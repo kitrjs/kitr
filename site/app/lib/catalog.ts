@@ -158,6 +158,11 @@ export const categories: Record<Category, { label: string; color: string }> = {
   kits: { label: 'Kits', color: '#C4B5FD' },
 }
 
+/** Packages grouped by category, in the order the categories are listed: how docs navigation walks them. */
+export const packageOrder: PackageEntry[] = (Object.keys(categories) as Category[]).flatMap((c) =>
+  packages.filter((p) => p.category === c),
+)
+
 /** Where a package runs. Badge colours are theme tokens (--client-*, --server-*) in site.css. */
 export const runsOn: Record<RunsOn, { label: string }> = {
   client: { label: 'Client' },

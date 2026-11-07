@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/api and kitr/api/client.
 order: 2
 ---
 
-# API
+# API reference
 
 ## defineRoutes
 

@@ -721,25 +721,6 @@ await mailer.send(teamInviteMail, { inviter: 'Grace', teamName: 'Analytical Engi
 
 `createMailer` takes the same `from` and `transport` as `config/mail.ts`, plus `renderHtml(element)`, which returns HTML or a promise of it. The default is `renderToStaticMarkup` from `react-dom/server`. Without a `transport`, it uses the log transport.
 
-## Errors
-
-Every error is a plain `Error` whose message starts with `[kitr/mail]`. Nothing is sent when one is thrown.
-
-| Message | When | What to do |
-| --- | --- | --- |
-| ``No sender: set `from` in config/mail.ts or in send().`` | No `from` in config or send options. | Set `from` or `MAIL_FROM`. |
-| `No recipient.` | `to` is an empty list. | Pass at least one recipient. |
-| `"<value>" in <field> is not an email address.` | An address is malformed, or several are joined in one string. | Pass one address per entry. |
-| `Line break in <field> address.` | An address or display name contains CR or LF. | Strip line breaks from user input. |
-| `Line break in the subject.` | The subject, often built from props, contains CR or LF. | Strip line breaks from the props. |
-| `Bad header name "<name>".` | A header name has a space or another character not allowed in a token. | Use names like `X-Acme-Invoice`. |
-| `Line break in header "<name>".` | A header value contains CR or LF. | Strip line breaks from the value. |
-| `Resend <status>: <body>` | Resend answered with an error status. | Read the body: usually an unverified domain or a bad key. |
-| `Set a transport in config/mail.ts (Resend, SMTP or your own).` | Boot in production with `transport` unset. | Set a transport, or the env variable that selects one. |
-| `The log transport prints every email (reset links included) and is not allowed in production; ...` | Boot in production with the log transport. | Use Resend, SMTP or your own transport in production. |
-
-SMTP errors come from nodemailer unchanged.
-
 ## Commands
 
 | Command | What it does |
@@ -773,6 +754,25 @@ export const orderShippedMail = defineMail<OrderShippedProps>('order_shipped', {
 ```
 
 The generator does not add the template to `mailPreview()`; add it to the list in `server/main.ts`.
+
+## Errors
+
+Every error is a plain `Error` whose message starts with `[kitr/mail]`. Nothing is sent when one is thrown.
+
+| Message | When | What to do |
+| --- | --- | --- |
+| ``No sender: set `from` in config/mail.ts or in send().`` | No `from` in config or send options. | Set `from` or `MAIL_FROM`. |
+| `No recipient.` | `to` is an empty list. | Pass at least one recipient. |
+| `"<value>" in <field> is not an email address.` | An address is malformed, or several are joined in one string. | Pass one address per entry. |
+| `Line break in <field> address.` | An address or display name contains CR or LF. | Strip line breaks from user input. |
+| `Line break in the subject.` | The subject, often built from props, contains CR or LF. | Strip line breaks from the props. |
+| `Bad header name "<name>".` | A header name has a space or another character not allowed in a token. | Use names like `X-Acme-Invoice`. |
+| `Line break in header "<name>".` | A header value contains CR or LF. | Strip line breaks from the value. |
+| `Resend <status>: <body>` | Resend answered with an error status. | Read the body: usually an unverified domain or a bad key. |
+| `Set a transport in config/mail.ts (Resend, SMTP or your own).` | Boot in production with `transport` unset. | Set a transport, or the env variable that selects one. |
+| `The log transport prints every email (reset links included) and is not allowed in production; ...` | Boot in production with the log transport. | Use Resend, SMTP or your own transport in production. |
+
+SMTP errors come from nodemailer unchanged.
 
 ## Testing
 

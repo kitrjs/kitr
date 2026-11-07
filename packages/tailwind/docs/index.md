@@ -51,7 +51,7 @@ export default defineConfig({
 | `entry` | `'app/styles/app.css'` | The stylesheet Tailwind starts from, relative to the project root. |
 | `preset` | `true` | Whether the app uses kitr's preset (`kitr/tailwind/preset.css`). |
 
-Tailwind v4 is configured in CSS, so the stylesheet decides what the build does, and these two options describe it. `kitr doctor` checks they agree: it reports an error when `entry` does not exist, and a warning when the entry does not import Tailwind, or imports kitr's preset while `preset` is false (or leaves it out while `preset` is true). To change the entry, link a different file from `head()` in `app/document.tsx` and set `entry`. To drop the preset, remove its `@import` line and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` also warns when `config/tailwind.ts` is missing, so keep the file.
+Tailwind v4 is configured in CSS, so the stylesheet decides what the build does, and these two options describe it. `kitr doctor` checks they agree: it reports an error when `entry` does not exist, and a warning when the entry does not import Tailwind, or imports kitr's preset while `preset` is false (or leaves it out while `preset` is true). To change the entry, link a different file from `head()` in `app/document.tsx` and set `entry`. To drop the preset, remove its `@import` line and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colors)). `kitr doctor` also warns when `config/tailwind.ts` is missing, so keep the file.
 
 The stylesheet `kitr add` writes is the real configuration:
 
@@ -119,7 +119,7 @@ export default () => (
 
 Run `npm run dev` and open `/orders`. The heading uses the theme's foreground colour, the badge sits on the muted surface with the theme's border and radius. Switch the theme to dark and both follow without a `dark:` class, because the tokens change under them.
 
-## Use the theme's colours
+## Use the theme's colors
 
 The preset maps every kitr token to a Tailwind theme variable. Each colour works with every colour utility (`bg-`, `text-`, `border-`, `ring-`, `fill-`, `outline-`...) and with opacity modifiers like `bg-primary/90`.
 
@@ -155,7 +155,7 @@ export function OrderCard({ number, customer, total }: { number: string; custome
 
 Tailwind's own palette (`bg-sky-500`, `text-zinc-600`) is still there. Use it for one-off colours such as chart series, and the theme classes for anything that should change with the theme.
 
-## Change a colour
+## Change a color
 
 The token values live in CSS variables, so change one by setting the variable after the imports. Acme's primary colour is orange:
 
@@ -183,7 +183,7 @@ Every `bg-primary`, `text-primary` and `ring-ring` in the app, and every compone
 
 Don't edit the values in `@theme` (`--color-primary`) to change a colour. The preset defines those as references to the `--kitr-*` variables, and replacing them breaks dark mode.
 
-## Add your own colours and sizes
+## Add your own colors and sizes
 
 For a token kitr does not have, add it to Tailwind's theme with an `@theme` block. Each `--color-*` variable becomes a colour utility, `--text-*` a font size, and so on:
 
@@ -423,7 +423,7 @@ export function RefundReasonField() {
 
 For a finished look, `kitr ui add form` copies a styled version into `app/components/ui/form.tsx`. Every component `kitr ui add` copies is plain Tailwind on the theme classes and `cn()`, and the code is yours to change.
 
-## Use plain Tailwind colours
+## Use plain Tailwind colors
 
 To use Tailwind without kitr's tokens, remove the preset import, and the theme stylesheet if nothing else needs it:
 

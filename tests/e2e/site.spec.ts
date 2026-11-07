@@ -239,6 +239,36 @@ test.describe('in the browser', () => {
     expect(errors).toEqual([])
   })
 
+  test("a package's sidebar is its own guide, with a way back to every package", async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/packages/mail')
+    await page.waitForLoadState('networkidle')
+    const sidebar = page.locator('#docs-sidebar')
+    await expect(sidebar.locator('a[href="/packages"]')).toBeVisible()
+    await expect(sidebar.locator('a[href="/packages/query"]')).toHaveCount(0)
+    await expect(sidebar.locator('a[href="#install"]')).toBeVisible()
+    await expect(sidebar.locator('a[href="/packages/mail/api"]')).toBeVisible()
+  })
+
+  test('on a phone, the docs bar opens the navigation and a section link closes it', async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/packages/mail')
+    await page.waitForLoadState('networkidle')
+    const sidebar = page.locator('#docs-sidebar')
+    await expect(sidebar).toBeHidden()
+    await page.locator('.docs-bar-button').click()
+    await expect(sidebar).toBeVisible()
+    await sidebar.locator('a[href="#configure"]').click()
+    await expect(sidebar).toBeHidden()
+    await expect(page.locator('.docs-bar-section')).toHaveText('Configure')
+  })
+
   test('an unknown page shows the not-found page', async ({ page }) => {
     await isolate(page)
     await page.goto('/this-page-does-not-exist')

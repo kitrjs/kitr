@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/realtime, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/realtime`, `kitr/realtime/client`, `kitr/realtime/routes`, `kitr/realtime/server`, `kitr/realtime/socket.io`, `kitr/realtime/socket.io/server`, `kitr/realtime/sse`, `kitr/realtime/sse/server`, `kitr/realtime/react`, read from the published type definitions. The [guide](/packages/realtime) shows them in use.
 

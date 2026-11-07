@@ -72,7 +72,7 @@ export default defineKitrConfig({
 })
 ```
 
-## Build the order screens
+## Run your first dev server
 
 With `kitr add web site` done, the app object imports its providers and config from the virtual modules and the dev server serves it:
 
@@ -92,7 +92,7 @@ kitr dev site
 
 The browser opens `http://localhost:3000` with the pages from `app/routes.ts`. `virtual:kitr/providers` is the `providers` list from `kitrrc.ts` as static imports, so every provider is in the bundle and tree-shakable, and `virtual:kitr/config` is every file under `config/` keyed by name: `config/query.ts` becomes `config.query`. Change `kitrrc.ts` and both modules reload without a restart.
 
-## Ask the build for something from a package
+## Let a package configure the build
 
 A package tells the plugin what it needs through the `vite` field of its setup module, so adding the package is the whole setup. `@kitr/tailwind` declares its plugin and the dependencies to pre-bundle; `@kitr/server` keeps `config/server.ts` out of the browser bundle; `@kitr/devtools` drops its provider from production builds; `@kitr/router` turns TanStack Start on:
 

@@ -624,35 +624,6 @@ The full parsed body is kept in `error.data`. For example, a `409` with `{ "mess
 
 A `422` whose `fieldErrors` reach a [Forms](/packages/forms) `<Form>` shows each message under its input, with no code in the component.
 
-## Errors
-
-| Code | When | What to do |
-| --- | --- | --- |
-| `BAD_REQUEST` | `400`, or any 4xx not listed below. | Fix the request; the message usually says what is wrong. |
-| `UNAUTHORIZED` | `401` after `refresh` failed or was not set. `onUnauthorized` runs. | Sign the user in again. |
-| `FORBIDDEN` | `403`. | Hide the action, or ask the API owner for access. |
-| `NOT_FOUND` | `404`. | Show a not-found state; the record was deleted or the path is wrong. |
-| `TIMEOUT` | `408` from the server. | Retry later. |
-| `CONFLICT` | `409`. | Reload the record and let the user decide. |
-| `PAYLOAD_TOO_LARGE` | `413`. | Send a smaller body or file. |
-| `VALIDATION` | `422`, or a response that fails the contract's `schema`. | Show `fieldErrors` next to the inputs; for a schema failure, update the schema or the API. |
-| `RATE_LIMITED` | `429`. | Back off; ky already retried idempotent requests. |
-| `INTERNAL` | `500` or any other 5xx; also a network failure or a client-side timeout. | Show a retry button. The message names the cause, such as `Request timed out: GET https://api.acme.com/v1/orders`. |
-| `UNAVAILABLE` | `503`. | Show a maintenance notice and retry later. |
-
-`normaliseHttpError(error)` performs this mapping on any error, if you call ky outside the client:
-
-```ts
-// app/lib/errors.ts
-import { normaliseHttpError } from 'kitr/http'
-
-export async function describeError(error: unknown) {
-  const kitrError = await normaliseHttpError(error)
-  return `${kitrError.code} (${kitrError.status}): ${kitrError.message}`
-}
-// describeError(new TypeError('Failed to fetch')) => 'NETWORK (0): Network request failed'
-```
-
 ## Commands
 
 | Command | What it does |
@@ -698,6 +669,35 @@ export const updateOrders = mutationFrom(
 ```
 
 Names come from the argument as given, so pass the singular (`kitr make:queries order`) if you want `Order` and `orderQuery`. Pass `--force` to overwrite an existing file. To change the template for your project, run `kitr eject stub queries` and edit `stubs/queries.ts`.
+
+## Errors
+
+| Code | When | What to do |
+| --- | --- | --- |
+| `BAD_REQUEST` | `400`, or any 4xx not listed below. | Fix the request; the message usually says what is wrong. |
+| `UNAUTHORIZED` | `401` after `refresh` failed or was not set. `onUnauthorized` runs. | Sign the user in again. |
+| `FORBIDDEN` | `403`. | Hide the action, or ask the API owner for access. |
+| `NOT_FOUND` | `404`. | Show a not-found state; the record was deleted or the path is wrong. |
+| `TIMEOUT` | `408` from the server. | Retry later. |
+| `CONFLICT` | `409`. | Reload the record and let the user decide. |
+| `PAYLOAD_TOO_LARGE` | `413`. | Send a smaller body or file. |
+| `VALIDATION` | `422`, or a response that fails the contract's `schema`. | Show `fieldErrors` next to the inputs; for a schema failure, update the schema or the API. |
+| `RATE_LIMITED` | `429`. | Back off; ky already retried idempotent requests. |
+| `INTERNAL` | `500` or any other 5xx; also a network failure or a client-side timeout. | Show a retry button. The message names the cause, such as `Request timed out: GET https://api.acme.com/v1/orders`. |
+| `UNAVAILABLE` | `503`. | Show a maintenance notice and retry later. |
+
+`normaliseHttpError(error)` performs this mapping on any error, if you call ky outside the client:
+
+```ts
+// app/lib/errors.ts
+import { normaliseHttpError } from 'kitr/http'
+
+export async function describeError(error: unknown) {
+  const kitrError = await normaliseHttpError(error)
+  return `${kitrError.code} (${kitrError.status}): ${kitrError.message}`
+}
+// describeError(new TypeError('Failed to fetch')) => 'NETWORK (0): Network request failed'
+```
 
 ## Testing
 

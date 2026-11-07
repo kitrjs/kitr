@@ -101,7 +101,7 @@ export function Welcome({ name }: { name: string }) {
 
 `<Welcome name="Ada" />` renders "Hello, Ada" and a "Save" button. The provider created the i18next instance at startup, so there is nothing to load and nothing to wait for. `as const` on the bundle keeps the exact strings, which [typed keys](#type-your-keys) need.
 
-## Organise strings into namespaces
+## Organize strings into namespaces
 
 Each top-level key in a bundle is a namespace. Keep `common` for words used everywhere and give each feature its own:
 

@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/router, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/router`, `kitr/router/routes`, `kitr/router/stack`, read from the published type definitions. The [guide](/packages/router) shows them in use.
 

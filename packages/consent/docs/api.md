@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/consent, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/consent`, `kitr/consent/react`, `kitr/consent/provider`, read from the published type definitions. The [guide](/packages/consent) shows them in use.
 

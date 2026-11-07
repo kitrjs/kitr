@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/flags, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/flags`, `kitr/flags/react`, `kitr/flags/provider`, `kitr/flags/server`, read from the published type definitions. The [guide](/packages/flags) shows them in use.
 

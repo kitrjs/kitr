@@ -1,5 +1,8 @@
 import {
+  ArrowDown01Icon,
+  ArrowLeft02Icon,
   ArrowRight02Icon,
+  Cancel01Icon,
   Copy01Icon,
   Delete02Icon,
   GithubIcon,
@@ -55,4 +58,7 @@ export const icons = {
   edit: PencilEdit02Icon,
   arrow: ArrowRight02Icon,
   menu: Menu01Icon,
+  back: ArrowLeft02Icon,
+  close: Cancel01Icon,
+  chevronDown: ArrowDown01Icon,
 }

@@ -1,5 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { DocBody, Toc } from '#app/components/doc-body'
+import { SectionList, Sidebar, sectionOf, useActiveHeading } from '#app/components/docs-nav'
+import { Icon, icons } from '#app/components/icons'
 import { docsNav, loadPage } from '#app/lib/content'
 import { seo } from '#app/lib/seo'
 
@@ -29,25 +31,43 @@ function DocsPage() {
   const index = flat.findIndex((i) => i.slug === slug)
   const prev = flat[index - 1]
   const next = flat[index + 1]
+  const active = useActiveHeading(page.toc)
   return (
     <div className="container docs-layout">
-      <nav className="sidebar" aria-label="Docs">
+      <Sidebar
+        label="Docs"
+        where={page.title}
+        section={sectionOf(page.toc, active)?.text}
+        active={active}
+      >
         {docsNav.map((group) => (
           <div key={group.title} className="sidebar-group">
             <span className="label sidebar-title">{group.title}</span>
             {group.items.map((item) => (
-              <Link
-                key={item.slug}
-                to="/docs/$slug"
-                params={{ slug: item.slug }}
-                aria-current={item.slug === slug ? 'page' : undefined}
-              >
-                {item.title}
-              </Link>
+              <div key={item.slug} className="sidebar-page">
+                <Link
+                  to="/docs/$slug"
+                  params={{ slug: item.slug }}
+                  aria-current={item.slug === slug ? 'page' : undefined}
+                >
+                  {item.title}
+                </Link>
+                {/* Below 1100px the "On this page" column is gone, so the sections sit here. */}
+                {item.slug === slug && (
+                  <SectionList toc={page.toc} active={active} className="narrow-only" />
+                )}
+              </div>
             ))}
           </div>
         ))}
-      </nav>
+        <div className="sidebar-group">
+          <span className="label sidebar-title">Packages</span>
+          <Link to="/packages" className="sidebar-browse">
+            Browse every package
+            <Icon icon={icons.arrow} size={16} />
+          </Link>
+        </div>
+      </Sidebar>
       <main className="docs-main">
         <header className="doc-head">
           {page.section && <span className="label">{page.section}</span>}
