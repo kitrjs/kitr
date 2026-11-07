@@ -1,0 +1,79 @@
+{
+  "name": "@kitr/animation",
+  "version": "0.1.0",
+  "description": "kitr/animation: Motion re-exported, plus reduced-motion defaults, shared presets, scroll reveals and page transitions.",
+  "kitr": {
+    "name": "animation",
+    "title": "Animation",
+    "summary": "Animate components and page changes, and respect the visitor's reduced-motion setting.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "motion"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/animation"
+  },
+  "homepage": "https://kitr.dev/packages/animation",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./page-transitions.css": "./page-transitions.css",
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "page-transitions.css"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "motion": ">=12.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-router": "^1.170.46",
+    "@types/react": "^19.3.0",
+    "motion": "^14.10.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}
