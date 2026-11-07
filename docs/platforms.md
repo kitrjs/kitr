@@ -122,7 +122,7 @@ export const kiosk = definePlatform<{ port?: number }>(
     type: 'kiosk',
     description: 'Fullscreen Chromium on a Raspberry Pi',
     describe: { port: { type: 'number', default: 3300, description: 'Dev server port' } },
-    requires: ['router', 'platform'],       // recipes `kitr add kiosk <name>` runs first
+    requires: ['router', 'platform'],       // packages `kitr add kiosk <name>` adds first
     provider: '@acme/kitr-kiosk/provider',  // registered in kitrrc.ts providers
   },
   (options) => ({

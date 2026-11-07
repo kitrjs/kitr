@@ -120,15 +120,18 @@ The project facts it may read: `ctx.root`, `ctx.pm`, `ctx.pkg`, `ctx.rc` (packag
 
 ## How `kitr add` resolves a name
 
-`jobs` means `@kitr/jobs`; anything with a scope or a slash is taken as written. When the package is not resolvable from the project, the CLI installs it first (`pnpm add @kitr/jobs`) and then loads its `kitr` module; with `--no-install` that is an error naming the flag. Inside this monorepo the module resolves from the CLI's own tree, which is how `kitr new --no-install` regenerates the examples. A package with no setup module falls back to the recipe of the same name inside the CLI, until every official package has moved its setup into its own code.
+`jobs` means `@kitr/jobs`; anything with a scope or a slash is taken as written. When the package is not resolvable from the project, the CLI installs it first (`pnpm add @kitr/jobs`) and then loads its `kitr` module; with `--no-install` that is an error naming the flag. Inside this monorepo the module resolves from the CLI's own tree, which is how `kitr new --no-install` regenerates the examples. A package with no setup module is installed and listed in `kitrrc.ts`, and nothing else happens: there is no fallback inside the CLI, because the CLI knows no package by name.
 
 ## Commands
 
 A `commands` module exports plain command objects in citty's shape (`meta`, `args`, `run`); the kitr CLI mounts them next to its own. The `<name>:` prefix (`jobs:work`) is the convention, so a project with several packages never sees two meanings of one word; a bare name is allowed, and a collision with a core command or another package's command is an error at load time. Commands are loaded only when `kitr --help` runs or the word typed is not a core command, so an unrelated `kitr dev` pays nothing for them.
 
+## Platforms and kits
+
+A platform package (`kind: 'platform'`) adds a `platform` block: the `definePlatform` factory `kitrrc.ts` calls, the export and module it is imported from, and the name `kitr add <type>` suggests. See [platforms.md](platforms.md).
+
+A kit package (`kind: 'kit'`) adds a `kit` block and is run by `kitr new --kit <name>` instead of `kitr add`: the platforms to write, the packages to add with their answers, the registry components to copy and a `files(ctx, projectName)` hook with the same `ctx` as `add()`. A kit is never installed into the project. See [kits.md](kits.md).
+
 ## Where the official setups are
 
-| Package | Setup |
-| --- | --- |
-| `jobs`, `web` | `packages/<name>/src/kitr.ts` (the contract above) |
-| every other package | `packages/cli/src/recipes*.ts` (legacy recipes, moving into their packages next) |
+Every official package keeps its setup in `packages/<name>/src/kitr.ts`, published as its `./kitr` export; the kits are `packages/kit-<name>/src/kitr.ts`. The CLI holds no package-specific code: `packages/cli` is the contract runner, the codemods, `kitr new`'s seven base files and the core commands.
