@@ -1,17 +1,30 @@
 import type { ProjectContext } from './context'
 import { type Recipe, r } from './recipe'
 
-/** Insert `line` (with its import) into server/main.ts right after the server is created, once. */
-function attachToServer(ctx: ProjectContext, marker: string, importLine: string, line: string) {
+/**
+ * Insert `line` (with its import) into server/main.ts once. By default it goes after the routes
+ * and anything attached before it; `first` puts it straight after `createServer()` so middleware
+ * that must see every request (the shield) reads in the order it runs.
+ */
+function attachToServer(
+  ctx: ProjectContext,
+  marker: string,
+  importLine: string,
+  line: string,
+  options: { first?: boolean } = {},
+) {
   if (!ctx.exists('server/main.ts')) return
   const main = ctx.read('server/main.ts')
   if (main.includes(marker)) return
-  const next = main
-    .replace(/(import \{ createServer \} from 'kitr\/server'\n)/, `$1${importLine}\n`)
-    .replace(
-      /(export const server = createServer\([^\n]*\)\n(?:mountRoutes\(server, routes\)\n)?(?:\/\/[^\n]*\nrealtime\.attach\([^\n]*\)\n)?)/,
-      `$1${line}\n`,
-    )
+  let next = importLine
+    ? main.replace(/(import \{ createServer \} from 'kitr\/server'\n)/, `$1${importLine}\n`)
+    : main
+  next = options.first
+    ? next.replace(/(export const server = createServer\([^\n]*\)\n)/, `$1${line}\n`)
+    : next.replace(
+        /(export const server = createServer\([^\n]*\)\n(?:(?:\/\/[^\n]*\n)?(?!export |const |\n)[^\n]+\n)*)/,
+        `$1${line}\n`,
+      )
   if (next !== main) ctx.write('server/main.ts', next, { overwrite: true })
 }
 
@@ -179,7 +192,7 @@ export function UpdateBanner() {
       c.addPackage('@kitr/offline')
       ctx.write(
         'config/offline.ts',
-        `import { defineConfig } from 'kitr/offline'\n\nexport default defineConfig({\n  maxAge: 24 * 60 * 60 * 1000,\n  // include: (key) => key[0] !== 'search', // leave volatile queries out of the snapshot\n  buster: import.meta.env.VITE_APP_VERSION, // a new version drops old snapshots\n})\n`,
+        `import { defineConfig } from 'kitr/offline'\nimport { env } from '#app/env'\n\nexport default defineConfig({\n  maxAge: 24 * 60 * 60 * 1000,\n  // include: (key) => key[0] !== 'search', // leave volatile queries out of the snapshot\n  buster: env.VITE_APP_VERSION, // a new version drops old snapshots\n})\n`,
       )
       c.addEnvSchema('public', 'VITE_APP_VERSION', "e.string({ default: '0.0.0' })", '0.0.0')
       c.addAgentsSection(
@@ -314,7 +327,8 @@ export function ConsentBanner() {
         ctx,
         'shield(server',
         "import { shield } from 'kitr/shield'",
-        '// Security headers, CORS, rate limit and CSRF from config/shield.ts, before the routes.\nshield(server)',
+        '// Security headers, CORS, rate limit and CSRF from config/shield.ts.\nshield(server)',
+        { first: true },
       )
       c.addAgentsSection(
         'shield',
@@ -340,7 +354,7 @@ export function ConsentBanner() {
       c.addEnv({ RESEND_API_KEY: '', MAIL_FROM: 'App <hello@example.com>' }, 'Mail')
       ctx.write(
         'config/mail.ts',
-        `import { createLogTransport, createResendTransport, defineConfig } from 'kitr/mail'\n\n/** Development logs every message; production needs a transport (Resend here, or createSmtpTransport). */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : createLogTransport(),\n})\n`,
+        `import { createLogTransport, createResendTransport, defineConfig } from 'kitr/mail'\n\n/** Development logs every message; production needs a transport: Resend here, or createSmtpTransport(nodemailer, { host, auth }). */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : createLogTransport(),\n})\n`,
       )
       ctx.write(
         'server/mail/welcome.tsx',
@@ -393,21 +407,15 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
       c.addPackage('@kitr/jobs')
       ctx.write(
         'config/jobs.ts',
-        `import { defineConfig } from 'kitr/jobs'\n\nexport default defineConfig({\n  // In-memory queue by default: fine for one process. For several, pass a shared driver.\n  concurrency: 5,\n  worker: true, // false when a separate worker process runs the jobs\n})\n`,
+        `import { defineConfig } from 'kitr/jobs'\nimport { exampleJob } from '#server/jobs/example'\n\nexport default defineConfig({\n  // Every job the worker runs (kitr make:job <name> writes one in server/jobs/).\n  jobs: [exampleJob],\n  // In-memory queue by default: fine for one process. For several, pass a shared driver.\n  concurrency: 5,\n  worker: true, // false when a separate worker process runs the jobs\n})\n`,
       )
       ctx.write(
         'server/jobs/example.ts',
-        `import { defineJob } from 'kitr/jobs'\nimport { z } from 'zod'\n\n/** Dispatch with \`jobs.dispatch(exampleJob, { id })\`; it runs on the worker with retries. */\nexport const exampleJob = defineJob('example', {\n  schema: z.object({ id: z.string() }),\n  retries: 3,\n  // schedule: { every: '1h' },\n  async run({ id }, ctx) {\n    console.info(\`example job \${id} (attempt \${ctx.attempt})\`)\n  },\n})\n`,
-      )
-      attachToServer(
-        ctx,
-        'jobs.register(',
-        "import { exampleJob } from './jobs/example'",
-        "// Jobs the worker knows about (kitr make:job <name> adds more in server/jobs/).\nserver.app.container.use('jobs').register(exampleJob)",
+        `import { defineJob } from 'kitr/jobs'\nimport { z } from 'zod'\n\n/** Dispatch with \`useJobs(app).dispatch(exampleJob, { id })\`; it runs on the worker with retries. */\nexport const exampleJob = defineJob('example', {\n  schema: z.object({ id: z.string() }),\n  retries: 3,\n  // schedule: { every: '1h' },\n  async run({ id }, ctx) {\n    console.info(\`example job \${id} (attempt \${ctx.attempt})\`)\n  },\n})\n`,
       )
       c.addAgentsSection(
         'jobs',
-        `- Background work is a job in \`server/jobs/*.ts\` (\`kitr make:job <name>\`, \`defineJob\` with a schema, retries and an optional schedule), registered in \`server/main.ts\`. Dispatch from controllers and actions with \`ctx.app.container.use('jobs').dispatch(job, payload)\`; never \`setTimeout\` work in a request.`,
+        `- Background work is a job in \`server/jobs/*.ts\` (\`kitr make:job <name>\`, \`defineJob\` with a schema, retries and an optional schedule), listed in \`config/jobs.ts\`. Dispatch from controllers and actions with \`ctx.app.container.use('jobs').dispatch(job, payload)\`; never \`setTimeout\` work in a request.`,
       )
     },
     unconfigure(_ctx, c) {
@@ -433,9 +441,9 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
       )
       attachToServer(
         ctx,
-        'uploads.mount(',
-        '',
-        "// POST /api/uploads receives multipart files per config/uploads.ts.\nserver.app.container.use('uploads').mount(server)",
+        'mountUploads(',
+        "import { mountUploads } from 'kitr/uploads/server'",
+        '// POST /api/uploads receives multipart files per config/uploads.ts; GET serves them.\nmountUploads(server)',
       )
       c.addAgentsSection(
         'uploads',

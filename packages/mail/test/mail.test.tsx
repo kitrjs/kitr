@@ -5,6 +5,7 @@ import {
   createLogTransport,
   createMailer,
   createResendTransport,
+  createSmtpTransport,
   defineMail,
   htmlToText,
 } from '../src'
@@ -26,6 +27,25 @@ const welcome = defineMail<{ name: string }>('welcome', {
 })
 
 describe('mail', () => {
+  it('sends over SMTP through an injected nodemailer', async () => {
+    const sent: Record<string, unknown>[] = []
+    const nodemailer = {
+      createTransport: (opts: unknown) => {
+        expect(opts).toMatchObject({ host: 'smtp.test', port: 2525 })
+        return {
+          sendMail: async (m: Record<string, unknown>) => (sent.push(m), { messageId: 'smtp-1' }),
+        }
+      },
+    }
+    const mailer = createMailer({
+      transport: createSmtpTransport(nodemailer, { host: 'smtp.test', port: 2525 }),
+      from: 'a@b.c',
+    })
+    const result = await mailer.send(welcome, { name: 'Bo' }, { to: 'bo@x.test' })
+    expect(result.id).toBe('smtp-1')
+    expect(sent[0]).toMatchObject({ to: 'bo@x.test', subject: 'Welcome, Bo' })
+  })
+
   it('renders React to html and text and sends through the transport', async () => {
     const transport = createLogTransport({ print: false })
     const mailer = createMailer({ transport, from: 'Kitr <hi@kitr.dev>' })

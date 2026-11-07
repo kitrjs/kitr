@@ -68,6 +68,19 @@ Server actions, API routes, external HTTP APIs and realtime channels all produce
 | `kitr/platform` | | `platform()`, `isNative()`, `perPlatform()`, driver registry; `kitr/platform/react` hooks (`usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) |
 | `kitr/storage` | | `defineStorage`, `defineCookie`; `kitr/storage/react` hooks, `kitr/storage/server` cookies, native drivers from the platform packages |
 | `kitr/devtools` | | the development overlay; `getDevtools(app)?.log()`, panels via a provider's `devtools()` |
+| `kitr/cache` | | `createCache`, `remember`, tags, `cached()`; in-memory driver, Redis-shaped `CacheDriver` |
+| `kitr/shield` | | `shield(server)`: security headers, CORS, rate limit with RateLimit-* headers, double-submit CSRF |
+| `kitr/mail` | | `defineMail` React templates, log/Resend/SMTP transports, `mailPreview` at `/_kitr/mail` |
+| `kitr/jobs` | | `defineJob` with schema, retries, timeouts and cron/interval schedules; in-process worker over a `JobsDriver` |
+| `kitr/uploads` | | `upload()` with progress; `kitr/uploads/server` parses multipart per rules into a disk or custom driver; `kitr/uploads/react` |
+| `kitr/flags` | | `defineFlags`, env/percentage/OpenFeature providers; `kitr/flags/server` resolves per request, `kitr/flags/react` reads |
+| `kitr/consent` | | one consent record by category; gates analytics and monitoring; `kitr/consent/react` for the banner |
+| `kitr/offline` | | persisted query cache and paused mutations, restored before first render; `useOffline()` |
+| `kitr/secure-storage` | | OS vault drivers with an AES-GCM web fallback; `defineSecureItem`, `useSecureItem` |
+| `kitr/files` | | `open`/`pick`/`save` with native dialogs or the browser's; `useFileDialogs`, `useDropFiles` |
+| `kitr/notifications` | | permission, `show`, `schedule`, `cancel`, tap routing; `useNotificationPermission`, `useNotificationTap` |
+| `kitr/native` | | clipboard, share, haptics, geolocation, camera, biometrics with web fallbacks; `useClipboard`, `useShare`, `useGeolocation` |
+| `kitr/updater` | | `check`/`apply` over the service worker or platform updaters; `useUpdate()` |
 | `kitr/web` | | the `web()` platform (static, spa, ssr, pwa); `kitr/web/client` has `useInstallPrompt`, `useServiceWorker`; `kitr/web/vite` |
 | `kitr/desktop` | `@tauri-apps/api` | the `desktop()` platform (Tauri or Electron); `kitr/desktop/tauri` (`defineCommands`, `commandQuery`, `useTauriEvent`), `kitr/desktop/electron` (typed IPC), `electron-main`, `electron-preload` |
 | `kitr/mobile` | `@capacitor/core` | the `mobile()` platform (Capacitor); `kitr/mobile/client` has `isCapacitor`, `isPluginAvailable`, `nativeOnly` |

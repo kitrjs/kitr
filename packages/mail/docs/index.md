@@ -57,7 +57,7 @@ export default defineConfig({
 })
 ```
 
-`createSmtpTransport({ host, port, auth })` uses nodemailer when it is installed. Without a transport the log transport prints every message and keeps it in `mailer.sent`, which is what tests read; production refuses to boot without a real one.
+`createSmtpTransport(nodemailer, { host, port, auth })` takes the nodemailer module (`pnpm add nodemailer`) so the bundler sees a real import. Without a transport the log transport prints every message and keeps it in `mailer.sent`, which is what tests read; production refuses to boot without a real one.
 
 ## Previews
 

@@ -40,7 +40,7 @@
 | `make:form project` | `app/components/forms/project_form.tsx` |
 | `make:queries projects` | `app/features/projects/queries.ts` (keys, queries, mutation with effects) |
 | `make:provider analytics` | `app/providers/analytics_provider.ts` |
-| `make:job send_digest` | `server/jobs/send_digest.ts` (`defineJob` with a schema and retries) |
+| `make:job send_digest` | `server/jobs/send_digest.ts` (`defineJob` with a schema and retries; list it in `config/jobs.ts`) |
 | `make:mail welcome` | `server/mail/welcome.tsx` (`defineMail` with a preview) |
 | `make:service billing` | `server/services/billing_service.ts` (a class to bind in a provider) |
 | `make:validator project` | `app/validators/project.ts` (create/update zod schemas) |

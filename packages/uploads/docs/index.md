@@ -14,7 +14,7 @@ Multipart uploads with the rules enforced on both sides: the browser checks size
 kitr add uploads
 ```
 
-The recipe writes `config/uploads.ts` and mounts `POST /api/uploads` and `GET /api/uploads/:key` in `server/main.ts`.
+The recipe writes `config/uploads.ts` and adds `mountUploads(server)` to `server/main.ts`: `POST /api/uploads` receives files and `GET /api/uploads/:key` serves them.
 
 ```ts
 // config/uploads.ts

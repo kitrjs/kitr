@@ -93,10 +93,11 @@ export const server = definePlatform<ServerPlatformOptions>(
         options.entry,
         react
           ? `${api ? "import { mountRoutes } from 'kitr/api'\n" : ''}import { createServer } from 'kitr/server'
-import serverConfig from '#config/server'
+import { config } from '../config'
+import rc from '../kitrrc'
 ${realtime ? "import { realtime } from '#server/realtime'\n" : ''}${api ? "import { routes } from '#server/routes'\n" : ''}
-/** The kitr server: what \`kitr dev ${ctx.name}\` runs, what the web platform's /api route delegates to, what tests call. */
-export const server = createServer({ config: { server: serverConfig } })
+/** The kitr server: providers from kitrrc.ts, config from config/. What \`kitr dev ${ctx.name}\` runs, what the web platform's /api route delegates to, what tests call. */
+export const server = createServer({ providers: rc.providers, config })
 ${api ? 'mountRoutes(server, routes)\n' : ''}${attach}
 /** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
 export default server

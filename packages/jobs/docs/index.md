@@ -37,7 +37,7 @@ export const sendWelcome = defineJob('send-welcome', {
 await useJobs(ctx.app).dispatch(sendWelcome, { userId }, { delay: 5000 })
 ```
 
-Register the jobs the worker should know in `server/jobs.ts` (`jobs.register(sendWelcome, ...)`); a job dispatched by object is registered on the fly.
+List the jobs the worker should know in `config/jobs.ts` (`jobs: [sendWelcome, cleanup]`), or call `jobs.register(...)`; a job dispatched by object is registered on the fly.
 
 ## Schedules
 

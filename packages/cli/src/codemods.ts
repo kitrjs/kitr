@@ -284,8 +284,8 @@ export class Codemods {
   }
 
   /**
-   * Server-only projects have no Vite, so `virtual:kitr/config` is not available.
-   * Regenerate `config/index.ts` from every file in config/ instead. Idempotent.
+   * The standalone server (tsx, no Vite) imports `config/index.ts` instead of `virtual:kitr/config`.
+   * Regenerate it from every file in config/. Idempotent.
    */
   syncConfigIndex() {
     const dir = this.ctx.readRc().directories.config ?? 'config'
@@ -336,7 +336,7 @@ export class Codemods {
     this.deps.clear()
     this.removals.clear()
     this.ctx.pkg = pkg
-    if (this.ctx.isServerOnly()) this.syncConfigIndex()
+    this.syncConfigIndex()
     this.format()
     if (options.install && changed && !this.ctx.dryRun) {
       const cmd = this.ctx.pm === 'yarn' ? 'yarn' : `${this.ctx.pm} install`

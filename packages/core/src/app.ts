@@ -39,6 +39,7 @@ export class KitrApp {
   readonly platform: string | undefined
   private inputs: ProviderInput[]
   private phase: Phase = 'created'
+  private readying: Promise<this> | undefined
   private booting?: Promise<this>
 
   constructor(options: CreateAppOptions = {}) {
@@ -88,12 +89,15 @@ export class KitrApp {
     return this.booting
   }
 
-  /** Server only: tell providers the server is listening. */
-  async ready(): Promise<this> {
-    await this.boot()
-    for (const p of this.providers) await p.ready?.(this)
-    this.phase = 'ready'
-    return this
+  /** Server only: tell providers the server is serving. Idempotent: runs each `ready` once. */
+  ready(): Promise<this> {
+    this.readying ??= (async () => {
+      await this.boot()
+      for (const p of this.providers) await p.ready?.(this)
+      this.phase = 'ready'
+      return this
+    })()
+    return this.readying
   }
 
   /** Server only: run providers' `shutdown` in reverse order. */
