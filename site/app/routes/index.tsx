@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Command } from '#app/components/command'
+import { CreatorMark } from '#app/components/creator-marks'
 import { Icon } from '#app/components/icons'
 import homeCode from '#app/generated/home-code.json'
 import { categories, findPackage, glyph, kits } from '#app/lib/catalog'
 import { seo, siteUrl } from '#app/lib/seo'
+import { creditsFor } from '#app/lib/upstream'
 
 const description =
   'kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform.'
@@ -35,7 +37,18 @@ export const Route = createFileRoute('/')({
   component: Home,
 })
 
-const mosaic = ['query', 'api', 'forms', 'auth', 'state', 'realtime', 'table', 'theme', 'server']
+// One tile per kind of work, across every platform: data, UI, backend and the native shells.
+const mosaic = [
+  'router',
+  'query',
+  'forms',
+  'api',
+  'server',
+  'realtime',
+  'auth',
+  'desktop',
+  'mobile',
+]
 
 const terminal = [
   {
@@ -153,6 +166,8 @@ function Home() {
           {mosaic.map((name) => {
             const pkg = findPackage(name)
             if (!pkg) return null
+            const credits = creditsFor(pkg.builtOn)
+            const by = credits.map((c) => c.name).join(' and ')
             return (
               <Link
                 key={name}
@@ -160,9 +175,23 @@ function Home() {
                 params={{ name }}
                 className="mosaic-tile"
                 style={{ background: categories[pkg.category].color }}
+                aria-label={`${name}, built on ${by}`}
               >
-                <Icon icon={glyph(name)} size={36} stroke="#0B121C" strokeWidth={1.6} />
-                <span className="mono">{name}</span>
+                <span className="mosaic-credit" title={`Built on ${by}`}>
+                  {credits.map((c) =>
+                    c.mark ? (
+                      <CreatorMark key={c.name} name={c.mark} size={22} />
+                    ) : (
+                      <span key={c.name} className="mosaic-credit-name">
+                        {c.name}
+                      </span>
+                    ),
+                  )}
+                </span>
+                <span className="mosaic-icon">
+                  <Icon icon={glyph(name)} size={44} stroke="#0B121C" />
+                </span>
+                <span className="mosaic-name mono">{name}</span>
               </Link>
             )
           })}
