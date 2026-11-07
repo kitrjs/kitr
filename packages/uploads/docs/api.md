@@ -191,6 +191,14 @@ function mountUploads<S extends {
 Mount `POST <path>` (receive) and `GET <path>/**` (serve) on a kitr server from `server/main.ts`.
 The service is resolved per request, so this can run before the app has booted.
 
+### servedFileHeaders
+
+```ts
+function servedFileHeaders(type: string, name?: string): Record<string, string>;
+```
+
+Headers for serving a stored file: never sniffed, sandboxed, and inline only when that is safe.
+
 ### useUploads
 
 ```ts

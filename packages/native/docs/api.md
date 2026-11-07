@@ -40,10 +40,16 @@ function useNative(app: KitrApp): Native;
 ### webBiometrics
 
 ```ts
-function webBiometrics(): BiometricsDriver | null;
+function webBiometrics(options?: {
+  storageKey?: string;
+}): BiometricsDriver | null;
 ```
 
-WebAuthn user verification with a platform authenticator (Touch ID, Windows Hello).
+WebAuthn user verification with a platform authenticator (Touch ID, Windows Hello, Android
+screen lock). The first call registers a device-only credential for this site (that prompt is
+itself the check); later calls ask for that credential by id, so people without a passkey get
+the fingerprint or PIN prompt rather than an empty passkey picker. A local presence check, like
+the native ones: to prove identity to your server, verify a WebAuthn assertion there.
 
 ### webCamera
 

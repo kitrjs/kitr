@@ -138,6 +138,12 @@ interface RateLimitOptions {
   max?: number;
   /** Key a request. Default: the client IP. */
   key?: (event: H3Event) => string;
+  /**
+   * Read the client IP from `X-Forwarded-For` (first entry). Only turn this on behind a proxy
+   * you control that overwrites the header: otherwise any client can send a new value with every
+   * request and is never limited. Default false: the address of the connection.
+   */
+  trustProxy?: boolean;
   /** Where counters live. Default: this process. */
   store?: RateLimitStore;
   /** Paths that are never limited. Prefix match. */

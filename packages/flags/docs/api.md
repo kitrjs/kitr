@@ -13,7 +13,7 @@ Every export of `kitr/flags`, `kitr/flags/react`, `kitr/flags/provider`, `kitr/f
 ### createFlags
 
 ```ts
-function createFlags<D extends FlagDefinitions>(definitions: D, config?: FlagsConfig, app?: KitrApp): Flags<D>;
+function createFlags<D extends FlagDefinitions>(definitions: D, config?: FlagsConfig, app?: KitrApp, options?: CreateFlagsOptions): Flags<D>;
 ```
 
 ### defineFlags
@@ -85,6 +85,19 @@ const defineConfig: <const C extends FlagsConfig>(config: C) => C;
 
 ```ts
 const FLAGS_SCRIPT_ID = "__kitr_flags__";
+```
+
+### CreateFlagsOptions
+
+```ts
+interface CreateFlagsOptions {
+  /**
+   * Whether `resolve()` updates the snapshot that `value()`, `isEnabled()` and the React hooks
+   * read. Default: everywhere but the server's root app, which serves every user at once (the
+   * provider binds one instance per request there, and those keep their snapshot).
+   */
+  keepSnapshot?: boolean;
+}
 ```
 
 ### FlagContext
