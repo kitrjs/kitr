@@ -6,7 +6,7 @@ order: 1
 
 # Storage
 
-Typed items over local storage, session storage and cookies. Each item has a default, an optional schema, a version with a migration and a TTL, so a stale or corrupt value becomes the default instead of a crash. Cookies have one definition for both sides: `useCookie(item)` in a component, `cookies(event).get(item)` on the server.
+Every app saves a few things on the device: a collapsed sidebar, recent searches, a chosen language. Reading `localStorage` directly means parsing JSON by hand, guarding against bad values, breaking server rendering and forgetting to update other tabs. `kitr/storage` lets you declare each value once, with a type and a default, and then read it anywhere.
 
 ## Install
 
@@ -14,49 +14,86 @@ Typed items over local storage, session storage and cookies. Each item has a def
 kitr add storage
 ```
 
-`config/storage.ts` sets a key prefix and cookie defaults. On desktop and mobile the platform packages register a native driver, so the same items live in the OS store.
+The desktop and mobile [platforms](/docs/platforms) add it for you, and save values in the native store instead of the browser. It writes `config/storage.ts` and `app/storage.ts`.
 
-## Items
+## Declare values
 
 ```ts
 // app/storage.ts
 import { defineCookie, defineStorage } from 'kitr/storage'
 import { z } from 'zod'
 
-export const sidebar = defineStorage('sidebar', {
-  default: { collapsed: false },
-  schema: z.object({ collapsed: z.boolean() }),
-  version: 2,
-  migrate: (raw) => ({ collapsed: Boolean((raw as { closed?: boolean }).closed) }),
+export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
+
+export const recentSearches = defineStorage<string[]>('recent-searches', {
+  default: [],
+  area: 'session',
+  schema: z.array(z.string()).max(10),
 })
 
 export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
 ```
 
-```tsx
-import { useCookie, useStorage } from 'kitr/storage/react'
+| Option | Description |
+| --- | --- |
+| `default` | Returned when nothing is saved, when the saved value is invalid, and on the server. |
+| `area` | `local` (the default) keeps it until cleared. `session` keeps it for this tab. |
+| `schema` | A zod or valibot schema. A saved value that fails it is ignored. |
+| `version`, `migrate` | Bump `version` when the shape changes. `migrate(old, fromVersion)` converts old values; without it they are dropped. |
+| `ttl` | Milliseconds before a saved value expires. |
 
-function Sidebar() {
+## Use them in components
+
+```tsx
+import { useStorage } from 'kitr/storage/react'
+import { sidebar } from '#app/storage'
+
+function SidebarToggle() {
   const [state, setState] = useStorage(sidebar)
-  const [locale, setLocale] = useCookie(localeCookie)
-  return <button onClick={() => setState((s) => ({ collapsed: !s.collapsed }))}>{locale}</button>
+  return (
+    <button onClick={() => setState((s) => ({ collapsed: !s.collapsed }))}>
+      {state.collapsed ? 'Expand' : 'Collapse'}
+    </button>
+  )
 }
 ```
 
-Hooks are hydration-safe: the server and the first render see the default. Outside React, `sidebar.get()`, `.set()`, `.subscribe()`.
+The server and the first browser render both see the default, so hydration never mismatches. Changes in another tab update the component too.
 
-## On the server
+Outside React, call `sidebar.get()`, `sidebar.set(value)` and `sidebar.remove()`.
 
-```ts
-import { cookies } from 'kitr/storage/server'
+## Cookies on the client and the server
 
-const jar = cookies(event)
-const locale = jar.get(localeCookie)
-jar.set(localeCookie, 'fr')
+A cookie is the one value both sides can read, which makes it the right home for anything the server needs to render the first page, like the visitor's language.
+
+```tsx
+// In a component
+import { useCookie } from 'kitr/storage/react'
+const [locale, setLocale] = useCookie(localeCookie)
 ```
 
-`defineKv` gives server code a key-value store with the same shape (in-memory by default, a `KvDriver` for Redis).
+```ts
+// In a controller
+import { cookies } from 'kitr/storage/server'
 
-## Secrets
+const jar = cookies(ctx.event)
+const locale = jar.get(localeCookie)
+jar.set(localeCookie, 'de', { httpOnly: false })
+```
 
-Tokens do not belong here. Use [Secure storage](/packages/secure-storage), which encrypts on the web and uses the OS vault on devices.
+To have `useCookie` render the right value during server rendering, wrap the root route in `<CookieHeader value={request.headers.get('cookie')}>`.
+
+`config/storage.ts` sets a `prefix` for every key and cookie name, so several apps on one domain never collide, plus default cookie options such as `sameSite` and `secure`.
+
+## Server-side values
+
+`defineKv` keeps a value for the whole server: a banner, a feature switch, a cached lookup.
+
+```ts
+import { defineKv } from 'kitr/storage'
+
+export const banner = defineKv('banner', { default: { text: '' } })
+await banner.set({ text: 'Maintenance at 22:00' }, { ttl: 6 * 60 * 60 * 1000 })
+```
+
+It lives in memory until you set a `kv` driver in `config/storage.ts`. A driver is any object with `get`, `set` and `remove`, so Redis, Cloudflare KV or a file all work.

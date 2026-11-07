@@ -11,17 +11,16 @@ import {
   type RunsOn,
   runsOn,
 } from '#app/lib/catalog'
+import { seo } from '#app/lib/seo'
 
 export const Route = createFileRoute('/packages/')({
-  head: () => ({
-    meta: [
-      { title: 'Packages · kitr' },
-      {
-        name: 'description',
-        content: 'Every kitr package: what it does for your app, where it runs, and how to add it.',
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: 'Packages · kitr',
+      description:
+        'Every kitr package and platform: what it does for your app, where it runs, and how to add it with one command.',
+      path: '/packages',
+    }),
   component: Packages,
 })
 

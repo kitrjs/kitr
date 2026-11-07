@@ -2,9 +2,38 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Command } from '#app/components/command'
 import { Icon } from '#app/components/icons'
+import homeCode from '#app/generated/home-code.json'
 import { categories, findPackage, glyph, kits } from '#app/lib/catalog'
+import { seo, siteUrl } from '#app/lib/seo'
 
-export const Route = createFileRoute('/')({ component: Home })
+const description =
+  'kitr is a thin layer over TanStack, React Hook Form, Zustand, ky, h3 and Tailwind: one import surface, one data contract and one CLI, for web, server, desktop and mobile.'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareSourceCode',
+  name: 'kitr',
+  description,
+  url: siteUrl,
+  codeRepository: 'https://github.com/kitrjs/kitr',
+  programmingLanguage: 'TypeScript',
+  license: 'https://opensource.org/licenses/MIT',
+}
+
+export const Route = createFileRoute('/')({
+  head: () => {
+    const head = seo({
+      title: 'kitr: the React framework where everything is an add-on',
+      description,
+      path: '/',
+    })
+    return {
+      ...head,
+      scripts: [{ type: 'application/ld+json', children: JSON.stringify(jsonLd) }],
+    }
+  },
+  component: Home,
+})
 
 const mosaic = ['query', 'api', 'forms', 'auth', 'state', 'realtime', 'table', 'theme', 'server']
 
@@ -51,6 +80,29 @@ const terminal = [
   },
 ] as const
 
+const platforms = [
+  {
+    name: 'web',
+    cmd: 'kitr add web site --mode ssr',
+    text: 'Static, single-page or server-rendered, from the same app. Add a manifest and offline support with one option.',
+  },
+  {
+    name: 'server',
+    cmd: 'kitr add server api --runtime node',
+    text: 'An API on Node, Bun, Deno or Cloudflare Workers, with the typed client your pages call.',
+  },
+  {
+    name: 'desktop',
+    cmd: 'kitr add desktop app --shell tauri',
+    text: 'Windows, macOS and Linux. A small Tauri binary or a familiar Electron shell.',
+  },
+  {
+    name: 'mobile',
+    cmd: 'kitr add mobile phone',
+    text: 'iPhone and Android through Capacitor, with storage and device APIs switched to native.',
+  },
+]
+
 const ideas = [
   {
     title: 'Re-export, never re-implement',
@@ -58,7 +110,7 @@ const ideas = [
   },
   {
     title: 'One data contract',
-    text: 'REST APIs, your API routes, server actions and sockets all produce the same queries and mutations.',
+    text: 'REST APIs, your own API routes, server actions and realtime channels all produce the same queries and mutations.',
   },
   {
     title: 'Explicit wiring',
@@ -148,6 +200,78 @@ function Home() {
         </pre>
       </section>
 
+      <section className="feature" aria-labelledby="contract-title">
+        <div className="feature-copy">
+          <span className="label">One data contract</span>
+          <h2 id="contract-title">Describe your data once. Every screen keeps up.</h2>
+          <p className="muted">
+            A query says where data comes from. A mutation says what it changes. Your REST API, your
+            own API routes, server actions and realtime channels all speak this contract, so the
+            cache stays right without a single manual refetch.
+          </p>
+          <Link to="/packages/$name" params={{ name: 'query' }}>
+            How queries work →
+          </Link>
+        </div>
+        <div
+          className="feature-code"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted at build time
+          dangerouslySetInnerHTML={{ __html: homeCode.contract }}
+        />
+      </section>
+
+      <section className="platforms-home" aria-labelledby="platforms-title">
+        <div className="section-head">
+          <div>
+            <span className="label">Platforms</span>
+            <h2 id="platforms-title">Write it once. Ship it everywhere.</h2>
+            <p className="muted">
+              One <code>app/</code> folder, named platforms in <code>kitrrc.ts</code>, and{' '}
+              <code>kitr dev</code> runs them all.
+            </p>
+          </div>
+          <Link to="/docs/$slug" params={{ slug: 'platforms' }}>
+            Platforms guide →
+          </Link>
+        </div>
+        <div className="platforms-layout">
+          <div className="platform-cards">
+            {platforms.map((p) => {
+              const pkg = findPackage(p.name)
+              return (
+                <Link
+                  key={p.name}
+                  to="/packages/$name"
+                  params={{ name: p.name }}
+                  className="platform-card"
+                >
+                  <span
+                    className="tile"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      background: pkg ? categories[pkg.category].color : 'var(--line)',
+                    }}
+                  >
+                    <Icon icon={glyph(p.name)} size={26} stroke="#0B121C" strokeWidth={1.6} />
+                  </span>
+                  <span className="platform-card-text">
+                    <strong className="mono">{p.name}</strong>
+                    <span className="muted">{p.text}</span>
+                    <code className="platform-cmd">{p.cmd}</code>
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+          <div
+            className="feature-code"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted at build time
+            dangerouslySetInnerHTML={{ __html: homeCode.platforms }}
+          />
+        </div>
+      </section>
+
       <section className="kits">
         <div className="section-head">
           <div>
@@ -161,39 +285,52 @@ function Home() {
         <div className="kit-grid">
           {kits.map((kit) => (
             <article key={kit.name} className="kit">
-              <div className="kit-head">
-                <h3>{kit.name}</h3>
-                <span className="mono muted">--kit {kit.name}</span>
-              </div>
+              <h3>{kit.name}</h3>
+              <code className="kit-flag">--kit {kit.name}</code>
               <p>{kit.text}</p>
-              <div
-                className="kit-dots"
-                role="img"
-                aria-label={`Includes ${kit.packages.join(', ')}`}
-              >
+              <ul className="kit-chips" aria-label={`${kit.name} kit packages`}>
                 {kit.packages.map((name) => {
                   const pkg = findPackage(name)
                   return pkg ? (
-                    <span
-                      key={name}
-                      title={name}
-                      style={{ background: categories[pkg.category].color }}
-                    />
+                    <li key={name}>
+                      <Link to="/packages/$name" params={{ name }} className="kit-chip mono">
+                        <span
+                          className="kit-chip-dot"
+                          style={{ background: categories[pkg.category].color }}
+                        />
+                        {name}
+                      </Link>
+                    </li>
                   ) : null
                 })}
-              </div>
+              </ul>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="ideas">
+      <section className="ideas" aria-label="Principles">
         {ideas.map((idea) => (
           <div key={idea.title}>
             <h3>{idea.title}</h3>
             <p className="muted">{idea.text}</p>
           </div>
         ))}
+      </section>
+
+      <section className="cta" aria-labelledby="cta-title">
+        <div>
+          <h2 id="cta-title" className="display">
+            your first app, five minutes from now
+          </h2>
+          <p>Install the CLI once, pick a kit, and add the rest as you need it.</p>
+        </div>
+        <div className="cta-actions">
+          <Command cmd="kitr new my-app --kit app" />
+          <Link to="/docs/$slug" params={{ slug: 'getting-started' }} className="button cta-button">
+            Read the getting started guide
+          </Link>
+        </div>
       </section>
     </main>
   )

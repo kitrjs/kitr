@@ -1,12 +1,12 @@
 ---
-title: Monitoring
+title: Error monitoring
 description: Catch errors in the browser and on the server, and see which user hit them and what they did first.
 order: 1
 ---
 
-# Monitoring
+# Error monitoring
 
-`captureException`, breadcrumbs, user context and tags behind one API, with reporters for Sentry and the console and room for your own. On the client, window errors, unhandled rejections and render errors are captured by the provider's error boundary; on the server, `reportErrors` middleware reports every thrown error with the method, URL and request id.
+When something breaks in production, you want to know before a user writes in, and you want enough context to fix it: who it happened to, which page they were on and what they did just before. `kitr/monitoring` catches errors in the browser and on the server and sends them to [Sentry](https://sentry.io) or any other service through one small API.
 
 ## Install
 
@@ -14,41 +14,78 @@ order: 1
 kitr add monitoring
 ```
 
+It writes `config/monitoring.ts` and adds an optional `VITE_SENTRY_DSN` (or `SENTRY_DSN` in a server-only project) to your env.
+
+Until you add a reporter, development prints errors to the console and to [devtools](/packages/devtools), and production sends them nowhere.
+
+## Send errors to Sentry
+
+```sh
+pnpm add @sentry/react
+```
+
 ```ts
 // config/monitoring.ts
-import { defineConfig, sentry } from 'kitr/monitoring'
 import * as Sentry from '@sentry/react'
+import { defineConfig, sentry } from 'kitr/monitoring'
 import { env } from '#app/env'
 
 export default defineConfig({
-  reporters: env.VITE_SENTRY_DSN ? [sentry(Sentry, { dsn: env.VITE_SENTRY_DSN })] : [],
-  tags: { app: env.VITE_APP_NAME, release: env.VITE_APP_VERSION },
-  // shouldReport: (error) => !(error instanceof KitrError && error.status < 500),
+  reporters: [...(env.VITE_SENTRY_DSN ? [sentry(Sentry, { dsn: env.VITE_SENTRY_DSN })] : [])],
+  tags: { app: env.VITE_APP_NAME },
 })
 ```
 
-Expected failures (kitr errors under 500, aborted requests) are dropped by default. Development also logs to the console and the devtools Errors panel.
+You pass the Sentry module yourself so the right one is bundled: `@sentry/react` in the browser, `@sentry/node` on the server.
 
-## Use it
+| Option | Default | Description |
+| --- | --- | --- |
+| `reporters` | none | Where errors go. `sentry()`, `consoleReporter()` and `memoryReporter()` are built in. |
+| `shouldReport(error, context)` | drops kitr errors below 500 | Return `false` to ignore an error. |
+| `globalHandlers` | `true` | Catch uncaught errors and unhandled promise rejections in the browser. |
+| `tags` | none | Added to every report, such as the release. |
+| `debug` | development | Print to the console as well. |
 
-```ts
-const monitoring = app.container.use('monitoring')
-monitoring.setUser({ id: user.id, email: user.email }) // after sign-in; setUser(null) on sign-out
-monitoring.addBreadcrumb({ category: 'checkout', message: 'payment started' })
+## What's caught for you
+
+- Errors thrown while a component renders. The provider wraps the app in an error boundary that reports them, then lets the router's error screen show.
+- Uncaught errors and rejected promises in the browser.
+- Errors in server routes, once you add the middleware below.
+
+Expected failures, like a 404 or a validation error, are not incidents, so they are dropped by default.
+
+## Report things yourself
+
+```tsx
+import { useService } from 'kitr/react'
+
+const monitoring = useService('monitoring')
+
 try {
-  await pay()
+  await importCsv(file)
 } catch (error) {
-  monitoring.captureException(error, { extra: { orderId } })
+  monitoring.captureException(error, { extra: { fileName: file.name } })
+  showToast('That file could not be imported')
 }
 ```
 
-`monitoring.wrap(fn)` reports and rethrows. On the server:
+| Method | Use it for |
+| --- | --- |
+| `captureException(error, context)` | An error you caught and handled. |
+| `captureMessage(message, context)` | Something worth knowing that isn't an error. |
+| `setUser({ id, email })` | After sign-in. Pass `null` on sign-out. |
+| `addBreadcrumb({ category, message })` | Steps leading up to a possible error. |
+| `wrap(fn, context)` | Run `fn`, and report and rethrow if it fails. |
+
+Outside React, use `app.container.use('monitoring')`.
+
+## On the server
 
 ```ts
+// server/main.ts
 import { reportErrors } from 'kitr/monitoring/server'
+
 server.use(reportErrors(app.container.use('monitoring')))
 ```
 
-## Reporters
-
-A reporter is `{ name, captureException, captureMessage?, setUser?, addBreadcrumb?, setTag?, flush? }`. `consoleReporter()` prints, `memoryReporter()` records for tests. With [Consent](/packages/consent) you can gate reports behind a category.
+Every error thrown by a route is reported with its method, URL and request id, and then kitr's error handler sends the response as usual.

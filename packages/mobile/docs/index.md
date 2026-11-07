@@ -38,7 +38,7 @@ kitr build phone
 
 ## Options
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `targets` | `ios,android` | Native projects to create |
 | `appId` | | Bundle identifier (reverse DNS) |

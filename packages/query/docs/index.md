@@ -8,7 +8,7 @@ order: 1
 
 Most screens show data that lives on a server: a list of projects, a user's profile, today's orders. `kitr/query` loads that data, keeps a cached copy so going back to a page is instant, and refreshes it when it changes, whether because you saved something, another tab did, or a live update arrived.
 
-It is [TanStack Query](https://tanstack.com/query), re-exported, plus a small **data contract**: you describe each piece of data once, and every source (a REST API, your own API routes, server actions, sockets) plugs into it the same way.
+It is [TanStack Query](https://tanstack.com/query), re-exported, plus a small **data contract**: you describe each piece of data once, and every source (a REST API, your own API routes, server actions, realtime channels) plugs into it the same way.
 
 ## When to use it
 
@@ -115,7 +115,7 @@ A subscription is a stream of events whose effects land in the same cache. When 
 useSubscription(projectEvents, { projectId })
 ```
 
-[Sockets](/packages/realtime) produce subscriptions from channel definitions; you can also write one by hand with `defineSubscription`.
+[Realtime](/packages/realtime) produce subscriptions from channel definitions; you can also write one by hand with `defineSubscription`.
 
 ## Errors
 

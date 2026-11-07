@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { DocBody, Toc } from '#app/components/doc-body'
 import { docsNav, loadPage } from '#app/lib/content'
+import { seo } from '#app/lib/seo'
 
 const flat = docsNav.flatMap((g) => g.items)
 
@@ -10,15 +11,15 @@ export const Route = createFileRoute('/docs/$slug')({
     if (!page) throw notFound()
     return page
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [
-          { title: `${loaderData.title} · kitr docs` },
-          { name: 'description', content: loaderData.description ?? '' },
-          { property: 'og:title', content: `${loaderData.title} · kitr docs` },
-        ]
-      : [],
-  }),
+  head: ({ loaderData }) =>
+    loaderData
+      ? seo({
+          title: `${loaderData.title} · kitr docs`,
+          description: loaderData.description ?? '',
+          path: loaderData.url,
+          type: 'article',
+        })
+      : {},
   component: DocsPage,
 })
 

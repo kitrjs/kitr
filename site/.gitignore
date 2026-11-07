@@ -5,3 +5,7 @@ public/docs
 public/packages
 .output
 dist
+public/og
+public/sitemap.xml
+public/robots.txt
+public/apple-touch-icon.png

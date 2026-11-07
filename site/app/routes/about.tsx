@@ -1,17 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import mark from '#app/assets/mark.svg?url'
 import { repoUrl } from '#app/components/chrome'
+import { seo } from '#app/lib/seo'
 
 export const Route = createFileRoute('/about')({
-  head: () => ({
-    meta: [
-      { title: 'About · kitr' },
-      {
-        name: 'description',
-        content: 'Why kitr exists, the ideas behind it, the brand and who makes it.',
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: 'About · kitr',
+      description: 'Why kitr exists, the ideas behind it, the brand and who makes it.',
+      path: '/about',
+    }),
   component: About,
 })
 
@@ -26,7 +24,7 @@ const ideas = [
     title: 'one contract',
     color: '#1FB25A',
     ink: '#0B121C',
-    text: 'REST APIs, API routes, server actions and sockets all speak queries, mutations and subscriptions, with cache effects declared once.',
+    text: 'REST APIs, API routes, server actions and realtime channels all speak queries, mutations and subscriptions, with cache effects declared once.',
   },
   {
     title: 'no magic',

@@ -15,14 +15,15 @@ import remarkRehype from 'remark-rehype'
 import { createHighlighter } from 'shiki'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
+import { ogImage, readCatalog, touchIcon } from './og.mjs'
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repo = resolve(site, '..')
 const out = join(site, 'app/generated')
-const repoUrl = 'https://github.com/kitrjs/kit'
+const repoUrl = 'https://github.com/kitrjs/kitr'
 
 const highlighter = await createHighlighter({
-  themes: ['github-light', 'github-dark'],
+  themes: ['github-light-high-contrast', 'github-dark'],
   langs: ['ts', 'tsx', 'js', 'json', 'sh', 'css', 'html', 'md'],
 })
 const langs = new Set(highlighter.getLoadedLanguages())
@@ -59,7 +60,7 @@ function remarkCode() {
       const lang = langs.has(node.lang) ? node.lang : 'text'
       const html = highlighter.codeToHtml(node.value, {
         lang,
-        themes: { light: 'github-light', dark: 'github-dark' },
+        themes: { light: 'github-light-high-contrast', dark: 'github-dark' },
         defaultColor: false,
       })
       parent.children[index] = {
@@ -82,6 +83,21 @@ function rehypeCollect(state) {
       } else if (node.tagName === 'p' || node.tagName === 'li' || node.tagName === 'td') {
         const current = state.sections.at(-1) ?? state.intro
         current.text += ` ${text(node)}`
+      }
+    })
+    // Wide tables scroll inside a focusable region so keyboard users can scroll them too.
+    visit(tree, 'element', (node, index, parent) => {
+      if (
+        node.tagName !== 'table' ||
+        !parent ||
+        parent.properties?.className?.includes('table-wrap')
+      )
+        return
+      parent.children[index] = {
+        type: 'element',
+        tagName: 'div',
+        properties: { className: ['table-wrap'], tabIndex: 0 },
+        children: [node],
       }
     })
     // Open external links in a new tab; keep internal ones in the router.
@@ -161,7 +177,7 @@ for (const dir of readdirSync(join(repo, 'packages')).sort()) {
 }
 
 rmSync(out, { recursive: true, force: true })
-for (const dir of ['docs', 'packages'])
+for (const dir of ['docs', 'packages', 'og'])
   rmSync(join(site, 'public', dir), { recursive: true, force: true })
 mkdirSync(join(out, 'pages'), { recursive: true })
 
@@ -287,9 +303,145 @@ for (const group of nav) {
 writeFileSync(join(out, 'docs-nav.json'), JSON.stringify(docsNav, null, 2))
 writeFileSync(join(out, 'search.json'), JSON.stringify(search))
 
-// ---------------------------------------------------------------- llms.txt
+// ---------------------------------------------------------------- home page code
+
+const highlight = (code, lang) =>
+  highlighter
+    .codeToHtml(code, {
+      lang,
+      themes: { light: 'github-light-high-contrast', dark: 'github-dark' },
+      defaultColor: false,
+    })
+    .replace('<pre ', `<pre data-lang="${lang}" `)
+writeFileSync(
+  join(out, 'home-code.json'),
+  JSON.stringify({
+    platforms: highlight(
+      `// kitrrc.ts
+import { defineKitrConfig } from 'kitr/app'
+import { desktop } from 'kitr/desktop'
+import { mobile } from 'kitr/mobile'
+import { server } from 'kitr/server'
+import { web } from 'kitr/web'
+
+export default defineKitrConfig({
+  platforms: {
+    site: web({ mode: 'ssr', pwa: true }),
+    api: server({ runtime: 'node', port: 3001 }),
+    app: desktop({ shell: 'tauri', title: 'Acme' }),
+    phone: mobile({ appId: 'com.acme.app', appName: 'Acme' }),
+  },
+})`,
+      'ts',
+    ),
+    contract: highlight(
+      `// app/features/projects/queries.ts
+export const projectsQuery = defineQuery({
+  key: () => projectKeys.list(),
+  fetch: () => api.projects.index(),
+})
+
+export const renameProject = defineMutation({
+  mutate: ({ id, name }: { id: string; name: string }) =>
+    api.projects.update({ params: { id }, body: { name } }),
+  // Every screen showing projects updates. No manual refetching.
+  effects: (project) => ({
+    set: [{ key: projectKeys.detail(project.id), data: project }],
+    invalidate: [projectKeys.lists()],
+  }),
+})`,
+      'ts',
+    ),
+  }),
+)
+
+// ---------------------------------------------------------------- SEO: OG images, sitemap, robots
 
 const base = 'https://kitr.dev'
+const catalog = readCatalog(site)
+const tileFor = (name, category) => ({
+  icon: catalog.glyphs[name] ?? 'Package01Icon',
+  color: catalog.colors[category]?.color ?? '#94A3B8',
+})
+const seoPages = [
+  {
+    path: '/',
+    title: 'The React framework where everything is an add-on',
+    description:
+      'One import surface, one data contract and one CLI, for web, server, desktop and mobile.',
+    display: true,
+  },
+  {
+    path: '/packages',
+    title: 'Packages',
+    description: `${packages.length} packages and platforms, each a single kitr add away.`,
+  },
+  {
+    path: '/about',
+    title: 'A box of parts that fit together',
+    description: 'Why kitr exists, the ideas behind it, the brand and who makes it.',
+    kind: 'About',
+  },
+]
+for (const { entry } of packages) {
+  const kind = `Package · ${catalog.colors[entry.category]?.label ?? entry.category}`
+  seoPages.push({
+    path: `/packages/${entry.name}`,
+    title: entry.title,
+    description: entry.summary,
+    kind,
+    tile: tileFor(entry.name, entry.category),
+  })
+  for (const page of entry.pages.filter((p) => p.slug))
+    seoPages.push({
+      path: `/packages/${entry.name}/${page.slug}`,
+      title: `${entry.title} ${page.title}`,
+      description: entry.summary,
+      kind,
+      tile: tileFor(entry.name, entry.category),
+    })
+}
+for (const group of docsNav)
+  for (const item of group.items) {
+    const p = llms.find((l) => l.url === `/docs/${item.slug}`)
+    seoPages.push({
+      path: `/docs/${item.slug}`,
+      title: item.title,
+      description: p?.description,
+      kind: `Docs · ${group.title}`,
+    })
+  }
+
+mkdirSync(join(site, 'public/og'), { recursive: true })
+const ogId = (path) => (path === '/' ? 'home' : path.slice(1).replace(/\//g, '-'))
+await Promise.all(
+  seoPages.map(async (p) =>
+    writeFileSync(join(site, 'public/og', `${ogId(p.path)}.png`), await ogImage(p, site)),
+  ),
+)
+writeFileSync(join(site, 'public/apple-touch-icon.png'), await touchIcon(site))
+
+const today = new Date().toISOString().slice(0, 10)
+writeFileSync(
+  join(site, 'public/sitemap.xml'),
+  `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${seoPages
+  .map(
+    (p) =>
+      `  <url><loc>${base}${p.path}</loc><lastmod>${today}</lastmod><priority>${p.path === '/' ? '1.0' : p.path.split('/').length > 3 ? '0.6' : '0.8'}</priority></url>`,
+  )
+  .join('\n')}
+</urlset>
+`,
+)
+writeFileSync(
+  join(site, 'public/robots.txt'),
+  `User-agent: *\nAllow: /\nDisallow: /play/\n\nSitemap: ${base}/sitemap.xml\n`,
+)
+
+// ---------------------------------------------------------------- llms.txt
+
 const index = [
   '# kitr',
   '',
