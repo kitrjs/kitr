@@ -1,7 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { defineCommand } from 'citty'
 import pc from 'picocolors'
+import { createProjectInfo } from '../add-context'
 import { createContext, type ProjectContext } from '../context'
+import { installedPackages } from '../packages'
 import { createPlatformContext, loadPlatforms, platformTypes } from '../platforms'
 import { recipes } from '../recipes'
 import { versions } from '../versions'
@@ -71,7 +73,7 @@ export function runChecks(ctx: ProjectContext): Finding[] {
     }
   }
 
-  // Recipes that need a config file should have one.
+  // Legacy recipes that need a config file should have one. Packages with a setup module check themselves.
   for (const name of rc.packages) {
     const short = name.replace('@kitr/', '')
     const recipe = recipes[short]
@@ -255,6 +257,24 @@ export function runChecks(ctx: ProjectContext): Finding[] {
   return out
 }
 
+/** Each installed package's own `doctor` hook. */
+export async function packageChecks(ctx: ProjectContext): Promise<Finding[]> {
+  const out: Finding[] = []
+  const info = createProjectInfo(ctx)
+  for (const loaded of await installedPackages(ctx)) {
+    if (!loaded.definition.doctor) continue
+    try {
+      out.push(...(await loaded.definition.doctor(info)))
+    } catch (error) {
+      out.push({
+        level: 'error',
+        message: `${loaded.name}: doctor failed: ${(error as Error).message}`,
+      })
+    }
+  }
+  return out
+}
+
 /** Each platform's own `doctor` hook, run with the real instances from kitrrc.ts. */
 export async function platformChecks(ctx: ProjectContext): Promise<Finding[]> {
   const out: Finding[] = []
@@ -333,6 +353,7 @@ export const doctor = defineCommand({
   async run({ args }) {
     const ctx = createContext()
     const findings = runChecks(ctx)
+    findings.push(...(await packageChecks(ctx)))
     findings.push(...(await platformChecks(ctx)))
     if (args.json) {
       console.log(JSON.stringify(findings, null, 2))

@@ -300,6 +300,119 @@ export class Codemods {
     this.ctx.write(`${dir}/index.ts`, body, { overwrite: true })
   }
 
+  /** Is this dependency queued for install in this run? */
+  queued(name: string): boolean {
+    return this.deps.has(name)
+  }
+
+  /** Edit tsconfig.json's compilerOptions with a function; the file is created when missing. */
+  editTsconfig(edit: (tsconfig: Record<string, any>) => void) {
+    const file = this.ctx.path('tsconfig.json')
+    const current = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {}
+    const before = JSON.stringify(current)
+    edit(current)
+    if (JSON.stringify(current) === before) return
+    if (!this.ctx.dryRun) writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`)
+    this.ctx.touched.add('tsconfig.json')
+  }
+
+  /** Add entries to a string array under compilerOptions (`types`, `lib`) or the root (`include`). */
+  addTsconfigList(where: 'compilerOptions' | 'root', key: string, entries: string[]) {
+    this.editTsconfig((ts) => {
+      if (where !== 'root') ts.compilerOptions ??= {}
+      const target = where === 'root' ? ts : ts.compilerOptions
+      target[key] ??= []
+      const list: string[] = target[key]
+      for (const e of entries) if (!list.includes(e)) list.push(e)
+    })
+  }
+
+  removeTsconfigList(where: 'compilerOptions' | 'root', key: string, entries: string[]) {
+    this.editTsconfig((ts) => {
+      const target = where === 'root' ? ts : ts.compilerOptions
+      if (!Array.isArray(target?.[key])) return
+      target[key] = target[key].filter((e: string) => !entries.includes(e))
+    })
+  }
+
+  /**
+   * Edit an existing source file with magicast. The callback may mutate the module or return
+   * replacement text. Missing files are skipped with a step line.
+   */
+  editFile(
+    file: string,
+    edit: (mod: any, src: string) => void | string,
+    options: { quote?: 'single' | 'double' } = {},
+  ) {
+    const full = this.ctx.path(file)
+    if (!existsSync(full)) return this.ctx.log.step(`skip ${file} (missing)`)
+    const src = readFileSync(full, 'utf8')
+    const mod = parseModule(src)
+    const result = edit(mod, src)
+    const next =
+      typeof result === 'string'
+        ? result
+        : generateCode(mod, { quote: options.quote ?? 'single' }).code
+    if (next === src) return
+    if (!this.ctx.dryRun) writeFileSync(full, next)
+    this.ctx.touched.add(file)
+  }
+
+  /** The route table file: `directories.routeTable`, default `app/routes.ts`. */
+  routeTablePath(): string {
+    const dirs = this.ctx.readRc().directories
+    return dirs.routeTable ?? `${dirs.app ?? 'app'}/routes.ts`
+  }
+
+  /**
+   * Add a route-table extension: `import ext from '<spec>'` and `ext` in the first argument of
+   * `defineRoutes([...], ...)`. Creates the file with an empty table when missing. Idempotent.
+   */
+  extendRoutes(spec: string) {
+    const file = this.routeTablePath()
+    const full = this.ctx.path(file)
+    if (!existsSync(full)) {
+      this.ctx.write(
+        file,
+        `import { defineRoutes } from 'kitr/app'\n\n/** The route table. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type AppRoutes = typeof routes.$types\n`,
+      )
+    }
+    if (this.ctx.dryRun) return
+    const src = readFileSync(full, 'utf8')
+    if (src.includes(`'${spec}'`) || src.includes(`"${spec}"`)) return
+    const local = extensionLocalName(spec)
+    const mod = parseModule(src)
+    const call = findDefineRoutes(mod)
+    if (!call) throw new Error(`${file}: expected a \`defineRoutes([...], ...)\` call`)
+    mod.imports.$prepend({ from: spec, imported: 'default', local })
+    if (!call.$args.length || !Array.isArray(call.$args[0])) call.$args.unshift([])
+    call.$args[0].push(builders.raw(local))
+    writeFileSync(full, generateCode(mod, { quote: 'single' }).code)
+    this.ctx.touched.add(file)
+  }
+
+  removeRoutesExtension(spec: string) {
+    const file = this.routeTablePath()
+    const full = this.ctx.path(file)
+    if (!existsSync(full) || this.ctx.dryRun) return
+    const src = readFileSync(full, 'utf8')
+    if (!src.includes(`'${spec}'`) && !src.includes(`"${spec}"`)) return
+    const mod = parseModule(src)
+    const local = Object.values(
+      mod.imports as Record<string, { from: string; local: string }>,
+    ).find((i) => i.from === spec)?.local
+    if (!local) return
+    const call = findDefineRoutes(mod)
+    if (call && Array.isArray(call.$args[0])) {
+      const list = call.$args[0]
+      for (let i = list.length - 1; i >= 0; i--)
+        if (generateCode(list[i]).code.trim() === local) list.splice(i, 1)
+    }
+    delete (mod.imports as Record<string, unknown>)[local]
+    writeFileSync(full, generateCode(mod, { quote: 'single' }).code)
+    this.ctx.touched.add(file)
+  }
+
   /** Write queued deps to package.json and run the package manager. */
   async flush(options: { install?: boolean } = {}) {
     const pkgPath = this.ctx.path('package.json')
@@ -346,6 +459,24 @@ export class Codemods {
       this.format()
     }
   }
+}
+
+/** `@kitr/api/routes` → `apiRoutes`; `@acme/thing/routes` → `thingRoutes`. */
+export function extensionLocalName(spec: string): string {
+  const parts = spec.split('/').filter((p) => p && !p.startsWith('@'))
+  const base = parts.length > 1 ? parts.slice(-2).join('-') : (parts[0] ?? 'ext')
+  const camel = base.replace(/[^a-zA-Z0-9]+(.)?/g, (_, c: string | undefined) =>
+    c ? c.toUpperCase() : '',
+  )
+  return /^[a-zA-Z_$]/.test(camel) ? camel : `_${camel}`
+}
+
+/** The `defineRoutes(...)` call in a module: an `export const x = defineRoutes(...)` or the default export. */
+function findDefineRoutes(mod: any): any | undefined {
+  const isCall = (v: any) =>
+    v && v.$type === 'function-call' && generateCode(v).code.startsWith('defineRoutes(')
+  for (const value of Object.values(mod.exports ?? {})) if (isCall(value)) return value
+  return undefined
 }
 
 function hasImportOf(src: string, spec: string) {

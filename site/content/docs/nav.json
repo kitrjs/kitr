@@ -41,6 +41,12 @@
     "pages": [
       {
         "slug": "building-packages"
+      },
+      {
+        "slug": "package-contract",
+        "source": "../../../docs/package-contract.md",
+        "title": "Package contract",
+        "description": "How a package plugs into kitr add, the CLI and the build: questions, codemods, commands, generators."
       }
     ]
   },
