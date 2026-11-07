@@ -5,7 +5,7 @@ description: Install kitr, create your first app and add a package, in about fiv
 
 # Getting started
 
-kitr is a React framework made of small packages you add as you need them. You start with a router and data loading, then run `kitr add forms` or `kitr add auth` when your app needs forms or sign-in. Each package is a popular library you may already know (TanStack Query, React Hook Form, Zustand...) with the setup done for you.
+kitr is a framework made of small packages you add as you need them. A new project is the wiring files and nothing else; `kitr add web site` brings Vite, React and a router, and `kitr add forms` or `kitr add auth` come when your app needs forms or sign-in. Each package is a popular library you may already know (TanStack Query, React Hook Form, Zustand...) with the setup done for you.
 
 You need [Node.js](https://nodejs.org) 22 or newer.
 
@@ -25,14 +25,15 @@ Prefer not to install globally? Every command on this site has a picker to switc
 kitr new my-app --kit app
 ```
 
-A **kit** is a starting set of packages. Pick the one closest to what you're building; you can add or remove packages later.
+A **kit** is a starting set of platforms, packages and files. Pick the one closest to what you're building; you can add or remove packages later, and every kit is itself a package you can read.
 
 | Kit | For | Includes |
 | --- | --- | --- |
-| `blank` | Learning, or starting from nothing | Router and query |
-| `app` | A logged-in app that talks to an existing API | Plus HTTP, forms, tables, state, UI, auth, mocks and testing |
-| `fullstack` | An app with its own backend | The app kit plus server rendering, server actions, API routes and realtime channels |
+| `blank` | Starting from nothing | Seven wiring files. No platform, no React, no dev server: `kitr add web site` adds them |
+| `app` | A logged-in app that talks to an existing API | A web platform with Vite, React and the router, plus HTTP, forms, tables, state, Tailwind, theme, auth, storage, mocks, testing and devtools |
+| `fullstack` | An app with its own backend | The app kit plus server rendering, an API server, server actions, SEO and realtime channels |
 | `server` | An API with no React at all | Server, API routes, database, realtime channels, logger and testing |
+| `saas`, `site`, `realtime`, `desktop`, `tauri`, `mobile` | A real application to start from | The base kits plus pages, controllers and tests; see [Kits](/docs/kits) |
 
 `kitr new` installs dependencies, sets up git and writes an `AGENTS.md` for coding assistants.
 

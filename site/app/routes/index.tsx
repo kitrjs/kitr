@@ -205,6 +205,9 @@ function Home() {
               <h3>{kit.name}</h3>
               <code className="kit-flag">--kit {kit.name}</code>
               <p>{kit.text}</p>
+              {kit.platforms.length > 0 && (
+                <p className="kit-platforms mono">{kit.platforms.join(' · ')}</p>
+              )}
               <ul className="kit-chips" aria-label={`${kit.name} kit packages`}>
                 {kit.packages.map((name) => {
                   const pkg = findPackage(name)

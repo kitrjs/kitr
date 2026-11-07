@@ -6,7 +6,7 @@
 // Output goes to app/generated (gitignored) and public/llms*.txt.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import rehypeSlug from 'rehype-slug'
 import rehypeStringify from 'rehype-stringify'
 import remarkGfm from 'remark-gfm'
@@ -179,10 +179,49 @@ for (const dir of readdirSync(join(repo, 'packages')).sort()) {
   })
 }
 
+// ---------------------------------------------------------------- kits
+
+// Every kit but blank is a package (`kind: 'kit'`); its built setup module says what it sets up.
+// Needs `pnpm build` first, like the examples.
+const kitOrder = [
+  'app',
+  'fullstack',
+  'server',
+  'saas',
+  'site',
+  'realtime',
+  'desktop',
+  'tauri',
+  'mobile',
+]
+const kits = [
+  {
+    name: 'blank',
+    text: 'The wiring files and nothing else: no platform, no React, no server. kitr add brings each.',
+    platforms: [],
+    packages: [],
+    components: 0,
+  },
+]
+for (const name of kitOrder) {
+  const dist = join(repo, 'packages', `kit-${name}`, 'dist/kitr.js')
+  if (!existsSync(dist)) throw new Error(`${dist} is missing: run pnpm build first`)
+  const { default: definition } = await import(pathToFileURL(dist).href)
+  const kit = definition.kit
+  kits.push({
+    name: definition.name,
+    text: kit.description,
+    platforms: Object.entries(kit.platforms ?? {}).map(([n, p]) => `${n}: ${p.type}`),
+    packages: kit.packages.map((p) => (typeof p === 'string' ? p : p.name)),
+    components: kit.components?.length ?? 0,
+  })
+}
+
 rmSync(out, { recursive: true, force: true })
 for (const dir of ['docs', 'packages', 'og'])
   rmSync(join(site, 'public', dir), { recursive: true, force: true })
 mkdirSync(join(out, 'pages'), { recursive: true })
+writeFileSync(join(out, 'kits.json'), JSON.stringify(kits, null, 2))
 
 const search = []
 const llms = []

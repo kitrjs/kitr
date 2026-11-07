@@ -60,6 +60,12 @@
         "description": "Every kitr command and flag."
       },
       {
+        "slug": "kits",
+        "source": "../../../docs/kits.md",
+        "title": "Kits",
+        "description": "What each kit sets up, what the presets scaffold, and how to write a kit of your own."
+      },
+      {
         "slug": "platforms",
         "source": "../../../docs/platforms.md",
         "title": "Platforms",
