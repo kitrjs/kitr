@@ -1733,6 +1733,26 @@ kbd {
   .terminal-note {
     display: none;
   }
+  .terminal-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+  .terminal-bar .example-dots {
+    display: none;
+  }
+  .terminal-tab {
+    padding: 0 8px;
+  }
+  .terminal-body {
+    padding: 20px 16px;
+    font-size: 13.5px;
+    line-height: 24px;
+  }
+  .platform-cmd {
+    white-space: normal;
+  }
   .doc-head h1,
   .package-title,
   .page-head h1 {
