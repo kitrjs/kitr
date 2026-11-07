@@ -1,14 +1,17 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createApp } from '@kitr/core'
 import { silentLogger } from '@kitr/logger'
 import { createServer } from '@kitr/server'
 import { afterAll, describe, expect, it } from 'vitest'
 import { accepts, checkFile, formatBytes, UploadError, upload } from '../src'
+import uploadsProvider from '../src/provider'
 import {
   createDiskUploadsDriver,
   createMemoryUploadsDriver,
   createUploads,
+  mountUploads,
   servedFileHeaders,
 } from '../src/server'
 
@@ -241,17 +244,17 @@ describe('receiving uploads', () => {
   })
 
   it('stops oversize bodies at the server limit before they are buffered', async () => {
-    const uploads = createUploads({ driver: createMemoryUploadsDriver() })
+    const uploads = createUploads({ driver: createMemoryUploadsDriver(), maxSize: 1024 })
     const server = createServer({
       logger: silentLogger,
-      server: { healthPath: false, bodyLimit: 1024 },
+      server: { healthPath: false },
     })
     uploads.mount(server)
     // Encode the multipart body up front: a FormData body streams from a generator, and when the
     // server answers 413 without reading it, Node 24's undici enqueues into the closed stream.
     const encoded = new Request('http://x', {
       method: 'POST',
-      body: form([{ name: 'a.txt', body: 'x'.repeat(4096) }]),
+      body: form([{ name: 'a.txt', body: 'x'.repeat(200_000) }]),
     })
     const res = await server.fetch(
       new Request('http://x/api/uploads', {
@@ -319,5 +322,53 @@ describe('client helpers', () => {
     } finally {
       globalThis.fetch = original
     }
+  })
+})
+
+describe('mountUploads (what kitr add uploads wires in)', () => {
+  async function mounted(config: Record<string, unknown> = {}) {
+    const app = createApp({
+      environment: 'server',
+      providers: [uploadsProvider],
+      config: { uploads: { driver: createMemoryUploadsDriver(), ...config } },
+    })
+    const server = createServer({ app, logger: silentLogger, server: { healthPath: false } })
+    mountUploads(server)
+    await server.boot()
+    return { app, server }
+  }
+
+  it('serves a scripted SVG as a sandboxed download, not as an image the site runs', async () => {
+    const { app, server } = await mounted({ accept: ['image/*'], publicPath: '/api/uploads' })
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(document.cookie)</script></svg>'
+    const up = await post(server, form([{ name: 'logo.svg', type: 'image/svg+xml', body: svg }]))
+    expect(up.status).toBe(200)
+    const { files } = (await up.json()) as { files: Array<{ key: string; url: string }> }
+    expect(files[0]!.url).toBe(`/api/uploads/${files[0]!.key}`)
+    const res = await server.fetch(new Request(`http://x/api/uploads/${files[0]!.key}`))
+    expect(res.headers.get('content-type')).toBe('application/octet-stream')
+    expect(res.headers.get('content-disposition')).toMatch(/^attachment/)
+    expect(res.headers.get('content-security-policy')).toContain('sandbox')
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    void app
+  })
+
+  it('accepts files up to maxSize even though the server default limit is 1 MiB', async () => {
+    const { server } = await mounted({ maxSize: 3 * 1024 * 1024, accept: ['text/*'] })
+    const encoded = new Request('http://x', {
+      method: 'POST',
+      body: form([{ name: 'big.txt', body: 'x'.repeat(2 * 1024 * 1024) }]),
+    })
+    const res = await server.fetch(
+      new Request('http://x/api/uploads', {
+        method: 'POST',
+        headers: { 'content-type': encoded.headers.get('content-type')! },
+        body: new Uint8Array(await encoded.arrayBuffer()),
+      }),
+    )
+    expect(res.status).toBe(200)
+    // Other routes keep the default limit.
+    expect(server.config.bodyLimit).toBe(1024 * 1024)
   })
 })

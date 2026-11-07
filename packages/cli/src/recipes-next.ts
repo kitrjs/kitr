@@ -354,7 +354,7 @@ export function ConsentBanner() {
       c.addEnv({ RESEND_API_KEY: '', MAIL_FROM: 'App <hello@example.com>' }, 'Mail')
       ctx.write(
         'config/mail.ts',
-        `import { createLogTransport, createResendTransport, defineConfig } from 'kitr/mail'\n\n/** Development logs every message; production needs a transport: Resend here, or createSmtpTransport(nodemailer, { host, auth }). */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : createLogTransport(),\n})\n`,
+        `import { createResendTransport, defineConfig } from 'kitr/mail'\n\n/**\n * Without a transport, development logs every message and production refuses to boot, so a\n * missing RESEND_API_KEY can never print password reset links to production logs.\n * For SMTP: createSmtpTransport({ host, auth }).\n */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : undefined,\n})\n`,
       )
       ctx.write(
         'server/mail/welcome.tsx',
@@ -409,7 +409,7 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
       c.addPackage('@kitr/uploads')
       ctx.write(
         'config/uploads.ts',
-        `import { defineConfig } from 'kitr/uploads'\n\nexport default defineConfig({\n  maxSize: 10 * 1024 * 1024,\n  accept: ['image/*', 'application/pdf'],\n  // Files go to storage/uploads and are served under publicPath. Pass a driver for S3/R2.\n  publicPath: '/uploads',\n})\n`,
+        `import { defineConfig } from 'kitr/uploads'\n\nexport default defineConfig({\n  maxSize: 10 * 1024 * 1024,\n  accept: ['image/*', 'application/pdf'],\n  // Files go to storage/uploads and are served by mountUploads() under publicPath. Pass a driver for S3/R2.\n  publicPath: '/api/uploads',\n})\n`,
       )
       attachToServer(
         ctx,

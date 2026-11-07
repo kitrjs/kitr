@@ -215,6 +215,22 @@ describe('mailer', () => {
       providers: [mailProvider],
     } as never)
     await expect(prod.boot()).rejects.toThrow(/Set a transport/)
+    // An explicit log transport would print reset links to production logs: refused too.
+    const logged = createApp({
+      environment: 'server',
+      mode: 'production',
+      providers: [mailProvider],
+      config: { mail: { from: 'a@x.test', transport: createLogTransport({ print: false }) } },
+    } as never)
+    await expect(logged.boot()).rejects.toThrow(/not allowed in production/)
+    // Development keeps logging.
+    const dev = createApp({
+      environment: 'server',
+      providers: [mailProvider],
+      config: { mail: { from: 'a@x.test' } },
+    })
+    await dev.boot()
+    expect(dev.container.use('mailer').transport.name).toBe('log')
     const client = createApp({ environment: 'client', providers: [mailProvider] })
     await client.boot()
     expect(client.container.has('mailer')).toBe(false)

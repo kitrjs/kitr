@@ -211,6 +211,7 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
     remove: (key) => driver.delete(key),
     mount(server, path = '/api/uploads') {
       const base = path.replace(/\/$/, '')
+      raiseBodyLimit(server as never, base, config)
       server.h3.post(base, async (event: H3Event) => ({ files: await uploads.receive(event) }))
       server.h3.get(`${base}/**`, async (event: H3Event) => {
         const key = decodeURIComponent(new URL(event.req.url).pathname.slice(base.length + 1))
@@ -226,6 +227,27 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
   return uploads
 }
 
+/**
+ * The server's body limit (1 MiB by default) applies before the upload rules: without a larger
+ * limit on the upload path, every file over 1 MiB fails with 413 whatever `maxSize` says.
+ * Multipart framing adds a little per file, so the limit leaves room for it.
+ */
+function raiseBodyLimit(
+  server: { app?: KitrApp; config?: { bodyLimits?: Record<string, number> } },
+  base: string,
+  rules?: UploadsConfig,
+) {
+  if (!server.config) return
+  const config =
+    rules ?? (server.app?.config.has('uploads') ? server.app.config.get('uploads') : {})
+  const maxSize = config.maxSize ?? 10 * 1024 * 1024
+  const maxFiles = config.maxFiles ?? 1
+  server.config.bodyLimits = {
+    ...server.config.bodyLimits,
+    [base]: maxSize * maxFiles + 64 * 1024 * maxFiles,
+  }
+}
+
 /** Returns the `uploads` service the provider bound, for a controller or job: `useUploads(ctx.app)`. */
 export function useUploads(app: KitrApp): Uploads {
   return app.container.use('uploads')
@@ -235,11 +257,11 @@ export function useUploads(app: KitrApp): Uploads {
  * Mount `POST <path>` (receive) and `GET <path>/**` (serve) on a kitr server from `server/main.ts`.
  * The service is resolved per request, so this can run before the app has booted.
  */
-export function mountUploads<S extends { h3: any; app: KitrApp }>(
-  server: S,
-  path = '/api/uploads',
-): S {
+export function mountUploads<
+  S extends { h3: any; app: KitrApp; config?: { bodyLimits?: Record<string, number> } },
+>(server: S, path = '/api/uploads'): S {
   const base = path.replace(/\/$/, '')
+  raiseBodyLimit(server, base)
   server.h3.post(base, async (event: H3Event) => ({
     files: await useUploads(server.app).receive(event),
   }))
@@ -247,11 +269,10 @@ export function mountUploads<S extends { h3: any; app: KitrApp }>(
     const key = decodeURIComponent(new URL(event.req.url).pathname.slice(base.length + 1))
     const file = await useUploads(server.app).driver.get(key)
     if (!file) throw KitrError.notFound('File')
+    // The type is whatever the uploader declared: never serve it as-is (an SVG or HTML upload
+    // would run script as the site).
     return new Response(file.data as BodyInit, {
-      headers: {
-        'content-type': file.type,
-        'cache-control': 'public, max-age=31536000, immutable',
-      },
+      headers: servedFileHeaders(file.type, key.split('/').pop()),
     })
   })
   return server

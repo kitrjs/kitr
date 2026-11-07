@@ -657,7 +657,7 @@ On the server, `authMiddleware` from `kitr/auth/server` reads the token, finds t
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/api'
 import { authMiddleware } from 'kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
 import ProjectsController from '#server/controllers/projects_controller'
@@ -666,7 +666,7 @@ import { findUserByToken } from '#server/services/sessions'
 const auth = authMiddleware<User>({ verify: (token) => findUserByToken(token), abilities })
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors(), auth] }, (api) =>
+  router.group({ prefix: '/api', middleware: [auth] }, (api) =>
     api.resource('projects', ProjectsController),
   ),
 )

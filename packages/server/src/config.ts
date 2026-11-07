@@ -10,6 +10,11 @@ export interface ServerConfig {
   healthPath?: string | false
   /** Max request body in bytes. Default 1 MiB. */
   bodyLimit?: number
+  /**
+   * Larger (or smaller) limits under a path prefix, e.g. `{ '/api/uploads': 10 * 1024 * 1024 }`.
+   * The longest matching prefix wins. `mountUploads()` adds its own from `config/uploads.ts`.
+   */
+  bodyLimits?: Record<string, number>
   /** Reserved for trusting `X-Forwarded-*` from a proxy in front of the server. Not read by the server yet. */
   trustProxy?: boolean
   /** Enable the WebSocket upgrade (needs `crossws`). Set by `@kitr/realtime`. */

@@ -38,13 +38,12 @@ describe('backend example over the network', () => {
     expect((await fetch(`${base}/api/health`)).status).toBe(200)
   })
 
-  it('applies CORS on the api group', async () => {
-    const res = await fetch(`${base}/api/health`, {
-      method: 'OPTIONS',
-      headers: { origin: 'http://example.com', 'access-control-request-method': 'GET' },
-    })
-    expect(res.status).toBeLessThan(300)
-    expect(res.headers.get('access-control-allow-origin')).toBeTruthy()
+  it('does not open the api to other origins by default', async () => {
+    // The generated routes used to put cors() (any origin) on /api, overriding shield.
+    const res = await fetch(`${base}/api/health`, { headers: { origin: 'http://evil.example' } })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    expect(res.headers.get('access-control-allow-credentials')).toBeNull()
   })
 
   it('rejects a body over the configured limit before reading it', async () => {

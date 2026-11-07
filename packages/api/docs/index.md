@@ -31,7 +31,7 @@ What `kitr add api` does:
 - Runs the [Server](/packages/server) recipe first if it is missing, which also adds [Logger](/packages/logger).
 - Installs `@kitr/api` and adds it to `packages` in `kitrrc.ts`.
 - Writes `config/api.ts` (shown under Configure) and adds it to `config/index.ts`.
-- Writes `server/routes.ts`, with one `GET /api/health` route behind `cors()`.
+- Writes `server/routes.ts`, with one `GET /api/health` route.
 - Writes `server/controllers/health_controller.ts`, the controller that route calls.
 - When `server/main.ts` exists without routes, adds `import { mountRoutes } from 'kitr/api'`, `import { routes } from './routes'` and `mountRoutes(server, routes)` to it.
 - In a React project, writes `app/api/client.ts`, the typed client.
@@ -41,11 +41,11 @@ The generated routes file:
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/api'
 import HealthController from '#server/controllers/health_controller'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api.get('/health', [HealthController, 'show'], { name: 'health' }),
     // api.resource('projects', () => import('#server/controllers/projects_controller'))
   ),
@@ -134,12 +134,12 @@ Register it in the routes file:
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/api'
 import HealthController from '#server/controllers/health_controller'
 import OrdersController from '#server/controllers/orders_controller'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .resource('orders', OrdersController),
@@ -202,13 +202,13 @@ Give every route you call from the client a `name`. Names are stable when paths 
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/api'
 import OrdersController from '#server/controllers/orders_controller'
 import TeamsController from '#server/controllers/teams_controller'
 import { audit } from '#app/middleware/audit'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api
       .resource('orders', OrdersController)
       .group({ prefix: '/admin', middleware: [audit], as: 'admin' }, (admin) =>
@@ -608,7 +608,7 @@ Middleware runs outer to inner: group middleware first, then route middleware, t
 
 ## Allow cross-origin requests
 
-`cors()` answers browser preflight requests and sets the CORS headers. The generated routes file puts it on the `/api` group with defaults that allow any origin:
+`cors()` answers browser preflight requests and sets the CORS headers for the origins you list. The generated routes file leaves it out: the app and its API share an origin, so no CORS is needed. Add it when another site calls the API:
 
 ```ts
 // server/routes.ts
@@ -630,7 +630,7 @@ export type AppRoutes = typeof routes.$types
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `origin` | `'*'` | `'*'`, one origin, a list, or a function `(origin) => boolean`. With `'*'` and `credentials`, the request's origin is echoed. |
+| `origin` | none | One origin, a list, a function `(origin) => boolean`, or `'*'` for a public API. With none, no cross-origin caller is allowed. `'*'` with `credentials` throws, because it would let any site act as the user. |
 | `methods` | `GET, POST, PUT, PATCH, DELETE, OPTIONS` | `access-control-allow-methods` on preflight. |
 | `headers` | `Content-Type, Authorization` | `access-control-allow-headers` on preflight. |
 | `credentials` | `false` | Sends `access-control-allow-credentials: true`, needed for cookies. |
