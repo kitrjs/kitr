@@ -45,6 +45,14 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
               authHeader === 'Authorization' ? `Bearer ${token}` : token,
             )
           }
+          // kitr/shield's double-submit cookie: echo it on every write so same-origin calls pass.
+          if (
+            !/^(GET|HEAD|OPTIONS)$/i.test(request.method) &&
+            !request.headers.has('x-csrf-token')
+          ) {
+            const csrf = readCsrfCookie()
+            if (csrf) request.headers.set('x-csrf-token', csrf)
+          }
         },
         ...(rest.hooks?.beforeRequest ?? []),
       ],
@@ -128,4 +136,10 @@ export async function normaliseHttpError(error: unknown): Promise<KitrError> {
       : kitrError
   }
   return toKitrError(error)
+}
+
+function readCsrfCookie(): string | undefined {
+  if (typeof document === 'undefined') return undefined
+  const m = document.cookie.match(/(?:^|;\s*)kitr-csrf=([^;]+)/)
+  return m ? decodeURIComponent(m[1]!) : undefined
 }

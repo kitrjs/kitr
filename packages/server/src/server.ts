@@ -71,7 +71,21 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       : createLogger({ name: 'kitr', level: (process.env.LOG_LEVEL as any) || undefined }))
 
   const h3 = new H3({
-    onError: (error, event) => errorToResponse(error, event),
+    onError: (error, event) => {
+      const response = errorToResponse(error, event)
+      // 5xx are bugs or outages: record them with the request id so logs and the client's
+      // error reference line up. 4xx are expected and stay at debug level with the request line.
+      if (response.status >= 500) {
+        const ctx = event.context.kitr as RequestContext | undefined
+        const log = ctx?.logger ?? server.logger
+        log?.error(error instanceof Error ? error : new Error(String(error)), {
+          method: event.req.method,
+          path: event.url.pathname,
+          status: response.status,
+        })
+      }
+      return response
+    },
   })
 
   let booted: Promise<KitrServer> | null = null

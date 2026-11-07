@@ -1504,6 +1504,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/cache:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       '@clack/prompts':
@@ -1552,6 +1568,40 @@ importers:
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/consent:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@kitr/analytics':
+        specifier: workspace:*
+        version: link:../analytics
+      '@kitr/monitoring':
+        specifier: workspace:*
+        version: link:../monitoring
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -1662,6 +1712,62 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/files:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/flags:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      h3:
+        specifier: ^2.0.8
+        version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/forms:
     dependencies:
       '@kitr/core':
@@ -1731,14 +1837,75 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/kitr:
+  packages/jobs:
     dependencies:
-      '@kitr/cli':
-        specifier: workspace:*
-        version: link:../cli
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      '@kitr/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kitr:
+    dependencies:
+      '@kitr/cache':
+        specifier: workspace:*
+        version: link:../cache
+      '@kitr/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@kitr/consent':
+        specifier: workspace:*
+        version: link:../consent
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/files':
+        specifier: workspace:*
+        version: link:../files
+      '@kitr/flags':
+        specifier: workspace:*
+        version: link:../flags
+      '@kitr/jobs':
+        specifier: workspace:*
+        version: link:../jobs
+      '@kitr/mail':
+        specifier: workspace:*
+        version: link:../mail
+      '@kitr/native':
+        specifier: workspace:*
+        version: link:../native
+      '@kitr/notifications':
+        specifier: workspace:*
+        version: link:../notifications
+      '@kitr/offline':
+        specifier: workspace:*
+        version: link:../offline
+      '@kitr/secure-storage':
+        specifier: workspace:*
+        version: link:../secure-storage
+      '@kitr/shield':
+        specifier: workspace:*
+        version: link:../shield
+      '@kitr/updater':
+        specifier: workspace:*
+        version: link:../updater
+      '@kitr/uploads':
+        specifier: workspace:*
+        version: link:../uploads
     devDependencies:
       '@kitr/actions':
         specifier: workspace:*
@@ -1847,6 +2014,40 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/mail:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      h3:
+        specifier: ^2.0.8
+        version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/mobile:
     dependencies:
       '@kitr/core':
@@ -1927,6 +2128,93 @@ importers:
       react:
         specifier: ^19.3.1
         version: 19.3.1
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/native:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/notifications:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/offline:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/query':
+        specifier: workspace:*
+        version: link:../query
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@tanstack/react-query':
+        specifier: ^5.107.1
+        version: 5.107.1(@types/react@19.3.0)(react@19.3.1)
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -2080,6 +2368,37 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/secure-storage:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/seo:
     dependencies:
       '@kitr/core':
@@ -2117,6 +2436,31 @@ importers:
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/shield:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      h3:
+        specifier: ^2.0.8
+        version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -2300,6 +2644,68 @@ importers:
       sonner:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/updater:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/uploads:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      h3:
+        specifier: ^2.0.8
+        version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)

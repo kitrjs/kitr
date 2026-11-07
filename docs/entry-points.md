@@ -58,6 +58,28 @@ TanStack's route generator rewrites that specific import in every route file and
 | `kitr/monitoring`, `kitr/monitoring/provider`, `kitr/monitoring/server` | `@kitr/monitoring` | no |
 | `kitr/platform`, `kitr/platform/provider` | `@kitr/platform` | no |
 | `kitr/platform/react`, `kitr/platform/devtools` | `@kitr/platform` | yes |
+| `kitr/offline`, `kitr/offline/provider` | `@kitr/offline` | no |
+| `kitr/offline/react` | `@kitr/offline` | yes |
+| `kitr/flags`, `kitr/flags/provider`, `kitr/flags/server` | `@kitr/flags` | no |
+| `kitr/flags/react` | `@kitr/flags` | yes |
+| `kitr/consent`, `kitr/consent/provider` | `@kitr/consent` | no |
+| `kitr/consent/react` | `@kitr/consent` | yes |
+| `kitr/secure-storage`, `kitr/secure-storage/provider` | `@kitr/secure-storage` | no |
+| `kitr/secure-storage/react` | `@kitr/secure-storage` | yes |
+| `kitr/files`, `kitr/files/provider` | `@kitr/files` | no |
+| `kitr/files/react` | `@kitr/files` | yes |
+| `kitr/notifications`, `kitr/notifications/provider` | `@kitr/notifications` | no |
+| `kitr/notifications/react` | `@kitr/notifications` | yes |
+| `kitr/native`, `kitr/native/provider` | `@kitr/native` | no |
+| `kitr/native/react` | `@kitr/native` | yes |
+| `kitr/updater`, `kitr/updater/provider` | `@kitr/updater` | no |
+| `kitr/updater/react` | `@kitr/updater` | yes |
+| `kitr/cache`, `kitr/cache/provider` | `@kitr/cache` | no |
+| `kitr/shield`, `kitr/shield/provider` | `@kitr/shield` | no |
+| `kitr/mail`, `kitr/mail/provider` | `@kitr/mail` | templates are React elements; sending needs react-dom/server |
+| `kitr/jobs`, `kitr/jobs/provider` | `@kitr/jobs` | no |
+| `kitr/uploads`, `kitr/uploads/server`, `kitr/uploads/provider` | `@kitr/uploads` | no |
+| `kitr/uploads/react` | `@kitr/uploads` | yes |
 | `kitr/storage`, `kitr/storage/provider`, `kitr/storage/server` | `@kitr/storage` | no |
 | `kitr/storage/react` | `@kitr/storage` | yes |
 | `kitr/devtools`, `kitr/devtools/provider` | `@kitr/devtools` | no (`kitr/devtools/ui` is React) |

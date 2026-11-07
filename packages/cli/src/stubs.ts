@@ -207,6 +207,120 @@ export default defineProvider({
   // wrap: (children) => <${pascal(name)}Context.Provider>{children}</${pascal(name)}Context.Provider>,
 })
 `,
+  job: ({ name }) => `import { defineJob } from 'kitr/jobs'
+import { z } from 'zod'
+
+export const ${camel(name)}Input = z.object({
+  id: z.string(),
+})
+
+/** Dispatch with \`jobs.dispatch(${camel(name)}, { id })\`; runs on the worker with retries. */
+export const ${camel(name)} = defineJob('${snake(name)}', {
+  schema: ${camel(name)}Input,
+  retries: 3,
+  // schedule: { every: '1h' },
+  async run({ id }, ctx) {
+    console.info(\`${snake(name)} \${id} (attempt \${ctx.attempt})\`)
+  },
+})
+`,
+  mail: ({ name }) => `import { defineMail } from 'kitr/mail'
+
+export interface ${pascal(name)}Props {
+  firstName: string
+}
+
+/** Send with \`mailer.send(${camel(name)}Mail, props, { to })\`; preview at /_kitr/mail/${snake(name)} in development. */
+export const ${camel(name)}Mail = defineMail<${pascal(name)}Props>('${snake(name)}', {
+  subject: ({ firstName }) => \`${pascal(name)} for \${firstName}\`,
+  preview: { firstName: 'Ada' },
+  render: ({ firstName }) => (
+    <html lang="en">
+      <body style={{ fontFamily: 'system-ui, sans-serif', lineHeight: 1.5 }}>
+        <h1>Hello {firstName}</h1>
+        <p>Replace this with the message.</p>
+      </body>
+    </html>
+  ),
+})
+`,
+  service: ({ name }) => `import type { KitrApp } from 'kitr/app'
+
+/**
+ * Plain class with the business logic for ${snake(name)}; bind it in a provider:
+ *   app.container.singleton('${camel(name)}', () => new ${pascal(name)}Service(app))
+ */
+export class ${pascal(name)}Service {
+  constructor(private readonly app: KitrApp) {}
+
+  async list() {
+    void this.app
+    return []
+  }
+}
+
+declare module 'kitr/app' {
+  interface ContainerBindings {
+    ${camel(name)}: ${pascal(name)}Service
+  }
+}
+`,
+  validator: ({ name }) => `import { z } from 'zod'
+
+/** Shared between the form, the action and the controller, so one schema decides what is valid. */
+export const ${camel(name)}Schema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+})
+
+export const create${pascal(name)}Schema = ${camel(name)}Schema
+export const update${pascal(name)}Schema = ${camel(name)}Schema.partial()
+
+export type ${pascal(name)}Input = z.infer<typeof ${camel(name)}Schema>
+`,
+  test: ({ name }) => `import { createTestApp, createTestClient } from 'kitr/testing'
+import { describe, expect, it } from 'vitest'
+
+describe('${snake(name)}', () => {
+  it('works', async () => {
+    const app = await createTestApp()
+    const client = createTestClient(app)
+    const res = await client.get('/api/health')
+    expect(res.status).toBe(200)
+  })
+})
+`,
+  component: ({ name }) => `import type { ReactNode } from 'react'
+
+export interface ${pascal(name)}Props {
+  children?: ReactNode
+  className?: string
+}
+
+export function ${pascal(name)}({ children, className }: ${pascal(name)}Props) {
+  return <div className={className}>{children}</div>
+}
+`,
+  hook: ({ name }) => `import { useCallback, useState } from 'react'
+
+export function use${pascal(name)}(initial = false) {
+  const [value, setValue] = useState(initial)
+  const toggle = useCallback(() => setValue((v) => !v), [])
+  return { value, setValue, toggle }
+}
+`,
+  exception: ({ name }) => `import { KitrError } from 'kitr/app'
+
+/**
+ * Thrown from actions and controllers; the API layer turns it into a JSON error with the
+ * right status and the client gets a typed \`KitrError\` back.
+ */
+export class ${pascal(name)}Error extends KitrError {
+  constructor(message = '${pascal(name)}', data?: unknown) {
+    super('BAD_REQUEST', message, { data })
+    this.name = '${pascal(name)}Error'
+  }
+}
+`,
 }
 
 export function renderStub(

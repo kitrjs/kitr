@@ -1,0 +1,85 @@
+{
+  "name": "@kitr/mail",
+  "version": "0.1.0",
+  "description": "kitr/mail: emails as React components rendered to HTML and text, sent through SMTP, Resend or a log transport, previewed at /_kitr/mail in development.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/mail"
+  },
+  "homepage": "https://kitr.dev/packages/mail",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "h3": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "h3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "h3": "^2.0.8",
+    "@types/node": "^22.19.0",
+    "@kitr/server": "workspace:*",
+    "@kitr/logger": "workspace:*"
+  },
+  "kitr": {
+    "name": "mail",
+    "title": "Mail",
+    "summary": "Write emails as React components, send them through your provider, and preview them in development.",
+    "category": "backend",
+    "runsOn": "server",
+    "builtOn": [
+      "React Email"
+    ],
+    "requires": [
+      "server"
+    ],
+    "docs": "docs"
+  }
+}

@@ -1,6 +1,7 @@
 import type { ProjectContext } from './context'
 import { type Recipe, r } from './recipe'
 import { addonRecipes } from './recipes-addons'
+import { nextRecipes } from './recipes-next'
 
 export type { Recipe } from './recipe'
 
@@ -640,6 +641,7 @@ export const recipes: Record<string, Recipe> = {
     },
   }),
   ...addonRecipes,
+  ...nextRecipes,
 }
 
 export const recipeNames = Object.keys(recipes)

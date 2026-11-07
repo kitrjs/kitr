@@ -4,6 +4,16 @@
   "description": "Kitr core: typed registry, provider lifecycle, config, env, errors and the data contract. Zero React runtime.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://kitr.dev/packages/core",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "exports": {
     ".": {
