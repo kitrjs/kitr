@@ -100,7 +100,9 @@ const skipNodeImport = new Set([
   '@kitr/kitr',
 ])
 /** Gzip budget per entry file, bytes. Generous; the point is catching a dependency bundled in. */
-/** Packages whose dist contains code templates (import lines inside strings): skip import scans. */
+/** Does this entry hold code templates (import lines inside strings), so import scans would misread it? */
+const isCodegen = (name, spec) => codegen.has(name) || spec === `${name}/kitr`
+/** Packages whose dist contains code templates: skip import scans. A package's `./kitr` setup module always is. */
 const codegen = new Set([
   '@kitr/cli',
   '@kitr/vite',
@@ -217,13 +219,13 @@ for (const [dir, pkg] of manifests) {
 
   for (const { spec, file } of entries) {
     // 4. undeclared imports
-    for (const ext of codegen.has(name) ? [] : graph(file).external) {
+    for (const ext of isCodegen(name, spec) ? [] : graph(file).external) {
       if (builtins.has(ext) || ext.startsWith('virtual:')) continue
       const dep = packageName(ext)
       if (!declared.has(dep)) fail(spec, `imports "${ext}" but ${dep} is not a dependency`)
     }
 
-    const reach = codegen.has(name) ? new Set() : deepExternals(file)
+    const reach = isCodegen(name, spec) ? new Set() : deepExternals(file)
     // 5. server entries stay React-free
     if (serverEntries.has(spec)) {
       const react = [...reach].filter((s) => /^(react|react-dom)(\/|$)/.test(s))

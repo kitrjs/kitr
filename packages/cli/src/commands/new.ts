@@ -3,10 +3,10 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineCommand } from 'citty'
 import { Codemods } from '../codemods'
+import { configurePackages } from '../configure'
 import { createContext, detectPackageManager, log, type PackageManager } from '../context'
 import { type KitName, kits } from '../kits'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
-import { resolveRecipes } from '../recipes'
 import { addComponents } from './ui'
 
 export const newCommand = defineCommand({
@@ -68,10 +68,12 @@ export const newCommand = defineCommand({
     const platformRequires: string[] = []
     for (const spec of Object.values(platforms))
       platformRequires.push(...((await loadFactory(ctx, spec.type))({}).definition.requires ?? []))
-    for (const recipe of resolveRecipes([...platformRequires, ...kit.recipes], [])) {
-      await recipe.configure(ctx, codemods)
-      log.success(recipe.name)
-    }
+    const added = new Set<string>()
+    await configurePackages(ctx, codemods, [...platformRequires, ...kit.recipes], {
+      install: args.install,
+      yes: true,
+      added,
+    })
     await codemods.flush({ install: false })
     let first = true
     for (const [name, spec] of Object.entries(platforms)) {

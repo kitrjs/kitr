@@ -7,7 +7,8 @@
 | Command | What it does |
 | --- | --- |
 | `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank`, `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed channels), `desktop` (the app kit in an Electron shell with typed IPC), `mobile` (the app kit as a PWA and a Capacitor shell). `--platform site=web,api=server` replaces the kit's platforms; `--mode`, `--pwa`, `--runtime`, `--shell`, `--targets`, `--port` set their options. `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
-| `kitr add <pkg...>` | Install the package(s), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`; adding `router` adds `react`). `--dry-run`, `--no-install`. |
+| `kitr add <pkg...>` | Install the package(s), ask each one's questions (every question is a flag: `kitr add jobs --no-worker`; `--yes` takes the defaults), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`; adding `router` adds `react`). Any npm package that ships a kitr setup module works (`kitr add @acme/stripe`); see [package-contract.md](package-contract.md). `kitr add <pkg> --help` prints its questions. `--dry-run`, `--no-install`. |
+| `kitr <pkg>:<cmd>` | Commands the installed packages contribute (`kitr jobs:list`, `kitr jobs:work`). `kitr --help` lists them after the core commands. |
 | `kitr add <type> <name> [--option value]` | Adds a platform (`web`, `server`, `desktop`, `mobile`): `kitr add web admin --mode spa`, `kitr add desktop app --shell tauri`. Installs the platform package and the packages it needs, writes `platforms.<name>` into `kitrrc.ts`, scaffolds `platforms/<name>/` for native shells and adds the `dev`/`build`/`start` scripts. See [platforms.md](platforms.md). |
 | `kitr remove <pkg...>` | Reverse of `add`: unregisters the provider and package, deletes `config/<pkg>.ts`, removes dependencies, then lists files that still import it. |
 | `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where a `kitr/*` entry exists, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
@@ -40,7 +41,7 @@
 | `make:form project` | `app/components/forms/project_form.tsx` |
 | `make:queries projects` | `app/features/projects/queries.ts` (keys, queries, mutation with effects) |
 | `make:provider analytics` | `app/providers/analytics_provider.ts` |
-| `make:job send_digest` | `server/jobs/send_digest.ts` (`defineJob` with a schema and retries; list it in `config/jobs.ts`) |
+| `make:job send_digest` | `server/jobs/send_digest.ts` (`defineJob` with a schema and retries; list it in `config/jobs.ts`). Contributed by the `jobs` package: present once it is added |
 | `make:mail welcome` | `server/mail/welcome.tsx` (`defineMail` with a preview) |
 | `make:service billing` | `server/services/billing_service.ts` (a class to bind in a provider) |
 | `make:validator project` | `app/validators/project.ts` (create/update zod schemas) |

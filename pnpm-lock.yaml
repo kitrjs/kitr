@@ -1858,6 +1858,9 @@ importers:
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
+      jiti:
+        specifier: ^2.7.0
+        version: 2.7.0
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
