@@ -72,4 +72,4 @@ app/
 └── channels/           # realtime channels (kitr add realtime)
 ```
 
-A `server` app has no `app/routes` or React at all. See [A backend without React](/docs/pure-backend).
+A `server` app has no `app/routes` or React at all. See [Build an API server without React](/guides/api-server).

@@ -28,6 +28,9 @@ export function Header() {
           >
             Docs
           </Link>
+          <Link to="/guides" activeProps={{ 'aria-current': 'page' }}>
+            Guides
+          </Link>
           <Link to="/about" activeProps={{ 'aria-current': 'page' }}>
             About
           </Link>
@@ -54,6 +57,7 @@ const footerLinks: Array<{ title: string; links: Array<{ label: string; to: stri
     title: 'Learn',
     links: [
       { label: 'Getting started', to: '/docs/getting-started' },
+      { label: 'Guides', to: '/guides' },
       { label: 'Project structure', to: '/docs/project-structure' },
       { label: 'Platforms', to: '/docs/platforms' },
       { label: 'CLI reference', to: '/docs/cli' },

@@ -1045,4 +1045,4 @@ With [Devtools](/packages/devtools) installed, the Auth panel shows the session 
 - [API routes](/packages/api): the routes `authMiddleware` protects
 - [HTTP](/packages/http): sending the token and refreshing on `401`
 - [Better Auth documentation](https://www.better-auth.com/docs)
-- [Building a full-stack app](/docs/fullstack)
+- [Build a full-stack app](/guides/fullstack-app)

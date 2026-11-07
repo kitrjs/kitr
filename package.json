@@ -28,6 +28,7 @@
     "readmes:check": "node scripts/package-readmes.mjs --check",
     "docs:check": "node scripts/docs-check.mjs",
     "docs:rules": "node scripts/docs-rules.mjs",
+    "docs:guides": "node scripts/guide-rules.mjs",
     "docs:api": "node scripts/api-docs.mjs",
     "site": "pnpm -C site dev"
   },
