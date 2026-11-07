@@ -55,6 +55,8 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 | `kitr/http` | `ky` | `createHttpClient` (auth header, refresh-once, kitr error shape), `httpQuery`, `httpMutation` |
 | `kitr/forms` | `react-hook-form` | `useSchemaForm` (Standard Schema), `<Form>`, `<FormField>`, `applyServerErrors` |
 | `kitr/table` | `@tanstack/react-table` v9 | `dataTableFeatures`, `useUrlTableState` (sort/page/filter in the URL) |
+| `kitr/animation` | `motion` | reduced-motion provider, shared `transitions` and `presets`, `<Reveal>`, `pageTransitions()` with `kitr/animation/page-transitions.css` |
+| `kitr/3d` | `@react-three/fiber`, `@react-three/drei` | `<Scene>` (WebGL fallback, pauses off screen, adaptive resolution), `useModel` with a self-hosted Draco decoder, `useThemeColor`; `kitr/3d/drei` |
 | `kitr/state` | `zustand` | `createKitrStore` (SSR-safe, per-request on the server) |
 | `kitr/tailwind` | | `cn()`, the preset mapping kitr tokens to `@theme`, `kitr/tailwind/vite` |
 | `kitr/theme` | `clsx`, `cva` | `defineTokens`, `ThemeProvider`, `useTheme`, `toast`, registry config; `kitr/theme/styles.css` |

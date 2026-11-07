@@ -263,7 +263,16 @@ describe('kitr add / remove', () => {
   })
   afterAll(() => remove(dir))
 
-  const addable = ['i18n', 'analytics', 'monitoring', 'logger', 'platform', 'seo']
+  const addable = [
+    'i18n',
+    'analytics',
+    'monitoring',
+    'logger',
+    'platform',
+    'seo',
+    'animation',
+    '3d',
+  ]
 
   it.each(addable)('add %s registers the provider and package, remove undoes it', (pkg) => {
     kitr(dir, 'add', pkg, '--no-install')
