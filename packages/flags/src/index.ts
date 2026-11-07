@@ -68,18 +68,31 @@ export interface Flags<D extends FlagDefinitions = FlagDefinitions> {
   readonly resolved: boolean
 }
 
+export interface CreateFlagsOptions {
+  /**
+   * Whether `resolve()` updates the snapshot that `value()`, `isEnabled()` and the React hooks
+   * read. Default: everywhere but the server's root app, which serves every user at once (the
+   * provider binds one instance per request there, and those keep their snapshot).
+   */
+  keepSnapshot?: boolean
+}
+
 export function createFlags<D extends FlagDefinitions>(
   definitions: D,
   config: FlagsConfig = {},
   app?: KitrApp,
+  options: CreateFlagsOptions = {},
 ): Flags<D> {
   const providers = config.providers ?? []
   const defaults = Object.fromEntries(
     Object.entries(definitions).map(([k, d]) => [k, d.default]),
   ) as FlagValues<D>
-  let values: FlagValues<D> = { ...defaults }
+  let values: FlagValues<D> = Object.freeze({ ...defaults }) as FlagValues<D>
   let resolved = false
   const listeners = new Set<() => void>()
+  // One server process answers many users at once: a per-request resolution must never become
+  // the shared snapshot that `value()` reads, or one user's targeting would leak to another.
+  const shared = options.keepSnapshot ?? !app?.isServer
   const notify = () => {
     for (const l of listeners) l()
     getDevtools(app ?? ({ container: { has: () => false } } as any))?.log(
@@ -96,30 +109,57 @@ export function createFlags<D extends FlagDefinitions>(
     value: (key) => (key in values ? values[key] : defaults[key]) as never,
     isEnabled: (key) => flags.value(key) === true,
     async resolve(context = {}) {
-      for (const p of providers) await p.init?.(context)
+      // A provider that is down (or throws) is skipped: the next one, then the default, answers.
+      const ready = new Set<FlagsProvider>()
+      for (const p of providers) {
+        try {
+          await p.init?.(context)
+          ready.add(p)
+        } catch (error) {
+          warn(`provider "${p.name}" failed to start`, error)
+        }
+      }
       const next = { ...defaults } as Record<string, FlagValue>
       await Promise.all(
         Object.keys(definitions).map(async (key) => {
           for (const p of providers) {
-            const answer = await p.resolve(key, context)
-            if (answer !== undefined) {
-              next[key] = coerce(answer, definitions[key]!.default)
+            if (!ready.has(p)) continue
+            let answer: FlagValue | undefined
+            try {
+              answer = await p.resolve(key, context)
+            } catch (error) {
+              warn(`provider "${p.name}" failed on "${key}"`, error)
+              continue
+            }
+            const value =
+              answer === undefined ? undefined : coerce(answer, definitions[key]!.default)
+            if (value !== undefined) {
+              next[key] = value
               return
             }
           }
         }),
       )
-      values = next as FlagValues<D>
+      if (!shared) return next as FlagValues<D>
+      values = Object.freeze(next) as FlagValues<D>
       resolved = true
       notify()
-      return values
+      return { ...values }
     },
     hydrate(partial) {
-      values = { ...defaults, ...partial } as FlagValues<D>
+      // Embedded JSON is input: keep declared keys only, in their declared types.
+      const clean: Record<string, FlagValue> = {}
+      for (const [key, raw] of Object.entries(partial ?? {})) {
+        if (!(key in definitions) || raw === undefined || raw === null) continue
+        const value = coerce(raw as FlagValue, definitions[key]!.default)
+        if (value !== undefined) clean[key] = value
+      }
+      values = Object.freeze({ ...defaults, ...clean }) as FlagValues<D>
       resolved = true
       notify()
     },
-    snapshot: () => ({ ...values }),
+    // The same object until the next resolve or hydrate: useSyncExternalStore needs a stable snapshot.
+    snapshot: () => values,
     subscribe(listener) {
       listeners.add(listener)
       return () => listeners.delete(listener)
@@ -128,11 +168,30 @@ export function createFlags<D extends FlagDefinitions>(
   return flags
 }
 
-/** Providers answer with strings from env files; keep the declared type. */
-function coerce(value: FlagValue, like: FlagValue): FlagValue {
-  if (typeof like === 'boolean' && typeof value === 'string')
-    return value === 'true' || value === '1' || value === 'on'
-  if (typeof like === 'number' && typeof value === 'string') return Number(value)
+function warn(message: string, error: unknown) {
+  console.warn(`[kitr/flags] ${message}:`, error)
+}
+
+/**
+ * Providers answer with strings from env files; keep the declared type. An answer that can't be
+ * read as that type (`FLAG_PAGE_SIZE=lots`) is no answer, so the next provider or the default wins.
+ */
+function coerce(value: FlagValue, like: FlagValue): FlagValue | undefined {
+  if (typeof like === 'boolean') {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value !== 0
+    const text = String(value).trim().toLowerCase()
+    if (['true', '1', 'on', 'yes'].includes(text)) return true
+    if (['false', '0', 'off', 'no', ''].includes(text)) return false
+    return undefined
+  }
+  if (typeof like === 'number') {
+    if (typeof value === 'boolean') return undefined
+    const n =
+      typeof value === 'number' ? value : String(value).trim() === '' ? Number.NaN : Number(value)
+    return Number.isFinite(n) ? n : undefined
+  }
+  if (typeof like === 'string') return typeof value === 'object' ? undefined : String(value)
   return value
 }
 

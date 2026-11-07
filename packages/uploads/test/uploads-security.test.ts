@@ -17,7 +17,11 @@ afterAll(() => rmSync(base, { recursive: true, force: true }))
 
 const bytes = (s: string) => new TextEncoder().encode(s)
 
-function post(server: { fetch(r: Request): Promise<Response> }, form: FormData, path = '/api/uploads') {
+function post(
+  server: { fetch(r: Request): Promise<Response> },
+  form: FormData,
+  path = '/api/uploads',
+) {
   return server.fetch(new Request(`http://x${path}`, { method: 'POST', body: form }))
 }
 
@@ -54,7 +58,9 @@ describe('disk driver keeps keys inside its directory', () => {
     '.',
   ])('refuses %j for get, put and delete', async (key) => {
     await expect(driver.get(key)).rejects.toMatchObject({ status: 403 })
-    await expect(driver.put(key, bytes('pwned'), { type: 'text/plain', name: 'x' })).rejects.toMatchObject({
+    await expect(
+      driver.put(key, bytes('pwned'), { type: 'text/plain', name: 'x' }),
+    ).rejects.toMatchObject({
       status: 403,
     })
     await expect(driver.delete(key)).rejects.toMatchObject({ status: 403 })
@@ -100,7 +106,11 @@ describe('serving uploaded files', () => {
   it('serves risky types as sandboxed downloads, never as pages', async () => {
     const { uploads, server } = setup()
     for (const type of ['text/html', 'image/svg+xml', 'application/xml', 'text/javascript', '']) {
-      const file = await uploads.store({ name: 'evil.html', type, data: bytes('<script>alert(1)</script>') })
+      const file = await uploads.store({
+        name: 'evil.html',
+        type,
+        data: bytes('<script>alert(1)</script>'),
+      })
       const res = await server.fetch(new Request(`http://x/api/uploads/${file.key}`))
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toBe('application/octet-stream')
@@ -111,7 +121,15 @@ describe('serving uploaded files', () => {
   })
 
   it('serves images, media, PDFs and plain text inline', () => {
-    for (const type of ['image/png', 'image/jpeg', 'video/mp4', 'audio/mpeg', 'application/pdf', 'text/plain', 'text/plain; charset=utf-8']) {
+    for (const type of [
+      'image/png',
+      'image/jpeg',
+      'video/mp4',
+      'audio/mpeg',
+      'application/pdf',
+      'text/plain',
+      'text/plain; charset=utf-8',
+    ]) {
       const h = servedFileHeaders(type, 'a')
       expect(h['content-type']).toBe(type)
       expect(h['content-disposition']).toMatch(/^inline/)
@@ -183,7 +201,13 @@ describe('receiving uploads', () => {
       keys.push(key)
       return original(key, data, meta)
     }
-    const res = await post(server, form([{ name: 'big.txt', body: 'toolong' }, { name: 'ok.txt', body: 'ok' }]))
+    const res = await post(
+      server,
+      form([
+        { name: 'big.txt', body: 'toolong' },
+        { name: 'ok.txt', body: 'ok' },
+      ]),
+    )
     expect(res.status).toBe(422)
     expect(keys).toEqual([])
   })
@@ -200,7 +224,9 @@ describe('receiving uploads', () => {
   it('checks type by MIME pattern and by extension', async () => {
     const { server } = setup({ accept: ['image/*', '.pdf'] })
     expect((await post(server, form([{ name: 'a.png', type: 'image/png' }]))).status).toBe(200)
-    expect((await post(server, form([{ name: 'doc.PDF', type: 'application/octet-stream' }]))).status).toBe(200)
+    expect(
+      (await post(server, form([{ name: 'doc.PDF', type: 'application/octet-stream' }]))).status,
+    ).toBe(200)
     expect((await post(server, form([{ name: 'a.html', type: 'text/html' }]))).status).toBe(422)
   })
 
@@ -216,7 +242,10 @@ describe('receiving uploads', () => {
 
   it('stops oversize bodies at the server limit before they are buffered', async () => {
     const uploads = createUploads({ driver: createMemoryUploadsDriver() })
-    const server = createServer({ logger: silentLogger, server: { healthPath: false, bodyLimit: 1024 } })
+    const server = createServer({
+      logger: silentLogger,
+      server: { healthPath: false, bodyLimit: 1024 },
+    })
     uploads.mount(server)
     const big = 'x'.repeat(4096)
     const res = await server.fetch(

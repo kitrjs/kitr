@@ -14,7 +14,9 @@ export async function resolveFlags<D extends FlagDefinitions>(
   const ctx = event.context as Record<string, any>
   if (ctx.kitrFlags) return ctx.kitrFlags
   const user = ctx.kitr?.locals?.user
-  const flags = app.container.use('flags') as Flags<D>
+  // The request's own app (kitr/server forks one per request), so the answer stays with this user.
+  const scope: KitrApp = ctx.kitr?.app ?? app
+  const flags = scope.container.use('flags') as Flags<D>
   const values = await flags.resolve({ userId: user?.id, ...context })
   ctx.kitrFlags = values
   return values

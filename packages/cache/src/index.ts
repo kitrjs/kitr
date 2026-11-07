@@ -53,13 +53,31 @@ export const defineConfig = createDefineConfig<CacheConfig>()
 
 /** In-process cache with TTLs and tags. The default; fine for one server, wrong for several. */
 export function createMemoryCacheDriver(): CacheDriver {
-  const entries = new Map<string, { value: string; expires?: number }>()
+  const entries = new Map<string, { value: string; expires?: number; tags?: string[] }>()
   const tags = new Map<string, Set<string>>()
+  let lastSweep = Date.now()
+  const drop = (key: string) => {
+    const e = entries.get(key)
+    if (!e) return
+    entries.delete(key)
+    for (const t of e.tags ?? []) {
+      const set = tags.get(t)
+      set?.delete(key)
+      if (set?.size === 0) tags.delete(t)
+    }
+  }
+  // Expired entries that are never read again would otherwise stay in memory for good.
+  const sweep = () => {
+    const now = Date.now()
+    if (now - lastSweep < 60_000) return
+    lastSweep = now
+    for (const [key, e] of entries) if (e.expires !== undefined && e.expires <= now) drop(key)
+  }
   const alive = (key: string) => {
     const e = entries.get(key)
     if (!e) return undefined
     if (e.expires !== undefined && e.expires <= Date.now()) {
-      entries.delete(key)
+      drop(key)
       return undefined
     }
     return e
@@ -70,12 +88,18 @@ export function createMemoryCacheDriver(): CacheDriver {
       return alive(key)?.value
     },
     async set(key, value, ttl) {
+      sweep()
+      // A new value starts untagged: tags from the old one must not invalidate it later.
+      drop(key)
       entries.set(key, { value, expires: ttl === undefined ? undefined : Date.now() + ttl * 1000 })
     },
     async delete(key) {
-      entries.delete(key)
+      drop(key)
     },
     async tag(key, list) {
+      const e = entries.get(key)
+      if (!e) return
+      e.tags = [...new Set([...(e.tags ?? []), ...list])]
       for (const t of list) {
         const set = tags.get(t) ?? new Set()
         set.add(key)
@@ -84,7 +108,7 @@ export function createMemoryCacheDriver(): CacheDriver {
     },
     async invalidateTags(list) {
       for (const t of list) {
-        for (const key of tags.get(t) ?? []) entries.delete(key)
+        for (const key of [...(tags.get(t) ?? [])]) drop(key)
         tags.delete(t)
       }
     },
@@ -125,7 +149,8 @@ export function createCache(config: CacheConfig = {}): Cache {
       const run = (async () => {
         try {
           const value = await fn()
-          await cache.set(key, value, options)
+          // `undefined` reads back as a miss, so storing it (as null) would change the answer.
+          if (value !== undefined) await cache.set(key, value, options)
           return value
         } finally {
           inflight.delete(key)

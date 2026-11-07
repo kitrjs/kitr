@@ -204,7 +204,9 @@ describe('rateLimit', () => {
 
   it('reads X-Forwarded-For when the proxy is trusted', async () => {
     const server = app(rateLimit({ max: 1, trustProxy: true }))
-    const a = await server.fetch(req('/ping', { headers: { 'x-forwarded-for': '1.1.1.1, 10.0.0.1' } }))
+    const a = await server.fetch(
+      req('/ping', { headers: { 'x-forwarded-for': '1.1.1.1, 10.0.0.1' } }),
+    )
     const b = await server.fetch(req('/ping', { headers: { 'x-forwarded-for': '2.2.2.2' } }))
     const a2 = await server.fetch(req('/ping', { headers: { 'x-forwarded-for': '1.1.1.1' } }))
     expect([a.status, b.status, a2.status]).toEqual([200, 200, 429])

@@ -111,7 +111,8 @@ declare module '@kitr/core' {
  * Types a browser can show inline without running script from our origin. Anything else (HTML,
  * SVG, XML, JavaScript) is served as a download, so an uploaded page can't act as the site.
  */
-const INLINE_TYPES = /^(image\/(png|jpeg|gif|webp|avif|bmp|x-icon)|video\/[\w.+-]+|audio\/[\w.+-]+|application\/pdf|text\/plain)(\s*;.*)?$/i
+const INLINE_TYPES =
+  /^(image\/(png|jpeg|gif|webp|avif|bmp|x-icon)|video\/[\w.+-]+|audio\/[\w.+-]+|application\/pdf|text\/plain)(\s*;.*)?$/i
 
 /** Headers for serving a stored file: never sniffed, sandboxed, and inline only when that is safe. */
 export function servedFileHeaders(type: string, name?: string): Record<string, string> {
