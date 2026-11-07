@@ -1,0 +1,78 @@
+{
+  "name": "@kitr/offline",
+  "version": "0.1.0",
+  "description": "kitr/offline: persists the TanStack Query cache, pauses mutations while offline and replays them when the network returns.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/query": "workspace:*",
+    "@kitr/storage": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tanstack/react-query": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@tanstack/react-query": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@kitr/react": "workspace:*",
+    "@tanstack/react-query": "^5.107.1",
+    "@testing-library/react": "^16.3.3"
+  },
+  "kitr": {
+    "name": "offline",
+    "title": "Offline",
+    "summary": "Keep showing loaded data with no connection, and send queued changes when the network comes back.",
+    "category": "data-fetching",
+    "runsOn": "client",
+    "builtOn": [
+      "TanStack Query"
+    ],
+    "requires": [
+      "query",
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs"
+  }
+}

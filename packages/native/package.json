@@ -1,0 +1,66 @@
+{
+  "name": "@kitr/native",
+  "version": "0.1.0",
+  "description": "kitr/native: clipboard, share, haptics, geolocation, camera and biometrics behind one API with web fallbacks and native drivers.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@kitr/react": "workspace:*"
+  },
+  "kitr": {
+    "name": "native",
+    "title": "Native",
+    "summary": "Clipboard, share sheet, haptics, location, camera and fingerprint unlock, each with a web fallback.",
+    "category": "device",
+    "runsOn": "client",
+    "requires": [
+      "platform"
+    ],
+    "client": true,
+    "docs": "docs"
+  }
+}

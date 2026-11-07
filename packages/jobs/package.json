@@ -1,0 +1,52 @@
+{
+  "name": "@kitr/jobs",
+  "version": "0.1.0",
+  "description": "kitr/jobs: typed background jobs with retries and backoff, cron and interval schedules, a memory queue and a driver interface for Redis or a database.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "@kitr/server": "workspace:*",
+    "@kitr/logger": "workspace:*"
+  },
+  "kitr": {
+    "name": "jobs",
+    "title": "Jobs",
+    "summary": "Run work in the background or on a schedule, with retries when it fails.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs"
+  }
+}

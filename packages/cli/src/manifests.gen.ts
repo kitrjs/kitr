@@ -58,6 +58,31 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
+  "cache": {
+    "package": "@kitr/cache",
+    "name": "cache",
+    "title": "Cache",
+    "summary": "Remember slow results on the server and clear them by tag when the data changes.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs"
+  },
+  "consent": {
+    "package": "@kitr/consent",
+    "name": "consent",
+    "title": "Consent",
+    "summary": "Ask for cookie and tracking consent once, and hold analytics and error reports until people agree.",
+    "category": "insights",
+    "runsOn": "client",
+    "requires": [
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "db": {
     "package": "@kitr/db",
     "name": "db",
@@ -97,6 +122,31 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "category": "dev-tools",
     "runsOn": "client",
     "client": true,
+    "docs": "docs"
+  },
+  "files": {
+    "package": "@kitr/files",
+    "name": "files",
+    "title": "Files",
+    "summary": "Let people open, save and pick files on any platform, with a download fallback in older browsers.",
+    "category": "device",
+    "runsOn": "client",
+    "requires": [
+      "platform"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "flags": {
+    "package": "@kitr/flags",
+    "name": "flags",
+    "title": "Feature flags",
+    "summary": "Turn features on for some users and off for others, with the same answer on the server and in the browser.",
+    "category": "app-state",
+    "runsOn": "both",
+    "builtOn": [
+      "OpenFeature"
+    ],
     "docs": "docs"
   },
   "forms": {
@@ -141,6 +191,18 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
+  "jobs": {
+    "package": "@kitr/jobs",
+    "name": "jobs",
+    "title": "Jobs",
+    "summary": "Run work in the background or on a schedule, with retries when it fails.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs"
+  },
   "logger": {
     "package": "@kitr/logger",
     "name": "logger",
@@ -148,6 +210,21 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "summary": "Write readable logs in development and structured logs in production.",
     "category": "dev-tools",
     "runsOn": "both",
+    "docs": "docs"
+  },
+  "mail": {
+    "package": "@kitr/mail",
+    "name": "mail",
+    "title": "Mail",
+    "summary": "Write emails as React components, send them through your provider, and preview them in development.",
+    "category": "backend",
+    "runsOn": "server",
+    "builtOn": [
+      "React Email"
+    ],
+    "requires": [
+      "server"
+    ],
     "docs": "docs"
   },
   "mobile": {
@@ -191,6 +268,49 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "builtOn": [
       "Sentry"
     ],
+    "docs": "docs"
+  },
+  "native": {
+    "package": "@kitr/native",
+    "name": "native",
+    "title": "Native",
+    "summary": "Clipboard, share sheet, haptics, location, camera and fingerprint unlock, each with a web fallback.",
+    "category": "device",
+    "runsOn": "client",
+    "requires": [
+      "platform"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "notifications": {
+    "package": "@kitr/notifications",
+    "name": "notifications",
+    "title": "Notifications",
+    "summary": "Ask for permission and show local or scheduled notifications that open the right page when tapped.",
+    "category": "device",
+    "runsOn": "client",
+    "requires": [
+      "platform"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "offline": {
+    "package": "@kitr/offline",
+    "name": "offline",
+    "title": "Offline",
+    "summary": "Keep showing loaded data with no connection, and send queued changes when the network comes back.",
+    "category": "data-fetching",
+    "runsOn": "client",
+    "builtOn": [
+      "TanStack Query"
+    ],
+    "requires": [
+      "query",
+      "storage"
+    ],
+    "client": true,
     "docs": "docs"
   },
   "platform": {
@@ -264,6 +384,19 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "included": true,
     "docs": "docs"
   },
+  "secure-storage": {
+    "package": "@kitr/secure-storage",
+    "name": "secure-storage",
+    "title": "Secure storage",
+    "summary": "Keep login tokens and secrets in the phone or computer's secure vault instead of plain storage.",
+    "category": "device",
+    "runsOn": "both",
+    "requires": [
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "seo": {
     "package": "@kitr/seo",
     "name": "seo",
@@ -286,6 +419,18 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "requires": [
       "logger"
+    ],
+    "docs": "docs"
+  },
+  "shield": {
+    "package": "@kitr/shield",
+    "name": "shield",
+    "title": "Shield",
+    "summary": "Turn on the security basics every API needs: CORS, CSRF protection, safe headers and rate limits.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
     ],
     "docs": "docs"
   },
@@ -370,6 +515,31 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "react"
     ],
     "client": true,
+    "docs": "docs"
+  },
+  "updater": {
+    "package": "@kitr/updater",
+    "name": "updater",
+    "title": "Updater",
+    "summary": "Tell people a new version is ready and update the app in place, on the web, desktop and mobile.",
+    "category": "platforms",
+    "runsOn": "client",
+    "requires": [
+      "platform"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "uploads": {
+    "package": "@kitr/uploads",
+    "name": "uploads",
+    "title": "Uploads",
+    "summary": "Accept file uploads with size limits, store them on disk or in the cloud, and show progress in the browser.",
+    "category": "backend",
+    "runsOn": "both",
+    "requires": [
+      "server"
+    ],
     "docs": "docs"
   },
   "web": {

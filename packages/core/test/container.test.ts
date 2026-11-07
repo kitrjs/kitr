@@ -25,6 +25,16 @@ describe('Container', () => {
     expect(b).toBe(d)
   })
 
+  it('builds a sync binding once when resolveAll() runs dependants in parallel', async () => {
+    const factory = vi.fn(() => ({ id: Math.random() }))
+    const c = new Container()
+      .singleton('client', factory)
+      .singleton('offline', (container) => ({ client: container.use('client') }))
+    await c.resolveAll()
+    expect(factory).toHaveBeenCalledTimes(1)
+    expect(c.use('offline').client).toBe(c.use('client'))
+  })
+
   it('passes itself to factories so bindings can depend on each other', async () => {
     const c = new Container()
       .value('base', 'http://x')

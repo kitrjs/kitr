@@ -132,3 +132,59 @@ export const makeProvider = makeCommand(
     vars: { name },
   }),
 )
+export const makeJob = makeCommand(
+  'job',
+  'Create a background job in server/jobs',
+  (ctx, name) => ({
+    file: `${ctx.readRc().directories.server ?? 'server'}/jobs/${naming.snake(name)}.ts`,
+    vars: { name },
+  }),
+)
+export const makeMail = makeCommand(
+  'mail',
+  'Create an email template in server/mail',
+  (ctx, name) => ({
+    file: `${ctx.readRc().directories.server ?? 'server'}/mail/${naming.snake(name)}.tsx`,
+    vars: { name },
+  }),
+)
+export const makeService = makeCommand(
+  'service',
+  'Create a service class in server/services',
+  (ctx, name) => ({
+    file: `${ctx.readRc().directories.server ?? 'server'}/services/${naming.snake(name)}_service.ts`,
+    vars: { name },
+  }),
+)
+export const makeValidator = makeCommand(
+  'validator',
+  'Create a shared zod schema in app/validators',
+  (ctx, name) => ({
+    file: `${ctx.readRc().directories.app}/validators/${naming.snake(name)}.ts`,
+    vars: { name },
+  }),
+)
+export const makeTest = makeCommand('test', 'Create a vitest file in tests/', (_ctx, name) => ({
+  file: `tests/${naming.snake(name)}.test.ts`,
+  vars: { name },
+}))
+export const makeComponent = makeCommand(
+  'component',
+  'Create a React component in app/components',
+  (ctx, name) => ({
+    file: `${ctx.readRc().directories.components}/${naming.snake(name).replace(/_/g, '-')}.tsx`,
+    vars: { name },
+  }),
+)
+export const makeHook = makeCommand('hook', 'Create a React hook in app/hooks', (ctx, name) => ({
+  file: `${ctx.readRc().directories.app}/hooks/use-${naming.snake(name).replace(/_/g, '-')}.ts`,
+  vars: { name },
+}))
+export const makeException = makeCommand(
+  'exception',
+  'Create a typed error class in app/exceptions',
+  (ctx, name) => ({
+    file: `${ctx.readRc().directories.app}/exceptions/${naming.snake(name)}_error.ts`,
+    vars: { name },
+  }),
+)

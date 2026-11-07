@@ -1,0 +1,254 @@
+import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
+
+/**
+ * Local notifications with one API: ask for permission, show one now or at a time, and learn
+ * which one was tapped so the app can open the right page. Platform packages register a
+ * `NotificationsDriver`; the web driver uses the Notification API and a timer for scheduling.
+ */
+
+export type NotificationPermission = 'granted' | 'denied' | 'prompt' | 'unsupported'
+
+export interface NotificationOptions {
+  /** Your own id, so the same notification can be replaced or cancelled. Default: generated. */
+  id?: string
+  title: string
+  body?: string
+  /** Where a tap should take the person, e.g. `/inbox/42`. Handed to `onTap` listeners. */
+  url?: string
+  icon?: string
+  /** Platform-specific extras passed through to the driver. */
+  data?: Record<string, unknown>
+  /** Group id (Android channel, web tag). */
+  channel?: string
+  silent?: boolean
+}
+
+export interface ScheduleOptions extends NotificationOptions {
+  at: Date | number
+}
+
+export interface NotificationTap {
+  id: string
+  url?: string
+  data?: Record<string, unknown>
+}
+
+export interface NotificationsDriver {
+  name: string
+  permission(): Promise<NotificationPermission>
+  request(): Promise<NotificationPermission>
+  show(options: NotificationOptions & { id: string }): Promise<void>
+  schedule(options: ScheduleOptions & { id: string }): Promise<void>
+  cancel(id: string): Promise<void>
+  cancelAll?(): Promise<void>
+  pending?(): Promise<string[]>
+  onTap(listener: (tap: NotificationTap) => void): () => void
+}
+
+export interface NotificationsConfig {
+  driver?: NotificationsDriver
+  /** Default icon for web notifications. */
+  icon?: string
+  /** Ask for permission at boot instead of waiting for the first `request()`. Default false. */
+  requestOnBoot?: boolean
+}
+
+export interface Notifications {
+  readonly driver: NotificationsDriver
+  permission(): Promise<NotificationPermission>
+  /** Ask once; resolves to the new state. Call it from a click, browsers block unprompted asks. */
+  request(): Promise<NotificationPermission>
+  /** Show now. Resolves to the notification id. */
+  show(options: NotificationOptions): Promise<string>
+  /** Show later. Resolves to the id, usable with `cancel()`. */
+  schedule(options: ScheduleOptions): Promise<string>
+  cancel(id: string): Promise<void>
+  cancelAll(): Promise<void>
+  /** Ids of scheduled notifications not yet delivered. */
+  pending(): Promise<string[]>
+  /** A notification was tapped (the app may have been opened by it). */
+  onTap(listener: (tap: NotificationTap) => void): () => void
+}
+
+declare module '@kitr/core' {
+  interface ConfigRegistry {
+    notifications: NotificationsConfig
+  }
+  interface ContainerBindings {
+    notifications: Notifications
+  }
+  interface DriverTypes {
+    notifications: NotificationsDriver
+  }
+}
+
+export const defineConfig = createDefineConfig<NotificationsConfig>()
+
+let counter = 0
+export function notificationId(): string {
+  return `n-${Date.now().toString(36)}-${(counter++).toString(36)}`
+}
+
+type Listener = (tap: NotificationTap) => void
+
+function listenerSet() {
+  const listeners = new Set<Listener>()
+  return {
+    on(listener: Listener) {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    emit(tap: NotificationTap) {
+      for (const l of listeners) l(tap)
+    },
+  }
+}
+
+/** Notification API with timers for scheduling. Scheduled ones are lost when the page closes. */
+export function createWebNotificationsDriver(config: { icon?: string } = {}): NotificationsDriver {
+  const taps = listenerSet()
+  const timers = new Map<string, ReturnType<typeof setTimeout>>()
+  const shown = new Map<string, Notification>()
+  const api = () => (typeof Notification === 'undefined' ? undefined : Notification)
+  const toPermission = (p: string): NotificationPermission =>
+    p === 'granted' ? 'granted' : p === 'denied' ? 'denied' : 'prompt'
+  const display = (options: NotificationOptions & { id: string }) => {
+    const N = api()
+    if (N?.permission !== 'granted') return
+    shown.get(options.id)?.close()
+    const n = new N(options.title, {
+      body: options.body,
+      icon: options.icon ?? config.icon,
+      tag: options.channel ?? options.id,
+      silent: options.silent,
+      data: { id: options.id, url: options.url, data: options.data },
+    })
+    n.onclick = () => {
+      window.focus()
+      n.close()
+      taps.emit({ id: options.id, url: options.url, data: options.data })
+    }
+    n.onclose = () => shown.delete(options.id)
+    shown.set(options.id, n)
+  }
+  return {
+    name: 'web',
+    permission: async () => (api() ? toPermission(api()!.permission) : 'unsupported'),
+    request: async () => (api() ? toPermission(await api()!.requestPermission()) : 'unsupported'),
+    show: async (options) => display(options),
+    schedule: async (options) => {
+      const delay = Math.max(0, new Date(options.at).getTime() - Date.now())
+      clearTimeout(timers.get(options.id))
+      timers.set(
+        options.id,
+        setTimeout(() => {
+          timers.delete(options.id)
+          display(options)
+        }, delay),
+      )
+    },
+    cancel: async (id) => {
+      clearTimeout(timers.get(id))
+      timers.delete(id)
+      shown.get(id)?.close()
+    },
+    cancelAll: async () => {
+      for (const t of timers.values()) clearTimeout(t)
+      timers.clear()
+      for (const n of shown.values()) n.close()
+    },
+    pending: async () => [...timers.keys()],
+    onTap: taps.on,
+  }
+}
+
+/** For tests and the server: records what was shown, `tap(id)` simulates a tap. */
+export function createMemoryNotificationsDriver(permission: NotificationPermission = 'granted') {
+  const taps = listenerSet()
+  const shown: Array<NotificationOptions & { id: string }> = []
+  const scheduled = new Map<string, ScheduleOptions & { id: string }>()
+  let state = permission
+  const driver: NotificationsDriver & {
+    shown: typeof shown
+    scheduled: typeof scheduled
+    tap(id: string): void
+  } = {
+    name: 'memory',
+    shown,
+    scheduled,
+    permission: async () => state,
+    request: async () => {
+      if (state === 'prompt') state = 'granted'
+      return state
+    },
+    show: async (options) => {
+      shown.push(options)
+    },
+    schedule: async (options) => {
+      scheduled.set(options.id, options)
+    },
+    cancel: async (id) => {
+      scheduled.delete(id)
+    },
+    cancelAll: async () => scheduled.clear(),
+    pending: async () => [...scheduled.keys()],
+    onTap: taps.on,
+    tap(id) {
+      const n = shown.find((s) => s.id === id) ?? scheduled.get(id)
+      taps.emit({ id, url: n?.url, data: n?.data })
+    },
+  }
+  return driver
+}
+
+export function createNotifications(
+  config: NotificationsConfig = {},
+  app?: KitrApp,
+): Notifications {
+  const driver =
+    config.driver ??
+    app?.drivers.resolve('notifications') ??
+    (typeof window === 'undefined'
+      ? createMemoryNotificationsDriver('unsupported')
+      : createWebNotificationsDriver({ icon: config.icon }))
+  const log = (label: string, data?: unknown) =>
+    app && getDevtools(app)?.log('notifications', label, data)
+  return {
+    driver,
+    permission: () => driver.permission(),
+    async request() {
+      const state = await driver.request()
+      log('permission', state)
+      return state
+    },
+    async show(options) {
+      const id = options.id ?? notificationId()
+      await driver.show({ ...options, id })
+      log('show', { id, title: options.title })
+      return id
+    },
+    async schedule(options) {
+      const id = options.id ?? notificationId()
+      await driver.schedule({ ...options, id })
+      log('schedule', { id, at: new Date(options.at).toISOString() })
+      return id
+    },
+    cancel: (id) => driver.cancel(id),
+    cancelAll: async () => {
+      if (driver.cancelAll) return driver.cancelAll()
+      for (const id of (await driver.pending?.()) ?? []) await driver.cancel(id)
+    },
+    pending: async () => (await driver.pending?.()) ?? [],
+    onTap: (listener) =>
+      driver.onTap((tap) => {
+        log('tap', tap)
+        listener(tap)
+      }),
+  }
+}
+
+export function useNotifications(app: KitrApp): Notifications {
+  return app.container.use('notifications')
+}
