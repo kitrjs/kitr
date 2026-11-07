@@ -247,11 +247,17 @@ describe('receiving uploads', () => {
       server: { healthPath: false, bodyLimit: 1024 },
     })
     uploads.mount(server)
-    const big = 'x'.repeat(4096)
+    // Encode the multipart body up front: a FormData body streams from a generator, and when the
+    // server answers 413 without reading it, Node 24's undici enqueues into the closed stream.
+    const encoded = new Request('http://x', {
+      method: 'POST',
+      body: form([{ name: 'a.txt', body: 'x'.repeat(4096) }]),
+    })
     const res = await server.fetch(
       new Request('http://x/api/uploads', {
         method: 'POST',
-        body: form([{ name: 'a.txt', body: big }]),
+        headers: { 'content-type': encoded.headers.get('content-type')! },
+        body: new Uint8Array(await encoded.arrayBuffer()),
       }),
     )
     expect(res.status).toBe(413)
@@ -282,11 +288,11 @@ describe('client helpers', () => {
   })
 
   it('upload() sends fields and headers, and reports server errors as UploadError', async () => {
-    const seen: Request[] = []
+    const seen: Array<{ headers: Headers; form: FormData }> = []
     const original = globalThis.fetch
     globalThis.fetch = (async (url: string, init: RequestInit) => {
       const req = new Request(`http://x${url}`, init)
-      seen.push(req.clone())
+      seen.push({ headers: req.headers, form: await req.formData() })
       if (url === '/fail') return new Response(JSON.stringify({ message: 'Nope' }), { status: 400 })
       if (url === '/text') return new Response('gateway down', { status: 502 })
       return Response.json({ files: [{ id: '1', key: '1/a', name: 'a', size: 1, type: 't' }] })
@@ -298,7 +304,7 @@ describe('client helpers', () => {
         headers: { 'x-csrf-token': 't' },
       })
       expect(files).toHaveLength(1)
-      const body = await seen[0]!.formData()
+      const body = seen[0]!.form
       expect(body.get('album')).toBe('7')
       expect(body.getAll('file')).toHaveLength(2)
       expect(seen[0]!.headers.get('x-csrf-token')).toBe('t')
