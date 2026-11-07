@@ -803,7 +803,7 @@ export function PageHeader({ title }: { title: string }) {
 | `presentation` | How the current page arrived. |
 | `entry` | The current page's stack entry (id, href, route ids). |
 
-The back button needs the `platform` service from [`kitr/platform`](../../platform/docs/index.md): the stack subscribes to `platform.onBackButton()` when the service is in the app's container. Without it the gestures and `useStack()` still work; only the hardware button has no listener.
+The back button needs the `platform` service from [`kitr/platform`](/packages/platform): the stack subscribes to `platform.onBackButton()` when the service is in the app's container. Without it the gestures and `useStack()` still work; only the hardware button has no listener.
 
 ## Tabs that keep their stacks
 
@@ -915,7 +915,7 @@ Keys are platform names from `kitrrc.ts` (`www`, `phone`), platform types (`web`
 | `onlyPlatform(['web', 'desktop'])` | Every web and desktop build; a 404 on phones. |
 | `onlyPlatform('native', { to: '/download' })` | Native shells; the web redirects to the download page. |
 
-To render a route on the server on one platform and in the browser on another, see `ssrRoute()` with a per-platform table in [`kitr/seo`](../../seo/docs/index.md).
+To render a route on the server on one platform and in the browser on another, see `ssrRoute()` with a per-platform table in [`kitr/seo`](/packages/seo).
 
 ## Set the page title and meta tags
 
