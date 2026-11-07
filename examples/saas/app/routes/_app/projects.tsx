@@ -83,7 +83,7 @@ function ProjectsPage() {
         description="Sorting and paging live in the URL, so links are shareable."
         actions={<Button onClick={() => setOpen(true)}>New project</Button>}
       />
-      <DataTable columns={columns} data={data} rowCount={data.length} {...tableState} />
+      <DataTable columns={columns} data={data} clientSide {...tableState} />
       <NewProjectDialog open={open} onOpenChange={setOpen} />
     </>
   )

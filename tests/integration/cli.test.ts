@@ -49,6 +49,29 @@ describe('kitr new', () => {
       const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
       for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
         expect(pkg.dependencies?.[name!] ?? pkg.devDependencies?.[name!], name).toBeDefined()
+      // The typed client resolves names through the route table: without it every call throws.
+      if (exists(dir, 'app/api/client.ts')) {
+        expect(readFileSync(join(dir, 'app/api/client.ts'), 'utf8')).toContain('registerRoutes(api')
+        expect(exists(dir, 'app/api/routes.gen.ts')).toBe(true)
+      }
+      // With the theme provider, the stored theme is applied before first paint, and the token
+      // overrides are actually loaded.
+      if (rc.includes('@kitr/theme') && exists(dir, 'app/routes/__root.tsx')) {
+        expect(readFileSync(join(dir, 'app/routes/__root.tsx'), 'utf8')).toContain(
+          '<ThemeScript />',
+        )
+        const css = exists(dir, 'app/styles/app.css')
+          ? readFileSync(join(dir, 'app/styles/app.css'), 'utf8')
+          : readFileSync(join(dir, 'app/routes/__root.tsx'), 'utf8')
+        if (exists(dir, 'app/styles/tokens.css')) expect(css).toContain('tokens.css')
+      }
+      // Env values are strings: VITE_MOCKS=false must not turn mocks on, and the worker must exist.
+      if (exists(dir, 'app/mocks/browser.ts')) {
+        expect(readFileSync(join(dir, 'app/mocks/browser.ts'), 'utf8')).toContain(
+          "VITE_MOCKS === 'true'",
+        )
+        expect(pkg.msw?.workerDirectory).toEqual(['public'])
+      }
     },
   )
 
@@ -175,6 +198,11 @@ describe('make:* generators produce code that typechecks and builds', () => {
     // The example copy has no @kitr/jobs installed (only its own dependencies are linked), so
     // drop the package wiring first; the generated jobs stay and import through `kitr/jobs`.
     kitr(dir, 'remove', 'jobs', '--no-install')
+    // make:service registers its binding: the container hands back the class, not `unknown`.
+    writeFileSync(
+      join(dir, 'server/services/billing_usage.ts'),
+      "import type { KitrApp } from 'kitr/app'\n\nexport const countInvoices = async (app: KitrApp) =>\n  (await app.container.use('billing').list()).length\n",
+    )
     kitr(dir, 'build', 'site')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   }, 300_000)
@@ -236,6 +264,18 @@ describe('kitr add / remove', () => {
     expect(after['package.json']).toBe(before['package.json'])
   })
 
+  it('auth puts the session in the router context, and remove auth takes it out', () => {
+    // The dashboard kit starts with auth: its router already carries the session.
+    const router = () => readFileSync(join(dir, 'app/router.tsx'), 'utf8')
+    expect(router()).toContain('get session()')
+    kitr(dir, 'remove', 'auth', '--no-install')
+    expect(router()).not.toContain('session')
+    expect(router()).toContain('createKitrRouter({ routeTree, app })')
+    kitr(dir, 'add', 'auth', '--no-install')
+    expect(router()).toBe(before['app/router.tsx'])
+    expect(readFileSync(join(dir, 'app/env.ts'), 'utf8')).toMatch(/VITE_API_URL:/)
+  })
+
   it('--dry-run changes nothing', () => {
     const now = snapshot(dir)
     kitr(dir, 'add', 'realtime', '--no-install', '--dry-run')
@@ -264,6 +304,17 @@ describe('kitr add / remove', () => {
     expect(() => kitr(dir, 'config', 'admin', 'mode', 'fast')).toThrow()
     kitr(dir, 'platforms', 'remove', 'admin')
     expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).not.toContain('admin')
+  })
+
+  // Regression: the platform name was required, so `kitr add server` alone threw.
+  it('add <type> without a name uses the usual name for that type', () => {
+    const blank = copyExample('blank')
+    try {
+      kitr(blank, 'add', 'server', '--no-install')
+      expect(readFileSync(join(blank, 'kitrrc.ts'), 'utf8')).toMatch(/api: server\(/)
+    } finally {
+      remove(blank)
+    }
   })
 
   it('rejects an unknown package', () => {

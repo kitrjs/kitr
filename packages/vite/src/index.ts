@@ -141,6 +141,12 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           ? { server: { port, strictPort: true }, preview: { port } }
           : {}),
         ...(platform ? { build: { outDir: `dist/${platform.name}` } } : {}),
+        // web({ base: '/admin/' }): asset URLs must carry it, unless vite.config.ts set its own.
+        ...(config.base === undefined &&
+        typeof platform?.options.base === 'string' &&
+        platform.options.base !== '/'
+          ? { base: platform.options.base.replace(/\/?$/, '/') }
+          : {}),
         resolve: {
           alias: {
             '#app': resolve(root, rc.directories.app ?? 'app'),

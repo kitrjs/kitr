@@ -64,7 +64,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: mocks
 
-- Mocks live in `app/mocks/handlers.ts` (MSW). `VITE_MOCKS=true` enables them in dev; tests use `setupNodeMocks(handlers)`. Mock a kitr route table with `mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })`.
+- Mocks live in `app/mocks/handlers.ts` (MSW). `VITE_MOCKS=true` enables them in dev (run `npm run mocks:init` once if public/mockServiceWorker.js is missing); tests use `setupNodeMocks(handlers)`. Mock a kitr route table with `mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })`.
 
 ## kitr: testing
 

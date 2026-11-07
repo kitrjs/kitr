@@ -69,6 +69,7 @@ function OrdersPage() {
 | `search` | required | The current table params, `{ page?, size?, sort?, filter? }`. Usually `Route.useSearch()`. |
 | `setSearch` | required | Merges a patch into the URL. A key set to `undefined` is removed from it. |
 | `defaultPageSize` | `20` | Rows per page when the URL has no `size`. A size equal to it is left out of the URL. |
+| `manual` | `true` | `false` turns the three manual flags off, for data the table sorts and pages itself (with `clientTableFeatures`). |
 
 `useUrlTableState` returns options to spread into `useTable` or `<DataTable>`:
 
@@ -509,6 +510,8 @@ export function CustomerOrders(props: {
 Given Grace's 120, Ada's 80 and Linus's 300 and `?sort=-total`, the rows come out Linus, Grace, Ada. The state still lives in the URL; only the work moved to the browser.
 
 Turning the flags off is not enough on its own. `dataTableFeatures` has no row models, so without `sortedRowModel` and the rest the table keeps the rows in the order you passed them, whatever the URL says. TanStack v9 only ships the code for what you register, which is why kitr's default set is small.
+
+`clientTableFeatures` from `kitr/table` is that feature set ready-made, with the sort and filter functions TanStack's `auto` picks. With it, `useUrlTableState({ search, setSearch, manual: false })` is all a client-side table needs, and the `data-table` component does both when you pass `clientSide`: `<DataTable columns={columns} data={rows} clientSide {...tableState} />`.
 
 ## Hide columns
 

@@ -7,6 +7,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import {
   type ColumnDef,
+  clientTableFeatures,
   type DataTableFeatures,
   dataTableFeatures,
   type RowData,
@@ -25,6 +26,11 @@ export interface DataTableProps<TData extends RowData>
   data: TData[]
   /** Total rows for server-side pagination. */
   rowCount?: number
+  /**
+   * Sort, filter and page in the browser: for data that arrives in one response. Without it the
+   * table expects the server to do that work (what `useUrlTableState` assumes by default).
+   */
+  clientSide?: boolean
   empty?: ReactNode
   className?: string
 }
@@ -38,16 +44,19 @@ export function DataTable<TData extends RowData>({
   columns,
   data,
   rowCount,
+  clientSide = false,
   empty = 'No results.',
   className,
   ...options
 }: DataTableProps<TData>) {
   const table = useTable<DataTableFeatures, TData>({
-    features: dataTableFeatures,
+    // A superset of dataTableFeatures, so the same columns work with either.
+    features: clientSide ? (clientTableFeatures as DataTableFeatures) : dataTableFeatures,
     data,
     columns,
-    rowCount,
+    rowCount: clientSide ? undefined : rowCount,
     ...options,
+    ...(clientSide && { manualSorting: false, manualPagination: false, manualFiltering: false }),
   })
   const rows = table.getRowModel().rows
   const pageIndex = table.state.pagination.pageIndex

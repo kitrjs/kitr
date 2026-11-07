@@ -5,6 +5,27 @@ import { nextRecipes } from './recipes-next'
 
 export type { Recipe } from './recipe'
 
+/** The router call `kitr add` writes, and the one `add auth` turns it into. */
+const PLAIN_ROUTER_CALL = 'return createKitrRouter({ routeTree, app })'
+const SESSION_ROUTER_CALL = `return createKitrRouter({
+    routeTree,
+    app,
+    context: {
+      // A live getter, so requireAuth() sees the session the auth provider restores during boot.
+      get session() {
+        const auth = app.container.has('auth') ? app.container.use('auth') : null
+        return (auth?.session ?? null) as Session<User> | null
+      },
+    },
+  })`
+const SESSION_CONTEXT_TYPE = `
+declare module '@kitr/router' {
+  interface KitrRouterContext {
+    session: Session<User> | null
+  }
+}
+`
+
 export const recipes: Record<string, Recipe> = {
   react: r({
     name: 'react',
@@ -239,7 +260,7 @@ export const recipes: Record<string, Recipe> = {
       )
       ctx.write(
         'app/styles/app.css',
-        `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/theme/styles.css';\n\n@source '../';\n`,
+        `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/theme/styles.css';\n${ctx.exists('app/styles/tokens.css') ? "@import './tokens.css';\n" : ''}\n@source '../';\n`,
       )
       c.replaceCssImport('app/routes/__root.tsx', 'kitr/theme/styles.css', '#app/styles/app.css')
       c.addAgentsSection(
@@ -272,12 +293,46 @@ export const recipes: Record<string, Recipe> = {
         'app/styles/tokens.css',
         `/* Override kitr tokens here. See kitr/theme/styles.css for the full list. */\n:root {\n  /* --kitr-color-primary: oklch(55% 0.2 262); */\n}\n`,
       )
+      // Load the overrides after kitr's tokens: through app.css when Tailwind owns the styles,
+      // otherwise straight from the root route.
+      if (ctx.exists('app/styles/app.css')) {
+        const css = ctx.read('app/styles/app.css')
+        if (!css.includes("'./tokens.css'"))
+          ctx.write(
+            'app/styles/app.css',
+            css.includes("@import 'kitr/theme/styles.css';\n")
+              ? css.replace(
+                  "@import 'kitr/theme/styles.css';\n",
+                  "@import 'kitr/theme/styles.css';\n@import './tokens.css';\n",
+                )
+              : `${css}@import './tokens.css';\n`,
+            { overwrite: true },
+          )
+      } else c.replaceCssImport('app/routes/__root.tsx', undefined, '#app/styles/tokens.css')
+      // Apply the stored theme before first paint: without it every load flashes the default.
+      c.editFile('app/routes/__root.tsx', (_mod, src) =>
+        src.includes('<ThemeScript') || !src.includes('<HeadContent />')
+          ? src
+          : src
+              .replace(
+                /^(import[^\n]*\n)(?!import)/m,
+                "$1import { ThemeScript } from 'kitr/theme'\n",
+              )
+              .replace('<html lang="en">', '<html lang="en" suppressHydrationWarning>')
+              .replace(/( *)<HeadContent \/>/, '$1<ThemeScript />\n$1<HeadContent />'),
+      )
       c.addAgentsSection(
         'theme',
         `- Theme: \`useTheme()\` from \`kitr/theme\` (\`theme\`, \`resolved\`, \`setTheme\`, \`toggle\`); \`data-theme="light|dark"\` on <html>. Put \`<ThemeScript />\` in the document head to avoid a flash.\n- Colours and radii come from the \`--kitr-*\` variables (\`kitr/theme/styles.css\`, overrides in \`app/styles/tokens.css\`); never hard-code them. Plain CSS helpers: \`pick()\`, \`vars()\`, \`dataAttrs()\` from \`kitr/theme\`.\n- Components live in \`app/components/ui/\` and are owned by the app: add more with \`kitr ui add <name>\` (shadcn-compatible registry); toasts via \`kitr ui add sonner\`.\n- Icons: Hugeicons in the stroke-rounded style through \`<Icon icon={Add01Icon} />\` from \`#components/ui/icon\` (\`kitr ui add icon\`), icons from \`@hugeicons/core-free-icons\`. No other icon set, no emoji or glyphs as icons.`,
       )
     },
     unconfigure(_ctx, c) {
+      c.editFile('app/routes/__root.tsx', (_mod, src) =>
+        src
+          .replace("import { ThemeScript } from 'kitr/theme'\n", '')
+          .replace('<html lang="en" suppressHydrationWarning>', '<html lang="en">')
+          .replace(/ *<ThemeScript \/>\n/, ''),
+      )
       c.removeProvider('@kitr/theme/provider')
       c.removePackage('@kitr/theme')
       c.removePackages(['@kitr/theme'])
@@ -302,12 +357,39 @@ export const recipes: Record<string, Recipe> = {
         'config/auth.ts',
         `import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'\nimport { type User, abilities } from '#app/abilities'\nimport { env } from '#app/env'\n\n// Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}).\nconst adapter = tokenAdapter<User>({\n  abilities,\n  storage: localStorageTokens(),\n  fetchUser: async (token) => {\n    const res = await fetch(\`\${env.VITE_API_URL}/me\`, { headers: { authorization: \`Bearer \${token}\` } })\n    return res.ok ? ((await res.json()) as User) : null\n  },\n  signIn: async (credentials) => {\n    const res = await fetch(\`\${env.VITE_API_URL}/sign-in\`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(credentials) })\n    if (!res.ok) throw new Error('Invalid credentials')\n    return (await res.json()) as { token: string; refreshToken?: string }\n  },\n})\n\nexport default defineConfig({ adapter, signInPath: '/sign-in' })\n`,
       )
+      c.addEnvSchema(
+        'public',
+        'VITE_API_URL',
+        "e.url({ default: 'http://localhost:3333' })",
+        'http://localhost:3333',
+      )
+      // requireAuth() reads the session from the router context: wire it into the default router.
+      c.editFile('app/router.tsx', (_mod, src) =>
+        src.includes(PLAIN_ROUTER_CALL) && !src.includes('KitrRouterContext')
+          ? src
+              .replace(
+                "import { createKitrRouter } from 'kitr/router'\n",
+                "import type { Session } from 'kitr/auth'\nimport { createKitrRouter } from 'kitr/router'\nimport type { User } from '#app/abilities'\n",
+              )
+              .replace(PLAIN_ROUTER_CALL, SESSION_ROUTER_CALL)
+              .concat(SESSION_CONTEXT_TYPE)
+          : src,
+      )
       c.addAgentsSection(
         'auth',
         `- Guard routes with \`beforeLoad: requireAuth()\` (from \`kitr/router\`) on a layout route; permissions with \`can('projects.update', { subject })\` or \`useCan()\` in components.\n- The session is \`useSession()\` / \`useUser()\` from \`kitr/auth\`. Abilities are plain functions in \`app/abilities.ts\`, shared with the API middleware (\`kitr/auth/server\`).`,
       )
     },
     unconfigure(_ctx, c) {
+      c.editFile('app/router.tsx', (_mod, src) =>
+        src.includes(SESSION_ROUTER_CALL)
+          ? src
+              .replace("import type { Session } from 'kitr/auth'\n", '')
+              .replace("import type { User } from '#app/abilities'\n", '')
+              .replace(SESSION_ROUTER_CALL, PLAIN_ROUTER_CALL)
+              .replace(SESSION_CONTEXT_TYPE, '')
+          : src,
+      )
       c.removeProvider('@kitr/auth/provider')
       c.removePackage('@kitr/auth')
       c.removePackages(['@kitr/auth'])
@@ -410,10 +492,17 @@ export const recipes: Record<string, Recipe> = {
           )
       }
       if (!serverOnly) {
+        // The client resolves route names through this table: without it every call throws
+        // "Unknown route". `kitr api:sync` rewrites it from server/routes.ts.
+        ctx.write(
+          'app/api/routes.gen.ts',
+          `// Route table for the typed client. Regenerate with \`kitr api:sync\`.\nexport const routeTable = ${JSON.stringify([{ name: 'health', method: 'GET', path: '/api/health' }], null, 2)} as const\n`,
+        )
         ctx.write(
           'app/api/client.ts',
-          `import { createApiClient } from 'kitr/api/client'\nimport type { AppRoutes } from '#server/routes'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\n`,
+          `import { createApiClient, registerRoutes } from 'kitr/api/client'\nimport type { AppRoutes } from '#server/routes'\nimport { routeTable } from './routes.gen'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\nregisterRoutes(api, [...routeTable])\n`,
         )
+        c.addScript('api:sync', 'kitr api:sync')
       }
       c.addAgentsSection(
         'api',
@@ -423,6 +512,7 @@ export const recipes: Record<string, Recipe> = {
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/api')
       c.removePackages(['@kitr/api'])
+      c.removeScripts({ 'api:sync': 'kitr api:sync' })
       c.removeAgentsSection('api')
     },
   }),
@@ -602,17 +692,23 @@ export const recipes: Record<string, Recipe> = {
       )
       ctx.write(
         'app/mocks/browser.ts',
-        `import { setupBrowserMocks } from 'kitr/mocks'\nimport { handlers } from './handlers'\n\n/** Call from main.tsx in dev: \`if (import.meta.env.DEV && import.meta.env.VITE_MOCKS) await enableMocks()\` */\nexport const enableMocks = () => setupBrowserMocks(handlers)\n`,
+        `import { setupBrowserMocks } from 'kitr/mocks'\nimport { handlers } from './handlers'\n\n/**\n * \`await enableMocks()\` in the client entry. Env values are strings, so only \`VITE_MOCKS=true\`\n * turns mocks on (\`false\` would be truthy), and only in dev.\n */\nexport async function enableMocks() {\n  if (import.meta.env.DEV && import.meta.env.VITE_MOCKS === 'true') await setupBrowserMocks(handlers)\n}\n`,
       )
+      // MSW serves from a worker script in public/: \`msw init\` writes it, and msw's postinstall
+      // refreshes it from this field on every install.
+      c.setPackageField('msw', { workerDirectory: ['public'] })
+      c.addScript('mocks:init', 'msw init public')
       c.addEnv({ VITE_MOCKS: 'false' }, 'Set true to serve app/mocks/handlers.ts in the browser')
       c.addAgentsSection(
         'mocks',
-        `- Mocks live in \`app/mocks/handlers.ts\` (MSW). \`VITE_MOCKS=true\` enables them in dev; tests use \`setupNodeMocks(handlers)\`. Mock a kitr route table with \`mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })\`.`,
+        `- Mocks live in \`app/mocks/handlers.ts\` (MSW). \`VITE_MOCKS=true\` enables them in dev (run \`npm run mocks:init\` once if public/mockServiceWorker.js is missing); tests use \`setupNodeMocks(handlers)\`. Mock a kitr route table with \`mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })\`.`,
       )
     },
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/mocks')
       c.removePackages(['@kitr/mocks', 'msw'])
+      c.removePackageField('msw', { workerDirectory: ['public'] })
+      c.removeScripts({ 'mocks:init': 'msw init public' })
       c.removeAgentsSection('mocks')
     },
   }),

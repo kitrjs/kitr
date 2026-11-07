@@ -122,26 +122,7 @@ export const Route = createRootRoute({
 
 Deploy a new build while Ada has the app open. Within the hour (or at her next visit) a bar appears at the bottom: "Version new is ready. **Restart to update** · Later". She clicks **Restart to update**, the page reloads on the new build, and the bar is gone. The service-worker driver does not know version numbers, so it reports `new` until you give it one; see [Show version numbers on the web](#show-version-numbers-on-the-web).
 
-The service only exists in the browser. In an app whose web platform renders on the server (`mode: 'ssr'`), wrap the banner in `ClientOnly` from `kitr/router`, so the server render does not ask for it:
-
-```tsx
-// app/routes/__root.tsx
-import { ClientOnly, createRootRoute, Outlet } from 'kitr/router'
-import { UpdateBanner } from '#app/components/update-banner'
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ClientOnly>
-        <UpdateBanner />
-      </ClientOnly>
-    </>
-  ),
-})
-```
-
-Without it, the server render fails with `[kitr] No binding named "updater". Did you add the package that provides it?`.
+The service only exists in the browser. During server rendering `useUpdate()` reports `idle` with nothing available, so the banner renders nothing there and appears once the browser finds an update.
 
 ## Follow the update status
 
