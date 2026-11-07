@@ -71,5 +71,5 @@ export const ${naming.camel(name)}Channel = defineChannel({
     },
   },
   eject: { 'kitr/realtime': 'partysocket + crossws (or socket.io, or EventSource)' },
-  vite: { optimizeDeps: ['partysocket'] },
+  vite: { optimizeDeps: ['partysocket/ws', 'socket.io-client'] },
 })

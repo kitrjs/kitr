@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { validateManifest } from '../src/manifest'
-import { manifests } from '../src/manifests.gen'
+import { kitManifests, manifests } from '../src/manifests.gen'
 import { platformTypeNames } from '../src/platforms'
 
 const root = join(import.meta.dirname, '../..')
@@ -17,14 +17,19 @@ describe('package manifests', () => {
 
   it.each(packages.map(({ dir, pkg }) => [dir, pkg]))('%s has a valid kitr block', (dir, pkg) => {
     expect(validateManifest(pkg.kitr, names)).toEqual([])
-    expect(pkg.kitr.name).toBe(dir)
+    expect(pkg.kitr.kind === 'kit' ? `kit-${pkg.kitr.name}` : pkg.kitr.name).toBe(dir)
     expect(pkg.keywords).toContain('kitr-package')
   })
 
   it('the generated copy matches every package.json', () => {
     for (const { pkg } of packages)
-      expect(manifests[pkg.kitr.name]).toEqual({ package: pkg.name, ...pkg.kitr })
-    expect(Object.keys(manifests).sort()).toEqual([...names].sort())
+      expect((pkg.kitr.kind === 'kit' ? kitManifests : manifests)[pkg.kitr.name]).toEqual({
+        package: pkg.name,
+        ...pkg.kitr,
+      })
+    expect([...Object.keys(manifests), ...Object.keys(kitManifests)].sort()).toEqual(
+      [...names].sort(),
+    )
   })
 
   it('every package ships a setup module, and platforms say so', () => {

@@ -1,17 +1,21 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { basename, dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import type { PackageDefinition, PackageViteNeeds } from '@kitr/core/package'
+import { pickPackageDefinition, shortPackageName } from '@kitr/core/package'
 import type { Plugin, PluginOption } from 'vite'
 
 export interface KitrPluginOptions {
   /** Project root. Default: Vite's root. */
   root?: string
-  /** Use TanStack Start (SSR, server functions). Default: true when `@kitr/server` is in kitrrc packages. */
+  /** Use TanStack Start (SSR, prerender, server functions). Default: when an installed package asks for it (`router` does). */
   start?: boolean | Record<string, unknown>
-  /** Add @vitejs/plugin-react. Default true when installed. */
-  react?: boolean
-  /** Add @tailwindcss/vite. Default: when `@kitr/tailwind` is in kitrrc packages and the plugin is installed. */
-  tailwind?: boolean
+  /**
+   * Leave out the Vite plugin a package declares, by its short name: `{ tailwind: false }` skips
+   * `@kitr/tailwind/vite`, `{ react: false }` skips `@vitejs/plugin-react`. Default: every declared plugin.
+   */
+  plugins?: Record<string, boolean>
   /** Route files directory. Default `app/routes`. */
   routesDirectory?: string
   generatedRouteTree?: string
@@ -56,8 +60,56 @@ async function loadTypesRunner(root: string): Promise<TypesRunner | undefined> {
   }
 }
 
-/** Config files whose packages import Node built-ins; kept out of client builds. */
-const SERVER_ONLY_CONFIG = ['server', 'api', 'db', 'cache', 'shield', 'jobs', 'mail', 'uploads']
+/**
+ * What the installed packages ask of the build, read from their setup modules (`<package>/kitr`,
+ * the module `kitr add` ran). The plugin knows no package by name: a package that needs a Vite
+ * plugin, pre-bundled deps, a server-only config file or TanStack Start says so there.
+ */
+interface PackageNeeds {
+  /** Full package name, as listed in kitrrc.ts. */
+  package: string
+  /** Short name: `config/<name>.ts`, the `plugins` option key. */
+  name: string
+  needs: PackageViteNeeds
+}
+
+const needsCache = new Map<string, Promise<PackageNeeds | undefined>>()
+
+async function loadPackageNeeds(root: string, pkg: string): Promise<PackageNeeds | undefined> {
+  const key = `${root}\0${pkg}`
+  let pending = needsCache.get(key)
+  if (!pending) {
+    pending = (async () => {
+      const require = createRequire(resolve(root, 'package.json'))
+      let file: string
+      try {
+        file = require.resolve(`${pkg}/kitr`)
+      } catch {
+        // Not installed here, or a package without a setup module: nothing to ask of the build.
+        return undefined
+      }
+      const mod = (await import(pathToFileURL(file).href)) as unknown
+      const definition: PackageDefinition | undefined =
+        pickPackageDefinition(mod) ?? pickPackageDefinition((mod as { default?: unknown }).default)
+      if (!definition) return undefined
+      return { package: pkg, name: definition.name, needs: definition.vite ?? {} }
+    })()
+    needsCache.set(key, pending)
+  }
+  return pending
+}
+
+async function loadNeeds(root: string, packages: string[]): Promise<PackageNeeds[]> {
+  const all = await Promise.all(packages.map((pkg) => loadPackageNeeds(root, pkg)))
+  return all.filter((n): n is PackageNeeds => !!n)
+}
+
+/** Does a provider spec (`@kitr/devtools/provider`, `kitr/devtools/provider`) belong to this package? */
+function providerOf(spec: string, pkg: string): boolean {
+  const short = shortPackageName(pkg)
+  const prefixes = pkg.startsWith('@kitr/') ? [pkg, `kitr/${short}`] : [pkg]
+  return prefixes.some((p) => spec === p || spec.startsWith(`${p}/`))
+}
 
 interface RcPlatform {
   factory: string
@@ -101,29 +153,47 @@ function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | 
 }
 
 /**
- * The kitr() Vite plugin. It reads `kitrrc.ts` at build time and:
- * - wires TanStack Router (or Start), React and Tailwind plugins,
+ * The kitr() Vite plugin. It reads `kitrrc.ts` and the installed packages' `vite` declarations
+ * at build time and:
+ * - wires TanStack Start (or the router plugin) and every plugin a package declares (React, Tailwind),
  * - exposes `virtual:kitr/providers` and `virtual:kitr/config` as static imports,
- * - pre-declares `optimizeDeps` for the blessed stack so dev start never rediscovers.
+ * - pre-declares `optimizeDeps` from the packages' lists so dev start never rediscovers,
+ * - sets the active platform's port, outDir and the `#app`-style aliases.
  */
 export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   let root = options.root ?? defaultRoot()
   let rc = readRc(root)
-  let stripDevtools = false
+  let production = false
   const wantedPlatform = options.platform ?? process.env.KITR_PLATFORM
   let platform = pickPlatform(rc, wantedPlatform)
   const plugins: PluginOption[] = []
+  let needs = loadNeeds(root, rc.packages)
+  /** Config files the installed packages keep out of browser bundles. */
+  let serverOnlyConfig: string[] = []
+  /** Packages whose provider never ships in a production build. */
+  let devOnlyProviders: string[] = []
 
   const core: Plugin = {
     name: 'kitr',
     enforce: 'pre',
     async config(config, env) {
-      stripDevtools =
-        options.devtools === false || (env.command === 'build' && env.mode === 'production')
-      root = options.root ?? config.root ?? process.cwd()
-      rc = readRc(root)
+      production = env.command === 'build' && env.mode === 'production'
+      const nextRoot = options.root ?? config.root ?? process.cwd()
+      if (nextRoot !== root) {
+        root = nextRoot
+        rc = readRc(root)
+        needs = loadNeeds(root, rc.packages)
+      }
       platform = pickPlatform(rc, wantedPlatform)
-      const include = blessedDeps(root)
+      const declared = await needs
+      serverOnlyConfig = declared.filter((n) => n.needs.serverOnlyConfig).map((n) => n.name)
+      devOnlyProviders = declared
+        .filter((n) => n.needs.provider?.production === false)
+        .map((n) => n.package)
+      const include = installedDeps(
+        root,
+        declared.flatMap((n) => n.needs.optimizeDeps ?? []),
+      )
       const port = platform?.options.port
       // Tauri's webview sees TAURI_ENV_* at build time; every native shell wants a fixed port.
       const shell =
@@ -169,9 +239,11 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
     load(id, loadOptions) {
       if (id === '\0virtual:kitr/providers') {
         // Production builds never import the devtools provider, so the overlay is not in the bundle.
-        const specs = stripDevtools
-          ? rc.providers.filter((spec) => !/devtools\/provider$/.test(spec))
-          : rc.providers
+        const dropped = (spec: string) => devOnlyProviders.some((pkg) => providerOf(spec, pkg))
+        const specs =
+          options.devtools === false || production
+            ? rc.providers.filter((spec) => !dropped(spec))
+            : rc.providers
         const imports = specs
           .map((spec, i) => `import p${i} from ${JSON.stringify(spec)}`)
           .join('\n')
@@ -180,7 +252,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       if (id === '\0virtual:kitr/config') {
         const dir = resolve(root, rc.directories.config ?? 'config')
         // Server-only config (config/server.ts imports Node APIs) never reaches the browser bundle.
-        const serverOnly = loadOptions?.ssr ? [] : SERVER_ONLY_CONFIG
+        const serverOnly = loadOptions?.ssr ? [] : serverOnlyConfig
         const files = existsSync(dir)
           ? readdirSync(dir).filter(
               (f) =>
@@ -215,8 +287,10 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       server.watcher.on('change', (file) => {
         if (file === rcPath) {
           rc = readRc(root)
-          const mod = server.moduleGraph.getModuleById('\0virtual:kitr/providers')
-          if (mod) server.moduleGraph.invalidateModule(mod)
+          for (const id of ['\0virtual:kitr/providers', '\0virtual:kitr/config']) {
+            const mod = server.moduleGraph.getModuleById(id)
+            if (mod) server.moduleGraph.invalidateModule(mod)
+          }
         }
       })
       if (options.types === false) return
@@ -254,36 +328,16 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   }
   plugins.push(core)
 
-  // robots.txt from `robots` in config/seo.ts, for web builds that ship no public/robots.txt.
-  plugins.push({
-    name: 'kitr:robots',
-    apply: 'build',
-    async generateBundle() {
-      const env = (
-        this as { environment?: { name: string; config?: { publicDir?: string | false } } }
-      ).environment
-      if (env && env.name !== 'client') return
-      if (platform && platform.type !== 'web') return
-      const publicDir = env?.config?.publicDir ?? resolve(root, 'public')
-      if (publicDir && existsSync(resolve(publicDir, 'robots.txt'))) return
-      const text = await robotsFor(root, rc.directories.config ?? 'config').catch((error) => {
-        this.warn(`config/seo.ts: robots.txt not written (${(error as Error).message})`)
-        return null
-      })
-      if (text) this.emitFile({ type: 'asset', fileName: 'robots.txt', source: text })
-    },
-  })
-
   // Every UI platform renders through TanStack Start: `ssr` streams on the server, `static`
-  // prerenders every page, `spa` (and desktop/mobile shells) ship one prerendered shell.
-  const useStart =
-    options.start ??
-    (rc.packages.includes('@kitr/router') || !!platform || rc.packages.includes('@kitr/server'))
+  // prerenders every page, `spa` (and desktop/mobile shells) ship one prerendered shell. The
+  // router package asks for it; `start: false` keeps the plain router plugin.
   const routesDirectory = options.routesDirectory ?? rc.directories.routes ?? 'app/routes'
   const generatedRouteTree =
     options.generatedRouteTree ?? join(rc.directories.app ?? 'app', 'routeTree.gen.ts')
   plugins.push(
-    (async () => {
+    needs.then(async (declared) => {
+      const wantsStart = declared.some((n) => n.needs.start)
+      const useStart = options.start ?? wantsStart
       if (useStart) {
         const { tanstackStart } = await import('@tanstack/react-start/plugin/vite')
         const startOptions = typeof useStart === 'object' ? useStart : {}
@@ -322,6 +376,8 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           ...startOptions,
         } as any)
       }
+      // No routes without the router package; a plain Vite app brings its own plugins.
+      if (!wantsStart && !options.router) return null
       const { tanstackRouter } = await import('@tanstack/router-plugin/vite')
       return tanstackRouter({
         target: 'react',
@@ -330,25 +386,66 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         generatedRouteTree,
         ...options.router,
       } as any)
-    })(),
+    }),
   )
-  if (options.react !== false) {
-    plugins.push(import('@vitejs/plugin-react').then((m) => m.default()).catch(() => null))
-  }
-  const useTailwind = options.tailwind ?? rc.packages.includes('@kitr/tailwind')
-  if (useTailwind)
-    plugins.push(import('@tailwindcss/vite').then((m) => m.default()).catch(() => null))
+  // The plugins the installed packages declare (`@vitejs/plugin-react` by react, `@kitr/tailwind/vite`
+  // by tailwind), resolved from the project so each comes from the copy the project installed.
+  plugins.push(
+    needs.then(async (declared) => {
+      const require = createRequire(resolve(root, 'package.json'))
+      const out: PluginOption[] = []
+      for (const { name, needs: n } of declared) {
+        if (!n.plugin || options.plugins?.[name] === false) continue
+        try {
+          const mod = (await import(pathToFileURL(require.resolve(n.plugin)).href)) as {
+            default?: (...args: unknown[]) => PluginOption
+          }
+          if (typeof mod.default === 'function') out.push(mod.default())
+        } catch (error) {
+          console.warn(
+            `[kitr/vite] ${name}: its Vite plugin ${n.plugin} could not load (${(error as Error).message})`,
+          )
+        }
+      }
+      return out
+    }),
+  )
+  // robots.txt from `robots` in config/seo.ts, for web builds that ship no public/robots.txt.
+  plugins.push({
+    name: 'kitr:robots',
+    apply: 'build',
+    async generateBundle() {
+      const env = (
+        this as { environment?: { name: string; config?: { publicDir?: string | false } } }
+      ).environment
+      if (env && env.name !== 'client') return
+      if (platform && platform.type !== 'web') return
+      const publicDir = env?.config?.publicDir ?? resolve(root, 'public')
+      if (publicDir && existsSync(resolve(publicDir, 'robots.txt'))) return
+      const text = await robotsFor(root, rc.directories.config ?? 'config').catch((error) => {
+        this.warn(`config/seo.ts: robots.txt not written (${(error as Error).message})`)
+        return null
+      })
+      if (text) this.emitFile({ type: 'asset', fileName: 'robots.txt', source: text })
+    },
+  })
+
   if (platform?.type === 'web' && platform.options.pwa) {
     const active = platform
     plugins.push(
-      import('@kitr/web/vite')
-        .then((m) => m.kitrPwa(active.options as any, appName(root)))
-        .catch((error) => {
-          console.warn(
-            `[kitr/vite] ${active.name}: pwa is on but vite-plugin-pwa could not load (${(error as Error).message})`,
-          )
-          return null
-        }),
+      (async () => {
+        // The web platform's installable build lives next to the platform, not in this plugin.
+        const require = createRequire(resolve(root, 'package.json'))
+        const mod = (await import(pathToFileURL(require.resolve('@kitr/web/vite')).href)) as {
+          kitrPwa: (options: unknown, appName: string) => PluginOption
+        }
+        return mod.kitrPwa(active.options, appName(root))
+      })().catch((error) => {
+        console.warn(
+          `[kitr/vite] ${active.name}: pwa is on but vite-plugin-pwa could not load (${(error as Error).message})`,
+        )
+        return null
+      }),
     )
   }
   return plugins
@@ -474,30 +571,12 @@ export function readRcPlatforms(src: string): Record<string, RcPlatform> {
   return out
 }
 
-const blessed = [
-  'react',
-  'react-dom',
-  'react/jsx-runtime',
-  '@tanstack/react-router',
-  '@tanstack/react-query',
-  '@tanstack/react-table',
-  'react-hook-form',
-  '@hookform/resolvers/standard-schema',
-  'zustand',
-  'ky',
-  'sonner',
-  'clsx',
-  'tailwind-merge',
-  'class-variance-authority',
-  'partysocket/ws',
-  'socket.io-client',
-]
-
-function blessedDeps(root: string): string[] {
+/** The declared pre-bundle list, narrowed to what package.json installs, so dev never asks for a missing dep. */
+function installedDeps(root: string, wanted: string[]): string[] {
   try {
     const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
     const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-    return blessed.filter(
+    return [...new Set(wanted)].filter(
       (d) =>
         d
           .split('/')

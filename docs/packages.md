@@ -67,7 +67,7 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 | Kit | Platforms | Packages |
 | --- | --- | --- |
-| `blank` | `site: web({ mode: 'spa' })` | router, query |
+| `blank` | none | none: `package.json`, `tsconfig.json`, `kitrrc.ts`, `biome.json`, `.gitignore`, `.env.example`, `AGENTS.md`. `kitr add web site` (or any platform) brings Vite, React and the router. |
 | `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools, plus eleven registry components (including `icon`, Hugeicons stroke-rounded) |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |
@@ -79,6 +79,8 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform; installable PWA and the Capacitor shell |
 
 `kitr new <dir> --platform admin=web,api=server --mode spa --runtime bun` replaces a kit's platforms; `--targets`, `--pwa` and `--port` set the first platform's options.
+
+Every kit but `blank` is a package of its own (`@kitr/kit-saas`, `@kitr/kit-server`), a setup module with `kind: 'kit'` that names the platforms, the packages with their answers, the registry components and the files to write. The CLI loads it the way it loads any setup module, runs it once and never lists it in the project: a kit is a template, not a dependency. `kitr new my-app --kit @acme/starter` runs a kit from any npm package the same way.
 
 ## Roadmap
 

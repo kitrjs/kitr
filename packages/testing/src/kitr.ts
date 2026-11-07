@@ -16,9 +16,10 @@ export default definePackage({
             { name: 'happy-dom', dev: true },
           ]),
     )
+    ctx.scripts.add('test', 'vitest run')
     ctx.write(
       'vitest.config.ts',
-      `import { defineConfig } from 'vitest/config'\n${serverOnly ? '' : "import { kitr } from 'kitr/vite'\n"}\nexport default defineConfig({\n${serverOnly ? '' : '  plugins: [kitr({ react: true, tailwind: false })],\n'}  test: {\n    environment: '${serverOnly ? 'node' : 'happy-dom'}',\n    include: ['app/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],\n  },\n})\n`,
+      `import { defineConfig } from 'vitest/config'\n${serverOnly ? '' : "import { kitr } from 'kitr/vite'\n"}\nexport default defineConfig({\n${serverOnly ? '' : '  plugins: [kitr({ plugins: { tailwind: false } })],\n'}  test: {\n    environment: '${serverOnly ? 'node' : 'happy-dom'}',\n    include: ['app/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],\n  },\n})\n`,
     )
     ctx.write(
       'test/example.test.ts',
@@ -32,6 +33,7 @@ export default definePackage({
     )
   },
   remove(ctx) {
+    ctx.scripts.remove('test', 'vitest run')
     ctx.agents.remove('testing')
   },
   generators: {

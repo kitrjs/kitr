@@ -3,10 +3,12 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { defineCommand } from 'citty'
+import { createAddContext } from '../add-context'
 import { Codemods } from '../codemods'
 import { configurePackages } from '../configure'
 import { createContext, detectPackageManager, log, type PackageManager } from '../context'
-import { type KitName, kits } from '../kits'
+import { kitAnswers, kitNames, kitPackageNames, loadKit } from '../kits'
+import { base } from '../kits-base'
 import { cliResolve } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { generateTypesQuietly } from '../types'
@@ -21,7 +23,7 @@ export const newCommand = defineCommand({
     name: { type: 'positional', description: 'Directory name', required: true },
     kit: {
       type: 'string',
-      description: `Starter kit: ${Object.keys(kits).join(' | ')}`,
+      description: `Starter kit: ${kitNames.join(' | ')}, or a package that exports one`,
       default: 'blank',
     },
     platform: {
@@ -46,8 +48,8 @@ export const newCommand = defineCommand({
     force: { type: 'boolean', description: 'Allow a non-empty directory', default: false },
   },
   async run({ args }) {
-    const kit = kits[args.kit as KitName]
-    if (!kit) throw new Error(`Unknown kit "${args.kit}". Kits: ${Object.keys(kits).join(', ')}`)
+    if (!kitNames.includes(args.kit) && !args.kit.includes('/'))
+      throw new Error(`Unknown kit "${args.kit}". Kits: ${kitNames.join(', ')}`)
     const dir = resolve(args.name)
     if (existsSync(dir) && readdirSync(dir).length && !args.force)
       throw new Error(`${dir} is not empty (use --force)`)
@@ -59,21 +61,24 @@ export const newCommand = defineCommand({
       .pop()!
       .replace(/[^a-z0-9-_.]/gi, '-')
       .toLowerCase()
-    log.title(`Creating ${projectName} with the ${kit.name} kit`)
-    kit.base(ctx, projectName)
+    log.title(`Creating ${projectName} with the ${args.kit} kit`)
+    base(ctx, projectName)
     ctx.pkg = JSON.parse(ctx.read('package.json'))
     ctx.rcPath = ctx.path('kitrrc.ts')
+    const kit = await loadKit(ctx, args.kit, { install: args.install })
     const codemods = new Codemods(ctx)
+    const kitPackages = kitPackageNames(kit)
     const platforms = parsePlatformArg(args.platform) ?? kit.platforms ?? {}
     // What the platforms need (react, router, server...) goes first, so later recipes find app/env.ts and friends.
     const platformRequires: string[] = []
     for (const spec of Object.values(platforms))
       platformRequires.push(...((await loadFactory(ctx, spec.type))({}).definition.requires ?? []))
     const added = new Set<string>()
-    await configurePackages(ctx, codemods, [...platformRequires, ...kit.packages], {
+    await configurePackages(ctx, codemods, [...platformRequires, ...kitPackages], {
       install: args.install,
       yes: true,
       added,
+      answers: kitAnswers(kit),
     })
     await codemods.flush({ install: false })
     let first = true
@@ -92,7 +97,7 @@ export const newCommand = defineCommand({
       ctx.pkg = JSON.parse(ctx.read('package.json'))
     }
     await codemods.flush({ install: false })
-    if (kit.components?.length && kit.packages.includes('theme')) {
+    if (kit.components?.length && kitPackages.includes('theme')) {
       // The registry client lives with the theme package (`kitr ui add`); the CLI resolves it the way it resolves setup modules.
       const commands = cliResolve('@kitr/theme', 'commands')
       if (!commands)
@@ -108,7 +113,14 @@ export const newCommand = defineCommand({
       }
       await addComponents(ctx, kit.components, { registry: args.registry, overwrite: true })
     }
-    await kit.extra?.(ctx, projectName)
+    if (kit.files) {
+      await kit.files(createAddContext(ctx, codemods, {}, added), projectName)
+      ctx.pkg = JSON.parse(ctx.read('package.json'))
+    }
+    // A kit that had to be installed to run is a template, not a dependency: drop it again.
+    if (kit.package && kit.package in { ...ctx.pkg.dependencies, ...ctx.pkg.devDependencies })
+      codemods.removePackages([kit.package])
+    await codemods.flush({ install: false })
     if (args.git && !existsSync(ctx.path('.git'))) {
       try {
         execSync('git init -q', { cwd: dir })

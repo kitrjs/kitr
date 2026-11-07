@@ -46,6 +46,7 @@ export const categories = {
   device: 'Device features',
   insights: 'Analytics & errors',
   'dev-tools': 'Developer tools',
+  kits: 'Kits',
 } as const
 
 export type KitrCategory = keyof typeof categories

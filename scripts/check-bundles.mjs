@@ -9,6 +9,7 @@
 // 5. server entries never pull React into their import graph
 // 6. browser entries never import node: builtins
 // 7. size budgets (gzip) per entry, so an accidental bundle-in shows up
+// 8. the umbrella depends on core and the CLI only; every other subpath is an optional peer
 import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
@@ -118,6 +119,13 @@ const budgets = {
   '@kitr/desktop': 20 * 1024,
   '@kitr/tauri': 20 * 1024,
   '@kitr/web': 16 * 1024,
+  // Kit packages are nothing but file templates.
+  '@kitr/kit-saas': 40 * 1024,
+  '@kitr/kit-site': 40 * 1024,
+  '@kitr/kit-realtime': 32 * 1024,
+  '@kitr/kit-desktop': 16 * 1024,
+  '@kitr/kit-tauri': 16 * 1024,
+  '@kitr/kit-mobile': 16 * 1024,
 }
 
 const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]))
@@ -246,6 +254,26 @@ for (const [dir, pkg] of manifests) {
         spec,
         `${(size / 1024).toFixed(1)} kB gzip over the ${(budget / 1024).toFixed(0)} kB budget`,
       )
+  }
+}
+
+// 8. a blank project installs only the core and the CLI: every other `kitr/*` subpath is an
+//    optional peer that `kitr add <package>` brings in. A hard dependency here would ship to
+//    every project whether it uses the package or not.
+{
+  const umbrella = manifests.get('kitr')
+  const hard = Object.keys(umbrella.dependencies ?? {}).sort()
+  const allowed = ['@kitr/cli', '@kitr/core']
+  if (hard.join() !== allowed.join())
+    fail(
+      'kitr',
+      `dependencies must be exactly ${allowed.join(', ')} (got ${hard.join(', ')}); make the rest optional peers`,
+    )
+  for (const [dir, pkg] of manifests) {
+    if (dir === 'kitr' || dir === 'core' || dir === 'cli') continue
+    if (!umbrella.peerDependencies?.[pkg.name]) continue
+    if (!umbrella.peerDependenciesMeta?.[pkg.name]?.optional)
+      fail('kitr', `peer ${pkg.name} must be optional`)
   }
 }
 
