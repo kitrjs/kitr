@@ -34,6 +34,8 @@ function Unlock() {
 }
 ```
 
+On the web, `biometrics` uses WebAuthn with the device's own authenticator (Touch ID, Windows Hello, the Android screen lock): the first `authenticate()` registers a credential for this site on this device, and later calls ask for it. It proves someone is at the device, not who they are to your server; for sign-in, verify a passkey assertion on the server.
+
 `useGeolocation({ watch: true })` keeps `position` fresh while mounted. Calling an unsupported capability rejects with `UnsupportedError`, so check `supported` first or catch it once in an error boundary.
 
 ## Drivers

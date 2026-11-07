@@ -210,6 +210,8 @@ export function createUpdater(config: UpdaterConfig = {}, app?: KitrApp): Update
       return state
     },
     async check() {
+      // An interval tick during a download must not reset 'downloading' or 'ready' to 'checking'.
+      if (state.status === 'downloading' || state.status === 'ready') return state.update
       set({ status: 'checking', error: null })
       try {
         const update = await driver.check()
@@ -226,7 +228,8 @@ export function createUpdater(config: UpdaterConfig = {}, app?: KitrApp): Update
       }
     },
     async apply() {
-      if (!state.update) return
+      // Once is enough: a double click (or auto plus a click) must not install twice.
+      if (!state.update || state.status === 'downloading' || state.status === 'ready') return
       set({ status: 'downloading', progress: 0 })
       try {
         await driver.apply((fraction) => set({ progress: fraction }))
@@ -252,11 +255,15 @@ export function createUpdater(config: UpdaterConfig = {}, app?: KitrApp): Update
     },
   }
 
-  driver.currentVersion?.().then((v) => set({ currentVersion: v }))
+  driver
+    .currentVersion?.()
+    .then((v) => set({ currentVersion: v }))
+    .catch((error) => log('version unknown', error))
   if (driver.onAvailable)
     stops.push(
       driver.onAvailable((update) => {
         if (update.version === dismissed) return
+        if (state.status === 'downloading' || state.status === 'ready') return
         set({ status: 'available', update })
         log('available', update)
         if (config.auto) void updater.apply()
