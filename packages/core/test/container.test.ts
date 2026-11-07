@@ -77,3 +77,31 @@ describe('Container', () => {
     expect(await child.make('shared')).toBe(parent.use('shared'))
   })
 })
+
+describe('scoped bindings', () => {
+  it('builds one instance per container, sharing within it', async () => {
+    const { Container } = await import('../src')
+    const root = new Container()
+    let n = 0
+    root.scoped('cache', () => ({ id: ++n }))
+    root.singleton('shared', () => ({ s: true }))
+    const a = root.child()
+    const b = root.child()
+    expect(a.use('cache')).toBe(a.use('cache'))
+    expect(a.use('cache')).not.toBe(b.use('cache'))
+    expect(root.use('cache')).not.toBe(a.use('cache'))
+    expect(await b.make('cache')).toBe(b.use('cache'))
+    expect(a.use('shared')).toBe(b.use('shared'))
+    const grandchild = a.child()
+    expect(grandchild.use('cache')).not.toBe(a.use('cache'))
+  })
+
+  it('a child built before the root resolved still gets its own instance', async () => {
+    const { Container } = await import('../src')
+    const root = new Container()
+    root.scoped('cache', async () => ({}))
+    await root.resolveAll()
+    const child = root.child()
+    expect(await child.make('cache')).not.toBe(root.use('cache'))
+  })
+})

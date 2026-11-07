@@ -36,7 +36,11 @@ declare module '@kitr/core' {
 export function createKitrRouter<TRouteTree extends AnyRoute>(
   options: CreateKitrRouterOptions<TRouteTree>,
 ): Router<TRouteTree, 'never', true> {
-  const { app, queryClient, context, ...rest } = options
+  const { app: rootApp, queryClient, context, ...rest } = options
+  // On the server the router is built once per request (TanStack Start calls getRouter() each
+  // time) while the app is a module singleton. Fork it so request-scoped services, like the
+  // query cache, and the `router` binding below belong to this request only.
+  const app = typeof window === 'undefined' ? rootApp.fork() : rootApp
   const client =
     queryClient ?? (app.container.has('queryClient') ? app.container.use('queryClient') : undefined)
   const router = createRouter({

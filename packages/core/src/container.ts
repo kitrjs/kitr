@@ -28,6 +28,7 @@ export class Container {
   private factories = new Map<string, Factory<unknown>>()
   private instances = new Map<string, unknown>()
   private pending = new Map<string, Promise<unknown>>()
+  private scopedKeys = new Set<string>()
 
   constructor(private readonly parent?: Container) {}
 
@@ -39,9 +40,41 @@ export class Container {
     return this
   }
 
+  /**
+   * Register a lazy binding with one instance per container: the app container and every
+   * `child()` (a request, a test) each build their own. Use it for per-user state such as a
+   * query cache, which must never be shared between server requests.
+   */
+  scoped<K extends BindingKey>(key: K, factory: Factory<Binding<K>>): this {
+    this.singleton(key, factory)
+    this.scopedKeys.add(key)
+    return this
+  }
+
+  /**
+   * Where `key` resolves from: a cached instance or factory here, or the nearest ancestor's.
+   * A scoped factory found on an ancestor is run in this container instead.
+   */
+  private locate(key: string): { owner: Container; build: boolean } | undefined {
+    if (this.instances.has(key) || this.factories.has(key)) return { owner: this, build: true }
+    for (let c = this.parent; c; c = c.parent) {
+      if (c.factories.has(key)) return { owner: c, build: !c.scopedKeys.has(key) }
+      // An ancestor's own instance of a scoped binding belongs to that ancestor, not to us.
+      if (c.instances.has(key) && !c.isScoped(key)) return { owner: c, build: true }
+    }
+    return undefined
+  }
+
+  private isScoped(key: string): boolean {
+    for (let c: Container | undefined = this; c; c = c.parent)
+      if (c.factories.has(key)) return c.scopedKeys.has(key)
+    return false
+  }
+
   /** Bind an already-built value. */
   value<K extends BindingKey>(key: K, value: Binding<K>): this {
     this.factories.delete(key)
+    this.scopedKeys.delete(key)
     this.instances.set(key, value)
     return this
   }
@@ -55,11 +88,10 @@ export class Container {
     if (this.instances.has(key)) return this.instances.get(key) as Binding<K>
     const inflight = this.pending.get(key)
     if (inflight) return inflight as Promise<Binding<K>>
-    const factory = this.factories.get(key)
-    if (!factory) {
-      if (this.parent) return this.parent.make(key)
-      throw new Error(`[kitr] No binding named "${key}". Did you add the package that provides it?`)
-    }
+    const found = this.locate(key)
+    if (!found) throw missing(key)
+    if (found.owner !== this && found.build) return found.owner.make(key)
+    const factory = (this.factories.get(key) ?? found.owner.factories.get(key))!
     const promise = Promise.resolve()
       .then(() => factory(this))
       .then(
@@ -84,11 +116,10 @@ export class Container {
    */
   use<K extends BindingKey>(key: K): Binding<K> {
     if (this.instances.has(key)) return this.instances.get(key) as Binding<K>
-    const factory = this.factories.get(key)
-    if (!factory) {
-      if (this.parent) return this.parent.use(key)
-      throw new Error(`[kitr] No binding named "${key}". Did you add the package that provides it?`)
-    }
+    const found = this.locate(key)
+    if (!found) throw missing(key)
+    if (found.owner !== this && found.build) return found.owner.use(key)
+    const factory = (this.factories.get(key) ?? found.owner.factories.get(key))!
     const instance = factory(this)
     if (instance instanceof Promise) {
       throw new Error(
@@ -120,4 +151,8 @@ export class Container {
     this.instances.clear()
     this.pending.clear()
   }
+}
+
+function missing(key: string) {
+  return new Error(`[kitr] No binding named "${key}". Did you add the package that provides it?`)
 }

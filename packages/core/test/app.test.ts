@@ -147,3 +147,20 @@ describe('getDevtools', () => {
     expect(getDevtools(app)).toBe(hub)
   })
 })
+
+describe('fork before boot', () => {
+  it('a fork of an unbooted app boots through the parent and reports its phase', async () => {
+    const { createApp, defineProvider } = await import('../src')
+    let boots = 0
+    const app = createApp({
+      providers: [defineProvider({ name: 'p', boot: () => void boots++ })],
+    })
+    const child = app.fork()
+    expect(child.status).toBe('created')
+    await child.boot()
+    expect(child.status).toBe('booted')
+    expect(app.status).toBe('booted')
+    await app.fork().boot()
+    expect(boots).toBe(1)
+  })
+})

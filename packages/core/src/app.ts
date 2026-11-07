@@ -113,8 +113,15 @@ export class KitrApp {
       providers: this.providers,
       inputs: [],
       phase: this.phase,
-      booting: Promise.resolve(child),
     })
+    // A fork shares the parent's providers, so it boots by booting the parent (once), then
+    // takes on its phase. Forking before boot is normal: TanStack Start builds the router,
+    // and with it the per-request fork, before anything has awaited app.boot().
+    child.boot = () =>
+      this.boot().then(() => {
+        child.phase = this.phase
+        return child
+      })
     return child
   }
 
