@@ -119,10 +119,9 @@ The "Make kitr core minimal and fully opt-in" work moves each package's setup ou
 - **Configure documents what `ctx.config()` writes.** The code block in Configure is the same text the codemod writes, comments included, so a reader comparing the two sees no difference.
 - **Commands documents `commands` and `generators`.** Every entry in those maps is a row in the Commands table. `doctor` checks are documented as a short list under Commands ("`kitr doctor` warns when ...").
 - **Remove is one sentence** at the end of Install: "`kitr remove <name>` reverses every step above", plus anything it leaves behind on purpose.
-- **Kits become packages**, so a kit's docs follow this file too, with the Tasks replaced by a walkthrough of the pages, controllers and tests the kit scaffolds.
+- **Kits are packages** (`@kitr/kit-<name>`), documented together in `docs/kits.md`: one section per kit with its platforms, packages, components and a walkthrough of the pages, controllers and tests it scaffolds, instead of a guide per kit.
 - The platform packages (web, server, desktop, mobile) own their options, scaffold and tooling, so their guides carry the full options table today held in `docs/platforms.md`. That page becomes an index linking to the four guides.
 
-Until the rework lands for a package, document what the CLI recipe does today, in the same list form, so the content is right when the code moves.
 
 ## Gap list
 
