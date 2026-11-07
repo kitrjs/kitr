@@ -1,0 +1,52 @@
+[
+  {
+    "title": "Start here",
+    "pages": [
+      { "slug": "getting-started" },
+      { "slug": "project-structure" },
+      { "slug": "configuration" }
+    ]
+  },
+  {
+    "title": "Guides",
+    "pages": [
+      { "slug": "data" },
+      { "slug": "dashboard" },
+      { "slug": "fullstack" },
+      {
+        "slug": "pure-backend",
+        "source": "../../../docs/pure-backend.md",
+        "title": "A backend without React",
+        "description": "Build an API server with controllers, a typed client and sockets, and no React anywhere."
+      },
+      { "slug": "agents" }
+    ]
+  },
+  {
+    "title": "Extending kitr",
+    "pages": [{ "slug": "building-packages" }]
+  },
+  {
+    "title": "Reference",
+    "pages": [
+      {
+        "slug": "cli",
+        "source": "../../../docs/cli.md",
+        "title": "CLI",
+        "description": "Every kitr command and flag."
+      },
+      {
+        "slug": "entry-points",
+        "source": "../../../docs/entry-points.md",
+        "title": "Entry points",
+        "description": "How kitr/* imports map to packages, and the rules behind them."
+      },
+      {
+        "slug": "departures",
+        "source": "../../../docs/departures.md",
+        "title": "Design decisions",
+        "description": "Where kitr deliberately differs from the obvious approach, and why."
+      }
+    ]
+  }
+]

@@ -24,7 +24,7 @@ Three steps: let the route accept table search params, bind the table to them, a
 
 ```tsx
 // app/routes/projects/index.tsx
-import { createFileRoute } from 'kitr/router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from 'kitr/query'
 import { parseTableSearch, useUrlTableState } from 'kitr/table'
 import { DataTable } from '#app/components/ui/data-table'

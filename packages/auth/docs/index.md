@@ -88,7 +88,8 @@ Put a guard on a layout route and every page under it requires a signed-in user:
 
 ```ts
 // app/routes/_app.tsx
-import { createFileRoute, requireAuth } from 'kitr/router'
+import { createFileRoute } from '@tanstack/react-router'
+import { requireAuth } from 'kitr/router'
 
 export const Route = createFileRoute('/_app')({ beforeLoad: requireAuth() })
 ```
