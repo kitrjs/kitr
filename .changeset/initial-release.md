@@ -7,6 +7,8 @@
 "@kitr/router": minor
 "@kitr/forms": minor
 "@kitr/table": minor
+"@kitr/animation": minor
+"@kitr/3d": minor
 "@kitr/state": minor
 "@kitr/tailwind": minor
 "@kitr/logger": minor
