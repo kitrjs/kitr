@@ -37,12 +37,30 @@ function gateMonitoring(app: any, consent: Consent, category: string | false) {
   const monitoring = app.container.use('monitoring')
   const allowed = consent.has(category)
   if (monitoring.__consentGate === undefined) {
-    const original = monitoring.captureException.bind(monitoring)
-    monitoring.captureException = (error: unknown, context?: unknown) => {
-      if (monitoring.__consentGate) original(error, context)
+    // Everything that sends data out waits for consent, not only exceptions: messages and
+    // breadcrumbs carry page content, and setUser carries who the visitor is.
+    for (const method of ['captureException', 'captureMessage', 'addBreadcrumb', 'setTag']) {
+      const original = monitoring[method]?.bind(monitoring)
+      if (!original) continue
+      monitoring[method] = (...args: unknown[]) => {
+        if (monitoring.__consentGate) original(...args)
+      }
+    }
+    const setUser = monitoring.setUser?.bind(monitoring)
+    if (setUser) {
+      monitoring.__consentSetUser = setUser
+      monitoring.setUser = (user: unknown) => {
+        // Kept, so granting consent later identifies the visitor without the app asking again.
+        monitoring.__consentUser = user
+        if (monitoring.__consentGate) setUser(user)
+      }
     }
   }
+  const was = monitoring.__consentGate
   monitoring.__consentGate = allowed
+  const setUser = monitoring.__consentSetUser
+  if (setUser && was !== allowed && monitoring.__consentUser !== undefined)
+    setUser(allowed ? monitoring.__consentUser : null)
 }
 
 export default consentProvider

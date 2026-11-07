@@ -139,6 +139,20 @@ export function createOffline(
   }
   client.getQueryCache().subscribe(schedule)
   client.getMutationCache().subscribe(schedule)
+  // A mutation queued in the last second before the tab closes (or the app is backgrounded and
+  // killed) must still be written: flush the throttle instead of dropping it.
+  const flush = () => {
+    if (!timer) return
+    clearTimeout(timer)
+    timer = undefined
+    offline.persist()
+  }
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush()
+    })
+  }
   onlineManager.subscribe(notify)
   return offline
 }
