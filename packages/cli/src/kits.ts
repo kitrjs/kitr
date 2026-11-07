@@ -55,6 +55,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
       'devtools',
     ],
     components: [
+      'icon',
       'button',
       'input',
       'label',
@@ -90,6 +91,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
       'realtime',
     ],
     components: [
+      'icon',
       'button',
       'input',
       'label',

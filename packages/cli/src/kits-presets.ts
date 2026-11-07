@@ -467,9 +467,11 @@ function SignInPage() {
 import { type Session, useAuth, useUser } from 'kitr/auth'
 import { Outlet, requireAuth, useNavigate } from 'kitr/router'
 import { ssrRoute } from 'kitr/seo'
+import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'
+import { Icon } from '#components/ui/icon'
 
 /**
  * Pathless layout: everything under it needs a session. The guard runs on the client only
@@ -495,8 +497,8 @@ function AppLayout() {
     <AppShell
       brand="${brand}"
       nav={[
-        { to: '/', label: 'Overview' },
-        { to: '/projects', label: 'Projects' },
+        { to: '/', label: 'Overview', icon: <Icon icon={Home01Icon} /> },
+        { to: '/projects', label: 'Projects', icon: <Icon icon={Folder01Icon} /> },
       ]}
       user={
         <div className="flex items-center gap-2 text-sm">
@@ -509,6 +511,7 @@ function AppLayout() {
               await navigate({ to: '/sign-in', search: { redirect: undefined } })
             }}
           >
+            <Icon icon={Logout01Icon} />
             Sign out
           </Button>
         </div>
@@ -1328,10 +1331,12 @@ function BlogIndexPage() {
   write(
     ctx,
     'app/routes/blog/$slug.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
+    `import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
+import { createFileRoute } from '@tanstack/react-router'
 import { Link, notFound } from 'kitr/router'
 import { seo } from 'kitr/seo'
 import { getPost } from '#app/content/posts'
+import { Icon } from '#components/ui/icon'
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: ({ params }) => {
@@ -1356,8 +1361,12 @@ function PostPage() {
   const post = Route.useLoaderData()
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
-      <Link to="/blog" className="text-sm text-muted-foreground hover:underline">
-        ← Blog
+      <Link
+        to="/blog"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+      >
+        <Icon icon={ArrowLeft01Icon} size={14} />
+        Blog
       </Link>
       <article className="mt-4">
         <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
@@ -2072,6 +2081,7 @@ function displayName(name: string) {
 }
 
 const appComponents = [
+  'icon',
   'button',
   'input',
   'label',
@@ -2129,7 +2139,7 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
       'seo',
       'api',
     ],
-    components: ['button', 'input', 'label', 'card', 'form', 'page-header', 'theme-toggle'],
+    components: ['icon', 'button', 'input', 'label', 'card', 'form', 'page-header', 'theme-toggle'],
     base: baseReact,
     extra: siteExtra,
   },

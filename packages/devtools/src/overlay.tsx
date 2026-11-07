@@ -1,5 +1,6 @@
 import type { DevtoolsAction, DevtoolsPanel, KitrApp } from '@kitr/core'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { Icon, icons, panelIcons } from './icon'
 import type { DevtoolsConfig } from './index'
 import { useHub } from './panels'
 import { Button, styles } from './ui'
@@ -109,10 +110,10 @@ export function DevtoolsOverlay({ app }: { app: KitrApp }) {
             ))}
             <span className="kitr-dt-spacer" />
             <Button onClick={() => setPalette(true)} title="Command palette (ctrl/cmd+shift+P)">
-              ⌘ actions
+              <Icon icon={icons.command} /> actions
             </Button>
             <Button onClick={() => setOpen(false)} title="Close (ctrl/cmd+shift+K)">
-              ✕
+              <Icon icon={icons.close} />
             </Button>
           </div>
           <div className="kitr-dt-body">
@@ -173,6 +174,7 @@ function Tab({
       className={`kitr-dt-tab${active ? ' kitr-dt-tab-active' : ''}`}
       onClick={onClick}
     >
+      {panelIcons[panel.id] ? <Icon icon={panelIcons[panel.id]!} /> : null}
       {panel.label}
       {badge}
     </button>

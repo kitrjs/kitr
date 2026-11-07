@@ -54,7 +54,7 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 | Kit | Platforms | Packages |
 | --- | --- | --- |
 | `blank` | `site: web({ mode: 'spa' })` | router, query |
-| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools, plus ten registry components |
+| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools, plus eleven registry components (including `icon`, Hugeicons stroke-rounded) |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |
 | `saas` | `site` (ssr), `api` | the fullstack set with analytics and monitoring; sign-in, guarded shell, projects CRUD, tests |

@@ -1,4 +1,11 @@
 import {
+  ArrowDown01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ArrowUp01Icon,
+  ArrowUpDownIcon,
+} from '@hugeicons/core-free-icons'
+import {
   type ColumnDef,
   type DataTableFeatures,
   dataTableFeatures,
@@ -9,6 +16,7 @@ import {
 import { cn } from 'kitr/tailwind'
 import type { ReactNode } from 'react'
 import { Button } from '#components/ui/button'
+import { Icon } from '#components/ui/icon'
 
 export interface DataTableProps<TData extends RowData>
   extends Partial<Omit<TableOptions<DataTableFeatures, TData>, 'data' | 'columns' | 'features'>> {
@@ -65,9 +73,17 @@ export function DataTable<TData extends RowData>({
                           onClick={header.column.getToggleSortingHandler()}
                         >
                           <table.FlexRender header={header} />
-                          <span aria-hidden>
-                            {sorted === 'asc' ? '↑' : sorted === 'desc' ? '↓' : ''}
-                          </span>
+                          <Icon
+                            icon={
+                              sorted === 'asc'
+                                ? ArrowUp01Icon
+                                : sorted === 'desc'
+                                  ? ArrowDown01Icon
+                                  : ArrowUpDownIcon
+                            }
+                            size={14}
+                            className={sorted ? undefined : 'opacity-50'}
+                          />
                         </button>
                       ) : (
                         <table.FlexRender header={header} />
@@ -114,6 +130,7 @@ export function DataTable<TData extends RowData>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
+            <Icon icon={ArrowLeft01Icon} size={14} />
             Previous
           </Button>
           <Button
@@ -123,6 +140,7 @@ export function DataTable<TData extends RowData>({
             disabled={!table.getCanNextPage()}
           >
             Next
+            <Icon icon={ArrowRight01Icon} size={14} />
           </Button>
         </div>
       </div>

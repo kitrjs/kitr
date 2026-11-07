@@ -196,6 +196,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -347,6 +353,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -513,6 +525,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/actions':
         specifier: workspace:*
         version: link:../../packages/actions
@@ -706,6 +724,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -1023,6 +1047,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -1195,6 +1225,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -1594,6 +1630,12 @@ importers:
 
   packages/devtools:
     dependencies:
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
@@ -2341,6 +2383,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/forms':
         specifier: workspace:*
         version: link:../packages/forms

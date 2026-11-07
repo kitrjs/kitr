@@ -1,5 +1,6 @@
 import type { DevtoolsEntry } from '@kitr/core'
 import { type ReactNode, useState } from 'react'
+import { Icon, icons } from './icon'
 
 /* Small, dependency-free building blocks that contributed panels can reuse. */
 
@@ -31,7 +32,7 @@ export function JsonView({
   return (
     <span>
       <button type="button" className="kitr-dt-toggle" onClick={() => setExpanded((e) => !e)}>
-        {expanded ? '▾' : '▸'} {label}
+        <Icon icon={expanded ? icons.expanded : icons.collapsed} size={12} /> {label}
       </button>
       {expanded ? (
         <div className="kitr-dt-indent">
@@ -153,10 +154,10 @@ export const styles = `
 .kitr-dt-key{color:#93c5fd;white-space:nowrap}
 .kitr-dt-table td.kitr-dt-key{width:1%;padding-right:16px}
 .kitr-dt-string{color:#86efac}.kitr-dt-number{color:#fcd34d}.kitr-dt-boolean{color:#f0abfc}.kitr-dt-undefined,.kitr-dt-object{color:#9ca3af}.kitr-dt-error{color:#fca5a5}
-.kitr-dt-toggle{background:none;border:0;color:#9ca3af;cursor:pointer;font:inherit;padding:0}
+.kitr-dt-toggle{background:none;border:0;color:#9ca3af;cursor:pointer;font:inherit;padding:0;display:inline-flex;align-items:center;gap:2px}
 .kitr-dt-indent{padding-left:14px;border-left:1px solid #1f2937;margin-left:3px}
 .kitr-dt-pre{margin:0;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow:auto;color:#d1d5db}
-.kitr-dt-btn{background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;cursor:pointer;font:inherit}
+.kitr-dt-btn{background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;cursor:pointer;font:inherit;display:inline-flex;align-items:center;gap:4px}
 .kitr-dt-btn:hover{background:#374151}
 .kitr-dt-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .kitr-dt-input{background:#111827;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;font:inherit;min-width:160px}

@@ -273,7 +273,7 @@ export const recipes: Record<string, Recipe> = {
       )
       c.addAgentsSection(
         'theme',
-        `- Theme: \`useTheme()\` from \`kitr/theme\` (\`theme\`, \`resolved\`, \`setTheme\`, \`toggle\`); \`data-theme="light|dark"\` on <html>. Put \`<ThemeScript />\` in the document head to avoid a flash.\n- Colours and radii come from the \`--kitr-*\` variables (\`kitr/theme/styles.css\`, overrides in \`app/styles/tokens.css\`); never hard-code them. Plain CSS helpers: \`pick()\`, \`vars()\`, \`dataAttrs()\` from \`kitr/theme\`.\n- Components live in \`app/components/ui/\` and are owned by the app: add more with \`kitr ui add <name>\` (shadcn-compatible registry); toasts via \`kitr ui add sonner\`.`,
+        `- Theme: \`useTheme()\` from \`kitr/theme\` (\`theme\`, \`resolved\`, \`setTheme\`, \`toggle\`); \`data-theme="light|dark"\` on <html>. Put \`<ThemeScript />\` in the document head to avoid a flash.\n- Colours and radii come from the \`--kitr-*\` variables (\`kitr/theme/styles.css\`, overrides in \`app/styles/tokens.css\`); never hard-code them. Plain CSS helpers: \`pick()\`, \`vars()\`, \`dataAttrs()\` from \`kitr/theme\`.\n- Components live in \`app/components/ui/\` and are owned by the app: add more with \`kitr ui add <name>\` (shadcn-compatible registry); toasts via \`kitr ui add sonner\`.\n- Icons: Hugeicons in the stroke-rounded style through \`<Icon icon={Add01Icon} />\` from \`#components/ui/icon\` (\`kitr ui add icon\`), icons from \`@hugeicons/core-free-icons\`. No other icon set, no emoji or glyphs as icons.`,
       )
     },
     unconfigure(_ctx, c) {

@@ -2,9 +2,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { type Session, useAuth, useUser } from 'kitr/auth'
 import { Outlet, requireAuth, useNavigate } from 'kitr/router'
 import { ssrRoute } from 'kitr/seo'
+import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'
+import { Icon } from '#components/ui/icon'
 
 /**
  * Pathless layout: everything under it needs a session. The guard runs on the client only
@@ -30,8 +32,8 @@ function AppLayout() {
     <AppShell
       brand="Saas"
       nav={[
-        { to: '/', label: 'Overview' },
-        { to: '/projects', label: 'Projects' },
+        { to: '/', label: 'Overview', icon: <Icon icon={Home01Icon} /> },
+        { to: '/projects', label: 'Projects', icon: <Icon icon={Folder01Icon} /> },
       ]}
       user={
         <div className="flex items-center gap-2 text-sm">
@@ -44,6 +46,7 @@ function AppLayout() {
               await navigate({ to: '/sign-in', search: { redirect: undefined } })
             }}
           >
+            <Icon icon={Logout01Icon} />
             Sign out
           </Button>
         </div>

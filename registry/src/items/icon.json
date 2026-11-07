@@ -1,0 +1,5 @@
+{
+  "title": "Icon",
+  "description": "Hugeicons in the stroke-rounded style: round caps, round joins, soft corners, currentColor.",
+  "dependencies": ["@hugeicons/react", "@hugeicons/core-free-icons"]
+}

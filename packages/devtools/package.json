@@ -33,7 +33,9 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@kitr/core": "workspace:*"
+    "@kitr/core": "workspace:*",
+    "@hugeicons/core-free-icons": "^4.4.0",
+    "@hugeicons/react": "^1.1.10"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

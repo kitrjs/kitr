@@ -23,6 +23,8 @@ export const versions: Record<string, string> = {
   'socket.io': '^4.8.4',
   'socket.io-client': '^4.8.4',
   sonner: '^2.0.8',
+  '@hugeicons/react': '^1.1.10',
+  '@hugeicons/core-free-icons': '^4.4.0',
   tailwindcss: '^4.3.5',
   '@tailwindcss/vite': '^4.3.5',
   'class-variance-authority': '^0.7.1',

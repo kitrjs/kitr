@@ -43,3 +43,5 @@ The choice is stored in `localStorage` and a cookie, so server-rendered pages co
 ## Components
 
 `kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use the tokens above and `cva`; `config/theme.ts` points `registry` at your own registry when you have one.
+
+Icons are Hugeicons in the stroke-rounded style: round caps, round joins, soft corners. `kitr ui add icon` (every React kit has it) gives `<Icon icon={Add01Icon} />` from `#components/ui/icon`, with the icons themselves imported from `@hugeicons/core-free-icons`. The registry components, the kit pages and the devtools overlay all draw from the same set.
