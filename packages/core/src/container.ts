@@ -1,3 +1,4 @@
+import type { DevtoolsHub } from './devtools'
 import type { MaybePromise } from './types'
 
 /**
@@ -9,8 +10,10 @@ import type { MaybePromise } from './types'
  *
  * Then `app.container.use('queryClient')` is typed in every app.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: augmentation target
-export interface ContainerBindings {}
+export interface ContainerBindings {
+  /** Bound by `@kitr/devtools` in development only. */
+  devtools: DevtoolsHub
+}
 
 export type BindingKey = keyof ContainerBindings | (string & {})
 export type Binding<K> = K extends keyof ContainerBindings ? ContainerBindings[K] : unknown

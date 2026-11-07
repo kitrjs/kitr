@@ -26,6 +26,12 @@ Server actions, API routes, external HTTP APIs and socket channels all produce t
 **Pure backend is a first-class target.**
 `@kitr/core`, `server`, `api`, `logger`, `socket`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 + srvx server with Adonis-style controllers, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and WebSocket channels. The same packages run inside TanStack Start when you want both.
 
+**One app, every platform.**
+`kitr add pwa electron tauri capacitor` are one-command add-ons like the rest: each wires the vendor tooling the way its docs recommend (electron-vite, the Tauri and Capacitor CLIs, vite-plugin-pwa), adds the scripts, and gives you typed helpers with browser fallbacks, so the same `app/` ships to the web, desktop and mobile. `kitr add analytics monitoring` do the same for Google Analytics, Plausible, PostHog and Sentry.
+
+**Debuggable by default.**
+`kitr add devtools` is in every React kit: a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `socket` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server.
+
 **Components you own.**
 `kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and kitr's tokens; there is no component library in `node_modules` to fight.
 
@@ -57,6 +63,14 @@ Server actions, API routes, external HTTP APIs and socket channels all produce t
 | `kitr/testing` | | `createTestApp`, `createTestClient`; `kitr/testing/react` adds `renderWithKitr` |
 | `kitr/mocks` | `msw` | handlers from route tables and contracts |
 | `kitr/i18n` | `react-i18next` | typed keys, locale detection |
+| `kitr/analytics` | | `createAnalytics`, GA/Plausible/PostHog/console adapters, `useAnalytics`, router page views |
+| `kitr/monitoring` | | `createMonitoring`, Sentry/console reporters, error boundary; `kitr/monitoring/server` middleware |
+| `kitr/pwa` | | `useInstallPrompt`, `useOnline`, `useServiceWorker`; `kitr/pwa/vite` wraps vite-plugin-pwa |
+| `kitr/electron` | | typed IPC client; `kitr/electron/main` (`createMainWindow`, `handleIpc`), `kitr/electron/preload` (`exposeIpc`) |
+| `kitr/tauri` | `@tauri-apps/api` | `defineCommands`, `commandQuery`, `commandMutation`, `isTauri`, `useTauriEvent` |
+| `kitr/storage` | | `defineStorage`, `defineCookie`; `kitr/storage/react` hooks, `kitr/storage/server` cookies |
+| `kitr/devtools` | | the development overlay; `getDevtools(app)?.log()`, panels via a provider's `devtools()` |
+| `kitr/capacitor` | `@capacitor/core` | `isNative`, `platform`, `perPlatform`, `useBackButton`, `useAppUrlOpen`, `useAppState` |
 | `kitr/vite` | | the `kitr()` Vite plugin: aliases, virtual modules, router/Start plugin, Tailwind |
 
 See [docs/entry-points.md](docs/entry-points.md) for the rules behind this table.
@@ -117,6 +131,7 @@ export const chatChannel = defineChannel<{ room: string }>({
 packages/
   core, react, query, http, router, forms, table, state, styling, tailwind, ui,
   logger, server, api, actions, ssr, socket, socket.io, auth, db, testing, mocks, i18n,
+  analytics, monitoring, pwa, electron, tauri, capacitor, storage, devtools,
   vite, cli, kitr            # `kitr` is the umbrella package users install
 registry/                    # shadcn-compatible component registry (built to registry/dist)
 examples/

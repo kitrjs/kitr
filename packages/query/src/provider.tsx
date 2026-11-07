@@ -1,4 +1,4 @@
-import { createDefineConfig, defineProvider, type KitrProvider } from '@kitr/core'
+import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } from '@kitr/core'
 import { type DefaultOptions, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
@@ -49,10 +49,27 @@ export const queryProvider: KitrProvider = defineProvider({
   register(app) {
     app.container.singleton('queryClient', () => createQueryClient(app.config.get('query', {})))
   },
+  boot(app) {
+    const hub = getDevtools(app)
+    if (!hub) return
+    // Re-render the Query panel whenever the cache changes; log failed mutations.
+    const client = app.container.use('queryClient')
+    client.getQueryCache().subscribe(() => hub.notify())
+    client.getMutationCache().subscribe((event) => {
+      if (event.type === 'updated' && event.action.type === 'error')
+        hub.log(
+          'query',
+          `mutation failed: ${JSON.stringify(event.mutation.options.mutationKey ?? '')}`,
+          event.action.error,
+          'error',
+        )
+    })
+  },
   wrap(children, app) {
     const client = app.container.use('queryClient')
     return <QueryClientProvider client={client}>{children as ReactNode}</QueryClientProvider>
   },
+  devtools: () => import('./devtools').then((m) => m.panels()),
 })
 
 export default queryProvider

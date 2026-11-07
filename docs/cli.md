@@ -7,7 +7,7 @@
 | Command | What it does |
 | --- | --- |
 | `kitr new <dir> --kit blank\|app\|fullstack\|server` | Create a project. `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
-| `kitr add <pkg...>` | Install the package(s), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`). `--dry-run`, `--no-install`. |
+| `kitr add <pkg...>` | Install the package(s), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`). Platform add-ons (`pwa`, `electron`, `tauri`, `capacitor`) also add scripts and scaffold folders (`electron/`, `src-tauri/`). `storage` and `devtools` are part of the `app` and `fullstack` kits. `--dry-run`, `--no-install`. |
 | `kitr remove <pkg...>` | Reverse of `add`: unregisters the provider and package, deletes `config/<pkg>.ts`, removes dependencies, then lists files that still import it. |
 | `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where a `kitr/*` entry exists, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
 | `kitr info` | JSON summary: version, package manager, packages, providers, directories, server-only or not. |

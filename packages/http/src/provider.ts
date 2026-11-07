@@ -1,4 +1,4 @@
-import { createDefineConfig, defineProvider } from '@kitr/core'
+import { createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
 import type { KyInstance } from 'ky'
 import { createHttpClient, type HttpClientOptions } from './client'
 
@@ -19,7 +19,35 @@ export const defineConfig = createDefineConfig<HttpConfig>()
 export const httpProvider = defineProvider({
   name: 'http',
   register(app) {
-    app.container.singleton('http', () => createHttpClient(app.config.get('http', {})))
+    app.container.singleton('http', () => {
+      const config = app.config.get('http', {})
+      const hub = getDevtools(app)
+      if (!hub) return createHttpClient(config)
+      // Development: every request shows up in the devtools Log panel under "http".
+      const started = new WeakMap<Request, number>()
+      return createHttpClient({
+        ...config,
+        hooks: {
+          ...config.hooks,
+          beforeRequest: [
+            ({ request }) => void started.set(request, performance.now()),
+            ...(config.hooks?.beforeRequest ?? []),
+          ],
+          afterResponse: [
+            ({ request, response }) => {
+              const ms = Math.round(performance.now() - (started.get(request) ?? performance.now()))
+              hub.log(
+                'http',
+                `${request.method} ${new URL(request.url).pathname} → ${response.status} (${ms}ms)`,
+                { url: request.url, status: response.status, ms },
+                response.status >= 500 ? 'error' : response.status >= 400 ? 'warn' : 'info',
+              )
+            },
+            ...(config.hooks?.afterResponse ?? []),
+          ],
+        },
+      })
+    })
   },
 })
 

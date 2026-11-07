@@ -1,8 +1,9 @@
-import type { KitrApp } from '@kitr/core'
+import { getDevtools, type KitrApp } from '@kitr/core'
 import { KitrProvider } from '@kitr/react'
 import type { QueryClient } from '@tanstack/react-query'
 import {
   type AnyRoute,
+  type AnyRouter,
   createRouter,
   type Router,
   type RouterOptions,
@@ -26,6 +27,12 @@ export interface CreateKitrRouterOptions<TRouteTree extends AnyRoute>
  *
  * With `@kitr/query` installed, loaders can `context.queryClient.ensureQueryData(...)`.
  */
+declare module '@kitr/core' {
+  interface ContainerBindings {
+    router: AnyRouter
+  }
+}
+
 export function createKitrRouter<TRouteTree extends AnyRoute>(
   options: CreateKitrRouterOptions<TRouteTree>,
 ): Router<TRouteTree, 'never', true> {
@@ -46,5 +53,15 @@ export function createKitrRouter<TRouteTree extends AnyRoute>(
       <KitrProvider app={app}>{children}</KitrProvider>
     ),
   })
+  // Devtools and services can reach the router without importing the route tree.
+  app.container.value('router', router as unknown as AnyRouter)
+  const hub = getDevtools(app)
+  if (hub)
+    router.subscribe('onResolved', (e) =>
+      hub.log('router', `${e.pathChanged ? 'navigated' : 'resolved'} ${e.toLocation.pathname}`, {
+        from: e.fromLocation?.pathname,
+        search: e.toLocation.search,
+      }),
+    )
   return router as unknown as Router<TRouteTree, 'never', true>
 }
