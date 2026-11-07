@@ -48,7 +48,7 @@ Every option can be overridden at run time without touching the file: `KITR_SITE
 
 **web** (`@kitr/web`)
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `mode` | `spa` | `static`: prerender every route to HTML. `spa`: one shell, client routing. `ssr`: render on request through TanStack Start. |
 | `port` | `3000` | Dev and production port. |
@@ -61,7 +61,7 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 
 **server** (`@kitr/server`)
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `runtime` | `node` | `node`, `bun`, `deno` or `workers` (Cloudflare, via `wrangler.toml`). |
 | `port` | `3001` | |
@@ -70,7 +70,7 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 
 **desktop** (`@kitr/desktop`)
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `shell` | `tauri` | `tauri` (Rust, small binary, `platforms/<name>/src-tauri`) or `electron` (electron-vite, `platforms/<name>/{main,preload,ipc}.ts`). |
 | `port` | `3200` | Dev server the window loads. |
@@ -82,7 +82,7 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 
 **mobile** (`@kitr/mobile`)
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `targets` | `ios,android` | Native projects; `kitr dev`/`kitr build` run `cap add <target>` the first time and `--target ios|android` picks one. |
 | `appId`, `appName` | | Bundle identifier and display name. |

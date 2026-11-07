@@ -59,8 +59,11 @@ function Play() {
     void examples[keyFor(pkg, example)]?.().then((m) => setExample(() => m.default))
   }, [pkg, example])
   return (
-    <div className="play">
+    <main className="play">
+      <h1 className="visually-hidden">
+        Live example: {pkg} / {example}
+      </h1>
       {Example ? <Example /> : <p className="play-loading">Loading example…</p>}
-    </div>
+    </main>
   )
 }

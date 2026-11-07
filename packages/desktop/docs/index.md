@@ -38,7 +38,7 @@ kitr build app
 
 ## Options
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `shell` | `tauri` | `tauri` or `electron` |
 | `port` | `3200` | Dev server port the window loads from |

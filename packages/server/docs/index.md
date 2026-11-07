@@ -6,7 +6,7 @@ order: 1
 
 # Server
 
-Anything that has to run somewhere other than the browser, such as [API routes](/packages/api), [server actions](/packages/actions), [sockets](/packages/realtime) or a [database](/packages/db), needs a server underneath. `kitr/server` is that server: it starts your providers in order, gives every request an id and a logger, turns errors into clean JSON, and waits for in-flight requests before shutting down.
+Anything that has to run somewhere other than the browser, such as [API routes](/packages/api), [server actions](/packages/actions), [realtime channels](/packages/realtime) or a [database](/packages/db), needs a server underneath. `kitr/server` is that server: it starts your providers in order, gives every request an id and a logger, turns errors into clean JSON, and waits for in-flight requests before shutting down.
 
 It is built on [h3](https://h3.dev) and runs on Node, Bun and Deno. It never imports React, so a pure backend built with kitr ships none.
 
@@ -101,7 +101,7 @@ export default defineConfig({
 | `trustProxy` | `false` | Trust `X-Forwarded-*` headers from a proxy in front. |
 | `requestIdHeader` | `'x-request-id'` | Header carrying the request id. |
 | `shutdownTimeout` | `10` | Seconds to wait for in-flight requests on shutdown. |
-| `websocket` | | Enables WebSocket upgrades. Set for you by [Sockets](/packages/realtime). |
+| `websocket` | | Enables WebSocket upgrades. Set for you by [Realtime](/packages/realtime). |
 
 ## Next steps
 

@@ -38,7 +38,7 @@ Every kit already has a web platform called `site`. Adding one installs `@kitr/w
 
 ## Options
 
-| Option | Default | |
+| Option | Default | Description |
 | --- | --- | --- |
 | `mode` | `spa` | `static`, `spa` or `ssr` |
 | `port` | `3000` | Dev and production port |

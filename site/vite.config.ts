@@ -39,7 +39,13 @@ export default defineConfig({
     kitr({
       start: {
         prerender: { enabled: true, crawlLinks: true, failOnError: true },
-        pages: [{ path: '/' }, { path: '/packages' }, { path: '/about' }, ...playPages],
+        pages: [
+          { path: '/' },
+          { path: '/packages' },
+          { path: '/about' },
+          { path: '/404' },
+          ...playPages,
+        ],
       },
     }),
   ],

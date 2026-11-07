@@ -1,17 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import mark from '#app/assets/mark.svg?url'
 import { repoUrl } from '#app/components/chrome'
+import { seo } from '#app/lib/seo'
 
 export const Route = createFileRoute('/about')({
-  head: () => ({
-    meta: [
-      { title: 'About · kitr' },
-      {
-        name: 'description',
-        content: 'Why kitr exists, the ideas behind it, the brand and who makes it.',
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: 'About · kitr',
+      description: 'Why kitr exists, the ideas behind it, the brand and who makes it.',
+      path: '/about',
+    }),
   component: About,
 })
 

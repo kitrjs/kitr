@@ -8,35 +8,31 @@ import {
 import type { KitrRouterContext } from 'kitr/router'
 import { type ReactNode, useEffect } from 'react'
 import { Footer, Header } from '#app/components/chrome'
+import { NotFound } from '#app/components/not-found'
 import { themeScript } from '#app/components/theme-toggle'
 import { PmProvider, rehydratePm } from '#app/lib/pm'
 import css from '#app/styles/site.css?url'
-
-const fonts =
-  'https://fonts.googleapis.com/css2?family=Asimovian&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap'
 
 export const Route = createRootRouteWithContext<KitrRouterContext>()({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'kitr: the React framework where everything is an add-on' },
-      {
-        name: 'description',
-        content:
-          'kitr is a thin layer over TanStack, React Hook Form, Zustand, ky, h3 and Tailwind. One import surface, one data contract, one CLI.',
-      },
-      { name: 'theme-color', content: '#FFFFFF' },
+      { title: 'kitr' },
+      { name: 'theme-color', content: '#FFFFFF', media: '(prefers-color-scheme: light)' },
+      { name: 'theme-color', content: '#0B121C', media: '(prefers-color-scheme: dark)' },
+      { name: 'color-scheme', content: 'light dark' },
     ],
     links: [
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-      { rel: 'stylesheet', href: fonts },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      { rel: 'manifest', href: '/site.webmanifest' },
+      { rel: 'alternate', type: 'text/plain', href: '/llms.txt', title: 'llms.txt' },
       { rel: 'stylesheet', href: css },
     ],
   }),
   component: RootLayout,
+  notFoundComponent: NotFound,
 })
 
 function RootLayout() {

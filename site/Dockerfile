@@ -5,7 +5,8 @@ WORKDIR /repo
 RUN corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm build && pnpm -C site build
+RUN pnpm build && pnpm -C site build \
+  && sed 's#<script type="module"[^>]*></script>##' site/dist/client/404/index.html > site/dist/client/404.html
 
 FROM nginx:1.27-alpine
 COPY site/nginx.conf /etc/nginx/conf.d/default.conf
