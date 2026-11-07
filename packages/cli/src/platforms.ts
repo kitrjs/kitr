@@ -8,11 +8,11 @@ import {
   type PlatformFactory,
   type PlatformInstance,
 } from '@kitr/core'
-import { resolvePackageName } from '@kitr/core/package'
 import { builders, generateCode, parseModule } from 'magicast'
 import type { Codemods } from './codemods'
 import { configurePackages } from './configure'
 import { log, type ProjectContext } from './context'
+import { manifests } from './manifests.gen'
 import { loadPackage } from './packages'
 
 /**
@@ -29,45 +29,17 @@ export interface PlatformTypeInfo {
   package: string
   /** The module exporting the factory (what kitrrc.ts imports). */
   entry: string
-  /** The module the CLI loads the factory from (a subpath without runtime deps where needed). */
-  module: string
   factory: string
   description: string
+  /** The name `kitr add <type>` suggests. */
+  defaultName: string
+  factoryFn: PlatformFactory<any>
 }
 
-/** The blessed platforms. Any package exporting a `definePlatform()` factory works the same way. */
-export const platformTypes: Record<string, PlatformTypeInfo> = {
-  web: {
-    package: '@kitr/web',
-    entry: 'kitr/web',
-    module: '@kitr/web',
-    factory: 'web',
-    description: 'Browser app: static, SPA or server-rendered, optionally installable (PWA).',
-  },
-  desktop: {
-    package: '@kitr/desktop',
-    entry: 'kitr/desktop',
-    module: '@kitr/desktop',
-    factory: 'desktop',
-    description: 'macOS, Windows and Linux app with a Tauri or Electron shell.',
-  },
-  mobile: {
-    package: '@kitr/mobile',
-    entry: 'kitr/mobile',
-    module: '@kitr/mobile',
-    factory: 'mobile',
-    description: 'iOS and Android app with Capacitor.',
-  },
-  server: {
-    package: '@kitr/server',
-    entry: 'kitr/server',
-    module: '@kitr/server/platform',
-    factory: 'server',
-    description: 'HTTP server on h3: Node, Bun, Deno or Cloudflare Workers.',
-  },
-}
-
-export const platformTypeNames = Object.keys(platformTypes)
+/** The official platform types, from the packages whose manifest says `kind: 'platform'`. Any package may declare one. */
+export const platformTypeNames = Object.keys(manifests).filter(
+  (name) => manifests[name]!.kind === 'platform',
+)
 
 export type Flags = Record<string, string | number | boolean | string[] | undefined>
 
@@ -163,7 +135,7 @@ export function selectPlatforms(
   const entries = Object.entries(all)
   if (!entries.length)
     throw new Error(
-      'No platforms in kitrrc.ts. Add one with `kitr add web site`, `kitr add server api`, `kitr add desktop app` or `kitr add mobile phone`.',
+      `No platforms in kitrrc.ts. Add one with \`kitr add <type> <name>\` (types: ${platformTypeNames.join(', ')}).`,
     )
   if (!names.length) return entries
   return names.map((name) => {
@@ -282,61 +254,42 @@ export function createPlatformContext(
   }
 }
 
-/**
- * Resolve a platform type to its package, import path and factory name. A package whose setup
- * module says `kind: 'platform'` wins; the blessed table covers the rest until every platform
- * package ships one.
- */
+/** Resolve a platform type to its package: the setup module must say `kind: 'platform'`. */
 export async function resolvePlatformType(
   ctx: ProjectContext,
   type: string,
-): Promise<PlatformTypeInfo & { factoryFn?: PlatformFactory<any> }> {
+): Promise<PlatformTypeInfo> {
   let loaded: Awaited<ReturnType<typeof loadPackage>>
   try {
     loaded = await loadPackage(ctx, type)
-  } catch {
-    loaded = undefined
+  } catch (error) {
+    throw new Error(
+      `Unknown platform type "${type}": ${(error as Error).message}. Types: ${platformTypeNames.join(', ')}, or a package whose setup module declares kind: 'platform'.`,
+    )
   }
   const def = loaded?.definition
-  if (loaded && def?.kind === 'platform' && def.platform) {
-    const entry =
-      def.platform.from ??
-      (loaded.package.startsWith('@kitr/') ? `kitr/${def.name}` : loaded.package)
-    return {
-      package: loaded.package,
-      entry,
-      module: loaded.package,
-      factory: def.platform.export,
-      description: def.platform.factory({}).definition.description ?? '',
-      factoryFn: def.platform.factory,
-    }
-  }
-  const info = platformTypes[type]
-  if (!info)
+  if (!loaded || def?.kind !== 'platform' || !def.platform)
     throw new Error(
-      `Unknown platform type "${type}". Types: ${platformTypeNames.join(', ')}, or a package whose setup module declares kind: 'platform'.`,
+      `"${type}" is not a platform type. Types: ${platformTypeNames.join(', ')}, or a package whose setup module declares kind: 'platform'.`,
     )
-  return info
+  const entry =
+    def.platform.from ?? (loaded.package.startsWith('@kitr/') ? `kitr/${def.name}` : loaded.package)
+  return {
+    package: loaded.package,
+    entry,
+    factory: def.platform.export,
+    description: def.platform.factory({}).definition.description ?? '',
+    defaultName: def.platform.defaultName ?? def.name,
+    factoryFn: def.platform.factory,
+  }
 }
 
-/** Load a platform factory: from the package's setup module, else from the project, else from the CLI's own dependencies. */
+/** Load a platform factory from the package's setup module. */
 export async function loadFactory(
   ctx: ProjectContext,
   type: string,
 ): Promise<PlatformFactory<any>> {
-  const info = await resolvePlatformType(ctx, type)
-  if (info.factoryFn) return info.factoryFn
-  let mod: Record<string, unknown> | undefined
-  try {
-    const jiti = await projectJiti(ctx)
-    mod = (await jiti.import(info.module)) as Record<string, unknown>
-  } catch {
-    mod = (await import(info.module)) as Record<string, unknown>
-  }
-  const factory = mod[info.factory]
-  if (typeof factory !== 'function')
-    throw new Error(`${info.module} does not export ${info.factory}()`)
-  return factory as PlatformFactory<any>
+  return (await resolvePlatformType(ctx, type)).factoryFn
 }
 
 /** `{ mode: 'ssr', port: 3000 }` as source text, single quotes, no quoted keys. Biome reflows it. */
@@ -393,12 +346,9 @@ function editRcSource(
 export function writeRcPlatform(
   ctx: ProjectContext,
   name: string,
-  type: string,
+  info: Pick<PlatformTypeInfo, 'entry' | 'factory'>,
   options: Record<string, unknown>,
-  resolved?: PlatformTypeInfo,
 ) {
-  const info = resolved ?? platformTypes[type]
-  if (!info) throw new Error(`Unknown platform type "${type}"`)
   editRcSource(ctx, (_mod, target, src, addImport) => {
     if (
       !new RegExp(
@@ -446,6 +396,10 @@ export interface AddPlatformOptions {
   options?: Record<string, unknown>
   /** Skip the platform's scaffold (files under platforms/<name>/). */
   scaffold?: boolean
+  /** Install missing packages before loading them (default true). */
+  install?: boolean
+  /** Packages configured earlier in this run. */
+  added?: Set<string>
 }
 
 /**
@@ -463,23 +417,20 @@ export async function addPlatform(
     throw new Error(
       `Platform name "${add.name}" must be a short identifier (site, api, app, phone...)`,
     )
-  const factory = await loadFactory(ctx, add.type)
-  const instance = factory(add.options ?? {})
+  const instance = info.factoryFn(add.options ?? {})
   const rc = ctx.readRc()
-  codemods.installPackages([info.package, ...(instance.dependencies ?? [])])
-  codemods.addPackage(info.package)
+  // The platform package itself, what its setup module requires, and what the instance asks for.
+  const steps = await configurePackages(
+    ctx,
+    codemods,
+    [info.package, ...(instance.definition.requires ?? [])],
+    { install: add.install ?? true, yes: true, report: false, added: add.added },
+  )
+  for (const step of steps)
+    if (step.package !== info.package) log.success(`${step.name} (needed by ${add.type})`)
+  codemods.installPackages(instance.dependencies ?? [])
   if (instance.definition.provider) codemods.addProvider(instance.definition.provider)
-  writeRcPlatform(ctx, add.name, add.type, add.options ?? {}, info)
-  const required = instance.definition.requires ?? []
-  if (required.length) {
-    const steps = await configurePackages(ctx, codemods, required, {
-      install: true,
-      yes: true,
-      report: false,
-      added: new Set(rc.packages.map((p) => resolvePackageName(p))),
-    })
-    for (const step of steps) log.success(`${step.name} (needed by ${add.type})`)
-  }
+  writeRcPlatform(ctx, add.name, info, add.options ?? {})
   for (const [script, command] of Object.entries({
     dev: 'kitr dev',
     build: 'kitr build',

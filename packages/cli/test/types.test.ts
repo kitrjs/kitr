@@ -5,7 +5,6 @@ import { defineTypes } from '@kitr/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Codemods } from '../src/codemods'
 import { createContext } from '../src/context'
-import { renderStub } from '../src/stubs'
 import {
   createGenerateContext,
   generatorsFor,
@@ -143,30 +142,15 @@ describe('kitr add actions codemods', () => {
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts.typecheck).toBe(
       'kitr types && tsc --noEmit',
     )
-    c.registerOperations()
-    c.registerOperations()
+    c.registerAppOption('operations', '#kitr/actions')
+    c.registerAppOption('operations', '#kitr/actions')
     const app = readFileSync(join(dir, 'app/app.ts'), 'utf8')
     expect(app).toBe(
       `import { createApp } from 'kitr/app'\nimport { env } from './env'\nimport { operations } from '#kitr/actions'\n\nexport const app = createApp({ operations, providers, config, env })\n`,
     )
-    c.unregisterOperations()
+    c.unregisterAppOption('operations', '#kitr/actions')
     expect(readFileSync(join(dir, 'app/app.ts'), 'utf8')).toBe(
       `import { createApp } from 'kitr/app'\nimport { env } from './env'\n\nexport const app = createApp({ providers, config, env })\n`,
     )
-  })
-})
-
-describe('make:query and make:mutation stubs', () => {
-  it('name the operation after the feature and file', () => {
-    const query = renderStub('query', { feature: 'projects', name: 'list', kind: 'query' })
-    expect(query).toContain("import { defineQuery } from 'kitr/actions'")
-    expect(query).toContain("defineQuery('projects.list', {")
-    const mutation = renderStub('mutation', {
-      feature: 'projects',
-      name: 'archive',
-      kind: 'mutation',
-    })
-    expect(mutation).toContain("defineMutation('projects.archive', {")
-    expect(mutation).toContain('effects:')
   })
 })

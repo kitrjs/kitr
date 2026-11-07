@@ -46,9 +46,10 @@ export default defineConfig({
         // Re-export shims: one line each, nothing to run.
         'packages/kitr/src/**',
         // Native shells and platform scaffolds: exercised by their platform, not by Node.
-        'packages/desktop/src/electron-main.ts',
-        'packages/desktop/src/electron-preload.ts',
+        'packages/desktop/src/main.ts',
+        'packages/desktop/src/preload.ts',
         'packages/desktop/src/index.ts',
+        'packages/tauri/src/index.ts',
         'packages/mobile/src/index.ts',
         'packages/web/src/index.ts',
       ],

@@ -228,21 +228,25 @@
       "types": "./dist/desktop-provider.d.ts",
       "default": "./dist/desktop-provider.js"
     },
-    "./desktop/tauri": {
-      "types": "./dist/desktop-tauri.d.ts",
-      "default": "./dist/desktop-tauri.js"
+    "./desktop/main": {
+      "types": "./dist/desktop-main.d.ts",
+      "default": "./dist/desktop-main.js"
     },
-    "./desktop/electron": {
-      "types": "./dist/desktop-electron.d.ts",
-      "default": "./dist/desktop-electron.js"
+    "./desktop/preload": {
+      "types": "./dist/desktop-preload.d.ts",
+      "default": "./dist/desktop-preload.js"
     },
-    "./desktop/electron-main": {
-      "types": "./dist/desktop-electron-main.d.ts",
-      "default": "./dist/desktop-electron-main.js"
+    "./tauri": {
+      "types": "./dist/tauri.d.ts",
+      "default": "./dist/tauri.js"
     },
-    "./desktop/electron-preload": {
-      "types": "./dist/desktop-electron-preload.d.ts",
-      "default": "./dist/desktop-electron-preload.js"
+    "./tauri/client": {
+      "types": "./dist/tauri-client.d.ts",
+      "default": "./dist/tauri-client.js"
+    },
+    "./tauri/provider": {
+      "types": "./dist/tauri-provider.d.ts",
+      "default": "./dist/tauri-provider.js"
     },
     "./server/platform": {
       "types": "./dist/server-platform.d.ts",
@@ -515,6 +519,7 @@
     "@kitr/web": "workspace:*",
     "@kitr/mobile": "workspace:*",
     "@kitr/desktop": "workspace:*",
+    "@kitr/tauri": "workspace:*",
     "@kitr/platform": "workspace:*",
     "@kitr/theme": "workspace:*",
     "@kitr/seo": "workspace:*",
@@ -596,6 +601,9 @@
     "@kitr/desktop": {
       "optional": true
     },
+    "@kitr/tauri": {
+      "optional": true
+    },
     "@kitr/platform": {
       "optional": true
     },
@@ -637,6 +645,7 @@
     "@kitr/web": "workspace:*",
     "@kitr/mobile": "workspace:*",
     "@kitr/desktop": "workspace:*",
+    "@kitr/tauri": "workspace:*",
     "@kitr/platform": "workspace:*",
     "@kitr/theme": "workspace:*",
     "@kitr/seo": "workspace:*",

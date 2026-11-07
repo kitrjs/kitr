@@ -629,7 +629,7 @@ Port `0` picks a free port; `url` tells you which one.
 
 ## Accept WebSocket connections
 
-Set `websocket: true` to accept WebSocket upgrades through [crossws](https://crossws.h3.dev). [Realtime](/packages/realtime) sets this for you and attaches its channels with `realtime.attach(server, '/ws')` in `server/main.ts`.
+Set `websocket: true` to accept WebSocket upgrades through [crossws](https://crossws.h3.dev). [Realtime](/packages/realtime) sets this for you and attaches its channels with `realtime.attach(server)` in `server/main.ts`.
 
 ```ts
 // server/main.ts

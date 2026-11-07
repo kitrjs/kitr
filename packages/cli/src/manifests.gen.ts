@@ -18,6 +18,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
+    "setup": "./kitr",
     "types": "./types"
   },
   "analytics": {
@@ -33,7 +34,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "PostHog"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "api": {
     "package": "@kitr/api",
@@ -48,7 +50,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "auth": {
     "package": "@kitr/auth",
@@ -58,7 +61,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "category": "auth",
     "runsOn": "both",
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "cache": {
     "package": "@kitr/cache",
@@ -70,7 +74,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "consent": {
     "package": "@kitr/consent",
@@ -83,7 +88,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "storage"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "db": {
     "package": "@kitr/db",
@@ -95,18 +101,19 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "desktop": {
     "package": "@kitr/desktop",
     "name": "desktop",
     "title": "Desktop",
-    "summary": "Ship the same app to Windows, macOS and Linux, choosing a small Tauri or a familiar Electron shell.",
+    "summary": "Ship the same app to Windows, macOS and Linux in an Electron shell: Chromium ships with the app, so it renders the same everywhere.",
     "category": "platforms",
     "runsOn": "client",
     "builtOn": [
-      "Tauri 2",
-      "electron-vite"
+      "electron-vite",
+      "electron-builder"
     ],
     "requires": [
       "router",
@@ -114,7 +121,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "storage"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "kind": "platform",
+    "setup": "./kitr"
   },
   "devtools": {
     "package": "@kitr/devtools",
@@ -124,7 +133,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "category": "dev-tools",
     "runsOn": "client",
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "files": {
     "package": "@kitr/files",
@@ -137,7 +147,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "platform"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "flags": {
     "package": "@kitr/flags",
@@ -149,7 +160,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "builtOn": [
       "OpenFeature"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "forms": {
     "package": "@kitr/forms",
@@ -162,7 +174,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "react-hook-form"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "http": {
     "package": "@kitr/http",
@@ -178,7 +191,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "query"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "i18n": {
     "package": "@kitr/i18n",
@@ -191,7 +205,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "react-i18next"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "jobs": {
     "package": "@kitr/jobs",
@@ -213,7 +228,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "summary": "Write readable logs in development and structured logs in production.",
     "category": "dev-tools",
     "runsOn": "both",
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "mail": {
     "package": "@kitr/mail",
@@ -228,7 +244,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "mobile": {
     "package": "@kitr/mobile",
@@ -246,7 +263,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "storage"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr",
+    "kind": "platform"
   },
   "mocks": {
     "package": "@kitr/mocks",
@@ -259,7 +278,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "msw"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "monitoring": {
     "package": "@kitr/monitoring",
@@ -271,7 +291,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "builtOn": [
       "Sentry"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "native": {
     "package": "@kitr/native",
@@ -284,7 +305,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "platform"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "notifications": {
     "package": "@kitr/notifications",
@@ -297,7 +319,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "platform"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "offline": {
     "package": "@kitr/offline",
@@ -314,7 +337,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "storage"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "platform": {
     "package": "@kitr/platform",
@@ -327,7 +351,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "react"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "query": {
     "package": "@kitr/query",
@@ -340,7 +365,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "@tanstack/react-query"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "react": {
     "package": "@kitr/react",
@@ -354,7 +380,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "included": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "realtime": {
     "package": "@kitr/realtime",
@@ -371,7 +398,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "router": {
     "package": "@kitr/router",
@@ -384,7 +412,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "@tanstack/react-router"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "secure-storage": {
     "package": "@kitr/secure-storage",
@@ -397,7 +426,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "storage"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "seo": {
     "package": "@kitr/seo",
@@ -407,7 +437,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "category": "pages",
     "runsOn": "both",
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "server": {
     "package": "@kitr/server",
@@ -422,7 +453,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "logger"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr",
+    "kind": "platform"
   },
   "shield": {
     "package": "@kitr/shield",
@@ -434,7 +467,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "state": {
     "package": "@kitr/state",
@@ -447,7 +481,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "zustand"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "storage": {
     "package": "@kitr/storage",
@@ -460,7 +495,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "localStorage",
       "cookies"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "table": {
     "package": "@kitr/table",
@@ -473,7 +509,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "@tanstack/react-table"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "tailwind": {
     "package": "@kitr/tailwind",
@@ -486,7 +523,28 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "tailwindcss"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "tauri": {
+    "package": "@kitr/tauri",
+    "name": "tauri",
+    "kind": "platform",
+    "title": "Tauri",
+    "summary": "Ship the same app to Windows, macOS and Linux as a small Tauri binary on the operating system's webview.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Tauri 2"
+    ],
+    "requires": [
+      "router",
+      "platform",
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "testing": {
     "package": "@kitr/testing",
@@ -499,7 +557,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "vitest",
       "@testing-library/react"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "theme": {
     "package": "@kitr/theme",
@@ -517,7 +576,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "react"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "updater": {
     "package": "@kitr/updater",
@@ -530,7 +590,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "platform"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "uploads": {
     "package": "@kitr/uploads",
@@ -542,7 +603,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "web": {
     "package": "@kitr/web",
@@ -561,6 +623,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kind": "platform"
   }
 }

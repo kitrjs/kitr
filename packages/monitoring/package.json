@@ -32,6 +32,10 @@
       "types": "./dist/server.d.ts",
       "default": "./dist/server.js"
     },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -80,6 +84,7 @@
     "builtOn": [
       "Sentry"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   }
 }

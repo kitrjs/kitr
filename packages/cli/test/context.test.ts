@@ -1,11 +1,12 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { naming } from '@kitr/core/package'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Codemods } from '../src/codemods'
 import { runChecks } from '../src/commands/doctor'
+import { coreGenerators, renderStub } from '../src/commands/make'
 import { createContext, detectPackageManager, findProjectRoot, readRcInfo } from '../src/context'
-import { naming, renderStub, stubs } from '../src/stubs'
 import { versionOf, versions } from '../src/versions'
 
 const dirs: string[] = []
@@ -135,26 +136,20 @@ describe('stubs', () => {
     expect(naming.snake('admin/users-list')).toBe('admin_users_list')
   })
 
-  it('renders every stub without leaving template holes', () => {
-    for (const name of Object.keys(stubs)) {
-      const out = renderStub(name, {
-        name: 'project-list',
-        path: '/projects',
-        feature: 'projects',
-        resource: 'true',
-      })
-      expect(out, name).not.toMatch(
-        /\$\{(name|path|feature|resource)\}|undefined|\[object Object\]/,
-      )
-      expect(out.length, name).toBeGreaterThan(20)
+  it('renders every core stub without leaving template holes', () => {
+    for (const [kind, generator] of Object.entries(coreGenerators)) {
+      const out = renderStub(kind, generator, { name: 'project-list', feature: 'projects' })
+      expect(out, kind).not.toMatch(/\$\{(name|feature)\}|undefined|\[object Object\]/)
+      expect(out.length, kind).toBeGreaterThan(20)
     }
   })
 
-  it('prefers overrides and rejects unknown stubs', () => {
-    expect(renderStub('route', { name: 'x' }, { route: ({ name }) => `custom ${name}` })).toBe(
-      'custom x',
-    )
-    expect(() => renderStub('nope', {})).toThrow(/Unknown stub/)
+  it('prefers the project override for a stub', () => {
+    const service = coreGenerators.service!
+    expect(
+      renderStub('service', service, { name: 'x' }, { service: ({ name }) => `custom ${name}` }),
+    ).toBe('custom x')
+    expect(renderStub('service', service, { name: 'billing' })).toContain('Billing')
   })
 })
 

@@ -18,7 +18,8 @@
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kind": "platform"
   },
   "type": "module",
   "license": "MIT",

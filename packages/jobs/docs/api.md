@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/jobs`, `kitr/jobs/provider`, `kitr/jobs/kitr`, read from the published type definitions. The [guide](/packages/jobs) shows them in use.
+Every export of `kitr/jobs`, `kitr/jobs/provider`, read from the published type definitions. The [guide](/packages/jobs) shows them in use.
 
 ## kitr/jobs
 

@@ -661,7 +661,7 @@ There is nothing to set up. Without a platform driver, `local` items use `localS
 ```ts
 // platforms/app/main.ts
 import { app, ipcMain } from 'electron'
-import { handleKitrIpc } from 'kitr/desktop/electron-main'
+import { handleKitrIpc } from 'kitr/desktop/main'
 
 app.whenReady().then(() => {
   handleKitrIpc(ipcMain, app)

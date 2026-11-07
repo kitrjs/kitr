@@ -128,7 +128,7 @@ describe('server()', () => {
         },
       })
       api.scaffold!(f.ctx)
-      expect(f.files.get('server/main.ts')).toContain("realtime.attach(server, '/live')")
+      expect(f.files.get('server/main.ts')).toContain('realtime.attach(server)')
     })
 
     it('writes wrangler.toml for workers, named after the package', () => {

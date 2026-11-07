@@ -12,7 +12,8 @@
       "tailwindcss"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "type": "module",
   "license": "MIT",
@@ -35,6 +36,10 @@
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
     },
     "./package.json": "./package.json"
   },

@@ -32,6 +32,10 @@
       "types": "./dist/ui.d.ts",
       "default": "./dist/ui.js"
     },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -67,6 +71,7 @@
     "category": "dev-tools",
     "runsOn": "client",
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   }
 }
