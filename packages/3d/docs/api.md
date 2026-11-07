@@ -115,7 +115,7 @@ A loaded glTF: the scene graph, its animations and cameras, plus its `nodes` and
 ### SceneProps
 
 ```ts
-interface SceneProps extends Omit<CanvasProps, 'frameloop' | 'fallback' | 'dpr' | 'children'> {
+interface SceneProps extends Omit<CanvasProps, 'frameloop' | 'fallback' | 'dpr' | 'children' | 'onError'> {
   children?: ReactNode;
   /**
    * Shown instead of the scene when it cannot run: no WebGL, or an error while loading or
