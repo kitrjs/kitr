@@ -9,7 +9,7 @@ export default definePackage({
   name: 'desktop',
   kind: 'platform',
   client: true,
-  requires: ['router', 'platform', 'storage'],
+  requires: ['vite', 'router', 'platform', 'storage'],
   platform: { factory: desktop, export: 'desktop', from: 'kitr/desktop', defaultName: 'app' },
   eject: { 'kitr/desktop': 'electron + electron-vite + electron-builder' },
 })

@@ -23,6 +23,9 @@
       "#config/*": [
         "./config/*"
       ],
+      "#components/*": [
+        "./app/components/*"
+      ],
       "#server/*": [
         "./server/*"
       ],
@@ -39,5 +42,10 @@
     ".kitr/**/*",
     "kitrrc.ts",
     "test"
+  ],
+  "exclude": [
+    "platforms/**/src-tauri",
+    "platforms/**/ios",
+    "platforms/**/android"
   ]
 }

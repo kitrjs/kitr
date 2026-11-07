@@ -55,7 +55,7 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `doctor(project)` | `Finding[]` | Appended to `kitr doctor`. Pure: read, never write |
 | `types` | `() => import(...)` | A module exporting a `defineTypes()` generator that `kitr types` runs into `.kitr/` |
 | `wraps` | `Record<string, string>` | Upstream libraries this package re-exports, by the kitr entry to import instead; `kitr doctor` flags direct imports |
-| `vite` | `{ serverOnlyConfig, optimizeDeps, plugin, provider }` | Read by `@kitr/vite` when it builds a web platform |
+| `vite` | `{ serverOnlyConfig, optimizeDeps, plugin, start, provider }` | Read by `@kitr/vite` at config time from every package in `kitrrc.ts`: the plugin to add (`@vitejs/plugin-react`, `@kitr/tailwind/vite`), the deps to pre-bundle, the config file to keep out of browser bundles, whether to render through TanStack Start, whether the provider ships in production. The plugin knows no package by name. |
 | `platform` | `{ factory, export, from, defaultName }` | For `kind: 'platform'`: the `definePlatform` factory `kitrrc.ts` calls, how it imports it, and the name `kitr add <type>` suggests |
 | `kit` | `{ platforms, packages, components, files }` | For `kind: 'kit'`: what `kitr new --kit` adds and writes |
 | `routes` | string | The module exporting this package's route-table extension |

@@ -22,6 +22,7 @@ export default defineKitrConfig({
    '@kitr/seo',
    '@kitr/api',
    '@kitr/realtime',
+   '@kitr/vite',
    '@kitr/web',
   ],
   providers: [

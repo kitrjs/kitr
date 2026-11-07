@@ -67,7 +67,7 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 | Kit | Platforms | Packages |
 | --- | --- | --- |
-| `blank` | `site: web({ mode: 'spa' })` | router, query |
+| `blank` | none | none: `package.json`, `tsconfig.json`, `kitrrc.ts`, `biome.json`, `.gitignore`, `.env.example`, `AGENTS.md`. `kitr add web site` (or any platform) brings Vite, React and the router. |
 | `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools, plus eleven registry components (including `icon`, Hugeicons stroke-rounded) |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |

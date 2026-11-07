@@ -47,5 +47,5 @@ export function ${naming.pascal(name)}Form({ defaultValues, onSubmit }: { defaul
   },
   wraps: { 'react-hook-form': 'kitr/forms' },
   eject: { 'kitr/forms': 'react-hook-form + @hookform/resolvers' },
-  vite: { optimizeDeps: ['react-hook-form', '@hookform/resolvers/standardSchema'] },
+  vite: { optimizeDeps: ['react-hook-form', '@hookform/resolvers/standard-schema'] },
 })

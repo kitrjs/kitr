@@ -93,6 +93,18 @@ export default definePackage({
     )
     ctx.agents.remove('router')
   },
+  doctor(project) {
+    const routes = project.rc.directories.routes ?? 'app/routes'
+    const app = project.rc.directories.app ?? 'app'
+    if (!project.exists(routes) || project.exists(`${app}/routeTree.gen.ts`)) return []
+    return [
+      {
+        level: 'info',
+        message: `${app}/routeTree.gen.ts not generated yet`,
+        fix: 'kitr dev <name> (TanStack Router writes it on first start)',
+      },
+    ]
+  },
   generators: {
     route: {
       description: 'Create a page route in app/routes',
@@ -129,5 +141,5 @@ function ${naming.pascal(name)}Page() {
   },
   wraps: { '@tanstack/react-router': 'kitr/router' },
   eject: { 'kitr/router': '@tanstack/react-router (+ your own context/guards)' },
-  vite: { optimizeDeps: ['@tanstack/react-router', '@tanstack/react-start'] },
+  vite: { start: true, optimizeDeps: ['@tanstack/react-router', '@tanstack/react-start'] },
 })

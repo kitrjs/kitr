@@ -443,7 +443,7 @@ import { kitr } from 'kitr/vite'
 import { kitrTailwind } from 'kitr/tailwind/vite'
 
 export default defineConfig({
-  plugins: [kitrTailwind(), kitr({ tailwind: false })],
+  plugins: [kitrTailwind(), kitr({ plugins: { tailwind: false } })],
 })
 ```
 
@@ -467,7 +467,7 @@ Most Tailwind problems in a kitr app come from one of a few causes. Check them i
 
 ## Testing
 
-Tests do not build CSS. The `vitest.config.ts` that kitr writes runs `kitr({ react: true, tailwind: false })`, so a test checks which classes a component renders, not what they look like. Test `cn()` merges and variant classes directly:
+Tests do not build CSS. The `vitest.config.ts` that kitr writes runs `kitr({ plugins: { tailwind: false } })`, so a test checks which classes a component renders, not what they look like. Test `cn()` merges and variant classes directly:
 
 ```tsx
 // app/features/orders/order-status-badge.test.tsx

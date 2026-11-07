@@ -18,6 +18,12 @@ export default definePackage({
       `import { defineConfig } from 'kitr/server'\n\nexport default defineConfig({\n  healthPath: '/healthz',\n  bodyLimit: 1024 * 1024,\n})\n`,
     )
     ctx.env.add({ LOG_LEVEL: 'info' }, 'Server')
+    // With React, `kitr add react` wrote app/env.ts; a pure backend gets its typed env here.
+    if (!(ctx.has('react') || ctx.hasPackage('react')))
+      ctx.write(
+        'app/env.ts',
+        `import { createEnv, env as e } from 'kitr/env'\n\nexport const env = createEnv({\n  server: {\n    PORT: e.number({ default: 3000 }),\n    LOG_LEVEL: e.enum(['debug', 'info', 'warn', 'error'], { default: 'info' }),\n  },\n})\n`,
+      )
     if (!Object.values(ctx.rc.platforms).some((p) => p.factory === 'server'))
       ctx.log.info('Run the server as a platform: `kitr add server api` (writes server/main.ts).')
     ctx.agents.add(

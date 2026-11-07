@@ -1,5 +1,5 @@
 import type { ProjectContext } from './context'
-import { baseReact, baseServer } from './kits-base'
+import { base } from './kits-base'
 import { presetKits } from './kits-presets'
 
 export type KitName =
@@ -32,10 +32,9 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
   blank: {
     name: 'blank',
     description:
-      'A web platform with React, TanStack Router and Query, nothing else. Add what you need.',
-    platforms: { site: { type: 'web', options: { mode: 'spa' } } },
-    packages: ['query'],
-    base: baseReact,
+      'The wiring files and nothing else: no platform, no React, no server. Add what you need with kitr add.',
+    packages: [],
+    base,
   },
   app: {
     name: 'app',
@@ -68,7 +67,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
       'theme-toggle',
       'app-shell',
     ],
-    base: baseReact,
+    base,
   },
   fullstack: {
     name: 'fullstack',
@@ -104,7 +103,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
       'theme-toggle',
       'app-shell',
     ],
-    base: baseReact,
+    base,
   },
   server: {
     name: 'server',
@@ -112,7 +111,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
       'A pure backend: h3 server, Adonis-style API, logger, db binding, realtime channels. No React in the bundle.',
     platforms: { api: { type: 'server' } },
     packages: ['logger', 'api', 'db', 'realtime', 'testing'],
-    base: baseServer,
+    base,
   },
 }
 
