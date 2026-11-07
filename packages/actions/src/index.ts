@@ -91,8 +91,17 @@ export function defineAction<
           return { ok: true, data: out }
         } catch (error) {
           const kitrError = toKitrError(error)
-          if (kitrError.status >= 500) console.error(`[kitr/actions] ${name} failed:`, error)
-          return { ok: false, error: kitrError.toJSON() }
+          const shape = kitrError.toJSON()
+          if (kitrError.status >= 500) {
+            console.error(`[kitr/actions] ${name} failed:`, error)
+            // Same rule as the kitr server: in production a server error's message and data
+            // stay in the server log and never reach the browser.
+            if ((globalThis as any).process?.env?.NODE_ENV === 'production') {
+              shape.message = 'Internal server error'
+              shape.data = undefined
+            }
+          }
+          return { ok: false, error: shape }
         }
       },
     )
