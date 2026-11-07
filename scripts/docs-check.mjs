@@ -12,6 +12,8 @@ const pkgs = readdirSync('packages')
   .filter(({ file }) => existsSync(file))
   .map(({ dir, file }) => ({ dir, pkg: JSON.parse(readFileSync(file, 'utf8')) }))
   .filter(({ pkg }) => pkg.kitr)
+  // Kits are documented on the kits page, not one guide each.
+  .filter(({ pkg }) => pkg.kitr.kind !== 'kit')
 const names = new Set(pkgs.map(({ pkg }) => pkg.kitr.name))
 
 export function frontmatter(source) {

@@ -150,6 +150,8 @@ for (const dir of readdirSync(join(repo, 'packages')).sort()) {
   if (!existsSync(file)) continue
   const pkg = JSON.parse(readFileSync(file, 'utf8'))
   if (!pkg.kitr) continue
+  // Kits are not packages you add; the home page and the CLI docs present them.
+  if (pkg.kitr.kind === 'kit') continue
   const docsDir = join(repo, 'packages', dir, pkg.kitr.docs ?? 'docs')
   const examplesDir = join(repo, 'packages', dir, 'examples')
   packages.push({
