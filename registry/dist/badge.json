@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge",
+  "type": "registry:ui",
+  "title": "Badge",
+  "description": "Status badge.",
+  "dependencies": [
+    "class-variance-authority"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/badge.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/badge.tsx",
+      "content": "import { cva, type VariantProps } from 'class-variance-authority'\nimport { cn } from 'kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport const badgeVariants = cva(\n  'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors',\n  {\n    variants: {\n      variant: {\n        default: 'border-transparent bg-primary text-primary-foreground',\n        secondary: 'border-transparent bg-muted text-foreground',\n        destructive: 'border-transparent bg-destructive text-destructive-foreground',\n        outline: 'text-foreground',\n      },\n    },\n    defaultVariants: { variant: 'default' },\n  },\n)\n\nexport function Badge({\n  className,\n  variant,\n  ...props\n}: ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {\n  return <span className={cn(badgeVariants({ variant }), className)} {...props} />\n}\n"
+    }
+  ]
+}

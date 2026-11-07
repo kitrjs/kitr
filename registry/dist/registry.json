@@ -1,0 +1,178 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "kitr",
+  "homepage": "https://kitr.dev",
+  "items": [
+    {
+      "name": "app-shell",
+      "type": "registry:ui",
+      "title": "App shell",
+      "description": "Sidebar + top bar layout with navigation links, user menu slot and theme toggle.",
+      "registryDependencies": [
+        "button",
+        "theme-toggle"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "Status badge.",
+      "registryDependencies": [],
+      "dependencies": [
+        "class-variance-authority"
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Button with variants and sizes, built on cva.",
+      "registryDependencies": [],
+      "dependencies": [
+        "class-variance-authority"
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "Card with header, content and footer.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "Native checkbox with kitr styling.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "data-table",
+      "type": "registry:ui",
+      "title": "Data table",
+      "description": "TanStack Table with sorting, pagination and URL-bound state via kitr/table.",
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "Modal dialog on the native <dialog> element. No positioning library.",
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "empty-state",
+      "type": "registry:ui",
+      "title": "Empty state",
+      "description": "Centered empty state with title, description and action.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "form",
+      "type": "registry:ui",
+      "title": "Form",
+      "description": "Styled FormField, FormMessage and SubmitButton over kitr/forms.",
+      "registryDependencies": [
+        "button",
+        "input",
+        "label"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "Text input.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "label",
+      "type": "registry:ui",
+      "title": "Label",
+      "description": "Form label.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "list-page",
+      "type": "registry:page",
+      "title": "List page",
+      "description": "A list route: page header, data table bound to URL search params, empty state.",
+      "registryDependencies": [
+        "page-header",
+        "data-table",
+        "empty-state",
+        "button"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "page-header",
+      "type": "registry:ui",
+      "title": "Page header",
+      "description": "Title, description and actions row for a page.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "Native select, styled to match inputs.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "sign-in-page",
+      "type": "registry:page",
+      "title": "Sign-in page",
+      "description": "A sign-in route using kitr/forms and the form components.",
+      "registryDependencies": [
+        "form",
+        "card",
+        "button",
+        "input"
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "description": "Loading placeholder.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "Multi-line text input.",
+      "registryDependencies": [],
+      "dependencies": []
+    },
+    {
+      "name": "theme-toggle",
+      "type": "registry:ui",
+      "title": "Theme toggle",
+      "description": "Light/dark toggle using kitr/ui's useTheme.",
+      "registryDependencies": [
+        "button"
+      ],
+      "dependencies": []
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea",
+  "type": "registry:ui",
+  "title": "Textarea",
+  "description": "Multi-line text input.",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/textarea.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/textarea.tsx",
+      "content": "import { cn } from 'kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport function Textarea({ className, ...props }: ComponentProps<'textarea'>) {\n  return (\n    <textarea\n      className={cn(\n        'flex min-h-20 w-full rounded-md border border-border bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-destructive',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n"
+    }
+  ]
+}

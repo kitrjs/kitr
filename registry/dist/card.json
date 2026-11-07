@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card",
+  "type": "registry:ui",
+  "title": "Card",
+  "description": "Card with header, content and footer.",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/card.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/card.tsx",
+      "content": "import { cn } from 'kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport function Card({ className, ...props }: ComponentProps<'div'>) {\n  return (\n    <div\n      className={cn('rounded-lg border border-border bg-background shadow-sm', className)}\n      {...props}\n    />\n  )\n}\nexport function CardHeader({ className, ...props }: ComponentProps<'div'>) {\n  return <div className={cn('flex flex-col gap-1.5 p-6', className)} {...props} />\n}\nexport function CardTitle({ className, ...props }: ComponentProps<'h3'>) {\n  return <h3 className={cn('font-semibold leading-none tracking-tight', className)} {...props} />\n}\nexport function CardDescription({ className, ...props }: ComponentProps<'p'>) {\n  return <p className={cn('text-sm text-muted-foreground', className)} {...props} />\n}\nexport function CardContent({ className, ...props }: ComponentProps<'div'>) {\n  return <div className={cn('p-6 pt-0', className)} {...props} />\n}\nexport function CardFooter({ className, ...props }: ComponentProps<'div'>) {\n  return <div className={cn('flex items-center p-6 pt-0', className)} {...props} />\n}\n"
+    }
+  ]
+}

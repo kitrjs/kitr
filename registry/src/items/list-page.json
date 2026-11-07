@@ -1,0 +1,10 @@
+{
+  "type": "registry:page",
+  "title": "List page",
+  "description": "A list route: page header, data table bound to URL search params, empty state.",
+  "registryDependencies": ["page-header", "data-table", "empty-state", "button"],
+  "targets": {
+    "items.tsx": "app/routes/items.tsx"
+  },
+  "files": ["items.tsx"]
+}

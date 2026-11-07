@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "list-page",
+  "type": "registry:page",
+  "title": "List page",
+  "description": "A list route: page header, data table bound to URL search params, empty state.",
+  "dependencies": [],
+  "registryDependencies": [
+    "page-header",
+    "data-table",
+    "empty-state",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "app/routes/items.tsx",
+      "type": "registry:page",
+      "target": "app/routes/items.tsx",
+      "content": "import { createFileRoute } from '@tanstack/react-router'\nimport {\n  type ColumnDef,\n  type DataTableFeatures,\n  parseTableSearch,\n  useUrlTableState,\n} from 'kitr/table'\nimport { Button } from '#components/ui/button'\nimport { DataTable } from '#components/ui/data-table'\nimport { PageHeader } from '#components/ui/page-header'\n\ninterface Item {\n  id: string\n  name: string\n  status: 'active' | 'archived'\n}\n\nconst columns: ColumnDef<DataTableFeatures, Item>[] = [\n  { accessorKey: 'name', header: 'Name' },\n  { accessorKey: 'status', header: 'Status' },\n]\n\nexport const Route = createFileRoute('/items')({\n  validateSearch: parseTableSearch,\n  component: ItemsPage,\n})\n\nfunction ItemsPage() {\n  const search = Route.useSearch()\n  const navigate = Route.useNavigate()\n  const tableState = useUrlTableState({\n    search,\n    setSearch: (patch) => navigate({ search: (prev: typeof search) => ({ ...prev, ...patch }) }),\n  })\n  // Replace with a query: `const { data } = useSuspenseQuery(itemsQuery.options(search))`\n  const data: Item[] = []\n  return (\n    <>\n      <PageHeader\n        title=\"Items\"\n        description=\"Everything in one table.\"\n        actions={<Button>New item</Button>}\n      />\n      <DataTable columns={columns} data={data} rowCount={0} {...tableState} />\n    </>\n  )\n}\n"
+    }
+  ]
+}

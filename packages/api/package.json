@@ -1,0 +1,40 @@
+{
+  "name": "@kitr/api",
+  "version": "0.1.0",
+  "description": "kitr/api: Adonis-style router, controllers, validators and middleware on h3, with a typed client and OpenAPI. No React.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/server": "workspace:*"
+  },
+  "peerDependencies": {
+    "h3": ">=2.0.0"
+  },
+  "devDependencies": {
+    "@kitr/logger": "workspace:*",
+    "@types/node": "^22.19.0",
+    "h3": "^2.0.8",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  }
+}

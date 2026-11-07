@@ -1,0 +1,10 @@
+{
+  "type": "registry:page",
+  "title": "Sign-in page",
+  "description": "A sign-in route using kitr/forms and the form components.",
+  "registryDependencies": ["form", "card", "button", "input"],
+  "targets": {
+    "sign-in.tsx": "app/routes/sign-in.tsx"
+  },
+  "files": ["sign-in.tsx"]
+}

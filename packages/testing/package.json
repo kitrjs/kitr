@@ -1,0 +1,60 @@
+{
+  "name": "@kitr/testing",
+  "version": "0.1.0",
+  "description": "kitr/testing: createTestApp and a request client for API tests (no React); kitr/testing/react adds renderWithKitr.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@kitr/react": "workspace:*",
+    "react": ">=18.0.0",
+    "@testing-library/react": ">=16.0.0",
+    "@testing-library/dom": ">=10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@kitr/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "@testing-library/react": {
+      "optional": true
+    },
+    "@testing-library/dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.19.0",
+    "@kitr/react": "workspace:*",
+    "@testing-library/dom": "^10.4.1"
+  }
+}

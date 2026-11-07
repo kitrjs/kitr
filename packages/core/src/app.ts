@@ -1,0 +1,126 @@
+import { ConfigStore } from './config'
+import { Container } from './container'
+import { type KitrProvider, type ProviderInput, resolveProvider } from './provider'
+import type { KitrNode } from './types'
+
+export type AppEnvironment = 'client' | 'server' | 'test'
+
+export interface CreateAppOptions {
+  providers?: ProviderInput[]
+  /** Per-package config, keyed the way `config/<name>.ts` files are. */
+  config?: Record<string, unknown>
+  environment?: AppEnvironment
+  /** Validated env object (from `createEnv`). Exposed as `app.env`. */
+  env?: Record<string, unknown>
+}
+
+type Phase = 'created' | 'registered' | 'booted' | 'ready' | 'shutdown'
+
+/**
+ * The app object every provider sees. One per client, one per server process,
+ * one per test. It owns the container, the config and the provider list.
+ */
+export class KitrApp {
+  readonly container: Container
+  readonly config = new ConfigStore()
+  readonly environment: AppEnvironment
+  readonly env: Record<string, unknown>
+  readonly providers: KitrProvider[] = []
+  private inputs: ProviderInput[]
+  private phase: Phase = 'created'
+  private booting?: Promise<this>
+
+  constructor(options: CreateAppOptions = {}) {
+    this.container = new Container()
+    this.environment = options.environment ?? detectEnvironment()
+    this.env = options.env ?? {}
+    this.inputs = [...(options.providers ?? [])]
+    for (const [key, value] of Object.entries(options.config ?? {}))
+      this.config.set(key, value as never)
+  }
+
+  get isClient(): boolean {
+    return this.environment === 'client'
+  }
+  get isServer(): boolean {
+    return this.environment === 'server'
+  }
+
+  /** Add a provider before boot. */
+  use(provider: ProviderInput): this {
+    if (this.phase !== 'created') throw new Error('[kitr] app.use() must be called before boot()')
+    this.inputs.push(provider)
+    return this
+  }
+
+  /** register → boot. Idempotent: concurrent callers share one boot. */
+  boot(): Promise<this> {
+    if (this.booting) return this.booting
+    this.booting = (async () => {
+      const resolved = await Promise.all(this.inputs.map(resolveProvider))
+      this.providers.push(...resolved)
+      for (const p of this.providers) await p.register?.(this)
+      this.phase = 'registered'
+      await this.container.resolveAll()
+      for (const p of this.providers) await p.boot?.(this)
+      this.phase = 'booted'
+      return this
+    })()
+    return this.booting
+  }
+
+  /** Server only: tell providers the server is listening. */
+  async ready(): Promise<this> {
+    await this.boot()
+    for (const p of this.providers) await p.ready?.(this)
+    this.phase = 'ready'
+    return this
+  }
+
+  /** Server only: run providers' `shutdown` in reverse order. */
+  async shutdown(): Promise<void> {
+    for (const p of [...this.providers].reverse()) await p.shutdown?.(this)
+    this.phase = 'shutdown'
+  }
+
+  /** Compose every provider's `wrap`, outermost first. */
+  wrap(children: KitrNode): KitrNode {
+    let node = children
+    for (const p of [...this.providers].reverse()) if (p.wrap) node = p.wrap(node, this)
+    return node
+  }
+
+  /** A request- or test-scoped app that shares providers and config but has its own instances. */
+  fork(): KitrApp {
+    const child = Object.create(KitrApp.prototype) as KitrApp
+    Object.assign(child, {
+      container: this.container.child(),
+      config: this.config,
+      environment: this.environment,
+      env: this.env,
+      providers: this.providers,
+      inputs: [],
+      phase: this.phase,
+      booting: Promise.resolve(child),
+    })
+    return child
+  }
+
+  get status(): Phase {
+    return this.phase
+  }
+}
+
+export function createApp(options?: CreateAppOptions): KitrApp {
+  return new KitrApp(options)
+}
+
+function detectEnvironment(): AppEnvironment {
+  if (globalProcess()?.env?.VITEST) return 'test'
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') return 'client'
+  return 'server'
+}
+
+function globalProcess(): { env?: Record<string, string | undefined> } | undefined {
+  return (globalThis as any).process
+}

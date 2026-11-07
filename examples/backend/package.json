@@ -1,0 +1,40 @@
+{
+  "name": "@kitr/example-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "start": "node --import tsx server.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "api:sync": "kitr api:sync",
+    "kitr": "kitr"
+  },
+  "dependencies": {
+    "@kitr/api": "workspace:*",
+    "@kitr/core": "workspace:*",
+    "@kitr/db": "workspace:*",
+    "@kitr/logger": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@kitr/socket": "workspace:*",
+    "crossws": "^0.4.17",
+    "h3": "^2.0.8",
+    "kitr": "workspace:*",
+    "srvx": "^1.0.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@kitr/testing": "workspace:*",
+    "@types/node": "^22.19.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  },
+  "imports": {
+    "#app/*": "./app/*",
+    "#config/*": "./config/*",
+    "#controllers/*": "./app/controllers/*",
+    "#start/*": "./start/*"
+  }
+}

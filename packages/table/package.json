@@ -1,0 +1,36 @@
+{
+  "name": "@kitr/table",
+  "version": "0.1.0",
+  "description": "kitr/table: TanStack Table re-exported, plus URL-bound table state.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tanstack/react-table": ">=8.20.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@tanstack/react-table": "^9.3.1"
+  }
+}

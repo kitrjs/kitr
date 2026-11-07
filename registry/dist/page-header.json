@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "page-header",
+  "type": "registry:ui",
+  "title": "Page header",
+  "description": "Title, description and actions row for a page.",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/page-header.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/page-header.tsx",
+      "content": "import { cn } from 'kitr/tailwind'\nimport type { ComponentProps, ReactNode } from 'react'\n\nexport interface PageHeaderProps extends Omit<ComponentProps<'header'>, 'title'> {\n  title: ReactNode\n  description?: ReactNode\n  actions?: ReactNode\n}\n\nexport function PageHeader({ title, description, actions, className, ...props }: PageHeaderProps) {\n  return (\n    <header\n      className={cn('mb-6 flex flex-wrap items-start justify-between gap-4', className)}\n      {...props}\n    >\n      <div className=\"flex flex-col gap-1\">\n        <h1 className=\"text-2xl font-semibold tracking-tight\">{title}</h1>\n        {description ? <p className=\"text-sm text-muted-foreground\">{description}</p> : null}\n      </div>\n      {actions ? <div className=\"flex items-center gap-2\">{actions}</div> : null}\n    </header>\n  )\n}\n"
+    }
+  ]
+}

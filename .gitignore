@@ -1,0 +1,14 @@
+node_modules
+dist
+.output
+.nitro
+.vinxi
+.tanstack
+*.tsbuildinfo
+.DS_Store
+coverage
+.turbo
+*.local
+
+# registry dist is served from GitHub raw
+!registry/dist

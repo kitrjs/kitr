@@ -1,0 +1,44 @@
+{
+  "name": "@kitr/tailwind",
+  "version": "0.1.0",
+  "description": "kitr/tailwind: Tailwind v4 wiring, the kitr preset (tokens as @theme) and a tailwind-merge aware cn().",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "preset.css"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "peerDependencies": {
+    "tailwindcss": ">=4.0.0",
+    "@tailwindcss/vite": ">=4.0.0",
+    "vite": ">=6.0.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "tailwindcss": "^4.3.5",
+    "@tailwindcss/vite": "^4.3.5",
+    "vite": "^8.3.6"
+  }
+}

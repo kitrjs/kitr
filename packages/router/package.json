@@ -1,0 +1,40 @@
+{
+  "name": "@kitr/router",
+  "version": "0.1.0",
+  "description": "kitr/router: TanStack Router re-exported, plus guards, default pending/error components and createKitrRouter.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tanstack/react-router": ">=1.120.0",
+    "@tanstack/react-query": ">=5.80.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-router": "^1.170.46",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  }
+}

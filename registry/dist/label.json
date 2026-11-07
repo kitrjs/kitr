@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "label",
+  "type": "registry:ui",
+  "title": "Label",
+  "description": "Form label.",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/label.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/label.tsx",
+      "content": "import { cn } from 'kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport function Label({ className, ...props }: ComponentProps<'label'>) {\n  return (\n    // biome-ignore lint/a11y/noLabelWithoutControl: htmlFor comes from props\n    <label\n      className={cn(\n        'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n"
+    }
+  ]
+}

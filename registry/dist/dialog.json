@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dialog",
+  "type": "registry:ui",
+  "title": "Dialog",
+  "description": "Modal dialog on the native <dialog> element. No positioning library.",
+  "dependencies": [],
+  "registryDependencies": [
+    "button"
+  ],
+  "files": [
+    {
+      "path": "app/components/ui/dialog.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/dialog.tsx",
+      "content": "import { cn } from 'kitr/tailwind'\nimport { type ComponentProps, type ReactNode, useEffect, useRef } from 'react'\n\nexport interface DialogProps extends Omit<ComponentProps<'dialog'>, 'open'> {\n  open: boolean\n  onOpenChange: (open: boolean) => void\n  children: ReactNode\n}\n\n/** Controlled modal on <dialog>: focus trap, Escape and backdrop close come from the browser. */\nexport function Dialog({ open, onOpenChange, className, children, ...props }: DialogProps) {\n  const ref = useRef<HTMLDialogElement>(null)\n  useEffect(() => {\n    const el = ref.current\n    if (!el) return\n    if (open && !el.open) el.showModal()\n    if (!open && el.open) el.close()\n  }, [open])\n  return (\n    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click only; Escape is handled natively by <dialog> via onClose\n    <dialog\n      ref={ref}\n      onClose={() => onOpenChange(false)}\n      onClick={(e) => {\n        if (e.target === ref.current) onOpenChange(false)\n      }}\n      className={cn(\n        'w-full max-w-lg rounded-lg border border-border bg-background p-0 text-foreground shadow-md backdrop:bg-black/50 open:animate-in',\n        className,\n      )}\n      {...props}\n    >\n      <div className=\"p-6\">{children}</div>\n    </dialog>\n  )\n}\n\nexport function DialogHeader({ className, ...props }: ComponentProps<'div'>) {\n  return <div className={cn('mb-4 flex flex-col gap-1.5', className)} {...props} />\n}\nexport function DialogTitle({ className, ...props }: ComponentProps<'h2'>) {\n  return <h2 className={cn('text-lg font-semibold leading-none', className)} {...props} />\n}\nexport function DialogDescription({ className, ...props }: ComponentProps<'p'>) {\n  return <p className={cn('text-sm text-muted-foreground', className)} {...props} />\n}\nexport function DialogFooter({ className, ...props }: ComponentProps<'div'>) {\n  return <div className={cn('mt-6 flex justify-end gap-2', className)} {...props} />\n}\n"
+    }
+  ]
+}

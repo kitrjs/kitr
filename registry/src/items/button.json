@@ -1,0 +1,5 @@
+{
+  "title": "Button",
+  "description": "Button with variants and sizes, built on cva.",
+  "dependencies": ["class-variance-authority"]
+}

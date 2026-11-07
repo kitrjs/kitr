@@ -1,0 +1,58 @@
+{
+  "name": "@kitr/vite",
+  "version": "0.1.0",
+  "description": "kitr/vite: the kitr() Vite plugin. Reads kitrrc.ts, wires the TanStack router plugin, optimizeDeps and Tailwind.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./client": {
+      "types": "./client.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "client.d.ts"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "jiti": "^2.7.0"
+  },
+  "peerDependencies": {
+    "vite": ">=6.0.0",
+    "@tanstack/router-plugin": ">=1.120.0",
+    "@tanstack/react-start": ">=1.120.0",
+    "@tailwindcss/vite": ">=4.0.0",
+    "@vitejs/plugin-react": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-start": {
+      "optional": true
+    },
+    "@tailwindcss/vite": {
+      "optional": true
+    },
+    "@vitejs/plugin-react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6",
+    "@tanstack/router-plugin": "^1.168.48",
+    "@tanstack/react-start": "^1.169.4",
+    "@tailwindcss/vite": "^4.3.5",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@types/node": "^22.19.0"
+  }
+}

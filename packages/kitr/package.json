@@ -1,0 +1,296 @@
+{
+  "name": "kitr",
+  "version": "0.1.0",
+  "description": "The kitr React framework: one import surface over TanStack, React Hook Form and friends, plus the kitr CLI.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "bin": {
+    "kitr": "./bin/kitr.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./env": {
+      "types": "./dist/env.d.ts",
+      "default": "./dist/env.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./router": {
+      "types": "./dist/router.d.ts",
+      "default": "./dist/router.js"
+    },
+    "./query": {
+      "types": "./dist/query.d.ts",
+      "default": "./dist/query.js"
+    },
+    "./query/provider": {
+      "types": "./dist/query-provider.d.ts",
+      "default": "./dist/query-provider.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "default": "./dist/http.js"
+    },
+    "./http/provider": {
+      "types": "./dist/http-provider.d.ts",
+      "default": "./dist/http-provider.js"
+    },
+    "./forms": {
+      "types": "./dist/forms.d.ts",
+      "default": "./dist/forms.js"
+    },
+    "./table": {
+      "types": "./dist/table.d.ts",
+      "default": "./dist/table.js"
+    },
+    "./state": {
+      "types": "./dist/state.d.ts",
+      "default": "./dist/state.js"
+    },
+    "./styling": {
+      "types": "./dist/styling.d.ts",
+      "default": "./dist/styling.js"
+    },
+    "./tailwind": {
+      "types": "./dist/tailwind.d.ts",
+      "default": "./dist/tailwind.js"
+    },
+    "./tailwind/vite": {
+      "types": "./dist/tailwind-vite.d.ts",
+      "default": "./dist/tailwind-vite.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./ui/provider": {
+      "types": "./dist/ui-provider.d.ts",
+      "default": "./dist/ui-provider.js"
+    },
+    "./ui/styles.css": "./styles/ui.css",
+    "./tailwind/preset.css": "./styles/tailwind-preset.css",
+    "./logger": {
+      "types": "./dist/logger.d.ts",
+      "default": "./dist/logger.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    },
+    "./api/client": {
+      "types": "./dist/api-client.d.ts",
+      "default": "./dist/api-client.js"
+    },
+    "./actions": {
+      "types": "./dist/actions.d.ts",
+      "default": "./dist/actions.js"
+    },
+    "./ssr": {
+      "types": "./dist/ssr.d.ts",
+      "default": "./dist/ssr.js"
+    },
+    "./socket": {
+      "types": "./dist/socket.d.ts",
+      "default": "./dist/socket.js"
+    },
+    "./socket/server": {
+      "types": "./dist/socket-server.d.ts",
+      "default": "./dist/socket-server.js"
+    },
+    "./socket.io": {
+      "types": "./dist/socket-io.d.ts",
+      "default": "./dist/socket-io.js"
+    },
+    "./socket.io/server": {
+      "types": "./dist/socket-io-server.d.ts",
+      "default": "./dist/socket-io-server.js"
+    },
+    "./auth": {
+      "types": "./dist/auth.d.ts",
+      "default": "./dist/auth.js"
+    },
+    "./auth/provider": {
+      "types": "./dist/auth-provider.d.ts",
+      "default": "./dist/auth-provider.js"
+    },
+    "./auth/server": {
+      "types": "./dist/auth-server.d.ts",
+      "default": "./dist/auth-server.js"
+    },
+    "./db": {
+      "types": "./dist/db.d.ts",
+      "default": "./dist/db.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    },
+    "./testing/react": {
+      "types": "./dist/testing-react.d.ts",
+      "default": "./dist/testing-react.js"
+    },
+    "./mocks": {
+      "types": "./dist/mocks.d.ts",
+      "default": "./dist/mocks.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n.d.ts",
+      "default": "./dist/i18n.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "styles"
+  ],
+  "scripts": {
+    "build": "tsdown && node scripts/copy-styles.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/cli": "workspace:*"
+  },
+  "peerDependencies": {
+    "@kitr/actions": "workspace:*",
+    "@kitr/api": "workspace:*",
+    "@kitr/auth": "workspace:*",
+    "@kitr/db": "workspace:*",
+    "@kitr/forms": "workspace:*",
+    "@kitr/http": "workspace:*",
+    "@kitr/i18n": "workspace:*",
+    "@kitr/logger": "workspace:*",
+    "@kitr/mocks": "workspace:*",
+    "@kitr/query": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/router": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@kitr/socket": "workspace:*",
+    "@kitr/socket.io": "workspace:*",
+    "@kitr/ssr": "workspace:*",
+    "@kitr/state": "workspace:*",
+    "@kitr/styling": "workspace:*",
+    "@kitr/table": "workspace:*",
+    "@kitr/tailwind": "workspace:*",
+    "@kitr/testing": "workspace:*",
+    "@kitr/ui": "workspace:*",
+    "@kitr/vite": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@kitr/actions": {
+      "optional": true
+    },
+    "@kitr/api": {
+      "optional": true
+    },
+    "@kitr/auth": {
+      "optional": true
+    },
+    "@kitr/db": {
+      "optional": true
+    },
+    "@kitr/forms": {
+      "optional": true
+    },
+    "@kitr/http": {
+      "optional": true
+    },
+    "@kitr/i18n": {
+      "optional": true
+    },
+    "@kitr/logger": {
+      "optional": true
+    },
+    "@kitr/mocks": {
+      "optional": true
+    },
+    "@kitr/query": {
+      "optional": true
+    },
+    "@kitr/react": {
+      "optional": true
+    },
+    "@kitr/router": {
+      "optional": true
+    },
+    "@kitr/server": {
+      "optional": true
+    },
+    "@kitr/socket": {
+      "optional": true
+    },
+    "@kitr/socket.io": {
+      "optional": true
+    },
+    "@kitr/ssr": {
+      "optional": true
+    },
+    "@kitr/state": {
+      "optional": true
+    },
+    "@kitr/styling": {
+      "optional": true
+    },
+    "@kitr/table": {
+      "optional": true
+    },
+    "@kitr/tailwind": {
+      "optional": true
+    },
+    "@kitr/testing": {
+      "optional": true
+    },
+    "@kitr/ui": {
+      "optional": true
+    },
+    "@kitr/vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@kitr/actions": "workspace:*",
+    "@kitr/api": "workspace:*",
+    "@kitr/auth": "workspace:*",
+    "@kitr/db": "workspace:*",
+    "@kitr/forms": "workspace:*",
+    "@kitr/http": "workspace:*",
+    "@kitr/i18n": "workspace:*",
+    "@kitr/logger": "workspace:*",
+    "@kitr/mocks": "workspace:*",
+    "@kitr/query": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/router": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@kitr/socket": "workspace:*",
+    "@kitr/socket.io": "workspace:*",
+    "@kitr/ssr": "workspace:*",
+    "@kitr/state": "workspace:*",
+    "@kitr/styling": "workspace:*",
+    "@kitr/table": "workspace:*",
+    "@kitr/tailwind": "workspace:*",
+    "@kitr/testing": "workspace:*",
+    "@kitr/ui": "workspace:*",
+    "@kitr/vite": "workspace:*",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  }
+}
