@@ -20,6 +20,12 @@ export interface CreateKitrRouterOptions<TRouteTree extends AnyRoute>
   context?: Record<string, unknown>
 }
 
+declare module '@kitr/core' {
+  interface ContainerBindings {
+    router: AnyRouter
+  }
+}
+
 /**
  * `createRouter` with kitr's defaults: queryClient and app in context, intent
  * preload, scroll restoration, default pending/error/not-found components,
@@ -27,12 +33,6 @@ export interface CreateKitrRouterOptions<TRouteTree extends AnyRoute>
  *
  * With `@kitr/query` installed, loaders can `context.queryClient.ensureQueryData(...)`.
  */
-declare module '@kitr/core' {
-  interface ContainerBindings {
-    router: AnyRouter
-  }
-}
-
 export function createKitrRouter<TRouteTree extends AnyRoute>(
   options: CreateKitrRouterOptions<TRouteTree>,
 ): Router<TRouteTree, 'never', true> {
