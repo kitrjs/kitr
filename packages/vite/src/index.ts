@@ -16,6 +16,8 @@ export interface KitrPluginOptions {
   generatedRouteTree?: string
   /** Extra options for @tanstack/router-plugin. */
   router?: Record<string, unknown>
+  /** Include `@kitr/devtools/provider`. Default: never in production builds, always otherwise. */
+  devtools?: boolean
 }
 
 interface RcInfo {
@@ -33,16 +35,28 @@ interface RcInfo {
 export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   let root = options.root ?? process.cwd()
   let rc = readRc(root)
+  let stripDevtools = false
   const plugins: PluginOption[] = []
 
   const core: Plugin = {
     name: 'kitr',
     enforce: 'pre',
-    async config(config) {
+    async config(config, env) {
+      stripDevtools =
+        options.devtools === false || (env.command === 'build' && env.mode === 'production')
       root = options.root ?? config.root ?? process.cwd()
       rc = readRc(root)
       const include = blessedDeps(root)
+      // Tauri's webview needs a fixed port and sees TAURI_ENV_* at build time.
+      const tauri = rc.packages.includes('@kitr/tauri')
+        ? {
+            clearScreen: false,
+            server: { port: 1420, strictPort: true },
+            envPrefix: ['VITE_', 'TAURI_ENV_*'],
+          }
+        : {}
       return {
+        ...tauri,
         resolve: {
           alias: {
             '#app': resolve(root, rc.directories.app ?? 'app'),
@@ -60,10 +74,14 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
     },
     load(id) {
       if (id === '\0virtual:kitr/providers') {
-        const imports = rc.providers
+        // Production builds never import the devtools provider, so the overlay is not in the bundle.
+        const specs = stripDevtools
+          ? rc.providers.filter((spec) => !/devtools\/provider$/.test(spec))
+          : rc.providers
+        const imports = specs
           .map((spec, i) => `import p${i} from ${JSON.stringify(spec)}`)
           .join('\n')
-        return `${imports}\nexport const providers = [${rc.providers.map((_, i) => `p${i}`).join(', ')}]\n`
+        return `${imports}\nexport const providers = [${specs.map((_, i) => `p${i}`).join(', ')}]\n`
       }
       if (id === '\0virtual:kitr/config') {
         const dir = resolve(root, rc.directories.config ?? 'config')

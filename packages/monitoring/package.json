@@ -1,0 +1,74 @@
+{
+  "name": "@kitr/monitoring",
+  "version": "0.1.0",
+  "description": "kitr/monitoring: captureException, breadcrumbs and user context behind one API, with Sentry and console reporters; error boundary and server middleware.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@kitr/server": "workspace:*",
+    "h3": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@kitr/server": {
+      "optional": true
+    },
+    "h3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@kitr/server": "workspace:*",
+    "h3": "^2.0.8",
+    "@types/node": "^22.19.0"
+  },
+  "kitr": {
+    "name": "monitoring",
+    "title": "Monitoring",
+    "summary": "Catch errors in the browser and on the server, and see which user hit them and what they did first.",
+    "category": "insights",
+    "runsOn": "both",
+    "builtOn": [
+      "Sentry"
+    ],
+    "docs": "docs"
+  }
+}

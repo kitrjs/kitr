@@ -1,0 +1,82 @@
+{
+  "name": "@kitr/analytics",
+  "version": "0.1.0",
+  "description": "kitr/analytics: one page/track/identify API with Google Analytics, Plausible, PostHog and console adapters; page views from the router.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tanstack/react-router": ">=1.120.0",
+    "posthog-js": ">=1.200.0",
+    "@kitr/react": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@tanstack/react-router": {
+      "optional": true
+    },
+    "posthog-js": {
+      "optional": true
+    },
+    "@kitr/react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@tanstack/react-router": "^1.170.46",
+    "@types/node": "^22.19.0",
+    "@kitr/react": "workspace:*"
+  },
+  "kitr": {
+    "name": "analytics",
+    "title": "Analytics",
+    "summary": "Count page views and button clicks, and send them to the analytics service you choose.",
+    "category": "insights",
+    "runsOn": "client",
+    "builtOn": [
+      "Google Analytics",
+      "Plausible",
+      "PostHog"
+    ],
+    "client": true,
+    "docs": "docs"
+  }
+}

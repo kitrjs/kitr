@@ -1,0 +1,60 @@
+{
+  "name": "@kitr/devtools",
+  "version": "0.1.0",
+  "description": "kitr/devtools: the development overlay. Every provider can contribute panels, actions and event logs; stripped from production builds.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@kitr/react": "workspace:*"
+  },
+  "kitr": {
+    "name": "devtools",
+    "title": "Devtools",
+    "summary": "Open a panel in development that shows what every package is doing. It is removed from production builds.",
+    "category": "dev-tools",
+    "runsOn": "client",
+    "client": true,
+    "docs": "docs"
+  }
+}

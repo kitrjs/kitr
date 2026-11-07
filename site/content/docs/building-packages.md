@@ -33,7 +33,7 @@ Every package on this site, official or not, is an ordinary npm package with thr
 | `name` | yes | The short name people type: `kitr add stripe`. |
 | `title` | yes | Display name on this site. |
 | `summary` | yes | One sentence, 140 characters at most, on what it does for the app. See below. |
-| `category` | yes | One of `data-fetching`, `app-state`, `backend`, `realtime`, `interface`, `forms`, `auth`, `pages`, `dev-tools`. Sets the colour and filter on the packages page. |
+| `category` | yes | One of `data-fetching`, `app-state`, `backend`, `realtime`, `interface`, `forms`, `auth`, `pages`, `platforms`, `device`, `insights`, `dev-tools`. Sets the colour and filter on the packages page. |
 | `runsOn` | yes | `client`, `server` or `both`. Shown as a badge. |
 | `builtOn` | | Upstream libraries it wraps, shown as "Built on". |
 | `requires` | | Other kitr packages that must be added first. |

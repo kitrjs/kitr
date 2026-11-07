@@ -33,6 +33,9 @@ export const categories = {
   forms: 'Forms',
   auth: 'Auth',
   pages: 'Pages & routing',
+  platforms: 'Platforms',
+  device: 'Device features',
+  insights: 'Analytics & errors',
   'dev-tools': 'Developer tools',
 } as const
 

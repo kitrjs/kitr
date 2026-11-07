@@ -66,4 +66,12 @@ export const REWRITES: Record<string, string> = {
   'kitr/i18n': 'react-i18next',
   'kitr/mocks': 'msw',
   'kitr/ui': 'your copied components + sonner',
+  'kitr/analytics': 'gtag / plausible / posthog-js called directly',
+  'kitr/monitoring': '@sentry/react (or @sentry/node) called directly',
+  'kitr/pwa': 'vite-plugin-pwa + navigator.serviceWorker',
+  'kitr/electron': 'electron ipcMain/ipcRenderer + contextBridge',
+  'kitr/tauri': '@tauri-apps/api (invoke, listen, emit)',
+  'kitr/capacitor': '@capacitor/core + @capacitor/app',
+  'kitr/storage': 'localStorage / document.cookie (+ a cookie parser)',
+  'kitr/devtools': 'nothing; development only',
 }

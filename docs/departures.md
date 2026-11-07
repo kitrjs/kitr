@@ -42,6 +42,18 @@ Instead of a runtime glob, the Vite plugin exposes `virtual:kitr/providers` and 
 
 `renderWithKitr` pulls Testing Library and React. It moved to `kitr/testing/react`, so `kitr/testing` stays usable in a pure backend's tests.
 
+## `app.mode` beside `app.environment`
+
+The plan had `environment` (client/server/test) only. Providers also need to know development from production (console analytics in dev, nothing in prod; devtools on or off), so `createApp` detects `mode` from Vite's `import.meta.env` or `NODE_ENV` and exposes `isDevelopment`/`isProduction`.
+
+## Platform add-ons
+
+Not in the plan: `analytics`, `monitoring`, `pwa`, `electron`, `tauri` and `capacitor`. They follow the same rules as every other package (re-export, add beside; config in `config/<name>.ts`; a recipe that wires the vendor tooling and writes an `AGENTS.md` section) and never replace the vendor CLI: `pnpm tauri`, `pnpm cap` and `electron-builder` stay the source of truth for native builds. Every helper degrades in a plain browser so one app can target all of them.
+
+## Devtools and storage
+
+Also not in the plan. `@kitr/devtools` follows the provider model: the hub is a container binding that exists only in development on the client, providers contribute panels through an optional `devtools()` method on the provider interface (lazy-importing their React parts), and `getDevtools(app)` is `null` everywhere else so logging costs nothing. The overlay has no dependencies beyond React. `@kitr/storage` makes browser storage and cookies declarations (`defineStorage`, `defineCookie`) so the same module reads on the server, in `useSyncExternalStore`-based hooks, and in tests. `createKitrRouter` now binds `router` into the container so devtools (and services) can reach it.
+
 ## Extra commands
 
 `kitr serve` (serve a Start build with srvx and WebSocket upgrades), `kitr info`, `kitr css:types` (typed CSS Modules for the no-Tailwind path), and `kitr eject all` printing the import rewrites that remove kitr. `make:*` generators can be overridden per project via `kitr eject stub <kind>`.

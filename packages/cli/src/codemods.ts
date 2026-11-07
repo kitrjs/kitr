@@ -162,6 +162,29 @@ export class Codemods {
     this.ctx.log.step(`remove ${file}`)
   }
 
+  /** Add a default import to a file kitr owns (vite.config.ts, capacitor.config.ts). Idempotent. */
+  addImport(file: string, local: string, spec: string) {
+    const full = this.ctx.path(file)
+    if (!existsSync(full) || this.ctx.dryRun) return
+    const src = readFileSync(full, 'utf8')
+    if (src.includes(`from '${spec}'`) || src.includes(`from "${spec}"`)) return
+    const mod = parseModule(src)
+    mod.imports.$prepend({ from: spec, imported: 'default', local })
+    writeFileSync(full, generateCode(mod).code)
+    this.ctx.touched.add(file)
+  }
+
+  /** Set a top-level package.json field (`main`, `build`...). Overwrites. */
+  setPackageField(name: string, value: unknown) {
+    const pkgPath = this.ctx.path('package.json')
+    const pkg = existsSync(pkgPath) ? JSON.parse(readFileSync(pkgPath, 'utf8')) : {}
+    if (JSON.stringify(pkg[name]) === JSON.stringify(value)) return
+    pkg[name] = value
+    if (!this.ctx.dryRun) writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+    this.ctx.pkg = pkg
+    this.ctx.touched.add('package.json')
+  }
+
   /** Set a package.json script unless it exists. */
   addScript(name: string, command: string) {
     const pkgPath = this.ctx.path('package.json')

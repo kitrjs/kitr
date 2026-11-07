@@ -1,4 +1,5 @@
 import type { KitrApp } from './app'
+import type { DevtoolsPanel } from './devtools'
 import type { KitrNode, MaybePromise } from './types'
 
 /**
@@ -18,6 +19,8 @@ export interface KitrProvider {
   wrap?(children: KitrNode, app: KitrApp): KitrNode
   ready?(app: KitrApp): MaybePromise<void>
   shutdown?(app: KitrApp): MaybePromise<void>
+  /** Development only: panels for the kitr devtools overlay. Lazy-import the React parts inside. */
+  devtools?(app: KitrApp): MaybePromise<DevtoolsPanel[]>
 }
 
 export type ProviderInput =

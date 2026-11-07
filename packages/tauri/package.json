@@ -1,0 +1,61 @@
+{
+  "name": "@kitr/tauri",
+  "version": "0.1.0",
+  "description": "kitr/tauri: typed commands over invoke, event hooks, and query contracts for Tauri v2 apps.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tauri-apps/api": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@tauri-apps/api": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@tauri-apps/api": "^2.12.4"
+  },
+  "kitr": {
+    "name": "tauri",
+    "title": "Tauri",
+    "summary": "Ship your app as a small, fast desktop program, with typed calls into native code.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Tauri 2"
+    ],
+    "client": true,
+    "docs": "docs"
+  }
+}

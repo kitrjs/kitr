@@ -23,6 +23,14 @@
 "@kitr/testing": minor
 "@kitr/mocks": minor
 "@kitr/i18n": minor
+"@kitr/analytics": minor
+"@kitr/monitoring": minor
+"@kitr/pwa": minor
+"@kitr/electron": minor
+"@kitr/tauri": minor
+"@kitr/capacitor": minor
+"@kitr/storage": minor
+"@kitr/devtools": minor
 "@kitr/vite": minor
 "@kitr/cli": minor
 ---

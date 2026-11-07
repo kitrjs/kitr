@@ -1,6 +1,7 @@
 import type { Codemods } from './codemods'
 import type { ProjectContext } from './context'
 import { manifests } from './manifests.gen'
+import { addonRecipes } from './recipes-addons'
 
 export interface Recipe {
   name: string
@@ -564,6 +565,12 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('i18n')
     },
   }),
+  ...Object.fromEntries(
+    Object.entries(addonRecipes).map(([name, recipe]) => {
+      const m = manifests[name]
+      return [name, m ? { ...recipe, description: m.summary } : recipe]
+    }),
+  ),
 }
 
 export const recipeNames = Object.keys(recipes)

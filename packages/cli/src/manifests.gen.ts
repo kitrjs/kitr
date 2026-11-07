@@ -18,6 +18,21 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
+  "analytics": {
+    "package": "@kitr/analytics",
+    "name": "analytics",
+    "title": "Analytics",
+    "summary": "Count page views and button clicks, and send them to the analytics service you choose.",
+    "category": "insights",
+    "runsOn": "client",
+    "builtOn": [
+      "Google Analytics",
+      "Plausible",
+      "PostHog"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "api": {
     "package": "@kitr/api",
     "name": "api",
@@ -43,6 +58,19 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
+  "capacitor": {
+    "package": "@kitr/capacitor",
+    "name": "capacitor",
+    "title": "Capacitor",
+    "summary": "Ship your app to the iPhone and Android app stores, with hooks for the back button and app state.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Capacitor"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "db": {
     "package": "@kitr/db",
     "name": "db",
@@ -53,6 +81,30 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
+    "docs": "docs"
+  },
+  "devtools": {
+    "package": "@kitr/devtools",
+    "name": "devtools",
+    "title": "Devtools",
+    "summary": "Open a panel in development that shows what every package is doing. It is removed from production builds.",
+    "category": "dev-tools",
+    "runsOn": "client",
+    "client": true,
+    "docs": "docs"
+  },
+  "electron": {
+    "package": "@kitr/electron",
+    "name": "electron",
+    "title": "Electron",
+    "summary": "Ship your app as a desktop program for Windows, macOS and Linux, with typed calls into the system.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Electron",
+      "electron-vite"
+    ],
+    "client": true,
     "docs": "docs"
   },
   "forms": {
@@ -115,6 +167,31 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "client",
     "builtOn": [
       "msw"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "monitoring": {
+    "package": "@kitr/monitoring",
+    "name": "monitoring",
+    "title": "Monitoring",
+    "summary": "Catch errors in the browser and on the server, and see which user hit them and what they did first.",
+    "category": "insights",
+    "runsOn": "both",
+    "builtOn": [
+      "Sentry"
+    ],
+    "docs": "docs"
+  },
+  "pwa": {
+    "package": "@kitr/pwa",
+    "name": "pwa",
+    "title": "PWA",
+    "summary": "Let people install your web app and keep using it offline, with a prompt when a new version ships.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "vite-plugin-pwa"
     ],
     "client": true,
     "docs": "docs"
@@ -222,6 +299,19 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
+  "storage": {
+    "package": "@kitr/storage",
+    "name": "storage",
+    "title": "Storage",
+    "summary": "Save small values in the browser or in cookies with types, and read the same cookies on the server.",
+    "category": "device",
+    "runsOn": "both",
+    "builtOn": [
+      "localStorage",
+      "cookies"
+    ],
+    "docs": "docs"
+  },
   "styling": {
     "package": "@kitr/styling",
     "name": "styling",
@@ -258,6 +348,19 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "client",
     "builtOn": [
       "tailwindcss"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "tauri": {
+    "package": "@kitr/tauri",
+    "name": "tauri",
+    "title": "Tauri",
+    "summary": "Ship your app as a small, fast desktop program, with typed calls into native code.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Tauri 2"
     ],
     "client": true,
     "docs": "docs"
