@@ -1,7 +1,9 @@
 import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
 
+/** The runtimes the server platform can run its entry on. */
 export type ServerRuntime = 'node' | 'bun' | 'deno' | 'workers'
 
+/** Options for `server()` in `kitrrc.ts`. */
 export interface ServerPlatformOptions {
   /** Where the server runs. `node` (tsx in dev, node in production), `bun`, `deno` or Cloudflare `workers` (wrangler). Default `node`. */
   runtime: ServerRuntime

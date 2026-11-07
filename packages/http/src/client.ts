@@ -1,6 +1,7 @@
 import { isKitrErrorShape, KitrError, toKitrError } from '@kitr/core'
 import ky, { HTTPError, type KyInstance, type Options } from 'ky'
 
+/** Options for `createHttpClient` and `config/http.ts`: kitr's auth settings plus every ky option except `prefixUrl`. */
 export interface HttpClientOptions extends Omit<Options, 'prefixUrl'> {
   /** Base URL; usually from validated env. */
   baseUrl?: string

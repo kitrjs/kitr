@@ -14,16 +14,21 @@ import { createMiddleware, createServerFn } from '@tanstack/react-start'
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: KitrErrorShape }
 
+/** What an action's handler receives: the validated input, middleware context and the caller's abort signal. */
 export interface ActionContext<TInput, TContext> {
+  /** The input after the `input` schema ran, with its transforms and defaults applied. */
   input: TInput
   /** Context from Start middleware (request, session...). */
   context: TContext
+  /** Fires when the caller aborts; pass it to `fetch` or a database query. */
   signal: AbortSignal
 }
 
+/** The second argument of `defineAction`: method, input schema, middleware, cache effects and handler. */
 export interface DefineActionOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext> {
   /** GET actions can be cached and prefetched like queries; POST (default) for mutations. */
   method?: 'GET' | 'POST'
+  /** Standard Schema (zod, valibot, arktype) run on the server before the handler; failures reject with `VALIDATION`. */
   input?: S
   /** TanStack Start middleware (`createMiddleware({ type: 'function' })`). */
   middleware?: ReadonlyArray<any>
@@ -31,16 +36,25 @@ export interface DefineActionOptions<S extends StandardSchemaV1 | undefined, TOu
   effects?:
     | CacheEffect
     | ((result: TOutput, input: S extends StandardSchemaV1 ? InferOutput<S> : void) => CacheEffect)
+  /** The server-only code. Its return value is sent to the caller; a thrown `KitrError` reaches the caller unchanged. */
   handler: (
     ctx: ActionContext<S extends StandardSchemaV1 ? InferOutput<S> : void, TContext>,
   ) => TOutput | Promise<TOutput>
 }
 
+/**
+ * What `defineAction` returns: an async function that runs the handler on the server and resolves
+ * with its result or rejects with a `KitrError`, plus contracts for kitr/query.
+ */
 export interface Action<TInput, TOutput> {
   (input: TInput, options?: { signal?: AbortSignal }): Promise<TOutput>
+  /** The name given to `defineAction`, such as `'orders.cancelOrder'`. */
   readonly name: string
+  /** The query key for an input: `['action', name, input]`, or `['action', name]` without input. */
   key(input: TInput): QueryKey
+  /** A query contract for `defineQuery`, for actions that read (`method: 'GET'`). */
   query(): Omit<QueryContract<TInput, TOutput>, 'kind'>
+  /** A mutation contract for `defineMutation`, carrying the action's cache effects. */
   mutation(): Omit<MutationContract<TInput, TOutput>, 'kind'>
   /** The raw TanStack server function, for `useServerFn` or middleware composition. */
   serverFn: (opts: { data: unknown; signal?: AbortSignal }) => Promise<Envelope<TOutput>>

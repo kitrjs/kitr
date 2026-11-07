@@ -18,13 +18,16 @@ Re-exports `clsx`, `tailwind-merge` unchanged, plus the following.
 function cn(...inputs: ClassValue[]): string;
 ```
 
-The shadcn `cn()`: clsx plus tailwind-merge, so later classes win.
+Join class names and drop the Tailwind classes a later one overrides: clsx plus tailwind-merge,
+as in shadcn. Put a component's `className` prop last so callers can override its defaults.
 
 ### defineConfig
 
 ```ts
 const defineConfig: <const C extends TailwindConfig>(config: C) => C;
 ```
+
+Types `config/tailwind.ts` against `TailwindConfig` and returns the object unchanged.
 
 ### TailwindConfig
 
@@ -36,6 +39,8 @@ interface TailwindConfig {
   preset?: boolean;
 }
 ```
+
+Options of `config/tailwind.ts`. They record how the project's stylesheet is set up; the build reads the CSS itself.
 
 ## kitr/tailwind/vite
 

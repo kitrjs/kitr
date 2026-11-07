@@ -2,11 +2,13 @@ import type { KitrErrorShape } from '@kitr/core'
 import type { SocketStatus, SocketTransport } from './client'
 import { type ClientMessage, parseMessage, type ServerMessage, topicFor } from './protocol'
 
+/** Options for `createSseTransport`, the Server-Sent Events client. */
 export interface SseTransportOptions {
   /** The stream URL (`/events`). Control messages are POSTed to the same URL. */
   url: string | (() => string)
   /** Extra headers for control requests (the stream itself cannot carry headers; use cookies or a `?token=`). */
   headers?: Record<string, string> | (() => Record<string, string>)
+  /** Called for server errors not tied to a subscription, and for failed control requests (`NETWORK`). */
   onError?: (error: KitrErrorShape) => void
 }
 

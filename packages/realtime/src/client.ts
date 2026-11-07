@@ -16,9 +16,11 @@ import {
   topicFor,
 } from './protocol'
 
+/** Options for `createSocketClient`, the native WebSocket transport. */
 export interface SocketClientOptions {
   /** `ws://` or `wss://` URL, or a function (e.g. to append a token). */
   url: string | (() => string | Promise<string>)
+  /** WebSocket subprotocols, passed to the WebSocket constructor. */
   protocols?: string | string[]
   /** Reconnect settings passed to partysocket. */
   reconnect?: { maxRetries?: number; minReconnectionDelay?: number; maxReconnectionDelay?: number }
@@ -26,18 +28,28 @@ export interface SocketClientOptions {
   onError?: (error: KitrErrorShape) => void
 }
 
+/** The connection state a transport reports: connecting, open or closed. */
 export type SocketStatus = 'connecting' | 'open' | 'closed'
 
+/**
+ * What every realtime client implements: WebSocket, Socket.IO, SSE, or your own.
+ * `channel()` and `useChannel()` only talk to this interface.
+ */
 export interface SocketTransport {
+  /** Subscribe to a channel topic. Returns a function that unsubscribes. */
   subscribe(
     channel: string,
     params: unknown,
     onEvent: (event: string, data: unknown) => void,
     onError?: (e: KitrErrorShape) => void,
   ): () => void
+  /** Send a client event up a channel; the server hands it to the channel's `onMessage`. */
   send(channel: string, params: unknown, event: string, data: unknown): void
+  /** Close the connection and stop reconnecting. */
   close(): void
+  /** The current connection state. */
   readonly status: SocketStatus
+  /** Listen for status changes. Returns a function that removes the listener. */
   onStatus(listener: (status: SocketStatus) => void): () => void
 }
 
@@ -139,6 +151,7 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
   }
 }
 
+/** A channel bound to a transport, as `channel()` returns it. */
 export interface ChannelHandle<C extends ChannelDefinition<any, any>> {
   /** A subscription contract for `useSubscription` (kitr/query) or `defineSubscription`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>
@@ -148,6 +161,7 @@ export interface ChannelHandle<C extends ChannelDefinition<any, any>> {
     event: E,
     data: unknown,
   ): void
+  /** The query key of a subscription: `['realtime', name, params]`. */
   key(params: ChannelParams<C>): QueryKey
 }
 
@@ -203,6 +217,7 @@ export function channel<C extends ChannelDefinition<any, any>>(
 
 /** Alias: the transport interface every realtime client implements. */
 export type RealtimeTransport = SocketTransport
+/** Alias of `SocketStatus`. */
 export type RealtimeStatus = SocketStatus
 /** The native WebSocket transport (same as `createSocketClient`). */
 export const createWebSocketTransport = createSocketClient

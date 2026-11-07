@@ -10,14 +10,19 @@ import type { KyInstance, Options } from 'ky'
 
 type Method = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
+/** Options for `httpQuery`: how one GET endpoint maps to a cached query. */
 export interface HttpQueryOptions<TInput, TOutput> {
   /** Path relative to the client's base URL, or a function of the input. */
   path: string | ((input: TInput) => string)
+  /** The cache key for an input. Include every input that changes the result. */
   key: (input: TInput) => QueryKey
+  /** Query string values from the input; `undefined` values are left out. */
   searchParams?: (input: TInput) => Record<string, string | number | boolean | undefined>
   /** Validate the response; also types `TOutput`. */
   schema?: StandardSchemaV1<unknown, TOutput>
+  /** ky options for this request only, such as `headers` or `timeout`. */
   options?: Options
+  /** How long this query's data stays fresh, in ms; overrides `config/query.ts`. */
   staleTime?: number
 }
 
@@ -45,12 +50,19 @@ export function httpQuery<TInput = void, TOutput = unknown>(
   }
 }
 
+/** Options for `httpMutation`: how one endpoint that changes data maps to a mutation. */
 export interface HttpMutationOptions<TInput, TOutput> {
+  /** HTTP method. Default `'post'`. */
   method?: Method
+  /** Path relative to the client's base URL, or a function of the input. */
   path: string | ((input: TInput) => string)
+  /** Builds the JSON body. Default: the input itself, or no body for `get` and `delete`. */
   body?: (input: TInput) => unknown
+  /** Validate the response; also types `TOutput`. */
   schema?: StandardSchemaV1<unknown, TOutput>
+  /** Cache effects applied after success: an object, or a function of the result and input. */
   effects?: CacheEffect | ((result: TOutput, input: TInput) => CacheEffect)
+  /** ky options for this request only. */
   options?: Options
 }
 

@@ -28,6 +28,9 @@ function defineTokens<const T extends TokenGroup>(tokens: T, options?: {
 }): DefineTokensResult<T>;
 ```
 
+Turn a nested token object into CSS custom properties with typed names. The prefix defaults to
+`kitr`, so `color.primary` becomes `--kitr-color-primary`.
+
 ### pick
 
 ```ts
@@ -42,7 +45,8 @@ Pick classes from a module with optional conditions: `pick(styles, 'card', { act
 function setToastImplementation(fn: ToastFn | null): void;
 ```
 
-Called by the ui provider once sonner is loaded.
+Replace what `toast` calls: a function with `success`, `error`, `info`, `warning` and `promise` methods.
+The theme provider sets sonner's `toast` once it loads; `null` goes back to the console fallback.
 
 ### themeFromCookie
 
@@ -86,6 +90,9 @@ Show a KitrError (or anything) as an error toast with its message.
 function useTheme(): ThemeContextValue;
 ```
 
+The current theme and the functions that change it: `{ theme, resolved, setTheme, toggle }`.
+Throws when no `ThemeProvider` (or the theme provider in `kitrrc.ts`) is above the component.
+
 ### vars
 
 ```ts
@@ -112,6 +119,8 @@ const darkTokens: DefineTokensResult<{
   };
 }>;
 ```
+
+kitr's dark colour tokens, the values `kitr/theme/styles.css` sets under `[data-theme="dark"]`. Radius, font and shadow are shared with the light set.
 
 ### defaultTokens
 
@@ -145,7 +154,7 @@ const defaultTokens: DefineTokensResult<{
 }>;
 ```
 
-kitr's default tokens. Override any of them in `config/theme.ts`.
+kitr's light (default) tokens, the values `kitr/theme/styles.css` sets on `:root`. Override them in `app/styles/tokens.css`.
 
 ### defineConfig
 
@@ -153,19 +162,26 @@ kitr's default tokens. Override any of them in `config/theme.ts`.
 const defineConfig: <const C extends ThemeConfig>(config: C) => C;
 ```
 
+Type-check `config/theme.ts`: returns the object unchanged, with autocomplete for every `ThemeConfig` option.
+
 ### toast
 
 ```ts
 const toast: ToastFn;
 ```
 
+Show a toast: `toast('Saved')`, `toast.success()`, `.error()`, `.info()`, `.warning()` and `.promise()`.
+Goes to sonner when it is installed and loaded, and to the console otherwise.
+
 ### DefineTokensResult
 
 ```ts
 interface DefineTokensResult<T extends TokenGroup> {
+  /** The token tree as passed in. */
   tokens: T;
-  /** `--kitr-color-primary` style names, typed from the token tree. */
+  /** A `var()` reference for a path: `var('color.primary')` → `var(--kitr-color-primary)`. */
   var: (path: TokenPath<T>) => `var(--${string})`;
+  /** The CSS variable name for a path: `name('color.primary')` → `--kitr-color-primary`. */
   name: (path: TokenPath<T>) => `--${string}`;
   /** `:root { --kitr-...: ...; }` ready to drop into a stylesheet. */
   css: (selector?: string) => string;
@@ -173,6 +189,8 @@ interface DefineTokensResult<T extends TokenGroup> {
   flat: () => Record<string, string>;
 }
 ```
+
+What `defineTokens` returns: the tree itself plus helpers that name, reference and emit its CSS variables.
 
 ### ThemeConfig
 
@@ -184,7 +202,7 @@ interface ThemeConfig {
   storageKey?: string;
   /** Attribute set on <html>. Default 'data-theme'. */
   attribute?: string;
-  /** Token overrides merged over kitr's defaults; emitted as CSS variables. */
+  /** Typed slot for token overrides. Not read by kitr yet; override `--kitr-*` variables in `app/styles/tokens.css`. */
   tokens?: {
     light?: TokenGroup;
     dark?: TokenGroup;
@@ -198,20 +216,29 @@ interface ThemeConfig {
   registry?: string;
   /** Where components are written. Default `app/components/ui`. */
   componentsDir?: string;
+  /** The sonner toaster the provider mounts once `sonner` is installed. */
   toaster?: {
+    /** Where toasts appear. Default `'bottom-right'`. */
     position?: 'top-right' | 'top-center' | 'bottom-right' | 'bottom-center';
+    /** Coloured success, error, info and warning toasts. Default `true`. */
     richColors?: boolean;
   };
 }
 ```
 
+The options of `config/theme.ts`: the default theme, where it is stored, window colours, the toaster and the component registry.
+
 ### ThemeProviderProps
 
 ```ts
 interface ThemeProviderProps {
+  /** The tree that can call `useTheme()`. */
   children: ReactNode;
+  /** The theme before the user picks one. Default `'system'`. */
   defaultTheme?: Theme;
+  /** The `localStorage` key and cookie name holding the choice. Default `'kitr-theme'`. */
   storageKey?: string;
+  /** The attribute set on `<html>` to `light` or `dark`. Default `'data-theme'`. */
   attribute?: string;
   /** Theme known on the server (e.g. from a cookie) to avoid a flash. */
   initialResolved?: ResolvedTheme;
@@ -223,6 +250,8 @@ interface ThemeProviderProps {
 }
 ```
 
+Props of `ThemeProvider`. The theme provider in `kitrrc.ts` fills them from `config/theme.ts`.
+
 ### TokenGroup
 
 ```ts
@@ -230,6 +259,8 @@ interface TokenGroup {
   [key: string]: TokenLeaf | TokenGroup;
 }
 ```
+
+A nested object of tokens, such as `{ color: { primary: '#0ea5e9' } }`. Each leaf becomes one CSS variable.
 
 ### CssModule
 
@@ -248,21 +279,24 @@ Type a CSS Modules import so `styles.foo` is checked. Generate the `.d.ts` with 
 type ResolvedTheme = 'light' | 'dark';
 ```
 
+The theme on screen once `'system'` is resolved: always `'light'` or `'dark'`.
+
 ### Theme
 
 ```ts
 type Theme = 'light' | 'dark' | 'system';
 ```
 
+The user's choice: a fixed theme, or `'system'` to follow the operating system.
+
 ### TokenLeaf
 
 ```ts
+/** A single token value: a CSS string such as `'0.5rem'`, or a number written without a unit. */
 type TokenLeaf = string | number;
 ```
 
-Design tokens as plain objects, emitted as CSS custom properties.
-The same tokens feed `@kitr/tailwind`'s `@theme` block and vanilla CSS alike,
-so switching styling approach never means re-typing colours.
+A single token value: a CSS string such as `'0.5rem'`, or a number written without a unit.
 
 ### TokenPath
 
@@ -271,6 +305,8 @@ type TokenPath<T, Prefix extends string = ''> = {
   [K in keyof T & string]: T[K] extends TokenLeaf ? `${Prefix}${K}` : TokenPath<T[K], `${Prefix}${K}.`>;
 }[keyof T & string];
 ```
+
+Every dotted path to a leaf of a token tree (`'color.primary'`), so token names are checked at compile time.
 
 ## kitr/theme/provider
 
@@ -299,10 +335,14 @@ Read the theme cookie on the server to pass as `initialResolved`.
 type ResolvedTheme = 'light' | 'dark';
 ```
 
+The theme on screen once `'system'` is resolved: always `'light'` or `'dark'`.
+
 ### Theme
 
 ```ts
 type Theme = 'light' | 'dark' | 'system';
 ```
+
+The user's choice: a fixed theme, or `'system'` to follow the operating system.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

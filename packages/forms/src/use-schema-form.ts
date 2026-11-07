@@ -2,6 +2,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema'
 import type { StandardSchemaV1 } from '@kitr/core'
 import { type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form'
 
+/** Every React Hook Form `useForm` option except `resolver`, which `useSchemaForm` sets from the schema. */
 export type SchemaFormOptions<TIn extends FieldValues, TOut> = Omit<
   UseFormProps<TIn, unknown, TOut>,
   'resolver'

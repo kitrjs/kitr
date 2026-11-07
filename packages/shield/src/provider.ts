@@ -1,7 +1,7 @@
 import { defineProvider } from '@kitr/core'
 import type { ShieldConfig } from './index'
 
-/** Validates `config/shield.ts` at boot; `shield(server)` in server/main.ts attaches the middleware. */
+/** Validates `config/shield.ts` at boot (refuses `origin: '*'` with credentials); `shield(server)` in server/main.ts attaches the middleware. */
 export const shieldProvider = defineProvider({
   name: 'shield',
   register(app) {

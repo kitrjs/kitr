@@ -4,13 +4,18 @@ import { DriverRegistry } from './drivers'
 import { type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 import type { KitrNode } from './types'
 
+/** Where the app is running: in a browser, in a server process, or under Vitest. */
 export type AppEnvironment = 'client' | 'server' | 'test'
+/** The build mode, which decides defaults such as log format and error masking. */
 export type AppMode = 'development' | 'production' | 'test'
 
+/** Options for `createApp()`: the providers to register, their config and the runtime details. */
 export interface CreateAppOptions {
+  /** Providers to register, in order. Usually the list from `kitrrc.ts`. */
   providers?: ProviderInput[]
   /** Per-package config, keyed the way `config/<name>.ts` files are. */
   config?: Record<string, unknown>
+  /** client | server | test. Default: `test` under Vitest, `client` when `window` exists, otherwise `server`. */
   environment?: AppEnvironment
   /** development | production | test. Default: from Vite's `import.meta.env.MODE` or `NODE_ENV`. */
   mode?: AppMode
@@ -144,6 +149,10 @@ export class KitrApp {
   }
 }
 
+/**
+ * Creates the app object that owns the container, config and providers. Call `boot()` on it
+ * before reading services; one app per client, per server process and per test.
+ */
 export function createApp(options?: CreateAppOptions): KitrApp {
   return new KitrApp(options)
 }

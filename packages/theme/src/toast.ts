@@ -23,11 +23,18 @@ const fallback: ToastFn = Object.assign((message: string) => console.info(`[toas
   promise: async <T>(p: Promise<T>) => p,
 })
 
-/** Called by the ui provider once sonner is loaded. */
+/**
+ * Replace what `toast` calls: a function with `success`, `error`, `info`, `warning` and `promise` methods.
+ * The theme provider sets sonner's `toast` once it loads; `null` goes back to the console fallback.
+ */
 export function setToastImplementation(fn: ToastFn | null) {
   impl = fn
 }
 
+/**
+ * Show a toast: `toast('Saved')`, `toast.success()`, `.error()`, `.info()`, `.warning()` and `.promise()`.
+ * Goes to sonner when it is installed and loaded, and to the console otherwise.
+ */
 export const toast: ToastFn = Object.assign(
   (message: string, options?: Record<string, unknown>) => (impl ?? fallback)(message, options),
   {

@@ -16,15 +16,20 @@ import {
 } from 'react-hook-form'
 import { applyServerErrors } from './server-errors'
 
+/** Props of `<Form>`. Every other prop is passed to the `<form>` element. */
 export interface FormProps<TIn extends FieldValues, TOut extends FieldValues>
   extends Omit<ComponentProps<'form'>, 'onSubmit' | 'onError'> {
+  /** The object returned by `useSchemaForm` or React Hook Form's `useForm`. */
   form: UseFormReturn<TIn, unknown, TOut>
   /** Runs with validated values. A thrown KitrError with `fieldErrors` lands on fields. */
   onSubmit: (values: TOut) => unknown | Promise<unknown>
+  /** Runs after `onSubmit` resolves, with its return value and the submitted values. */
   onSuccess?: (result: unknown, values: TOut) => void
+  /** Runs after a thrown error has been mapped onto the fields; receives it as a `KitrError`. */
   onError?: (error: unknown) => void
   /** Reset to default values after a successful submit. */
   resetOnSuccess?: boolean
+  /** The fields, buttons and anything else inside the form. */
   children: ReactNode
 }
 
@@ -90,13 +95,19 @@ interface FieldContextValue {
 }
 const FieldContext = createContext<FieldContextValue | null>(null)
 
+/** Props of `<FormField>`: which field it wraps and the text around the input. */
 export interface FormFieldProps<T extends FieldValues> {
+  /** The field path, dot-separated for nested fields (`'lines.0.quantity'`). */
   name: FieldPath<T>
+  /** Content of the `<label>`, which points at the input's generated id. */
   label?: ReactNode
+  /** Help text under the input, linked to it with `aria-describedby`. */
   description?: ReactNode
+  /** The input, or a function that receives `{ id, name, invalid, describedBy }` and renders it. */
   children:
     | ReactNode
     | ((field: { id: string; name: string; invalid: boolean; describedBy: string }) => ReactNode)
+  /** Class for the wrapper `<div data-kitr="field">`. */
   className?: string
 }
 
@@ -166,6 +177,10 @@ export function FieldInput(props: Omit<ComponentProps<'input'>, 'name' | 'id'>) 
   return <input {...props} {...fieldProps} />
 }
 
+/**
+ * A `type="submit"` button that is disabled and `aria-busy` while the form submits, and shows
+ * `pendingText` in that time. A `disabled` prop is combined with the pending state, never replaced.
+ */
 export function SubmitButton({
   children,
   pendingText,

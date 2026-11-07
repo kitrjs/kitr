@@ -2,23 +2,35 @@ import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } fr
 import type { AuthAdapter, Session } from './session'
 import { anonymousSession } from './session'
 
+/** Options in `config/auth.ts`. */
 export interface AuthConfig<TUser = unknown, TCredentials = unknown> {
+  /** Where sessions come from: `tokenAdapter`, `betterAuthAdapter` or `customAdapter`. */
   adapter: AuthAdapter<TUser, TCredentials>
-  /** Where `requireAuth()` sends anonymous users. Default `/sign-in`. */
+  /** Your sign-in page. Documentation only: `requireAuth()` takes its own `to` (default `/sign-in`). */
   signInPath?: string
   /** Load the session during boot (default true). Set false to defer to the first guarded route. */
   eager?: boolean
 }
 
+/** The `auth` service bound in the container: the live session and the actions that change it. */
 export interface Auth<TUser = unknown, TCredentials = unknown> {
+  /** The current session; anonymous when nobody is signed in. */
   readonly session: Session<TUser>
+  /** The signed-in user, or `null`. */
   readonly user: TUser | null
+  /** The adapter from the config. */
   readonly adapter: AuthAdapter<TUser, TCredentials>
+  /** Ask the adapter for the session again. Errors become an anonymous session. */
   load(): Promise<Session<TUser>>
+  /** Sign in through the adapter and resolve the new session. */
   signIn(credentials: TCredentials): Promise<Session<TUser>>
+  /** Sign out through the adapter and clear the session. */
   signOut(): Promise<void>
+  /** Refresh tokens. Resolves false, and clears the session, when that is not possible. */
   refresh(): Promise<boolean>
+  /** The bearer token for API calls, or `null`. */
   getToken(): Promise<string | null>
+  /** Listen for session changes, once per change. Returns an unsubscribe function. */
   subscribe(listener: (session: Session<TUser>) => void): () => void
   /** Router context slice: `createKitrRouter({ context: auth.toContext() })`. */
   toContext(): { session: Session<TUser> }
@@ -33,8 +45,10 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type the `config/auth.ts` export. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<AuthConfig<any, any>>()
 
+/** Build the `auth` service around an adapter. The provider does this from `config/auth.ts`; call it directly in tests. */
 export function createAuth<TUser, TCredentials>(
   adapter: AuthAdapter<TUser, TCredentials>,
 ): Auth<TUser, TCredentials> {

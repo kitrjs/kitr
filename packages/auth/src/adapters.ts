@@ -2,11 +2,15 @@ import { KitrError } from '@kitr/core'
 import type { Abilities } from './abilities'
 import { type AuthAdapter, createSession, type Session } from './session'
 
+/** Where `tokenAdapter` keeps a token. Both methods may be async. */
 export interface TokenStorage {
+  /** The stored token, or `null`. */
   get(): string | null | Promise<string | null>
+  /** Store a token; `null` clears it. */
   set(token: string | null): void | Promise<void>
 }
 
+/** Token storage in a variable: safest, but lost on reload. The default for `tokenAdapter`. */
 export const memoryStorage = (): TokenStorage => {
   let value: string | null = null
   return {
@@ -17,6 +21,7 @@ export const memoryStorage = (): TokenStorage => {
   }
 }
 
+/** Token storage in `localStorage` under `key` (default `kitr:token`), so sessions survive reloads. Errors read as `null`. */
 export const localStorageTokens = (key = 'kitr:token'): TokenStorage => ({
   get: () => {
     try {
@@ -33,6 +38,7 @@ export const localStorageTokens = (key = 'kitr:token'): TokenStorage => ({
   },
 })
 
+/** Options for `tokenAdapter`. */
 export interface TokenAdapterOptions<TUser, TCredentials> {
   /** Where the access token lives. Default: memory (safest); use `localStorageTokens()` to survive reloads. */
   storage?: TokenStorage
@@ -44,8 +50,11 @@ export interface TokenAdapterOptions<TUser, TCredentials> {
   ) => Promise<{ token: string; refreshToken?: string; user?: TUser }>
   /** Exchange a refresh token for a new access token. */
   refresh?: (refreshToken: string) => Promise<{ token: string; refreshToken?: string } | null>
+  /** Tell the backend to revoke the token. Errors are ignored. */
   signOut?: (token: string) => Promise<void>
+  /** Where the refresh token lives. Default: memory. */
   refreshStorage?: TokenStorage
+  /** Abilities for `session.can`. Without them, `can` is true for any signed-in user. */
   abilities?: Abilities<TUser, any>
 }
 
@@ -117,8 +126,11 @@ export function tokenAdapter<TUser, TCredentials = { email: string; password: st
 
 /** Minimal surface of a Better Auth client we rely on; keeps `better-auth` out of our dependencies. */
 export interface BetterAuthLikeClient<TUser> {
+  /** Resolves the current user and session, or `data: null`. */
   getSession(): Promise<{ data: { user: TUser; session?: { expiresAt?: string | Date } } | null }>
+  /** Ends the Better Auth session. */
   signOut(): Promise<unknown>
+  /** Sign-in methods by name; `email` is used by default. */
   signIn?: Record<string, (...args: any[]) => Promise<unknown>>
 }
 

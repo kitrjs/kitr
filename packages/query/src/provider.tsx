@@ -2,6 +2,7 @@ import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } fr
 import { type DefaultOptions, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
+/** Options for `config/query.ts`; the provider builds the app's `QueryClient` from them. */
 export interface QueryConfig {
   /** Default `staleTime` in ms. kitr defaults to 30s so back-navigation doesn't refetch. */
   staleTime?: number
@@ -20,8 +21,13 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/query.ts`: `export default defineConfig({ staleTime: 30_000 })`. */
 export const defineConfig = createDefineConfig<QueryConfig>()
 
+/**
+ * Builds the `QueryClient` the provider binds: `staleTime` defaults to 30s, and queries never
+ * retry a 4xx error but retry other failures twice. `createClient` replaces all of it.
+ */
 export function createQueryClient(config: QueryConfig = {}): QueryClient {
   if (config.createClient) return config.createClient()
   return new QueryClient({

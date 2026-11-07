@@ -98,9 +98,9 @@ for (const { dir, pkg } of pkgs) {
   const api = join(docsDir, 'api.md')
   if (existsSync(api)) {
     const a = readFileSync(api, 'utf8')
-    const bare = [...a.matchAll(/^### (\S+)\n\n```ts\n[\s\S]*?```\n\n(?=###|## |$)/gm)].map(
-      (m) => m[1],
-    )
+    const bare = [
+      ...a.matchAll(/^### (\S+)\n\n```ts\n(?:(?!```)[\s\S])*```\n\n(?=###|## |$)/gm),
+    ].map((m) => m[1])
     if (bare.length)
       problems.push(
         `api.md: ${bare.length} export(s) without a doc comment (${bare.slice(0, 4).join(', ')}${bare.length > 4 ? ', …' : ''})`,

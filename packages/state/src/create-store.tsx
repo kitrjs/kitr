@@ -2,11 +2,13 @@ import { createContext, type ReactNode, useContext, useRef, useSyncExternalStore
 import { createStore as createVanillaStore, type StateCreator, type StoreApi } from 'zustand'
 import { devtools, type PersistOptions, persist } from 'zustand/middleware'
 
+/** Options for `createKitrStore`: the store's name, whether it is saved in the browser, and devtools. */
 export interface KitrStoreOptions<T> {
   /** Name for devtools and persistence. */
   name: string
   /** Persist to storage (localStorage by default). Only the client ever reads it. */
   persist?: Partial<PersistOptions<T, Partial<T>>> | boolean
+  /** Connect to the Redux DevTools extension in development. Default `true`; never in production or on the server. */
   devtools?: boolean
 }
 

@@ -1,11 +1,12 @@
 import { createDefineConfig } from '@kitr/core'
 
+/** Options in `config/api.ts`, read by `kitr api:sync`. */
 export interface ApiConfig {
-  /** Prefix for all routes, e.g. `/api`. Default none. */
+  /** Documents the prefix routes share, e.g. `/api`. The router does not read it; set it with `router.group({ prefix })`. */
   prefix?: string
-  /** Where `kitr api:sync` writes the OpenAPI document. Default `openapi.json`. */
+  /** The OpenAPI document `kitr api:sync` writes: `path` (default `openapi.json`), `title`, `version`, `description`. */
   openapi?: { path?: string; title?: string; version?: string; description?: string }
-  /** Where `kitr api:sync` writes the typed client. Default `app/api/client.ts`. */
+  /** Where the typed client lives. Declared; `kitr api:sync` does not read it yet. */
   client?: { path?: string }
 }
 
@@ -15,4 +16,5 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type the `config/api.ts` export. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<ApiConfig>()

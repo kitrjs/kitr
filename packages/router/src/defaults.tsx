@@ -2,9 +2,8 @@ import { isKitrError, toKitrError } from '@kitr/core'
 import { type ErrorComponentProps, Link, useRouter } from '@tanstack/react-router'
 
 /**
- * Default route-level components. Generated routes reference these so every
- * page has a loading, error and not-found state without anyone deciding each time.
- * Override globally in `createKitrRouter({ defaultPendingComponent })` or per route.
+ * The default loading screen: a spinner with "Loading…" for screen readers (`data-kitr="pending"`).
+ * `createKitrRouter` uses it for every route; override with `defaultPendingComponent` or a route's `pendingComponent`.
  */
 export function DefaultPending() {
   return (
@@ -15,6 +14,10 @@ export function DefaultPending() {
   )
 }
 
+/**
+ * The default error screen: the KitrError's message (or "Something went wrong"), a "Try again" button
+ * that reloads the route and a "Go home" link. FORBIDDEN errors read "You don't have access to this page."
+ */
 export function DefaultError({ error, reset }: ErrorComponentProps) {
   const router = useRouter()
   const err = toKitrError(error)
@@ -43,6 +46,7 @@ export function DefaultError({ error, reset }: ErrorComponentProps) {
   )
 }
 
+/** The default not-found screen: "Page not found" and a "Go home" link, for unknown URLs and thrown `notFound()`. */
 export function DefaultNotFound() {
   return (
     <div className="kitr-not-found" data-kitr="not-found">
