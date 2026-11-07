@@ -25,55 +25,61 @@ describe('kitr new', () => {
   })
   afterAll(() => remove(tmp))
 
-  it.each(['blank', 'app', 'fullstack', 'server', 'saas', 'site', 'realtime', 'desktop', 'mobile'])(
-    'kit %s writes a valid project',
-    (kit) => {
-      kitr(
-        tmp,
-        'new',
-        kit,
-        '--kit',
-        kit,
-        '--no-install',
-        '--no-git',
-        '--registry',
-        join(root, 'registry/dist'),
+  it.each([
+    'blank',
+    'app',
+    'fullstack',
+    'server',
+    'saas',
+    'site',
+    'realtime',
+    'desktop',
+    'tauri',
+    'mobile',
+  ])('kit %s writes a valid project', (kit) => {
+    kitr(
+      tmp,
+      'new',
+      kit,
+      '--kit',
+      kit,
+      '--no-install',
+      '--no-git',
+      '--registry',
+      join(root, 'registry/dist'),
+    )
+    const dir = join(tmp, kit)
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    expect(pkg.name).toBe(kit)
+    expect(pkg.type).toBe('module')
+    expect(exists(dir, 'kitrrc.ts')).toBe(true)
+    expect(exists(dir, 'AGENTS.md')).toBe(true)
+    // Every provider in kitrrc.ts has its package in package.json.
+    const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+    for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
+      expect(pkg.dependencies?.[name!] ?? pkg.devDependencies?.[name!], name).toBeDefined()
+    // The typed client resolves names through the route table: without it every call throws.
+    if (exists(dir, 'app/api/client.ts')) {
+      expect(readFileSync(join(dir, 'app/api/client.ts'), 'utf8')).toContain('registerRoutes(api')
+      expect(exists(dir, 'app/api/routes.gen.ts')).toBe(true)
+    }
+    // With the theme provider, the stored theme is applied before first paint, and the token
+    // overrides are actually loaded.
+    if (rc.includes('@kitr/theme') && exists(dir, 'app/routes/__root.tsx')) {
+      expect(readFileSync(join(dir, 'app/routes/__root.tsx'), 'utf8')).toContain('<ThemeScript />')
+      const css = exists(dir, 'app/styles/app.css')
+        ? readFileSync(join(dir, 'app/styles/app.css'), 'utf8')
+        : readFileSync(join(dir, 'app/routes/__root.tsx'), 'utf8')
+      if (exists(dir, 'app/styles/tokens.css')) expect(css).toContain('tokens.css')
+    }
+    // Env values are strings: VITE_MOCKS=false must not turn mocks on, and the worker must exist.
+    if (exists(dir, 'app/mocks/browser.ts')) {
+      expect(readFileSync(join(dir, 'app/mocks/browser.ts'), 'utf8')).toContain(
+        "VITE_MOCKS === 'true'",
       )
-      const dir = join(tmp, kit)
-      const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
-      expect(pkg.name).toBe(kit)
-      expect(pkg.type).toBe('module')
-      expect(exists(dir, 'kitrrc.ts')).toBe(true)
-      expect(exists(dir, 'AGENTS.md')).toBe(true)
-      // Every provider in kitrrc.ts has its package in package.json.
-      const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
-      for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
-        expect(pkg.dependencies?.[name!] ?? pkg.devDependencies?.[name!], name).toBeDefined()
-      // The typed client resolves names through the route table: without it every call throws.
-      if (exists(dir, 'app/api/client.ts')) {
-        expect(readFileSync(join(dir, 'app/api/client.ts'), 'utf8')).toContain('registerRoutes(api')
-        expect(exists(dir, 'app/api/routes.gen.ts')).toBe(true)
-      }
-      // With the theme provider, the stored theme is applied before first paint, and the token
-      // overrides are actually loaded.
-      if (rc.includes('@kitr/theme') && exists(dir, 'app/routes/__root.tsx')) {
-        expect(readFileSync(join(dir, 'app/routes/__root.tsx'), 'utf8')).toContain(
-          '<ThemeScript />',
-        )
-        const css = exists(dir, 'app/styles/app.css')
-          ? readFileSync(join(dir, 'app/styles/app.css'), 'utf8')
-          : readFileSync(join(dir, 'app/routes/__root.tsx'), 'utf8')
-        if (exists(dir, 'app/styles/tokens.css')) expect(css).toContain('tokens.css')
-      }
-      // Env values are strings: VITE_MOCKS=false must not turn mocks on, and the worker must exist.
-      if (exists(dir, 'app/mocks/browser.ts')) {
-        expect(readFileSync(join(dir, 'app/mocks/browser.ts'), 'utf8')).toContain(
-          "VITE_MOCKS === 'true'",
-        )
-        expect(pkg.msw?.workerDirectory).toEqual(['public'])
-      }
-    },
-  )
+      expect(pkg.msw?.workerDirectory).toEqual(['public'])
+    }
+  })
 
   it.each(['blank', 'app', 'fullstack', 'server', 'saas', 'site', 'realtime', 'desktop', 'mobile'])(
     'kit %s passes its own lint once formatted (what `new` does after install)',
@@ -106,6 +112,7 @@ describe.each([
   'site',
   'realtime',
   'desktop',
+  'tauri',
   'mobile',
 ])('example %s', (name) => {
   const dir = join(root, 'examples', name)
@@ -149,6 +156,15 @@ describe('make:* generators produce code that typechecks and builds', () => {
     expect(kitr(dir, 'jobs:list')).toMatch(/example\s+3/)
   })
 
+  let serverMain: string
+  it('kitr add mail mounts the preview on the server and brings the make:mail generator', () => {
+    serverMain = readFileSync(join(dir, 'server/main.ts'), 'utf8')
+    const out = kitr(dir, 'add', 'mail', '--no-install')
+    expect(out).toMatch(/config\/mail\.ts/)
+    expect(readFileSync(join(dir, 'server/main.ts'), 'utf8')).toContain('mailPreview(server')
+    expect(kitr(dir, '--help')).toMatch(/make:mail/)
+  })
+
   const generators: Array<[string, string, string]> = [
     ['make:route', 'reports', 'app/routes/reports.tsx'],
     ['make:query', 'projects/list', 'app/actions/projects/list.ts'],
@@ -161,7 +177,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
     ['make:queries', 'invoices', 'app/features/invoices/queries.ts'],
     ['make:provider', 'flags', 'app/providers/flags_provider.ts'],
     ['make:job', 'SendReceipt', 'server/jobs/send_receipt.ts'],
-    ['make:mail', 'welcome', 'server/mail/welcome.tsx'],
+    ['make:mail', 'invoice', 'server/mail/invoice.tsx'],
     ['make:service', 'billing', 'server/services/billing_service.ts'],
     ['make:validator', 'project', 'app/validators/project.ts'],
     ['make:test', 'billing', 'test/billing.test.ts'],
@@ -195,9 +211,11 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
 
   it('the project still builds and typechecks with every generated file', () => {
-    // The example copy has no @kitr/jobs installed (only its own dependencies are linked), so
-    // drop the package wiring first; the generated jobs stay and import through `kitr/jobs`.
+    // The example copy has no @kitr/jobs or @kitr/mail installed (only its own dependencies are
+    // linked), so drop the package wiring first; the generated files stay and import through `kitr/*`.
     kitr(dir, 'remove', 'jobs', '--no-install')
+    kitr(dir, 'remove', 'mail', '--no-install')
+    writeFileSync(join(dir, 'server/main.ts'), serverMain)
     // make:service registers its binding: the container hands back the class, not `unknown`.
     writeFileSync(
       join(dir, 'server/services/billing_usage.ts'),
@@ -325,7 +343,7 @@ describe('kitr add / remove', () => {
     // A fresh copy, so the comparison below does not depend on what earlier tests left behind.
     const dir = copyExample('dashboard')
     // Requirements stay after a remove, so bring them in first and compare against that.
-    kitr(dir, 'add', '@kitr/server', '--no-install')
+    kitr(dir, 'add', 'server', 'api', '--no-install')
     const start = snapshot(dir)
     kitr(dir, 'add', 'jobs', '--no-install', '--yes')
     const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')

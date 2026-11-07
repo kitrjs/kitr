@@ -14,7 +14,8 @@
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "type": "module",
   "license": "MIT",
@@ -38,6 +39,10 @@
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
     },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -53,17 +58,24 @@
     "@kitr/server": "workspace:*"
   },
   "peerDependencies": {
-    "h3": ">=2.0.0"
+    "h3": ">=2.0.0",
+    "jiti": ">=2.0.0"
   },
   "devDependencies": {
     "@kitr/logger": "workspace:*",
     "@types/node": "^22.19.0",
     "h3": "^2.0.8",
     "tsdown": "^0.23.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "jiti": "^2.7.0"
   },
   "keywords": [
     "kitr",
     "kitr-package"
-  ]
+  ],
+  "peerDependenciesMeta": {
+    "jiti": {
+      "optional": true
+    }
+  }
 }

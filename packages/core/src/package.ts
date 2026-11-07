@@ -149,6 +149,12 @@ export interface AddContext extends ProjectInfo {
     /** Remove a script, only if it still holds `command` when given. */
     remove(name: string, command?: string): void
   }
+  packageJson: {
+    /** Set a top-level package.json field (`msw`, `browserslist`...). Overwrites. */
+    set(field: string, value: unknown): void
+    /** Remove a top-level field, only if it still holds `value`. */
+    remove(field: string, value: unknown): void
+  }
   env: {
     /** Append to `.env.example` (and `.env` when present). */
     add(vars: Record<string, string>, comment?: string): void
@@ -178,6 +184,50 @@ export interface AddContext extends ProjectInfo {
     extend(spec: string): void
     remove(spec: string): void
   }
+  types: {
+    /**
+     * Make the project ready for `kitr types` (a package with a `types` generator): the `#kitr/*`
+     * path and `.kitr` include in tsconfig.json, `.kitr` in .gitignore, `kitr types` before `tsc`
+     * in the typecheck script. Idempotent.
+     */
+    enable(): void
+  }
+  app: {
+    /** Pass `<name>` to `createApp({ ... })` in `app/app.ts`, importing it from `from`. Idempotent. */
+    option(name: string, from: string): void
+    removeOption(name: string, from: string): void
+  }
+  /**
+   * Replace one side-effect import (`import 'kitr/theme/styles.css'`) with another in a file,
+   * or add `to` after the first import when neither is present. Skipped when the file is missing.
+   */
+  replaceImport(file: string, from: string | undefined, to: string): void
+  server: {
+    /**
+     * Insert a line (with its import) into the server entry the server platform wrote
+     * (`server/main.ts`) once, after `createServer()`. `marker` is the text that proves it is
+     * already there; `first` puts the line straight after `createServer()` so middleware that
+     * must see every request reads in the order it runs. Skipped when there is no server entry.
+     */
+    attach(options: { marker: string; import?: string; line: string; first?: boolean }): void
+  }
+}
+
+/** Name casing helpers for generators and setup modules: `pascal('send-receipt')` is `SendReceipt`. */
+export const naming = {
+  pascal: (s: string): string =>
+    s.replace(/(^|[-_/\s])(\w)/g, (_, __, c: string) => c.toUpperCase()).replace(/[^\w]/g, ''),
+  snake: (s: string): string =>
+    s
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .replace(/[-\s/]+/g, '_')
+      .toLowerCase(),
+  camel: (s: string): string => {
+    const p = naming.pascal(s)
+    return p.charAt(0).toLowerCase() + p.slice(1)
+  },
+  /** `send_receipt` → `send-receipt`. */
+  kebab: (s: string): string => naming.snake(s).replace(/_/g, '-'),
 }
 
 export interface GeneratorVars {
@@ -232,6 +282,8 @@ export interface PlatformPackage {
   export: string
   /** Where kitrrc.ts imports it from. Default: `kitr/<name>` for `@kitr/*`, the package name otherwise. */
   from?: string
+  /** The name `kitr add <type>` suggests (`site`, `api`, `app`, `phone`). Default: the type. */
+  defaultName?: string
 }
 
 export interface KitPackage {
@@ -255,6 +307,8 @@ export interface PackageDefinition {
   requires?: string[]
   /** Needs React: refused in a server-only project. */
   client?: boolean
+  /** Install as a devDependency: tooling the app never imports at run time (testing). */
+  dev?: boolean
   questions?: Question[] | ((project: ProjectInfo) => MaybePromise<Question[]>)
   add?(ctx: AddContext): MaybePromise<void>
   remove?(ctx: AddContext): MaybePromise<void>
@@ -264,6 +318,13 @@ export interface PackageDefinition {
   generators?: Record<string, Generator>
   /** Extra `kitr doctor` checks. Pure: read, never write. */
   doctor?(project: ProjectInfo): MaybePromise<Finding[]>
+  /**
+   * Upstream libraries this package re-exports, by the kitr entry to import instead:
+   * `{ '@tanstack/react-query': 'kitr/query' }`. `kitr doctor` flags direct imports of them.
+   */
+  wraps?: Record<string, string>
+  /** Type generation this package runs on `kitr types` (`defineTypes`). Lazy, like `commands`. */
+  types?: () => Promise<unknown>
   vite?: PackageViteNeeds
   /** For `kind: 'platform'`. */
   platform?: PlatformPackage

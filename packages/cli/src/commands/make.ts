@@ -1,12 +1,90 @@
 import { existsSync } from 'node:fs'
-import type { Generator } from '@kitr/core/package'
+import { type Generator, type GeneratorVars, naming } from '@kitr/core/package'
 import { type CommandDef, defineCommand } from 'citty'
 import { createProjectInfo } from '../add-context'
 import { createContext } from '../context'
 import { installedPackages } from '../packages'
-import { naming, renderStub, type StubFn } from '../stubs'
 
-async function stubOverrides(root: string): Promise<Record<string, StubFn>> {
+export type StubFn = (vars: GeneratorVars) => string
+
+/**
+ * `kitr make:<kind>`. The core ships the three generators that need no package (a provider, a
+ * service, an exception); every other generator comes from the package that owns the code it
+ * writes (`make:route` from router, `make:job` from jobs...). A project overrides any stub with
+ * `kitr eject stub <kind>`, which copies it to `stubs/<kind>.ts`.
+ */
+export const coreGenerators: Record<string, Generator> = {
+  provider: {
+    description: 'Create a kitr provider in app/providers',
+    target: (name, project) => ({
+      file: `${project.rc.directories.app ?? 'app'}/providers/${naming.snake(name)}_provider.ts`,
+    }),
+    stub: ({ name }) => `import { defineProvider } from 'kitr/app'
+
+export default defineProvider({
+  name: '${naming.snake(name)}',
+  register(app) {
+    // app.container.singleton('${naming.camel(name)}', () => new ${naming.pascal(name)}Service())
+    void app
+  },
+  async boot(app) {
+    void app
+  },
+  // wrap: (children) => <${naming.pascal(name)}Context.Provider>{children}</${naming.pascal(name)}Context.Provider>,
+})
+`,
+  },
+  service: {
+    description: 'Create a service class in server/services',
+    target: (name, project) => ({
+      file: `${project.rc.directories.server ?? 'server'}/services/${naming.snake(name)}_service.ts`,
+    }),
+    stub: ({ name }) => `import type { KitrApp } from 'kitr/app'
+
+/**
+ * Plain class with the business logic for ${naming.snake(name)}; bind it in a provider:
+ *   app.container.singleton('${naming.camel(name)}', () => new ${naming.pascal(name)}Service(app))
+ */
+export class ${naming.pascal(name)}Service {
+  constructor(private readonly app: KitrApp) {}
+
+  async list() {
+    void this.app
+    return []
+  }
+}
+
+// Augment @kitr/core itself: kitr/app only re-exports it, so augmenting kitr/app types nothing.
+declare module '@kitr/core' {
+  interface ContainerBindings {
+    ${naming.camel(name)}: ${naming.pascal(name)}Service
+  }
+}
+`,
+  },
+  exception: {
+    description: 'Create a typed error class in app/exceptions',
+    target: (name, project) => ({
+      file: `${project.rc.directories.app ?? 'app'}/exceptions/${naming.snake(name)}_error.ts`,
+    }),
+    stub: ({ name }) => `import { KitrError } from 'kitr/app'
+
+/**
+ * Thrown from actions and controllers; the API layer turns it into a JSON error with the
+ * right status and the client gets a typed \`KitrError\` back.
+ */
+export class ${naming.pascal(name)}Error extends KitrError {
+  constructor(message = '${naming.pascal(name)}', data?: unknown) {
+    super('BAD_REQUEST', message, { data })
+    this.name = '${naming.pascal(name)}Error'
+  }
+}
+`,
+  },
+}
+
+/** The project's `stubs/<kind>.ts` overrides, each a default-exported stub function. */
+export async function stubOverrides(root: string): Promise<Record<string, StubFn>> {
   const out: Record<string, StubFn> = {}
   const dir = `${root}/stubs`
   if (!existsSync(dir)) return out
@@ -21,182 +99,21 @@ async function stubOverrides(root: string): Promise<Record<string, StubFn>> {
   return out
 }
 
-function makeCommand(
-  kind: string,
-  description: string,
-  target: (
-    ctx: ReturnType<typeof createContext>,
-    name: string,
-    args: Record<string, any>,
-  ) => { file: string; vars: Record<string, string> },
-) {
-  return defineCommand({
-    meta: { name: `make:${kind}`, description },
-    args: {
-      name: { type: 'positional', required: true },
-      resource: {
-        type: 'boolean',
-        description: 'controller: generate index/show/store/update/destroy',
-        default: false,
-      },
-      force: { type: 'boolean', default: false },
-    },
-    async run({ args }) {
-      const ctx = createContext()
-      const { file, vars } = target(ctx, args.name, args)
-      const overrides = await stubOverrides(ctx.root)
-      const written = ctx.write(file, renderStub(kind, vars, overrides), { overwrite: args.force })
-      if (!written) ctx.log.warn(`${file} exists (use --force)`)
-      else ctx.log.success(`${kind}: ${file}`)
-    },
-  })
-}
-
-export const makeRoute = makeCommand('route', 'Create a page route in app/routes', (ctx, name) => {
-  // `projects/index` → file app/routes/projects/index.tsx, route path '/projects/' (TanStack's index route form).
-  const raw = name.startsWith('/') ? name : `/${name}`
-  const isIndex = raw === '/' || raw.endsWith('/index')
-  const path = isIndex ? (raw === '/' ? '/' : `${raw.slice(0, -'/index'.length)}/`) : raw
-  const file = `${ctx.readRc().directories.routes}/${raw === '/' ? 'index' : raw.slice(1).replace(/:(\w+)/g, '$$$1')}.tsx`
-  const base =
-    raw
-      .split('/')
-      .filter((s) => s && s !== 'index')
-      .pop()
-      ?.replace(/[:$]/g, '') || 'home'
-  return { file, vars: { path, name: base } }
-})
-const operationTarget =
-  (kind: 'query' | 'mutation') => (ctx: ReturnType<typeof createContext>, name: string) => {
-    const [feature, operation] = name.includes('/')
-      ? (name.split('/') as [string, string])
-      : ['app', name]
-    return {
-      file: `${ctx.readRc().directories.actions ?? `${ctx.readRc().directories.app}/actions`}/${feature}/${naming.snake(operation)}.ts`,
-      vars: { feature, name: operation, kind },
-    }
-  }
-export const makeQuery = makeCommand(
-  'query',
-  'Create a server query in app/actions/<feature>/<name>.ts (defineQuery)',
-  operationTarget('query'),
-)
-export const makeMutation = makeCommand(
-  'mutation',
-  'Create a server mutation in app/actions/<feature>/<name>.ts (defineMutation)',
-  operationTarget('mutation'),
-)
-export const makeController = makeCommand(
-  'controller',
-  'Create a controller in server/controllers',
-  (ctx, name, args) => ({
-    file: `${ctx.readRc().directories.server ?? 'server'}/controllers/${naming.snake(name)}_controller.ts`,
-    vars: { name, resource: String(args.resource) },
-  }),
-)
-export const makeMiddleware = makeCommand(
-  'middleware',
-  'Create an API middleware in app/middleware',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/middleware/${naming.snake(name)}.ts`,
-    vars: { name },
-  }),
-)
-export const makeChannel = makeCommand(
-  'channel',
-  'Create a socket channel in app/channels',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/channels/${naming.snake(name)}.ts`,
-    vars: { name },
-  }),
-)
-export const makeStore = makeCommand(
-  'store',
-  'Create a Zustand store in app/stores',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/stores/${naming.snake(name)}.ts`,
-    vars: { name },
-  }),
-)
-export const makeForm = makeCommand(
-  'form',
-  'Create a form component in app/components/forms',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.components}/forms/${naming.snake(name)}_form.tsx`,
-    vars: { name },
-  }),
-)
-export const makeQueries = makeCommand(
-  'queries',
-  'Create a feature queries file in app/features/<name>/queries.ts',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/features/${naming.snake(name)}/queries.ts`,
-    vars: { name },
-  }),
-)
-export const makeProvider = makeCommand(
-  'provider',
-  'Create a kitr provider in app/providers',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/providers/${naming.snake(name)}_provider.ts`,
-    vars: { name },
-  }),
-)
-export const makeMail = makeCommand(
-  'mail',
-  'Create an email template in server/mail',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.server ?? 'server'}/mail/${naming.snake(name)}.tsx`,
-    vars: { name },
-  }),
-)
-export const makeService = makeCommand(
-  'service',
-  'Create a service class in server/services',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.server ?? 'server'}/services/${naming.snake(name)}_service.ts`,
-    vars: { name },
-  }),
-)
-export const makeValidator = makeCommand(
-  'validator',
-  'Create a shared zod schema in app/validators',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/validators/${naming.snake(name)}.ts`,
-    vars: { name },
-  }),
-)
-export const makeTest = makeCommand('test', 'Create a vitest file in test/', (_ctx, name) => ({
-  // test/, where every kit's vitest config and tsconfig look; tests/ was never run or checked.
-  file: `test/${naming.snake(name)}.test.ts`,
-  vars: { name },
-}))
-export const makeComponent = makeCommand(
-  'component',
-  'Create a React component in app/components',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.components}/${naming.snake(name).replace(/_/g, '-')}.tsx`,
-    vars: { name },
-  }),
-)
-export const makeHook = makeCommand('hook', 'Create a React hook in app/hooks', (ctx, name) => ({
-  file: `${ctx.readRc().directories.app}/hooks/use-${naming.snake(name).replace(/_/g, '-')}.ts`,
-  vars: { name },
-}))
-export const makeException = makeCommand(
-  'exception',
-  'Create a typed error class in app/exceptions',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.app}/exceptions/${naming.snake(name)}_error.ts`,
-    vars: { name },
-  }),
-)
-
-/** `make:<kind>` for a generator a package contributed. The project's `stubs/<kind>.ts` overrides its stub. */
-export function packageGeneratorCommand(
+/** Render a generator's stub for `name`, through the project's override when it has one. */
+export function renderStub(
   kind: string,
   generator: Generator,
-  owner: string,
+  vars: GeneratorVars,
+  overrides: Record<string, StubFn> = {},
+): string {
+  return (overrides[kind] ?? generator.stub)(vars)
+}
+
+/** `make:<kind>` for one generator. `owner` names the package it comes from, for `--help`. */
+export function generatorCommand(
+  kind: string,
+  generator: Generator,
+  owner?: string,
 ): CommandDef<any> {
   const extra = Object.fromEntries(
     Object.entries(generator.args ?? {}).map(([k, a]) => [
@@ -205,7 +122,10 @@ export function packageGeneratorCommand(
     ]),
   ) as Record<string, any>
   return defineCommand({
-    meta: { name: `make:${kind}`, description: `${generator.description} (${owner})` },
+    meta: {
+      name: `make:${kind}`,
+      description: owner ? `${generator.description} (${owner})` : generator.description,
+    },
     args: {
       name: { type: 'positional', required: true },
       force: { type: 'boolean', default: false },
@@ -214,11 +134,12 @@ export function packageGeneratorCommand(
     async run({ args }) {
       const ctx = createContext()
       const { file, vars } = generator.target(args.name, createProjectInfo(ctx), args)
-      const overrides = await stubOverrides(ctx.root)
-      const override = overrides[kind]
-      const body = override
-        ? override({ name: args.name, path: '', feature: '', resource: '', ...vars })
-        : generator.stub({ name: args.name, ...vars })
+      const body = renderStub(
+        kind,
+        generator,
+        { name: args.name, ...vars },
+        await stubOverrides(ctx.root),
+      )
       const written = ctx.write(file, body, { overwrite: args.force })
       if (!written) ctx.log.warn(`${file} exists (use --force)`)
       else ctx.log.success(`${kind}: ${file}`)
@@ -226,13 +147,28 @@ export function packageGeneratorCommand(
   })
 }
 
+/** The core `make:*` commands, keyed by command name. */
+export const coreGeneratorCommands: Record<string, CommandDef<any>> = Object.fromEntries(
+  Object.entries(coreGenerators).map(([kind, g]) => [`make:${kind}`, generatorCommand(kind, g)]),
+)
+
+/** Every generator the installed packages contribute, keyed by kind, with its owner. */
+export async function packageGeneratorList(
+  ctx = createContext(),
+): Promise<Array<{ kind: string; generator: Generator; owner: string }>> {
+  const out: Array<{ kind: string; generator: Generator; owner: string }> = []
+  for (const loaded of await installedPackages(ctx))
+    for (const [kind, generator] of Object.entries(loaded.definition.generators ?? {}))
+      out.push({ kind, generator, owner: loaded.package })
+  return out
+}
+
 /** Every `make:*` command the installed packages contribute, keyed by command name. */
 export async function packageGenerators(
   ctx = createContext(),
 ): Promise<Record<string, CommandDef<any>>> {
   const out: Record<string, CommandDef<any>> = {}
-  for (const loaded of await installedPackages(ctx))
-    for (const [kind, generator] of Object.entries(loaded.definition.generators ?? {}))
-      out[`make:${kind}`] = packageGeneratorCommand(kind, generator, loaded.package)
+  for (const { kind, generator, owner } of await packageGeneratorList(ctx))
+    out[`make:${kind}`] = generatorCommand(kind, generator, owner)
   return out
 }

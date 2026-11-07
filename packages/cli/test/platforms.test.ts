@@ -11,6 +11,7 @@ import {
   loadPlatforms,
   parseFlags,
   removeRcPlatform,
+  resolvePlatformType,
   runPlatforms,
   selectPlatforms,
   setRcPlatformOption,
@@ -200,7 +201,7 @@ describe('selectPlatforms and withFlags', () => {
   })
 
   it('explains an empty config and an unknown name', () => {
-    expect(() => selectPlatforms({}, [])).toThrow(/kitr add web site/)
+    expect(() => selectPlatforms({}, [])).toThrow(/kitr add <type> <name>/)
     expect(() => selectPlatforms(all, ['web'])).toThrow(/No platform named "web".*site, api/)
   })
 
@@ -301,6 +302,8 @@ export default defineKitrConfig({
   providers: [],
 })
 `
+  const web = { entry: 'kitr/web', factory: 'web' }
+  const server = { entry: 'kitr/server', factory: 'server' }
   function rcProject(source = base) {
     const dir = mkdtempSync(join(tmpdir(), 'kitr-platforms-'))
     dirs.push(dir)
@@ -315,9 +318,9 @@ export default defineKitrConfig({
 
   it('adds a platform with its import once, and replaces it on a second add', () => {
     const { ctx, read } = rcProject()
-    writeRcPlatform(ctx, 'site', 'web', { mode: 'ssr' })
-    writeRcPlatform(ctx, 'admin', 'web', {})
-    writeRcPlatform(ctx, 'site', 'web', { mode: 'static', port: 4000 })
+    writeRcPlatform(ctx, 'site', web, { mode: 'ssr' })
+    writeRcPlatform(ctx, 'admin', web, {})
+    writeRcPlatform(ctx, 'site', web, { mode: 'static', port: 4000 })
     const src = read()
     expect(src.match(/import \{ web \} from 'kitr\/web'/g)).toHaveLength(1)
     expect(src).toMatch(/site: web\(\{ mode: 'static', port: 4000 \}\)/)
@@ -328,7 +331,7 @@ export default defineKitrConfig({
 
   it('sets, changes and unsets one option', () => {
     const { ctx, read } = rcProject()
-    writeRcPlatform(ctx, 'api', 'server', {})
+    writeRcPlatform(ctx, 'api', server, {})
     setRcPlatformOption(ctx, 'api', 'port', 8080)
     expect(read()).toMatch(/api: server\(\{\s*port: 8080,?\s*\}\)/)
     setRcPlatformOption(ctx, 'api', 'runtime', 'bun')
@@ -342,8 +345,8 @@ export default defineKitrConfig({
 
   it('removes a platform and leaves the rest', () => {
     const { ctx, read } = rcProject()
-    writeRcPlatform(ctx, 'site', 'web', {})
-    writeRcPlatform(ctx, 'api', 'server', {})
+    writeRcPlatform(ctx, 'site', web, {})
+    writeRcPlatform(ctx, 'api', server, {})
     removeRcPlatform(ctx, 'site')
     expect(read()).not.toMatch(/site:/)
     expect(read()).toMatch(/api: server\(\)/)
@@ -355,16 +358,16 @@ export default defineKitrConfig({
     writeFileSync(join(dir, 'package.json'), '{}')
     quiet()
     const ctx = createContext({ root: dir })
-    writeRcPlatform(ctx, 'site', 'web', { mode: 'spa' })
+    writeRcPlatform(ctx, 'site', web, { mode: 'spa' })
     const src = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
     expect(src).toContain("import { web } from 'kitr/web'")
     expect(src).toMatch(/site: web\(\{ mode: 'spa' \}\)/)
   })
 
-  it('refuses an rc without a default export object, and unknown types', () => {
+  it('refuses an rc without a default export object, and unknown types', async () => {
     const { ctx } = rcProject(`export const x = 1\n`)
-    expect(() => writeRcPlatform(ctx, 'site', 'web', {})).toThrow(/expected `export default/)
-    expect(() => writeRcPlatform(ctx, 'site', 'nope', {})).toThrow(/Unknown platform type/)
+    expect(() => writeRcPlatform(ctx, 'site', web, {})).toThrow(/expected `export default/)
+    await expect(resolvePlatformType(ctx, 'nope')).rejects.toThrow(/not a platform type/)
   })
 })
 

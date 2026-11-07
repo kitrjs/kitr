@@ -32,6 +32,10 @@
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
     },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -87,6 +91,7 @@
       "PostHog"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   }
 }

@@ -4,10 +4,11 @@ import { createAddContext, createProjectInfo } from '../add-context'
 import { Codemods } from '../codemods'
 import { configurePackages } from '../configure'
 import { createContext, type ProjectContext } from '../context'
-import { loadPackage, resolvePackageName } from '../packages'
+import { manifests } from '../manifests.gen'
+import { loadPackage } from '../packages'
+import { knownPackageNames } from '../plan'
 import { parseFlags, platformTypeNames } from '../platforms'
 import { describeQuestions } from '../questions'
-import { recipeNames, recipes } from '../recipes'
 import { generateTypesQuietly } from '../types'
 import { addPlatformCommand } from './platforms'
 
@@ -16,25 +17,22 @@ const OWN_FLAGS = new Set(['install', 'dry-run', 'verbose', 'yes', 'y', 'help', 
 /** `kitr add <pkg> --help`: the package's summary and its questions as flags. */
 export async function describePackage(name: string): Promise<string> {
   const ctx = createContext()
-  const loaded = await loadPackage(ctx, name).catch(() => undefined)
-  const lines: string[] = []
-  if (loaded) {
-    const def = loaded.definition
-    lines.push(`${pc.bold(def.name)} (${loaded.package})`)
-    if (def.requires?.length) lines.push(`requires: ${def.requires.join(', ')}`)
-    const questions =
-      typeof def.questions === 'function'
-        ? await def.questions(createProjectInfo(ctx))
-        : (def.questions ?? [])
-    if (questions.length) {
-      lines.push('', 'Options (every question is a flag; --yes takes the defaults):')
-      for (const l of describeQuestions(questions)) lines.push(`  ${l}`)
-    } else lines.push('', `No options: \`kitr add ${def.name}\` asks nothing.`)
-    return lines.join('\n')
-  }
-  const recipe = recipes[name]
-  if (recipe) return `${pc.bold(recipe.name)}: ${recipe.description}`
-  throw new Error(`Unknown package "${name}"`)
+  const loaded = await loadPackage(ctx, name)
+  if (!loaded) throw new Error(`Unknown package "${name}"`)
+  const def = loaded.definition
+  const lines: string[] = [`${pc.bold(def.name)} (${loaded.package})`]
+  const summary = manifests[def.name]?.summary
+  if (summary) lines.push(summary)
+  if (def.requires?.length) lines.push(`requires: ${def.requires.join(', ')}`)
+  const questions =
+    typeof def.questions === 'function'
+      ? await def.questions(createProjectInfo(ctx))
+      : (def.questions ?? [])
+  if (questions.length) {
+    lines.push('', 'Options (every question is a flag; --yes takes the defaults):')
+    for (const l of describeQuestions(questions)) lines.push(`  ${l}`)
+  } else lines.push('', `No options: \`kitr add ${def.name}\` asks nothing.`)
+  return lines.join('\n')
 }
 
 export const add = defineCommand({
@@ -46,7 +44,7 @@ export const add = defineCommand({
   args: {
     packages: {
       type: 'positional',
-      description: `A package (${recipeNames.join(', ')}, or @scope/name), or a platform type (${platformTypeNames.join(', ')}) followed by its name`,
+      description: `A package (${knownPackageNames.join(', ')}, or @scope/name), or a platform type (${platformTypeNames.join(', ')}) followed by its name`,
       required: true,
     },
     install: {
@@ -82,15 +80,13 @@ export const add = defineCommand({
     ctx.log.success(
       `${ctx.dryRun ? 'Would change' : 'Done. Changed'}: ${[...ctx.touched].join(', ') || 'nothing'}`,
     )
-    if (names.includes('theme'))
-      ctx.log.info('Pull components with `kitr ui add button input form`.')
   },
 })
 
-/** A platform type: one of the blessed names, or a package whose setup module says `kind: 'platform'`. */
+/** A platform type: an official one, or a package whose setup module says `kind: 'platform'`. */
 export async function isPlatformType(ctx: ProjectContext, word: string): Promise<boolean> {
   if (platformTypeNames.includes(word)) return true
-  if (recipes[word]) return false
+  if (word in manifests) return false
   try {
     const loaded = await loadPackage(ctx, word)
     return loaded?.definition.kind === 'platform'
@@ -115,41 +111,34 @@ export const remove = defineCommand({
     const names = [args.packages, ...rawArgs.slice(1).filter((a) => !a.startsWith('-'))]
     const codemods = new Codemods(ctx)
     for (const name of names) {
-      const pkg = resolvePackageName(name)
       const loaded = await loadPackage(ctx, name).catch(() => undefined)
-      const recipe = recipes[name]
-      if (!loaded && !recipe) {
+      if (!loaded) {
         ctx.log.error(`Unknown package "${name}"`)
         continue
       }
-      const short = loaded?.name ?? recipe!.name
-      if (loaded) {
-        await loaded.definition.remove?.(createAddContext(ctx, codemods, {}))
-        codemods.removePackage(loaded.package)
-        codemods.removePackages([loaded.package])
-      } else await recipe!.unconfigure?.(ctx, codemods)
+      const short = loaded.name
+      await loaded.definition.remove?.(createAddContext(ctx, codemods, {}))
+      codemods.removePackage(loaded.package)
+      codemods.removePackages([loaded.package])
       // kitr owns config/<name>.ts; the package's other files (stubs, routes) stay because the app may have edited them.
       codemods.remove(`${ctx.readRc().directories.config ?? 'config'}/${short}.ts`)
       ctx.log.success(`removed ${short}`)
-      const installedPkg = loaded?.package ?? recipe?.package ?? pkg
-      if (installedPkg) {
-        const { execSync } = await import('node:child_process')
-        try {
-          const hits = execSync(
-            `grep -rl "kitr/${short}\\|${installedPkg}" app config server start 2>/dev/null || true`,
-            { cwd: ctx.root },
+      const { execSync } = await import('node:child_process')
+      try {
+        const hits = execSync(
+          `grep -rl "kitr/${short}\\|${loaded.package}" app config server start 2>/dev/null || true`,
+          { cwd: ctx.root },
+        )
+          .toString()
+          .trim()
+        if (hits)
+          ctx.log.warn(
+            `Still imported from:\n${hits
+              .split('\n')
+              .map((h) => `  ${h}`)
+              .join('\n')}`,
           )
-            .toString()
-            .trim()
-          if (hits)
-            ctx.log.warn(
-              `Still imported from:\n${hits
-                .split('\n')
-                .map((h) => `  ${h}`)
-                .join('\n')}`,
-            )
-        } catch {}
-      }
+      } catch {}
     }
     await codemods.flush({ install: args.install })
   },

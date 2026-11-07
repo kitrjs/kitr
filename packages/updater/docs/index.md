@@ -456,7 +456,7 @@ For the Electron shell, run [electron-updater](https://www.electron.build/auto-u
 // platforms/app/main.ts
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import { handleIpc } from 'kitr/desktop/electron-main'
+import { handleIpc } from 'kitr/desktop/main'
 
 autoUpdater.autoDownload = false
 
@@ -485,7 +485,7 @@ autoUpdater.on('download-progress', (p) => {
 ```ts
 // app/providers/electron_updater_provider.ts
 import { defineProvider } from 'kitr/app'
-import { createIpcClient } from 'kitr/desktop/electron'
+import { createIpcClient } from 'kitr/desktop/client'
 import type { UpdaterDriver } from 'kitr/updater'
 
 type UpdaterIpc = {

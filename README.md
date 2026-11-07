@@ -10,8 +10,8 @@ Under the hood it is a thin layer over the libraries you would pick anyway: TanS
 pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API
 pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and realtime channels
 pnpm dlx kitr new my-api --kit server   # a pure backend. No React anywhere in the dependency graph.
-pnpm dlx kitr new my-saas --kit saas    # presets: saas, site, realtime, desktop, mobile. Real pages, controllers and tests to start from.
-pnpm dlx kitr new my-app --kit app --platform site=web,app=desktop --shell tauri   # the same app/ in a browser and a Tauri window
+pnpm dlx kitr new my-saas --kit saas    # presets: saas, site, realtime, desktop, tauri, mobile. Real pages, controllers and tests to start from.
+pnpm dlx kitr new my-app --kit app --platform site=web,app=desktop   # the same app/ in a browser and an Electron window
 ```
 
 Every command runs from flags alone, so coding agents and CI never hit a prompt. `kitr new` writes an `AGENTS.md` that `kitr add` keeps up to date.
@@ -28,7 +28,7 @@ Server actions, API routes, external HTTP APIs and realtime channels all produce
 `kitrrc.ts` lists every provider as a lazy import. `config/<package>.ts` holds that package's options, typed by its `defineConfig`. Providers have `register → boot → ready → shutdown`, a typed container (`app.container.use('http')`), and a `wrap()` hook so React packages can wrap the tree without the core knowing React exists.
 
 **Where the app runs is a platform, and platforms are packages.**
-`kitrrc.ts` names them: `platforms: { site: web({ mode: 'ssr' }), api: server({ runtime: 'node' }), app: desktop({ shell: 'tauri' }), phone: mobile() }`. `kitr dev site api` runs two of them, `kitr build` builds them all into `dist/<name>/`, `kitr config site port 4000` edits an option with validation, `KITR_SITE_PORT=4000` overrides it at run time. The core knows only the `definePlatform` contract; `@kitr/web`, `@kitr/server`, `@kitr/desktop` and `@kitr/mobile` own their options, scaffold and tooling (TanStack Start, srvx and wrangler, Tauri and electron-vite, Capacitor), and native projects live in `platforms/<name>/`. One `app/` ships everywhere; `kitr/platform` answers `usePlatform()`, `useBackButton()` and `useSafeArea()` the same way in a browser and a shell.
+`kitrrc.ts` names them: `platforms: { site: web({ mode: 'ssr' }), api: server({ runtime: 'node' }), app: desktop(), phone: mobile() }`. `kitr dev site api` runs two of them, `kitr build` builds them all into `dist/<name>/`, `kitr config site port 4000` edits an option with validation, `KITR_SITE_PORT=4000` overrides it at run time. The core knows only the `definePlatform` contract; `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` own their options, scaffold and tooling (TanStack Start, srvx and wrangler, electron-vite, Tauri, Capacitor), and native projects live in `platforms/<name>/`. One `app/` ships everywhere; `kitr/platform` answers `usePlatform()`, `useBackButton()` and `useSafeArea()` the same way in a browser and a shell.
 
 **Pure backend is a first-class target.**
 `@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
@@ -84,7 +84,8 @@ Server actions, API routes, external HTTP APIs and realtime channels all produce
 | `kitr/native` | | clipboard, share, haptics, geolocation, camera, biometrics with web fallbacks; `useClipboard`, `useShare`, `useGeolocation` |
 | `kitr/updater` | | `check`/`apply` over the service worker or platform updaters; `useUpdate()` |
 | `kitr/web` | | the `web()` platform (static, spa, ssr, pwa); `kitr/web/client` has `useInstallPrompt`, `useServiceWorker`; `kitr/web/vite` |
-| `kitr/desktop` | `@tauri-apps/api` | the `desktop()` platform (Tauri or Electron); `kitr/desktop/tauri` (`defineCommands`, `commandQuery`, `useTauriEvent`), `kitr/desktop/electron` (typed IPC), `electron-main`, `electron-preload` |
+| `kitr/desktop` | `electron` | the `desktop()` platform (Electron); `kitr/desktop/client` (typed IPC), `kitr/desktop/main`, `kitr/desktop/preload` |
+| `kitr/tauri` | `@tauri-apps/api` | the `tauri()` platform; `kitr/tauri/client` (`defineCommands`, `commandQuery`, `useTauriEvent`) |
 | `kitr/mobile` | `@capacitor/core` | the `mobile()` platform (Capacitor); `kitr/mobile/client` has `isCapacitor`, `isPluginAvailable`, `nativeOnly` |
 | `kitr/vite` | | the `kitr()` Vite plugin: platform-aware aliases, virtual modules, Start, Tailwind, PWA |
 
@@ -147,12 +148,12 @@ packages/
   core, react, router, query, http, forms, table, state, tailwind, theme,
   logger, server, api, actions, seo, realtime, auth, db, testing, mocks, i18n,
   analytics, monitoring, platform, storage, devtools,
-  web, desktop, mobile       # platform packages (server's platform lives in packages/server)
+  web, desktop, tauri, mobile  # platform packages (server's platform lives in packages/server)
   vite, cli, kitr            # `kitr` is the umbrella package users install
 registry/                    # shadcn-compatible component registry (built to registry/dist)
 examples/
   blank, dashboard, fullstack, backend,        # kitr new --kit blank | app | fullstack | server
-  saas, site, realtime, desktop, mobile        # the presets
+  saas, site, realtime, desktop, tauri, mobile  # the presets
 docs/                        # entry points, CLI, packages, platforms, pure backend, departures
 ```
 
@@ -164,14 +165,14 @@ pnpm test         # vitest across the monorepo
 pnpm lint         # biome
 ```
 
-The examples are exactly what the CLI generates (with workspace links instead of published versions). Regenerate one with `node packages/kitr/bin/kitr.mjs new examples/<name> --kit <kit> --no-install --no-git --registry $PWD/registry/dist`, then see `examples/README.md` for the workspace links. Five of them are presets you can start from: `saas`, `site`, `realtime`, `desktop`, `mobile`. Every example runs with `pnpm dev` (`kitr dev`), builds with `pnpm build` and serves with `pnpm start`.
+The examples are exactly what the CLI generates (with workspace links instead of published versions). Regenerate one with `node packages/kitr/bin/kitr.mjs new examples/<name> --kit <kit> --no-install --no-git --registry $PWD/registry/dist`, then see `examples/README.md` for the workspace links. Six of them are presets you can start from: `saas`, `site`, `realtime`, `desktop`, `tauri`, `mobile`. Every example runs with `pnpm dev` (`kitr dev`), builds with `pnpm build` and serves with `pnpm start`.
 
 ## Docs
 
 - [docs/cli.md](docs/cli.md): every command and flag
 - [docs/package-contract.md](docs/package-contract.md): how a package plugs into `kitr add`, the CLI and the build
 - [docs/packages.md](docs/packages.md): what each package provides and when to add it
-- [docs/platforms.md](docs/platforms.md): web, server, desktop and mobile platforms, their options and commands
+- [docs/platforms.md](docs/platforms.md): web, server, desktop, tauri and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
 - [docs/pure-backend.md](docs/pure-backend.md): kitr without React
 - [docs/departures.md](docs/departures.md): where the implementation improved on the design plan, and why

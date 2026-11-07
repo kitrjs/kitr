@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Question } from '@kitr/core/package'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createAddContext, createProjectInfo } from '../src/add-context'
 import { Codemods, extensionLocalName } from '../src/codemods'
 import { createContext } from '../src/context'
@@ -228,18 +228,40 @@ describe('add context', () => {
 })
 
 describe('plan', () => {
-  it('orders setup modules and legacy recipes by requires, skipping what is installed', async () => {
+  // Setup modules resolve from the running CLI's package: the kitr bin, which depends on every
+  // official package. Point argv there, as it is when the CLI runs for real.
+  const argv1 = process.argv[1]
+  beforeAll(() => {
+    process.argv[1] = join(import.meta.dirname, '../../kitr/bin/kitr.mjs')
+  })
+  afterAll(() => {
+    process.argv[1] = argv1!
+  })
+
+  it('orders setup modules by requires, skipping what is installed', async () => {
     const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
     const ctx = createContext({ root: dir })
-    // jobs ships a setup module (resolved from this monorepo); logger and server are recipes.
     const plan = await resolvePlan(ctx, ['jobs'], ['@kitr/server'], { install: false })
     expect(plan.map((s) => s.name)).toEqual(['jobs'])
-    expect(plan[0]!.loaded?.package).toBe('@kitr/jobs')
+    expect(plan[0]!.loaded.package).toBe('@kitr/jobs')
     const fresh = await resolvePlan(ctx, ['jobs'], [], { install: false })
-    expect(fresh.map((s) => [s.name, s.loaded ? 'module' : 'recipe'])).toEqual([
-      ['logger', 'recipe'],
-      ['server', 'recipe'],
-      ['jobs', 'module'],
+    expect(fresh.map((s) => [s.name, s.loaded.package])).toEqual([
+      ['logger', '@kitr/logger'],
+      ['server', '@kitr/server'],
+      ['jobs', '@kitr/jobs'],
+    ])
+  })
+
+  it('tells a platform package from the rest', async () => {
+    const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
+    const ctx = createContext({ root: dir })
+    const plan = await resolvePlan(ctx, ['tauri'], ['@kitr/router', '@kitr/storage'], {
+      install: false,
+    })
+    expect(plan.map((s) => [s.name, s.loaded.definition.kind ?? 'package'])).toEqual([
+      ['react', 'package'],
+      ['platform', 'package'],
+      ['tauri', 'platform'],
     ])
   })
 

@@ -47,6 +47,16 @@ function robotsTxt(config: SeoConfig): string | null;
 
 `robots.txt` text from the config, or null when `robots` is false. kitr does not write the file; serve or write it yourself.
 
+### safeJson
+
+```ts
+function safeJson(value: unknown): string;
+```
+
+JSON for inside a `<script>`: `<`, `>` and `&` as unicode escapes so a value such as
+`</script><script>…` from a user's title can't close the tag, and U+2028/U+2029 escaped too.
+Still valid JSON: parsers read the escapes back as the same characters.
+
 ### seo
 
 ```ts

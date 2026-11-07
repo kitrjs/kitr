@@ -55,13 +55,16 @@ export function isInstalled(ctx: ProjectContext, pkg: string): boolean {
   }
 }
 
-/** Resolve `<pkg>/kitr` from where the running CLI lives (the `kitr` bin's package, then this one). */
-function cliResolve(pkg: string): string | undefined {
+/**
+ * Resolve a module from where the running CLI lives: the `kitr` bin's package (which depends
+ * on every official package), then this one. `cliResolve('@kitr/jobs')` finds its setup module.
+ */
+export function cliResolve(pkg: string, sub = 'kitr'): string | undefined {
   const bases = [process.argv[1], import.meta.url].filter(Boolean) as string[]
   for (const base of bases) {
     try {
       const req = createRequire(base.startsWith('file:') ? base : pathToFileURL(base).href)
-      return req.resolve(`${pkg}/kitr`)
+      return req.resolve(sub ? `${pkg}/${sub}` : pkg)
     } catch {}
   }
   return undefined

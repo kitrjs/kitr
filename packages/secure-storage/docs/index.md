@@ -438,7 +438,7 @@ This driver keeps secrets in Electron's [`safeStorage`](https://www.electronjs.o
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, ipcMain, safeStorage } from 'electron'
-import { handleIpc } from 'kitr/desktop/electron-main'
+import { handleIpc } from 'kitr/desktop/main'
 
 const vaultFile = () => join(app.getPath('userData'), 'vault.json')
 const load = async (): Promise<Record<string, string>> =>
@@ -473,7 +473,7 @@ handleIpc<{
 ```ts
 // app/providers/vault_provider.ts
 import { defineProvider } from 'kitr/app'
-import { createIpcClient } from 'kitr/desktop/electron'
+import { createIpcClient } from 'kitr/desktop/client'
 import type { SecureStorageDriver } from 'kitr/secure-storage'
 
 const ipc = createIpcClient<{

@@ -1,19 +1,18 @@
 import { resolvePackageName, shortPackageName } from '@kitr/core/package'
 import type { ProjectContext } from './context'
-import { ensureAvailable, isKnown, type LoadedPackage, loadPackage } from './packages'
-import { type Recipe, recipeNames, recipes } from './recipes'
+import { manifests } from './manifests.gen'
+import { ensureAvailable, type LoadedPackage, loadPackage } from './packages'
 
-/**
- * One package to configure. Either a setup module (`loaded`) or, until every package ships
- * one, a legacy recipe from the CLI. Requirements come first in the list.
- */
+/** The short names of the official packages, for messages. */
+export const knownPackageNames = Object.keys(manifests).filter((n) => !manifests[n]!.included)
+
+/** One package to configure: its loaded setup module. Requirements come first in the list. */
 export interface PlanStep {
   /** Short name. */
   name: string
-  /** Full npm name, when the step installs a package. */
-  package?: string
-  loaded?: LoadedPackage
-  recipe?: Recipe
+  /** Full npm name. */
+  package: string
+  loaded: LoadedPackage
   client?: boolean
   requires: string[]
 }
@@ -23,49 +22,27 @@ async function stepFor(
   name: string,
   options: { install: boolean },
 ): Promise<PlanStep> {
-  const scoped = name.startsWith('@') || name.includes('/')
   const pkg = resolvePackageName(name)
-  const short = shortPackageName(pkg)
-  // Built-in recipes answer to the short name and to the official `@kitr/<name>` it maps to.
-  const recipe = !scoped || resolvePackageName(short) === pkg ? recipes[short] : undefined
-  // A setup module wins over a recipe of the same name; recipes are the fallback.
-  let loaded: LoadedPackage | undefined
-  if (!recipe || isKnown(ctx, name)) {
-    if (!recipe) {
-      try {
-        await ensureAvailable(ctx, name, options)
-      } catch (error) {
-        if (scoped) throw error
-        throw new Error(
-          `Unknown package "${name}": no built-in package by that name and ${pkg} could not be loaded (${(error as Error).message}). Known: ${recipeNames.join(', ')}, or any npm package that ships a kitr setup module.`,
-        )
-      }
-    }
-    try {
-      loaded = await loadPackage(ctx, name)
-    } catch (error) {
-      if (!recipe) throw error
-    }
+  try {
+    await ensureAvailable(ctx, name, options)
+  } catch (error) {
+    if (name.startsWith('@') || name.includes('/')) throw error
+    throw new Error(
+      `Unknown package "${name}": ${pkg} could not be loaded (${(error as Error).message}). Known: ${knownPackageNames.join(', ')}, or any npm package that ships a kitr setup module.`,
+    )
   }
-  if (loaded)
-    return {
-      name: loaded.name,
-      package: loaded.package,
-      loaded,
-      client: loaded.definition.client,
-      requires: loaded.definition.requires ?? [],
-    }
-  if (recipe)
-    return {
-      name: recipe.name,
-      package: recipe.package,
-      recipe,
-      client: recipe.client,
-      requires: recipe.requires ?? [],
-    }
-  throw new Error(
-    `Unknown package "${name}". Use a short name (${recipeNames.join(', ')}) or a full npm package name.`,
-  )
+  const loaded = await loadPackage(ctx, name)
+  if (!loaded)
+    throw new Error(
+      `${pkg} is not a kitr package: it has no "./kitr" export (a definePackage() setup module). Install it with ${ctx.pm} add ${pkg} and wire it by hand.`,
+    )
+  return {
+    name: loaded.name,
+    package: loaded.package,
+    loaded,
+    client: loaded.definition.client,
+    requires: loaded.definition.requires ?? [],
+  }
 }
 
 /** Steps in dependency order; packages already in kitrrc.ts are not revisited. */
@@ -83,10 +60,8 @@ export async function resolvePlan(
     if (path.includes(key)) throw new Error(`Circular requires: ${[...path, key].join(' → ')}`)
     const step = await stepFor(ctx, name, options)
     seen.add(key)
-    for (const dep of step.requires) {
-      const depPkg = recipes[dep]?.package ?? resolvePackageName(dep)
-      if (!installed.includes(depPkg)) await visit(dep, [...path, key])
-    }
+    for (const dep of step.requires)
+      if (!installed.includes(resolvePackageName(dep))) await visit(dep, [...path, key])
     out.push(step)
   }
   for (const n of names) await visit(n, [])

@@ -1,14 +1,15 @@
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { defineCommand } from 'citty'
 import { Codemods } from '../codemods'
 import { configurePackages } from '../configure'
 import { createContext, detectPackageManager, log, type PackageManager } from '../context'
 import { type KitName, kits } from '../kits'
+import { cliResolve } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { generateTypesQuietly } from '../types'
-import { addComponents } from './ui'
 
 export const newCommand = defineCommand({
   meta: {
@@ -33,7 +34,6 @@ export const newCommand = defineCommand({
       type: 'string',
       description: 'server platform runtime: node | bun | deno | workers',
     },
-    shell: { type: 'string', description: 'desktop platform shell: tauri | electron' },
     targets: { type: 'string', description: 'mobile platform targets: ios,android' },
     port: { type: 'string', description: 'Port for the first platform' },
     pm: { type: 'string', description: 'pnpm | npm | yarn | bun (default: detected)' },
@@ -70,7 +70,7 @@ export const newCommand = defineCommand({
     for (const spec of Object.values(platforms))
       platformRequires.push(...((await loadFactory(ctx, spec.type))({}).definition.requires ?? []))
     const added = new Set<string>()
-    await configurePackages(ctx, codemods, [...platformRequires, ...kit.recipes], {
+    await configurePackages(ctx, codemods, [...platformRequires, ...kit.packages], {
       install: args.install,
       yes: true,
       added,
@@ -84,7 +84,6 @@ export const newCommand = defineCommand({
         if (args.pwa !== undefined) options.pwa = args.pwa
       }
       if (spec.type === 'server' && args.runtime) options.runtime = args.runtime
-      if (spec.type === 'desktop' && args.shell) options.shell = args.shell
       if (spec.type === 'mobile' && args.targets) options.targets = args.targets.split(',')
       if (first && args.port) options.port = Number(args.port)
       first = false
@@ -93,7 +92,20 @@ export const newCommand = defineCommand({
       ctx.pkg = JSON.parse(ctx.read('package.json'))
     }
     await codemods.flush({ install: false })
-    if (kit.components?.length && kit.recipes.includes('theme')) {
+    if (kit.components?.length && kit.packages.includes('theme')) {
+      // The registry client lives with the theme package (`kitr ui add`); the CLI resolves it the way it resolves setup modules.
+      const commands = cliResolve('@kitr/theme', 'commands')
+      if (!commands)
+        throw new Error(
+          '@kitr/theme is not available to this CLI, so the kit components cannot be pulled',
+        )
+      const { addComponents } = (await import(pathToFileURL(commands).href)) as {
+        addComponents: (
+          ctx: ReturnType<typeof createContext>,
+          names: string[],
+          options: { registry?: string; overwrite?: boolean; install?: boolean },
+        ) => Promise<void>
+      }
       await addComponents(ctx, kit.components, { registry: args.registry, overwrite: true })
     }
     await kit.extra?.(ctx, projectName)

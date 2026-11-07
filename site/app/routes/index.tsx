@@ -106,8 +106,8 @@ const platforms = [
   },
   {
     name: 'desktop',
-    cmd: 'kitr add desktop app --shell tauri',
-    text: 'Windows, macOS and Linux. A small Tauri binary or a familiar Electron shell.',
+    cmd: 'kitr add desktop app',
+    text: 'Windows, macOS and Linux in an Electron shell, or add tauri instead for a small binary on the OS webview.',
   },
   {
     name: 'mobile',

@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/web`, `kitr/web/client`, `kitr/web/provider`, `kitr/web/vite`, `kitr/web/kitr`, read from the published type definitions. The [guide](/packages/web) shows them in use.
+Every export of `kitr/web`, `kitr/web/client`, `kitr/web/provider`, `kitr/web/vite`, read from the published type definitions. The [guide](/packages/web) shows them in use.
 
 ## kitr/web
 
@@ -39,10 +39,26 @@ function startWeb(ctx: PlatformContext, options: {
   mode: WebMode;
   port: number;
   host: string;
+  base?: string;
 }): Promise<void>;
 ```
 
 Serve a built web platform: the Start server bundle for `ssr`, static files otherwise.
+
+### staticFiles
+
+```ts
+function staticFiles(serveStatic: (options: {
+  dir: string;
+  maxAge?: number;
+  immutable?: boolean;
+}) => unknown, dir: string, base?: string): StaticHandler;
+```
+
+Static files for a built web platform, under the platform's `base`. Vite's hashed files in
+`assets/` never change, so they are cached for a year; everything else (`index.html`, `sw.js`,
+the manifest, `public/` files) keeps its name across deploys and is revalidated on every load,
+or users would be stuck on an old release.
 
 ### web
 

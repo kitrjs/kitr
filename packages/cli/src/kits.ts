@@ -11,6 +11,7 @@ export type KitName =
   | 'site'
   | 'realtime'
   | 'desktop'
+  | 'tauri'
   | 'mobile'
 
 export interface Kit {
@@ -18,8 +19,8 @@ export interface Kit {
   description: string
   /** Platforms written to kitrrc.ts (`kitr new --platform` overrides them). */
   platforms?: Record<string, { type: string; options?: Record<string, unknown> }>
-  /** Recipes applied after the base files. */
-  recipes: string[]
+  /** Packages added after the base files (short names). */
+  packages: string[]
   /** Registry components pulled in (`kitr ui add`). */
   components?: string[]
   base: (ctx: ProjectContext, name: string) => void
@@ -33,7 +34,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
     description:
       'A web platform with React, TanStack Router and Query, nothing else. Add what you need.',
     platforms: { site: { type: 'web', options: { mode: 'spa' } } },
-    recipes: ['query'],
+    packages: ['query'],
     base: baseReact,
   },
   app: {
@@ -41,7 +42,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
     description:
       'A logged-in app on an external API: http, forms, tables, state, theme, tailwind, auth, mocks, testing.',
     platforms: { site: { type: 'web', options: { mode: 'spa' } } },
-    recipes: [
+    packages: [
       'http',
       'forms',
       'table',
@@ -74,7 +75,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
     description:
       'The app kit plus a server-rendered web platform, an API server, actions, api and realtime channels.',
     platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
-    recipes: [
+    packages: [
       'http',
       'forms',
       'table',
@@ -110,7 +111,7 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
     description:
       'A pure backend: h3 server, Adonis-style API, logger, db binding, realtime channels. No React in the bundle.',
     platforms: { api: { type: 'server' } },
-    recipes: ['logger', 'api', 'db', 'realtime', 'testing'],
+    packages: ['logger', 'api', 'db', 'realtime', 'testing'],
     base: baseServer,
   },
 }

@@ -83,6 +83,10 @@ export function createAddContext(
       add: (name, command) => codemods.addScript(name, command),
       remove: (name, command) => codemods.removeScripts({ [name]: command }),
     },
+    packageJson: {
+      set: (field, value) => codemods.setPackageField(field, value),
+      remove: (field, value) => codemods.removePackageField(field, value),
+    },
     env: {
       add: (vars, comment) => codemods.addEnv(vars, comment),
       schema: (scope, name, schema, example) => codemods.addEnvSchema(scope, name, schema, example),
@@ -117,6 +121,15 @@ export function createAddContext(
     routes: {
       extend: (spec) => codemods.extendRoutes(spec),
       remove: (spec) => codemods.removeRoutesExtension(spec),
+    },
+    types: { enable: () => codemods.enableGeneratedTypes() },
+    app: {
+      option: (name, from) => codemods.registerAppOption(name, from),
+      removeOption: (name, from) => codemods.unregisterAppOption(name, from),
+    },
+    replaceImport: (file, from, to) => codemods.replaceCssImport(file, from, to),
+    server: {
+      attach: (options) => codemods.attachToServer(options),
     },
   }
 }

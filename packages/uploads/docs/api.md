@@ -217,6 +217,9 @@ and the default rules. The provider calls it with `config/uploads.ts`; call it y
 function mountUploads<S extends {
   h3: any;
   app: KitrApp;
+  config?: {
+    bodyLimits?: Record<string, number>;
+  };
 }>(server: S, path?: string): S;
 ```
 

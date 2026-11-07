@@ -25,6 +25,8 @@ const commented = ts.createPrinter({ removeComments: false, newLine: ts.NewLineK
 function entries(dir, pkg) {
   const out = []
   for (const [key, value] of Object.entries(pkg.exports ?? {})) {
+    // The setup module and command modules face the CLI, not the app; they have no kitr/* entry.
+    if (key === './kitr' || key === './commands') continue
     const types = typeof value === 'string' ? value : value.types
     if (!types?.endsWith('.d.ts')) continue
     const file = join('packages', dir, types)
