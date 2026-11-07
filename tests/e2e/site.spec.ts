@@ -221,6 +221,13 @@ test.describe('in the browser', () => {
     await expect(page.getByText(/not found/i).first()).toBeVisible()
   })
 
+  test('/docs goes to the first guide', async ({ page }) => {
+    await isolate(page)
+    await page.goto('/docs')
+    await expect(page).toHaveURL(/\/docs\/getting-started$/)
+    await expect(page.locator('h1')).toBeVisible()
+  })
+
   test('assets are cached for a year and pages revalidate', async ({ request }) => {
     const home = await request.get('/')
     expect(home.headers()['cache-control']).toMatch(/must-revalidate|max-age=0|no-cache/)

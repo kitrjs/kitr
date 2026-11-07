@@ -43,9 +43,9 @@ function About() {
           <span className="label">About kitr</span>
           <h1 className="display">a box of parts that fit together</h1>
           <p className="lede">
-            Every React app ends up making the same thirty decisions: routing, data loading, forms,
-            auth, styling, testing. kitr makes them once, out loud, with libraries you already
-            trust, and lets you lift any piece out.
+            Every app ends up making the same thirty decisions: routing, data loading, forms, auth,
+            styling, testing, and how to ship to the web, phones, desktops and servers. kitr makes
+            them once, out loud, with libraries you already trust, and lets you lift any piece out.
           </p>
         </div>
       </section>
@@ -102,6 +102,10 @@ function About() {
           <h3>Contribute</h3>
           <span className="muted">Fix a doc or write a package.</span>
         </Link>
+        <a href="/llms.txt">
+          <h3>For agents</h3>
+          <span className="muted">Every doc as plain text, ready for a coding agent.</span>
+        </a>
       </section>
     </main>
   )
