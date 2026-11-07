@@ -212,7 +212,7 @@ export const recipes: Record<string, Recipe> = {
       c.addPackage('@kitr/ui')
       ctx.write(
         'config/ui.ts',
-        `import { defineConfig } from 'kitr/ui'\n\nexport default defineConfig({\n  theme: { default: 'system' },\n  toaster: { position: 'bottom-right' },\n  // Any shadcn-compatible registry. Default: kitr's.\n  // registry: 'https://raw.githubusercontent.com/PodkopovP/kitr/main/registry/dist',\n  componentsDir: 'app/components/ui',\n})\n`,
+        `import { defineConfig } from 'kitr/ui'\n\nexport default defineConfig({\n  theme: { default: 'system' },\n  toaster: { position: 'bottom-right' },\n  // Any shadcn-compatible registry. Default: kitr's.\n  // registry: 'https://raw.githubusercontent.com/kitrjs/kitr/main/registry/dist',\n  componentsDir: 'app/components/ui',\n})\n`,
       )
       c.addAgentsSection(
         'ui',
