@@ -48,14 +48,14 @@ export function Search() {
   return (
     <>
       <button type="button" className="search-button" onClick={() => setOpen(true)}>
-        <Icon d={icons.search} size={16} />
+        <Icon icon={icons.search} size={16} />
         <span className="search-label">Search docs</span>
         <kbd className="mono">⌘K</kbd>
       </button>
       {open && (
         <dialog ref={dialog} className="search-dialog" onClose={close} aria-label="Search">
           <div className="search-input">
-            <Icon d={icons.search} size={18} />
+            <Icon icon={icons.search} size={18} />
             <input
               autoFocus
               type="search"

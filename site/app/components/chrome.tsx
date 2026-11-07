@@ -39,7 +39,7 @@ export function Header() {
           target="_blank"
           rel="noreferrer"
         >
-          <Icon d={icons.github} />
+          <Icon icon={icons.github} />
         </a>
       </nav>
     </header>

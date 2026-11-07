@@ -64,7 +64,7 @@ export function LiveExample({
         </span>
         <span className="mono example-url">{src}</span>
         <button type="button" className="example-button" onClick={reload}>
-          <Icon d={icons.refresh} size={15} /> Reload
+          <Icon icon={icons.refresh} size={15} /> Reload
         </button>
         <a
           className="example-button"
@@ -73,7 +73,7 @@ export function LiveExample({
           rel="noreferrer"
           aria-label="Open the example in a new tab"
         >
-          <Icon d={icons.external} size={15} />
+          <Icon icon={icons.external} size={15} />
         </a>
       </div>
       <div className="example-body">
@@ -94,7 +94,7 @@ export function LiveExample({
               onClick={clear}
               disabled={!entries.length}
             >
-              <Icon d={icons.trash} size={14} /> Clear
+              <Icon icon={icons.trash} size={14} /> Clear
             </button>
           </div>
           {entries.length ? (

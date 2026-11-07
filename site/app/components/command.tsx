@@ -33,7 +33,7 @@ export function Command({ cmd }: { cmd: string }) {
           ))}
         </div>
         <button type="button" className="command-copy" onClick={copy} aria-label="Copy command">
-          <Icon d={copied ? icons.check : icons.copy} size={16} />
+          <Icon icon={copied ? icons.check : icons.copy} size={16} />
         </button>
       </div>
       <pre className="command-text">

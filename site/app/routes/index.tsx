@@ -106,7 +106,7 @@ function Home() {
                 className="mosaic-tile"
                 style={{ background: categories[pkg.category].color }}
               >
-                <Icon d={glyph(name)} size={36} stroke="#0B121C" strokeWidth={1.6} />
+                <Icon icon={glyph(name)} size={36} stroke="#0B121C" strokeWidth={1.6} />
                 <span className="mono">{name}</span>
               </Link>
             )
