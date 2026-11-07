@@ -121,6 +121,14 @@ describe('make:* generators produce code that typechecks and builds', () => {
     ['make:form', 'invite', 'app/components/forms/invite_form.tsx'],
     ['make:queries', 'invoices', 'app/features/invoices/queries.ts'],
     ['make:provider', 'flags', 'app/providers/flags_provider.ts'],
+    ['make:job', 'SendReceipt', 'server/jobs/send_receipt.ts'],
+    ['make:mail', 'welcome', 'server/mail/welcome.tsx'],
+    ['make:service', 'billing', 'server/services/billing_service.ts'],
+    ['make:validator', 'project', 'app/validators/project.ts'],
+    ['make:test', 'billing', 'test/billing.test.ts'],
+    ['make:component', 'StatCard', 'app/components/stat-card.tsx'],
+    ['make:hook', 'disclosure', 'app/hooks/use-disclosure.ts'],
+    ['make:exception', 'QuotaExceeded', 'app/exceptions/quota_exceeded_error.ts'],
   ]
 
   it.each(generators)('%s %s writes %s', (command, arg, file) => {
@@ -151,6 +159,25 @@ describe('make:* generators produce code that typechecks and builds', () => {
     kitr(dir, 'build', 'site')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   }, 300_000)
+
+  it("the generated test runs and passes with the project's vitest", () => {
+    const out = run(dir, bin('vitest'), ['run', 'test/billing.test.ts'])
+    expect(out).toMatch(/1 passed/)
+  }, 120_000)
+
+  it("generated code passes the project's lint", () => {
+    run(dir, bin('biome'), [
+      'check',
+      'server/jobs',
+      'server/mail',
+      'server/services',
+      'app/validators',
+      'test',
+      'app/hooks',
+      'app/exceptions',
+      'app/components/stat-card.tsx',
+    ])
+  })
 
   it('doctor stays clean after generating', () => {
     const findings = JSON.parse(kitr(dir, 'doctor', '--json')) as Array<{ level: string }>

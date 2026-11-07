@@ -164,8 +164,9 @@ export const makeValidator = makeCommand(
     vars: { name },
   }),
 )
-export const makeTest = makeCommand('test', 'Create a vitest file in tests/', (_ctx, name) => ({
-  file: `tests/${naming.snake(name)}.test.ts`,
+export const makeTest = makeCommand('test', 'Create a vitest file in test/', (_ctx, name) => ({
+  // test/, where every kit's vitest config and tsconfig look; tests/ was never run or checked.
+  file: `test/${naming.snake(name)}.test.ts`,
   vars: { name },
 }))
 export const makeComponent = makeCommand(
