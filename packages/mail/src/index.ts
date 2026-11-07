@@ -88,13 +88,40 @@ declare module '@kitr/core' {
 export const defineConfig = createDefineConfig<MailConfig>()
 
 export function address(input: Recipient): Address {
-  if (typeof input !== 'string') return input
+  if (typeof input !== 'string') return { ...input, email: input.email.trim() }
   const m = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(input)
-  return m ? { name: m[1] || undefined, email: m[2]! } : { email: input.trim() }
+  if (!m) return { email: input.trim() }
+  const name = m[1]!.replace(/^"(.*)"$/, '$1').replace(/\\(.)/g, '$1') || undefined
+  return { name, email: m[2]!.trim() }
+}
+
+/** CR or LF in a header would let a value start a new header (`Bcc:`) at the SMTP layer. */
+const lineBreak = /[\r\n]/
+
+function checkAddress(a: Address, field: string): Address {
+  if (lineBreak.test(a.email) || (a.name && lineBreak.test(a.name)))
+    throw new Error(`[kitr/mail] Line break in ${field} address.`)
+  if (!/^[^\s@<>,;"]+@[^\s@<>,;"]+$/.test(a.email))
+    throw new Error(`[kitr/mail] "${a.email}" in ${field} is not an email address.`)
+  return a
+}
+
+function checkHeaders(headers: Record<string, string> | undefined) {
+  for (const [name, value] of Object.entries(headers ?? {})) {
+    if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name))
+      throw new Error(`[kitr/mail] Bad header name "${name}".`)
+    if (lineBreak.test(String(value)))
+      throw new Error(`[kitr/mail] Line break in header "${name}".`)
+  }
 }
 
 export function formatAddress(a: Address): string {
-  return a.name ? `${a.name} <${a.email}>` : a.email
+  if (!a.name) return a.email
+  // Commas, quotes and the like in a display name must be quoted, or "Doe, Jane" becomes two recipients.
+  const name = /^[\w !#$%&'*+\-/=?^`{|}~.]*$/.test(a.name)
+    ? a.name
+    : `"${a.name.replace(/(["\\])/g, '\\$1')}"`
+  return `${name} <${a.email}>`
 }
 
 const list = (input?: Recipient | Recipient[]): Address[] =>
@@ -102,20 +129,23 @@ const list = (input?: Recipient | Recipient[]): Address[] =>
 
 /** A readable text version of an HTML body. */
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>|<head[\s\S]*?<\/head>/gi, '')
-    .replace(/<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
-    .replace(/<\/(p|div|h[1-6]|li|tr|br)>|<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+  return (
+    html
+      .replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>|<head[\s\S]*?<\/head>/gi, '')
+      .replace(/<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+      .replace(/<\/(p|div|h[1-6]|li|tr|br)>|<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&#x27;/g, "'")
+      // Last, so `&amp;lt;` reads as `&lt;` and not `<`.
+      .replace(/&amp;/g, '&')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  )
 }
 
 /** Keeps messages in memory and prints them; the default outside production. */
@@ -135,6 +165,14 @@ export function createLogTransport(options: { print?: boolean } = {}): MailTrans
       return { id: `log-${messages.length}` }
     },
   }
+}
+
+// Chunked: spreading a large attachment into fromCharCode overflows the call stack.
+function base64(bytes: Uint8Array): string {
+  let text = ''
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(text)
 }
 
 /** Resend's HTTP API. */
@@ -159,10 +197,13 @@ export function createResendTransport(options: {
           html: message.html,
           text: message.text,
           headers: message.headers,
+          // Resend takes base64; text content is encoded as UTF-8 first, as SMTP would send it.
           attachments: message.attachments?.map((a) => ({
             filename: a.filename,
-            content:
-              typeof a.content === 'string' ? a.content : btoa(String.fromCharCode(...a.content)),
+            content: base64(
+              typeof a.content === 'string' ? new TextEncoder().encode(a.content) : a.content,
+            ),
+            content_type: a.contentType,
           })),
         }),
       })
@@ -238,17 +279,20 @@ export function createMailer(options: CreateMailerOptions = {}): Mailer {
       const from = send.from ?? options.from
       if (!from)
         throw new Error('[kitr/mail] No sender: set `from` in config/mail.ts or in send().')
+      const subject =
+        typeof template.subject === 'function' ? template.subject(props) : template.subject
+      if (lineBreak.test(subject)) throw new Error('[kitr/mail] Line break in the subject.')
+      checkHeaders(send.headers)
       const html = await renderHtml(template.render(props))
       const doc =
         /^\s*<!doctype/i.test(html) || /^\s*<html/i.test(html) ? html : `<!DOCTYPE html>${html}`
       return {
-        from: address(from),
-        to: list(send.to),
-        cc: send.cc ? list(send.cc) : undefined,
-        bcc: send.bcc ? list(send.bcc) : undefined,
-        replyTo: send.replyTo ? address(send.replyTo) : undefined,
-        subject:
-          typeof template.subject === 'function' ? template.subject(props) : template.subject,
+        from: checkAddress(address(from), 'from'),
+        to: list(send.to).map((a) => checkAddress(a, 'to')),
+        cc: send.cc ? list(send.cc).map((a) => checkAddress(a, 'cc')) : undefined,
+        bcc: send.bcc ? list(send.bcc).map((a) => checkAddress(a, 'bcc')) : undefined,
+        replyTo: send.replyTo ? checkAddress(address(send.replyTo), 'replyTo') : undefined,
+        subject,
         html: doc,
         text: template.text ? template.text(props) : htmlToText(html),
         headers: send.headers,
