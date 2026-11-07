@@ -46,7 +46,7 @@ export default defineKitrConfig({
 })
 ```
 
-`site` renders pages on the server through [TanStack Start](https://tanstack.com/start) and hydrates them in the browser. `api` is the h3 server in `server/main.ts`. The kit also wrote `app/routes/api.$.ts`, which hands every `/api/*` request the site receives to that same server, so in production one process serves pages and the API. Run both in development:
+`site` renders pages on the server through [TanStack Start](https://tanstack.com/start) and hydrates them in the browser. `api` is the h3 server in `server/main.ts`. The kit also wrote `app/server.ts`, Start's server entry, which hands every request for a path in `server/routes.ts` to that same server, so in production one process serves pages and the API. Run both in development:
 
 ```sh
 cp .env.example .env
@@ -59,7 +59,7 @@ Where the code goes:
 
 | Folder | What lives there | Runs on |
 | --- | --- | --- |
-| `app/routes/` | Pages | Server, then browser |
+| `app/routes.ts`, `app/pages/` | The route table and its page modules | Server, then browser |
 | `app/actions/` | Server actions: functions the browser calls | Server |
 | `app/channels/` | Realtime channel definitions | Both |
 | `app/features/` | Queries, forms and components by feature | Browser |
@@ -169,20 +169,24 @@ The handler, Drizzle and the Postgres driver only run on the server; none of it 
 
 The name `projects.list` is the action's address. `kitr types` (which `kitr dev` runs, and reruns whenever a file in `app/actions/` changes) writes it into `.kitr/actions.ts`, so a component can use it by name with full types. Load it in the page's loader and read it in the component:
 
-```tsx
-// app/routes/projects/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { queryOptions, useSuspenseQuery } from 'kitr/query'
+```ts
+// app/routes.ts
+import { queryOptions } from 'kitr/query'
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/projects/')({
+r.page('/projects', {
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(queryOptions('projects.list', { teamId: 'team_acme' })),
   head: () => seo({ title: 'Projects · Acme', description: 'Every project the Acme team runs.' }),
-  component: ProjectsPage,
+  lazy: () => import('./pages/projects/index'),
 })
+```
 
-function ProjectsPage() {
+```tsx
+// app/pages/projects/index.tsx
+import { useSuspenseQuery } from 'kitr/query'
+
+export default function ProjectsPage() {
   const { data: projects } = useSuspenseQuery('projects.list', { teamId: 'team_acme' })
   return (
     <main className="mx-auto grid max-w-2xl gap-4 p-6">
@@ -312,20 +316,22 @@ export default class ProjectsController {
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
 import HealthController from '#server/controllers/health_controller'
 import ProjectsController from '#server/controllers/projects_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .get('/teams/:teamId/projects', [ProjectsController, 'index'], { name: 'projects.index' })
       .get('/teams/:teamId/projects/:id', [ProjectsController, 'show'], { name: 'projects.show' }),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 ```sh
@@ -361,31 +367,35 @@ export const teamProjectsChannel = defineChannel({
 })
 ```
 
-Register it with the realtime server the kit wrote:
+Put it on the socket link the kit wrote in `server/routes.ts`:
 
 ```ts
-// server/realtime.ts
-import { createRealtimeServer } from 'kitr/realtime/server'
+// server/routes.ts
+// ...
 import { teamProjectsChannel } from '#app/channels/projects'
 
-export const realtime = createRealtimeServer({
-  channels: [teamProjectsChannel],
-})
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
+      // ...endpoints as before
+      .ws('/ws', { channels: [teamProjectsChannel] }),
+  ),
+)
 ```
 
-Emit from the action, after the insert:
+Emit from the action, after the insert. `createServer({ routes })` bound the socket server as `realtime` in the container, so anything on the server reaches it through `server.app`:
 
 ```ts
 // app/actions/projects/create.ts
 // ...
 import { teamProjectsChannel } from '#app/channels/projects'
-import { realtime } from '#server/realtime'
+import { server } from '#server/main'
 
 export const createProject = defineMutation('projects.create', {
   // ...input and effects as before
   handler: async ({ input }) => {
     // ...the duplicate check and the insert as before
-    realtime.use(teamProjectsChannel, { teamId: input.teamId }).emit('created', {
+    server.app.container.use('realtime').use(teamProjectsChannel, { teamId: input.teamId }).emit('created', {
       id: project!.id,
       name: project!.name,
     })

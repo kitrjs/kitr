@@ -1,18 +1,8 @@
 import { useAnalytics } from 'kitr/analytics/react'
 import { useSchemaForm } from 'kitr/forms'
-<<<<<<< HEAD:examples/saas/app/pages/projects.tsx
 import { useMutation, useSuspenseQuery } from 'kitr/query'
 import { getRouteApi } from 'kitr/router'
 import { type ColumnDef, type DataTableFeatures, useUrlTableState } from 'kitr/table'
-=======
-import { useMutation, useSuspenseQuery } from 'kitr/query'
-import {
-  type ColumnDef,
-  type DataTableFeatures,
-  parseTableSearch,
-  useUrlTableState,
-} from 'kitr/table'
->>>>>>> origin/main:examples/saas/app/routes/_app/projects.tsx
 import { useState } from 'react'
 import type { AppEvents } from '#app/analytics'
 import { createProject, deleteProject, projectsQuery } from '#app/features/projects/queries'

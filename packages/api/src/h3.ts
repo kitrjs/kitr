@@ -1,10 +1,10 @@
+import type { RouteEntry as TableEntry } from '@kitr/core'
 import { type KitrApp, KitrError, validate } from '@kitr/core'
 import type { KitrServer } from '@kitr/server'
 import { H3, type H3Event } from 'h3'
 import { createHttpContext } from './context'
 import { controllerInstance, isControllerRef, resolveControllerClass } from './controller'
 import { compose, handlesPreflight } from './middleware'
-import type { RouteEntry as TableEntry } from '@kitr/core'
 import { httpEntries } from './routes'
 import type { RouteEntry, Validators } from './types'
 

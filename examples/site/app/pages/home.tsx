@@ -10,15 +10,7 @@ import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 
-<<<<<<< HEAD:examples/site/app/pages/home.tsx
 const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
-=======
-export const Route = createFileRoute('/')({
-  component: HomePage,
-})
-
-const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
->>>>>>> origin/main:examples/site/app/routes/index.tsx
 
 export default function HomePage() {
   const { t } = useTranslation()

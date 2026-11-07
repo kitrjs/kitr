@@ -211,7 +211,7 @@ export class Codemods {
     const src = readFileSync(full, 'utf8')
     if (src.includes(`from '${spec}'`) || src.includes(`from "${spec}"`)) return
     const mod = parseModule(src)
-    mod.imports.$prepend({ from: spec, imported: 'default', local })
+    mod.imports.$append({ from: spec, imported: 'default', local })
     writeFileSync(full, generateCode(mod).code)
     this.ctx.touched.add(file)
   }
@@ -510,23 +510,24 @@ export class Codemods {
   extendRoutes(spec: string, options: { table?: RouteTableSide } = {}) {
     const file = this.routeTablePath(options.table)
     const full = this.ctx.path(file)
+    const server = options.table === 'server' || this.ctx.isServerOnly()
     if (!existsSync(full)) {
-      const what = options.table === 'server' ? 'endpoints and sockets' : 'routes'
+      const what = server ? 'endpoints and sockets' : 'routes'
       this.ctx.write(
         file,
-        `import { defineRoutes } from 'kitr/app'\n\n/** The ${what} of this app. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type ${options.table === 'server' ? 'ServerRoutes' : 'AppRoutes'} = typeof routes.$types\n`,
+        `import { defineRoutes } from 'kitr/app'\n\n/** The ${what} of this app. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type ${server ? 'ServerRoutes' : 'AppRoutes'} = typeof routes.$types\n`,
       )
     }
     if (this.ctx.dryRun) return
     // Whatever extends the server table needs the server to serve it.
-    if (options.table === 'server' || this.ctx.isServerOnly()) this.mountServerRoutes()
+    if (server) this.mountServerRoutes()
     const src = readFileSync(full, 'utf8')
     if (src.includes(`'${spec}'`) || src.includes(`"${spec}"`)) return
     const local = extensionLocalName(spec)
     const mod = parseModule(src)
     const call = findDefineRoutes(mod)
     if (!call) throw new Error(`${file}: expected a \`defineRoutes([...], ...)\` call`)
-    mod.imports.$prepend({ from: spec, imported: 'default', local })
+    insertPackageImport(mod, spec, local)
     if (!call.$args.length || !Array.isArray(call.$args[0])) call.$args.unshift([])
     call.$args[0].push(builders.raw(local))
     writeFileSync(full, emit(mod))
@@ -571,7 +572,11 @@ export class Codemods {
   ): boolean {
     const file = this.routeTablePath(options.table)
     const full = this.ctx.path(file)
-    if (!existsSync(full)) this.extendRoutes(options.table === 'server' ? 'kitr/api/routes' : 'kitr/router/routes', options)
+    if (!existsSync(full))
+      this.extendRoutes(
+        options.table === 'server' ? 'kitr/api/routes' : 'kitr/router/routes',
+        options,
+      )
     if (this.ctx.dryRun) return true
     let src = readFileSync(full, 'utf8')
     if (options.skipIf?.test(src)) return true
@@ -583,7 +588,11 @@ export class Codemods {
     let added = false
     for (const spec of options.imports ?? []) {
       if (src.includes(`'${spec.from}'`) || src.includes(`"${spec.from}"`)) continue
-      mod.imports.$append({ from: spec.from, imported: spec.imported ?? spec.local, local: spec.local })
+      mod.imports.$append({
+        from: spec.from,
+        imported: spec.imported ?? spec.local,
+        local: spec.local,
+      })
       added = true
     }
     if (added) src = emit(mod)
@@ -681,7 +690,24 @@ export class Codemods {
   }
 }
 
-/** `@kitr/api/routes` → `apiRoutes`; `@acme/thing/routes` → `thingRoutes`. */
+/**
+ * `import <local> from '<spec>'` after the last package import (before `#app/*` and relative
+ * ones), so the extension list reads in the order it is declared and the file stays sorted.
+ */
+function insertPackageImport(mod: ReturnType<typeof parseModule>, spec: string, local: string) {
+  type Decl = { type: string; source?: { value?: unknown } }
+  const body = (mod.$ast as unknown as { body: Decl[] }).body
+  let at = 0
+  body.forEach((node, i) => {
+    const from = node.type === 'ImportDeclaration' ? String(node.source?.value ?? '') : null
+    if (from !== null && !from.startsWith('#') && !from.startsWith('.')) at = i + 1
+  })
+  const decl = (parseModule(`import ${local} from '${spec}'\n`).$ast as unknown as { body: Decl[] })
+    .body[0]!
+  body.splice(at, 0, decl)
+}
+
+/** `@kitr/api/routes` → `api`; `@acme/thing/routes` → `thing`; `my-router` → `myRouter`. */
 export function extensionLocalName(spec: string): string {
   const parts = spec.split('/').filter((p) => p && !p.startsWith('@'))
   // `kitr/api/routes` is the api package's extension: `api` in `defineRoutes([api], ...)`.

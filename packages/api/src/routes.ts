@@ -125,18 +125,16 @@ export interface ResourceOptions {
 }
 
 /** One http method on the table: `get`, `post`, `put`, `patch`, `delete`. */
-export interface HttpMethodFn<K extends ExtensionKey, R extends TableMap, Method extends HttpMethod> {
-  <
-    Path extends string,
-    H extends RouteHandler<Path, V>,
-    Name extends string = never,
-    V extends Validators = never,
-  >(
-    path: Path,
-    handler: H,
-    options?: RouteOptions<Name, V>,
-  ): KitrRouter<K, Add<R, NameOf<Name, Method, Path>, RouteFor<Method, Path, H, V>>>
-}
+export type HttpMethodFn<K extends ExtensionKey, R extends TableMap, Method extends HttpMethod> = <
+  Path extends string,
+  H extends RouteHandler<Path, V>,
+  Name extends string = never,
+  V extends Validators = never,
+>(
+  path: Path,
+  handler: H,
+  options?: RouteOptions<Name, V>,
+) => KitrRouter<K, Add<R, NameOf<Name, Method, Path>, RouteFor<Method, Path, H, V>>>
 
 declare module '@kitr/core' {
   interface RouterExtensions<K extends string, R extends TableMap> {
@@ -280,7 +278,6 @@ export function httpEntries(source: { entries: TableEntry[] } | RouteEntry[]): R
   if (Array.isArray(source)) return source
   return source.entries.filter((e) => e.kind === 'http') as unknown as RouteEntry[]
 }
-
 
 export function joinPath(base: string, path: string): string {
   const joined = `${base}/${path}`.replace(/\/{2,}/g, '/').replace(/\/$/, '')

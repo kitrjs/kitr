@@ -1,11 +1,5 @@
-<<<<<<< HEAD:examples/realtime/app/pages/chat.tsx
 import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
 import { getRouteApi } from 'kitr/router'
-=======
-import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
-import { ssrRoute } from 'kitr/seo'
->>>>>>> origin/main:examples/realtime/app/routes/index.tsx
 import { useStorage } from 'kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { chatSubscription, messagesQuery, sendMessage } from '#app/features/chat/queries'

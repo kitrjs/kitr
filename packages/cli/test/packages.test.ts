@@ -193,36 +193,39 @@ describe('add context', () => {
     add.routes.extend('@kitr/api/routes')
     add.routes.extend('@kitr/api/routes')
     add.routes.extend('@kitr/realtime/routes')
-    const read = () => readFileSync(join(dir, 'app/routes.ts'), 'utf8')
-    expect(read()).toContain("import apiRoutes from '@kitr/api/routes'")
-    expect(read()).toContain("import realtimeRoutes from '@kitr/realtime/routes'")
-    expect(read()).toMatch(/defineRoutes\(\[apiRoutes, realtimeRoutes\]/)
-    expect(read().match(/apiRoutes/g)).toHaveLength(2)
+    // A server-only project has one table, the server's, so the extension lands there.
+    const read = () => readFileSync(join(dir, 'server/routes.ts'), 'utf8')
+    expect(read()).toContain("import api from '@kitr/api/routes'")
+    expect(read()).toContain("import realtime from '@kitr/realtime/routes'")
+    expect(read()).toMatch(/defineRoutes\(\[api, realtime\]/)
+    expect(read()).toContain('export type ServerRoutes = typeof routes.$types')
+    expect(read().match(/import api from/g)).toHaveLength(1)
     add.routes.remove('@kitr/api/routes')
-    expect(read()).not.toContain('apiRoutes')
-    expect(read()).toMatch(/defineRoutes\(\[realtimeRoutes\]/)
+    expect(read()).not.toContain('@kitr/api/routes')
+    expect(read()).toMatch(/defineRoutes\(\[realtime\]/)
   })
 
-  it('honours directories.routeTable and edits an existing table the app wrote', () => {
+  it('honours directories.serverRouteTable and edits an existing table the app wrote', () => {
     quiet()
     const dir = project({
       'package.json': pkg,
       'kitrrc.ts': rc.replace(
         "server: 'server'",
-        "server: 'server', routeTable: 'server/routes.ts'",
+        "server: 'server', serverRouteTable: 'server/table.ts'",
       ),
-      'server/routes.ts': `import { defineRoutes } from 'kitr/app'\n\nexport const routes = defineRoutes([], (r) => r.group('/api', (api) => api))\n`,
+      'server/table.ts': `import { defineRoutes } from 'kitr/app'\n\nexport const routes = defineRoutes([], (r) => r.group('/api', (api) => api))\n`,
     })
     const ctx = createContext({ root: dir })
     createAddContext(ctx, new Codemods(ctx), {}).routes.extend('@acme/sockets/routes')
-    const src = readFileSync(join(dir, 'server/routes.ts'), 'utf8')
-    expect(src).toContain("import socketsRoutes from '@acme/sockets/routes'")
-    expect(src).toMatch(/defineRoutes\(\[socketsRoutes\], \(r\) => r\.group/)
+    const src = readFileSync(join(dir, 'server/table.ts'), 'utf8')
+    expect(src).toContain("import sockets from '@acme/sockets/routes'")
+    expect(src).toMatch(/defineRoutes\(\[sockets\], \(r\) => r\.group/)
   })
 
   it('derives readable local names for extension imports', () => {
-    expect(extensionLocalName('@kitr/api/routes')).toBe('apiRoutes')
-    expect(extensionLocalName('@acme/sockets/routes')).toBe('socketsRoutes')
+    expect(extensionLocalName('@kitr/api/routes')).toBe('api')
+    expect(extensionLocalName('kitr/router/routes')).toBe('router')
+    expect(extensionLocalName('@acme/sockets/routes')).toBe('sockets')
     expect(extensionLocalName('my-router')).toBe('myRouter')
     expect(extensionLocalName('@scope/x')).toBe('x')
   })

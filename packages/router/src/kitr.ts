@@ -136,7 +136,9 @@ export default definePackage({
     ctx.routes.remove('kitr/router/routes')
     const table = ctx.rc.directories.routeTable ?? `${ctx.rc.directories.app ?? 'app'}/routes.ts`
     if (ctx.exists(table) && /\.(root|page|layout)\(/.test(ctx.read(table)))
-      ctx.log.warn(`${table} still has .root()/.page()/.layout() links; delete them or the file, the extension is gone.`)
+      ctx.log.warn(
+        `${table} still has .root()/.page()/.layout() links; delete them or the file, the extension is gone.`,
+      )
     ctx.agents.remove('router')
   },
   doctor(project) {
@@ -157,7 +159,10 @@ export default definePackage({
       description: 'Create a page in app/pages and add it to app/routes.ts',
       target: (name, project) => {
         // `projects/$id` → app/pages/projects/id.tsx, route path '/projects/$id'. `:id` works too.
-        const path = `/${name.replace(/^\/+/, '').replace(/\/+$/, '').replace(/:(\w+)/g, '$$$1')}`
+        const path = `/${name
+          .replace(/^\/+/, '')
+          .replace(/\/+$/, '')
+          .replace(/:(\w+)/g, '$$$1')}`
         const segments = path.split('/').filter(Boolean)
         const fileSegments = segments.map((s) => s.replace(/^\$/, '')).filter(Boolean)
         const rel = fileSegments.length ? fileSegments.join('/') : 'home'
@@ -165,7 +170,10 @@ export default definePackage({
         const base = fileSegments.map((s) => naming.pascal(s)).join('') || 'Home'
         return { file, vars: { path, name: base, module: `./pages/${rel}` } }
       },
-      stub: ({ path, name }) => `// Route options (loader, beforeLoad, head) go on the \`.page('${path}', ...)\` link in app/routes.ts.
+      stub: ({
+        path,
+        name,
+      }) => `// Route options (loader, beforeLoad, head) go on the \`.page('${path}', ...)\` link in app/routes.ts.
 // Read what the loader returned: \`const route = getRouteApi('${path}')\` from 'kitr/router', then \`route.useLoaderData()\`.
 
 export default function ${naming.pascal(name)}Page() {

@@ -45,7 +45,8 @@ export default definePackage({
   },
   remove(ctx) {
     ctx.routes.remove('kitr/realtime/routes', { table: 'server' })
-    const table = ctx.rc.directories.serverRouteTable ?? `${ctx.rc.directories.server ?? 'server'}/routes.ts`
+    const table =
+      ctx.rc.directories.serverRouteTable ?? `${ctx.rc.directories.server ?? 'server'}/routes.ts`
     if (ctx.exists(table) && /\.(ws|sse)\(/.test(ctx.read(table)))
       ctx.log.warn(`${table} still has .ws()/.sse() links; remove them, the extension is gone.`)
     ctx.deps.remove('crossws', 'partysocket', 'socket.io', 'socket.io-client')

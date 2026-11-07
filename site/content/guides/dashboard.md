@@ -57,7 +57,7 @@ cp .env.example .env
 npm run dev
 ```
 
-`npm run dev` runs `kitr dev`, which starts the `site` web platform on `http://localhost:3000`. Edit `app/routes/index.tsx` and the page updates as you save.
+`npm run dev` runs `kitr dev`, which starts the `site` web platform on `http://localhost:3000`. Edit `app/pages/home.tsx` and the page updates as you save.
 
 ## Point the app at your API
 
@@ -210,23 +210,27 @@ Every request now carries `Authorization: Bearer tok_ada` once Ada signs in, and
 
 Now the sign-in page. `requireAuth()` sends anonymous visitors here with the page they wanted in `?redirect=`, so send them back after a successful sign-in:
 
-```tsx
-// app/routes/sign-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { useAuth } from 'kitr/auth'
-import { useNavigate } from 'kitr/router'
-import { type FormEvent, useState } from 'react'
-import type { User } from '#app/abilities'
-
-export const Route = createFileRoute('/sign-in')({
+```ts
+// app/routes.ts
+r.page('/sign-in', {
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : '/orders',
   }),
-  component: SignInPage,
+  lazy: () => import('./pages/sign-in'),
 })
+```
 
-function SignInPage() {
-  const { redirect } = Route.useSearch()
+```tsx
+// app/pages/sign-in.tsx
+import { useAuth } from 'kitr/auth'
+import { getRouteApi, useNavigate } from 'kitr/router'
+import { type FormEvent, useState } from 'react'
+import type { User } from '#app/abilities'
+
+const route = getRouteApi('/sign-in')
+
+export default function SignInPage() {
+  const { redirect } = route.useSearch()
   const navigate = useNavigate()
   const auth = useAuth<User, { email: string; password: string }>()
   const [error, setError] = useState<string | null>(null)
@@ -256,22 +260,27 @@ function SignInPage() {
 
 ## Protect every page behind the layout
 
-A file whose name starts with `_` is a layout with no URL segment. Put the guard and the app's chrome on it, and every page inside `app/routes/_app/` needs a signed-in user:
+`.layout()` wraps pages in a component without adding a URL segment. Put the guard and the app's chrome on it, and every page declared inside it needs a signed-in user:
+
+```ts
+// app/routes.ts
+import { requireAuth } from 'kitr/router'
+
+r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+  app
+    .page('/orders', { lazy: () => import('./pages/orders/index') })
+    .page('/orders/new', { lazy: () => import('./pages/orders/new') }),
+)
+```
 
 ```tsx
-// app/routes/_app.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/app-layout.tsx
 import { useAuth, useUser } from 'kitr/auth'
-import { Outlet, requireAuth } from 'kitr/router'
+import { Outlet } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 
-export const Route = createFileRoute('/_app')({
-  beforeLoad: requireAuth(),
-  component: AppLayout,
-})
-
-function AppLayout() {
+export default function AppLayout() {
   const auth = useAuth()
   const user = useUser<User>()
   return (
@@ -380,26 +389,33 @@ export const columns: ColumnDef<DataTableFeatures, Order>[] = [
 
 The page validates the search params, loads the matching page before it renders, and binds the table's sorting and paging to the URL:
 
+```ts
+// app/routes.ts
+import { parseTableSearch } from 'kitr/table'
+import { ordersPageQuery } from '#app/features/orders/queries'
+
+app.page('/orders', {
+  validateSearch: parseTableSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(ordersPageQuery.options(deps)),
+  lazy: () => import('./pages/orders/index'),
+})
+```
+
 ```tsx
-// app/routes/_app/orders/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { Link } from 'kitr/router'
+// app/pages/orders/index.tsx
+import { getRouteApi, Link } from 'kitr/router'
 import { useSuspenseQuery } from 'kitr/query'
-import { parseTableSearch, useUrlTableState } from 'kitr/table'
+import { useUrlTableState } from 'kitr/table'
 import { DataTable } from '#components/ui/data-table'
 import { columns } from '#app/features/orders/columns'
 import { ordersPageQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/_app/orders/')({
-  validateSearch: parseTableSearch,
-  loaderDeps: ({ search }) => search,
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(ordersPageQuery.options(deps)),
-  component: OrdersPage,
-})
+const route = getRouteApi('/_app/orders')
 
-function OrdersPage() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+export default function OrdersPage() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
   const { data } = useSuspenseQuery(ordersPageQuery.options(search))
   const urlState = useUrlTableState({
     search,
@@ -440,20 +456,20 @@ export type NewOrder = z.output<typeof newOrderSchema>
 
 The page runs the mutation with `mutateAsync` and goes back to the table when it succeeds:
 
+```ts
+// app/routes.ts
+app.page('/orders/new', { lazy: () => import('./pages/orders/new') })
+```
+
 ```tsx
-// app/routes/_app/orders/new.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders/new.tsx
 import { useNavigate } from 'kitr/router'
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
 import { useMutation } from 'kitr/query'
 import { createOrder } from '#app/features/orders/queries'
 import { newOrderSchema } from '#app/features/orders/schema'
 
-export const Route = createFileRoute('/_app/orders/new')({
-  component: NewOrderPage,
-})
-
-function NewOrderPage() {
+export default function NewOrderPage() {
   const create = useMutation(createOrder)
   const navigate = useNavigate()
   const form = useSchemaForm(newOrderSchema, { defaultValues: { customer: '', total: '' } })

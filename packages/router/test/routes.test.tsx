@@ -19,15 +19,13 @@ const routes = defineRoutes([pages], (r) =>
     .page('/', { component: () => <p>home</p> })
     .page('/about', { lazy: () => import('./fixtures/page') })
     .group('/projects', (g) =>
-      g
-        .page('/', { component: () => <p>projects index</p> })
-        .page('/$id', {
-          loader: ({ params }) => ({ id: params.id }),
-          component: function Project() {
-            const data = route.useLoaderData()
-            return <p>project {data.id}</p>
-          },
-        }),
+      g.page('/', { component: () => <p>projects index</p> }).page('/$id', {
+        loader: ({ params }) => ({ id: params.id }),
+        component: function Project() {
+          const data = route.useLoaderData()
+          return <p>project {data.id}</p>
+        },
+      }),
     )
     .layout('_app', { beforeLoad: () => ({ user: 'u1' }) }, (app) =>
       app.page('/dashboard', {
@@ -89,7 +87,16 @@ describe('pages extension', () => {
   it('compiles to a TanStack tree with the same ids file routes would get', () => {
     const ids = collectIds(routes.compile('tanstack', {}).pages as any)
     expect(ids.sort()).toEqual(
-      ['__root__', '/', '/about', '/projects', '/projects/', '/projects/$id', '/_app', '/_app/dashboard'].sort(),
+      [
+        '__root__',
+        '/',
+        '/about',
+        '/projects',
+        '/projects/',
+        '/projects/$id',
+        '/_app',
+        '/_app/dashboard',
+      ].sort(),
     )
   })
 
@@ -121,9 +128,9 @@ describe('pages extension', () => {
   })
 
   it('refuses a second root', () => {
-    expect(() =>
-      defineRoutes([pages], (r) => r.root({}).root({})),
-    ).toThrow(/root\(\) may only be called once/)
+    expect(() => defineRoutes([pages], (r) => r.root({}).root({}))).toThrow(
+      /root\(\) may only be called once/,
+    )
   })
 })
 

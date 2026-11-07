@@ -100,7 +100,7 @@ describe('web()', () => {
       'site: vite is not installed',
       'site: @tanstack/react-start is not installed',
       'site: pwa is on but vite-plugin-pwa is not installed',
-      'site: app/routes/__root.tsx is missing',
+      'site: app/routes.ts is missing (no pages to render)',
     ])
     expect(findings[0].fix).toBe('pnpm add -D vite')
 

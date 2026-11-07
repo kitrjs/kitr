@@ -70,8 +70,15 @@ export function createKitrRouter<R>(
 export function createKitrRouter(
   options: CreateKitrRouterBaseOptions<any> & { routes?: PageRoutes; routeTree?: AnyRoute },
 ): Router<any, 'never', true> {
-  const { app: rootApp, queryClient, context, routes, routeTree: givenTree, platform, ...rest } =
-    options
+  const {
+    app: rootApp,
+    queryClient,
+    context,
+    routes,
+    routeTree: givenTree,
+    platform,
+    ...rest
+  } = options
   // The route table compiles to a TanStack tree once per router; the platform drops the pages
   // that do not ship on it.
   const routeTree: AnyRoute =

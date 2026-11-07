@@ -32,9 +32,8 @@ The `server` kit is a backend whose dependency graph has no React, no TanStack a
 ```
 acme-billing/
 ├── server/
-│   ├── main.ts             # createServer() + routes + realtime + listen()
-│   ├── routes.ts           # defineRoutes(...)
-│   ├── realtime.ts         # createRealtimeServer({ channels })
+│   ├── main.ts             # createServer({ routes }) + listen()
+│   ├── routes.ts           # defineRoutes([api, realtime], ...): endpoints and sockets
 │   └── controllers/        # one class per resource
 ├── app/
 │   ├── channels/           # defineChannel(...): shared with any client
@@ -122,19 +121,21 @@ Register it. `resource()` adds a route for each REST method the controller has, 
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
 import HealthController from '#server/controllers/health_controller'
 import InvoicesController from '#server/controllers/invoices_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .resource('invoices', InvoicesController),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 ```sh
@@ -291,20 +292,22 @@ Put it on the group, so every invoice route needs a user:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
 import { auth } from '#server/auth'
 import HealthController from '#server/controllers/health_controller'
 import InvoicesController from '#server/controllers/invoices_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .group({ middleware: [auth] }, (secured) => secured.resource('invoices', InvoicesController)),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 Without a token, `GET /api/invoices` answers `401` with `{ "code": "UNAUTHORIZED", "message": "Authentication required", "status": 401 }`. Inside a controller, `requireUser<ApiUser>(ctx)` returns the typed user. [Add sign-in, end to end](/guides/authentication) covers permissions with `can()` and cookie sessions.
@@ -315,22 +318,25 @@ When the API and the web app live on different origins (`api.acme.com` and `app.
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes, rateLimit } from 'kitr/api'
+import { cors, rateLimit } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
 import { auth } from '#server/auth'
 import HealthController from '#server/controllers/health_controller'
 import InvoicesController from '#server/controllers/invoices_controller'
 
-export const routes = defineRoutes((router) =>
+export const routes = defineRoutes([api, realtime], (router) =>
   router.group(
     { prefix: '/api', middleware: [cors({ origin: ['https://app.acme.com'] }), rateLimit({ max: 300 })] },
-    (api) =>
-      api
+    (r) =>
+      r
         .get('/health', [HealthController, 'show'], { name: 'health' })
         .group({ middleware: [auth] }, (secured) => secured.resource('invoices', InvoicesController)),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 `rateLimit({ max: 300 })` answers `429` past 300 requests a minute per IP. Its counters live in this process's memory: with several instances, use [Shield](/packages/shield)'s limiter with a shared store.
@@ -355,21 +361,29 @@ export const invoicesChannel = defineChannel({
 })
 ```
 
+The socket is a route on the same table, from the `realtime` extension. `createServer({ routes })` serves it and binds the socket server as `realtime` in the container:
+
 ```ts
-// server/realtime.ts
-import { createRealtimeServer } from 'kitr/realtime/server'
+// server/routes.ts
+// ...
+import realtime from 'kitr/realtime/routes'
 import { invoicesChannel } from '#app/channels/invoices'
 
-export const realtime = createRealtimeServer({ channels: [invoicesChannel] })
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
+      // ...health and invoices as before
+      .ws('/ws', { channels: [invoicesChannel] }),
+  ),
+)
 ```
 
-Add a `pay` route and emit from it:
+Add a `pay` route and emit from it. `app` is on every `HttpContext`, so the controller reaches the socket server through the container:
 
 ```ts
 // server/controllers/invoices_controller.ts
 // ...
 import { invoicesChannel } from '#app/channels/invoices'
-import { realtime } from '#server/realtime'
 
 export default class InvoicesController {
   // ...index, show, store as before
@@ -381,7 +395,7 @@ export default class InvoicesController {
       .where(eq(invoices.id, params.id))
       .returning()
     if (!invoice) throw KitrError.notFound('Invoice')
-    realtime.use(invoicesChannel, {}).emit('paid', { id: invoice.id, amountCents: invoice.amountCents })
+    app.container.use('realtime').use(invoicesChannel, {}).emit('paid', { id: invoice.id, amountCents: invoice.amountCents })
     return invoice
   }
 }
@@ -398,7 +412,7 @@ export default class InvoicesController {
 // ...
 ```
 
-`server/main.ts` already attaches the WebSocket server at `/ws`. A kitr frontend subscribes with `useChannel`, and its `effects` refetch the invoice list; any other client can speak the protocol described in the [Realtime guide](/packages/realtime).
+The `.ws('/ws', ...)` link above serves the WebSocket on the same port as the API. A kitr frontend subscribes with `useChannel`, and its `effects` refetch the invoice list; any other client can speak the protocol described in the [Realtime guide](/packages/realtime).
 
 ## Publish OpenAPI and a typed client
 
@@ -411,15 +425,15 @@ kitr api:sync
 
 `openapi.json` describes every named route, with request bodies and parameters converted from the zod schemas. `server/routes.gen.ts` is a plain table of names, methods and paths.
 
-A kitr frontend in another project imports only the `AppRoutes` type and the table. Share them through a workspace package (see [Run kitr in a monorepo](/guides/monorepo)) or publish them as a small types package. On the frontend:
+A kitr frontend in another project imports only the `ServerRoutes` type and the table. Share them through a workspace package (see [Run kitr in a monorepo](/guides/monorepo)) or publish them as a small types package. On the frontend:
 
 ```ts
 // app/api/billing.ts
 import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from '@acme/billing-api'
+import type { ServerRoutes } from '@acme/billing-api'
 import { routeTable } from '@acme/billing-api/routes'
 
-export const billing = createApiClient<AppRoutes>({
+export const billing = createApiClient<ServerRoutes>({
   baseUrl: 'https://api.acme.com',
   getToken: async () => localStorage.getItem('acme:token'),
 })
@@ -490,4 +504,4 @@ Among its other checks, `kitr doctor` fails when a server-only project starts im
 - [API routes](/packages/api): lazy controllers, middleware, rate limits, raw responses and every client option.
 - [Server](/packages/server): request-scoped services, health checks, graceful shutdown and tracing.
 - [Mail](/packages/mail): email the invoice to the customer when it is created.
-- [Run kitr in a monorepo](/guides/monorepo): share `AppRoutes` with the frontend through a workspace package.
+- [Run kitr in a monorepo](/guides/monorepo): share `ServerRoutes` with the frontend through a workspace package.

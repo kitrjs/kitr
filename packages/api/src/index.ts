@@ -8,8 +8,8 @@ export * from './router'
 export {
   default as http,
   type Handler,
-  httpEntries,
   type HttpMethodFn,
+  httpEntries,
   type ResourceAction,
   type ResourceOptions,
   type ResourceRoutes,

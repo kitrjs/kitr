@@ -107,8 +107,8 @@ export {
   defineRoutes,
   type ExtensionKey,
   type GroupChildMap,
-  type GroupOptions,
   type Grouped,
+  type GroupOptions,
   isRouteTable,
   type JoinPaths,
   joinPath,
@@ -117,9 +117,9 @@ export {
   type RouteExtension,
   type RouteGroupChild,
   type RouteMap,
+  type RouterExtensions,
   RouteTable,
   type RouteTableBase,
-  type RouterExtensions,
   type RouteType,
 } from './routes'
 export {

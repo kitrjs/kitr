@@ -7,7 +7,7 @@ import {
   type QueryKey,
   toKitrError,
 } from '@kitr/core'
-import type { RouteMap, RouteType } from './types'
+import type { RouteType } from './types'
 
 /**
  * Options for `createApiClient()`. The client is typed from `typeof routes.$types`, with no codegen:

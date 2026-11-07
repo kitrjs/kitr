@@ -11,12 +11,10 @@ const routes = defineRoutes([pages], (r) =>
     .page('/', { component: Page })
     .page('/about', { lazy: () => import('./fixtures/page') })
     .group('/projects', (g) =>
-      g
-        .page('/', { loader: () => ({ count: 1 }), component: Page })
-        .page('/$id', {
-          loader: ({ params }) => ({ id: params.id, name: 'x' }),
-          component: Page,
-        }),
+      g.page('/', { loader: () => ({ count: 1 }), component: Page }).page('/$id', {
+        loader: ({ params }) => ({ id: params.id, name: 'x' }),
+        component: Page,
+      }),
     )
     .layout('_app', { beforeLoad: () => ({ user: { id: 'u1' } }) }, (app) =>
       app.page('/dashboard', {
@@ -69,7 +67,14 @@ describe('pages extension types', () => {
   it('compiles to a TanStack tree whose route ids are the page paths', () => {
     type Tree = RouteTreeOf<R>
     expectTypeOf<RouteIds<Tree>>().toEqualTypeOf<
-      '__root__' | '/' | '/about' | '/projects' | '/projects/' | '/projects/$id' | '/_app' | '/_app/dashboard'
+      | '__root__'
+      | '/'
+      | '/about'
+      | '/projects'
+      | '/projects/'
+      | '/projects/$id'
+      | '/_app'
+      | '/_app/dashboard'
     >()
   })
 

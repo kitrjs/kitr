@@ -66,6 +66,7 @@ export interface RouteEntry {
  * the accumulated route map; every method returns `KitrRouter<K, R & { [name]: RouteType }>`.
  */
 // biome-ignore lint/suspicious/noEmptyInterface: augmented by packages
+// biome-ignore lint/correctness/noUnusedVariables: the parameters are the augmentation's contract
 export interface RouterExtensions<K extends string, R extends RouteMap> {}
 
 export type ExtensionKey = keyof RouterExtensions<any, any>
@@ -74,6 +75,7 @@ export type ExtensionKey = keyof RouterExtensions<any, any>
  * What a package adds to the route map of a group's child table, by extension key. The pages
  * extension sets `~parent` to the group's TanStack route so pages inside resolve their full path.
  */
+// biome-ignore-start lint/correctness/noUnusedVariables: the parameters are the augmentation's contract
 // biome-ignore lint/suspicious/noEmptyInterface: augmented by packages
 export interface RouteGroupChild<
   K extends string,
@@ -81,6 +83,7 @@ export interface RouteGroupChild<
   P extends string,
   O extends GroupOptions,
 > {}
+// biome-ignore-end lint/correctness/noUnusedVariables: see above
 
 export interface GroupOptions {
   /** Prefix for custom route names: `as: 'admin'` makes `admin.projects.index`. */
@@ -91,9 +94,7 @@ export interface GroupOptions {
   [option: string]: unknown
 }
 
-type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
-  x: infer I,
-) => void
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void
   ? I
   : never
 
@@ -140,10 +141,9 @@ type GroupedType<T, P extends string> = T extends { scope: 'absolute' }
 
 /** A group's routes as the parent sees them: paths prefixed, `METHOD /path` names rewritten, custom names under `as.`. */
 export type Grouped<G extends RouteMap, P extends string, O> = {
-  [N in keyof G & string as N extends `~${string}` ? never : GroupedKey<N, G[N], P, O>]: GroupedType<
-    G[N],
-    P
-  >
+  [N in keyof G & string as N extends `~${string}`
+    ? never
+    : GroupedKey<N, G[N], P, O>]: GroupedType<G[N], P>
 }
 
 type PrefixOrOptions = string | (GroupOptions & { prefix?: string })
@@ -174,9 +174,7 @@ export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
   group<A extends PrefixOrOptions, const O extends GroupOptions, G extends RouteMap = {}>(
     prefixOrOptions: A,
     options: O,
-    define: (
-      r: KitrRouter<K, GroupChildMap<K, R, PrefixOf<A>, O>>,
-    ) => KitrRouter<K, G> | void,
+    define: (r: KitrRouter<K, GroupChildMap<K, R, PrefixOf<A>, O>>) => KitrRouter<K, G> | void,
   ): KitrRouter<K, Prettify<R & Grouped<G, PrefixOf<A>, O>>>
   group<const A extends PrefixOrOptions, G extends RouteMap = {}>(
     prefixOrOptions: A,
@@ -213,7 +211,13 @@ export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
     query?: Record<string, string | number | boolean>,
   ): string
   /** `kitr routes:list`: every entry without handlers. */
-  toJSON(): Array<{ kind: string; method?: string; path: string; name: string; [k: string]: unknown }>
+  toJSON(): Array<{
+    kind: string
+    method?: string
+    path: string
+    name: string
+    [k: string]: unknown
+  }>
   /** @deprecated The http entries, as `kitr/api`'s router exposed them. Use `entries`. */
   readonly routes: RouteEntry[]
 }

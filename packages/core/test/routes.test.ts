@@ -101,13 +101,18 @@ describe('route table', () => {
 
   it('merges another table once, by entry name', () => {
     const server = defineRoutes([hits], (r: Any) => r.hit('/api/a').hit('/api/b'))
-    const app = defineRoutes([marks], (r: Any) => r.mark('home')).merge(server).merge(server)
+    const app = defineRoutes([marks], (r: Any) => r.mark('home'))
+      .merge(server)
+      .merge(server)
     expect(app.entries.map((e) => e.name)).toEqual(['home', 'HIT /api/a', 'HIT /api/b'])
   })
 
   it('compiles each extension with its own kinds and returns the results by key', () => {
     const routes = defineRoutes([hits, marks], (r: Any) =>
-      r.hit('/a').mark('m').group('/g', (g: Any) => g.hit('/b').mark('n')),
+      r
+        .hit('/a')
+        .mark('m')
+        .group('/g', (g: Any) => g.hit('/b').mark('n')),
     )
     expect(routes.compile('list', 'http://x')).toEqual({
       hits: ['http://x/a', 'http://x/g/b'],
@@ -117,7 +122,9 @@ describe('route table', () => {
   })
 
   it('builds urls with params and query', () => {
-    const routes = defineRoutes([hits], (r: Any) => r.hit('/projects/:id/tasks/:taskId', { name: 'task' }))
+    const routes = defineRoutes([hits], (r: Any) =>
+      r.hit('/projects/:id/tasks/:taskId', { name: 'task' }),
+    )
     expect(routes.url('task', { id: '1', taskId: 2 }, { tab: 'files', open: true })).toBe(
       '/projects/1/tasks/2?tab=files&open=true',
     )

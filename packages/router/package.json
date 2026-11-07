@@ -1,11 +1,11 @@
 {
   "name": "@kitr/router",
   "version": "0.1.0",
-  "description": "kitr/router: TanStack Router re-exported, plus guards, default pending/error components, createKitrRouter and the stack outlet (kitr/router/stack).",
+  "description": "kitr/router: TanStack Router re-exported, plus the pages extension for the route table (kitr/router/routes), guards, default pending/error components, createKitrRouter and the stack outlet (kitr/router/stack).",
   "kitr": {
     "name": "router",
     "title": "Router",
-    "summary": "Turn files in app/routes into pages, with links, loaders and guards. Web, desktop and mobile apps get it automatically.",
+    "summary": "Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free.",
     "category": "pages",
     "runsOn": "client",
     "builtOn": [

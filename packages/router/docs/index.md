@@ -1,6 +1,6 @@
 ---
 title: Router
-description: Define pages on the kitr route table and render them with TanStack Router, with typed links, loaders and guards. Web, desktop and mobile apps get it automatically.
+description: Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free.
 order: 1
 ---
 

@@ -331,6 +331,7 @@ Structured data tells search engines what a page is about: an organization, an a
 
 ```ts
 // app/routes.ts
+import { pageSeo } from '#app/seo'
 import { jsonLd } from 'kitr/seo'
 
 r.page('/', {
@@ -467,6 +468,8 @@ In a web platform in `ssr` mode, every route renders on the server by default. `
 
 ```ts
 // app/routes.ts
+import { ssrRoute } from 'kitr/seo'
+
 app.page('/reports', {
   ...ssrRoute('data-only'),
   loader: async () => {
@@ -497,18 +500,17 @@ export default function ReportsPage() {
 
 A route that does not render on the server sends no page content to crawlers. Keep `ssr: true` on anything you want found. See TanStack Start's [selective SSR](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr) for how it combines with parent routes.
 
-When one route tree serves several platforms, the mode can differ per platform. A table resolves at build time by platform name from `kitrrc.ts`, then platform type, then `default`:
+When one route table serves several platforms, the mode can differ per platform. A table resolves at build time by platform name from `kitrrc.ts`, then platform type, then `default`:
 
-```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { ssrRoute } from 'kitr/seo'
 
-export const Route = createFileRoute('/')({
+r.page('/', {
   // The marketing build renders on the server for crawlers; the authed web app runs the loader
   // on the server and renders in the browser; native shells have no server at all.
   ...ssrRoute({ www: true, web: 'data-only', default: false }),
-  component: HomePage,
+  lazy: () => import('./pages/home'),
 })
 ```
 

@@ -28,7 +28,6 @@ import {
   type Route,
   type RouteComponent,
   type RouteOptions,
-  type StaticDataRouteOption,
 } from '@tanstack/react-router'
 import type { KitrRouterContext } from './context'
 
@@ -412,7 +411,10 @@ declare module '@kitr/core' {
 }
 
 /** Reserved for the group route the `pages` extension registers under a group. Not a route type itself. */
-export type GroupRouteType<R, P extends string, O> = PageRouteType<GroupRoute<R, P, O>, 'page-group'>
+export type GroupRouteType<R, P extends string, O> = PageRouteType<
+  GroupRoute<R, P, O>,
+  'page-group'
+>
 
 interface PagesState {
   /** Entry name of the route pages added here become children of; `null` means the root. */
@@ -426,10 +428,19 @@ interface PagesState {
 const STATE = 'pages'
 
 function pagesState(table: AnyRouteTable): PagesState {
-  return ((table.state as Record<string, PagesState>)[STATE] ??= { parent: null, pendingPrefix: '', id: '' })
+  const states = table.state as Record<string, PagesState>
+  states[STATE] ??= { parent: null, pendingPrefix: '', id: '' }
+  return states[STATE]
 }
 
-const KITR_KEYS = ['presentation', 'keepAlive', 'stackParent', 'platforms', 'render', 'lazy'] as const
+const KITR_KEYS = [
+  'presentation',
+  'keepAlive',
+  'stackParent',
+  'platforms',
+  'render',
+  'lazy',
+] as const
 
 /** Split kitr's page options from TanStack's, moving the stack options into `staticData`. */
 function splitOptions(options: Record<string, unknown>) {
@@ -443,7 +454,11 @@ function splitOptions(options: Record<string, unknown>) {
   for (const k of ['presentation', 'keepAlive', 'stackParent', 'platforms', 'render'] as const)
     if (kitr[k] !== undefined) staticData[k] = kitr[k]
   if (Object.keys(staticData).length) tanstack.staticData = staticData
-  return { tanstack, lazy: kitr.lazy as KitrPageOptions['lazy'], platforms: kitr.platforms as string[] | undefined }
+  return {
+    tanstack,
+    lazy: kitr.lazy as KitrPageOptions['lazy'],
+    platforms: kitr.platforms as string[] | undefined,
+  }
 }
 
 interface PageEntry extends RouteEntry {

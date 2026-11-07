@@ -512,16 +512,18 @@ The `saas` kit uses this form. With tokens in `localStorage` the server can't se
 
 Some pages exist for everyone but look different signed in: the home page is a landing for guests and a feed for members. A redirect to `/sign-in` is the wrong tool there; `<Authed>`, `<Guest>` and `authBranch()` render by the live session instead, on the same URL, so deep links, the back button and crawlers see one route:
 
+```ts
+// app/routes.ts
+r.page('/', { lazy: () => import('./pages/home') })
+```
+
 ```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/home.tsx
 import { authBranch } from 'kitr/auth'
 import { Feed } from '#app/components/feed'
 import { Landing } from '#app/components/landing'
 
-export const Route = createFileRoute('/')({
-  component: authBranch({ authed: Feed, guest: Landing }),
-})
+export default authBranch({ authed: Feed, guest: Landing })
 ```
 
 ```tsx

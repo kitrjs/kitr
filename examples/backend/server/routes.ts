@@ -1,6 +1,6 @@
-import realtime from 'kitr/realtime/routes'
 import { defineRoutes } from 'kitr/app'
 import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
 import HealthController from '#server/controllers/health_controller'
 import { exampleChannel } from '#app/channels/example'
 

@@ -46,7 +46,7 @@ That writes `app/components/ui/data-table.tsx`, plus the `button` and `icon` com
 // app/routes.ts
 import { parseTableSearch } from 'kitr/table'
 
-r.page('/orders/', {
+r.page('/orders', {
   validateSearch: parseTableSearch,
   lazy: () => import('./pages/orders/index'),
 })
@@ -57,7 +57,7 @@ r.page('/orders/', {
 import { useUrlTableState } from 'kitr/table'
 import { getRouteApi } from 'kitr/router'
 
-const route = getRouteApi('/orders/')
+const route = getRouteApi('/orders')
 
 export default function OrdersPage() {
   const search = route.useSearch()
@@ -73,7 +73,7 @@ export default function OrdersPage() {
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `search` | required | The current table params, `{ page?, size?, sort?, filter? }`. Usually `Route.useSearch()`. |
+| `search` | required | The current table params, `{ page?, size?, sort?, filter? }`. Usually `getRouteApi(path).useSearch()`. |
 | `setSearch` | required | Merges a patch into the URL. A key set to `undefined` is removed from it. |
 | `defaultPageSize` | `20` | Rows per page when the URL has no `size`. A size equal to it is left out of the URL. |
 | `manual` | `true` | `false` turns the three manual flags off, for data the table sorts and pages itself (with `clientTableFeatures`). |
@@ -135,7 +135,7 @@ Then the page. `validateSearch: parseTableSearch` makes `page`, `size`, `sort` a
 import { parseTableSearch } from 'kitr/table'
 import { ordersPageQuery } from '#app/features/orders/queries'
 
-r.page('/orders/', {
+r.page('/orders', {
   validateSearch: parseTableSearch,
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(ordersPageQuery.options(deps)),
@@ -152,7 +152,7 @@ import { columns } from '#app/features/orders/columns'
 import { ordersPageQuery } from '#app/features/orders/queries'
 import { getRouteApi } from 'kitr/router'
 
-const route = getRouteApi('/orders/')
+const route = getRouteApi('/orders')
 
 export default function OrdersPage() {
   const search = route.useSearch()
@@ -284,7 +284,9 @@ To add params of your own, such as a search box, call it inside your own `valida
 
 ```ts
 // app/routes.ts
-r.page('/orders/', {
+import { parseTableSearch } from 'kitr/table'
+
+r.page('/orders', {
   validateSearch: (raw: Record<string, unknown>) => ({
     ...parseTableSearch(raw),
     q: typeof raw.q === 'string' && raw.q.length <= 100 ? raw.q : undefined,
@@ -297,7 +299,7 @@ r.page('/orders/', {
 // app/pages/orders/index.tsx
 import { getRouteApi } from 'kitr/router'
 
-const route = getRouteApi('/orders/')
+const route = getRouteApi('/orders')
 
 export default function OrdersPage() {
   const { q } = route.useSearch()
@@ -405,7 +407,7 @@ export function StatusFilter({ table }: { table: ReactTable<DataTableFeatures, O
 // app/routes.ts
 import { parseTableSearch } from 'kitr/table'
 
-r.page('/orders/', {
+r.page('/orders', {
   validateSearch: parseTableSearch,
   lazy: () => import('./pages/orders/index'),
 })
@@ -415,7 +417,7 @@ r.page('/orders/', {
 // app/pages/orders/index.tsx
 import { getRouteApi } from 'kitr/router'
 
-const route = getRouteApi('/orders/')
+const route = getRouteApi('/orders')
 
 export default function OrdersToolbar() {
   const search = route.useSearch()

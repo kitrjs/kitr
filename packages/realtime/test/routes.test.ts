@@ -35,8 +35,20 @@ describe('realtime routes extension', () => {
 
   it('records sockets as entries with full paths and channel names', () => {
     expect(routes.toJSON()).toMatchObject([
-      { kind: 'ws', transport: 'websocket', path: '/api/ws', name: 'WS /api/ws', channels: ['chat'] },
-      { kind: 'ws', transport: 'sse', path: '/api/events', name: 'SSE /api/events', channels: ['chat'] },
+      {
+        kind: 'ws',
+        transport: 'websocket',
+        path: '/api/ws',
+        name: 'WS /api/ws',
+        channels: ['chat'],
+      },
+      {
+        kind: 'ws',
+        transport: 'sse',
+        path: '/api/events',
+        name: 'SSE /api/events',
+        channels: ['chat'],
+      },
     ])
   })
 
@@ -45,10 +57,14 @@ describe('realtime routes extension', () => {
     const socket = new WebSocket(`${url.replace(/^http/, 'ws')}/api/ws?user=u1`)
     await new Promise<void>((resolve, reject) => {
       socket.addEventListener('open', () => resolve(), { once: true })
-      socket.addEventListener('error', () => reject(new Error('socket failed to open')), { once: true })
+      socket.addEventListener('error', () => reject(new Error('socket failed to open')), {
+        once: true,
+      })
     })
     const reply = new Promise<any>((resolve) =>
-      socket.addEventListener('message', (e) => resolve(JSON.parse(String(e.data))), { once: true }),
+      socket.addEventListener('message', (e) => resolve(JSON.parse(String(e.data))), {
+        once: true,
+      }),
     )
     socket.send(JSON.stringify({ t: 'sub', id: 's1', ch: 'chat', p: { room: 'a' } }))
     expect(await reply).toEqual({ t: 'ok', id: 's1', p: { room: 'a' } })

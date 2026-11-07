@@ -95,7 +95,10 @@ export const apiSync = {
 
 /** `kitr routes:list`: prints every route with its method, path and name. */
 export const routesList = {
-  meta: { name: 'routes:list', description: 'Print the route table: pages, endpoints and sockets.' },
+  meta: {
+    name: 'routes:list',
+    description: 'Print the route table: pages, endpoints and sockets.',
+  },
   args: { file: { type: 'string' } },
   async run({ args }: { args: { file?: string } }) {
     const { router } = await loadRoutes(args.file)

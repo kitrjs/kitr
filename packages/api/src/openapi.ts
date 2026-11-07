@@ -1,6 +1,5 @@
-import type { StandardSchemaV1 } from '@kitr/core'
+import type { StandardSchemaV1, RouteEntry as TableEntry } from '@kitr/core'
 import { httpEntries } from './routes'
-import type { RouteEntry as TableEntry } from '@kitr/core'
 
 /** Options for `toOpenApi()`: document info and schema conversion. */
 export interface OpenApiOptions {

@@ -112,9 +112,9 @@ dist/<name>/         # build output per platform
 kitrrc.ts
 ```
 
-## One route tree, many apps
+## One route table, many apps
 
-A product that ships as a marketing site, an authed web app, a phone app and a desktop app shares one route tree and one set of components. kitr keeps the differences at the edges:
+A product that ships as a marketing site, an authed web app, a phone app and a desktop app shares one route table and one set of components. kitr keeps the differences at the edges:
 
 | Need | Tool |
 | --- | --- |
