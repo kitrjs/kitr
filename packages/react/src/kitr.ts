@@ -15,6 +15,9 @@ export default definePackage({
       { name: '@types/react', dev: true },
       { name: '@types/react-dom', dev: true },
     )
+    // The blank base compiles for Node only; React brings the browser types and JSX with it.
+    ctx.tsconfig.addLib('DOM', 'DOM.Iterable')
+    ctx.tsconfig.set('jsx', 'react-jsx')
     ctx.write(
       'app/env.ts',
       `import { createEnv, env as e } from 'kitr/env'\n\n/** Validated at startup. Public vars (VITE_*) ship to the browser; server vars throw if read there. */\nexport const env = createEnv({\n  public: {\n    VITE_APP_NAME: e.string({ default: '${ctx.pkg.name ?? 'app'}' }),\n  },\n  server: {},\n})\n`,
@@ -32,6 +35,16 @@ export default definePackage({
       '@types/react',
       '@types/react-dom',
     )
+  },
+  doctor(project) {
+    if (project.has('react')) return []
+    return [
+      {
+        level: 'error',
+        message: 'react is not installed',
+        fix: `${project.pm} add react react-dom`,
+      },
+    ]
   },
   generators: {
     component: {
@@ -66,5 +79,8 @@ export function use${naming.pascal(name)}(initial = false) {
 `,
     },
   },
-  vite: { optimizeDeps: ['react', 'react-dom'] },
+  vite: {
+    plugin: '@vitejs/plugin-react',
+    optimizeDeps: ['react', 'react-dom', 'react/jsx-runtime'],
+  },
 })

@@ -259,6 +259,7 @@ describe('plan', () => {
       install: false,
     })
     expect(plan.map((s) => [s.name, s.loaded.definition.kind ?? 'package'])).toEqual([
+      ['vite', 'package'],
       ['react', 'package'],
       ['platform', 'package'],
       ['tauri', 'platform'],

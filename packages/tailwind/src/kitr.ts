@@ -32,5 +32,8 @@ export default definePackage({
     ctx.agents.remove('tailwind')
   },
   eject: { 'kitr/tailwind': 'clsx + tailwind-merge' },
-  vite: { plugin: '@kitr/tailwind/vite', optimizeDeps: ['clsx', 'tailwind-merge'] },
+  vite: {
+    plugin: '@kitr/tailwind/vite',
+    optimizeDeps: ['clsx', 'tailwind-merge', 'class-variance-authority'],
+  },
 })

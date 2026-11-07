@@ -1,16 +1,13 @@
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
 
 /**
  * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every
  * platform by name. `kitr add`, `kitr remove` and `kitr config` edit this file; so can you.
  */
 export default defineKitrConfig({
-  packages: ['@kitr/react', '@kitr/router', '@kitr/query', '@kitr/web'],
-  providers: [() => import('@kitr/query/provider'), () => import('@kitr/web/provider')],
-  platforms: {
-   site: web({ mode: 'spa' }),
-  },
+  packages: [],
+  providers: [],
+  platforms: {},
   directories: {
     app: 'app',
     routes: 'app/routes',

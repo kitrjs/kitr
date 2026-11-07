@@ -606,6 +606,19 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "docs": "docs",
     "setup": "./kitr"
   },
+  "vite": {
+    "package": "@kitr/vite",
+    "name": "vite",
+    "title": "Vite",
+    "summary": "Build and serve the browser side of your app with Vite, wired to kitrrc.ts by one plugin.",
+    "category": "dev-tools",
+    "runsOn": "server",
+    "builtOn": [
+      "vite"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  },
   "web": {
     "package": "@kitr/web",
     "name": "web",

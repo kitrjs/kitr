@@ -1,11 +1,12 @@
 # Agent guide
 
-This is a server-only kitr app (no React). Each section below is maintained by `kitr add`.
+This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: conventions
 
-- Routes in `server/routes.ts`, controllers in `server/controllers/*_controller.ts`, config in `config/*.ts`, wiring in `kitrrc.ts` (the `server` platform under `platforms`).
-- Start with `kitr dev`; the entry is `server/main.ts`. Run `kitr doctor` after changes.
+- Import framework code from `kitr/*` entry points (`kitr/router`, `kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
+- Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Every package brings its own generators (`kitr make:<kind>`, see `kitr --help`). Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
 
 ## kitr: logger
 

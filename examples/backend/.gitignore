@@ -1,5 +1,8 @@
 node_modules
 dist
+.output
+.nitro
+.tanstack
 .kitr
 *.local
 .env

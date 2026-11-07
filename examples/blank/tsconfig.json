@@ -2,13 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
+      "ES2023"
     ],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "verbatimModuleSyntax": true,
@@ -16,8 +13,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": [
-      "vite/client",
-      "@kitr/vite/client"
+      "node"
     ],
     "baseUrl": ".",
     "paths": {
@@ -45,7 +41,6 @@
     "platforms",
     ".kitr/**/*",
     "kitrrc.ts",
-    "vite.config.ts",
     "test"
   ],
   "exclude": [

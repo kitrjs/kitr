@@ -62,4 +62,5 @@ export default definePackage({
   },
   commands: () => import('./commands'),
   eject: { 'kitr/theme': 'a theme context + CSS variables' },
+  vite: { optimizeDeps: ['sonner'] },
 })

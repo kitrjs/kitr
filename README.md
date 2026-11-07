@@ -7,6 +7,7 @@ kitr is the opinionated TypeScript framework for web, mobile, desktop and backen
 Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
 
 ```sh
+pnpm dlx kitr new my-app                # the blank kit: the wiring files and nothing else; kitr add brings the rest
 pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API
 pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and realtime channels
 pnpm dlx kitr new my-api --kit server   # a pure backend. No React anywhere in the dependency graph.
@@ -23,6 +24,9 @@ Every command runs from flags alone, so coding agents and CI never hit a prompt.
 
 **One data contract.**
 Server actions, API routes, external HTTP APIs and realtime channels all produce the same `QueryContract` / `MutationContract` / `SubscriptionContract`. Mutations declare cache `effects` (`invalidate`, `set`, `remove`) instead of components calling `queryClient.invalidateQueries` inline. A channel event is just a subscription whose events carry effects.
+
+**Nothing you did not add.**
+The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform contracts and the CLI that runs them. It has no dev server, no bundler, no runtime and no React: `kitr new` writes seven files, and `kitr add web site` is what brings Vite, React and the router, through the same `kitr add` that brings `auth` or `mail`. Each package owns its setup end to end: its dependencies, its config file, its codemods, its questions, its scripts, its generators, its `AGENTS.md` lines and what it asks of the Vite build. The umbrella `kitr` package depends on the core and the CLI only; every other `kitr/*` entry point is an optional peer that resolves once its package is added.
 
 **Explicit wiring, the Adonis way.**
 `kitrrc.ts` lists every provider as a lazy import. `config/<package>.ts` holds that package's options, typed by its `defineConfig`. Providers have `register → boot → ready → shutdown`, a typed container (`app.container.use('http')`), and a `wrap()` hook so React packages can wrap the tree without the core knowing React exists.

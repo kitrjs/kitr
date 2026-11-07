@@ -10,7 +10,7 @@ export default definePackage({
   name: 'web',
   kind: 'platform',
   client: true,
-  requires: ['router'],
+  requires: ['vite', 'router'],
   platform: { factory: web, export: 'web', from: 'kitr/web', defaultName: 'site' },
   commands: () => import('./commands'),
   eject: { 'kitr/web': 'vite + @tanstack/react-start + vite-plugin-pwa' },
