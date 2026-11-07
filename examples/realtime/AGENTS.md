@@ -57,12 +57,6 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - `pnpm test` runs Vitest. Components: `renderWithKitr(<X />, { app, queryData })` from `kitr/testing/react`. APIs: `createTestClient(server).get('/api/x')`. No running backend is needed.
 
-## kitr: devtools
-
-- In development a "k" button (ctrl/cmd+shift+K) opens the kitr devtools: App, Router, Query, Auth, Storage, Errors, Analytics and Log panels, plus a command palette (ctrl/cmd+shift+P) with every package's actions.
-- Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`kitr/devtools`); it is null in production so the call costs nothing.
-- A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `kitr/devtools/ui`.
-
 ## kitr: seo
 
 - `head: () => seo({ title, description })` from `kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.

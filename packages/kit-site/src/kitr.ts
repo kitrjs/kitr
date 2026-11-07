@@ -760,7 +760,6 @@ export default definePackage({
       'storage',
       'analytics',
       'testing',
-      'devtools',
       'seo',
       'api',
     ],

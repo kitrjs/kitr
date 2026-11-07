@@ -520,7 +520,6 @@ export default definePackage({
       'theme',
       'storage',
       'testing',
-      'devtools',
       'seo',
       'api',
       'realtime',

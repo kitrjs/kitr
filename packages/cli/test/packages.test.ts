@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { createAddContext, createProjectInfo } from '../src/add-context'
 import { Codemods, extensionLocalName } from '../src/codemods'
 import { createContext } from '../src/context'
-import { resolvePlan } from '../src/plan'
+import { knownPackageNames, resolvePlan } from '../src/plan'
 import { coerceAnswer, describeQuestions, resolveAnswers } from '../src/questions'
 
 const dirs: string[] = []
@@ -20,6 +20,7 @@ function project(files: Record<string, string>) {
   return dir
 }
 afterEach(() => {
+  vi.unstubAllEnvs()
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
   vi.restoreAllMocks()
 })
@@ -241,6 +242,7 @@ describe('plan', () => {
   it('orders setup modules by requires, skipping what is installed', async () => {
     const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
     const ctx = createContext({ root: dir })
+    vi.stubEnv('KITR_PREVIEW', '1')
     const plan = await resolvePlan(ctx, ['jobs'], ['@kitr/server'], { install: false })
     expect(plan.map((s) => s.name)).toEqual(['jobs'])
     expect(plan[0]!.loaded.package).toBe('@kitr/jobs')
@@ -252,9 +254,25 @@ describe('plan', () => {
     ])
   })
 
+  it('refuses a preview package unless previews are on', async () => {
+    const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
+    const ctx = createContext({ root: dir })
+    vi.stubEnv('KITR_PREVIEW', '')
+    await expect(resolvePlan(ctx, ['jobs'], [], { install: false })).rejects.toThrow(
+      /@kitr\/jobs is a preview package.*--preview/,
+    )
+    await expect(resolvePlan(ctx, ['desktop'], [], { install: false })).rejects.toThrow(/preview/)
+    expect(knownPackageNames).not.toContain('jobs')
+    expect(knownPackageNames).toContain('cache')
+    vi.stubEnv('KITR_PREVIEW', '1')
+    const plan = await resolvePlan(ctx, ['jobs'], ['@kitr/server'], { install: false })
+    expect(plan.map((s) => s.name)).toEqual(['jobs'])
+  })
+
   it('tells a platform package from the rest', async () => {
     const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
     const ctx = createContext({ root: dir })
+    vi.stubEnv('KITR_PREVIEW', '1')
     const plan = await resolvePlan(ctx, ['tauri'], ['@kitr/router', '@kitr/storage'], {
       install: false,
     })

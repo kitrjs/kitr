@@ -154,9 +154,6 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@kitr/devtools':
-        specifier: workspace:*
-        version: link:../../packages/devtools
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms
@@ -489,9 +486,6 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@kitr/devtools':
-        specifier: workspace:*
-        version: link:../../packages/devtools
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms
@@ -845,9 +839,6 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@kitr/devtools':
-        specifier: workspace:*
-        version: link:../../packages/devtools
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms
@@ -1011,9 +1002,6 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@kitr/devtools':
-        specifier: workspace:*
-        version: link:../../packages/devtools
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms
@@ -1186,9 +1174,6 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@kitr/devtools':
-        specifier: workspace:*
-        version: link:../../packages/devtools
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms

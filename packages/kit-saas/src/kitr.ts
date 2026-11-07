@@ -797,7 +797,6 @@ export default definePackage({
       'auth',
       'storage',
       'testing',
-      'devtools',
       'seo',
       'api',
       'analytics',
