@@ -78,7 +78,7 @@ The `description` of `index.md` must match the manifest `summary`. Follow the or
 
 Shell blocks that only contain `kitr` commands get the package-manager picker automatically. Link to other packages as `/packages/<name>`.
 
-Check the manifest and docs before publishing:
+Follow [docs/STYLE.md](https://github.com/kitrjs/kitr/blob/main/docs/STYLE.md) in the repo for the full rulebook. Check the manifest and docs before publishing:
 
 ```sh
 kitr package:check
