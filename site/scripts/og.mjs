@@ -45,6 +45,7 @@ const svgData = (svg) => `data:image/svg+xml;base64,${Buffer.from(svg).toString(
 
 /** A Hugeicons icon (array of [tag, attrs]) as an SVG string in one colour. */
 function iconSvg(name, color, stroke = 1.5) {
+  // biome-ignore lint/performance/noDynamicNamespaceImportAccess: build script, icon chosen by name
   const nodes = hugeicons[name] ?? hugeicons.Package01Icon
   const kebab = (k) => k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
   const body = nodes

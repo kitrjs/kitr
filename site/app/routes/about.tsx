@@ -24,7 +24,7 @@ const ideas = [
     title: 'one contract',
     color: '#1FB25A',
     ink: '#0B121C',
-    text: 'REST APIs, API routes, server actions and sockets all speak queries, mutations and subscriptions, with cache effects declared once.',
+    text: 'REST APIs, API routes, server actions and realtime channels all speak queries, mutations and subscriptions, with cache effects declared once.',
   },
   {
     title: 'no magic',

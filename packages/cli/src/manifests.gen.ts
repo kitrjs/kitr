@@ -254,14 +254,13 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "package": "@kitr/router",
     "name": "router",
     "title": "Router",
-    "summary": "Turn files in app/routes into pages, with links, loaders and guards. Every app has it.",
+    "summary": "Turn files in app/routes into pages, with links, loaders and guards. Web, desktop and mobile apps get it automatically.",
     "category": "pages",
     "runsOn": "client",
     "builtOn": [
       "@tanstack/react-router"
     ],
     "client": true,
-    "included": true,
     "docs": "docs"
   },
   "seo": {

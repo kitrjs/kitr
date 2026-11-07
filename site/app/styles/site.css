@@ -1189,6 +1189,16 @@ kbd {
   background: var(--raised);
   border: 1px solid var(--line);
 }
+.prose kbd {
+  font-size: 0.8em;
+  color: var(--ink);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  white-space: nowrap;
+}
 .prose table {
   width: 100%;
   border-collapse: collapse;

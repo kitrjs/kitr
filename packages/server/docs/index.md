@@ -64,7 +64,7 @@ import { useRequest, useRequestApp } from 'kitr/server'
 export async function chargeCard(amount: number) {
   const { logger, requestId } = useRequest()
   const payments = useRequestApp().container.use('payments')
-  logger.info({ amount }, 'charging')
+  logger.info('charging', { amount })
   return payments.charge(amount, { idempotencyKey: requestId })
 }
 ```

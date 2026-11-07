@@ -123,7 +123,7 @@ const create = useKitrMutation(
 import { defineMiddleware, rateLimit, requireJson } from 'kitr/api'
 
 const audit = defineMiddleware(async (ctx, next) => {
-  ctx.logger.info({ path: ctx.request.url.pathname }, 'request')
+  ctx.logger.info('request', { path: ctx.request.url.pathname })
   return next()
 })
 
