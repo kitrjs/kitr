@@ -1,4 +1,4 @@
-import { type AddContext, definePackage, displayName, startRoot } from '@kitr/core/package'
+import { type AddContext, definePackage, displayName, startDocument } from '@kitr/core/package'
 
 const write = (ctx: AddContext, path: string, content: string) =>
   ctx.write(path, content, { overwrite: true })
@@ -17,11 +17,11 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
   )} as const\n`
 
 const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
-/** Typed, no codegen: route names, params, bodies and outputs come from the router. */
-export const api = createApiClient<AppRoutes>({
+/** Typed, no codegen: route names, params, bodies and outputs come from the server table. */
+export const api = createApiClient<ServerRoutes>({
   baseUrl: typeof window === 'undefined' ? 'http://localhost:' + (process.env.PORT ?? 3000) : '',
 })
 registerRoutes(api, [...routeTable])
@@ -29,7 +29,7 @@ registerRoutes(api, [...routeTable])
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
-  remove(ctx, 'app/routes/about.tsx', 'app/channels/example.ts')
+  remove(ctx, 'app/pages/about.tsx', 'app/channels/example.ts')
   addScript(ctx, 'api:sync', 'kitr api:sync')
 
   write(
@@ -60,19 +60,20 @@ export interface Message {
     ctx,
     'app/channels/chat.ts',
     `import { defineChannel } from 'kitr/realtime'
-import { api } from '#app/api/client'
 import type { Message } from '#app/features/chat/schema'
 
 /**
- * One definition for both ends. The server emits \`message\` from MessagesController;
- * the client's \`effects\` refresh the room's query, so the list updates without any wiring in the component.
+ * One definition for both ends: the server serves it from server/routes.ts and emits \`message\`
+ * from MessagesController; the client's \`effects\` refresh the room's query, so the list updates
+ * without any wiring in the component. The key is spelled out (\`api.messages.index.key(...)\`
+ * would pull the client into the server).
  */
 export const chatChannel = defineChannel<{ room: string }>({
   name: 'chat',
   events: {
     message: {
       effects: (_message: Message, { room }) => ({
-        invalidate: [api.messages.index.key({ query: { room } })],
+        invalidate: [['api', 'messages.index', {}, { room }]],
       }),
     },
   },
@@ -85,7 +86,6 @@ export const chatChannel = defineChannel<{ room: string }>({
     ctx,
     'server/controllers/messages_controller.ts',
     `import type { HttpContext } from 'kitr/api'
-import { realtime } from '#server/realtime'
 import { chatChannel } from '#app/channels/chat'
 import {
   type Message,
@@ -126,7 +126,7 @@ export default class MessagesController {
     return history(query.room)
   }
 
-  async store({ body, response }: Ctx<Record<string, string | string[]>, SendMessage>) {
+  async store({ app, body, response }: Ctx<Record<string, string | string[]>, SendMessage>) {
     const message: Message = {
       id: crypto.randomUUID(),
       room: body.room,
@@ -137,7 +137,8 @@ export default class MessagesController {
     const list = history(body.room)
     list.push(message)
     if (list.length > 100) list.shift()
-    realtime.use(chatChannel, { room: body.room }).emit('message', message)
+    // The socket server mounted by \`.ws()\` in server/routes.ts; everyone in the room gets the event.
+    app.container.use('realtime').use(chatChannel, { room: body.room }).emit('message', message)
     response.status(201)
     return message
   }
@@ -148,20 +149,29 @@ export default class MessagesController {
   write(
     ctx,
     'server/routes.ts',
-    `import { defineRoutes } from 'kitr/api'
+    `import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
+import { chatChannel } from '#app/channels/chat'
 import HealthController from '#server/controllers/health_controller'
 import MessagesController from '#server/controllers/messages_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+/** Endpoints and the chat socket, served by \`createServer({ routes })\` in server/main.ts. */
+export const routes = defineRoutes([api, realtime], (root) =>
+  root.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
-      .resource('messages', MessagesController, { only: ['index', 'store'] }),
+      .resource('messages', MessagesController, { only: ['index', 'store'] })
+      // WebSocket upgrades on /api/ws, next to the REST routes.
+      .ws('/ws', {
+        channels: [chatChannel],
+        // authorize: (request) => verify(request.headers.get('authorization')),
+      }),
   ),
 )
 
-/** Pass to createApiClient<AppRoutes>() on the client. */
-export type AppRoutes = typeof routes.$types
+/** Pass to createApiClient<ServerRoutes>() on the client. */
+export type ServerRoutes = typeof routes.$types
 `,
   )
   write(
@@ -175,38 +185,6 @@ export type AppRoutes = typeof routes.$types
   )
   write(ctx, 'app/api/client.ts', apiClient)
 
-  write(
-    ctx,
-    'server/realtime.ts',
-    `import { createRealtimeServer } from 'kitr/realtime/server'
-import { chatChannel } from '#app/channels/chat'
-import realtimeConfig from '../config/realtime'
-
-/** Transport and path come from config/realtime.ts. */
-export const realtime = createRealtimeServer({
-  ...realtimeConfig,
-  channels: [chatChannel],
-  // authorize: (request) => verify(request.headers.get('authorization')),
-})
-`,
-  )
-  write(
-    ctx,
-    'server/main.ts',
-    `import { mountRoutes } from 'kitr/api'
-import { createServer } from 'kitr/server'
-import { config } from '../config'
-import rc from '../kitrrc'
-import { routes } from '#server/routes'
-import { realtime } from '#server/realtime'
-
-/** The kitr server behind Start's /api/* catch-all route; also what tests call. Providers from kitrrc.ts, config from config/. */
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-// Realtime on /api/ws (config/realtime.ts), next to the REST routes.
-realtime.attach(server)
-`,
-  )
   write(
     ctx,
     'config/realtime.ts',
@@ -270,8 +248,8 @@ export const displayName = defineStorage('chat:name', { default: '' })
 
   write(
     ctx,
-    'app/routes/__root.tsx',
-    startRoot({
+    'app/document.tsx',
+    startDocument({
       imports: '',
       head: `    meta: [
       { charSet: 'utf-8' },
@@ -284,10 +262,35 @@ export const displayName = defineStorage('chat:name', { default: '' })
 
   write(
     ctx,
-    'app/routes/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
+    'app/routes.ts',
+    `import { defineRoutes } from 'kitr/app'
+import router from 'kitr/router/routes'
 import { ssrRoute } from 'kitr/seo'
+import { head, RootDocument } from './document'
+
+const rooms = ['general', 'random', 'help']
+
+/** Every page of the app. \`kitr make:page <path>\` appends to the chain. */
+export const routes = defineRoutes([router], (r) =>
+  r.root({ head, component: RootDocument }).page('/', {
+    validateSearch: (search: Record<string, unknown>) => ({
+      room: typeof search.room === 'string' && rooms.includes(search.room) ? search.room : 'general',
+    }),
+    // The socket only exists in the browser, so this page renders on the client.
+    ...ssrRoute(false),
+    lazy: () => import('./pages/chat'),
+  }),
+)
+
+export type AppRoutes = typeof routes.$types
+`,
+  )
+
+  write(
+    ctx,
+    'app/pages/chat.tsx',
+    `import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
+import { getRouteApi } from 'kitr/router'
 import { useStorage } from 'kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { chatSubscription, messagesQuery, sendMessage } from '#app/features/chat/queries'
@@ -298,19 +301,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
 import { Input } from '#components/ui/input'
 
 const rooms = ['general', 'random', 'help']
+const route = getRouteApi('/')
 
-export const Route = createFileRoute('/')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    room: typeof search.room === 'string' && rooms.includes(search.room) ? search.room : 'general',
-  }),
-  // The socket only exists in the browser, so this page renders on the client.
-  ...ssrRoute(false),
-  component: ChatPage,
-})
-
-function ChatPage() {
-  const { room } = Route.useSearch()
-  const navigate = Route.useNavigate()
+export default function ChatPage() {
+  const { room } = route.useSearch()
+  const navigate = route.useNavigate()
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-4">
       <header className="flex flex-wrap items-center gap-2">

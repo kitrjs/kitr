@@ -1,4 +1,4 @@
-import { type AddContext, definePackage, displayName, startRoot } from '@kitr/core/package'
+import { type AddContext, definePackage, displayName, startDocument } from '@kitr/core/package'
 
 const write = (ctx: AddContext, path: string, content: string) =>
   ctx.write(path, content, { overwrite: true })
@@ -17,11 +17,11 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
   )} as const\n`
 
 const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
-/** Typed, no codegen: route names, params, bodies and outputs come from the router. */
-export const api = createApiClient<AppRoutes>({
+/** Typed, no codegen: route names, params, bodies and outputs come from the server table. */
+export const api = createApiClient<ServerRoutes>({
   baseUrl: typeof window === 'undefined' ? 'http://localhost:' + (process.env.PORT ?? 3000) : '',
 })
 registerRoutes(api, [...routeTable])
@@ -29,7 +29,7 @@ registerRoutes(api, [...routeTable])
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
-  remove(ctx, 'app/routes/index.tsx', 'app/routes/about.tsx')
+  remove(ctx, 'app/pages/home.tsx', 'app/pages/about.tsx')
   addScript(ctx, 'api:sync', 'kitr api:sync')
 
   write(
@@ -288,20 +288,22 @@ export default class NewsletterController {
   write(
     ctx,
     'server/routes.ts',
-    `import { defineRoutes } from 'kitr/api'
+    `import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import HealthController from '#server/controllers/health_controller'
 import NewsletterController from '#server/controllers/newsletter_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+/** Endpoints of this app, served by \`createServer({ routes })\` in server/main.ts. */
+export const routes = defineRoutes([api], (root) =>
+  root.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .post('/newsletter', [NewsletterController, 'subscribe'], { name: 'newsletter.subscribe' }),
   ),
 )
 
-/** Pass to createApiClient<AppRoutes>() on the client. */
-export type AppRoutes = typeof routes.$types
+/** Pass to createApiClient<ServerRoutes>() on the client. */
+export type ServerRoutes = typeof routes.$types
 `,
   )
   write(
@@ -330,26 +332,26 @@ export default defineConfig({
 
   write(
     ctx,
-    'app/routes/__root.tsx',
-    startRoot({
+    'app/document.tsx',
+    startDocument({
       imports: `import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { useTranslation } from 'kitr/i18n'
-import { Link } from 'kitr/router'
+import { getRouteApi, Link } from 'kitr/router'
 import { seo } from 'kitr/seo'
 import { LocaleSwitch } from '#app/components/locale-switch'
 import { LocaleProvider } from '#app/locale'
 import { localeCookie } from '#app/storage'
 import { ThemeToggle } from '#components/ui/theme-toggle'
 
-/** Runs on the server only: the visitor's language, straight from the request cookie. */
-const readLocale = createServerFn({ method: 'GET' }).handler(() =>
+/** Runs on the server only: the visitor's language, straight from the request cookie. The root route's loader (app/routes.ts). */
+export const readLocale = createServerFn({ method: 'GET' }).handler(() =>
   localeCookie.get(getRequest().headers),
 )
+
+const rootRoute = getRouteApi('__root__')
 `,
-      route: `  loader: () => readLocale(),
-`,
-      prelude: `  const locale = Route.useLoaderData()
+      prelude: `  const locale = rootRoute.useLoaderData()
 `,
       wrap: ['      <LocaleProvider initial={locale}>', '      </LocaleProvider>'],
       head: `    meta: [
@@ -401,9 +403,53 @@ function SiteFooter() {
 
   write(
     ctx,
-    'app/routes/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { useSchemaForm } from 'kitr/forms'
+    'app/routes.ts',
+    `import { defineRoutes } from 'kitr/app'
+import { notFound } from 'kitr/router'
+import router from 'kitr/router/routes'
+import { seo } from 'kitr/seo'
+import { getPost } from '#app/content/posts'
+import { head, readLocale, RootDocument } from './document'
+
+/**
+ * Every page of the site. Heads and loaders live here; the components live in app/pages and load
+ * on first visit. \`kitr make:page <path>\` appends to the chain.
+ */
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ head, loader: () => readLocale(), component: RootDocument })
+    .page('/', { lazy: () => import('./pages/home') })
+    .page('/pricing', {
+      head: () => seo({ title: 'Pricing', description: 'Simple plans for every team size.' }),
+      lazy: () => import('./pages/pricing'),
+    })
+    .group('/blog', (blog) =>
+      blog
+        .page('/', {
+          head: () => seo({ title: 'Blog', description: 'Notes on building with kitr.' }),
+          lazy: () => import('./pages/blog/index'),
+        })
+        .page('/$slug', {
+          loader: ({ params }) => {
+            const post = getPost(params.slug)
+            if (!post) throw notFound()
+            return post
+          },
+          head: ({ loaderData }) =>
+            seo({ title: loaderData?.title, description: loaderData?.excerpt, type: 'article' }),
+          lazy: () => import('./pages/blog/post'),
+        }),
+    ),
+)
+
+export type AppRoutes = typeof routes.$types
+`,
+  )
+
+  write(
+    ctx,
+    'app/pages/home.tsx',
+    `import { useSchemaForm } from 'kitr/forms'
 import { useTranslation } from 'kitr/i18n'
 import { useMutation } from 'kitr/query'
 import { mutationFrom } from 'kitr/query'
@@ -415,13 +461,9 @@ import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
-})
-
 const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
 
-function HomePage() {
+export default function HomePage() {
   const { t } = useTranslation()
   const features = ['ssr', 'i18n', 'api'] as const
   return (
@@ -495,17 +537,10 @@ function Newsletter() {
 
   write(
     ctx,
-    'app/routes/pricing.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { seo } from 'kitr/seo'
-import { Button } from '#components/ui/button'
+    'app/pages/pricing.tsx',
+    `import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
-
-export const Route = createFileRoute('/pricing')({
-  head: () => seo({ title: 'Pricing', description: 'Simple plans for every team size.' }),
-  component: PricingPage,
-})
 
 const tiers = [
   { name: 'Hobby', price: 'Free', features: ['1 project', 'Community support'] },
@@ -513,7 +548,7 @@ const tiers = [
   { name: 'Enterprise', price: 'Talk to us', features: ['Dedicated support', 'Custom contracts'] },
 ]
 
-function PricingPage() {
+export default function PricingPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-12">
       <PageHeader title="Pricing" description="Prerendered at build time: this page is static HTML." />
@@ -543,19 +578,12 @@ function PricingPage() {
 
   write(
     ctx,
-    'app/routes/blog/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { Link } from 'kitr/router'
-import { seo } from 'kitr/seo'
+    'app/pages/blog/index.tsx',
+    `import { Link } from 'kitr/router'
 import { posts } from '#app/content/posts'
 import { PageHeader } from '#components/ui/page-header'
 
-export const Route = createFileRoute('/blog/')({
-  head: () => seo({ title: 'Blog', description: 'Notes on building with kitr.' }),
-  component: BlogIndexPage,
-})
-
-function BlogIndexPage() {
+export default function BlogIndexPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
       <PageHeader title="Blog" description="Every post is prerendered; the build crawls these links." />
@@ -580,22 +608,16 @@ function BlogIndexPage() {
 
   write(
     ctx,
-    'app/routes/blog/$slug.tsx',
+    'app/pages/blog/post.tsx',
     `import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
-import { createFileRoute } from '@tanstack/react-router'
-import { Link, notFound } from 'kitr/router'
-import { seo } from 'kitr/seo'
-import { getPost } from '#app/content/posts'
+import { definePage, getRouteApi, Link } from 'kitr/router'
 import { Icon } from '#components/ui/icon'
 
-export const Route = createFileRoute('/blog/$slug')({
-  loader: ({ params }) => {
-    const post = getPost(params.slug)
-    if (!post) throw notFound()
-    return post
-  },
-  head: ({ loaderData }) =>
-    seo({ title: loaderData?.title, description: loaderData?.excerpt, type: 'article' }),
+const route = getRouteApi('/blog/$slug')
+
+/** The page and what renders when the loader in app/routes.ts throws notFound(). */
+export default definePage({
+  component: PostPage,
   notFoundComponent: () => (
     <main className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-2xl font-semibold">No such post</h1>
@@ -604,11 +626,10 @@ export const Route = createFileRoute('/blog/$slug')({
       </Link>
     </main>
   ),
-  component: PostPage,
 })
 
 function PostPage() {
-  const post = Route.useLoaderData()
+  const post = route.useLoaderData()
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
       <Link

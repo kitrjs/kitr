@@ -134,6 +134,7 @@ describe('Router', () => {
     })
     expect(router.toJSON()).toEqual([
       {
+        kind: 'http',
         method: 'POST',
         path: '/x',
         name: 'x',

@@ -249,7 +249,8 @@ Register the routes, and read the cookie on every API request with `authMiddlewa
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import { authMiddleware, can } from 'kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
 import { findUserBySession, SESSION_COOKIE } from '#server/auth/sessions'
@@ -265,9 +266,9 @@ const optionalAuth = authMiddleware<User>({
 })
 const auth = authMiddleware<User>({ from: { cookie: SESSION_COOKIE }, verify: (id) => findUserBySession(id), abilities })
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+export const routes = defineRoutes([api], (router) =>
+  router.group('/api', (r) =>
+    r
       .get('/health', () => ({ ok: true }), { name: 'health' })
       .group({ middleware: [optionalAuth] }, (open) =>
         open
@@ -286,7 +287,7 @@ export const routes = defineRoutes((router) =>
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 `can('projects.update', loader)` loads the project before it checks the rule. The loader is a plain function:
@@ -359,35 +360,39 @@ const adapter = customAdapter<User, Credentials>({
 export default defineConfig({ adapter, signInPath: '/sign-in' })
 ```
 
-The pages and the API share an origin, because `app/routes/api.$.ts` serves `/api/*` from the site's process, so the relative URL works and the cookie goes along. No token is stored anywhere a script can read.
+The pages and the API share an origin, because `app/server.ts` serves the paths of `server/routes.ts` from the site's process, so the relative URL works and the cookie goes along. No token is stored anywhere a script can read.
 
 ## Build the sign-in page
 
 The page validates the form, calls `auth.signIn` and goes back to where the visitor was headed:
 
+```ts
+// app/routes.ts
+r.page('/sign-in', {
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+  }),
+  lazy: () => import('./pages/sign-in'),
+})
+```
+
 ```tsx
-// app/routes/sign-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/sign-in.tsx
 import { useAuth } from 'kitr/auth'
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
-import { useNavigate } from 'kitr/router'
+import { getRouteApi, useNavigate } from 'kitr/router'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
+
+const route = getRouteApi('/sign-in')
 
 const schema = z.object({
   email: z.string().email('Enter your work email'),
   password: z.string().min(1, 'Enter your password'),
 })
 
-export const Route = createFileRoute('/sign-in')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-  }),
-  component: SignInPage,
-})
-
-function SignInPage() {
-  const { redirect } = Route.useSearch()
+export default function SignInPage() {
+  const { redirect } = route.useSearch()
   const navigate = useNavigate()
   const auth = useAuth<User, z.output<typeof schema>>()
   const form = useSchemaForm(schema, { defaultValues: { email: '', password: '' } })
@@ -422,34 +427,34 @@ A wrong password shows "Wrong email or password" at the top of the form: `<Form>
 
 Move the pages that need a user under a pathless layout, `_app`, and guard it once:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import type { Session } from 'kitr/auth'
 import { requireAuth } from 'kitr/router'
 import { ssrRoute } from 'kitr/seo'
 import type { User } from '#app/abilities'
 
-export const Route = createFileRoute('/_app')({
+r.layout('_app', {
   ...ssrRoute(false),
   beforeLoad: async ({ context, location }) => {
     await context.app.boot()
     const session = context.app.container.use('auth').session as Session<User>
     return requireAuth()({ context: { session }, location })
   },
-  component: () => <Outlet />,
-})
+}, (app) => app.page('/projects', { lazy: () => import('./pages/projects') }))
 ```
 
-```
-app/routes/
-├── __root.tsx
-├── index.tsx
-├── sign-in.tsx
-├── _app.tsx                 # the guard
-└── _app/
-    └── projects/
-        └── index.tsx        # still answers /projects
+```ts
+// app/routes.ts
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ head, component: RootDocument })
+    .page('/', { lazy: () => import('./pages/home') })
+    .page('/sign-in', { /* ...as above */ })
+    .layout('_app', { /* the guard, as above */ }, (app) =>
+      app.page('/projects', { lazy: () => import('./pages/projects') }), // still answers /projects
+    ),
+)
 ```
 
 An anonymous visitor to `/projects` lands on `/sign-in?redirect=/projects`. `ssrRoute(false)` renders the guarded pages in the browser: the server renders the shell, then the browser restores the session from the cookie and runs the guard. That keeps signed-in pages out of shared caches, and it means the guard and the session always run in the same place.

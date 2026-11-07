@@ -1,4 +1,4 @@
-import { definePackage } from '@kitr/core/package'
+import { definePackage, documentFile } from '@kitr/core/package'
 
 /** `kitr add tailwind`: Tailwind v4 via the Vite plugin, the kitr preset (tokens as @theme) and cn(). */
 export default definePackage({
@@ -21,7 +21,7 @@ export default definePackage({
       'app/styles/app.css',
       `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/theme/styles.css';\n${ctx.exists('app/styles/tokens.css') ? "@import './tokens.css';\n" : ''}\n@source '../';\n`,
     )
-    ctx.replaceImport('app/routes/__root.tsx', 'kitr/theme/styles.css', '#app/styles/app.css')
+    ctx.replaceImport(documentFile(ctx), 'kitr/theme/styles.css', '#app/styles/app.css')
     ctx.agents.add(
       'tailwind',
       `- Tailwind v4: utilities map to kitr tokens (\`bg-background\`, \`text-primary\`, \`rounded-md\`). Use \`cn()\` from \`kitr/tailwind\` to merge classes. Dark mode is \`data-theme="dark"\` on <html>, toggled by \`useTheme()\`.`,

@@ -7,9 +7,8 @@ const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
   write(
     ctx,
-    'app/routes/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { isTauri, useTauriEvent } from 'kitr/tauri/client'
+    'app/pages/home.tsx',
+    `import { isTauri, useTauriEvent } from 'kitr/tauri/client'
 import { useCallback, useState } from 'react'
 import { commands } from '#app/commands'
 import { Badge } from '#components/ui/badge'
@@ -18,16 +17,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#comp
 import { Input } from '#components/ui/input'
 import { PageHeader } from '#components/ui/page-header'
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
-})
-
 /**
  * The same page runs in the browser (\`kitr dev site\`) and in the Tauri window (\`kitr dev app\`).
  * \`isTauri()\` tells them apart; every call goes through the typed commands in app/commands.ts,
  * which mirror the \`#[tauri::command]\` functions in platforms/app/src-tauri/src/lib.rs.
  */
-function HomePage() {
+export default function HomePage() {
   const native = isTauri()
   const [name, setName] = useState('kitr')
   const [greeting, setGreeting] = useState<string>()

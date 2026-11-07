@@ -1,4 +1,4 @@
-import { definePackage } from '@kitr/core/package'
+import { definePackage, documentFile } from '@kitr/core/package'
 
 /**
  * `kitr add theme`: design tokens and light/dark/system theming with no flash on load. The
@@ -34,9 +34,9 @@ export default definePackage({
             : `${css}@import './tokens.css';\n`,
           { overwrite: true },
         )
-    } else ctx.replaceImport('app/routes/__root.tsx', undefined, '#app/styles/tokens.css')
+    } else ctx.replaceImport(documentFile(ctx), undefined, '#app/styles/tokens.css')
     // Apply the stored theme before first paint: without it every load flashes the default.
-    ctx.edit('app/routes/__root.tsx', (_mod, src) =>
+    ctx.edit(documentFile(ctx), (_mod, src) =>
       src.includes('<ThemeScript') || !src.includes('<HeadContent />')
         ? src
         : src
@@ -51,7 +51,7 @@ export default definePackage({
     ctx.log.info('Pull components with `kitr ui add button input form`.')
   },
   remove(ctx) {
-    ctx.edit('app/routes/__root.tsx', (_mod, src) =>
+    ctx.edit(documentFile(ctx), (_mod, src) =>
       src
         .replace("import { ThemeScript } from 'kitr/theme'\n", '')
         .replace('<html lang="en" suppressHydrationWarning>', '<html lang="en">')

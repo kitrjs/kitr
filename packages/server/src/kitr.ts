@@ -28,7 +28,7 @@ export default definePackage({
       ctx.log.info('Run the server as a platform: `kitr add server api` (writes server/main.ts).')
     ctx.agents.add(
       'server',
-      `- Server code lives under \`server/\` and never imports React. Services come from the request-scoped container (\`useRequestApp()\`), logs from \`ctx.logger\`.\n- \`server/main.ts\` (written by the server platform) exports \`server\`; providers' \`ready\`/\`shutdown\` run on \`server.listen()\`. A web platform in \`ssr\` mode answers \`/api/*\` through the same object via \`app/routes/api.$.ts\`.`,
+      `- Server code lives under \`server/\` and never imports React. Services come from the request-scoped container (\`useRequestApp()\`), logs from \`ctx.logger\`.\n- \`server/main.ts\` (written by the server platform) exports \`server\`; providers' \`ready\`/\`shutdown\` run on \`server.listen()\`. Endpoints and sockets come from the route table in \`server/routes.ts\` (\`createServer({ routes })\`). A web platform in the same app answers those paths through the same object via \`app/server.ts\` (Start's server entry asks \`server.handles(request)\` first).`,
     )
   },
   remove(ctx) {

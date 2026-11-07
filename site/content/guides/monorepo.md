@@ -187,16 +187,18 @@ The browser runs on another origin in development (`localhost:3000` calling `loc
 
 ```ts
 // apps/api/server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { cors } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import OrdersController from '#server/controllers/orders_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors({ origin: ['http://localhost:3000', 'https://app.acme.com'] })] }, (api) =>
-    api.get('/health', () => ({ ok: true }), { name: 'health' }).resource('orders', OrdersController),
+export const routes = defineRoutes([api], (router) =>
+  router.group({ prefix: '/api', middleware: [cors({ origin: ['http://localhost:3000', 'https://app.acme.com'] })] }, (r) =>
+    r.get('/health', () => ({ ok: true }), { name: 'health' }).resource('orders', OrdersController),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 `curl -X POST localhost:3001/api/orders -H 'content-type: application/json' -d '{"customer":"G","total":-1}'` answers `422` with `fieldErrors` for both fields, worded by the shared schema.
@@ -233,7 +235,7 @@ export const createOrder = mutationFrom(
 The form uses `newOrderSchema` from the same import, so "Name the customer" appears under the field before the request is sent, and the server says the same if the browser is bypassed. Rename `customer` to `customerName` in `@acme/contracts` and `pnpm typecheck` fails in the controller, the query and the form, in one run.
 
 > **Warning**
-> Don't import types from `apps/api` into `apps/web`, such as `AppRoutes` for the typed API client. Both apps map `#app/*` and `#server/*` to their own folders, and TypeScript applies the web app's mapping to every file it reads, including the API's. Types then resolve against the wrong files, or not at all. Share through a package with relative imports, as above.
+> Don't import types from `apps/api` into `apps/web`, such as `ServerRoutes` for the typed API client. Both apps map `#app/*` and `#server/*` to their own folders, and TypeScript applies the web app's mapping to every file it reads, including the API's. Types then resolve against the wrong files, or not at all. Share through a package with relative imports, as above.
 
 ## Add a private kitr package
 

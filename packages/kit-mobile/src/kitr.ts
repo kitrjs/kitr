@@ -7,37 +7,26 @@ const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
   write(
     ctx,
-    'app/routes/__root.tsx',
-    `import type { KitrRouterContext } from 'kitr/router'
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+    'app/document.tsx',
+    `import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { ThemeScript } from 'kitr/theme'
-import type { ReactNode } from 'react'
 import css from '#app/styles/app.css?url'
 import { PwaUpdate } from '#app/components/pwa-update'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+/** Head tags for every page: viewport for notched screens, the web app manifest. */
+export function head() {
+  return {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
     ],
     links: [{ rel: 'stylesheet', href: css }, { rel: 'manifest', href: '/manifest.webmanifest' }],
-  }),
-  component: RootLayout,
-})
-
-function RootLayout() {
-  return (
-    <RootDocument>
-      <Outlet />
-      <PwaUpdate />
-    </RootDocument>
-  )
+  }
 }
 
 /** The HTML shell: one page for the browser, the installed PWA and the Capacitor WebView. */
-function RootDocument({ children }: { children: ReactNode }) {
+export function RootDocument() {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -45,7 +34,8 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        {children}
+        <Outlet />
+        <PwaUpdate />
         <Scripts />
       </body>
     </html>
@@ -75,9 +65,8 @@ export function PwaUpdate() {
   )
   write(
     ctx,
-    'app/routes/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { useAppState, useBackButton, useOnline, usePlatform } from 'kitr/platform/react'
+    'app/pages/home.tsx',
+    `import { useAppState, useBackButton, useOnline, usePlatform } from 'kitr/platform/react'
 import { useInstallPrompt } from 'kitr/web/client'
 import { useCallback, useState } from 'react'
 import { Badge } from '#components/ui/badge'
@@ -85,15 +74,11 @@ import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
-})
-
 /**
  * One page, three homes: the browser, the installed PWA, and the Capacitor shell on iOS/Android.
  * Everything below works in all three; \`kitr/platform\` answers the same way everywhere.
  */
-function HomePage() {
+export default function HomePage() {
   const platform = usePlatform()
   const online = useOnline()
   const install = useInstallPrompt()

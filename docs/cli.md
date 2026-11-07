@@ -56,8 +56,8 @@ Inside an app directory every command is the app's own, as if there were no work
 
 | Command | Writes |
 | --- | --- |
-| `make:route projects/index` | `app/routes/projects/index.tsx` with route path `/projects/` |
-| `make:route projects/:id` | `app/routes/projects/$id.tsx` |
+| `make:page projects` | `app/pages/projects.tsx`, and `.page('/projects', { lazy })` appended to `app/routes.ts` |
+| `make:page projects/:id` | `app/pages/projects/id.tsx`, and `.page('/projects/$id', { lazy })` |
 | `make:query projects/list` | `app/actions/projects/list.ts` (`defineQuery('projects.list', ...)`) |
 | `make:mutation projects/create` | `app/actions/projects/create.ts` (`defineMutation('projects.create', ...)`) |
 | `make:controller projects [--resource]` | `server/controllers/projects_controller.ts` (index/show/store/update/destroy with `--resource`) |
@@ -80,7 +80,7 @@ Inside an app directory every command is the app's own, as if there were no work
 
 | Command | What it does |
 | --- | --- |
-| `kitr ui add <name...>` | Copies components from a shadcn-compatible registry into `app/components/ui` (and pages into `app/routes`), resolving `registryDependencies` and installing npm dependencies. `--registry`, `--overwrite`. |
+| `kitr ui add <name...>` | Copies components from a shadcn-compatible registry into `app/components/ui` (and pages into `app/pages`), resolving `registryDependencies` and installing npm dependencies. `--registry`, `--overwrite`. |
 | `kitr ui list` | Lists the registry's items. |
 
 The default registry is kitr's own (`registry/dist` in this repo). Point `--registry`, `config/theme.ts` or `KITR_REGISTRY` at any other shadcn-format registry, including a local folder.

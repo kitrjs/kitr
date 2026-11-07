@@ -261,20 +261,23 @@ export const loadFlags = createServerFn({ method: 'GET' }).handler(async () => {
 })
 ```
 
-```tsx
-// app/routes/__root.tsx
-import { FlagsScript } from 'kitr/flags/react'
-import type { KitrRouterContext } from 'kitr/router'
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+```ts
+// app/routes.ts
+import { head, RootDocument } from './document'
 import { loadFlags } from '#app/server/load_flags'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  loader: () => loadFlags(),
-  component: RootDocument,
-})
+r.root({ head, loader: () => loadFlags(), component: RootDocument })
+```
 
-function RootDocument() {
-  const flags = Route.useLoaderData()
+```tsx
+// app/document.tsx
+import { FlagsScript } from 'kitr/flags/react'
+import { getRouteApi, HeadContent, Outlet, Scripts } from 'kitr/router'
+
+const root = getRouteApi('__root__')
+
+export function RootDocument() {
+  const flags = root.useLoaderData()
   return (
     <html lang="en">
       <head>

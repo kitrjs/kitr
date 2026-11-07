@@ -33,8 +33,7 @@ What `kitr add realtime` sets up:
 | File | What it is |
 | --- | --- |
 | `config/realtime.ts` | The transport (`websocket`) and the path (`/api/ws`) |
-| `server/realtime.ts` | The realtime server, with the channels it serves |
-| `server/main.ts` | Gains `realtime.attach(server, '/api/ws')` |
+| `server/routes.ts` | Gains `realtime` from `kitr/realtime/routes` and a `.ws('/api/ws', { channels })` link |
 | `app/realtime.ts` | `realtime()`: one connection per browser tab, opened on first use |
 | `app/channels/example.ts` | A sample channel to copy |
 
@@ -91,58 +90,60 @@ Prefer `invalidate` when the payload would have to be filtered per user. A refet
 
 ## Serve it
 
-Add the channel to the realtime server:
+Add the channel to the socket link on the server route table:
 
 ```ts
-// server/realtime.ts
-import { createRealtimeServer } from 'kitr/realtime/server'
+// server/routes.ts
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
+import realtime from 'kitr/realtime/routes'
 import { ordersChannel } from '#app/channels/orders'
+// ...controllers
 
-export const realtime = createRealtimeServer({
-  channels: [ordersChannel],
-})
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
+      // ...endpoints as before
+      .ws('/ws', { channels: [ordersChannel] }),
+  ),
+)
 ```
 
-`server/main.ts` already attaches it:
+`server/main.ts` already serves the table, and binds the socket server as `realtime` in the app container:
 
 ```ts
 // server/main.ts
-import { mountRoutes } from 'kitr/api'
 import { createServer } from 'kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
-import { realtime } from './realtime'
 import { routes } from './routes'
 
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-realtime.attach(server, '/api/ws')
+export const server = createServer({ providers: rc.providers, config, routes })
 // ...listen() when run directly
 ```
 
 ## Emit when an order ships
 
-`realtime.use(channel, params)` is the topic for one team. `emit` sends to every connection subscribed to it:
+`app.container.use('realtime')` is the socket server; `.use(channel, params)` is the topic for one team, and `emit` sends to every connection subscribed to it. `app` is on every `HttpContext`:
 
 ```ts
 // server/controllers/orders_controller.ts
 import type { HttpContext } from 'kitr/api'
 import { KitrError } from 'kitr/app'
 import { type Order, ordersChannel } from '#app/channels/orders'
-import { realtime } from '#server/realtime'
 
 const orders = new Map<string, Order>([
   ['ord_1042', { id: 'ord_1042', customer: 'Ada', total: 129, status: 'paid' }],
 ])
 
 export default class OrdersController {
-  async ship({ params }: HttpContext<{ id: string }>) {
+  async ship({ app, params }: HttpContext<{ id: string }>) {
     const order = orders.get(params.id)
     if (!order) throw KitrError.notFound('Order')
     const shipped: Order = { ...order, status: 'shipped' }
     orders.set(shipped.id, shipped)
     // ... save it with your database
-    realtime.use(ordersChannel, { teamId: 'team_acme' }).emit('shipped', shipped)
+    app.container.use('realtime').use(ordersChannel, { teamId: 'team_acme' }).emit('shipped', shipped)
     return shipped
   }
 }
@@ -150,7 +151,7 @@ export default class OrdersController {
 
 Emit after the write succeeds, with data you built from your own records. The server does not validate what you pass to `emit`; the schema protects clients from a malformed event, not the server from sending one.
 
-The same call works in a server action, a scheduled task or a webhook handler: anything on the server that imports `#server/realtime`.
+The same call works in a server action, a scheduled task or a webhook handler: anything on the server that can reach the app, for example `server.app.container.use('realtime')` after importing `server` from `#server/main`.
 
 ## Subscribe on the board
 
@@ -174,21 +175,25 @@ export function LiveOrders({ teamId }: { teamId: string }) {
 
 Render `<LiveOrders teamId="team_acme" />` on the orders page. The socket only exists in the browser, so the page either renders on the client or mounts this component after hydration. With server rendering, opt the page out with `ssrRoute(false)` from [SEO](/packages/seo):
 
-```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { useSuspenseQuery } from 'kitr/query'
+```ts
+// app/routes.ts
 import { ssrRoute } from 'kitr/seo'
+import { ordersQuery } from '#app/features/orders/queries'
+
+r.page('/orders', {
+  ...ssrRoute(false),
+  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
+  lazy: () => import('./pages/orders'),
+})
+```
+
+```tsx
+// app/pages/orders.tsx
+import { useSuspenseQuery } from 'kitr/query'
 import { LiveOrders } from '#app/features/orders/live-orders'
 import { ordersQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders')({
-  ...ssrRoute(false),
-  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
-  component: OrdersBoard,
-})
-
-function OrdersBoard() {
+export default function OrdersBoard() {
   const { data: orders } = useSuspenseQuery(ordersQuery.options())
   return (
     <main>
@@ -240,22 +245,27 @@ The client reconnects by itself with backoff and resubscribes everything. Events
 Anyone who can open a WebSocket to your server could subscribe to any team's orders. Two checks close that. The server's `authorize(request)` runs once per connection and returns who is connected; returning `false` or throwing refuses the upgrade with `401`:
 
 ```ts
-// server/realtime.ts
+// server/routes.ts
+// ...
 import { KitrError } from 'kitr/app'
-import { createRealtimeServer } from 'kitr/realtime/server'
-import { ordersChannel } from '#app/channels/orders'
 import { userFromSession } from '#server/sessions'
 
-export const realtime = createRealtimeServer({
-  channels: [ordersChannel],
-  authorize: async (request) => {
-    const cookie = request.headers.get('cookie') ?? ''
-    const session = cookie.match(/(?:^|;\s*)acme_session=([^;]+)/)?.[1]
-    const user = session ? await userFromSession(session) : null
-    if (!user) throw KitrError.unauthorized()
-    return { user }
-  },
-})
+export const routes = defineRoutes([api, realtime], (router) =>
+  router.group('/api', (r) =>
+    r
+      // ...endpoints as before
+      .ws('/ws', {
+        channels: [ordersChannel],
+        authorize: async (request) => {
+          const cookie = request.headers.get('cookie') ?? ''
+          const session = cookie.match(/(?:^|;\s*)acme_session=([^;]+)/)?.[1]
+          const user = session ? await userFromSession(session) : null
+          if (!user) throw KitrError.unauthorized()
+          return { user }
+        },
+      }),
+  ),
+)
 ```
 
 `userFromSession` is your own lookup, the same one your API uses. Browsers send same-site cookies with the WebSocket upgrade, so no client code changes. For bearer tokens, put the token in the socket URL instead; the [Realtime guide](/packages/realtime#authenticate-connections) shows the client side.
@@ -285,7 +295,7 @@ When Linus, who is not on `team_acme`, subscribes to it, his `useChannel` return
 
 ## Pick a transport
 
-Channels, effects, `useChannel` and `emit` are the same on every transport. What changes is `config/realtime.ts`, `server/realtime.ts` and the `attach` line:
+Channels, effects, `useChannel` and `emit` are the same on every transport. What changes is `config/realtime.ts` and the socket link in `server/routes.ts`:
 
 | `transport` | Use it when |
 | --- | --- |
@@ -306,14 +316,12 @@ export default defineConfig({
 ```
 
 ```ts
-// server/realtime.ts
-import { createSseServer } from 'kitr/realtime/sse/server'
-import { ordersChannel } from '#app/channels/orders'
-
-export const realtime = createSseServer({ channels: [ordersChannel], keepAlive: 15_000 })
+// server/routes.ts
+// ...
+      .sse('/events', { channels: [ordersChannel], keepAlive: 15_000 }),
 ```
 
-Change `realtime.attach(server, '/api/ws')` to `'/api/events'` in `server/main.ts`. `app/realtime.ts` reads the transport from the config and needs no change.
+`.sse()` replaces `.ws()` on the table and serves `/api/events` over plain HTTP. `app/realtime.ts` reads the transport from the config and needs no change.
 
 > **Warning**
 > Each server instance keeps its subscriptions in memory. With the WebSocket or SSE transport behind a load balancer, an emit on one instance only reaches clients connected to that instance, and the others silently miss events. Run one realtime instance, or use Socket.IO with the [Redis adapter](/packages/realtime#run-more-than-one-server-instance).

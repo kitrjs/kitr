@@ -67,7 +67,7 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 | `runtime` | `node` | `node`, `bun`, `deno` or `workers` (Cloudflare, via `wrangler.toml`). |
 | `port` | `3001` | |
 | `host` | | |
-| `entry` | `server/main.ts` | `createServer({...})` plus routes and realtime. A React project with a web platform also gets `app/routes/api.$.ts`, which mounts the same server inside TanStack Start. |
+| `entry` | `server/main.ts` | `createServer({ providers, config, routes })` with the table from `server/routes.ts`. A React project with a web platform also gets `app/server.ts`, Start's server entry, which hands the table's paths to the same server inside the Start process. |
 
 **desktop** (`@kitr/desktop`, Electron)
 
@@ -112,9 +112,9 @@ dist/<name>/         # build output per platform
 kitrrc.ts
 ```
 
-## One route tree, many apps
+## One route table, many apps
 
-A product that ships as a marketing site, an authed web app, a phone app and a desktop app shares one route tree and one set of components. kitr keeps the differences at the edges:
+A product that ships as a marketing site, an authed web app, a phone app and a desktop app shares one route table and one set of components. kitr keeps the differences at the edges:
 
 | Need | Tool |
 | --- | --- |

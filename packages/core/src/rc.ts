@@ -21,7 +21,12 @@ export interface KitrRc {
   /** Where the app lives relative to the project root. */
   directories?: {
     app?: string
+    /** File-based page routes the Vite plugin reads (TanStack Router). Default `app/routes`. */
     routes?: string
+    /** The app's route table (`defineRoutes([router], ...)`: pages). Default `app/routes.ts`. */
+    routeTable?: string
+    /** The server's route table (endpoints and sockets; never imports React). Default `server/routes.ts`. A server-only project has only this one. */
+    serverRouteTable?: string
     config?: string
     stubs?: string
     components?: string
@@ -37,6 +42,8 @@ export interface KitrRc {
 export const defaultDirectories = {
   app: 'app',
   routes: 'app/routes',
+  routeTable: 'app/routes.ts',
+  serverRouteTable: 'server/routes.ts',
   config: 'config',
   stubs: 'stubs',
   components: 'app/components',

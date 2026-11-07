@@ -119,8 +119,10 @@ export function createAddContext(
       addPlugin: (importName, spec, call) => codemods.addVitePlugin(importName, spec, call),
     },
     routes: {
-      extend: (spec) => codemods.extendRoutes(spec),
-      remove: (spec) => codemods.removeRoutesExtension(spec),
+      extend: (spec, options) => codemods.extendRoutes(spec, options),
+      remove: (spec, options) => codemods.removeRoutesExtension(spec, options),
+      addPage: (path, module) => codemods.addPage(path, module),
+      append: (link, options) => codemods.appendRoute(link, options),
     },
     types: { enable: () => codemods.enableGeneratedTypes() },
     app: {

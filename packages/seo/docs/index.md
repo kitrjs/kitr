@@ -91,17 +91,19 @@ export default defineConfig({
 
 Set `head` on a route and return `seo()` from it:
 
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/pricing')({
+r.page('/pricing', {
   head: () => seo({ title: 'Pricing', description: 'Plans for every team size.' }),
-  component: PricingPage,
+  lazy: () => import('./pages/pricing'),
 })
+```
 
-function PricingPage() {
+```tsx
+// app/pages/pricing.tsx
+export default function PricingPage() {
   return <h1>Pricing</h1>
 }
 ```
@@ -125,22 +127,24 @@ Open `/pricing` and view the page source. The root route's `<HeadContent />` ren
 
 `seo()` takes the site name, default share image, handle and locale from `site` in `config/seo.ts`, so every title gets the site name with nothing to pass. Give each page its own URL:
 
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/pricing')({
+r.page('/pricing', {
   head: () =>
     seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
     }),
-  component: PricingPage,
+  lazy: () => import('./pages/pricing'),
 })
+```
 
-function PricingPage() {
+```tsx
+// app/pages/pricing.tsx
+export default function PricingPage() {
   return <h1>Pricing</h1>
 }
 ```
@@ -186,23 +190,22 @@ Always pass `url` for a page when `site` has a `url`. Without it, `og:url` and t
 Tags from the root route apply to every page. A child route's `<title>` and its tags with the same `name` or `property` replace the root's, so put the site-wide description in the root and let pages override it:
 
 ```tsx
-// app/routes/__root.tsx
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from 'kitr/router'
-import type { KitrRouterContext } from 'kitr/router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { seo } from 'kitr/seo'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+/** `app/routes.ts` passes this to `.root({ head, component: RootDocument })`. */
+export function head() {
+  return {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ...seo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }).meta,
     ],
-  }),
-  component: RootDocument,
-})
+  }
+}
 
-function RootDocument() {
+export function RootDocument() {
   return (
     <html lang="en">
       <head>
@@ -223,12 +226,11 @@ Spread only `.meta` in the root. TanStack Router merges `links` from every match
 
 Chat apps and social networks show `og:image` as a large card. Pass an absolute URL; most crawlers do not resolve `/og/pricing.png` against your domain:
 
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/pricing')({
+r.page('/pricing', {
   head: () =>
     seo({
       title: 'Pricing',
@@ -236,8 +238,13 @@ export const Route = createFileRoute('/pricing')({
       url: 'https://acme.com/pricing',
       image: 'https://acme.com/og/pricing.png',
     }),
-  component: () => <h1>Pricing</h1>,
+  lazy: () => import('./pages/pricing'),
 })
+```
+
+```tsx
+// app/pages/pricing.tsx
+export default () => <h1>Pricing</h1>
 ```
 
 The page image replaces `site.image` in `og:image` and `twitter:image`, and `twitter:card` becomes `summary_large_image`. A 1200 × 630 PNG or JPEG works everywhere. Check the result with a preview tool such as [opengraph.xyz](https://www.opengraph.xyz) after you deploy.
@@ -246,14 +253,13 @@ The page image replaces `site.image` in `og:image` and `twitter:image`, and `twi
 
 For a blog post, read the post in the loader and build the tags from `loaderData`. Set `type: 'article'`:
 
-```tsx
-// app/routes/blog/$slug.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { notFound } from 'kitr/router'
 import { getPost } from '#app/content/posts'
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/blog/$slug')({
+r.page('/blog/$slug', {
   loader: ({ params }) => {
     const post = getPost(params.slug)
     if (!post) throw notFound()
@@ -267,11 +273,18 @@ export const Route = createFileRoute('/blog/$slug')({
       type: 'article',
       keywords: loaderData?.tags,
     }),
-  component: PostPage,
+  lazy: () => import('./pages/blog/slug'),
 })
+```
 
-function PostPage() {
-  const post = Route.useLoaderData()
+```tsx
+// app/pages/blog/slug.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/blog/$slug')
+
+export default function PostPage() {
+  const post = route.useLoaderData()
   return <h1>{post.title}</h1>
 }
 ```
@@ -282,15 +295,19 @@ For Grace's post "Invoices in one click", the page gets `<title>Invoices in one 
 
 Sign-in pages, drafts and anything behind a login should not show up in search. Pass `noIndex: true`:
 
-```tsx
-// app/routes/sign-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/sign-in')({
+r.page('/sign-in', {
   head: () => seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }),
-  component: () => <h1>Sign in to Acme</h1>,
+  lazy: () => import('./pages/sign-in'),
 })
+```
+
+```tsx
+// app/pages/sign-in.tsx
+export default () => <h1>Sign in to Acme</h1>
 ```
 
 The page gets `<meta name="robots" content="noindex, nofollow">`. Crawlers must be able to load the page to see that tag, so don't also block it in `robots.txt`. To keep a whole area out, such as `/app`, set `noIndex` in its layout route's `head`; its pages inherit the tag unless they set their own `robots` meta.
@@ -299,13 +316,11 @@ The page gets `<meta name="robots" content="noindex, nofollow">`. Crawlers must 
 
 Structured data tells search engines what a page is about: an organization, an article, a product with a price. `jsonLd()` turns a [schema.org](https://schema.org) object into a `<script type="application/ld+json">` for `head().scripts`, and adds `@context` for you:
 
-```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { jsonLd } from 'kitr/seo'
-import { seo } from 'kitr/seo'
+```ts
+// app/routes.ts
+import { jsonLd, seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/')({
+r.page('/', {
   head: () => ({
     ...seo({ title: 'Acme', url: 'https://acme.com' }),
     scripts: [
@@ -317,8 +332,13 @@ export const Route = createFileRoute('/')({
       }),
     ],
   }),
-  component: () => <h1>Acme</h1>,
+  lazy: () => import('./pages/index'),
 })
+```
+
+```tsx
+// app/pages/index.tsx
+export default () => <h1>Acme</h1>
 ```
 
 `jsonLd()` returns:
@@ -408,22 +428,28 @@ The build of a web platform writes this text to `robots.txt` in the client outpu
 
 In a web platform in `ssr` mode, every route renders on the server by default, or as `ssr` in `config/seo.ts` says. `ssrRoute()` returns the route option that changes it for one route. Spread it into the route:
 
-```tsx
-// app/routes/_app/reports.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { ssrRoute } from 'kitr/seo'
 
-export const Route = createFileRoute('/_app/reports')({
+app.page('/reports', {
   ...ssrRoute('data-only'),
   loader: async () => {
     const response = await fetch('https://app.acme.com/api/reports/invoices')
     return (await response.json()) as Array<{ month: string; total: number }>
   },
-  component: ReportsPage,
+  lazy: () => import('./pages/reports'),
 })
+```
 
-function ReportsPage() {
-  const rows = Route.useLoaderData()
+```tsx
+// app/pages/reports.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/_app/reports')
+
+export default function ReportsPage() {
+  const rows = route.useLoaderData()
   return <p>{rows.length} months of invoices</p>
 }
 ```
@@ -436,18 +462,17 @@ function ReportsPage() {
 
 A route that does not render on the server sends no page content to crawlers. Keep `ssr: true` on anything you want found. See TanStack Start's [selective SSR](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr) for how it combines with parent routes.
 
-When one route tree serves several platforms, the mode can differ per platform. A table resolves at build time by platform name from `kitrrc.ts`, then platform type, then `default`:
+When one route table serves several platforms, the mode can differ per platform. A table resolves at build time by platform name from `kitrrc.ts`, then platform type, then `default`:
 
-```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { ssrRoute } from 'kitr/seo'
 
-export const Route = createFileRoute('/')({
+r.page('/', {
   // The marketing build renders on the server for crawlers; the authed web app runs the loader
   // on the server and renders in the browser; native shells have no server at all.
   ...ssrRoute({ www: true, web: 'data-only', default: false }),
-  component: HomePage,
+  lazy: () => import('./pages/home'),
 })
 ```
 
@@ -457,17 +482,21 @@ The `www` build gets `{ ssr: true }`, every other web build `{ ssr: 'data-only' 
 
 `cacheHeaders()` builds a `cache-control` header for TanStack Start's `headers` route option:
 
-```tsx
-// app/routes/blog/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { cacheHeaders } from 'kitr/seo'
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/blog/')({
+r.page('/blog/', {
   headers: () => cacheHeaders({ sMaxAge: 60, staleWhileRevalidate: 300 }),
   head: () => seo({ title: 'Blog', url: 'https://acme.com/blog' }),
-  component: () => <h1>Blog</h1>,
+  lazy: () => import('./pages/blog/index'),
 })
+```
+
+```tsx
+// app/pages/blog/index.tsx
+export default () => <h1>Blog</h1>
 ```
 
 ```ts

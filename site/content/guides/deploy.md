@@ -50,7 +50,7 @@ pnpm kitr start site
 ✔ site: serving dist/site on http://localhost:3000/
 ```
 
-`kitr start site` serves the assets in `dist/site/client` and hands every other request to the server bundle. Because the fullstack kit wrote `app/routes/api.$.ts`, which passes `/api/*` to the server in `server/main.ts`, this one process serves the pages and the API. `curl http://localhost:3000/api/health` answers `{"ok":true}`.
+`kitr start site` serves the assets in `dist/site/client` and hands every other request to the server bundle. Because the fullstack kit wrote `app/server.ts`, Start's server entry, which passes every path in `server/routes.ts` to the server in `server/main.ts`, this one process serves the pages and the API. `curl http://localhost:3000/api/health` answers `{"ok":true}`.
 
 ## Set the environment
 

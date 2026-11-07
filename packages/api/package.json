@@ -39,6 +39,10 @@
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
     },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
+    },
     "./kitr": {
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"

@@ -88,7 +88,7 @@ export function attachSocketIo(io: Server, options: SocketIoServerOptions): Sock
           await socket.join(topic)
           send({ t: 'ok', id: msg.id, p: params ?? null })
         } else if (msg.t === 'msg') {
-          await channel.onMessage?.(msg.ev, msg.d, params, socket.data.kitrCtx)
+          await channel.onMessage?.(msg.ev, msg.d, params, socket.data.kitrCtx, sockets)
         }
       } catch (error) {
         fail(error, id)
@@ -96,7 +96,7 @@ export function attachSocketIo(io: Server, options: SocketIoServerOptions): Sock
     })
   })
 
-  return {
+  const sockets: SocketIoServer = {
     io,
     use(channel, params) {
       const topic = topicFor(channel.name, params)
@@ -113,4 +113,5 @@ export function attachSocketIo(io: Server, options: SocketIoServerOptions): Sock
       }
     },
   }
+  return sockets
 }

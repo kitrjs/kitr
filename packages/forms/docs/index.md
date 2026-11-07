@@ -126,16 +126,20 @@ function RootError() {
 
 Render it from a route and give it something to do on submit:
 
-```tsx
-// app/routes/invoices/new.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
 
-export const Route = createFileRoute('/invoices/new')({
-  component: () => (
+r.page('/invoices/new', {
     <NewInvoiceForm onCreate={async (invoice) => console.log('created', invoice)} />
   ),
+  lazy: () => import('./pages/invoices/new'),
 })
+```
+
+```tsx
+// app/pages/invoices/new.tsx
+export default () => (
 ```
 
 Open `/invoices/new`, tab out of the empty email field and "Enter the customer’s email" appears under it. Fill the form with `grace@acme.com`, `120` and a date, press the button, and the console prints:
@@ -228,17 +232,19 @@ export const createInvoice = mutationFrom(
 )
 ```
 
+```ts
+// app/routes.ts
+r.page('/invoices/new', { lazy: () => import('./pages/invoices/new') })
+```
+
 ```tsx
-// app/routes/invoices/new.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/invoices/new.tsx
 import { useMutation } from 'kitr/query'
 import { useNavigate } from 'kitr/router'
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
 import { createInvoice } from '#app/features/invoices/queries'
 
-export const Route = createFileRoute('/invoices/new')({ component: NewInvoicePage })
-
-function NewInvoicePage() {
+export default function NewInvoicePage() {
   const create = useMutation(createInvoice)
   const navigate = useNavigate()
   return (
@@ -274,14 +280,11 @@ export const createInvoice = defineMutation('invoices.create', {
 ```
 
 ```tsx
-// app/routes/invoices/new.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/invoices/new.tsx
 import { useMutation } from 'kitr/query'
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
 
-export const Route = createFileRoute('/invoices/new')({ component: NewInvoicePage })
-
-function NewInvoicePage() {
+export default function NewInvoicePage() {
   const create = useMutation('invoices.create')
   return <NewInvoiceForm onCreate={(invoice) => create.mutateAsync(invoice)} />
 }
@@ -437,18 +440,23 @@ export function NewInvoicePanel({ onCreate }: { onCreate: (v: unknown) => Promis
 
 Load the record first, then pass it as `defaultValues`. Render the form only once the data is there, so the defaults are right from the first render:
 
+```ts
+// app/routes.ts
+r.page('/invoices/$id/edit', { lazy: () => import('./pages/invoices/edit') })
+```
+
 ```tsx
-// app/routes/invoices/$id.edit.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/invoices/edit.tsx
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
 import { useSuspenseQuery } from 'kitr/query'
+import { getRouteApi } from 'kitr/router'
 import { newInvoiceSchema } from '#app/features/invoices/schema'
 import { invoiceQuery } from '#app/features/invoices/queries'
 
-export const Route = createFileRoute('/invoices/$id/edit')({ component: EditInvoicePage })
+const route = getRouteApi('/invoices/$id/edit')
 
-function EditInvoicePage() {
-  const { id } = Route.useParams()
+export default function EditInvoicePage() {
+  const { id } = route.useParams()
   const { data: invoice } = useSuspenseQuery(invoiceQuery.options(id))
   const form = useSchemaForm(newInvoiceSchema, {
     defaultValues: {

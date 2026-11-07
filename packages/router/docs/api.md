@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/router`, `kitr/router/stack`, read from the published type definitions. The [guide](/packages/router) shows them in use.
+Every export of `kitr/router`, `kitr/router/routes`, `kitr/router/stack`, read from the published type definitions. The [guide](/packages/router) shows them in use.
 
 ## kitr/router
 
@@ -28,10 +28,20 @@ function can(permission: string, options?: {
 `beforeLoad` permission guard: passes when `context.session.can(permission, subject)` is true.
 Otherwise throws a FORBIDDEN KitrError (403) that the route's error screen renders, or redirects when `to` is given.
 
+### compileTree
+
+```ts
+function compileTree(entries: RouteEntry[], options?: CompileTreeOptions): AnyRoute;
+```
+
+Build the TanStack route tree from the table's page entries.
+
 ### createKitrRouter
 
 ```ts
 function createKitrRouter<TRouteTree extends AnyRoute>(options: CreateKitrRouterOptions<TRouteTree>): Router<TRouteTree, 'never', true>;
+
+function createKitrRouter<R>(options: CreateKitrRouterFromRoutesOptions<R>): Router<TreeOf<R>, 'never', true>;
 ```
 
 `createRouter` with kitr's defaults: queryClient and app in context, intent
@@ -65,6 +75,14 @@ function DefaultPending(): import("react").JSX.Element;
 
 The default loading screen: a spinner with "Loading…" for screen readers (`data-kitr="pending"`).
 `createKitrRouter` uses it for every route; override with `defaultPendingComponent` or a route's `pendingComponent`.
+
+### definePage
+
+```ts
+function definePage(page: PageModule): PageModule;
+```
+
+`export default definePage({ component: HomePage, pendingComponent: HomeSkeleton })` in a page file.
 
 ### guards
 
@@ -119,20 +137,80 @@ provider) and redirects anonymous users, remembering where they were going.
 export const Route = createFileRoute('/_app')({ beforeLoad: requireAuth() })
 ```
 
-### CreateKitrRouterOptions
+### pages
 
 ```ts
-interface CreateKitrRouterOptions<TRouteTree extends AnyRoute> extends Omit<RouterOptions<TRouteTree, 'never', false, any, any>, 'context'> {
+const pages: {
+  readonly key: "pages";
+  readonly kinds: readonly [
+    "page",
+    "page-layout",
+    "page-group",
+    "page-root"
+  ];
+  readonly methods: {
+    readonly root: (this: AnyRouteTable, options: Record<string, unknown>) => AnyRouteTable;
+    readonly page: (this: AnyRouteTable, path: string, options?: Record<string, unknown>) => AnyRouteTable;
+    readonly layout: (this: AnyRouteTable, id: string, ...rest: unknown[]) => AnyRouteTable;
+  };
+  readonly group: (child: AnyRouteTable, parent: AnyRouteTable, prefix: string, options: GroupOptions) => void;
+  readonly targets: {
+    readonly tanstack: typeof compileTree;
+  };
+};
+```
+
+### CompileTreeOptions
+
+```ts
+interface CompileTreeOptions {
+  /** The current platform name; pages whose `platforms` leave it out are dropped. */
+  platform?: string;
+  /** Default root route options when the table has no `.root(...)`. */
+  root?: Record<string, unknown>;
+}
+```
+
+What `compile('tanstack', options)` receives from `createKitrRouter`.
+
+### CreateKitrRouterBaseOptions
+
+```ts
+interface CreateKitrRouterBaseOptions<TRouteTree extends AnyRoute> extends Omit<RouterOptions<TRouteTree, 'never', false, any, any>, 'context' | 'routeTree'> {
   /** The app from `app/app.ts`. Put in every route's context as `context.app`; forked per request on the server. */
   app: KitrApp;
   /** Defaults to the container's `queryClient` (from @kitr/query). */
   queryClient?: QueryClient;
   /** Extra context merged into every route (e.g. `session`). */
   context?: Record<string, unknown>;
+  /** The platform this router is built for. Default `import.meta.env.KITR_PLATFORM`. */
+  platform?: string;
 }
 ```
 
 Options of `createKitrRouter`: TanStack's router options without `context`, plus the kitr app and extra context.
+
+### CreateKitrRouterFromRoutesOptions
+
+```ts
+interface CreateKitrRouterFromRoutesOptions<R> extends CreateKitrRouterBaseOptions<TreeOf<R>> {
+  routes: PageRoutes<R>;
+  routeTree?: never;
+}
+```
+
+`createKitrRouter({ routes })`: the kitr route table from `app/routes.ts`, compiled to a route tree.
+
+### CreateKitrRouterOptions
+
+```ts
+interface CreateKitrRouterOptions<TRouteTree extends AnyRoute> extends CreateKitrRouterBaseOptions<TRouteTree> {
+  routeTree: TRouteTree;
+  routes?: never;
+}
+```
+
+`createKitrRouter({ routeTree })`: a TanStack route tree, from `createRootRoute().addChildren` or file-based routes.
 
 ### GuardPlatform
 
@@ -159,6 +237,32 @@ interface GuardSession {
 ```
 
 What the guards read from `context.session`: a user when signed in, and an optional permission check.
+
+### KitrPageOptions
+
+```ts
+interface KitrPageOptions {
+  /** How the page enters in a stack outlet: slide in (`push`, default), slide up over the parent (`cover`), bottom sheet, or full screen. */
+  presentation?: 'push' | 'cover' | 'sheet' | 'fullscreen';
+  /** Keep the page mounted (state, scroll, media) when another page covers it. */
+  keepAlive?: boolean;
+  /** The page a cold deep link stacks under this one (`/chats/$id` under `/chats`). */
+  stackParent?: string;
+  /** Platforms that ship this page. Default: all. Others drop it from their tree and bundle. */
+  platforms?: PlatformName[];
+  /** Render mode on the web platform, overriding its `mode`. Native platforms always render on the client. */
+  render?: 'ssr' | 'client' | 'static';
+  /**
+   * The page's components, loaded on first visit: `() => import('#app/pages/home')`. The module's
+   * default export is the component, or `definePage({ component, pendingComponent, errorComponent })`.
+   */
+  lazy?: () => Promise<{
+    default: RouteComponent | PageModule;
+  } | PageModule>;
+}
+```
+
+How a page moves and lives inside a stack outlet, and where it ships. Lands in TanStack's `staticData`.
 
 ### KitrRouterBindings
 
@@ -202,6 +306,44 @@ interface OnlyPlatformOptions {
 
 Options of `onlyPlatform()`: where other platforms go instead of a 404.
 
+### PageModule
+
+```ts
+interface PageModule {
+  component?: RouteComponent;
+  pendingComponent?: RouteComponent;
+  errorComponent?: ErrorRouteComponent;
+  notFoundComponent?: NotFoundRouteComponent;
+}
+```
+
+What a page module may export as default besides a bare component.
+
+### PageRoutes
+
+```ts
+interface PageRoutes<R = any> {
+  $types: R;
+  compile(target: 'tanstack', options?: CompileTreeOptions): Record<string, unknown>;
+}
+```
+
+A route table with pages (`defineRoutes([pages], ...)`): what `createKitrRouter({ routes })` compiles.
+
+### PageRouteType
+
+```ts
+interface PageRouteType<Rt extends AnyRoute, Kind extends string = 'page'> {
+  kind: Kind;
+  scope: 'absolute';
+  path: Rt['fullPath'];
+  /** The TanStack route, exactly as `createRoute` types it. */
+  route: Rt;
+}
+```
+
+The entry type carried per page into `$types`. `scope: 'absolute'`: groups never rewrite it.
+
 ### RequireAuthOptions
 
 ```ts
@@ -215,6 +357,51 @@ interface RequireAuthOptions {
 
 Options of `requireAuth()`: where anonymous visitors go and which search param remembers their page.
 
+### DefaultRootRoute
+
+```ts
+/** The root route `createKitrRouter` builds when the table has no `.root(...)`: a kitr context, no loader. */
+type DefaultRootRoute = RootRoute<Register, undefined, KitrRouterContext, AnyContext, AnyContext, {}, undefined, unknown, unknown, unknown, unknown, undefined>;
+```
+
+The root route `createKitrRouter` builds when the table has no `.root(...)`: a kitr context, no loader.
+
+### GroupRouteType
+
+```ts
+type GroupRouteType<R, P extends string, O> = PageRouteType<GroupRoute<R, P, O>, 'page-group'>;
+```
+
+Reserved for the group route the `pages` extension registers under a group. Not a route type itself.
+
+### PageName
+
+```ts
+type PageName<P extends AnyRoute, Path extends string> = `page ${JoinPaths<TrimRight<P['fullPath']>, Path>}`;
+```
+
+The name of a page entry: `page /admin/users`, the full path without a trailing slash.
+
+### ParentOf
+
+```ts
+type ParentOf<R> = R extends {
+  '~parent': infer T extends AnyRoute;
+} ? T : RootOf<R>;
+```
+
+The route pages added here become children of: the enclosing layout or group, else the root.
+
+### RootOf
+
+```ts
+type RootOf<R> = R extends {
+  '~root': infer T extends AnyRoute;
+} ? T : DefaultRootRoute;
+```
+
+The table's root route type: from `.root(...)`, else the default.
+
 ### RouterContextWith
 
 ```ts
@@ -222,6 +409,222 @@ type RouterContextWith<T> = KitrRouterContext & T;
 ```
 
 The router context plus your own fields, for typing a route's context without augmenting `KitrRouterContext`.
+
+### RouteTreeOf
+
+```ts
+type RouteTreeOf<R> = Subtree<R, RootOf<R>>;
+```
+
+The route tree `compile('tanstack')` returns for a table's `$types`: what `createKitrRouter({ routes })` registers.
+
+### RouteUnder
+
+```ts
+type RouteUnder<TParent extends AnyRoute, TPath extends string, TCustomId extends string, TSearchValidator = undefined, TParams = ResolveParams<TPath>, TRouteContextFn = AnyContext, TBeforeLoadFn = AnyContext, TLoaderDeps extends Record<string, any> = {}, TLoaderFn = undefined, TSSR = unknown> = Route<unknown, TParent, TPath, ResolveFullPath<TParent, TPath>, TCustomId, ResolveId<TParent, TCustomId, TPath>, TSearchValidator, TParams, AnyContext, TRouteContextFn, TBeforeLoadFn, TLoaderDeps, TLoaderFn, unknown, unknown, TSSR, unknown, undefined>;
+```
+
+A TanStack route under `TParent`, as `createRoute({ getParentRoute, path | id, ...options })` types it.
+
+### TreeOf
+
+```ts
+type TreeOf<R> = RouteTreeOf<R> extends (infer T extends AnyRoute) ? T : never;
+```
+
+The TanStack route tree of a table's `$types`, as a route (never `unknown`, so the router stays typed).
+
+### WithChildren
+
+```ts
+type WithChildren<Rt, C> = IsAny<Rt extends {
+  types: {
+    parentRoute: infer P;
+  };
+} ? P : never> extends true ? Rt extends RootRoute<infer TRegister, infer TSearchValidator, infer TRouterContext, infer TRouteContextFn, infer TBeforeLoadFn, infer TLoaderDeps extends Record<string, any>, infer TLoaderFn, any, infer TFileRouteTypes, infer TSSR, infer TServerMiddlewares, infer THandlers> ? RootRoute<TRegister, TSearchValidator, TRouterContext, TRouteContextFn, TBeforeLoadFn, TLoaderDeps, TLoaderFn, C, TFileRouteTypes, TSSR, TServerMiddlewares, THandlers> : never : Rt extends Route<infer TRegister, infer TParentRoute extends AnyRoute, infer TPath extends string, infer TFullPath extends string, infer TCustomId extends string, infer TId extends string, infer TSearchValidator, infer TParams, infer TRouterContext, infer TRouteContextFn, infer TBeforeLoadFn, infer TLoaderDeps extends Record<string, any>, infer TLoaderFn, any, infer TFileRouteTypes, infer TSSR, infer TServerMiddlewares, infer THandlers> ? Route<TRegister, TParentRoute, TPath, TFullPath, TCustomId, TId, TSearchValidator, TParams, TRouterContext, TRouteContextFn, TBeforeLoadFn, TLoaderDeps, TLoaderFn, C, TFileRouteTypes, TSSR, TServerMiddlewares, THandlers> : never;
+```
+
+`Rt` with its `TChildren` replaced by `C`, for a root or a child route.
+
+## kitr/router/routes
+
+### compileTree
+
+```ts
+function compileTree(entries: RouteEntry[], options?: CompileTreeOptions): AnyRoute;
+```
+
+Build the TanStack route tree from the table's page entries.
+
+### definePage
+
+```ts
+function definePage(page: PageModule): PageModule;
+```
+
+`export default definePage({ component: HomePage, pendingComponent: HomeSkeleton })` in a page file.
+
+### pages
+
+```ts
+const pages: {
+  readonly key: "pages";
+  readonly kinds: readonly [
+    "page",
+    "page-layout",
+    "page-group",
+    "page-root"
+  ];
+  readonly methods: {
+    readonly root: (this: AnyRouteTable, options: Record<string, unknown>) => AnyRouteTable;
+    readonly page: (this: AnyRouteTable, path: string, options?: Record<string, unknown>) => AnyRouteTable;
+    readonly layout: (this: AnyRouteTable, id: string, ...rest: unknown[]) => AnyRouteTable;
+  };
+  readonly group: (child: AnyRouteTable, parent: AnyRouteTable, prefix: string, options: GroupOptions) => void;
+  readonly targets: {
+    readonly tanstack: typeof compileTree;
+  };
+};
+```
+
+### CompileTreeOptions
+
+```ts
+interface CompileTreeOptions {
+  /** The current platform name; pages whose `platforms` leave it out are dropped. */
+  platform?: string;
+  /** Default root route options when the table has no `.root(...)`. */
+  root?: Record<string, unknown>;
+}
+```
+
+What `compile('tanstack', options)` receives from `createKitrRouter`.
+
+### KitrPageOptions
+
+```ts
+interface KitrPageOptions {
+  /** How the page enters in a stack outlet: slide in (`push`, default), slide up over the parent (`cover`), bottom sheet, or full screen. */
+  presentation?: 'push' | 'cover' | 'sheet' | 'fullscreen';
+  /** Keep the page mounted (state, scroll, media) when another page covers it. */
+  keepAlive?: boolean;
+  /** The page a cold deep link stacks under this one (`/chats/$id` under `/chats`). */
+  stackParent?: string;
+  /** Platforms that ship this page. Default: all. Others drop it from their tree and bundle. */
+  platforms?: PlatformName[];
+  /** Render mode on the web platform, overriding its `mode`. Native platforms always render on the client. */
+  render?: 'ssr' | 'client' | 'static';
+  /**
+   * The page's components, loaded on first visit: `() => import('#app/pages/home')`. The module's
+   * default export is the component, or `definePage({ component, pendingComponent, errorComponent })`.
+   */
+  lazy?: () => Promise<{
+    default: RouteComponent | PageModule;
+  } | PageModule>;
+}
+```
+
+How a page moves and lives inside a stack outlet, and where it ships. Lands in TanStack's `staticData`.
+
+### PageModule
+
+```ts
+interface PageModule {
+  component?: RouteComponent;
+  pendingComponent?: RouteComponent;
+  errorComponent?: ErrorRouteComponent;
+  notFoundComponent?: NotFoundRouteComponent;
+}
+```
+
+What a page module may export as default besides a bare component.
+
+### PageRouteType
+
+```ts
+interface PageRouteType<Rt extends AnyRoute, Kind extends string = 'page'> {
+  kind: Kind;
+  scope: 'absolute';
+  path: Rt['fullPath'];
+  /** The TanStack route, exactly as `createRoute` types it. */
+  route: Rt;
+}
+```
+
+The entry type carried per page into `$types`. `scope: 'absolute'`: groups never rewrite it.
+
+### DefaultRootRoute
+
+```ts
+/** The root route `createKitrRouter` builds when the table has no `.root(...)`: a kitr context, no loader. */
+type DefaultRootRoute = RootRoute<Register, undefined, KitrRouterContext, AnyContext, AnyContext, {}, undefined, unknown, unknown, unknown, unknown, undefined>;
+```
+
+The root route `createKitrRouter` builds when the table has no `.root(...)`: a kitr context, no loader.
+
+### GroupRouteType
+
+```ts
+type GroupRouteType<R, P extends string, O> = PageRouteType<GroupRoute<R, P, O>, 'page-group'>;
+```
+
+Reserved for the group route the `pages` extension registers under a group. Not a route type itself.
+
+### PageName
+
+```ts
+type PageName<P extends AnyRoute, Path extends string> = `page ${JoinPaths<TrimRight<P['fullPath']>, Path>}`;
+```
+
+The name of a page entry: `page /admin/users`, the full path without a trailing slash.
+
+### ParentOf
+
+```ts
+type ParentOf<R> = R extends {
+  '~parent': infer T extends AnyRoute;
+} ? T : RootOf<R>;
+```
+
+The route pages added here become children of: the enclosing layout or group, else the root.
+
+### RootOf
+
+```ts
+type RootOf<R> = R extends {
+  '~root': infer T extends AnyRoute;
+} ? T : DefaultRootRoute;
+```
+
+The table's root route type: from `.root(...)`, else the default.
+
+### RouteTreeOf
+
+```ts
+type RouteTreeOf<R> = Subtree<R, RootOf<R>>;
+```
+
+The route tree `compile('tanstack')` returns for a table's `$types`: what `createKitrRouter({ routes })` registers.
+
+### RouteUnder
+
+```ts
+type RouteUnder<TParent extends AnyRoute, TPath extends string, TCustomId extends string, TSearchValidator = undefined, TParams = ResolveParams<TPath>, TRouteContextFn = AnyContext, TBeforeLoadFn = AnyContext, TLoaderDeps extends Record<string, any> = {}, TLoaderFn = undefined, TSSR = unknown> = Route<unknown, TParent, TPath, ResolveFullPath<TParent, TPath>, TCustomId, ResolveId<TParent, TCustomId, TPath>, TSearchValidator, TParams, AnyContext, TRouteContextFn, TBeforeLoadFn, TLoaderDeps, TLoaderFn, unknown, unknown, TSSR, unknown, undefined>;
+```
+
+A TanStack route under `TParent`, as `createRoute({ getParentRoute, path | id, ...options })` types it.
+
+### WithChildren
+
+```ts
+type WithChildren<Rt, C> = IsAny<Rt extends {
+  types: {
+    parentRoute: infer P;
+  };
+} ? P : never> extends true ? Rt extends RootRoute<infer TRegister, infer TSearchValidator, infer TRouterContext, infer TRouteContextFn, infer TBeforeLoadFn, infer TLoaderDeps extends Record<string, any>, infer TLoaderFn, any, infer TFileRouteTypes, infer TSSR, infer TServerMiddlewares, infer THandlers> ? RootRoute<TRegister, TSearchValidator, TRouterContext, TRouteContextFn, TBeforeLoadFn, TLoaderDeps, TLoaderFn, C, TFileRouteTypes, TSSR, TServerMiddlewares, THandlers> : never : Rt extends Route<infer TRegister, infer TParentRoute extends AnyRoute, infer TPath extends string, infer TFullPath extends string, infer TCustomId extends string, infer TId extends string, infer TSearchValidator, infer TParams, infer TRouterContext, infer TRouteContextFn, infer TBeforeLoadFn, infer TLoaderDeps extends Record<string, any>, infer TLoaderFn, any, infer TFileRouteTypes, infer TSSR, infer TServerMiddlewares, infer THandlers> ? Route<TRegister, TParentRoute, TPath, TFullPath, TCustomId, TId, TSearchValidator, TParams, TRouterContext, TRouteContextFn, TBeforeLoadFn, TLoaderDeps, TLoaderFn, C, TFileRouteTypes, TSSR, TServerMiddlewares, THandlers> : never;
+```
+
+`Rt` with its `TChildren` replaced by `C`, for a root or a child route.
 
 ## kitr/router/stack
 
