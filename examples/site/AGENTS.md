@@ -26,7 +26,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: query
 
 - Import from `kitr/query`, never from `@tanstack/react-query` directly.
-- Every data source becomes `defineQuery(...)` / `defineMutation(...)` in `app/features/<name>/queries.ts`. Components use `useSuspenseQuery(x.options(input))`.
+- Every data source becomes `queryFrom(...)` / `mutationFrom(...)` in `app/features/<name>/queries.ts`. Components use `useSuspenseQuery(x.options(input))`.
 - Route loaders call `context.queryClient.ensureQueryData(x.options(input))` so data is fetched once for server and client.
 - Mutations declare `effects` (invalidate/set keys). Never call `queryClient.invalidateQueries` inline in components.
 
@@ -66,12 +66,6 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: testing
 
 - `pnpm test` runs Vitest. Components: `renderWithKitr(<X />, { app, queryData })` from `kitr/testing/react`. APIs: `createTestClient(server).get('/api/x')`. No running backend is needed.
-
-## kitr: devtools
-
-- In development a "k" button (ctrl/cmd+shift+K) opens the kitr devtools: App, Router, Query, Auth, Storage, Errors, Analytics and Log panels, plus a command palette (ctrl/cmd+shift+P) with every package's actions.
-- Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`kitr/devtools`); it is null in production so the call costs nothing.
-- A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `kitr/devtools/ui`.
 
 ## kitr: seo
 

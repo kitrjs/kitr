@@ -7,15 +7,14 @@ import {
   applyCacheEffect,
   call,
   createQueryClient,
-  defineMutation,
-  defineQuery,
-  defineSubscription,
   invalidate,
+  mutationFrom,
   QueryClient,
   QueryClientProvider,
+  queryFrom,
   queryOptions,
   queryProvider,
-  useKitrMutation,
+  subscriptionFrom,
   useMutation,
   useQuery,
   useSubscription,
@@ -47,9 +46,9 @@ describe('createQueryClient', () => {
   })
 })
 
-describe('defineQuery', () => {
+describe('queryFrom', () => {
   it('produces queryOptions with key, staleTime, meta and KitrError normalisation', async () => {
-    const q = defineQuery<{ id: string }, { id: string }>({
+    const q = queryFrom<{ id: string }, { id: string }>({
       key: ({ id }) => ['p', id],
       fetch: async ({ id }) => {
         if (id === 'x') throw new TypeError('fetch failed')
@@ -74,7 +73,7 @@ describe('defineQuery', () => {
   })
 
   it('renders through useQuery', async () => {
-    const q = defineQuery({ key: () => ['hello'], fetch: async () => 'world' })
+    const q = queryFrom({ key: () => ['hello'], fetch: async () => 'world' })
     const client = new QueryClient()
     function View() {
       const { data } = useQuery(q.options())
@@ -112,17 +111,17 @@ describe('cache effects', () => {
   })
 })
 
-describe('defineMutation', () => {
+describe('mutationFrom', () => {
   it('computes effects from the result and applies them on success', async () => {
     const client = new QueryClient()
-    const m = defineMutation<{ name: string }, { id: string; name: string }>({
+    const m = mutationFrom<{ name: string }, { id: string; name: string }>({
       mutate: async ({ name }) => ({ id: '9', name }),
       effects: (result) => ({ set: [{ key: ['p', result.id], data: result }] }),
     })
     expect(m.effectsFor({ id: '1', name: 'a' }, { name: 'a' })).toEqual({
       set: [{ key: ['p', '1'], data: { id: '1', name: 'a' } }],
     })
-    const { result } = renderHook(() => useKitrMutation(m, { onSuccess: vi.fn() }), {
+    const { result } = renderHook(() => useMutation(m, { onSuccess: vi.fn() }), {
       wrapper: wrapperFor(client),
     })
     await act(() => result.current.mutateAsync({ name: 'Zed' }))
@@ -132,8 +131,8 @@ describe('defineMutation', () => {
   it('runs both its own and the caller onSuccess', async () => {
     const client = new QueryClient()
     const callerSuccess = vi.fn()
-    const m = defineMutation({ mutate: async () => 1, effects: { invalidate: [['all']] } })
-    const { result } = renderHook(() => useKitrMutation(m, { onSuccess: callerSuccess }), {
+    const m = mutationFrom({ mutate: async () => 1, effects: { invalidate: [['all']] } })
+    const { result } = renderHook(() => useMutation(m, { onSuccess: callerSuccess }), {
       wrapper: wrapperFor(client),
     })
     await act(() => result.current.mutateAsync())
@@ -142,12 +141,12 @@ describe('defineMutation', () => {
 
   it('normalises failures to KitrError', async () => {
     const client = new QueryClient()
-    const m = defineMutation({
+    const m = mutationFrom({
       mutate: async () => {
         throw { code: 'CONFLICT', message: 'dup', status: 409 }
       },
     })
-    const { result } = renderHook(() => useKitrMutation(m), { wrapper: wrapperFor(client) })
+    const { result } = renderHook(() => useMutation(m), { wrapper: wrapperFor(client) })
     await act(async () => {
       await result.current.mutateAsync().catch(() => {})
     })
@@ -166,7 +165,7 @@ describe('useSubscription', () => {
       fail = handlers.error
       return unsubscribe
     })
-    const def = defineSubscription<{ room: string }, { id: string }>({
+    const def = subscriptionFrom<{ room: string }, { id: string }>({
       key: ({ room }) => ['room', room],
       subscribe,
       effects: (event) => ({ set: [{ key: ['last'], data: event.id }] }),
@@ -279,12 +278,12 @@ describe('queryProvider', () => {
 })
 
 describe('name and definition forms', () => {
-  const listProjects = defineQuery<{ owner?: string }, string[]>({
+  const listProjects = queryFrom<{ owner?: string }, string[]>({
     key: (input) => ['projects', input?.owner ?? 'all'],
     fetch: async (input) => [input?.owner ?? 'all'],
     source: 'action',
   })
-  const updateProject = defineMutation<{ id: string }, { id: string }>({
+  const updateProject = mutationFrom<{ id: string }, { id: string }>({
     mutate: async ({ id }) => ({ id }),
     effects: { invalidate: [['projects']] },
   })

@@ -14,7 +14,7 @@ import type { RouteMap, RouteType } from './types'
  *
  *   const api = createApiClient<AppRoutes>({ baseUrl: env.VITE_API_URL })
  *   const project = await api.projects.show({ params: { id } })
- *   const projectQuery = defineQuery(api.projects.show.query())
+ *   const projectQuery = queryFrom(api.projects.show.query())
  *   useSuspenseQuery(projectQuery.options({ params: { id } }))
  */
 export interface ApiClientOptions {
@@ -52,9 +52,9 @@ type MaybeOptional<I> = {} extends I ? [input?: I] : [input: I]
 /** One typed route on the client: call it, or take its query and mutation contracts, key and URL. */
 export interface Endpoint<R extends RouteType> {
   (...args: MaybeOptional<InputFor<R>>): Promise<R['output']>
-  /** Query contract for `defineQuery` (kitr/query). Input is the request input. */
+  /** Query contract for `queryFrom` (kitr/query). Input is the request input. */
   query(): Omit<QueryContract<InputFor<R>, R['output']>, 'kind'>
-  /** Mutation contract for `defineMutation` (kitr/query). */
+  /** Mutation contract for `mutationFrom` (kitr/query). */
   mutation(options?: {
     effects?: CacheEffect | ((result: R['output'], input: InputFor<R>) => CacheEffect)
   }): Omit<MutationContract<InputFor<R>, R['output']>, 'kind'>

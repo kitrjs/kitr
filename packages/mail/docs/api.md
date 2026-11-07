@@ -101,6 +101,11 @@ function mailPreview<S extends {
   h3: {
     get(path: string, handler: (event: any) => unknown): unknown;
   };
+  app?: {
+    config: {
+      get(key: 'mail', fallback: MailConfig): MailConfig;
+    };
+  };
 }>(server: S, templates: MailTemplate<any>[], options?: {
   path?: string;
   mailer?: Mailer;
@@ -108,7 +113,9 @@ function mailPreview<S extends {
 ```
 
 Serves every registered template at `<previewPath>/<name>` in development (the `preview` props,
-or `?prop=value` from the query string), and an index listing them.
+or `?prop=value` from the query string), and an index listing them. The path comes from
+`options.path`, then `previewPath` in `config/mail.ts` (read from `server.app` when the server
+has one), then `/_kitr/mail`; `previewPath: false` mounts nothing.
 
 ### useMailer
 

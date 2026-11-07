@@ -29,13 +29,13 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: query
 
 - Import from `kitr/query`, never from `@tanstack/react-query` directly.
-- Every data source becomes `defineQuery(...)` / `defineMutation(...)` in `app/features/<name>/queries.ts`. Components use `useSuspenseQuery(x.options(input))`.
+- Every data source becomes `queryFrom(...)` / `mutationFrom(...)` in `app/features/<name>/queries.ts`. Components use `useSuspenseQuery(x.options(input))`.
 - Route loaders call `context.queryClient.ensureQueryData(x.options(input))` so data is fetched once for server and client.
 - Mutations declare `effects` (invalidate/set keys). Never call `queryClient.invalidateQueries` inline in components.
 
 ## kitr: http
 
-- The HTTP client is `app.container.use('http')` (a ky instance). Wrap endpoints with `httpQuery`/`httpMutation` from `kitr/http` and pass them to `defineQuery`/`defineMutation`.
+- The HTTP client is `app.container.use('http')` (a ky instance). Wrap endpoints with `httpQuery`/`httpMutation` from `kitr/http` and pass them to `queryFrom`/`mutationFrom`.
 - Errors are already `KitrError`; a 422 with `fieldErrors` maps onto form fields through `<Form>`.
 
 ## kitr: forms

@@ -1,6 +1,7 @@
 {
   "name": "@kitr/mobile",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr/mobile: the iOS and Android platform on Capacitor. Native projects in platforms/<name>/, drivers for storage and device capabilities, lifecycle hooks.",
   "kitr": {
     "name": "mobile",
@@ -30,9 +31,6 @@
   },
   "homepage": "https://kitr.dev/packages/mobile",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     ".": {

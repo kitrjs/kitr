@@ -2,9 +2,12 @@ import { resolvePackageName, shortPackageName } from '@kitr/core/package'
 import type { ProjectContext } from './context'
 import { manifests } from './manifests.gen'
 import { ensureAvailable, type LoadedPackage, loadPackage } from './packages'
+import { assertReleased, isPreview } from './preview'
 
 /** The short names of the official packages, for messages. */
-export const knownPackageNames = Object.keys(manifests).filter((n) => !manifests[n]!.included)
+export const knownPackageNames = Object.keys(manifests).filter(
+  (n) => !manifests[n]!.included && !isPreview(n),
+)
 
 /** One package to configure: its loaded setup module. Requirements come first in the list. */
 export interface PlanStep {
@@ -23,6 +26,7 @@ async function stepFor(
   options: { install: boolean },
 ): Promise<PlanStep> {
   const pkg = resolvePackageName(name)
+  assertReleased(name)
   try {
     await ensureAvailable(ctx, name, options)
   } catch (error) {

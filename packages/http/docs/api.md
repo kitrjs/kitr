@@ -43,7 +43,7 @@ function httpQuery<TInput = void, TOutput = unknown>(
 ): QueryContract<TInput, TOutput>
 ```
 
-A `GET` endpoint as a query contract. Pass it to `defineQuery`. `undefined` search params are dropped.
+A `GET` endpoint as a query contract. Pass it to `queryFrom`. `undefined` search params are dropped.
 
 ## httpMutation
 
@@ -61,7 +61,7 @@ function httpMutation<TInput = void, TOutput = unknown>(
 ): MutationContract<TInput, TOutput>
 ```
 
-An endpoint that changes data, as a mutation contract. Pass it to `defineMutation`.
+An endpoint that changes data, as a mutation contract. Pass it to `mutationFrom`.
 
 ## normaliseHttpError
 

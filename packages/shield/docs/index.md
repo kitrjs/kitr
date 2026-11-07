@@ -103,7 +103,7 @@ The shield reads one env variable:
 
 | Variable | Used for |
 | --- | --- |
-| `NODE_ENV` | `production` turns on HSTS and the `Secure` flag on the CSRF cookie. |
+| `NODE_ENV` | `production` turns on HSTS and the `Secure` flag on the CSRF cookie. The app's mode (`kitr build`, Vite's production mode) does the same, so hosts that never set `NODE_ENV` are covered. |
 
 Config files are TypeScript, so you can vary values per environment. Tests often turn the rate limit off, because every test request comes from the same client:
 
@@ -230,7 +230,7 @@ Don't fix a blocked resource with `default-src *`. Add the one origin that needs
 
 ## Turn on HSTS in production
 
-HSTS tells browsers to use HTTPS for your domain, and its subdomains, for the next `max-age` seconds. The shield sends it only when `NODE_ENV` is `production`, with a max-age of one year. To roll it out carefully, start short and raise it once every subdomain serves HTTPS:
+HSTS tells browsers to use HTTPS for your domain, and its subdomains, for the next `max-age` seconds. The shield sends it only in production (the app's mode, or `NODE_ENV=production`), with a max-age of one year. To roll it out carefully, start short and raise it once every subdomain serves HTTPS:
 
 ```ts
 // config/shield.ts

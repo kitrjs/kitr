@@ -159,7 +159,7 @@ One event a channel carries: an optional payload schema and the cache effects it
 
 ```ts
 interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `defineSubscription`. */
+  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
@@ -387,7 +387,7 @@ The native WebSocket transport (same as `createSocketClient`).
 
 ```ts
 interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `defineSubscription`. */
+  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
@@ -746,7 +746,7 @@ Options for `createSseServer`: the channels to serve, stream auth and the keep-a
 
 ```ts
 function useChannel<C extends ChannelDefinition<any, any>>(transport: SocketTransport, definition: C, params: ChannelParams<C>, options?: UseSubscriptionOptions<ChannelEventUnion<C>>): {
-  status: "error" | "idle" | "open";
+  status: "idle" | "open" | "error";
   lastEvent: ChannelEventUnion<C> | undefined;
   error: import("@kitr/core").KitrErrorShape | undefined;
 };

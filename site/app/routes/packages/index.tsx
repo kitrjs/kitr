@@ -40,9 +40,9 @@ export const Route = createFileRoute('/packages/')({
 
 type Entry = PackageEntry | PlannedEntry
 
-/** Categories in catalog order, leaving out any with nothing in them yet. */
+/** Categories in catalog order, leaving out any with no shipped package yet. */
 const categoryOrder = (Object.keys(categories) as Category[]).filter((c) =>
-  [...packages, ...planned].some((p) => p.category === c),
+  packages.some((p) => p.category === c),
 )
 
 /** A package that runs on both sides matches either filter. */
@@ -127,21 +127,23 @@ function Packages() {
     const inRuns = all.filter((x) => matchesRuns(x.p.runsOn, runs))
     const inCategory = (x: { p: Entry }) => !category || x.p.category === category
     // Facet counts: each filter counts what the others leave, so a chip never promises
-    // results it cannot show.
+    // results it cannot show. Counts are shipped packages only; roadmap entries sit below.
+    const shipped = (x: { p: Entry }) => !('status' in x.p)
     const categoryCounts = new Map<Category, number>()
-    for (const x of inRuns)
+    for (const x of inRuns.filter(shipped))
       categoryCounts.set(x.p.category, (categoryCounts.get(x.p.category) ?? 0) + 1)
+    const built = all.filter((x) => shipped(x) && inCategory(x))
     const runsCounts = {
-      any: all.filter(inCategory).length,
-      client: all.filter((x) => inCategory(x) && matchesRuns(x.p.runsOn, 'client')).length,
-      server: all.filter((x) => inCategory(x) && matchesRuns(x.p.runsOn, 'server')).length,
+      any: built.length,
+      client: built.filter((x) => matchesRuns(x.p.runsOn, 'client')).length,
+      server: built.filter((x) => matchesRuns(x.p.runsOn, 'server')).length,
     }
     const shown = inRuns.filter(inCategory)
     const ranked = [...shown].sort((a, b) => b.s - a.s || a.p.name.localeCompare(b.p.name))
     return {
       categoryCounts,
       runsCounts,
-      total: inRuns.length,
+      total: inRuns.filter(shipped).length,
       built: ranked.filter((x) => !('status' in x.p)).map((x) => x.p as PackageEntry),
       upcoming: ranked
         .filter((x) => 'status' in x.p)
@@ -155,7 +157,8 @@ function Packages() {
   }, [terms, category, runs])
 
   const filtered = Boolean(terms.length || category || runs)
-  const count = view.built.length + view.upcoming.length
+  const count = view.built.length
+  const anything = count + view.upcoming.length
   // Browsing everything reads best by category; a search reads best as one ranked list.
   const groups: Array<{ category?: Category; list: PackageEntry[] }> = terms.length
     ? [{ list: view.built }]
@@ -175,7 +178,7 @@ function Packages() {
         <h1>Packages</h1>
         <p className="muted">
           Pick the pieces your app needs. Each one is a single <code>kitr add</code> away, and every
-          page starts with a live example.
+          page shows what that command changes and how to use the result.
         </p>
       </div>
 
@@ -253,6 +256,7 @@ function Packages() {
               <strong>{count}</strong> {count === 1 ? 'package' : 'packages'}
               {category && <> in {categories[category].label}</>}
               {terms.length > 0 && <> for “{query.trim()}”</>}
+              {view.upcoming.length > 0 && <>, plus {view.upcoming.length} planned</>}
               {filtered && (
                 <button type="button" className="dir-clear" onClick={clear}>
                   Clear
@@ -286,7 +290,7 @@ function Packages() {
             </fieldset>
           </div>
 
-          {count === 0 ? (
+          {anything === 0 ? (
             <div className="dir-empty">
               <p>
                 No package matches{terms.length ? <> “{query.trim()}”</> : ' these filters'}
@@ -348,7 +352,7 @@ function Packages() {
               )}
             </>
           )}
-          {count > 0 && (
+          {anything > 0 && (
             <Link
               to="/docs/$slug"
               params={{ slug: 'building-packages' }}

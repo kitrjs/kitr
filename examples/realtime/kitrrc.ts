@@ -18,7 +18,6 @@ export default defineKitrConfig({
    '@kitr/theme',
    '@kitr/storage',
    '@kitr/testing',
-   '@kitr/devtools',
    '@kitr/seo',
    '@kitr/api',
    '@kitr/realtime',
@@ -30,7 +29,6 @@ export default defineKitrConfig({
    () => import('@kitr/query/provider'),
    () => import('@kitr/theme/provider'),
    () => import('@kitr/storage/provider'),
-   () => import('@kitr/devtools/provider'),
    () => import('@kitr/web/provider'),
   ],
   platforms: {
