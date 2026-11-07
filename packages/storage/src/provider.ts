@@ -1,9 +1,17 @@
 import { defineProvider, getDevtools } from '@kitr/core'
-import { type StorageConfig, setCookieDefaults, setStoragePrefix } from './index'
+import {
+  getStorageDriver,
+  type StorageConfig,
+  setCookieDefaults,
+  setKvDriver,
+  setStorageDriver,
+  setStoragePrefix,
+} from './index'
 
 /**
- * Applies `config/storage.ts` (key prefix, cookie defaults) and contributes the
- * Storage panel to the devtools. Nothing to wrap: items are plain modules.
+ * Applies `config/storage.ts` (key prefix, cookie defaults, kv driver), switches `defineStorage`
+ * items to the platform's native driver when one is registered, hydrates it before the first
+ * render, and contributes the Storage panel to the devtools.
  */
 export const storageProvider = defineProvider({
   name: 'storage',
@@ -11,12 +19,20 @@ export const storageProvider = defineProvider({
     const config = app.config.get('storage', {} as StorageConfig)
     if (config.prefix) setStoragePrefix(config.prefix)
     if (config.cookie) setCookieDefaults(config.cookie)
+    if (config.kv) setKvDriver(config.kv)
+    const driver = app.drivers.resolve('storage')
+    if (driver) setStorageDriver(driver)
   },
-  boot(app) {
+  async boot(app) {
+    const driver = app.drivers.resolve('storage')
+    await driver?.hydrate?.()
     const hub = getDevtools(app)
-    if (!hub || typeof window === 'undefined') return
-    // Mirror every write into the devtools log so a changing value is visible as it happens.
-    window.addEventListener('storage', (e) => hub.log('storage', `${e.key} changed in another tab`))
+    if (!hub) return
+    hub.log('storage', `driver: ${getStorageDriver('local')?.name ?? 'none (server)'}`)
+    for (const area of ['local', 'session'] as const)
+      getStorageDriver(area)?.subscribe?.((key) =>
+        hub.log('storage', `${key ?? 'storage'} changed outside this context`),
+      )
   },
   devtools: () => import('./devtools').then((m) => m.panels()),
 })

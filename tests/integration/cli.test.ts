@@ -75,6 +75,7 @@ describe('kitr new', () => {
 })
 
 describe.each([
+  'blank',
   'backend',
   'dashboard',
   'fullstack',
@@ -113,7 +114,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
   const generators: Array<[string, string, string]> = [
     ['make:route', 'reports', 'app/routes/reports.tsx'],
     ['make:action', 'projects/archive', 'app/actions/projects/archive.ts'],
-    ['make:controller', 'invoices', 'app/controllers/invoices_controller.ts'],
+    ['make:controller', 'invoices', 'server/controllers/invoices_controller.ts'],
     ['make:middleware', 'audit', 'app/middleware/audit.ts'],
     ['make:channel', 'presence', 'app/channels/presence.ts'],
     ['make:store', 'filters', 'app/stores/filters.ts'],
@@ -139,15 +140,15 @@ describe('make:* generators produce code that typechecks and builds', () => {
 
   it('make:controller --resource writes every action', () => {
     kitr(dir, 'make:controller', 'customers', '--resource')
-    const files = Object.keys(snapshot(join(dir, 'app/controllers')))
+    const files = Object.keys(snapshot(join(dir, 'server/controllers')))
     const file = files.find((f) => f.includes('customers'))!
-    const src = readFileSync(join(dir, 'app/controllers', file), 'utf8')
+    const src = readFileSync(join(dir, 'server/controllers', file), 'utf8')
     for (const action of ['index', 'show', 'store', 'update', 'destroy'])
       expect(src).toMatch(new RegExp(`\\b${action}\\s*\\(`))
   })
 
   it('the project still builds and typechecks with every generated file', () => {
-    run(dir, bin('vite'), ['build', '--logLevel', 'error'], 300_000)
+    kitr(dir, 'build', 'site')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   }, 300_000)
 
@@ -170,16 +171,7 @@ describe('kitr add / remove', () => {
   })
   afterAll(() => remove(dir))
 
-  const addable = [
-    'i18n',
-    'analytics',
-    'monitoring',
-    'pwa',
-    'logger',
-    'tauri',
-    'electron',
-    'capacitor',
-  ]
+  const addable = ['i18n', 'analytics', 'monitoring', 'logger', 'platform', 'seo']
 
   it.each(addable)('add %s registers the provider and package, remove undoes it', (pkg) => {
     kitr(dir, 'add', pkg, '--no-install')
@@ -200,19 +192,32 @@ describe('kitr add / remove', () => {
 
   it('--dry-run changes nothing', () => {
     const now = snapshot(dir)
-    kitr(dir, 'add', 'socket', '--no-install', '--dry-run')
+    kitr(dir, 'add', 'realtime', '--no-install', '--dry-run')
     expect(snapshot(dir)).toEqual(now)
   })
 
-  it('add socket brings its dependencies; remove socket keeps them and lists leftover imports', () => {
-    kitr(dir, 'add', 'socket', '--no-install')
+  it('add realtime brings its dependencies; remove realtime keeps them and lists leftover imports', () => {
+    kitr(dir, 'add', 'realtime', '--no-install')
     const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
-    for (const dep of ['@kitr/socket', '@kitr/server', '@kitr/logger']) expect(rc).toContain(dep)
-    const out = kitr(dir, 'remove', 'socket', '--no-install')
+    for (const dep of ['@kitr/realtime', '@kitr/server', '@kitr/logger']) expect(rc).toContain(dep)
+    const out = kitr(dir, 'remove', 'realtime', '--no-install')
     expect(out).toMatch(/Still imported from/)
     const after = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
-    expect(after).not.toContain('@kitr/socket')
+    expect(after).not.toContain('@kitr/realtime')
     expect(after).toContain('@kitr/server')
+  })
+
+  it('add <type> <name> registers a platform in kitrrc.ts and kitr config edits it', () => {
+    kitr(dir, 'add', 'web', 'admin', '--no-install', '--mode', 'static', '--port', '3002')
+    const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+    expect(rc).toMatch(/admin: web\(\{[^}]*mode: 'static'/)
+    expect(kitr(dir, 'platforms')).toMatch(/admin\s+web\s+mode=static port=3002/)
+    kitr(dir, 'config', 'admin', 'port', '3003')
+    expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).toMatch(/port: 3003/)
+    expect(() => kitr(dir, 'config', 'admin', 'port', 'nope')).toThrow(/expected a number/)
+    expect(() => kitr(dir, 'config', 'admin', 'mode', 'fast')).toThrow()
+    kitr(dir, 'platforms', 'remove', 'admin')
+    expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).not.toContain('admin')
   })
 
   it('rejects an unknown package', () => {

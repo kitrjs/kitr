@@ -51,6 +51,13 @@ export const versions: Record<string, string> = {
   '@capacitor/core': '^8.6.0',
   '@capacitor/app': '^8.1.2',
   '@capacitor/cli': '^8.6.0',
+  '@capacitor/preferences': '^8.0.0',
+  '@capacitor/ios': '^8.6.0',
+  '@capacitor/android': '^8.6.0',
+  '@tauri-apps/plugin-store': '^2.4.0',
+  '@tauri-apps/plugin-opener': '^2.5.0',
+  '@tauri-apps/plugin-process': '^2.3.0',
+  wrangler: '^4.0.0',
 }
 
 export function versionOf(name: string): string {

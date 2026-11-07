@@ -1,0 +1,5 @@
+{
+  "title": "Toaster",
+  "description": "Toasts with sonner, themed by kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
+  "dependencies": ["sonner"]
+}

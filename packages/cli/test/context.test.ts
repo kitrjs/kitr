@@ -47,11 +47,14 @@ describe('readRcInfo', () => {
     expect(readRcInfo(join(dir, 'kitrrc.ts'))).toEqual({
       packages: ['@kitr/query', '@kitr/http'],
       providers: ['@kitr/query/provider', '@kitr/http/provider'],
+      platforms: {},
       directories: {
         app: 'src',
         routes: 'src/pages',
         config: 'config',
         components: 'app/components',
+        platforms: 'platforms',
+        server: 'server',
         stubs: 'stubs',
       },
     })

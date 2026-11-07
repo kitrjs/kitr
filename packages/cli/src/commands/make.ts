@@ -78,9 +78,9 @@ export const makeAction = makeCommand(
 )
 export const makeController = makeCommand(
   'controller',
-  'Create a controller in app/controllers',
+  'Create a controller in server/controllers',
   (ctx, name, args) => ({
-    file: `${ctx.readRc().directories.app}/controllers/${naming.snake(name)}_controller.ts`,
+    file: `${ctx.readRc().directories.server ?? 'server'}/controllers/${naming.snake(name)}_controller.ts`,
     vars: { name, resource: String(args.resource) },
   }),
 )

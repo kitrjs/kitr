@@ -57,10 +57,6 @@
       "types": "./dist/state.d.ts",
       "default": "./dist/state.js"
     },
-    "./styling": {
-      "types": "./dist/styling.d.ts",
-      "default": "./dist/styling.js"
-    },
     "./tailwind": {
       "types": "./dist/tailwind.d.ts",
       "default": "./dist/tailwind.js"
@@ -69,15 +65,6 @@
       "types": "./dist/tailwind-vite.d.ts",
       "default": "./dist/tailwind-vite.js"
     },
-    "./ui": {
-      "types": "./dist/ui.d.ts",
-      "default": "./dist/ui.js"
-    },
-    "./ui/provider": {
-      "types": "./dist/ui-provider.d.ts",
-      "default": "./dist/ui-provider.js"
-    },
-    "./ui/styles.css": "./styles/ui.css",
     "./tailwind/preset.css": "./styles/tailwind-preset.css",
     "./logger": {
       "types": "./dist/logger.d.ts",
@@ -98,26 +85,6 @@
     "./actions": {
       "types": "./dist/actions.d.ts",
       "default": "./dist/actions.js"
-    },
-    "./ssr": {
-      "types": "./dist/ssr.d.ts",
-      "default": "./dist/ssr.js"
-    },
-    "./socket": {
-      "types": "./dist/socket.d.ts",
-      "default": "./dist/socket.js"
-    },
-    "./socket/server": {
-      "types": "./dist/socket-server.d.ts",
-      "default": "./dist/socket-server.js"
-    },
-    "./socket.io": {
-      "types": "./dist/socket-io.d.ts",
-      "default": "./dist/socket-io.js"
-    },
-    "./socket.io/server": {
-      "types": "./dist/socket-io-server.d.ts",
-      "default": "./dist/socket-io-server.js"
     },
     "./auth": {
       "types": "./dist/auth.d.ts",
@@ -167,34 +134,6 @@
       "types": "./dist/analytics-react.d.ts",
       "default": "./dist/analytics-react.js"
     },
-    "./pwa": {
-      "types": "./dist/pwa.d.ts",
-      "default": "./dist/pwa.js"
-    },
-    "./pwa/vite": {
-      "types": "./dist/pwa-vite.d.ts",
-      "default": "./dist/pwa-vite.js"
-    },
-    "./electron": {
-      "types": "./dist/electron.d.ts",
-      "default": "./dist/electron.js"
-    },
-    "./electron/main": {
-      "types": "./dist/electron-main.d.ts",
-      "default": "./dist/electron-main.js"
-    },
-    "./electron/preload": {
-      "types": "./dist/electron-preload.d.ts",
-      "default": "./dist/electron-preload.js"
-    },
-    "./tauri": {
-      "types": "./dist/tauri.d.ts",
-      "default": "./dist/tauri.js"
-    },
-    "./capacitor": {
-      "types": "./dist/capacitor.d.ts",
-      "default": "./dist/capacitor.js"
-    },
     "./monitoring": {
       "types": "./dist/monitoring.d.ts",
       "default": "./dist/monitoring.js"
@@ -235,7 +174,132 @@
       "types": "./dist/devtools-ui.d.ts",
       "default": "./dist/devtools-ui.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "default": "./dist/web.js"
+    },
+    "./web/client": {
+      "types": "./dist/web-client.d.ts",
+      "default": "./dist/web-client.js"
+    },
+    "./web/provider": {
+      "types": "./dist/web-provider.d.ts",
+      "default": "./dist/web-provider.js"
+    },
+    "./web/vite": {
+      "types": "./dist/web-vite.d.ts",
+      "default": "./dist/web-vite.js"
+    },
+    "./mobile": {
+      "types": "./dist/mobile.d.ts",
+      "default": "./dist/mobile.js"
+    },
+    "./mobile/client": {
+      "types": "./dist/mobile-client.d.ts",
+      "default": "./dist/mobile-client.js"
+    },
+    "./mobile/provider": {
+      "types": "./dist/mobile-provider.d.ts",
+      "default": "./dist/mobile-provider.js"
+    },
+    "./desktop": {
+      "types": "./dist/desktop.d.ts",
+      "default": "./dist/desktop.js"
+    },
+    "./desktop/client": {
+      "types": "./dist/desktop-client.d.ts",
+      "default": "./dist/desktop-client.js"
+    },
+    "./desktop/provider": {
+      "types": "./dist/desktop-provider.d.ts",
+      "default": "./dist/desktop-provider.js"
+    },
+    "./desktop/tauri": {
+      "types": "./dist/desktop-tauri.d.ts",
+      "default": "./dist/desktop-tauri.js"
+    },
+    "./desktop/electron": {
+      "types": "./dist/desktop-electron.d.ts",
+      "default": "./dist/desktop-electron.js"
+    },
+    "./desktop/electron-main": {
+      "types": "./dist/desktop-electron-main.d.ts",
+      "default": "./dist/desktop-electron-main.js"
+    },
+    "./desktop/electron-preload": {
+      "types": "./dist/desktop-electron-preload.d.ts",
+      "default": "./dist/desktop-electron-preload.js"
+    },
+    "./server/platform": {
+      "types": "./dist/server-platform.d.ts",
+      "default": "./dist/server-platform.js"
+    },
+    "./platform": {
+      "types": "./dist/platform.d.ts",
+      "default": "./dist/platform.js"
+    },
+    "./platform/react": {
+      "types": "./dist/platform-react.d.ts",
+      "default": "./dist/platform-react.js"
+    },
+    "./platform/provider": {
+      "types": "./dist/platform-provider.d.ts",
+      "default": "./dist/platform-provider.js"
+    },
+    "./platform/devtools": {
+      "types": "./dist/platform-devtools.d.ts",
+      "default": "./dist/platform-devtools.js"
+    },
+    "./theme": {
+      "types": "./dist/theme.d.ts",
+      "default": "./dist/theme.js"
+    },
+    "./theme/provider": {
+      "types": "./dist/theme-provider.d.ts",
+      "default": "./dist/theme-provider.js"
+    },
+    "./theme/server": {
+      "types": "./dist/theme-server.d.ts",
+      "default": "./dist/theme-server.js"
+    },
+    "./seo": {
+      "types": "./dist/seo.d.ts",
+      "default": "./dist/seo.js"
+    },
+    "./realtime": {
+      "types": "./dist/realtime.d.ts",
+      "default": "./dist/realtime.js"
+    },
+    "./realtime/client": {
+      "types": "./dist/realtime-client.d.ts",
+      "default": "./dist/realtime-client.js"
+    },
+    "./realtime/server": {
+      "types": "./dist/realtime-server.d.ts",
+      "default": "./dist/realtime-server.js"
+    },
+    "./realtime/socket.io": {
+      "types": "./dist/realtime-socket-io.d.ts",
+      "default": "./dist/realtime-socket-io.js"
+    },
+    "./realtime/socket.io/server": {
+      "types": "./dist/realtime-socket-io-server.d.ts",
+      "default": "./dist/realtime-socket-io-server.js"
+    },
+    "./realtime/sse": {
+      "types": "./dist/realtime-sse.d.ts",
+      "default": "./dist/realtime-sse.js"
+    },
+    "./realtime/sse/server": {
+      "types": "./dist/realtime-sse-server.d.ts",
+      "default": "./dist/realtime-sse-server.js"
+    },
+    "./realtime/react": {
+      "types": "./dist/realtime-react.d.ts",
+      "default": "./dist/realtime-react.js"
+    },
+    "./theme/styles.css": "./styles/theme.css"
   },
   "files": [
     "dist",
@@ -264,24 +328,22 @@
     "@kitr/react": "workspace:*",
     "@kitr/router": "workspace:*",
     "@kitr/server": "workspace:*",
-    "@kitr/socket": "workspace:*",
-    "@kitr/socket.io": "workspace:*",
-    "@kitr/ssr": "workspace:*",
     "@kitr/state": "workspace:*",
-    "@kitr/styling": "workspace:*",
     "@kitr/table": "workspace:*",
     "@kitr/tailwind": "workspace:*",
     "@kitr/testing": "workspace:*",
-    "@kitr/ui": "workspace:*",
     "@kitr/vite": "workspace:*",
     "@kitr/analytics": "workspace:*",
-    "@kitr/pwa": "workspace:*",
-    "@kitr/electron": "workspace:*",
-    "@kitr/tauri": "workspace:*",
-    "@kitr/capacitor": "workspace:*",
     "@kitr/monitoring": "workspace:*",
     "@kitr/storage": "workspace:*",
-    "@kitr/devtools": "workspace:*"
+    "@kitr/devtools": "workspace:*",
+    "@kitr/web": "workspace:*",
+    "@kitr/mobile": "workspace:*",
+    "@kitr/desktop": "workspace:*",
+    "@kitr/platform": "workspace:*",
+    "@kitr/theme": "workspace:*",
+    "@kitr/seo": "workspace:*",
+    "@kitr/realtime": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@kitr/actions": {
@@ -323,19 +385,7 @@
     "@kitr/server": {
       "optional": true
     },
-    "@kitr/socket": {
-      "optional": true
-    },
-    "@kitr/socket.io": {
-      "optional": true
-    },
-    "@kitr/ssr": {
-      "optional": true
-    },
     "@kitr/state": {
-      "optional": true
-    },
-    "@kitr/styling": {
       "optional": true
     },
     "@kitr/table": {
@@ -347,25 +397,10 @@
     "@kitr/testing": {
       "optional": true
     },
-    "@kitr/ui": {
-      "optional": true
-    },
     "@kitr/vite": {
       "optional": true
     },
     "@kitr/analytics": {
-      "optional": true
-    },
-    "@kitr/pwa": {
-      "optional": true
-    },
-    "@kitr/electron": {
-      "optional": true
-    },
-    "@kitr/tauri": {
-      "optional": true
-    },
-    "@kitr/capacitor": {
       "optional": true
     },
     "@kitr/monitoring": {
@@ -375,6 +410,27 @@
       "optional": true
     },
     "@kitr/devtools": {
+      "optional": true
+    },
+    "@kitr/web": {
+      "optional": true
+    },
+    "@kitr/mobile": {
+      "optional": true
+    },
+    "@kitr/desktop": {
+      "optional": true
+    },
+    "@kitr/platform": {
+      "optional": true
+    },
+    "@kitr/theme": {
+      "optional": true
+    },
+    "@kitr/seo": {
+      "optional": true
+    },
+    "@kitr/realtime": {
       "optional": true
     }
   },
@@ -392,25 +448,23 @@
     "@kitr/react": "workspace:*",
     "@kitr/router": "workspace:*",
     "@kitr/server": "workspace:*",
-    "@kitr/socket": "workspace:*",
-    "@kitr/socket.io": "workspace:*",
-    "@kitr/ssr": "workspace:*",
     "@kitr/state": "workspace:*",
-    "@kitr/styling": "workspace:*",
     "@kitr/table": "workspace:*",
     "@kitr/tailwind": "workspace:*",
     "@kitr/testing": "workspace:*",
-    "@kitr/ui": "workspace:*",
     "@kitr/vite": "workspace:*",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
     "@kitr/analytics": "workspace:*",
-    "@kitr/pwa": "workspace:*",
-    "@kitr/electron": "workspace:*",
-    "@kitr/tauri": "workspace:*",
-    "@kitr/capacitor": "workspace:*",
     "@kitr/monitoring": "workspace:*",
     "@kitr/storage": "workspace:*",
-    "@kitr/devtools": "workspace:*"
+    "@kitr/devtools": "workspace:*",
+    "@kitr/web": "workspace:*",
+    "@kitr/mobile": "workspace:*",
+    "@kitr/desktop": "workspace:*",
+    "@kitr/platform": "workspace:*",
+    "@kitr/theme": "workspace:*",
+    "@kitr/seo": "workspace:*",
+    "@kitr/realtime": "workspace:*"
   }
 }

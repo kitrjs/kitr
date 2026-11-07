@@ -157,6 +157,16 @@
       "dependencies": []
     },
     {
+      "name": "sonner",
+      "type": "registry:ui",
+      "title": "Toaster",
+      "description": "Toasts with sonner, themed by kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
+      "registryDependencies": [],
+      "dependencies": [
+        "sonner"
+      ]
+    },
+    {
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",
@@ -168,7 +178,7 @@
       "name": "theme-toggle",
       "type": "registry:ui",
       "title": "Theme toggle",
-      "description": "Light/dark toggle using kitr/ui's useTheme.",
+      "description": "Light/dark toggle using kitr/theme's useTheme.",
       "registryDependencies": [
         "button"
       ],

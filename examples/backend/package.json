@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch server.ts",
-    "start": "node --import tsx server.ts",
-    "build": "tsc --noEmit",
+    "dev": "kitr dev",
+    "build": "kitr build",
+    "start": "kitr start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "api:sync": "kitr api:sync",
@@ -16,8 +16,8 @@
     "@kitr/core": "workspace:*",
     "@kitr/db": "workspace:*",
     "@kitr/logger": "workspace:*",
+    "@kitr/realtime": "workspace:*",
     "@kitr/server": "workspace:*",
-    "@kitr/socket": "workspace:*",
     "crossws": "^0.4.17",
     "h3": "^2.0.8",
     "kitr": "workspace:*",
@@ -34,7 +34,6 @@
   "imports": {
     "#app/*": "./app/*",
     "#config/*": "./config/*",
-    "#controllers/*": "./app/controllers/*",
-    "#start/*": "./start/*"
+    "#server/*": "./server/*"
   }
 }

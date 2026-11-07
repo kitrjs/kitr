@@ -31,8 +31,8 @@ A **kit** is a starting set of packages. Pick the one closest to what you're bui
 | --- | --- | --- |
 | `blank` | Learning, or starting from nothing | Router and query |
 | `app` | A logged-in app that talks to an existing API | Plus HTTP, forms, tables, state, UI, auth, mocks and testing |
-| `fullstack` | An app with its own backend | The app kit plus server rendering, server actions, API routes and sockets |
-| `server` | An API with no React at all | Server, API routes, database, sockets, logger and testing |
+| `fullstack` | An app with its own backend | The app kit plus server rendering, server actions, API routes and realtime channels |
+| `server` | An API with no React at all | Server, API routes, database, realtime channels, logger and testing |
 
 `kitr new` installs dependencies, sets up git and writes an `AGENTS.md` for coding assistants.
 

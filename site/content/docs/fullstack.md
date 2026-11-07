@@ -48,7 +48,7 @@ const rename = useKitrMutation(defineMutation(renameTask.mutation()))
 
 ## Live updates
 
-With [Sockets](/packages/socket), one channel definition serves both ends. The server publishes; every open browser applies the event's cache effects:
+With [Realtime](/packages/realtime), one channel definition serves both ends. The server publishes; every open browser applies the event's cache effects:
 
 ```ts
 // app/channels/tasks.ts
@@ -61,7 +61,7 @@ export const tasksChannel = defineChannel<{ board: string }>({
 
 ## Server rendering and SEO
 
-[SSR and SEO](/packages/ssr) controls which pages render on the server and what goes in their `<head>`:
+[SEO](/packages/seo) controls which pages render on the server and what goes in their `<head>`:
 
 ```ts
 export const Route = createFileRoute('/tasks/$id')({
@@ -76,4 +76,4 @@ npm run build
 npm start
 ```
 
-`npm start` runs `kitr serve`, a Node server for the build. The output is also a standard fetch handler, so platforms that run those directly work too.
+`npm start` runs `kitr start`, which serves each platform's build (the site on srvx, the API on its runtime). The output is also a standard fetch handler, so platforms that run those directly work too.

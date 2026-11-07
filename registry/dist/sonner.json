@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sonner",
+  "type": "registry:ui",
+  "title": "Toaster",
+  "description": "Toasts with sonner, themed by kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
+  "dependencies": [
+    "sonner"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/sonner.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/sonner.tsx",
+      "content": "import { useTheme } from 'kitr/theme'\nimport { Toaster as Sonner, type ToasterProps } from 'sonner'\n\n/** Mount once in the root route; call `toast()` from `sonner` anywhere. Follows the kitr theme. */\nexport function Toaster(props: ToasterProps) {\n  const { resolved } = useTheme()\n  return <Sonner theme={resolved} position=\"bottom-right\" richColors {...props} />\n}\n\nexport { toast } from 'sonner'\n"
+    }
+  ]
+}

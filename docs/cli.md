@@ -6,12 +6,23 @@
 
 | Command | What it does |
 | --- | --- |
-| `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank`, `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed WebSocket channels), `desktop` (the app kit in Electron with typed IPC), `mobile` (the app kit as a PWA and Capacitor shell). `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
-| `kitr add <pkg...>` | Install the package(s), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`). Platform add-ons (`pwa`, `electron`, `tauri`, `capacitor`) also add scripts and scaffold folders (`electron/`, `src-tauri/`). `storage` and `devtools` are part of the `app` and `fullstack` kits. `--dry-run`, `--no-install`. |
+| `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank`, `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed channels), `desktop` (the app kit in an Electron shell with typed IPC), `mobile` (the app kit as a PWA and a Capacitor shell). `--platform site=web,api=server` replaces the kit's platforms; `--mode`, `--pwa`, `--runtime`, `--shell`, `--targets`, `--port` set their options. `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
+| `kitr add <pkg...>` | Install the package(s), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`; adding `router` adds `react`). `--dry-run`, `--no-install`. |
+| `kitr add <type> <name> [--option value]` | Adds a platform (`web`, `server`, `desktop`, `mobile`): `kitr add web admin --mode spa`, `kitr add desktop app --shell tauri`. Installs the platform package and the packages it needs, writes `platforms.<name>` into `kitrrc.ts`, scaffolds `platforms/<name>/` for native shells and adds the `dev`/`build`/`start` scripts. See [platforms.md](platforms.md). |
 | `kitr remove <pkg...>` | Reverse of `add`: unregisters the provider and package, deletes `config/<pkg>.ts`, removes dependencies, then lists files that still import it. |
 | `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where a `kitr/*` entry exists, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
-| `kitr info` | JSON summary: version, package manager, packages, providers, directories, server-only or not. |
+| `kitr info` | JSON summary: version, package manager, packages, providers, platforms, directories, server-only or not. |
 | `kitr upgrade [--to x.y.z] [--majors]` | Moves `kitr` and every `@kitr/*` to one version and aligns upstream libraries with the versions that release was tested with. Major bumps are listed, not applied, unless `--majors`. |
+
+## Platforms
+
+| Command | What it does |
+| --- | --- |
+| `kitr dev [names...]` | Runs every platform in `kitrrc.ts`, or the named ones, in development: `kitr dev`, `kitr dev site api`, `kitr dev site --port 4000`. |
+| `kitr build [names...]` | Production builds into `dist/<name>/`. |
+| `kitr start [names...]` | Serves the builds (`kitr serve` is an alias). |
+| `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms and their effective options; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
+| `kitr config <name> [option] [value] [--unset]` | Reads or sets one platform option in `kitrrc.ts`, validated against the platform's schema: `kitr config site port 4000`. `KITR_<NAME>_<OPTION>` overrides any option at run time. |
 
 ## Generators
 
@@ -22,7 +33,7 @@
 | `make:route projects/index` | `app/routes/projects/index.tsx` with route path `/projects/` |
 | `make:route projects/:id` | `app/routes/projects/$id.tsx` |
 | `make:action projects/create` | `app/actions/projects/create.ts` (`defineAction`) |
-| `make:controller projects [--resource]` | `app/controllers/projects_controller.ts` (index/show/store/update/destroy with `--resource`) |
+| `make:controller projects [--resource]` | `server/controllers/projects_controller.ts` (index/show/store/update/destroy with `--resource`) |
 | `make:middleware audit` | `app/middleware/audit.ts` |
 | `make:channel chat` | `app/channels/chat.ts` (`defineChannel`) |
 | `make:store cart` | `app/stores/cart.ts` (`createKitrStore`) |
@@ -37,15 +48,14 @@
 | `kitr ui add <name...>` | Copies components from a shadcn-compatible registry into `app/components/ui` (and pages into `app/routes`), resolving `registryDependencies` and installing npm dependencies. `--registry`, `--overwrite`. |
 | `kitr ui list` | Lists the registry's items. |
 
-The default registry is kitr's own (`registry/dist` in this repo). Point `--registry`, `config/ui.ts` or `KITR_REGISTRY` at any other shadcn-format registry, including a local folder.
+The default registry is kitr's own (`registry/dist` in this repo). Point `--registry`, `config/theme.ts` or `KITR_REGISTRY` at any other shadcn-format registry, including a local folder.
 
 ## API and server
 
 | Command | What it does |
 | --- | --- |
-| `kitr api:sync` | Loads the routes file (`app/api/routes.ts` or `start/routes.ts`), writes `openapi.json` (OpenAPI 3.1; schemas from zod, valibot or arktype when present) and `routes.gen.ts`, a plain route table for clients that cannot import the server. `--file`, `--out`. |
+| `kitr api:sync` | Loads the routes file (`server/routes.ts`), writes `openapi.json` (OpenAPI 3.1; schemas from zod, valibot or arktype when present) and `routes.gen.ts`, a plain route table for clients that cannot import the server. `--file`, `--out`. |
 | `kitr routes:list` | Prints the route table: method, path, name. |
-| `kitr serve` | Serves a TanStack Start production build (`dist/server/server.js`) with srvx, adding `PORT`/`HOST` and WebSocket upgrades. Pure backends run `server.ts` directly instead. |
 | `kitr css:types` | Writes a `.d.ts` beside every `*.module.css`. `--check` fails when stale. |
 
 ## Leaving kitr

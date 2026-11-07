@@ -3,7 +3,7 @@
   "name": "theme-toggle",
   "type": "registry:ui",
   "title": "Theme toggle",
-  "description": "Light/dark toggle using kitr/ui's useTheme.",
+  "description": "Light/dark toggle using kitr/theme's useTheme.",
   "dependencies": [],
   "registryDependencies": [
     "button"
@@ -13,7 +13,7 @@
       "path": "app/components/ui/theme-toggle.tsx",
       "type": "registry:ui",
       "target": "app/components/ui/theme-toggle.tsx",
-      "content": "import { useTheme } from 'kitr/ui'\nimport { Button } from '#components/ui/button'\n\nexport function ThemeToggle() {\n  const { resolved, toggle } = useTheme()\n  return (\n    <Button\n      variant=\"ghost\"\n      size=\"icon\"\n      onClick={toggle}\n      aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}\n    >\n      {resolved === 'dark' ? '☀' : '☾'}\n    </Button>\n  )\n}\n"
+      "content": "import { useTheme } from 'kitr/theme'\nimport { Button } from '#components/ui/button'\n\nexport function ThemeToggle() {\n  const { resolved, toggle } = useTheme()\n  return (\n    <Button\n      variant=\"ghost\"\n      size=\"icon\"\n      onClick={toggle}\n      aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}\n    >\n      {resolved === 'dark' ? '☀' : '☾'}\n    </Button>\n  )\n}\n"
     }
   ]
 }

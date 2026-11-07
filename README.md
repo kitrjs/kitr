@@ -6,9 +6,10 @@ kitr is a thin, opinionated layer over the libraries you would pick anyway: TanS
 
 ```sh
 pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API
-pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and sockets
+pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and realtime channels
 pnpm dlx kitr new my-api --kit server   # a pure backend. No React anywhere in the dependency graph.
 pnpm dlx kitr new my-saas --kit saas    # presets: saas, site, realtime, desktop, mobile. Real pages, controllers and tests to start from.
+pnpm dlx kitr new my-app --kit app --platform site=web,app=desktop --shell tauri   # the same app/ in a browser and a Tauri window
 ```
 
 Every command runs from flags alone, so coding agents and CI never hit a prompt. `kitr new` writes an `AGENTS.md` that `kitr add` keeps up to date.
@@ -19,28 +20,28 @@ Every command runs from flags alone, so coding agents and CI never hit a prompt.
 `kitr/router` *is* `@tanstack/react-router`, plus `createKitrRouter`, `requireAuth()` and `can()`. `kitr/query` *is* `@tanstack/react-query`, plus `defineQuery` and cache effects. Your TanStack knowledge transfers one to one, upstream docs stay valid, and leaving kitr is an import rewrite (`kitr eject all` prints it).
 
 **One data contract.**
-Server actions, API routes, external HTTP APIs and socket channels all produce the same `QueryContract` / `MutationContract` / `SubscriptionContract`. Mutations declare cache `effects` (`invalidate`, `set`, `remove`) instead of components calling `queryClient.invalidateQueries` inline. A socket event is just a subscription whose events carry effects.
+Server actions, API routes, external HTTP APIs and realtime channels all produce the same `QueryContract` / `MutationContract` / `SubscriptionContract`. Mutations declare cache `effects` (`invalidate`, `set`, `remove`) instead of components calling `queryClient.invalidateQueries` inline. A channel event is just a subscription whose events carry effects.
 
 **Explicit wiring, the Adonis way.**
 `kitrrc.ts` lists every provider as a lazy import. `config/<package>.ts` holds that package's options, typed by its `defineConfig`. Providers have `register → boot → ready → shutdown`, a typed container (`app.container.use('http')`), and a `wrap()` hook so React packages can wrap the tree without the core knowing React exists.
 
-**Pure backend is a first-class target.**
-`@kitr/core`, `server`, `api`, `logger`, `socket`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 + srvx server with Adonis-style controllers, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and WebSocket channels. The same packages run inside TanStack Start when you want both.
+**Where the app runs is a platform, and platforms are packages.**
+`kitrrc.ts` names them: `platforms: { site: web({ mode: 'ssr' }), api: server({ runtime: 'node' }), app: desktop({ shell: 'tauri' }), phone: mobile() }`. `kitr dev site api` runs two of them, `kitr build` builds them all into `dist/<name>/`, `kitr config site port 4000` edits an option with validation, `KITR_SITE_PORT=4000` overrides it at run time. The core knows only the `definePlatform` contract; `@kitr/web`, `@kitr/server`, `@kitr/desktop` and `@kitr/mobile` own their options, scaffold and tooling (TanStack Start, srvx and wrangler, Tauri and electron-vite, Capacitor), and native projects live in `platforms/<name>/`. One `app/` ships everywhere; `kitr/platform` answers `usePlatform()`, `useBackButton()` and `useSafeArea()` the same way in a browser and a shell.
 
-**One app, every platform.**
-`kitr add pwa electron tauri capacitor` are one-command add-ons like the rest: each wires the vendor tooling the way its docs recommend (electron-vite, the Tauri and Capacitor CLIs, vite-plugin-pwa), adds the scripts, and gives you typed helpers with browser fallbacks, so the same `app/` ships to the web, desktop and mobile. `kitr add analytics monitoring` do the same for Google Analytics, Plausible, PostHog and Sentry.
+**Pure backend is a first-class target.**
+`@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
 
 **Debuggable by default.**
-`kitr add devtools` is in every React kit: a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `socket` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server.
+`kitr add devtools` is in every React kit: a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
 
 **Components you own.**
-`kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and kitr's tokens; there is no component library in `node_modules` to fight.
+`kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and the tokens from `kitr/theme`; there is no component library in `node_modules` to fight.
 
 ## Entry points
 
 | Import | Re-exports | Adds |
 | --- | --- | --- |
-| `kitr/app` | `@kitr/core` | `createApp`, `defineProvider`, `defineKitrConfig`, `createKeys`, `KitrError`, `validate` |
+| `kitr/app` | `@kitr/core` | `createApp`, `defineProvider`, `defineKitrConfig`, `definePlatform`, `createKeys`, `KitrError`, `validate` |
 | `kitr/env` | | `createEnv` with a public/server split, validated at startup |
 | `kitr/react` | | `<KitrProvider>`, `useApp()`, `useService()`, `useConfig()` |
 | `kitr/router` | `@tanstack/react-router` | `createKitrRouter`, `requireAuth`, `can`, default pending/error/404 |
@@ -49,16 +50,14 @@ Server actions, API routes, external HTTP APIs and socket channels all produce t
 | `kitr/forms` | `react-hook-form` | `useSchemaForm` (Standard Schema), `<Form>`, `<FormField>`, `applyServerErrors` |
 | `kitr/table` | `@tanstack/react-table` v9 | `dataTableFeatures`, `useUrlTableState` (sort/page/filter in the URL) |
 | `kitr/state` | `zustand` | `createKitrStore` (SSR-safe, per-request on the server) |
-| `kitr/styling` | `clsx`, `cva` | `defineTokens`, CSS Modules helpers |
 | `kitr/tailwind` | | `cn()`, the preset mapping kitr tokens to `@theme`, `kitr/tailwind/vite` |
-| `kitr/ui` | | `ThemeProvider`, `useTheme`, `toast`, registry config |
+| `kitr/theme` | `clsx`, `cva` | `defineTokens`, `ThemeProvider`, `useTheme`, `toast`, registry config; `kitr/theme/styles.css` |
 | `kitr/logger` | | `createLogger`, child loggers, request ids |
-| `kitr/server` | `h3` | `createServer` (standalone via srvx, or a `fetch` handler), request context |
+| `kitr/server` | `h3` | `createServer` (standalone via srvx, or a `fetch` handler), request context, the `server()` platform |
 | `kitr/api` | | `defineRoutes`, controllers, validators, middleware, `toOpenApi`; `kitr/api/client` is the typed client |
 | `kitr/actions` | `@tanstack/react-start` server fns | `defineAction` with validation, middleware, one error shape, cache effects |
-| `kitr/ssr` | | `seo()`, `ssrRoute()`, `cacheHeaders()` |
-| `kitr/socket` | `partysocket` | `defineChannel`, `createSocketClient`; `kitr/socket/server` on crossws |
-| `kitr/socket.io` | `socket.io-client` | the same channels over Socket.IO |
+| `kitr/seo` | | `seo()`, `jsonLd()`, `ssrRoute()`, `cacheHeaders()`, `robotsTxt()`, prerender and sitemap config |
+| `kitr/realtime` | `partysocket`, `socket.io-client` | `defineChannel`, `createRealtimeClient` over `ws`, `socket.io` or `sse`; `kitr/realtime/server`, `kitr/realtime/react` |
 | `kitr/auth` | | `createAuth`, adapters (token, Better Auth, custom), `defineAbilities`, hooks; `kitr/auth/server` middleware |
 | `kitr/db` | | `defineDb` binds any ORM into the lifecycle |
 | `kitr/testing` | | `createTestApp`, `createTestClient`; `kitr/testing/react` adds `renderWithKitr` |
@@ -66,13 +65,13 @@ Server actions, API routes, external HTTP APIs and socket channels all produce t
 | `kitr/i18n` | `react-i18next` | typed keys, locale detection |
 | `kitr/analytics` | | `createAnalytics`, GA/Plausible/PostHog/console adapters, `useAnalytics`, router page views |
 | `kitr/monitoring` | | `createMonitoring`, Sentry/console reporters, error boundary; `kitr/monitoring/server` middleware |
-| `kitr/pwa` | | `useInstallPrompt`, `useOnline`, `useServiceWorker`; `kitr/pwa/vite` wraps vite-plugin-pwa |
-| `kitr/electron` | | typed IPC client; `kitr/electron/main` (`createMainWindow`, `handleIpc`), `kitr/electron/preload` (`exposeIpc`) |
-| `kitr/tauri` | `@tauri-apps/api` | `defineCommands`, `commandQuery`, `commandMutation`, `isTauri`, `useTauriEvent` |
-| `kitr/storage` | | `defineStorage`, `defineCookie`; `kitr/storage/react` hooks, `kitr/storage/server` cookies |
+| `kitr/platform` | | `platform()`, `isNative()`, `perPlatform()`, driver registry; `kitr/platform/react` hooks (`usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) |
+| `kitr/storage` | | `defineStorage`, `defineCookie`; `kitr/storage/react` hooks, `kitr/storage/server` cookies, native drivers from the platform packages |
 | `kitr/devtools` | | the development overlay; `getDevtools(app)?.log()`, panels via a provider's `devtools()` |
-| `kitr/capacitor` | `@capacitor/core` | `isNative`, `platform`, `perPlatform`, `useBackButton`, `useAppUrlOpen`, `useAppState` |
-| `kitr/vite` | | the `kitr()` Vite plugin: aliases, virtual modules, router/Start plugin, Tailwind |
+| `kitr/web` | | the `web()` platform (static, spa, ssr, pwa); `kitr/web/client` has `useInstallPrompt`, `useServiceWorker`; `kitr/web/vite` |
+| `kitr/desktop` | `@tauri-apps/api` | the `desktop()` platform (Tauri or Electron); `kitr/desktop/tauri` (`defineCommands`, `commandQuery`, `useTauriEvent`), `kitr/desktop/electron` (typed IPC), `electron-main`, `electron-preload` |
+| `kitr/mobile` | `@capacitor/core` | the `mobile()` platform (Capacitor); `kitr/mobile/client` has `isCapacitor`, `isPluginAvailable`, `nativeOnly` |
+| `kitr/vite` | | the `kitr()` Vite plugin: platform-aware aliases, virtual modules, Start, Tailwind, PWA |
 
 See [docs/entry-points.md](docs/entry-points.md) for the rules behind this table.
 
@@ -103,7 +102,7 @@ export const updateProject = defineMutation(
 ```
 
 ```ts
-// app/api/routes.ts (Start) or start/routes.ts (pure backend)
+// server/routes.ts
 export const routes = defineRoutes((router) =>
   router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
     api.resource('projects', ProjectsController).get('/me', [UsersController, 'me'], { name: 'me' }),
@@ -130,16 +129,16 @@ export const chatChannel = defineChannel<{ room: string }>({
 
 ```
 packages/
-  core, react, query, http, router, forms, table, state, styling, tailwind, ui,
-  logger, server, api, actions, ssr, socket, socket.io, auth, db, testing, mocks, i18n,
-  analytics, monitoring, pwa, electron, tauri, capacitor, storage, devtools,
+  core, react, router, query, http, forms, table, state, tailwind, theme,
+  logger, server, api, actions, seo, realtime, auth, db, testing, mocks, i18n,
+  analytics, monitoring, platform, storage, devtools,
+  web, desktop, mobile       # platform packages (server's platform lives in packages/server)
   vite, cli, kitr            # `kitr` is the umbrella package users install
 registry/                    # shadcn-compatible component registry (built to registry/dist)
 examples/
-  backend/                   # kitr new --kit server
-  dashboard/                 # kitr new --kit app
-  fullstack/                 # kitr new --kit fullstack
-docs/                        # entry points, CLI, packages, pure backend, departures from the plan
+  blank, dashboard, fullstack, backend,        # kitr new --kit blank | app | fullstack | server
+  saas, site, realtime, desktop, mobile        # the presets
+docs/                        # entry points, CLI, packages, platforms, pure backend, departures
 ```
 
 ```sh
@@ -150,12 +149,13 @@ pnpm test         # vitest across the monorepo
 pnpm lint         # biome
 ```
 
-The examples are exactly what the CLI generates (with workspace links instead of published versions). Regenerate one with `node packages/kitr/bin/kitr.mjs new examples/<name> --kit <kit> --no-install --no-git --registry $PWD/registry/dist`, then see `examples/README.md` for the workspace links. Five of them are presets you can start from: `saas`, `site`, `realtime`, `desktop`, `mobile`.
+The examples are exactly what the CLI generates (with workspace links instead of published versions). Regenerate one with `node packages/kitr/bin/kitr.mjs new examples/<name> --kit <kit> --no-install --no-git --registry $PWD/registry/dist`, then see `examples/README.md` for the workspace links. Five of them are presets you can start from: `saas`, `site`, `realtime`, `desktop`, `mobile`. Every example runs with `pnpm dev` (`kitr dev`), builds with `pnpm build` and serves with `pnpm start`.
 
 ## Docs
 
 - [docs/cli.md](docs/cli.md): every command and flag
 - [docs/packages.md](docs/packages.md): what each package provides and when to add it
+- [docs/platforms.md](docs/platforms.md): web, server, desktop and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
 - [docs/pure-backend.md](docs/pure-backend.md): kitr without React
 - [docs/departures.md](docs/departures.md): where the implementation improved on the design plan, and why

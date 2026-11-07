@@ -23,20 +23,17 @@
       "#config/*": [
         "./config/*"
       ],
-      "#controllers/*": [
-        "./app/controllers/*"
-      ],
-      "#start/*": [
-        "./start/*"
+      "#server/*": [
+        "./server/*"
       ]
     }
   },
   "include": [
     "app",
     "config",
-    "start",
+    "server",
+    "platforms",
     "kitrrc.ts",
-    "server.ts",
     "test"
   ]
 }

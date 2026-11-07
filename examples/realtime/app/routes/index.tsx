@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useKitrMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
-import { ssrRoute } from 'kitr/ssr'
+import { ssrRoute } from 'kitr/seo'
 import { useStorage } from 'kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { chatSubscription, messagesQuery, sendMessage } from '#app/features/chat/queries'

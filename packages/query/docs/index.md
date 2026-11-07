@@ -51,7 +51,7 @@ export const projectQuery = defineQuery({
 
 `createKeys('projects')` gives you consistent keys (`all`, `lists()`, `list(filters)`, `details()`, `detail(id)`), so every part of the app agrees on what to refresh.
 
-You will rarely write `fetch` by hand. [HTTP](/packages/http), [API](/packages/api), [server actions](/packages/actions) and [sockets](/packages/socket) each produce these contracts for you.
+You will rarely write `fetch` by hand. [HTTP](/packages/http), [API](/packages/api), [server actions](/packages/actions) and [realtime channels](/packages/realtime) each produce these contracts for you.
 
 ## Show it in a component
 
@@ -115,7 +115,7 @@ A subscription is a stream of events whose effects land in the same cache. When 
 useSubscription(projectEvents, { projectId })
 ```
 
-[Sockets](/packages/socket) produce subscriptions from channel definitions; you can also write one by hand with `defineSubscription`.
+[Sockets](/packages/realtime) produce subscriptions from channel definitions; you can also write one by hand with `defineSubscription`.
 
 ## Errors
 

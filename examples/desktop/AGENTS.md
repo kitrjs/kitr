@@ -5,9 +5,26 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: conventions
 
 - Import framework code from `kitr/*` entry points (`kitr/router`, `kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
+- Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generators: `kitr make:route|action|controller|channel|store|form|queries`. Run `kitr doctor` after changes.
+
+## kitr: router
+
 - Routes are files in `app/routes` (TanStack Router file routes). `app/routeTree.gen.ts` is generated; never edit it.
 - In route files, import `createFileRoute` / `createLazyFileRoute` from `@tanstack/react-router` (the route generator owns that import). Everything else comes from `kitr/router`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`. Generators: `kitr make:route|action|controller|channel|store|form|queries`. Run `kitr doctor` after changes.
+- The root route (`app/routes/__root.tsx`) renders the HTML document: TanStack Start streams it on the server (web `ssr`), prerenders it (`static`) or ships one shell (`spa`, desktop, mobile). Keep it platform-neutral.
+
+## kitr: platform
+
+- Never branch on user agents or `window.__TAURI__`: use `usePlatform()`, `useOnline()`, `useAppState()`, `useBackButton()`, `useDeepLink()`, `useSafeArea()` from `kitr/platform/react`, or `app.use('platform')` outside React. `platform.is('mobile')` / `platform.is('ios')` match the type or the OS.
+- The web, desktop and mobile platform providers register the drivers; in a plain browser the defaults apply, so the same code runs everywhere.
+
+## kitr: storage
+
+- Persisted values are declared once in `app/storage.ts` (`defineStorage` for local/session storage, `defineCookie` for cookies) and never read through `localStorage`/`document.cookie` directly.
+- Components: `const [value, setValue] = useStorage(item)` / `useCookie(item)` from `kitr/storage/react`. Both are hydration-safe: the server and first render see the default.
+- Server side (actions, controllers): `cookies(event).get(item)` / `.set(item, value)` from `kitr/storage/server`; wrap the root route in `<CookieHeader value={request.headers.get('cookie')}>` so `useCookie` renders the right value during SSR.
+- Add `schema` (zod/valibot) to validate what comes back from storage, `version` + `migrate` when a shape changes, `ttl` to expire.
 
 ## kitr: query
 
@@ -34,31 +51,20 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Client state only. `kitr make:store <name>` writes `app/stores/<name>.ts` using `createKitrStore`. Server data belongs in queries, not stores.
 
-## kitr: styling
-
-- Plain CSS and CSS Modules are first-class: `import styles from './x.module.css'`, run `kitr css:types` for typed class names, compose with `pick()` from `kitr/styling`.
-- Colours and radii come from the `--kitr-*` variables; never hard-code them.
-
 ## kitr: tailwind
 
 - Tailwind v4: utilities map to kitr tokens (`bg-background`, `text-primary`, `rounded-md`). Use `cn()` from `kitr/tailwind` to merge classes. Dark mode is `data-theme="dark"` on <html>, toggled by `useTheme()`.
 
-## kitr: ui
+## kitr: theme
 
-- Components live in `app/components/ui/` and are owned by the app: edit them freely. Add more with `kitr ui add <name>` (shadcn-compatible registry).
-- Toasts: `toast.success('Saved')` from `kitr/ui`. Theme: `useTheme()`. Import `kitr/ui/styles.css` once (done in app/styles/app.css).
+- Theme: `useTheme()` from `kitr/theme` (`theme`, `resolved`, `setTheme`, `toggle`); `data-theme="light|dark"` on <html>. Put `<ThemeScript />` in the document head to avoid a flash.
+- Colours and radii come from the `--kitr-*` variables (`kitr/theme/styles.css`, overrides in `app/styles/tokens.css`); never hard-code them. Plain CSS helpers: `pick()`, `vars()`, `dataAttrs()` from `kitr/theme`.
+- Components live in `app/components/ui/` and are owned by the app: add more with `kitr ui add <name>` (shadcn-compatible registry); toasts via `kitr ui add sonner`.
 
 ## kitr: auth
 
 - Guard routes with `beforeLoad: requireAuth()` (from `kitr/router`) on a layout route; permissions with `can('projects.update', { subject })` or `useCan()` in components.
 - The session is `useSession()` / `useUser()` from `kitr/auth`. Abilities are plain functions in `app/abilities.ts`, shared with the API middleware (`kitr/auth/server`).
-
-## kitr: storage
-
-- Persisted values are declared once in `app/storage.ts` (`defineStorage` for local/session storage, `defineCookie` for cookies) and never read through `localStorage`/`document.cookie` directly.
-- Components: `const [value, setValue] = useStorage(item)` / `useCookie(item)` from `kitr/storage/react`. Both are hydration-safe: the server and first render see the default.
-- Server side (actions, controllers): `cookies(event).get(item)` / `.set(item, value)` from `kitr/storage/server`; wrap the root route in `<CookieHeader value={request.headers.get('cookie')}>` so `useCookie` renders the right value during SSR.
-- Add `schema` (zod/valibot) to validate what comes back from storage, `version` + `migrate` when a shape changes, `ttl` to expire.
 
 ## kitr: mocks
 
@@ -74,8 +80,13 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`kitr/devtools`); it is null in production so the call costs nothing.
 - A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `kitr/devtools/ui`.
 
-## kitr: electron
+## kitr: platform site
 
-- `pnpm electron:dev` runs main + preload + the renderer (the normal kitr app) with HMR; `pnpm electron:build` packages with electron-builder (see electron-builder.yml).
-- IPC is typed end to end: declare in `electron/ipc.ts`, implement in `electron/main.ts` (`handleIpc`), call from the app via `ipc.invoke('app.version')` from `app/ipc.ts`. Guard desktop-only UI with `ipc.available` / `isElectron()`.
-- Windows keep context isolation and the sandbox on; never enable nodeIntegration. Electron targets the SPA layout (`kitr new --kit app`): the renderer loads index.html, not the Start server.
+- `kitr dev <name>` runs Vite on the platform's port; `kitr build` writes `dist/<name>`; `kitr start` serves it (static files).
+- Routes render on the client; loaders run in the browser.
+
+## kitr: platform app
+
+- `kitr dev <name>` starts Vite and Electron (main + preload rebuilt on change); `kitr build <name>` builds the client, main and preload into `dist/<name>` and packages installers with electron-builder.
+- IPC is typed end to end: declare in `platforms/<name>/ipc.ts`, implement in `platforms/<name>/main.ts` (`handleIpc`), call from the app via `createIpcClient` from `kitr/desktop/electron`. Guard desktop-only UI with `isElectron()`.
+- Windows keep context isolation and the sandbox on; never enable nodeIntegration. The packaged app serves the client from `app://-/`; storage items from `kitr/storage` persist in a JSON file in userData through `handleKitrIpc`.

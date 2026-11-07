@@ -1,8 +1,8 @@
 import { defineMutation, defineQuery, defineSubscription } from 'kitr/query'
-import { channel } from 'kitr/socket'
+import { channel } from 'kitr/realtime'
 import { api } from '#app/api/client'
 import { chatChannel } from '#app/channels/chat'
-import { getSocket } from '#app/socket'
+import { getSocket } from '#app/realtime'
 
 export const messagesQuery = defineQuery(api.messages.index.query())
 

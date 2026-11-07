@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { type Session, useAuth, useUser } from 'kitr/auth'
 import { Outlet, requireAuth, useNavigate } from 'kitr/router'
-import { ssrRoute } from 'kitr/ssr'
+import { ssrRoute } from 'kitr/seo'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'

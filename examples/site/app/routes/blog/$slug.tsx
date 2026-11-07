@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Link, notFound } from 'kitr/router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { getPost } from '#app/content/posts'
 
 export const Route = createFileRoute('/blog/$slug')({

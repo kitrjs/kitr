@@ -46,9 +46,15 @@ Instead of a runtime glob, the Vite plugin exposes `virtual:kitr/providers` and 
 
 The plan had `environment` (client/server/test) only. Providers also need to know development from production (console analytics in dev, nothing in prod; devtools on or off), so `createApp` detects `mode` from Vite's `import.meta.env` or `NODE_ENV` and exposes `isDevelopment`/`isProduction`.
 
-## Platform add-ons
+## Platforms are packages, not add-ons
 
-Not in the plan: `analytics`, `monitoring`, `pwa`, `electron`, `tauri` and `capacitor`. They follow the same rules as every other package (re-export, add beside; config in `config/<name>.ts`; a recipe that wires the vendor tooling and writes an `AGENTS.md` section) and never replace the vendor CLI: `pnpm tauri`, `pnpm cap` and `electron-builder` stay the source of truth for native builds. Every helper degrades in a plain browser so one app can target all of them.
+The first version shipped `pwa`, `electron`, `tauri` and `capacitor` as capability packages that each patched `vite.config.ts` and `package.json` scripts. They are now four platform packages (`@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/mobile`) built on one contract, `definePlatform` in `@kitr/core`. A project lists where it runs in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`), `kitr dev|build|start <name>` run them, `kitr config <name> <option> <value>` edits them with validation, `KITR_<NAME>_<OPTION>` overrides at run time, and native projects live in `platforms/<name>/`. Every UI platform renders through TanStack Start (SPA, static and SSR are modes of the same build), so the router is itself an add-on and a project starts with nothing but `@kitr/core` and the CLI. The vendor CLIs (`tauri`, `cap`, `electron-vite`, `wrangler`) are still what runs underneath; the platform packages only know how to call them.
+
+The cross-platform helpers that used to be split by vendor are one package, `@kitr/platform`, with a driver registry the desktop and mobile packages fill (`platform()`, `isNative()`, `useBackButton`, `useDeepLink`, `useSafeArea`...), and `@kitr/storage` gained native drivers the same way. `analytics` and `monitoring` stay capability packages.
+
+## Fewer packages with clearer names
+
+`styling` and `ui` merged into `theme` (tokens, theme provider, toast, the registry settings for `kitr ui add`). `ssr` became `seo`, since Start owns server rendering and what the package adds is head tags, JSON-LD, prerender lists, sitemap and robots. `socket` and `socket.io` merged into `realtime` with `ws`, `socket.io` and `sse` transports behind one channel definition. Validation moved into `@kitr/core`.
 
 ## Devtools and storage
 
@@ -56,11 +62,12 @@ Also not in the plan. `@kitr/devtools` follows the provider model: the hub is a 
 
 ## Extra commands
 
-`kitr serve` (serve a Start build with srvx and WebSocket upgrades), `kitr info`, `kitr css:types` (typed CSS Modules for the no-Tailwind path), and `kitr eject all` printing the import rewrites that remove kitr. `make:*` generators can be overridden per project via `kitr eject stub <kind>`.
+`kitr dev|build|start`, `kitr platforms`, `kitr config`, `kitr info`, `kitr css:types` (typed CSS Modules for the no-Tailwind path), and `kitr eject all` printing the import rewrites that remove kitr. `make:*` generators can be overridden per project via `kitr eject stub <kind>`.
 
 ## What is not in this version
 
-- Prerendering and sitemap generation are configured (`config/ssr.ts`) but delegate to Start's own options; kitr adds no crawler.
+- Prerendering and sitemap generation are configured (`config/seo.ts`) and delegate to Start's own prerender; kitr adds no crawler.
 - The Socket.IO Redis adapter is wired through `attachSocketIo(io)`; the adapter itself is yours to install.
+- The Next-tier packages from the package map (`secure-storage`, `files`, `notifications`, `native`, `updater`, `offline`, `flags`, `consent`, `cache`, `shield`, `mail`, `jobs`, `uploads`) are not here yet.
 - Better Auth is supported through `betterAuthAdapter(client)`; no auth server is shipped.
 - npm publishing is prepared (changesets, lockstep versions) but nothing is published yet.

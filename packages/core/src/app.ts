@@ -1,5 +1,6 @@
 import { ConfigStore } from './config'
 import { Container } from './container'
+import { DriverRegistry } from './drivers'
 import { type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 import type { KitrNode } from './types'
 
@@ -15,6 +16,8 @@ export interface CreateAppOptions {
   mode?: AppMode
   /** Validated env object (from `createEnv`). Exposed as `app.env`. */
   env?: Record<string, unknown>
+  /** The platform name this bundle was built for (`kitr dev site` → `site`). Default: from `import.meta.env.KITR_PLATFORM`. */
+  platform?: string
 }
 
 type Phase = 'created' | 'registered' | 'booted' | 'ready' | 'shutdown'
@@ -30,6 +33,10 @@ export class KitrApp {
   readonly mode: AppMode
   readonly env: Record<string, unknown>
   readonly providers: KitrProvider[] = []
+  /** Native drivers registered by platform providers, resolved by capability packages. */
+  readonly drivers = new DriverRegistry()
+  /** The platform name from kitrrc.ts this bundle runs as, when known. */
+  readonly platform: string | undefined
   private inputs: ProviderInput[]
   private phase: Phase = 'created'
   private booting?: Promise<this>
@@ -39,6 +46,7 @@ export class KitrApp {
     this.environment = options.environment ?? detectEnvironment()
     this.mode = options.mode ?? detectMode()
     this.env = options.env ?? {}
+    this.platform = options.platform ?? detectPlatform()
     this.inputs = [...(options.providers ?? [])]
     for (const [key, value] of Object.entries(options.config ?? {}))
       this.config.set(key, value as never)
@@ -110,6 +118,8 @@ export class KitrApp {
       environment: this.environment,
       mode: this.mode,
       env: this.env,
+      drivers: this.drivers,
+      platform: this.platform,
       providers: this.providers,
       inputs: [],
       phase: this.phase,
@@ -142,6 +152,11 @@ function detectEnvironment(): AppEnvironment {
 
 function globalProcess(): { env?: Record<string, string | undefined> } | undefined {
   return (globalThis as any).process
+}
+
+function detectPlatform(): string | undefined {
+  const meta = (import.meta as unknown as { env?: { KITR_PLATFORM?: string } }).env
+  return meta?.KITR_PLATFORM || globalProcess()?.env?.KITR_PLATFORM || undefined
 }
 
 function detectMode(): AppMode {

@@ -58,19 +58,6 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
-  "capacitor": {
-    "package": "@kitr/capacitor",
-    "name": "capacitor",
-    "title": "Capacitor",
-    "summary": "Ship your app to the iPhone and Android app stores, with hooks for the back button and app state.",
-    "category": "platforms",
-    "runsOn": "client",
-    "builtOn": [
-      "Capacitor"
-    ],
-    "client": true,
-    "docs": "docs"
-  },
   "db": {
     "package": "@kitr/db",
     "name": "db",
@@ -83,6 +70,25 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "docs": "docs"
   },
+  "desktop": {
+    "package": "@kitr/desktop",
+    "name": "desktop",
+    "title": "Desktop",
+    "summary": "Ship the same app to Windows, macOS and Linux, choosing a small Tauri or a familiar Electron shell.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Tauri 2",
+      "electron-vite"
+    ],
+    "requires": [
+      "router",
+      "platform",
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "devtools": {
     "package": "@kitr/devtools",
     "name": "devtools",
@@ -90,20 +96,6 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "summary": "Open a panel in development that shows what every package is doing. It is removed from production builds.",
     "category": "dev-tools",
     "runsOn": "client",
-    "client": true,
-    "docs": "docs"
-  },
-  "electron": {
-    "package": "@kitr/electron",
-    "name": "electron",
-    "title": "Electron",
-    "summary": "Ship your app as a desktop program for Windows, macOS and Linux, with typed calls into the system.",
-    "category": "platforms",
-    "runsOn": "client",
-    "builtOn": [
-      "Electron",
-      "electron-vite"
-    ],
     "client": true,
     "docs": "docs"
   },
@@ -158,6 +150,24 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "both",
     "docs": "docs"
   },
+  "mobile": {
+    "package": "@kitr/mobile",
+    "name": "mobile",
+    "title": "Mobile",
+    "summary": "Ship the same app to iPhone and Android, with every kitr package switched to its native version.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Capacitor"
+    ],
+    "requires": [
+      "router",
+      "platform",
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "mocks": {
     "package": "@kitr/mocks",
     "name": "mocks",
@@ -183,15 +193,15 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "docs": "docs"
   },
-  "pwa": {
-    "package": "@kitr/pwa",
-    "name": "pwa",
-    "title": "PWA",
-    "summary": "Let people install your web app and keep using it offline, with a prompt when a new version ships.",
-    "category": "platforms",
-    "runsOn": "client",
-    "builtOn": [
-      "vite-plugin-pwa"
+  "platform": {
+    "package": "@kitr/platform",
+    "name": "platform",
+    "title": "Platform",
+    "summary": "Know where your app is running, whether it is online or in the background, and handle the back button and deep links.",
+    "category": "device",
+    "runsOn": "both",
+    "requires": [
+      "react"
     ],
     "client": true,
     "docs": "docs"
@@ -209,6 +219,37 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
+  "react": {
+    "package": "@kitr/react",
+    "name": "react",
+    "title": "React",
+    "summary": "React with the kitr app in context, so every component can reach services and config.",
+    "category": "pages",
+    "runsOn": "client",
+    "builtOn": [
+      "react"
+    ],
+    "client": true,
+    "included": true,
+    "docs": "docs"
+  },
+  "realtime": {
+    "package": "@kitr/realtime",
+    "name": "realtime",
+    "title": "Realtime",
+    "summary": "Define a live channel once and push updates to every open screen, over WebSockets, Socket.IO or server events.",
+    "category": "realtime",
+    "runsOn": "both",
+    "builtOn": [
+      "crossws",
+      "partysocket",
+      "socket.io"
+    ],
+    "requires": [
+      "server"
+    ],
+    "docs": "docs"
+  },
   "router": {
     "package": "@kitr/router",
     "name": "router",
@@ -221,6 +262,16 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "included": true,
+    "docs": "docs"
+  },
+  "seo": {
+    "package": "@kitr/seo",
+    "name": "seo",
+    "title": "SEO",
+    "summary": "Give every page a title, a share preview and a sitemap entry so search engines and chat apps show it well.",
+    "category": "pages",
+    "runsOn": "both",
+    "client": true,
     "docs": "docs"
   },
   "server": {
@@ -236,54 +287,6 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "logger"
     ],
-    "docs": "docs"
-  },
-  "socket": {
-    "package": "@kitr/socket",
-    "name": "socket",
-    "title": "Sockets",
-    "summary": "Push live updates, like chat messages or notifications, to open browsers.",
-    "category": "realtime",
-    "runsOn": "both",
-    "builtOn": [
-      "partysocket",
-      "crossws"
-    ],
-    "requires": [
-      "server"
-    ],
-    "docs": "docs"
-  },
-  "socket.io": {
-    "package": "@kitr/socket.io",
-    "name": "socket.io",
-    "title": "Socket.IO",
-    "summary": "The same live updates, over Socket.IO if your infrastructure already uses it.",
-    "category": "realtime",
-    "runsOn": "both",
-    "builtOn": [
-      "socket.io"
-    ],
-    "requires": [
-      "server",
-      "socket"
-    ],
-    "docs": "docs"
-  },
-  "ssr": {
-    "package": "@kitr/ssr",
-    "name": "ssr",
-    "title": "SSR and SEO",
-    "summary": "Render pages on the server for fast first loads and good search ranking.",
-    "category": "pages",
-    "runsOn": "both",
-    "builtOn": [
-      "@tanstack/react-start"
-    ],
-    "requires": [
-      "server"
-    ],
-    "client": true,
     "docs": "docs"
   },
   "state": {
@@ -312,20 +315,6 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "docs": "docs"
   },
-  "styling": {
-    "package": "@kitr/styling",
-    "name": "styling",
-    "title": "Styling",
-    "summary": "Style with plain CSS or CSS modules, for apps that skip Tailwind.",
-    "category": "interface",
-    "runsOn": "client",
-    "builtOn": [
-      "clsx",
-      "class-variance-authority"
-    ],
-    "client": true,
-    "docs": "docs"
-  },
   "table": {
     "package": "@kitr/table",
     "name": "table",
@@ -352,19 +341,6 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs"
   },
-  "tauri": {
-    "package": "@kitr/tauri",
-    "name": "tauri",
-    "title": "Tauri",
-    "summary": "Ship your app as a small, fast desktop program, with typed calls into native code.",
-    "category": "platforms",
-    "runsOn": "client",
-    "builtOn": [
-      "Tauri 2"
-    ],
-    "client": true,
-    "docs": "docs"
-  },
   "testing": {
     "package": "@kitr/testing",
     "name": "testing",
@@ -378,15 +354,38 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "docs": "docs"
   },
-  "ui": {
-    "package": "@kitr/ui",
-    "name": "ui",
-    "title": "UI",
-    "summary": "Ready-made buttons, dialogs and pages you copy into your app, plus dark mode and toasts.",
+  "theme": {
+    "package": "@kitr/theme",
+    "name": "theme",
+    "title": "Theme",
+    "summary": "Light, dark and system themes with no flash on load, design tokens, toasts, and the components you copy into your app.",
     "category": "interface",
     "runsOn": "client",
     "builtOn": [
-      "shadcn/ui"
+      "CSS variables",
+      "shadcn/ui",
+      "sonner"
+    ],
+    "requires": [
+      "react"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "web": {
+    "package": "@kitr/web",
+    "name": "web",
+    "title": "Web",
+    "summary": "Ship to the browser as a static site, a single-page app or a server-rendered app, installable if you want.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Vite",
+      "TanStack Start",
+      "vite-plugin-pwa"
+    ],
+    "requires": [
+      "router"
     ],
     "client": true,
     "docs": "docs"

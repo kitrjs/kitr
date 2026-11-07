@@ -2,13 +2,13 @@
 import api from './api'
 import db from './db'
 import logger from './logger'
+import realtime from './realtime'
 import server from './server'
-import socket from './socket'
 
 export const config = {
   api,
   db,
   logger,
+  realtime,
   server,
-  socket,
 }

@@ -8,16 +8,11 @@
 "@kitr/forms": minor
 "@kitr/table": minor
 "@kitr/state": minor
-"@kitr/styling": minor
 "@kitr/tailwind": minor
-"@kitr/ui": minor
 "@kitr/logger": minor
 "@kitr/server": minor
 "@kitr/api": minor
 "@kitr/actions": minor
-"@kitr/ssr": minor
-"@kitr/socket": minor
-"@kitr/socket.io": minor
 "@kitr/auth": minor
 "@kitr/db": minor
 "@kitr/testing": minor
@@ -25,12 +20,15 @@
 "@kitr/i18n": minor
 "@kitr/analytics": minor
 "@kitr/monitoring": minor
-"@kitr/pwa": minor
-"@kitr/electron": minor
-"@kitr/tauri": minor
-"@kitr/capacitor": minor
 "@kitr/storage": minor
 "@kitr/devtools": minor
+"@kitr/theme": minor
+"@kitr/seo": minor
+"@kitr/realtime": minor
+"@kitr/platform": minor
+"@kitr/web": minor
+"@kitr/desktop": minor
+"@kitr/mobile": minor
 "@kitr/vite": minor
 "@kitr/cli": minor
 ---

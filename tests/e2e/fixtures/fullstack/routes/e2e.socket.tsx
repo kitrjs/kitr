@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { channel, createSocketClient } from 'kitr/socket'
+import { channel, createSocketClient } from 'kitr/realtime'
 import { useEffect, useState } from 'react'
 import { exampleChannel } from '#app/channels/example'
 

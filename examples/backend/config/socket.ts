@@ -1,6 +1,0 @@
-import { defineConfig } from 'kitr/socket'
-
-export default defineConfig({
-  path: '/ws',
-  transport: 'websocket',
-})

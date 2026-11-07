@@ -1,4 +1,4 @@
-import { useTheme } from 'kitr/ui'
+import { useTheme } from 'kitr/theme'
 import { Button } from '#components/ui/button'
 
 export function ThemeToggle() {

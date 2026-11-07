@@ -24,7 +24,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./platform": {
+      "types": "./dist/platform.d.ts",
+      "default": "./dist/platform.js"
+    }
   },
   "files": [
     "dist",

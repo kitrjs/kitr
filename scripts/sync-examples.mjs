@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 export const examples = {
+  blank: 'blank',
   backend: 'server',
   dashboard: 'app',
   fullstack: 'fullstack',

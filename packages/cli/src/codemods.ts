@@ -342,6 +342,8 @@ export class Codemods {
       const cmd = this.ctx.pm === 'yarn' ? 'yarn' : `${this.ctx.pm} install`
       this.ctx.log.step(`${cmd}`)
       execSync(cmd, { cwd: this.ctx.root, stdio: this.ctx.verbose ? 'inherit' : 'pipe' })
+      // Biome may only exist now.
+      this.format()
     }
   }
 }

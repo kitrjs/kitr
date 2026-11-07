@@ -108,7 +108,7 @@ export const ${camel(name)} = defineMiddleware(async (ctx, next) => {
   return result
 })
 `,
-  channel: ({ name }) => `import { defineChannel } from 'kitr/socket'
+  channel: ({ name }) => `import { defineChannel } from 'kitr/realtime'
 import { z } from 'zod'
 
 export const ${camel(name)}Channel = defineChannel({

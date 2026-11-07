@@ -24,11 +24,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm -C registry build
-      - name: Build the examples (also regenerates route trees)
+      - name: Build the examples' web platforms (also regenerates route trees)
         run: |
-          for app in dashboard fullstack saas site realtime desktop mobile; do
-            pnpm -C examples/$app build
+          for app in blank dashboard fullstack saas site realtime desktop mobile; do
+            pnpm -C examples/$app exec kitr build site
           done
+          pnpm -C examples/backend exec kitr build api
       - run: pnpm manifests:check
       - run: pnpm docs:check
       - run: pnpm -C site build

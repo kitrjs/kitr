@@ -2,6 +2,19 @@
   "name": "@kitr/react",
   "version": "0.1.0",
   "description": "React bindings for the kitr app: <KitrProvider>, useApp(), useService().",
+  "kitr": {
+    "name": "react",
+    "title": "React",
+    "summary": "React with the kitr app in context, so every component can reach services and config.",
+    "category": "pages",
+    "runsOn": "client",
+    "builtOn": [
+      "react"
+    ],
+    "client": true,
+    "included": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +26,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -30,5 +44,9 @@
     "typescript": "^5.9.3",
     "react": "^19.3.1",
     "@types/react": "^19.3.0"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

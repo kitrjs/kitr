@@ -16,6 +16,8 @@ export type KitName =
 export interface Kit {
   name: KitName
   description: string
+  /** Platforms written to kitrrc.ts (`kitr new --platform` overrides them). */
+  platforms?: Record<string, { type: string; options?: Record<string, unknown> }>
   /** Recipes applied after the base files. */
   recipes: string[]
   /** Registry components pulled in (`kitr ui add`). */
@@ -28,22 +30,24 @@ export interface Kit {
 const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
   blank: {
     name: 'blank',
-    description: 'TanStack Router + Query, nothing else. Add what you need.',
-    recipes: [],
+    description:
+      'A web platform with React, TanStack Router and Query, nothing else. Add what you need.',
+    platforms: { site: { type: 'web', options: { mode: 'spa' } } },
+    recipes: ['query'],
     base: baseReact,
   },
   app: {
     name: 'app',
     description:
-      'A logged-in app on an external API: http, forms, tables, state, ui, tailwind, auth, mocks, testing.',
+      'A logged-in app on an external API: http, forms, tables, state, theme, tailwind, auth, mocks, testing.',
+    platforms: { site: { type: 'web', options: { mode: 'spa' } } },
     recipes: [
       'http',
       'forms',
       'table',
       'state',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'auth',
       'storage',
       'mocks',
@@ -66,24 +70,24 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
   },
   fullstack: {
     name: 'fullstack',
-    description: 'The app kit plus server, ssr, actions, api and sockets on TanStack Start.',
+    description:
+      'The app kit plus a server-rendered web platform, an API server, actions, api and realtime channels.',
+    platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
     recipes: [
       'http',
       'forms',
       'table',
       'state',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'auth',
       'storage',
       'testing',
       'devtools',
-      'server',
-      'ssr',
+      'seo',
       'actions',
       'api',
-      'socket',
+      'realtime',
     ],
     components: [
       'button',
@@ -102,8 +106,9 @@ const baseKits: Record<'blank' | 'app' | 'server' | 'fullstack', Kit> = {
   server: {
     name: 'server',
     description:
-      'A pure backend: h3 server, Adonis-style API, logger, db binding, sockets. No React in the bundle.',
-    recipes: ['logger', 'server', 'api', 'db', 'socket', 'testing'],
+      'A pure backend: h3 server, Adonis-style API, logger, db binding, realtime channels. No React in the bundle.',
+    platforms: { api: { type: 'server' } },
+    recipes: ['logger', 'api', 'db', 'realtime', 'testing'],
     base: baseServer,
   },
 }

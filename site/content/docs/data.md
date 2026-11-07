@@ -54,7 +54,7 @@ export const renameProject = defineMutation(
 )
 ```
 
-Every screen showing that project or a list of projects updates, without any component knowing the others exist. A socket event can carry the same effects, so a change made in another browser lands in the same cache.
+Every screen showing that project or a list of projects updates, without any component knowing the others exist. A realtime channel event can carry the same effects, so a change made in another browser lands in the same cache.
 
 ## Keys
 
@@ -78,4 +78,4 @@ Whatever the source, a failure arrives as a `KitrError` with `code`, `status`, `
 ## Learn more
 
 - [Query](/packages/query): the full API
-- [HTTP](/packages/http), [API routes](/packages/api), [server actions](/packages/actions), [sockets](/packages/socket): the sources
+- [HTTP](/packages/http), [API routes](/packages/api), [server actions](/packages/actions), [realtime channels](/packages/realtime): the sources
