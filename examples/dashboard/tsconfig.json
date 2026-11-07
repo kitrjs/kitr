@@ -8,7 +8,6 @@
     ],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "verbatimModuleSyntax": true,
@@ -16,6 +15,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": [
+      "node",
       "vite/client",
       "@kitr/vite/client"
     ],
@@ -36,7 +36,8 @@
       "#kitr/*": [
         "./.kitr/*"
       ]
-    }
+    },
+    "jsx": "react-jsx"
   },
   "include": [
     "app",
@@ -45,8 +46,8 @@
     "platforms",
     ".kitr/**/*",
     "kitrrc.ts",
-    "vite.config.ts",
-    "test"
+    "test",
+    "vite.config.ts"
   ],
   "exclude": [
     "platforms/**/src-tauri",

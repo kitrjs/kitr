@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs'
 import type { ProjectContext } from './context'
 import type { Kit } from './kits'
-import { baseReact } from './kits-base'
+import { base } from './kits-base'
 
 /**
  * Preset kits: opinionated starting points on top of the base kits. Each one is a
@@ -2206,7 +2206,7 @@ export const presetKits: Record<
       'monitoring',
     ],
     components: [...appComponents, 'dialog', 'skeleton'],
-    base: baseReact,
+    base,
     extra: saasExtra,
   },
   site: {
@@ -2228,7 +2228,7 @@ export const presetKits: Record<
       'api',
     ],
     components: ['icon', 'button', 'input', 'label', 'card', 'form', 'page-header', 'theme-toggle'],
-    base: baseReact,
+    base,
     extra: siteExtra,
   },
   realtime: {
@@ -2249,7 +2249,7 @@ export const presetKits: Record<
       'realtime',
     ],
     components: ['button', 'input', 'label', 'card', 'badge', 'page-header'],
-    base: baseReact,
+    base,
     extra: realtimeExtra,
   },
   desktop: {
@@ -2275,7 +2275,7 @@ export const presetKits: Record<
       'platform',
     ],
     components: appComponents,
-    base: baseReact,
+    base,
     extra: desktopExtra,
   },
   tauri: {
@@ -2301,7 +2301,7 @@ export const presetKits: Record<
       'platform',
     ],
     components: appComponents,
-    base: baseReact,
+    base,
     extra: tauriExtra,
   },
   mobile: {
@@ -2327,7 +2327,7 @@ export const presetKits: Record<
       'platform',
     ],
     components: appComponents,
-    base: baseReact,
+    base,
     extra: mobileExtra,
   },
 }

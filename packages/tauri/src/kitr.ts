@@ -9,7 +9,7 @@ export default definePackage({
   name: 'tauri',
   kind: 'platform',
   client: true,
-  requires: ['router', 'platform', 'storage'],
+  requires: ['vite', 'router', 'platform', 'storage'],
   platform: { factory: tauri, export: 'tauri', from: 'kitr/tauri', defaultName: 'app' },
   eject: { 'kitr/tauri': '@tauri-apps/api + @tauri-apps/plugin-store' },
 })

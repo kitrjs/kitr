@@ -116,25 +116,6 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
           fix: `${ctx.pm} remove ${name}`,
         })
     }
-  } else {
-    if (!('react' in deps))
-      out.push({
-        level: 'error',
-        message: 'react is not installed',
-        fix: `${ctx.pm} add react react-dom`,
-      })
-    if (ctx.exists('app/routeTree.gen.ts') === false && ctx.exists('app/routes'))
-      out.push({
-        level: 'info',
-        message: 'app/routeTree.gen.ts not generated yet',
-        fix: `${ctx.pm} dev (TanStack Router writes it on first start)`,
-      })
-    if (ctx.exists('vite.config.ts') && !ctx.read('vite.config.ts').includes('kitr/vite'))
-      out.push({
-        level: 'warn',
-        message: 'vite.config.ts does not use the kitr() plugin',
-        fix: "import { kitr } from 'kitr/vite' and add kitr() to plugins",
-      })
   }
 
   // Platforms: each one's package (what kitrrc.ts imports the factory from) must be installed and listed.

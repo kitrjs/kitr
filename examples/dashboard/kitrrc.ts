@@ -21,6 +21,7 @@ export default defineKitrConfig({
    '@kitr/mocks',
    '@kitr/testing',
    '@kitr/devtools',
+   '@kitr/vite',
    '@kitr/web',
   ],
   providers: [

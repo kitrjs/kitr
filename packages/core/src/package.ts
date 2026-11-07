@@ -264,14 +264,20 @@ export interface CommandLike {
   subCommands?: unknown
 }
 
+/**
+ * What a package needs from the Vite build, declared on its setup module and read by `kitr/vite`
+ * at config time, so the plugin knows no package by name.
+ */
 export interface PackageViteNeeds {
   /** `config/<name>.ts` imports Node APIs; keep it out of browser bundles. */
   serverOnlyConfig?: boolean
-  /** Dependencies to pre-bundle in dev so the first start never rediscovers them. */
+  /** Dependencies to pre-bundle in dev so the first start never rediscovers them (only the installed ones are listed). */
   optimizeDeps?: string[]
-  /** A module whose default export is a Vite plugin factory to add (`@kitr/tailwind/vite`). */
+  /** A module whose default export is a Vite plugin factory to add (`@vitejs/plugin-react`, `@kitr/tailwind/vite`). */
   plugin?: string
-  /** `production: false`: the provider is dropped from production builds (devtools). */
+  /** Render routes through TanStack Start (SSR, prerender, server functions). Declared by `router`. */
+  start?: boolean
+  /** `production: false`: the package's provider is dropped from production builds (devtools). */
   provider?: { production?: boolean }
 }
 

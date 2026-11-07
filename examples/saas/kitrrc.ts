@@ -27,6 +27,7 @@ export default defineKitrConfig({
    '@kitr/api',
    '@kitr/analytics',
    '@kitr/monitoring',
+   '@kitr/vite',
    '@kitr/web',
   ],
   providers: [

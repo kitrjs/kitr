@@ -478,20 +478,7 @@
   },
   "dependencies": {
     "@kitr/core": "workspace:*",
-    "@kitr/cli": "workspace:*",
-    "@kitr/cache": "workspace:*",
-    "@kitr/shield": "workspace:*",
-    "@kitr/jobs": "workspace:*",
-    "@kitr/mail": "workspace:*",
-    "@kitr/uploads": "workspace:*",
-    "@kitr/flags": "workspace:*",
-    "@kitr/consent": "workspace:*",
-    "@kitr/offline": "workspace:*",
-    "@kitr/secure-storage": "workspace:*",
-    "@kitr/files": "workspace:*",
-    "@kitr/notifications": "workspace:*",
-    "@kitr/native": "workspace:*",
-    "@kitr/updater": "workspace:*"
+    "@kitr/cli": "workspace:*"
   },
   "peerDependencies": {
     "@kitr/actions": "workspace:*",
@@ -523,7 +510,20 @@
     "@kitr/platform": "workspace:*",
     "@kitr/theme": "workspace:*",
     "@kitr/seo": "workspace:*",
-    "@kitr/realtime": "workspace:*"
+    "@kitr/realtime": "workspace:*",
+    "@kitr/cache": "workspace:*",
+    "@kitr/shield": "workspace:*",
+    "@kitr/jobs": "workspace:*",
+    "@kitr/mail": "workspace:*",
+    "@kitr/uploads": "workspace:*",
+    "@kitr/flags": "workspace:*",
+    "@kitr/consent": "workspace:*",
+    "@kitr/offline": "workspace:*",
+    "@kitr/secure-storage": "workspace:*",
+    "@kitr/files": "workspace:*",
+    "@kitr/notifications": "workspace:*",
+    "@kitr/native": "workspace:*",
+    "@kitr/updater": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@kitr/actions": {
@@ -615,6 +615,45 @@
     },
     "@kitr/realtime": {
       "optional": true
+    },
+    "@kitr/cache": {
+      "optional": true
+    },
+    "@kitr/shield": {
+      "optional": true
+    },
+    "@kitr/jobs": {
+      "optional": true
+    },
+    "@kitr/mail": {
+      "optional": true
+    },
+    "@kitr/uploads": {
+      "optional": true
+    },
+    "@kitr/flags": {
+      "optional": true
+    },
+    "@kitr/consent": {
+      "optional": true
+    },
+    "@kitr/offline": {
+      "optional": true
+    },
+    "@kitr/secure-storage": {
+      "optional": true
+    },
+    "@kitr/files": {
+      "optional": true
+    },
+    "@kitr/notifications": {
+      "optional": true
+    },
+    "@kitr/native": {
+      "optional": true
+    },
+    "@kitr/updater": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -649,6 +688,19 @@
     "@kitr/platform": "workspace:*",
     "@kitr/theme": "workspace:*",
     "@kitr/seo": "workspace:*",
-    "@kitr/realtime": "workspace:*"
+    "@kitr/realtime": "workspace:*",
+    "@kitr/cache": "workspace:*",
+    "@kitr/shield": "workspace:*",
+    "@kitr/jobs": "workspace:*",
+    "@kitr/mail": "workspace:*",
+    "@kitr/uploads": "workspace:*",
+    "@kitr/flags": "workspace:*",
+    "@kitr/consent": "workspace:*",
+    "@kitr/offline": "workspace:*",
+    "@kitr/secure-storage": "workspace:*",
+    "@kitr/files": "workspace:*",
+    "@kitr/notifications": "workspace:*",
+    "@kitr/native": "workspace:*",
+    "@kitr/updater": "workspace:*"
   }
 }
