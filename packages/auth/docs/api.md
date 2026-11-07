@@ -86,6 +86,8 @@ abilities.can(user, 'name', subject) // false when user is null
 abilities.for(user)('name', subject)
 ```
 
+Checks return `false` for an anonymous user, an unknown ability and a rule that throws. Annotate `user` in each rule instead of passing `<User>` to keep the ability names typed.
+
 ## kitr/auth/server
 
 No React. Works with any `@kitr/api` router.

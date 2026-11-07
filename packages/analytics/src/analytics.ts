@@ -2,19 +2,30 @@ import type { AnalyticsAdapter, AnalyticsConfig, EventMap, EventProps } from './
 
 type Call = { type: 'page' | 'track' | 'identify' | 'reset'; args: unknown[] }
 
+/**
+ * The analytics service bound as `analytics` in the container and returned by `useAnalytics()`.
+ * Every call goes to each adapter, or waits in a queue until `enable()`.
+ */
 export interface Analytics<E extends EventMap = EventMap> {
+  /** Record a page view. The provider calls it on every route change unless `pageViews` is false. */
   page(path: string, props?: EventProps & { url?: string; title?: string }): void
+  /** Record an event from the app's event map, with its props. */
   track<K extends keyof E & string>(event: K, ...props: E[K] extends undefined ? [] : [E[K]]): void
+  /** Record any event by name. Accepts names outside the event map. */
   track(event: string, props?: EventProps): void
+  /** Attach later events to a user id, after sign-in. `globalProps` are not added. */
   identify(userId: string, traits?: EventProps): void
+  /** Forget the identified user, on sign-out. */
   reset(): void
-  /** Flush the queue and start sending. Call after consent. */
+  /** Load each adapter's script, then send the queued calls and start sending. Call after consent. */
   enable(): Promise<void>
-  /** Stop sending; calls are dropped (not queued) once disabled after being enabled. */
+  /** Stop sending and empty the queue. Later calls queue again (up to 100) until the next `enable()`. */
   disable(): void
+  /** True once `enable()` has finished and until `disable()`. */
   readonly enabled: boolean
   /** Add an adapter at runtime (after a consent choice, or lazily). */
   use(adapter: AnalyticsAdapter): void
+  /** Every adapter in use, in the order calls reach them. */
   readonly adapters: readonly AnalyticsAdapter[]
 }
 

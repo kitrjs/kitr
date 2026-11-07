@@ -1,11 +1,15 @@
 import { KitrError } from '@kitr/core'
 import { redirect } from '@tanstack/react-router'
 
+/** What the guards read from `context.session`: a user when signed in, and an optional permission check. */
 export interface GuardSession {
+  /** The signed-in user. `requireAuth()` redirects when it is missing or null. */
   user?: unknown | null
+  /** Answers `can(permission, { subject })`. Without it, every `can()` check fails. */
   can?: (permission: string, subject?: unknown) => boolean
 }
 
+/** Options of `requireAuth()`: where anonymous visitors go and which search param remembers their page. */
 export interface RequireAuthOptions {
   /** Where to send anonymous users. Default `/sign-in`. */
   to?: string
@@ -40,8 +44,8 @@ export function requireAuth(options: RequireAuthOptions = {}) {
 }
 
 /**
- * `beforeLoad` permission guard. Throws a FORBIDDEN KitrError that the route's
- * errorComponent renders, or redirects when `to` is given.
+ * `beforeLoad` permission guard: passes when `context.session.can(permission, subject)` is true.
+ * Otherwise throws a FORBIDDEN KitrError (403) that the route's error screen renders, or redirects when `to` is given.
  */
 export function can(permission: string, options: { subject?: unknown; to?: string } = {}) {
   return ({ context }: { context: { session?: GuardSession | null } }) => {
@@ -54,7 +58,10 @@ export function can(permission: string, options: { subject?: unknown; to?: strin
   }
 }
 
-/** Compose several `beforeLoad` guards; each may return context to merge. */
+/**
+ * Compose several `beforeLoad` guards into one. They run in order and are awaited; the objects
+ * they return are merged into the route context, and the first throw stops the rest.
+ */
 export function guards<Ctx>(...fns: Array<(ctx: Ctx) => unknown | Promise<unknown>>) {
   return async (ctx: Ctx) => {
     let merged: Record<string, unknown> = {}

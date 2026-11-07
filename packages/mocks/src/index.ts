@@ -3,9 +3,13 @@ import { HttpResponse, http, type RequestHandler } from 'msw'
 
 export { HttpResponse, http }
 
+/** One route of a kitr route table, as `routes.toJSON()` and `kitr api:sync` describe it. */
 export interface RouteDescriptor {
+  /** The route name that `mockRoutes` resolvers are keyed by, such as `orders.show`. */
   name: string
+  /** The HTTP method, in any case: `GET`, `post`. */
   method: string
+  /** The path pattern with `:params`, such as `/api/orders/:id`. */
   path: string
 }
 
@@ -54,6 +58,10 @@ export function mockRoutes(
   })
 }
 
+/**
+ * Turns anything thrown into the JSON response a kitr server sends for it: a `KitrError` keeps its
+ * code and status, anything else becomes `INTERNAL` with status 500.
+ */
 export function kitrErrorResponse(error: unknown) {
   const e =
     error instanceof KitrError
@@ -71,7 +79,10 @@ export function mockValidationError(
   return http[method](url, () => kitrErrorResponse(KitrError.validation(fieldErrors)))
 }
 
-/** Node (tests): `const server = await setupNodeMocks(handlers)`; browser (dev): `await setupBrowserMocks(handlers)`. */
+/**
+ * Starts MSW in Node for tests: `const mocks = await setupNodeMocks(handlers)`. Requests no handler
+ * matches go to the real network. Returns MSW's server, so `use`, `resetHandlers` and `close` work.
+ */
 export async function setupNodeMocks(handlers: RequestHandler[]) {
   const { setupServer } = await import('msw/node')
   const server = setupServer(...handlers)
@@ -79,6 +90,10 @@ export async function setupNodeMocks(handlers: RequestHandler[]) {
   return server
 }
 
+/**
+ * Starts MSW's service worker in the browser for development: `await setupBrowserMocks(handlers)`.
+ * Needs `mockServiceWorker.js` in the public folder. Pass `quiet: false` to see MSW's console messages.
+ */
 export async function setupBrowserMocks(
   handlers: RequestHandler[],
   options: { quiet?: boolean } = {},

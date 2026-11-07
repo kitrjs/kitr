@@ -11,8 +11,10 @@ import {
 import type { ReactNode } from 'react'
 import { DefaultError, DefaultNotFound, DefaultPending } from './defaults'
 
+/** Options of `createKitrRouter`: TanStack's router options without `context`, plus the kitr app and extra context. */
 export interface CreateKitrRouterOptions<TRouteTree extends AnyRoute>
   extends Omit<RouterOptions<TRouteTree, 'never', false, any, any>, 'context'> {
+  /** The app from `app/app.ts`. Put in every route's context as `context.app`; forked per request on the server. */
   app: KitrApp
   /** Defaults to the container's `queryClient` (from @kitr/query). */
   queryClient?: QueryClient

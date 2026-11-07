@@ -35,7 +35,7 @@ interface MobileOptions {
   appId?: string;
   /** Name shown on the home screen. Default the package name. */
   appName?: string;
-  /** Custom URL scheme for deep links (`myapp://`). */
+  /** Custom URL scheme for deep links (`acme://`). Recorded in kitrrc.ts; register it in the native projects yourself. */
   scheme?: string;
   /** Dev server port the device loads from with `kitr dev <name>`. Default 3100. */
   port: number;
@@ -44,11 +44,15 @@ interface MobileOptions {
 }
 ```
 
+Options of the mobile platform, as written in `mobile({ ... })` in kitrrc.ts and edited by `kitr config <name>`.
+
 ### MobileTarget
 
 ```ts
 type MobileTarget = 'ios' | 'android';
 ```
+
+A native project the mobile platform creates and builds: `ios` (Xcode) or `android` (Android Studio).
 
 ## kitr/mobile/client
 
@@ -73,6 +77,8 @@ True inside the iOS or Android shell.
 ```ts
 function isPluginAvailable(name: string): boolean;
 ```
+
+True when the native shell registered the Capacitor plugin `name` (`'App'`, `'Share'`); always false on the web.
 
 ### nativeOnly
 

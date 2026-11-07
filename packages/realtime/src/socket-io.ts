@@ -6,13 +6,16 @@ import { type ServerMessage, topicFor } from './protocol'
 export { channel } from './client'
 export { defineChannel } from './protocol'
 
+/** Options for `createSocketIoClient`: any socket.io-client option plus the server URL and an error handler. */
 export interface SocketIoClientOptions extends Partial<ManagerOptions & SocketOptions> {
+  /** Server URL. Default: the page's origin. */
   url?: string
+  /** Called for every server error that isn't tied to a subscription. */
   onError?: (error: KitrErrorShape) => void
 }
 
 /**
- * The same `SocketTransport` as kitr/realtime, over Socket.IO. Use it with `channel()`
+ * Creates the same `SocketTransport` as kitr/realtime, over Socket.IO; `.socket` is the raw socket.io-client socket. Use it with `channel()`
  * from kitr/realtime/socket.io; the channel definitions and `useSubscription` don't change.
  */
 export function createSocketIoClient(

@@ -8,9 +8,11 @@ import { createDefineConfig, defineProvider, type KitrApp, type KitrProvider } f
  *   export default defineDb({ connect: () => drizzle(process.env.DATABASE_URL!), disconnect: (db) => db.$client.end() })
  */
 export interface DbDefinition<T> {
+  /** Opens the connection and returns the client. Runs once during `app.boot()`; a rejection fails boot. */
   connect: (app: KitrApp) => T | Promise<T>
+  /** Closes the client when the server shuts down (SIGINT, SIGTERM or `server.close()`). */
   disconnect?: (db: T, app: KitrApp) => void | Promise<void>
-  /** Run on `ready` (e.g. pending migrations check). */
+  /** Runs once the server is ready to serve, after boot. Use it to check for pending migrations or warm a pool. */
   onReady?: (db: T, app: KitrApp) => void | Promise<void>
 }
 
@@ -23,13 +25,21 @@ declare module '@kitr/core' {
   }
 }
 
+/**
+ * Declares how the app connects to its database, in `config/db.ts`. Returns the definition
+ * unchanged; it exists so `disconnect` and `onReady` receive the client type `connect` returns.
+ */
 export function defineDb<T>(definition: DbDefinition<T>): DbDefinition<T> {
   return definition
 }
 
+/** Untyped alias of `defineDb` for the `defineConfig` convention; prefer `defineDb`, which infers the client type. */
 export const defineConfig = createDefineConfig<DbDefinition<any>>()
 
-/** Binds `db` from `config/db.ts`. Connects on boot, disconnects on shutdown. */
+/**
+ * The provider `kitr add db` puts in `kitrrc.ts`. It binds `db` in the container from `config/db.ts`,
+ * connects during boot, runs `onReady` when the server is ready and `disconnect` on shutdown.
+ */
 export const dbProvider: KitrProvider = defineProvider({
   name: 'db',
   register(app) {
@@ -48,7 +58,10 @@ export const dbProvider: KitrProvider = defineProvider({
 
 export default dbProvider
 
-/** Typed access: `const db = useDb<AppDb>(app)`. */
+/**
+ * Returns the connected client from an app's container, typed as `T`: `useDb<AppDb>(ctx.app)`.
+ * Throws when the app has no `db` binding, or when an async `connect` has not finished (call it after `app.boot()`).
+ */
 export function useDb<T>(app: KitrApp): T {
   return app.container.use('db') as T
 }

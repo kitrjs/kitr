@@ -2,17 +2,24 @@ import { KitrError } from '@kitr/core'
 import type { HttpContext } from './context'
 import type { Middleware } from './types'
 
+/** Type a `(ctx, next)` middleware function. Returns it unchanged. */
 export function defineMiddleware<P = any, Q = any, B = any>(
   middleware: Middleware<P, Q, B>,
 ): Middleware<P, Q, B> {
   return middleware
 }
 
+/** Options for `cors()`. */
 export interface CorsOptions {
+  /** Allowed origins: `'*'` (default), one origin, a list, or a predicate. */
   origin?: string | string[] | ((origin: string) => boolean)
+  /** Methods allowed on preflight. Default GET, POST, PUT, PATCH, DELETE, OPTIONS. */
   methods?: string[]
+  /** Request headers allowed on preflight. Default Content-Type, Authorization. */
   headers?: string[]
+  /** Send `access-control-allow-credentials: true` for cookie requests. Default false. */
   credentials?: boolean
+  /** Seconds a browser may cache the preflight. Default 600. */
   maxAge?: number
 }
 
@@ -53,6 +60,7 @@ export function cors(options: CorsOptions = {}): Middleware {
   return Object.assign(middleware, { [handlesPreflight]: true })
 }
 
+/** Options for `rateLimit()`. */
 export interface RateLimitOptions {
   /** Window length in ms. Default 60 000. */
   windowMs?: number

@@ -3,10 +3,13 @@ import { KitrProvider } from '@kitr/react'
 import { type RenderOptions, render } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 
+/** Options for `renderWithKitr`: Testing Library's render options plus the app, cache seed and an extra wrapper. */
 export interface RenderWithKitrOptions extends Omit<RenderOptions, 'wrapper'> {
+  /** The booted app whose providers wrap the component, usually from `createTestApp`. */
   app: KitrApp
   /** Seed the query cache: `[[['projects', 'detail', '1'], project]]`. Needs @kitr/query's provider. */
   queryData?: Array<[readonly unknown[], unknown]>
+  /** An extra wrapper rendered inside the app's providers, such as a router with a memory history. */
   wrapper?: (props: { children: ReactNode }) => ReactElement
 }
 

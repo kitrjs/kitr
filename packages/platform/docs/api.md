@@ -16,6 +16,8 @@ Every export of `kitr/platform`, `kitr/platform/react`, `kitr/platform/provider`
 function createPlatform(app: KitrApp, driver?: PlatformDriver): Platform;
 ```
 
+Build the `platform` service from a driver (default: the registered one, else the browser/server default). The provider binds it for you.
+
 ### deepLinkPath
 
 ```ts
@@ -38,6 +40,8 @@ The browser (or server) driver used when no platform package registered one.
 function osFromUserAgent(ua: string): PlatformOs;
 ```
 
+Map a user agent string to a `PlatformOs`; iPhone and iPad user agents are checked before macOS.
+
 ### perPlatform
 
 ```ts
@@ -58,27 +62,43 @@ Keys are platform types or OS names; `native` covers every native shell; `defaul
 const defineConfig: <const C extends PlatformConfig>(config: C) => C;
 ```
 
+Typed helper for `config/platform.ts`.
+
 ### Platform
 
 ```ts
 interface Platform {
+  /** The active driver's platform type. */
   readonly type: PlatformType;
+  /** True inside a native shell (Capacitor, Tauri, Electron). */
   readonly native: boolean;
+  /** The operating system, read from the driver on every access. */
   readonly os: PlatformOs | string;
+  /** Installed as an app: a standalone PWA or any native shell. */
   readonly standalone: boolean;
   /** The platform name from kitrrc.ts the bundle was built for, when known. */
   readonly name: string | undefined;
+  /** The active driver, for anything the service does not wrap. */
   readonly driver: PlatformDriver;
+  /** Whether the device reports a connection. */
   isOnline(): boolean;
+  /** The native app version, or `'0.0.0'` where there is none. */
   appVersion(): Promise<string>;
+  /** Foreground (`true`) and background (`false`) changes. Returns an unsubscribe function. */
   onAppState(listener: (active: boolean) => void): () => void;
+  /** Hardware or window back button. Never fires where the driver has none. Returns an unsubscribe function. */
   onBackButton(listener: (info: {
     canGoBack: boolean;
   }) => void): () => void;
+  /** URLs the OS opens in the running app. Returns an unsubscribe function. */
   onDeepLink(listener: (url: string) => void): () => void;
+  /** Connection changes. Returns an unsubscribe function. */
   onOnline(listener: (online: boolean) => void): () => void;
+  /** Safe-area insets in pixels. */
   safeArea(): SafeArea;
+  /** Open a URL in the system browser (native) or a new tab (web). */
   openExternal(url: string): Promise<void>;
+  /** Close the app where the driver supports it; resolves and does nothing elsewhere. */
   exit(): Promise<void>;
   /** `platform.is('mobile')`, `platform.is('ios')`: matches the type or the OS. */
   is(what: PlatformType | PlatformOs): boolean;
@@ -91,10 +111,12 @@ The `platform` service: the active driver plus safe defaults for everything it l
 
 ```ts
 interface PlatformConfig {
-  /** Route deep links by stripping this prefix (`myapp://` or `https://app.example.com`) before navigating. */
+  /** Path prefixes (`'/open'`) to strip from deep links; pass them to `deepLinkPath()`. The scheme and host are always dropped. */
   deepLinkPrefixes?: string[];
 }
 ```
+
+The options in `config/platform.ts`.
 
 ### PlatformDriver
 
@@ -104,9 +126,11 @@ interface PlatformDriver {
   type: PlatformType;
   /** True inside a native shell (Capacitor, Tauri, Electron). */
   native: boolean;
+  /** The operating system, read on every access. */
   os(): PlatformOs | string;
   /** Installed as an app (PWA standalone, native shell). */
   standalone?(): boolean;
+  /** The native app version. Default `'0.0.0'`. */
   appVersion?(): Promise<string>;
   /** Foreground/background. */
   onAppState?(listener: (active: boolean) => void): () => void;
@@ -116,8 +140,11 @@ interface PlatformDriver {
   }) => void): () => void;
   /** Deep links and custom-scheme URLs opened while the app runs. */
   onDeepLink?(listener: (url: string) => void): () => void;
+  /** Connection changes. Default: the browser's `online` and `offline` events. */
   onOnline?(listener: (online: boolean) => void): () => void;
+  /** Whether the device has a connection. Default: `navigator.onLine`. */
   isOnline?(): boolean;
+  /** Safe-area insets. Default: the CSS `env(safe-area-inset-*)` values. */
   safeArea?(): SafeArea;
   /** Open a URL in the system browser (native) or a new tab (web). */
   openExternal?(url: string): Promise<void>;
@@ -126,16 +153,25 @@ interface PlatformDriver {
 }
 ```
 
+What a platform package implements so `kitr/platform` can answer for it. Register one with
+`app.drivers.register('platform', driver)`; every optional member falls back to a browser default.
+
 ### SafeArea
 
 ```ts
 interface SafeArea {
+  /** Inset from the top edge (status bar, notch). */
   top: number;
+  /** Inset from the right edge (notch in landscape). */
   right: number;
+  /** Inset from the bottom edge (home indicator). */
   bottom: number;
+  /** Inset from the left edge (notch in landscape). */
   left: number;
 }
 ```
+
+Safe-area insets in CSS pixels: the space the notch, status bar and home indicator cover.
 
 ### PlatformOs
 
@@ -143,14 +179,16 @@ interface SafeArea {
 type PlatformOs = 'ios' | 'android' | 'macos' | 'windows' | 'linux' | 'server' | 'unknown';
 ```
 
+The operating system a driver reports; `server` during server rendering, `unknown` when the user agent matches none.
+
 ### PlatformType
 
 ```ts
+/** The kind of place the app runs: `web`, `mobile`, `desktop`, `server`, or a custom platform's own type. */
 type PlatformType = 'web' | 'mobile' | 'desktop' | 'server' | (string & {});
 ```
 
-Where the app runs, as one API. Platform packages register a `PlatformDriver`;
-the `platform` service wraps whichever is active, with a browser/server default.
+The kind of place the app runs: `web`, `mobile`, `desktop`, `server`, or a custom platform's own type.
 
 ## kitr/platform/react
 

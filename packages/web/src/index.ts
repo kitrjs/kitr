@@ -1,15 +1,25 @@
 import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
 
+/** How a web platform renders: prerendered HTML (`static`), a client-rendered shell (`spa`) or per-request server rendering (`ssr`). */
 export type WebMode = 'static' | 'spa' | 'ssr'
 
+/** The manifest and service worker settings of an installable web platform, passed as `web({ pwa: { ... } })`. */
 export interface PwaOptions {
+  /** Full app name in the install dialog. Default: the app name from package.json. */
   name?: string
+  /** Name under the home-screen icon. Default: `name`, then the app name. */
   shortName?: string
+  /** Manifest description. */
   description?: string
+  /** Browser UI color. Default `#0f172a`. */
   themeColor?: string
+  /** Splash screen background. Default `#ffffff`. */
   backgroundColor?: string
+  /** How the installed app opens. Default `standalone`. */
   display?: 'standalone' | 'fullscreen' | 'minimal-ui' | 'browser'
+  /** Page the installed app opens on. Default `/`. */
   startUrl?: string
+  /** Manifest icons. Default `/icons/icon-192.png` and `/icons/icon-512.png` (maskable). */
   icons?: Array<{ src: string; sizes: string; type?: string; purpose?: string }>
   /** `autoUpdate` reloads on a new version; `prompt` lets `useServiceWorker()` show a banner. Default `prompt`. */
   registerType?: 'autoUpdate' | 'prompt'
@@ -19,6 +29,7 @@ export interface PwaOptions {
   plugin?: Record<string, unknown>
 }
 
+/** Options of the web platform, as written in `web({ ... })` in kitrrc.ts and edited by `kitr config <name>`. */
 export interface WebOptions {
   /**
    * `ssr`: TanStack Start renders on the server (needs a Node-ish host).
@@ -28,6 +39,7 @@ export interface WebOptions {
   mode: WebMode
   /** Dev server and production port. Default 3000. */
   port: number
+  /** Interface to bind. Default: Vite's (localhost) in dev, `0.0.0.0` for `kitr start`. */
   host?: string
   /** Installable app: manifest and service worker. `true` uses the app name; an object sets the manifest. */
   pwa: boolean | PwaOptions

@@ -1,10 +1,15 @@
 import type { StandardSchemaV1 } from '@kitr/core'
 import type { Router } from './router'
 
+/** Options for `toOpenApi()`: document info and schema conversion. */
 export interface OpenApiOptions {
+  /** `info.title`. Default `kitr API`. */
   title?: string
+  /** `info.version`. Default `0.0.0`. */
   version?: string
+  /** `info.description`. */
   description?: string
+  /** The document's `servers` list. */
   servers?: Array<{ url: string; description?: string }>
   /** Convert a Standard Schema to JSON Schema. Zod 4 is handled automatically when `zod` is importable. */
   schemaToJson?: (

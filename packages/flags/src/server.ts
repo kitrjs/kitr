@@ -28,4 +28,5 @@ export function flagsScript(values: Record<string, unknown>): string {
   return `<script type="application/json" id="__kitr_flags__">${json}</script>`
 }
 
+/** The flags service type, re-exported for server code. */
 export type { Flags }

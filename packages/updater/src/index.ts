@@ -7,6 +7,7 @@ import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
  * live-update bundle.
  */
 
+/** Where the update flow is: `idle → checking → available → downloading → ready`, or `up-to-date` / `error`. */
 export type UpdateStatus =
   | 'idle'
   | 'checking'
@@ -16,15 +17,21 @@ export type UpdateStatus =
   | 'up-to-date'
   | 'error'
 
+/** A version the driver found. */
 export interface UpdateInfo {
+  /** Its version label, such as `2.4.0` (`new` from the service-worker driver without a version). */
   version: string
+  /** Release notes to show next to the update. */
   notes?: string
+  /** Release date, as the driver reports it. */
   date?: string
   /** Bytes, when the driver knows. */
   size?: number
 }
 
+/** What a platform implements to find and install new versions. */
 export interface UpdaterDriver {
+  /** Shown in devtools, such as `service-worker` or `memory`. */
   name: string
   /** Look for a newer version. Resolves to the update or null when current. */
   check(): Promise<UpdateInfo | null>
@@ -36,7 +43,9 @@ export interface UpdaterDriver {
   currentVersion?(): Promise<string>
 }
 
+/** Options for `config/updater.ts` and `createUpdater()`. */
 export interface UpdaterConfig {
+  /** Replace the driver the service would pick (tests, custom shells). */
   driver?: UpdaterDriver
   /** Re-check every N milliseconds while the app is open. Default: none (check at boot only). */
   interval?: number
@@ -46,21 +55,33 @@ export interface UpdaterConfig {
   auto?: boolean
 }
 
+/** A snapshot of the updater, replaced on every change. */
 export interface UpdaterState {
+  /** Where the flow is. */
   status: UpdateStatus
+  /** The update found, or null. */
   update: UpdateInfo | null
+  /** 0 to 1 while downloading. */
   progress: number
+  /** Why the last check or apply failed. Cleared by the next check. */
   error: Error | null
+  /** The running version, once the driver reports it. */
   currentVersion: string | null
 }
 
+/** The `updater` service: check, apply and dismiss updates, and subscribe to the state. */
 export interface Updater {
+  /** The active driver. */
   readonly driver: UpdaterDriver
+  /** The current snapshot. */
   readonly state: UpdaterState
+  /** Look for an update. Never throws: failures set `status: 'error'` and resolve to null. */
   check(): Promise<UpdateInfo | null>
+  /** Install the update found. Runs once however often it is called; failures set `status: 'error'`. */
   apply(): Promise<void>
   /** Hide the prompt until the next update. */
   dismiss(): void
+  /** Call `listener` after every state change; returns an unsubscribe function. */
   subscribe(listener: () => void): () => void
   /** Stop the interval and listeners. */
   stop(): void
@@ -78,9 +99,13 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/updater.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<UpdaterConfig>()
 
-/** Service-worker driver: an update is "available" when a new worker is waiting; applying reloads. */
+/**
+ * Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
+ * to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
+ */
 export function createServiceWorkerUpdaterDriver(
   options: { version?: string } = {},
 ): UpdaterDriver {
@@ -180,6 +205,10 @@ export function createMemoryUpdaterDriver(
   return driver satisfies UpdaterDriver
 }
 
+/**
+ * Build the `updater` service. The driver is `config.driver`, else the one registered on `app`, else
+ * the service-worker driver in a browser. Starts the `interval` checks and the driver listener.
+ */
 export function createUpdater(config: UpdaterConfig = {}, app?: KitrApp): Updater {
   const driver =
     config.driver ??
@@ -276,6 +305,7 @@ export function createUpdater(config: UpdaterConfig = {}, app?: KitrApp): Update
   return updater
 }
 
+/** The app's `updater` service, outside React. Same as `app.container.use('updater')`. */
 export function useUpdater(app: KitrApp): Updater {
   return app.container.use('updater')
 }

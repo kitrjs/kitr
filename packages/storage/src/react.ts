@@ -16,6 +16,10 @@ import type { CookieItem, StorageItem } from './index'
  */
 const CookieHeaderContext = createContext<string | null | undefined>(undefined)
 
+/**
+ * Gives `useCookie()` the request's `Cookie` header during server rendering, so the first
+ * HTML shows the stored value instead of the default. Wrap the tree once, in the root route.
+ */
 export function CookieHeader({
   value,
   children,

@@ -9,9 +9,13 @@ import {
   type MonitoringConfig,
 } from './index'
 
+/** Props of `MonitoringErrorBoundary`. */
 export interface ErrorBoundaryProps {
+  /** The service to report render errors to. */
   monitoring: Monitoring
+  /** Shown instead of the children after an error; a function gets the error and `reset`. Left out, the boundary rethrows. */
   fallback?: ReactNode | ((error: unknown, reset: () => void) => ReactNode)
+  /** What the boundary guards. */
   children: ReactNode
 }
 

@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 import type { Auth } from './provider'
 import type { Session } from './session'
 
+/** The `auth` service from the nearest kitr app: sign in and out, refresh, read the session. */
 export function useAuth<TUser = unknown, TCredentials = unknown>(): Auth<TUser, TCredentials> {
   return useApp().container.use('auth') as Auth<TUser, TCredentials>
 }
@@ -17,6 +18,7 @@ export function useSession<TUser = unknown>(): Session<TUser> {
   )
 }
 
+/** The signed-in user, or `null`. Re-renders on sign-in and sign-out. */
 export function useUser<TUser = unknown>(): TUser | null {
   return useSession<TUser>().user
 }

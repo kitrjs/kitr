@@ -17,7 +17,9 @@ import {
 } from './protocol'
 import type { ChannelEmitter } from './server'
 
+/** Options for `createSseServer`: the channels to serve, stream auth and the keep-alive interval. */
 export interface SseServerOptions {
+  /** Every channel clients may subscribe to. */
   channels: ChannelDefinition<any, any>[]
   /** Authenticate the stream request. Return per-connection context or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>
@@ -25,14 +27,18 @@ export interface SseServerOptions {
   keepAlive?: number
 }
 
+/** The realtime server for the SSE transport, as `createSseServer` returns it. */
 export interface SseServer {
   /** GET opens the stream, POST carries sub/unsub/msg control messages. Mount both on one path. */
   handler: ReturnType<typeof defineHandler>
+  /** Publish on a channel from an action, controller or job. */
   use<C extends ChannelDefinition<any, any>>(
     channel: C,
     params: ChannelParams<C>,
   ): ChannelEmitter<C>
+  /** Register GET and POST on `path` (default `/events`) of a kitr server. */
   attach(server: KitrServer, path?: string): SseServer
+  /** Number of open streams. */
   readonly connections: number
 }
 
@@ -209,7 +215,7 @@ export function createSseServer(options: SseServerOptions): SseServer {
   return sse
 }
 
-/** Provider: binds `realtime` (the SSE server) in the container. */
+/** A provider that binds an SSE server as `realtime` in the container. It does not attach the route. */
 export function sseProvider(options: SseServerOptions): KitrProvider {
   return defineProvider({
     name: 'realtime',

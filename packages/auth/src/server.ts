@@ -10,6 +10,7 @@ interface AuthContextLike {
 }
 type Next = () => Promise<unknown>
 
+/** Options for `authMiddleware`. */
 export interface AuthMiddlewareOptions<TUser> {
   /** Turn a bearer token (or cookie value) into a user. Return null when invalid. */
   verify: (token: string, ctx: AuthContextLike) => Promise<TUser | null> | TUser | null
@@ -63,6 +64,7 @@ export function requireUser<TUser>(ctx: { locals: Record<string, unknown> }): TU
   return user
 }
 
+/** The user set by `authMiddleware`, or `null`. For routes with `optional: true`. */
 export function currentUser<TUser>(ctx: { locals: Record<string, unknown> }): TUser | null {
   return (ctx.locals.user as TUser | null | undefined) ?? null
 }

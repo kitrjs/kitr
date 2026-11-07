@@ -25,13 +25,14 @@ Bind a channel definition to a transport. Events validated by their schema
 function createRealtimeClient(config?: RealtimeConfig): SocketTransport;
 ```
 
-A transport from `config/realtime.ts`: websocket (default) or sse here; socket.io loads its
+Creates the client transport `config/realtime.ts` names: websocket (default) or sse here; socket.io loads its
 client from `kitr/realtime/socket.io` so the dependency stays optional.
 
 ```ts
 let transport: SocketTransport | undefined
 export const realtime = () => (transport ??= createRealtimeClient(realtimeConfig))
 ```
+Call it lazily, as above, so nothing connects during SSR.
 
 ### createSocketClient
 
@@ -77,6 +78,7 @@ export const projectChannel = defineChannel({
   },
 })
 ```
+Import the same definition on the server (to serve and emit) and on the client (to subscribe).
 
 ### parseMessage
 
@@ -84,11 +86,15 @@ export const projectChannel = defineChannel({
 function parseMessage<T>(raw: unknown): T | null;
 ```
 
+Parses a frame from a string, an ArrayBuffer or an object; returns `null` for anything that is not valid JSON.
+
 ### stableStringify
 
 ```ts
 function stableStringify(value: unknown): string;
 ```
+
+`JSON.stringify` with object keys sorted, so equal params always produce the same topic.
 
 ### topicFor
 
@@ -96,7 +102,7 @@ function stableStringify(value: unknown): string;
 function topicFor(channel: string, params: unknown): string;
 ```
 
-Stable topic string for a channel + params.
+The topic string for a channel and params (`chat:{"room":"general"}`); key order in params does not matter.
 
 ### createWebSocketTransport
 
@@ -112,12 +118,17 @@ The native WebSocket transport (same as `createSocketClient`).
 const defineConfig: <const C extends RealtimeConfig>(config: C) => C;
 ```
 
+Typed identity helper for `config/realtime.ts`.
+
 ### ChannelDefinition
 
 ```ts
 interface ChannelDefinition<TParams = void, TEvents extends Record<string, ChannelEvent<any, TParams>> = Record<string, ChannelEvent<any, TParams>>> {
+  /** Unique channel name; it is the first part of every topic and must match on both ends. */
   name: string;
+  /** Schema for the subscription params. The server validates (and may transform) them before `authorize`. */
   params?: StandardSchemaV1<unknown, TParams>;
+  /** The events this channel carries, by name. */
   events: TEvents;
   /** Server side: may this connection subscribe? `ctx` is what `authorize` on the server returned. */
   authorize?: (params: TParams, ctx: unknown) => boolean | Promise<boolean>;
@@ -125,6 +136,8 @@ interface ChannelDefinition<TParams = void, TEvents extends Record<string, Chann
   onMessage?: (event: string, data: unknown, params: TParams, ctx: unknown) => void | Promise<void>;
 }
 ```
+
+A channel as `defineChannel` returns it: its name, params schema, events and server-side hooks.
 
 ### ChannelEvent
 
@@ -140,6 +153,8 @@ interface ChannelEvent<TData = unknown, TParams = unknown> {
 }
 ```
 
+One event a channel carries: an optional payload schema and the cache effects it applies on the client.
+
 ### ChannelHandle
 
 ```ts
@@ -148,9 +163,12 @@ interface ChannelHandle<C extends ChannelDefinition<any, any>> {
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
+  /** The query key of a subscription: `['realtime', name, params]`. */
   key(params: ChannelParams<C>): QueryKey;
 }
 ```
+
+A channel bound to a transport, as `channel()` returns it.
 
 ### RealtimeConfig
 
@@ -162,10 +180,12 @@ interface RealtimeConfig {
   url?: string;
   /** Server path of the upgrade route (websocket), the SSE stream, or the Socket.IO path. Default `/ws`, `/events` for sse. */
   path?: string;
-  /** Heartbeat interval in ms (client pings). Default 25 000; 0 disables. */
+  /** Heartbeat interval in ms (client pings). Default 25 000; 0 disables. Not read by the built-in clients yet. */
   heartbeat?: number;
 }
 ```
+
+The shape of `config/realtime.ts`: which transport the client uses and where it connects.
 
 ### SocketClientOptions
 
@@ -173,6 +193,7 @@ interface RealtimeConfig {
 interface SocketClientOptions {
   /** `ws://` or `wss://` URL, or a function (e.g. to append a token). */
   url: string | (() => string | Promise<string>);
+  /** WebSocket subprotocols, passed to the WebSocket constructor. */
   protocols?: string | string[];
   /** Reconnect settings passed to partysocket. */
   reconnect?: {
@@ -185,17 +206,27 @@ interface SocketClientOptions {
 }
 ```
 
+Options for `createSocketClient`, the native WebSocket transport.
+
 ### SocketTransport
 
 ```ts
 interface SocketTransport {
+  /** Subscribe to a channel topic. Returns a function that unsubscribes. */
   subscribe(channel: string, params: unknown, onEvent: (event: string, data: unknown) => void, onError?: (e: KitrErrorShape) => void): () => void;
+  /** Send a client event up a channel; the server hands it to the channel's `onMessage`. */
   send(channel: string, params: unknown, event: string, data: unknown): void;
+  /** Close the connection and stop reconnecting. */
   close(): void;
+  /** The current connection state. */
   readonly status: SocketStatus;
+  /** Listen for status changes. Returns a function that removes the listener. */
   onStatus(listener: (status: SocketStatus) => void): () => void;
 }
 ```
+
+What every realtime client implements: WebSocket, Socket.IO, SSE, or your own.
+`channel()` and `useChannel()` only talk to this interface.
 
 ### SseTransportOptions
 
@@ -205,9 +236,12 @@ interface SseTransportOptions {
   url: string | (() => string);
   /** Extra headers for control requests (the stream itself cannot carry headers; use cookies or a `?token=`). */
   headers?: Record<string, string> | (() => Record<string, string>);
+  /** Called for server errors not tied to a subscription, and for failed control requests (`NETWORK`). */
   onError?: (error: KitrErrorShape) => void;
 }
 ```
+
+Options for `createSseTransport`, the Server-Sent Events client.
 
 ### ChannelEventUnion
 
@@ -220,11 +254,15 @@ type ChannelEventUnion<C extends ChannelDefinition<any, any>> = {
 }[keyof C['events'] & string];
 ```
 
+Every event of a channel as a `{ event, data }` union, which `useChannel` returns as `lastEvent`.
+
 ### ChannelParams
 
 ```ts
 type ChannelParams<C> = C extends ChannelDefinition<infer P, any> ? P : never;
 ```
+
+The params type a channel subscribes with.
 
 ### ClientMessage
 
@@ -248,7 +286,8 @@ type ClientMessage = {
 };
 ```
 
-Wire protocol shared by the WebSocket and Socket.IO transports.
+A frame the client sends: subscribe (`sub`), unsubscribe (`unsub`), a client event (`msg`) or a `ping`.
+The wire protocol shared by the WebSocket, Socket.IO and SSE transports.
 
 ### EventData
 
@@ -256,11 +295,15 @@ Wire protocol shared by the WebSocket and Socket.IO transports.
 type EventData<E> = E extends ChannelEvent<infer D, any> ? D : never;
 ```
 
+The payload type of one channel event, inferred from its `schema` or `effects` annotation.
+
 ### RealtimeStatus
 
 ```ts
 type RealtimeStatus = SocketStatus;
 ```
+
+Alias of `SocketStatus`.
 
 ### RealtimeTransport
 
@@ -275,6 +318,8 @@ Alias: the transport interface every realtime client implements.
 ```ts
 type RealtimeTransport$1 = 'websocket' | 'socket.io' | 'sse';
 ```
+
+Which transport carries channel traffic: native WebSocket, Socket.IO, or Server-Sent Events.
 
 ### ServerMessage
 
@@ -300,11 +345,15 @@ type ServerMessage = {
 };
 ```
 
+A frame the server sends: an event (`ev`), a subscription ack (`ok`), an error (`err`) or a `pong`.
+
 ### SocketStatus
 
 ```ts
 type SocketStatus = 'connecting' | 'open' | 'closed';
 ```
+
+The connection state a transport reports: connecting, open or closed.
 
 ## kitr/realtime/client
 
@@ -342,9 +391,12 @@ interface ChannelHandle<C extends ChannelDefinition<any, any>> {
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
+  /** The query key of a subscription: `['realtime', name, params]`. */
   key(params: ChannelParams<C>): QueryKey;
 }
 ```
+
+A channel bound to a transport, as `channel()` returns it.
 
 ### SocketClientOptions
 
@@ -352,6 +404,7 @@ interface ChannelHandle<C extends ChannelDefinition<any, any>> {
 interface SocketClientOptions {
   /** `ws://` or `wss://` URL, or a function (e.g. to append a token). */
   url: string | (() => string | Promise<string>);
+  /** WebSocket subprotocols, passed to the WebSocket constructor. */
   protocols?: string | string[];
   /** Reconnect settings passed to partysocket. */
   reconnect?: {
@@ -364,23 +417,35 @@ interface SocketClientOptions {
 }
 ```
 
+Options for `createSocketClient`, the native WebSocket transport.
+
 ### SocketTransport
 
 ```ts
 interface SocketTransport {
+  /** Subscribe to a channel topic. Returns a function that unsubscribes. */
   subscribe(channel: string, params: unknown, onEvent: (event: string, data: unknown) => void, onError?: (e: KitrErrorShape) => void): () => void;
+  /** Send a client event up a channel; the server hands it to the channel's `onMessage`. */
   send(channel: string, params: unknown, event: string, data: unknown): void;
+  /** Close the connection and stop reconnecting. */
   close(): void;
+  /** The current connection state. */
   readonly status: SocketStatus;
+  /** Listen for status changes. Returns a function that removes the listener. */
   onStatus(listener: (status: SocketStatus) => void): () => void;
 }
 ```
+
+What every realtime client implements: WebSocket, Socket.IO, SSE, or your own.
+`channel()` and `useChannel()` only talk to this interface.
 
 ### RealtimeStatus
 
 ```ts
 type RealtimeStatus = SocketStatus;
 ```
+
+Alias of `SocketStatus`.
 
 ### RealtimeTransport
 
@@ -396,6 +461,8 @@ Alias: the transport interface every realtime client implements.
 type SocketStatus = 'connecting' | 'open' | 'closed';
 ```
 
+The connection state a transport reports: connecting, open or closed.
+
 ## kitr/realtime/server
 
 ### createSocketServer
@@ -404,7 +471,8 @@ type SocketStatus = 'connecting' | 'open' | 'closed';
 function createSocketServer(options: SocketServerOptions): SocketServer;
 ```
 
-Native WebSocket server on crossws (via h3). Runs on Node, Bun, Deno and Cloudflare.
+Creates the native WebSocket server on crossws (via h3). Runs on Node, Bun, Deno and Cloudflare.
+Attach it to a kitr server with `attach(server, path)`; emit with `use(channel, params).emit()`.
 
 ### realtimeProvider
 
@@ -414,7 +482,8 @@ function realtimeProvider(options: SocketServerOptions & {
 }): KitrProvider;
 ```
 
-Provider: binds `realtime` (the WebSocket server) in the container.
+A provider that binds a WebSocket server as `realtime` in the container. It does not attach the
+route: call `attach()` on the bound server yourself. `path` is accepted but not used.
 
 ### createRealtimeServer
 
@@ -422,12 +491,13 @@ Provider: binds `realtime` (the WebSocket server) in the container.
 const createRealtimeServer: typeof createSocketServer;
 ```
 
-The WebSocket server, under the transport-neutral name.
+The WebSocket server factory under its transport-neutral name; same as `createSocketServer`.
 
 ### ChannelEmitter
 
 ```ts
 interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
+  /** Send an event to every connection subscribed to this topic. A topic with no subscribers is a no-op. */
   emit<E extends keyof C['events'] & string>(event: E, data: C['events'][E] extends {
     schema: infer S;
   } ? S extends {
@@ -442,6 +512,8 @@ interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
 }
 ```
 
+Publishes events to every subscriber of one channel topic, as `server.use(channel, params)` returns it.
+
 ### SocketServer
 
 ```ts
@@ -452,25 +524,33 @@ interface SocketServer {
   use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): ChannelEmitter<C>;
   /** Attach to a kitr server: registers the route and enables the upgrade. */
   attach(server: KitrServer, path?: string): SocketServer;
+  /** Number of open connections. */
   readonly connections: number;
 }
 ```
+
+The realtime server for the native WebSocket transport, as `createRealtimeServer` returns it.
 
 ### SocketServerOptions
 
 ```ts
 interface SocketServerOptions {
+  /** Every channel clients may subscribe to. Subscribing to any other name fails with `NOT_FOUND`. */
   channels: ChannelDefinition<any, any>[];
   /** Authenticate the upgrade. Return per-connection context (e.g. the user) or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>;
 }
 ```
 
+Options for `createSocketServer`: the channels it serves and how it authenticates connections.
+
 ### RealtimeServer
 
 ```ts
 type RealtimeServer = SocketServer;
 ```
+
+Alias of `SocketServer`.
 
 ## kitr/realtime/socket.io
 
@@ -491,7 +571,7 @@ function createSocketIoClient(options?: SocketIoClientOptions): SocketTransport 
 };
 ```
 
-The same `SocketTransport` as kitr/realtime, over Socket.IO. Use it with `channel()`
+Creates the same `SocketTransport` as kitr/realtime, over Socket.IO; `.socket` is the raw socket.io-client socket. Use it with `channel()`
 from kitr/realtime/socket.io; the channel definitions and `useSubscription` don't change.
 
 ### defineChannel
@@ -519,15 +599,20 @@ export const projectChannel = defineChannel({
   },
 })
 ```
+Import the same definition on the server (to serve and emit) and on the client (to subscribe).
 
 ### SocketIoClientOptions
 
 ```ts
 interface SocketIoClientOptions extends Partial<ManagerOptions & SocketOptions> {
+  /** Server URL. Default: the page's origin. */
   url?: string;
+  /** Called for every server error that isn't tied to a subscription. */
   onError?: (error: KitrErrorShape) => void;
 }
 ```
+
+Options for `createSocketIoClient`: any socket.io-client option plus the server URL and an error handler.
 
 ## kitr/realtime/socket.io/server
 
@@ -537,7 +622,7 @@ interface SocketIoClientOptions extends Partial<ManagerOptions & SocketOptions> 
 function attachSocketIo(io: Server, options: SocketIoServerOptions): SocketIoServer;
 ```
 
-Serve kitr channels over a Socket.IO server. Rooms are channel topics, so the
+Serves kitr channels over an existing Socket.IO server. Rooms are channel topics, so the
 Redis adapter and sticky sessions work as they do for any Socket.IO app.
 
 ```ts
@@ -545,28 +630,37 @@ const io = new Server(nodeServer)
 const sockets = attachSocketIo(io, { channels: [projectChannel] })
 sockets.use(projectChannel, { id }).emit('updated', project)
 ```
+Connections are authenticated once in a namespace middleware; each subscription runs the channel's `authorize`.
 
 ### SocketIoServer
 
 ```ts
 interface SocketIoServer {
+  /** The Socket.IO server you passed in. */
   io: Server;
+  /** Publish on a channel topic: `use(channel, params).emit(event, data)` emits to that topic's room. */
   use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): {
     emit(event: keyof C['events'] & string, data: unknown): void;
   };
 }
 ```
 
+Channels served over Socket.IO, as `attachSocketIo` returns them.
+
 ### SocketIoServerOptions
 
 ```ts
 interface SocketIoServerOptions {
+  /** Every channel clients may subscribe to. */
   channels: ChannelDefinition<any, any>[];
   /** Authenticate a connection (`socket.handshake.auth`). Return context or throw. */
   authorize?: (socket: Socket) => unknown | Promise<unknown>;
+  /** Serve channels on this Socket.IO namespace instead of the default `/`. */
   namespace?: string;
 }
 ```
+
+Options for `attachSocketIo`: the channels to serve, connection auth and an optional namespace.
 
 ## kitr/realtime/sse
 
@@ -588,9 +682,12 @@ interface SseTransportOptions {
   url: string | (() => string);
   /** Extra headers for control requests (the stream itself cannot carry headers; use cookies or a `?token=`). */
   headers?: Record<string, string> | (() => Record<string, string>);
+  /** Called for server errors not tied to a subscription, and for failed control requests (`NETWORK`). */
   onError?: (error: KitrErrorShape) => void;
 }
 ```
+
+Options for `createSseTransport`, the Server-Sent Events client.
 
 ## kitr/realtime/sse/server
 
@@ -609,7 +706,7 @@ over POST. Runs anywhere h3 runs, including hosts without WebSocket upgrades.
 function sseProvider(options: SseServerOptions): KitrProvider;
 ```
 
-Provider: binds `realtime` (the SSE server) in the container.
+A provider that binds an SSE server as `realtime` in the container. It does not attach the route.
 
 ### SseServer
 
@@ -617,16 +714,22 @@ Provider: binds `realtime` (the SSE server) in the container.
 interface SseServer {
   /** GET opens the stream, POST carries sub/unsub/msg control messages. Mount both on one path. */
   handler: ReturnType<typeof defineHandler>;
+  /** Publish on a channel from an action, controller or job. */
   use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): ChannelEmitter<C>;
+  /** Register GET and POST on `path` (default `/events`) of a kitr server. */
   attach(server: KitrServer, path?: string): SseServer;
+  /** Number of open streams. */
   readonly connections: number;
 }
 ```
+
+The realtime server for the SSE transport, as `createSseServer` returns it.
 
 ### SseServerOptions
 
 ```ts
 interface SseServerOptions {
+  /** Every channel clients may subscribe to. */
   channels: ChannelDefinition<any, any>[];
   /** Authenticate the stream request. Return per-connection context or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>;
@@ -634,6 +737,8 @@ interface SseServerOptions {
   keepAlive?: number;
 }
 ```
+
+Options for `createSseServer`: the channels to serve, stream auth and the keep-alive interval.
 
 ## kitr/realtime/react
 

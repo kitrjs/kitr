@@ -1,43 +1,68 @@
 import { createDefineConfig, isKitrError } from '@kitr/core'
 
+/** How serious a report or breadcrumb is, using Sentry's levels. */
 export type Severity = 'fatal' | 'error' | 'warning' | 'info' | 'debug'
 
+/** A step on the way to a possible error, attached to later reports by reporters that keep them. */
 export interface Breadcrumb {
+  /** A group, such as `import`, `navigation` or `api`. */
   category?: string
+  /** What happened. */
   message: string
+  /** How notable the step is. */
   level?: Severity
+  /** Extra data for the step. */
   data?: Record<string, unknown>
+  /** Milliseconds since the epoch; set to `Date.now()` when left out. */
   timestamp?: number
 }
 
+/** The signed-in user attached to reports by `setUser`. Any extra fields go to the reporter as-is. */
 export interface MonitoringUser {
+  /** Your id for the user. */
   id: string
+  /** The user's email, if your privacy policy allows sending it. */
   email?: string
+  /** A display or login name. */
   username?: string
   [key: string]: unknown
 }
 
+/** The optional second argument of `captureException` and `captureMessage`. */
 export interface CaptureContext {
+  /** Short strings to filter by; merged over the config `tags`. */
   tags?: Record<string, string>
+  /** Any data that helps fix it: ids, sizes, the failing input. */
   extra?: Record<string, unknown>
+  /** How serious it is. */
   level?: Severity
   /** Where it came from: 'error-boundary' | 'router' | 'server' | 'window' | 'action'. */
   source?: string
 }
 
-/** What every destination implements. */
+/** A destination for reports (Sentry, the console, your own endpoint). Only `name` and `captureException` are required. */
 export interface Reporter {
+  /** Identifies the reporter, such as `sentry`. */
   name: string
+  /** Called once when the monitoring service is created. */
   init?(): void | Promise<void>
+  /** Send an exception; must not throw or block. */
   captureException(error: unknown, context?: CaptureContext): void
+  /** Send a message that is not an exception. */
   captureMessage?(message: string, context?: CaptureContext): void
+  /** Attach the user to later reports, or clear it with null. */
   setUser?(user: MonitoringUser | null): void
+  /** Record a step for later reports. */
   addBreadcrumb?(crumb: Breadcrumb): void
+  /** Set a tag on later reports. */
   setTag?(key: string, value: string): void
+  /** Wait for queued reports to be sent, up to the timeout; resolves false when it ran out. */
   flush?(timeoutMs?: number): Promise<boolean>
 }
 
+/** The options in `config/monitoring.ts`. */
 export interface MonitoringConfig {
+  /** Where reports go. The provider falls back to the console reporter in development. */
   reporters?: Reporter[]
   /** Return false to drop an error (expected 4xx, cancelled requests). Default drops kitr errors with status < 500. */
   shouldReport?: (error: unknown, context?: CaptureContext) => boolean
@@ -49,15 +74,23 @@ export interface MonitoringConfig {
   debug?: boolean
 }
 
+/** The service bound as `monitoring`: report errors and messages, and set the user, tags and breadcrumbs, on every reporter. */
 export interface Monitoring {
+  /** Report an error, unless `shouldReport` drops it. */
   captureException(error: unknown, context?: CaptureContext): void
+  /** Report a message. Not filtered by `shouldReport`. */
   captureMessage(message: string, context?: CaptureContext): void
+  /** Attach the signed-in user to later reports; null on sign-out. */
   setUser(user: MonitoringUser | null): void
+  /** Record a step leading up to a possible error. */
   addBreadcrumb(crumb: Breadcrumb): void
+  /** Set a tag on reporters that keep their own scope, such as Sentry. */
   setTag(key: string, value: string): void
   /** Run `fn`, report and rethrow on failure. */
   wrap<T>(fn: () => T, context?: CaptureContext): T
+  /** Wait for every reporter to send what it queued, up to the timeout (default 2000 ms). Never throws. */
   flush(timeoutMs?: number): Promise<void>
+  /** The reporters in use. */
   readonly reporters: readonly Reporter[]
 }
 
@@ -70,9 +103,10 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/monitoring.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<MonitoringConfig>()
 
-/** Default filter: kitr errors that are client mistakes (4xx) are not incidents. */
+/** The default `shouldReport`: drops kitr errors below 500 (client mistakes) and `AbortError`s; reports everything else. */
 export function defaultShouldReport(error: unknown): boolean {
   if (isKitrError(error)) return (error.status ?? 500) >= 500
   if (error && typeof error === 'object' && 'name' in error && (error as any).name === 'AbortError')
@@ -80,6 +114,10 @@ export function defaultShouldReport(error: unknown): boolean {
   return true
 }
 
+/**
+ * Create the monitoring service without the provider: for server-only apps, scripts and tests.
+ * Unlike the provider it adds no console reporter and no `environment` tag.
+ */
 export function createMonitoring(config: MonitoringConfig = {}): Monitoring {
   const reporters = [...(config.reporters ?? [])]
   const shouldReport = config.shouldReport ?? defaultShouldReport
@@ -137,7 +175,7 @@ export function createMonitoring(config: MonitoringConfig = {}): Monitoring {
   return monitoring
 }
 
-/** Window error and unhandled-rejection handlers. Returns a disposer. */
+/** Report uncaught errors and unhandled rejections in the browser (`source: 'window'`). Returns a function that removes the handlers. */
 export function installGlobalHandlers(monitoring: Monitoring): () => void {
   if (typeof window === 'undefined') return () => {}
   const onError = (e: ErrorEvent) =>
@@ -154,12 +192,19 @@ export function installGlobalHandlers(monitoring: Monitoring): () => void {
 
 /** The subset of `@sentry/react` / `@sentry/browser` / `@sentry/node` these reporters call. */
 export interface SentryLike {
+  /** `Sentry.init`, called with the reporter's options. */
   init?(options: Record<string, unknown>): unknown
+  /** `Sentry.captureException`. */
   captureException(error: unknown, context?: Record<string, unknown>): unknown
+  /** `Sentry.captureMessage`. */
   captureMessage(message: string, context?: Record<string, unknown>): unknown
+  /** `Sentry.setUser`. */
   setUser(user: Record<string, unknown> | null): void
+  /** `Sentry.addBreadcrumb`. */
   addBreadcrumb(crumb: Record<string, unknown>): void
+  /** `Sentry.setTag`. */
   setTag(key: string, value: string): void
+  /** `Sentry.flush`. */
   flush?(timeout?: number): Promise<boolean>
 }
 
@@ -238,7 +283,7 @@ export function devtoolsReporter(hub: {
   }
 }
 
-/** Prints reports. The default reporter in development. */
+/** Prints exceptions and messages to the console; ignores breadcrumbs and users. The provider's default in development. */
 export function consoleReporter(): Reporter {
   return {
     name: 'console',
@@ -250,7 +295,7 @@ export function consoleReporter(): Reporter {
   }
 }
 
-/** Keeps reports in memory, for tests. */
+/** Keeps exceptions, message texts and the last user in arrays, for tests. Ignores breadcrumbs and tags. */
 export function memoryReporter(): Reporter & {
   exceptions: Array<{ error: unknown; context?: CaptureContext }>
   messages: string[]

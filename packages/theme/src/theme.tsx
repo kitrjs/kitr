@@ -8,9 +8,11 @@ import {
   useState,
 } from 'react'
 
+/** The user's choice: a fixed theme, or `'system'` to follow the operating system. */
 export type Theme = 'light' | 'dark' | 'system'
 export { themeFromCookie } from './cookie'
 
+/** The theme on screen once `'system'` is resolved: always `'light'` or `'dark'`. */
 export type ResolvedTheme = 'light' | 'dark'
 
 interface ThemeContextValue {
@@ -22,10 +24,15 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
+/** Props of `ThemeProvider`. The theme provider in `kitrrc.ts` fills them from `config/theme.ts`. */
 export interface ThemeProviderProps {
+  /** The tree that can call `useTheme()`. */
   children: ReactNode
+  /** The theme before the user picks one. Default `'system'`. */
   defaultTheme?: Theme
+  /** The `localStorage` key and cookie name holding the choice. Default `'kitr-theme'`. */
   storageKey?: string
+  /** The attribute set on `<html>` to `light` or `dark`. Default `'data-theme'`. */
   attribute?: string
   /** Theme known on the server (e.g. from a cookie) to avoid a flash. */
   initialResolved?: ResolvedTheme
@@ -102,6 +109,10 @@ export function ThemeProvider({
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
+/**
+ * The current theme and the functions that change it: `{ theme, resolved, setTheme, toggle }`.
+ * Throws when no `ThemeProvider` (or the theme provider in `kitrrc.ts`) is above the component.
+ */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext)
   if (!ctx) throw new Error('[kitr/theme] useTheme() must be used inside <ThemeProvider>.')

@@ -14,13 +14,14 @@ import {
 } from '@tanstack/react-query'
 import { applyCacheEffect } from './effects'
 
-/**
- * `defineQuery` turns a contract from any source into a reusable query definition.
- * `projectQuery.options(id)` gives TanStack `queryOptions`, ready for `useQuery`,
- * `useSuspenseQuery` or `ensureQueryData` in a loader.
- */
+/** What `defineQuery` returns: the contract plus `key`, `options` and `fetch` helpers for one query. */
 export type QueryDefinition<TInput, TOutput> = ReturnType<typeof defineQuery<TInput, TOutput>>
 
+/**
+ * Turns a query contract from any source (HTTP, API routes, actions or hand-written) into a reusable query.
+ * `orderQuery.options(id)` gives TanStack `queryOptions` for `useQuery`, `useSuspenseQuery` or
+ * `ensureQueryData` in a loader, with failures normalised to `KitrError`.
+ */
 export function defineQuery<TInput = void, TOutput = unknown>(
   contract: Omit<QueryContract<TInput, TOutput>, 'kind'>,
 ) {
@@ -46,15 +47,24 @@ export function defineQuery<TInput = void, TOutput = unknown>(
   }
 }
 
+/** What `defineMutation` returns: a mutation contract with helpers to run it through TanStack with its cache effects. */
 export interface MutationDefinition<TInput, TOutput> {
+  /** Always `'mutation'`; tells definitions apart at run time. */
   readonly kind: 'mutation'
+  /** The full contract, including `kind`, for tooling and devtools. */
   readonly contract: MutationContract<TInput, TOutput>
   /** TanStack mutation options; pass a queryClient to get cache effects applied. */
   options(ctx: { queryClient: QueryClient }): UseMutationOptions<TOutput, Error, TInput>
+  /** Calls the source directly: no cache effects and no `KitrError` normalisation. */
   mutate(input: TInput): Promise<TOutput>
+  /** The cache effects one result would produce, for tests and custom handlers. */
   effectsFor(result: TOutput, input: TInput): CacheEffect | undefined
 }
 
+/**
+ * Turns a mutation contract from any source into a reusable mutation whose `effects`
+ * (set, invalidate, remove) are applied to the cache on success. Run it with `useKitrMutation`.
+ */
 export function defineMutation<TInput = void, TOutput = unknown>(
   contract: Omit<MutationContract<TInput, TOutput>, 'kind'>,
 ): MutationDefinition<TInput, TOutput> {
@@ -99,12 +109,20 @@ export function useKitrMutation<TInput, TOutput>(
   })
 }
 
+/** What `defineSubscription` returns: an event stream contract that `useSubscription` opens. */
 export interface SubscriptionDefinition<TInput, TEvent> {
+  /** Always `'subscription'`; tells definitions apart at run time. */
   readonly kind: 'subscription'
+  /** The full contract: `subscribe`, `effects` and `source`. */
   readonly contract: SubscriptionContract<TInput, TEvent>
+  /** The key for one input; `useSubscription` resubscribes only when it changes. */
   key(input: TInput): readonly unknown[]
 }
 
+/**
+ * Turns a stream of events (a socket channel, an SSE feed) into a subscription whose
+ * `effects` land in the same cache that queries read. Open it with `useSubscription`.
+ */
 export function defineSubscription<TInput = void, TEvent = unknown>(
   contract: Omit<SubscriptionContract<TInput, TEvent>, 'kind'>,
 ): SubscriptionDefinition<TInput, TEvent> {

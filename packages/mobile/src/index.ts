@@ -1,7 +1,9 @@
 import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
 
+/** A native project the mobile platform creates and builds: `ios` (Xcode) or `android` (Android Studio). */
 export type MobileTarget = 'ios' | 'android'
 
+/** Options of the mobile platform, as written in `mobile({ ... })` in kitrrc.ts and edited by `kitr config <name>`. */
 export interface MobileOptions {
   /** Which native projects to create and run. Default both. */
   targets: MobileTarget[]
@@ -9,7 +11,7 @@ export interface MobileOptions {
   appId?: string
   /** Name shown on the home screen. Default the package name. */
   appName?: string
-  /** Custom URL scheme for deep links (`myapp://`). */
+  /** Custom URL scheme for deep links (`acme://`). Recorded in kitrrc.ts; register it in the native projects yourself. */
   scheme?: string
   /** Dev server port the device loads from with `kitr dev <name>`. Default 3100. */
   port: number

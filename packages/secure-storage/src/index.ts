@@ -14,16 +14,23 @@ import { createMemoryStorageDriver, getStorageDriver, type StorageDriver } from 
  * kept in IndexedDB (non-extractable), so a copied `localStorage` entry is useless on its own.
  */
 
+/** What a vault implements. Keys arrive with the service's prefix already added. */
 export interface SecureStorageDriver {
+  /** Shown in devtools, such as `web-crypto` or `memory`. */
   name: string
   /** Backed by hardware or an OS vault (false for the web fallback). */
   secure: boolean
+  /** Resolve the stored string, or null. */
   get(key: string): Promise<string | null>
+  /** Store a string. */
   set(key: string, value: string): Promise<void>
+  /** Delete a key. */
   remove(key: string): Promise<void>
+  /** Every stored key. Optional: without it the service lists keys written this session. */
   keys?(): Promise<string[]>
 }
 
+/** Options for `config/secure-storage.ts` and `createSecureStorage()`. */
 export interface SecureStorageConfig {
   /** Prefix for every key. Default `kitr:secure:`. */
   prefix?: string
@@ -35,23 +42,35 @@ export interface SecureStorageConfig {
   requireSecure?: boolean
 }
 
+/** The `secureStorage` service: async string storage over the vault, under one key prefix. */
 export interface SecureStorage {
+  /** The active driver. */
   readonly driver: SecureStorageDriver
   /** True when values live in an OS vault rather than the encrypted web fallback. */
   readonly secure: boolean
+  /** Resolve the string stored under `key`, or null. */
   get(key: string): Promise<string | null>
+  /** Store a string. Throws under `requireSecure` when no vault is registered. */
   set(key: string, value: string): Promise<void>
+  /** Delete a key. */
   remove(key: string): Promise<void>
   /** Keys written through this service (not every item in the vault). */
   keys(): Promise<string[]>
+  /** Remove every key `keys()` returns, leaving other prefixes alone. */
   clear(): Promise<void>
 }
 
+/** A typed secret bound to a `SecureStorage` service, as returned by calling a `defineSecureItem` result. */
 export interface SecureItem<T> {
+  /** The key, without the service prefix. */
   key: string
+  /** Resolve the value, or undefined when missing. Corrupt or invalid values are removed. */
   get(): Promise<T | undefined>
+  /** Store the value and notify this item's subscribers. */
   set(value: T): Promise<void>
+  /** Delete the value and notify this item's subscribers with undefined. */
   remove(): Promise<void>
+  /** Hear writes made through this bound item; returns an unsubscribe function. */
   subscribe(listener: (value: T | undefined) => void): () => void
 }
 
@@ -67,8 +86,10 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/secure-storage.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<SecureStorageConfig>()
 
+/** A vault in a `Map`, for tests and the server. `secure` is false; nothing survives a restart. */
 export function createMemorySecureStorageDriver(name = 'memory'): SecureStorageDriver {
   const map = new Map<string, string>()
   return {
@@ -196,6 +217,10 @@ export function createWebSecureStorageDriver(storage?: StorageDriver): SecureSto
   }
 }
 
+/**
+ * Build the `secureStorage` service. The driver is `config.driver`, else the vault registered on
+ * `app`, else the encrypted web fallback in a browser or the memory driver on the server.
+ */
 export function createSecureStorage(
   config: SecureStorageConfig = {},
   app?: KitrApp,
@@ -242,6 +267,7 @@ export function createSecureStorage(
   }
 }
 
+/** Options for `defineSecureItem`: a schema to check reads and a codec for non-JSON values. */
 export interface SecureItemOptions<T> {
   /** Validate what comes back from the vault; invalid values are removed. */
   schema?: StandardSchemaV1<unknown, T>
@@ -251,7 +277,7 @@ export interface SecureItemOptions<T> {
 
 /**
  * A typed, subscribable secret: `const session = defineSecureItem<Session>('session')`.
- * Bind it to an app with `session.bind(app.container.use('secureStorage'))` or use it through the provider.
+ * Call it with a service to bind it, `session(app.container.use('secureStorage'))`, or pass it to `useSecureItem`.
  */
 export function defineSecureItem<T>(key: string, options: SecureItemOptions<T> = {}) {
   const codec = options.codec ?? {
@@ -300,6 +326,7 @@ export function defineSecureItem<T>(key: string, options: SecureItemOptions<T> =
   }
 }
 
+/** The app's `secureStorage` service, outside React. Same as `app.container.use('secureStorage')`. */
 export function useSecureStorage(app: KitrApp): SecureStorage {
   return app.container.use('secureStorage')
 }

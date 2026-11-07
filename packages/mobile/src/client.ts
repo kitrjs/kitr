@@ -24,6 +24,7 @@ export function isCapacitor(): boolean {
   return cap()?.isNativePlatform() ?? false
 }
 
+/** True when the native shell registered the Capacitor plugin `name` (`'App'`, `'Share'`); always false on the web. */
 export function isPluginAvailable(name: string): boolean {
   return cap()?.isPluginAvailable(name) ?? false
 }

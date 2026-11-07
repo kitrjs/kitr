@@ -1,5 +1,6 @@
 import { createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
 
+/** A log level, lowest to highest; `silent` drops everything and is for configuration only. */
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'silent'
 const levels: Record<LogLevel, number> = {
   trace: 10,
@@ -11,16 +12,25 @@ const levels: Record<LogLevel, number> = {
   silent: 100,
 }
 
+/** One log line as an object: what `write` receives and what `json` format serialises. */
 export interface LogRecord {
+  /** The level it was written at. */
   level: LogLevel
+  /** When it was written, as an ISO 8601 string. */
   time: string
+  /** The logger's name, when it has one. */
   name?: string
+  /** The message, or the error's message. */
   msg: string
+  /** Bindings, fields, `err` for errors and `durationMs` from `time()`. */
   [key: string]: unknown
 }
 
+/** Options for `createLogger`, and the shape of `config/logger.ts`. */
 export interface LoggerOptions {
+  /** The lowest level written. Default `info`. */
   level?: LogLevel
+  /** Shown as `[name]` in pretty output and as `name` in JSON. */
   name?: string
   /** 'pretty' for terminals, 'json' for production. Default: pretty in dev, json otherwise. */
   format?: 'pretty' | 'json'
@@ -30,16 +40,25 @@ export interface LoggerOptions {
   write?: (line: string, record: LogRecord) => void
 }
 
+/** A logger: one method per level, child loggers that carry fields, and timing. Bound as `logger` by the provider. */
 export interface Logger {
+  /** The lowest level written. Settable at run time; children copy it when created. */
   level: LogLevel
+  /** Write at `trace`: step-by-step detail. */
   trace(msg: string, fields?: Record<string, unknown>): void
+  /** Write at `debug`: detail for development. */
   debug(msg: string, fields?: Record<string, unknown>): void
+  /** Write at `info`: something that happened. */
   info(msg: string, fields?: Record<string, unknown>): void
+  /** Write at `warn`: something odd that did not fail. */
   warn(msg: string, fields?: Record<string, unknown>): void
+  /** Write at `error`. Pass an `Error` to keep its name, message, stack and code under `err`. */
   error(msg: string | Error, fields?: Record<string, unknown>): void
+  /** Write at `fatal`. Pass an `Error` to keep its name, message, stack and code under `err`. */
   fatal(msg: string | Error, fields?: Record<string, unknown>): void
+  /** A logger that adds `bindings` to every record, optionally under another name. */
   child(bindings: Record<string, unknown>, name?: string): Logger
-  /** Time an async operation and log its duration. */
+  /** Run `fn`, then log `msg` at info with `durationMs`, even when it throws; returns its result. */
   time<T>(msg: string, fn: () => Promise<T>, fields?: Record<string, unknown>): Promise<T>
 }
 
@@ -53,6 +72,7 @@ const colors: Record<LogLevel, string> = {
   silent: '',
 }
 
+/** Create a logger without the provider, for scripts, packages and tests. */
 export function createLogger(options: LoggerOptions = {}): Logger {
   const isDev = (globalThis as any).process?.env?.NODE_ENV !== 'production'
   const format = options.format ?? (isDev ? 'pretty' : 'json')
@@ -135,6 +155,7 @@ function pretty(r: LogRecord): string {
   return `${tag} \x1b[90m${time.slice(11, 23)}\x1b[0m ${name ? `[${name}] ` : ''}${msg}${extras}${stack}`
 }
 
+/** The options in `config/logger.ts`; the same as `LoggerOptions`. */
 export type LoggerConfig = LoggerOptions
 
 declare module '@kitr/core' {
@@ -146,9 +167,13 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/logger.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<LoggerConfig>()
 
-/** Binds `logger` into the container from `config/logger.ts`. */
+/**
+ * Binds `logger` into the container from `config/logger.ts`, on the server and in the browser.
+ * In development with devtools, every record is also mirrored to the Log panel.
+ */
 export const loggerProvider = defineProvider({
   name: 'logger',
   register(app) {

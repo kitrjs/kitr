@@ -12,11 +12,13 @@ import type { RealtimeConfig } from './config'
 import { createSseTransport } from './sse'
 
 /**
- * A transport from `config/realtime.ts`: websocket (default) or sse here; socket.io loads its
+ * Creates the client transport `config/realtime.ts` names: websocket (default) or sse here; socket.io loads its
  * client from `kitr/realtime/socket.io` so the dependency stays optional.
  *
  *   let transport: SocketTransport | undefined
  *   export const realtime = () => (transport ??= createRealtimeClient(realtimeConfig))
+ *
+ * Call it lazily, as above, so nothing connects during SSR.
  */
 export function createRealtimeClient(config: RealtimeConfig = {}): SocketTransport {
   const transport = config.transport ?? 'websocket'

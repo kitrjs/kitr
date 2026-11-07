@@ -1,10 +1,15 @@
 import { useCallback, useRef, useState } from 'react'
 import { checkFile, type UploadedFile, type UploadOptions, type UploadRules, upload } from './index'
 
+/** The state `useUpload()` returns next to `send`, `cancel` and `reset`. */
 export interface UseUploadState {
+  /** The stored files from the last successful upload. */
   files: UploadedFile[]
+  /** Percent sent, 0 to 100. */
   progress: number
+  /** True while a request is in flight. */
   uploading: boolean
+  /** The last failure: a plain `Error` from the client-side check, or an `UploadError` from the request. */
   error: Error | null
 }
 
@@ -13,6 +18,8 @@ export interface UseUploadState {
  *
  *   const { send, progress, uploading, error } = useUpload({ accept: ['image/*'] })
  *   <input type="file" onChange={(e) => send(e.target.files)} />
+ *
+ * `send` checks every file against the rules first, then uploads; it resolves with the stored files and rethrows failures.
  */
 export function useUpload(options: UploadOptions & UploadRules = {}) {
   const [state, setState] = useState<UseUploadState>({

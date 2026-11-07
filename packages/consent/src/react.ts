@@ -3,8 +3,9 @@ import { useCallback, useSyncExternalStore } from 'react'
 import type { Consent, ConsentCategory, ConsentRecord } from './index'
 
 /**
- * The consent record and the actions a banner needs. Hydration-safe: the server and the first
- * render see "undecided", so the banner renders once on the client after mount.
+ * The consent record and the actions a banner needs; re-renders when the choice changes. The
+ * server always sees "undecided" while the browser reads the cookie on its first render, so in
+ * server-rendered apps render the banner only after mount.
  */
 export function useConsent(): {
   record: ConsentRecord
