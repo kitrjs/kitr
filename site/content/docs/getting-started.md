@@ -67,7 +67,7 @@ Say you want users to save a list of favourites that survives a reload:
 kitr add state
 ```
 
-That one command installs the package, wires it up and notes the conventions in `AGENTS.md`. Every package page on this site starts with a live example, then shows exactly what `kitr add` changed.
+That one command installs the package, wires it up and notes the conventions in `AGENTS.md`. Every package page on this site shows exactly what `kitr add` changed, then walks through each task the package supports.
 
 ## What next
 

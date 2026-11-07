@@ -101,7 +101,14 @@ export class KitrApp {
       for (const p of this.providers) await p.boot?.(this)
       this.phase = 'booted'
       return this
-    })()
+    })().catch((error) => {
+      // A failed boot is not cached: the next boot() starts over (a transient DB or a fixed env
+      // var should not need a new app), so drop the providers this attempt resolved.
+      this.booting = undefined
+      this.providers.length = 0
+      this.phase = 'created'
+      throw error
+    })
     return this.booting
   }
 

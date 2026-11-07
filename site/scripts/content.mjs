@@ -422,7 +422,7 @@ await Promise.all(
 )
 writeFileSync(join(site, 'public/apple-touch-icon.png'), await touchIcon(site))
 
-const today = new Date().toISOString().slice(0, 10)
+// No <lastmod>: every page would carry the build date, which teaches crawlers to ignore it.
 writeFileSync(
   join(site, 'public/sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>
@@ -430,7 +430,7 @@ writeFileSync(
 ${seoPages
   .map(
     (p) =>
-      `  <url><loc>${base}${p.path}</loc><lastmod>${today}</lastmod><priority>${p.path === '/' ? '1.0' : p.path.split('/').length > 3 ? '0.6' : '0.8'}</priority></url>`,
+      `  <url><loc>${base}${p.path}</loc><priority>${p.path === '/' ? '1.0' : p.path.split('/').length > 3 ? '0.6' : '0.8'}</priority></url>`,
   )
   .join('\n')}
 </urlset>

@@ -56,7 +56,10 @@ const terminal = [
     cmd: 'kitr new my-app --kit app',
     out: [
       ['ok', '✓ created my-app from the app kit'],
-      ['dim', '  router · query · http · forms · table · state · theme · auth · mocks · testing'],
+      [
+        'dim',
+        '  web · http · forms · table · state · tailwind · theme · auth · storage · mocks · testing · devtools',
+      ],
       ['ok', '✓ wrote AGENTS.md'],
       ['info', '→ cd my-app && npm run dev'],
     ],
