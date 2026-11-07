@@ -94,12 +94,10 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       const port = platform?.options.port
       // Tauri's webview sees TAURI_ENV_* at build time; every native shell wants a fixed port.
       const shell =
-        platform?.type === 'desktop'
+        platform?.type === 'desktop' || platform?.type === 'tauri'
           ? {
               clearScreen: false,
-              ...(platform.options.shell !== 'electron'
-                ? { envPrefix: ['VITE_', 'TAURI_ENV_*'] }
-                : {}),
+              ...(platform.type === 'tauri' ? { envPrefix: ['VITE_', 'TAURI_ENV_*'] } : {}),
             }
           : {}
       return {

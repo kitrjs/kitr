@@ -55,7 +55,8 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 | --- | --- | --- | --- |
 | `web` | `@kitr/web` | `kitr/web` (`web()`), `kitr/web/client` (`useInstallPrompt`, `useServiceWorker`), `kitr/web/vite` | router |
 | `server` | `@kitr/server` | `kitr/server` (`server()` beside `createServer`), `kitr/server/platform` | server |
-| `desktop` | `@kitr/desktop` | `kitr/desktop` (`desktop()`), `kitr/desktop/client`, `kitr/desktop/tauri`, `kitr/desktop/electron`, `kitr/desktop/electron-main`, `kitr/desktop/electron-preload`, `kitr/desktop/provider` | router, platform, storage |
+| `desktop` | `@kitr/desktop` | `kitr/desktop` (`desktop()`, Electron), `kitr/desktop/client`, `kitr/desktop/main`, `kitr/desktop/preload`, `kitr/desktop/provider` | router, platform, storage |
+| `tauri` | `@kitr/tauri` | `kitr/tauri` (`tauri()`), `kitr/tauri/client`, `kitr/tauri/provider` | router, platform, storage |
 | `mobile` | `@kitr/mobile` | `kitr/mobile` (`mobile()`), `kitr/mobile/client`, `kitr/mobile/provider` | router, platform, storage |
 
 ## Devtools
@@ -73,10 +74,11 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 | `saas` | `site` (ssr), `api` | the fullstack set with analytics and monitoring; sign-in, guarded shell, projects CRUD, tests |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools; prerendered pages, blog, newsletter |
 | `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, storage, seo, api, realtime, testing, devtools; chat over typed channels |
-| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop({ shell: 'electron' })` | the app kit plus platform; native dialogs over typed IPC |
+| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform; Electron, native dialogs over typed IPC |
+| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform; Tauri, typed Rust commands and events |
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform; installable PWA and the Capacitor shell |
 
-`kitr new <dir> --platform admin=web,api=server --mode spa --runtime bun` replaces a kit's platforms; `--shell`, `--targets`, `--pwa` and `--port` set the first platform's options.
+`kitr new <dir> --platform admin=web,api=server --mode spa --runtime bun` replaces a kit's platforms; `--targets`, `--pwa` and `--port` set the first platform's options.
 
 ## Roadmap
 

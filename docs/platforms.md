@@ -13,7 +13,7 @@ export default defineKitrConfig({
   platforms: {
     site: web({ mode: 'ssr', pwa: true }),
     api: server({ runtime: 'node', port: 3001 }),
-    app: desktop({ shell: 'tauri', title: 'My App' }),
+    app: desktop({ title: 'My App' }),
   },
   packages: [...],
   providers: [...],
@@ -26,17 +26,18 @@ Names are yours. One project can hold several platforms of the same type (`admin
 | --- | --- | --- | --- |
 | `web` | `@kitr/web` | `web()` from `kitr/web` | A browser app through TanStack Start: `static` (prerendered pages), `spa`, or `ssr`. `pwa: true` adds the manifest and service worker. |
 | `server` | `@kitr/server` | `server()` from `kitr/server` | The h3 server in `server/main.ts` on Node, Bun, Deno or Cloudflare Workers. |
-| `desktop` | `@kitr/desktop` | `desktop()` from `kitr/desktop` | A Tauri or Electron shell around the SPA build. Native project in `platforms/<name>/`. |
+| `desktop` | `@kitr/desktop` | `desktop()` from `kitr/desktop` | An Electron shell around the SPA build: Chromium ships with the app. Main and preload in `platforms/<name>/`. |
+| `tauri` | `@kitr/tauri` | `tauri()` from `kitr/tauri` | A Tauri shell around the SPA build: a small Rust binary on the OS webview. Rust project in `platforms/<name>/src-tauri`. |
 | `mobile` | `@kitr/mobile` | `mobile()` from `kitr/mobile` | A Capacitor shell for iOS and Android. Native project in `platforms/<name>/`. |
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `kitr dev [names...]` | Starts every platform (or the named ones) in parallel: Vite for `web`, `tsx watch` / `bun --watch` / `wrangler dev` for `server`, the Tauri or Electron dev window for `desktop`, Capacitor live reload for `mobile`. |
+| `kitr dev [names...]` | Starts every platform (or the named ones) in parallel: Vite for `web`, `tsx watch` / `bun --watch` / `wrangler dev` for `server`, the Electron window for `desktop`, the Tauri window for `tauri`, Capacitor live reload for `mobile`. |
 | `kitr build [names...]` | Production builds, in order. Web platforms land in `dist/<name>/` (`client/` and, for SSR, `server/server.js`). |
 | `kitr start [names...]` | Serves the builds: srvx for SSR and static sites, the compiled server for `server`. |
-| `kitr add <type> <name> [--option value]` | Adds a platform: installs the package, writes `platforms.<name>` into `kitrrc.ts`, adds the packages the platform needs (`router` for `web`, `router platform storage` for `desktop` and `mobile`, `server` for `server`), scaffolds its files and the `dev`/`build`/`start` scripts. `kitr add web admin --mode spa --port 3002`. |
+| `kitr add <type> <name> [--option value]` | Adds a platform: installs the package, writes `platforms.<name>` into `kitrrc.ts`, adds the packages the platform needs (`router` for `web`, `router platform storage` for `desktop`, `tauri` and `mobile`, `server` for `server`), scaffolds its files and the `dev`/`build`/`start` scripts. `kitr add web admin --mode spa --port 3002`. |
 | `kitr platforms` | Lists the platforms and their effective options. `kitr platforms types` lists the available types, `kitr platforms scaffold <name>` rewrites a platform's files, `kitr platforms remove <name>` takes it out of `kitrrc.ts`. |
 | `kitr config <name> [option] [value]` | Reads or sets one option in `kitrrc.ts`, validated against the platform's option schema: `kitr config site port 4000`, `kitr config api runtime bun`, `kitr config site pwa --unset`. |
 
@@ -68,17 +69,20 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 | `host` | | |
 | `entry` | `server/main.ts` | `createServer({...})` plus routes and realtime. A React project with a web platform also gets `app/routes/api.$.ts`, which mounts the same server inside TanStack Start. |
 
-**desktop** (`@kitr/desktop`)
+**desktop** (`@kitr/desktop`, Electron)
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `shell` | `tauri` | `tauri` (Rust, small binary, `platforms/<name>/src-tauri`) or `electron` (electron-vite, `platforms/<name>/{main,preload,ipc}.ts`). |
 | `port` | `3200` | Dev server the window loads. |
 | `title`, `width`, `height`, `minWidth`, `minHeight` | | Window. |
 | `appId` | | Bundle identifier. |
 | `devtools` | `true` | Open devtools in dev. |
 
-`kitr/desktop/client` tells which shell is running (`isTauri`, `isElectron`, `desktopShell`); `kitr/desktop/tauri` has `defineCommands`, `commandQuery`, `commandMutation` and `useTauriEvent`, `kitr/desktop/electron` the typed IPC bridge with `kitr/desktop/electron-main` and `kitr/desktop/electron-preload` for the other two processes. `kitr/desktop/provider` registers the `platform` and `storage` drivers for the shell in use.
+electron-vite builds `platforms/<name>/{main,preload,ipc}.ts`; electron-builder packages installers. `kitr/desktop/client` has the typed IPC bridge (`createIpcClient`, `isElectron`), `kitr/desktop/main` and `kitr/desktop/preload` serve the other two processes, and `kitr/desktop/provider` registers the `platform` and `storage` drivers. Electron is the recommended desktop shell for most setups: it ships a browser with the app, so what you test is what every user runs.
+
+**tauri** (`@kitr/tauri`)
+
+Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri` and needs the Rust toolchain; the window is the webview the operating system provides, so downloads are small but rendering can differ between machines. `kitr/tauri/client` has `isTauri`, `defineCommands`, `commandQuery`, `commandMutation`, `useTauriEvent` and `emitTauri`; `kitr/tauri/provider` registers the `platform` and `storage` drivers on the Tauri APIs and the store plugin. Pick one of `desktop` and `tauri` per project; neither installs the other's tooling.
 
 **mobile** (`@kitr/mobile`)
 
@@ -102,7 +106,7 @@ server/
   realtime.ts        # createRealtimeServer({ channels })
 config/              # one file per package (config/seo.ts, config/realtime.ts, config/theme.ts, ...)
 platforms/
-  app/               # desktop: src-tauri/ or the Electron main/preload sources
+  app/               # desktop: the Electron main/preload sources; tauri: src-tauri/
   phone/             # mobile: capacitor.config.ts, ios/, android/
 dist/<name>/         # build output per platform
 kitrrc.ts

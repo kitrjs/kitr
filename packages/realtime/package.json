@@ -16,7 +16,8 @@
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "type": "module",
   "license": "MIT",
@@ -63,6 +64,10 @@
     "./react": {
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
     },
     "./package.json": "./package.json"
   },

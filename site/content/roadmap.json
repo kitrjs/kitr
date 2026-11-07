@@ -40,9 +40,18 @@
       "status": "building",
       "category": "platforms",
       "runsOn": "client",
-      "replaces": ["tauri", "electron"],
-      "builtOn": ["Tauri 2", "electron-vite"],
-      "summary": "Ship the same app to Windows, macOS and Linux, choosing a small Tauri or a familiar Electron shell."
+      "replaces": ["electron"],
+      "builtOn": ["electron-vite", "electron-builder"],
+      "summary": "Ship the same app to Windows, macOS and Linux in an Electron shell: Chromium ships with the app, so it renders the same everywhere."
+    },
+    {
+      "name": "tauri",
+      "status": "building",
+      "category": "platforms",
+      "runsOn": "client",
+      "replaces": ["tauri"],
+      "builtOn": ["Tauri 2"],
+      "summary": "Ship the same app to Windows, macOS and Linux as a small Tauri binary on the operating system's webview."
     },
     {
       "name": "seo",

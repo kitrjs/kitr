@@ -35,6 +35,7 @@ const serverEntries = new Set([
   '@kitr/theme/server',
   '@kitr/web',
   '@kitr/desktop',
+  '@kitr/tauri',
   '@kitr/mobile',
   '@kitr/server/platform',
   '@kitr/auth/server',
@@ -67,8 +68,7 @@ const browserEntries = new Set([
   '@kitr/monitoring',
   '@kitr/web/client',
   '@kitr/desktop/client',
-  '@kitr/desktop/tauri',
-  '@kitr/desktop/electron',
+  '@kitr/tauri/client',
   '@kitr/mobile/client',
   '@kitr/platform',
   '@kitr/platform/react',
@@ -94,11 +94,7 @@ const browserEntries = new Set([
   '@kitr/updater/react',
 ])
 /** Entries that legitimately need a host at import time (a DOM, Electron, Vite). */
-const skipNodeImport = new Set([
-  '@kitr/desktop/electron-main',
-  '@kitr/desktop/electron-preload',
-  '@kitr/kitr',
-])
+const skipNodeImport = new Set(['@kitr/desktop/main', '@kitr/desktop/preload', '@kitr/kitr'])
 /** Gzip budget per entry file, bytes. Generous; the point is catching a dependency bundled in. */
 /** Does this entry hold code templates (import lines inside strings), so import scans would misread it? */
 const isCodegen = (name, spec) => codegen.has(name) || spec === `${name}/kitr`
@@ -108,6 +104,7 @@ const codegen = new Set([
   '@kitr/vite',
   '@kitr/web',
   '@kitr/desktop',
+  '@kitr/tauri',
   '@kitr/mobile',
   '@kitr/server',
   'kitr',
@@ -118,6 +115,7 @@ const budgets = {
   '@kitr/vite': 30 * 1024,
   '@kitr/devtools': 20 * 1024,
   '@kitr/desktop': 20 * 1024,
+  '@kitr/tauri': 20 * 1024,
   '@kitr/web': 16 * 1024,
 }
 

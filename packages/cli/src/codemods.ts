@@ -154,6 +154,42 @@ export class Codemods {
     this.ctx.touched.add(file)
   }
 
+  /**
+   * Insert `line` (with its import) into the server entry once. By default it goes after the
+   * routes and anything attached before it; `first` puts it straight after `createServer()` so
+   * middleware that must see every request reads in the order it runs. The entry is the
+   * `server` platform's `entry` option when one is listed in kitrrc.ts, else `server/main.ts`.
+   */
+  attachToServer(options: { marker: string; import?: string; line: string; first?: boolean }) {
+    const file = this.serverEntry()
+    const full = this.ctx.path(file)
+    if (!existsSync(full)) return
+    const main = readFileSync(full, 'utf8')
+    if (main.includes(options.marker)) return
+    let next = options.import
+      ? main.replace(/(import \{ createServer \} from 'kitr\/server'\n)/, `$1${options.import}\n`)
+      : main
+    next = options.first
+      ? next.replace(/(export const server = createServer\([^\n]*\)\n)/, `$1${options.line}\n`)
+      : next.replace(
+          /(export const server = createServer\([^\n]*\)\n(?:(?:\/\/[^\n]*\n)?(?!export |const |\n)[^\n]+\n)*)/,
+          `$1${options.line}\n`,
+        )
+    if (next === main) return
+    if (!this.ctx.dryRun) writeFileSync(full, next)
+    this.ctx.touched.add(file)
+    this.ctx.log.step(`edit ${file}`)
+  }
+
+  /** The server platform's entry file from kitrrc.ts, default `server/main.ts`. */
+  serverEntry(): string {
+    const platform = Object.values(this.ctx.readRc().platforms).find((p) => p.factory === 'server')
+    const entry = platform?.options?.entry
+    return typeof entry === 'string'
+      ? entry
+      : `${this.ctx.readRc().directories.server ?? 'server'}/main.ts`
+  }
+
   /** Delete a file kitr generated earlier (e.g. index.html when switching to Start). */
   remove(file: string) {
     const full = this.ctx.path(file)

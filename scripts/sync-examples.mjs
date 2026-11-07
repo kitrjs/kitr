@@ -32,6 +32,7 @@ export const examples = {
   site: 'site',
   realtime: 'realtime',
   desktop: 'desktop',
+  tauri: 'tauri',
   mobile: 'mobile',
 }
 /** Build output and generated files that are not part of the kit. */

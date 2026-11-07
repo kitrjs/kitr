@@ -10,6 +10,7 @@ export default defineConfig({
     'src/sse.ts',
     'src/sse-server.ts',
     'src/react.ts',
+    'src/kitr.ts',
   ],
   format: ['esm'],
   dts: { resolve: false },

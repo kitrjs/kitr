@@ -28,6 +28,10 @@
       "types": "./dist/provider.d.ts",
       "default": "./dist/provider.js"
     },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -55,6 +59,7 @@
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   }
 }

@@ -1,60 +1,41 @@
 import { type CommandDef, runMain as cittyRunMain, defineCommand, runCommand } from 'citty'
 import pc from 'picocolors'
 import { add, describePackage, remove } from './commands/add'
-import { apiSync, routesList } from './commands/api'
-import { cssTypes } from './commands/css-types'
 import { doctor } from './commands/doctor'
 import { eject } from './commands/eject'
-import {
-  makeAction,
-  makeChannel,
-  makeComponent,
-  makeController,
-  makeException,
-  makeForm,
-  makeHook,
-  makeMail,
-  makeMiddleware,
-  makeProvider,
-  makeQueries,
-  makeRoute,
-  makeService,
-  makeStore,
-  makeTest,
-  makeValidator,
-  packageGenerators,
-} from './commands/make'
+import { coreGeneratorCommands, packageGenerators } from './commands/make'
 import { newCommand } from './commands/new'
 import { packageCheck } from './commands/package-check'
 import { build, config, dev, platforms, start } from './commands/platforms'
 import { serve } from './commands/serve'
-import { ui } from './commands/ui'
 import { upgrade } from './commands/upgrade'
 import { createContext, findProjectRoot, findRcPath, log } from './context'
 import { installedPackages } from './packages'
 
+export { createAddContext, createProjectInfo } from './add-context'
 export { Codemods } from './codemods'
 export type { Finding } from './commands/doctor'
 export { runChecks } from './commands/doctor'
-export { addComponents, DEFAULT_REGISTRY } from './commands/ui'
+export type { StubFn } from './commands/make'
+export { coreGenerators, renderStub, stubOverrides } from './commands/make'
 export { configurePackages } from './configure'
 export type { ProjectContext, RcInfo } from './context'
 export { createContext, findProjectRoot, readRcInfo } from './context'
 export { kits } from './kits'
-export { installedPackages, loadPackage, resolvePackageName } from './packages'
-export { resolvePlan } from './plan'
+export type { KitrManifest } from './manifest'
+export { manifests } from './manifests.gen'
+export type { LoadedPackage } from './packages'
+export { cliResolve, installedPackages, loadPackage, resolvePackageName } from './packages'
+export { knownPackageNames, resolvePlan } from './plan'
 export {
   addPlatform,
   createPlatformContext,
   loadPlatforms,
-  platformTypes,
+  platformTypeNames,
+  resolvePlatformType,
   runPlatforms,
 } from './platforms'
 export { describeQuestions, resolveAnswers } from './questions'
-export type { Recipe } from './recipes'
-export { recipeNames, recipes, resolveRecipes } from './recipes'
-export type { StubFn } from './stubs'
-export { naming, renderStub, stubs } from './stubs'
 export { versionOf, versions } from './versions'
 
 const info = defineCommand({
@@ -94,32 +75,13 @@ export const main = defineCommand({
     new: newCommand,
     add,
     remove,
-    'make:route': makeRoute,
-    'make:action': makeAction,
-    'make:controller': makeController,
-    'make:middleware': makeMiddleware,
-    'make:channel': makeChannel,
-    'make:store': makeStore,
-    'make:form': makeForm,
-    'make:queries': makeQueries,
-    'make:provider': makeProvider,
-    'make:mail': makeMail,
-    'make:service': makeService,
-    'make:validator': makeValidator,
-    'make:test': makeTest,
-    'make:component': makeComponent,
-    'make:hook': makeHook,
-    'make:exception': makeException,
+    ...coreGeneratorCommands,
     dev,
     build,
     start,
     serve,
     platforms,
     config,
-    ui,
-    'api:sync': apiSync,
-    'routes:list': routesList,
-    'css:types': cssTypes,
     doctor,
     'package:check': packageCheck,
     eject,

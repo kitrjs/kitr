@@ -118,5 +118,9 @@ export function createAddContext(
       extend: (spec) => codemods.extendRoutes(spec),
       remove: (spec) => codemods.removeRoutesExtension(spec),
     },
+    replaceImport: (file, from, to) => codemods.replaceCssImport(file, from, to),
+    server: {
+      attach: (options) => codemods.attachToServer(options),
+    },
   }
 }

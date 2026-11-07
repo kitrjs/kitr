@@ -20,6 +20,8 @@ export interface KitrManifest {
   client?: boolean
   /** Part of every app; not added on its own. */
   included?: boolean
+  /** A `platform` is added as `kitr add <name> <platform-name>`; a `kit` by `kitr new --kit`. Default `package`. */
+  kind?: 'package' | 'platform' | 'kit'
   /** Folder of markdown docs, relative to the package root. */
   docs?: string
   /** The setup module's export path (`./kitr`), when the package ships one. */
@@ -65,6 +67,8 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
       errors.push(`"${field}" must be a list of strings`)
   if (k.setup !== undefined && k.setup !== './kitr')
     errors.push('"setup" must be "./kitr" (the export the CLI loads)')
+  if (k.kind !== undefined && !['package', 'platform', 'kit'].includes(k.kind as string))
+    errors.push('"kind" must be "package", "platform" or "kit"')
   if (known.length && Array.isArray(k.requires))
     for (const dep of k.requires)
       if (!known.includes(dep)) errors.push(`requires unknown package "${dep}"`)

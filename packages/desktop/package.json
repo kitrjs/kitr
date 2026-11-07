@@ -1,16 +1,16 @@
 {
   "name": "@kitr/desktop",
   "version": "0.1.0",
-  "description": "kitr/desktop: the desktop platform with a Tauri or Electron shell. Native project in platforms/<name>/, typed commands and IPC, storage drivers, packaging.",
+  "description": "kitr/desktop: the desktop platform with an Electron shell. Main and preload in platforms/<name>/, typed IPC, storage drivers, packaging with electron-builder.",
   "kitr": {
     "name": "desktop",
     "title": "Desktop",
-    "summary": "Ship the same app to Windows, macOS and Linux, choosing a small Tauri or a familiar Electron shell.",
+    "summary": "Ship the same app to Windows, macOS and Linux in an Electron shell: Chromium ships with the app, so it renders the same everywhere.",
     "category": "platforms",
     "runsOn": "client",
     "builtOn": [
-      "Tauri 2",
-      "electron-vite"
+      "electron-vite",
+      "electron-builder"
     ],
     "requires": [
       "router",
@@ -18,7 +18,9 @@
       "storage"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "kind": "platform",
+    "setup": "./kitr"
   },
   "type": "module",
   "license": "MIT",
@@ -42,25 +44,21 @@
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
     },
+    "./main": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./preload": {
+      "types": "./dist/preload.d.ts",
+      "default": "./dist/preload.js"
+    },
     "./provider": {
       "types": "./dist/provider.d.ts",
       "default": "./dist/provider.js"
     },
-    "./tauri": {
-      "types": "./dist/tauri.d.ts",
-      "default": "./dist/tauri.js"
-    },
-    "./electron": {
-      "types": "./dist/electron.d.ts",
-      "default": "./dist/electron.js"
-    },
-    "./electron-main": {
-      "types": "./dist/electron-main.d.ts",
-      "default": "./dist/electron-main.js"
-    },
-    "./electron-preload": {
-      "types": "./dist/electron-preload.d.ts",
-      "default": "./dist/electron-preload.js"
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
     },
     "./package.json": "./package.json"
   },
@@ -79,29 +77,13 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "@tauri-apps/api": ">=2.0.0",
-    "electron": ">=30.0.0",
-    "@tauri-apps/plugin-store": ">=2.0.0",
-    "@tauri-apps/plugin-opener": ">=2.0.0",
-    "@tauri-apps/plugin-process": ">=2.0.0"
+    "electron": ">=30.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
-    "@tauri-apps/api": {
-      "optional": true
-    },
     "electron": {
-      "optional": true
-    },
-    "@tauri-apps/plugin-store": {
-      "optional": true
-    },
-    "@tauri-apps/plugin-opener": {
-      "optional": true
-    },
-    "@tauri-apps/plugin-process": {
       "optional": true
     }
   },
@@ -111,11 +93,7 @@
     "@types/node": "^22.19.0",
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
-    "@tauri-apps/api": "^2.12.4",
-    "electron": "^45.2.3",
-    "@tauri-apps/plugin-store": "^2.4.0",
-    "@tauri-apps/plugin-opener": "^2.5.0",
-    "@tauri-apps/plugin-process": "^2.3.0"
+    "electron": "^45.2.3"
   },
   "keywords": [
     "kitr",

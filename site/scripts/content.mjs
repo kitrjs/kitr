@@ -328,7 +328,7 @@ export default defineKitrConfig({
   platforms: {
     site: web({ mode: 'ssr', pwa: true }),
     api: server({ runtime: 'node', port: 3001 }),
-    app: desktop({ shell: 'tauri', title: 'Acme' }),
+    app: desktop({ title: 'Acme' }),
     phone: mobile({ appId: 'com.acme.app', appName: 'Acme' }),
   },
 })`,

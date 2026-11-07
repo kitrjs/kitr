@@ -97,9 +97,9 @@ describe('kitr() plugin', () => {
 
   it('applies the desktop shell settings for a Tauri platform', async () => {
     const root = project({
-      'kitrrc.ts': `import { desktop } from 'kitr/desktop'
+      'kitrrc.ts': `import { tauri } from 'kitr/tauri'
 export default defineKitrConfig({
-  platforms: { app: desktop({ shell: 'tauri', port: 3200 }) },
+  platforms: { app: tauri({ port: 3200 }) },
   packages: ['@kitr/router'],
   providers: [],
 })`,

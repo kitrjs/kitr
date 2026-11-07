@@ -25,32 +25,40 @@ describe('kitr new', () => {
   })
   afterAll(() => remove(tmp))
 
-  it.each(['blank', 'app', 'fullstack', 'server', 'saas', 'site', 'realtime', 'desktop', 'mobile'])(
-    'kit %s writes a valid project',
-    (kit) => {
-      kitr(
-        tmp,
-        'new',
-        kit,
-        '--kit',
-        kit,
-        '--no-install',
-        '--no-git',
-        '--registry',
-        join(root, 'registry/dist'),
-      )
-      const dir = join(tmp, kit)
-      const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
-      expect(pkg.name).toBe(kit)
-      expect(pkg.type).toBe('module')
-      expect(exists(dir, 'kitrrc.ts')).toBe(true)
-      expect(exists(dir, 'AGENTS.md')).toBe(true)
-      // Every provider in kitrrc.ts has its package in package.json.
-      const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
-      for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
-        expect(pkg.dependencies?.[name!] ?? pkg.devDependencies?.[name!], name).toBeDefined()
-    },
-  )
+  it.each([
+    'blank',
+    'app',
+    'fullstack',
+    'server',
+    'saas',
+    'site',
+    'realtime',
+    'desktop',
+    'tauri',
+    'mobile',
+  ])('kit %s writes a valid project', (kit) => {
+    kitr(
+      tmp,
+      'new',
+      kit,
+      '--kit',
+      kit,
+      '--no-install',
+      '--no-git',
+      '--registry',
+      join(root, 'registry/dist'),
+    )
+    const dir = join(tmp, kit)
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    expect(pkg.name).toBe(kit)
+    expect(pkg.type).toBe('module')
+    expect(exists(dir, 'kitrrc.ts')).toBe(true)
+    expect(exists(dir, 'AGENTS.md')).toBe(true)
+    // Every provider in kitrrc.ts has its package in package.json.
+    const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+    for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
+      expect(pkg.dependencies?.[name!] ?? pkg.devDependencies?.[name!], name).toBeDefined()
+  })
 
   it.each(['blank', 'app', 'fullstack', 'server', 'saas', 'site', 'realtime', 'desktop', 'mobile'])(
     'kit %s passes its own lint once formatted (what `new` does after install)',
@@ -83,6 +91,7 @@ describe.each([
   'site',
   'realtime',
   'desktop',
+  'tauri',
   'mobile',
 ])('example %s', (name) => {
   const dir = join(root, 'examples', name)
@@ -123,6 +132,15 @@ describe('make:* generators produce code that typechecks and builds', () => {
     expect(kitr(dir, 'add', 'jobs', '--help')).toMatch(/--worker \/ --no-worker/)
     expect(kitr(dir, '--help')).toMatch(/jobs:list/)
     expect(kitr(dir, 'jobs:list')).toMatch(/example\s+3/)
+  })
+
+  let serverMain: string
+  it('kitr add mail mounts the preview on the server and brings the make:mail generator', () => {
+    serverMain = readFileSync(join(dir, 'server/main.ts'), 'utf8')
+    const out = kitr(dir, 'add', 'mail', '--no-install')
+    expect(out).toMatch(/config\/mail\.ts/)
+    expect(readFileSync(join(dir, 'server/main.ts'), 'utf8')).toContain('mailPreview(server')
+    expect(kitr(dir, '--help')).toMatch(/make:mail/)
   })
 
   const generators: Array<[string, string, string]> = [
@@ -170,9 +188,11 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
 
   it('the project still builds and typechecks with every generated file', () => {
-    // The example copy has no @kitr/jobs installed (only its own dependencies are linked), so
-    // drop the package wiring first; the generated jobs stay and import through `kitr/jobs`.
+    // The example copy has no @kitr/jobs or @kitr/mail installed (only its own dependencies are
+    // linked), so drop the package wiring first; the generated files stay and import through `kitr/*`.
     kitr(dir, 'remove', 'jobs', '--no-install')
+    kitr(dir, 'remove', 'mail', '--no-install')
+    writeFileSync(join(dir, 'server/main.ts'), serverMain)
     kitr(dir, 'build', 'site')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   }, 300_000)

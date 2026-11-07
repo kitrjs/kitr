@@ -29,10 +29,10 @@ describe('platform commands', () => {
     return false
   }
 
-  it('kitr platforms lists each platform with its options, and types lists the four kinds', () => {
+  it('kitr platforms lists each platform with its options, and types lists every kind', () => {
     expect(kitr(fullstack, 'platforms')).toMatch(/site\s+web\s+mode=ssr[\s\S]*api\s+server/)
     const types = kitr(backend, 'platforms', 'types')
-    for (const t of ['web', 'server', 'desktop', 'mobile'])
+    for (const t of ['web', 'server', 'desktop', 'tauri', 'mobile'])
       expect(types).toMatch(new RegExp(`\\b${t}\\b`))
   })
 

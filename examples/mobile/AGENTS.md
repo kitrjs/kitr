@@ -17,7 +17,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: platform
 
 - Never branch on user agents or `window.__TAURI__`: use `usePlatform()`, `useOnline()`, `useAppState()`, `useBackButton()`, `useDeepLink()`, `useSafeArea()` from `kitr/platform/react`, or `app.use('platform')` outside React. `platform.is('mobile')` / `platform.is('ios')` match the type or the OS.
-- The web, desktop and mobile platform providers register the drivers; in a plain browser the defaults apply, so the same code runs everywhere.
+- The web, desktop, tauri and mobile platform providers register the drivers; in a plain browser the defaults apply, so the same code runs everywhere.
 
 ## kitr: storage
 

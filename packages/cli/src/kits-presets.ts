@@ -1915,6 +1915,86 @@ function HomePage() {
 }
 
 // ---------------------------------------------------------------------------
+// tauri: the app kit in a Tauri shell with typed Rust commands
+// ---------------------------------------------------------------------------
+
+const tauriExtra = (ctx: ProjectContext, name: string) => {
+  const brand = displayName(name)
+  write(
+    ctx,
+    'app/routes/index.tsx',
+    `import { createFileRoute } from '@tanstack/react-router'
+import { isTauri, useTauriEvent } from 'kitr/tauri/client'
+import { useCallback, useState } from 'react'
+import { commands } from '#app/commands'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { Input } from '#components/ui/input'
+import { PageHeader } from '#components/ui/page-header'
+
+export const Route = createFileRoute('/')({
+  component: HomePage,
+})
+
+/**
+ * The same page runs in the browser (\`kitr dev site\`) and in the Tauri window (\`kitr dev app\`).
+ * \`isTauri()\` tells them apart; every call goes through the typed commands in app/commands.ts,
+ * which mirror the \`#[tauri::command]\` functions in platforms/app/src-tauri/src/lib.rs.
+ */
+function HomePage() {
+  const native = isTauri()
+  const [name, setName] = useState('kitr')
+  const [greeting, setGreeting] = useState<string>()
+  const [lastEvent, setLastEvent] = useState<string>()
+  useTauriEvent<string>(
+    'hello',
+    useCallback((payload: string) => setLastEvent(payload), []),
+  )
+
+  return (
+    <main className="mx-auto max-w-2xl p-6">
+      <PageHeader
+        title="${brand}"
+        description="A kitr app with a Tauri shell. The window loads the same client build the web platform ships."
+        actions={<Badge variant={native ? 'default' : 'secondary'}>{native ? 'Tauri' : 'Browser'}</Badge>}
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Rust commands</CardTitle>
+            <CardDescription>\`commands.greet({ name })\` runs in src-tauri/src/lib.rs.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Input value={name} onChange={(e) => setName(e.target.value)} disabled={!native} />
+            <Button disabled={!native} onClick={async () => setGreeting(await commands.greet({ name }))}>
+              Greet
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              {native ? (greeting ?? 'No greeting yet.') : 'Available inside the Tauri window.'}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Events</CardTitle>
+            <CardDescription>Rust emits \`hello\` (\`app.emit("hello", payload)\`); the page listens with \`useTauriEvent\`.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {native ? (lastEvent ?? 'No event received yet.') : 'Available inside the Tauri window.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  )
+}
+`,
+  )
+}
+
+// ---------------------------------------------------------------------------
 // mobile: the app kit as a PWA and a Capacitor shell
 // ---------------------------------------------------------------------------
 
@@ -2096,13 +2176,16 @@ const appComponents = [
   'badge',
 ]
 
-export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobile', Kit> = {
+export const presetKits: Record<
+  'saas' | 'site' | 'realtime' | 'desktop' | 'tauri' | 'mobile',
+  Kit
+> = {
   saas: {
     name: 'saas',
     description:
       'A logged-in product on its own API: sign-in, a guarded app shell, a projects CRUD with a data table, analytics and monitoring. Server-rendered web plus an API server.',
     platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
-    recipes: [
+    packages: [
       'http',
       'forms',
       'table',
@@ -2127,7 +2210,7 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
     description:
       'A marketing site: server-rendered with prerendering, SEO heads, i18n (en/de), a blog and a newsletter form on a controller.',
     platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
-    recipes: [
+    packages: [
       'query',
       'forms',
       'tailwind',
@@ -2149,7 +2232,7 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
     description:
       'A chat room: typed WebSocket channels that feed the query cache, a messages controller, rooms in the URL.',
     platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
-    recipes: [
+    packages: [
       'query',
       'forms',
       'tailwind',
@@ -2168,12 +2251,12 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
   desktop: {
     name: 'desktop',
     description:
-      'The app kit in an Electron shell with a typed IPC contract and native dialogs. Pass --shell tauri for Tauri.',
+      'The app kit in an Electron shell with a typed IPC contract and native dialogs. See the tauri kit for a Tauri shell.',
     platforms: {
       site: { type: 'web', options: { mode: 'spa' } },
-      app: { type: 'desktop', options: { shell: 'electron' } },
+      app: { type: 'desktop' },
     },
-    recipes: [
+    packages: [
       'http',
       'forms',
       'table',
@@ -2191,6 +2274,32 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
     base: baseReact,
     extra: desktopExtra,
   },
+  tauri: {
+    name: 'tauri',
+    description:
+      'The app kit in a Tauri shell: typed Rust commands and events from the same React app. See the desktop kit for Electron.',
+    platforms: {
+      site: { type: 'web', options: { mode: 'spa' } },
+      app: { type: 'tauri' },
+    },
+    packages: [
+      'http',
+      'forms',
+      'table',
+      'state',
+      'tailwind',
+      'theme',
+      'auth',
+      'storage',
+      'mocks',
+      'testing',
+      'devtools',
+      'platform',
+    ],
+    components: appComponents,
+    base: baseReact,
+    extra: tauriExtra,
+  },
   mobile: {
     name: 'mobile',
     description:
@@ -2199,7 +2308,7 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
       site: { type: 'web', options: { mode: 'spa', pwa: true } },
       phone: { type: 'mobile' },
     },
-    recipes: [
+    packages: [
       'http',
       'forms',
       'table',

@@ -8,8 +8,8 @@ import {
   loadPlatforms,
   parseFlags,
   platformTypeNames,
-  platformTypes,
   removeRcPlatform,
+  resolvePlatformType,
   runPlatforms,
   selectPlatforms,
   setRcPlatformOption,
@@ -58,10 +58,16 @@ export const platforms = defineCommand({
   async run({ args, rawArgs }) {
     const ctx = createContext()
     if (args.action === 'types') {
-      for (const [type, info] of Object.entries(platformTypes))
-        ctx.log.plain(
-          `  ${pc.bold(type.padEnd(9))} ${info.description} ${pc.dim(`(${info.package})`)}`,
-        )
+      for (const type of platformTypeNames) {
+        try {
+          const info = await resolvePlatformType(ctx, type)
+          ctx.log.plain(
+            `  ${pc.bold(type.padEnd(9))} ${info.description} ${pc.dim(`(${info.package})`)}`,
+          )
+        } catch {
+          ctx.log.plain(`  ${pc.bold(type.padEnd(9))} ${pc.dim('(not installed)')}`)
+        }
+      }
       return
     }
     if (args.action === 'scaffold') {
@@ -171,14 +177,14 @@ export async function addPlatformCommand(
 ) {
   const ctx = createContext({ dryRun: options.dryRun })
   const { words, flags } = parseFlags(rawArgs)
+  const info = await resolvePlatformType(ctx, type)
   const name = words[0]
   if (!name)
     throw new Error(
-      `kitr add ${type} <name> [--option value]   e.g. kitr add ${type} ${defaultName(type)}`,
+      `kitr add ${type} <name> [--option value]   e.g. kitr add ${type} ${info.defaultName}`,
     )
   const platformOptions: Record<string, unknown> = {}
-  const factory = await (await import('../platforms')).loadFactory(ctx, type)
-  const describe = factory({}).definition.describe ?? {}
+  const describe = info.factoryFn({}).definition.describe ?? {}
   for (const [key, raw] of Object.entries(flags)) {
     if (key === 'install' || key === 'dry-run' || key === 'scaffold') continue
     const spec = describe[key]
@@ -195,11 +201,8 @@ export async function addPlatformCommand(
     name,
     options: platformOptions,
     scaffold: flags.scaffold !== false,
+    install: options.install,
   })
   await codemods.flush({ install: options.install })
   ctx.log.success(`${name}: kitr dev ${name} · kitr build ${name} · kitr config ${name}`)
-}
-
-export function defaultName(type: string) {
-  return { web: 'site', server: 'api', desktop: 'app', mobile: 'phone' }[type] ?? type
 }

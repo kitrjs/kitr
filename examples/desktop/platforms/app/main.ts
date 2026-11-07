@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron'
-import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from 'kitr/desktop/electron-main'
+import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from 'kitr/desktop/main'
 import type { Ipc, IpcPush } from './ipc'
 
 const window = {"title":"Desktop","width":1200,"height":800}

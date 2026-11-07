@@ -1457,6 +1457,9 @@ importers:
       h3:
         specifier: ^2.0.8
         version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
+      jiti:
+        specifier: ^2.7.0
+        version: 2.7.0
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -1528,18 +1531,6 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
-      '@kitr/desktop':
-        specifier: workspace:*
-        version: link:../desktop
-      '@kitr/mobile':
-        specifier: workspace:*
-        version: link:../mobile
-      '@kitr/server':
-        specifier: workspace:*
-        version: link:../server
-      '@kitr/web':
-        specifier: workspace:*
-        version: link:../web
       citty:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1647,18 +1638,6 @@ importers:
         specifier: workspace:*
         version: link:../storage
     devDependencies:
-      '@tauri-apps/api':
-        specifier: ^2.12.4
-        version: 2.12.4
-      '@tauri-apps/plugin-opener':
-        specifier: ^2.5.0
-        version: 2.7.2
-      '@tauri-apps/plugin-process':
-        specifier: ^2.3.0
-        version: 2.4.0
-      '@tauri-apps/plugin-store':
-        specifier: ^2.4.0
-        version: 2.5.0
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
@@ -1991,6 +1970,9 @@ importers:
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../tailwind
+      '@kitr/tauri':
+        specifier: workspace:*
+        version: link:../tauri
       '@kitr/testing':
         specifier: workspace:*
         version: link:../testing
@@ -2577,6 +2559,46 @@ importers:
         specifier: ^8.3.6
         version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
+  packages/tauri:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@tauri-apps/api':
+        specifier: ^2.12.4
+        version: 2.12.4
+      '@tauri-apps/plugin-opener':
+        specifier: ^2.5.0
+        version: 2.7.2
+      '@tauri-apps/plugin-process':
+        specifier: ^2.3.0
+        version: 2.4.0
+      '@tauri-apps/plugin-store':
+        specifier: ^2.4.0
+        version: 2.5.0
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/testing:
     dependencies:
       '@kitr/core':
@@ -2629,6 +2651,9 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
     devDependencies:
+      '@kitr/cli':
+        specifier: workspace:*
+        version: link:../cli
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
