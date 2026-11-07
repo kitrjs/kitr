@@ -1,10 +1,11 @@
-import { createApp, KitrError } from '@kitr/core'
+import { createApp, KitrError, operations } from '@kitr/core'
 import { KitrProvider } from '@kitr/react'
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   applyCacheEffect,
+  call,
   createQueryClient,
   defineMutation,
   defineQuery,
@@ -12,10 +13,13 @@ import {
   invalidate,
   QueryClient,
   QueryClientProvider,
+  queryOptions,
   queryProvider,
   useKitrMutation,
+  useMutation,
   useQuery,
   useSubscription,
+  useSuspenseQuery,
 } from '../src'
 
 const wrapperFor = (client: QueryClient) =>
@@ -271,5 +275,104 @@ describe('queryProvider', () => {
       expect.any(Error),
       'error',
     )
+  })
+})
+
+describe('name and definition forms', () => {
+  const listProjects = defineQuery<{ owner?: string }, string[]>({
+    key: (input) => ['projects', input?.owner ?? 'all'],
+    fetch: async (input) => [input?.owner ?? 'all'],
+    source: 'action',
+  })
+  const updateProject = defineMutation<{ id: string }, { id: string }>({
+    mutate: async ({ id }) => ({ id }),
+    effects: { invalidate: [['projects']] },
+  })
+  const named = {
+    'projects.list': Object.assign(listProjects, {
+      kind: 'query' as const,
+      name: 'projects.list',
+      contract: {},
+    }),
+    'projects.update': Object.assign(updateProject, {
+      kind: 'mutation' as const,
+      name: 'projects.update',
+      contract: {},
+    }),
+  }
+
+  beforeEach(() => {
+    operations.reset()
+    operations.register(named)
+  })
+
+  it('useQuery resolves a registered name and a definition to the same options', async () => {
+    const client = new QueryClient()
+    const byName = renderHook(() => useQuery('projects.list' as any, { owner: 'ada' }), {
+      wrapper: wrapperFor(client),
+    })
+    await waitFor(() => expect(byName.result.current.isSuccess).toBe(true))
+    expect(byName.result.current.data).toEqual(['ada'])
+    const byDefinition = renderHook(() => useQuery(named['projects.list'], { owner: 'ada' }), {
+      wrapper: wrapperFor(client),
+    })
+    await waitFor(() => expect(byDefinition.result.current.isSuccess).toBe(true))
+    expect(client.getQueryData(['projects', 'ada'])).toEqual(['ada'])
+    expect(client.getQueryCache().getAll()).toHaveLength(1)
+  })
+
+  it('useQuery passes overrides through and still accepts plain TanStack options', async () => {
+    const client = new QueryClient()
+    const { result } = renderHook(
+      () => useQuery('projects.list' as any, undefined, { enabled: false }),
+      { wrapper: wrapperFor(client) },
+    )
+    expect(result.current.fetchStatus).toBe('idle')
+    const plain = renderHook(() => useQuery({ queryKey: ['plain'], queryFn: () => 'ok' }), {
+      wrapper: wrapperFor(client),
+    })
+    await waitFor(() => expect(plain.result.current.data).toBe('ok'))
+  })
+
+  it('queryOptions works for loaders and useSuspenseQuery reads the cache it fills', async () => {
+    const client = new QueryClient()
+    const opts = queryOptions('projects.list' as any, { owner: 'grace' })
+    expect(opts.queryKey).toEqual(['projects', 'grace'])
+    await client.ensureQueryData(opts)
+    const { result } = renderHook(
+      () => useSuspenseQuery('projects.list' as any, { owner: 'grace' }),
+      {
+        wrapper: wrapperFor(client),
+      },
+    )
+    await waitFor(() => expect(result.current.data).toEqual(['grace']))
+  })
+
+  it('useMutation by name applies cache effects and then the caller onSuccess', async () => {
+    const client = new QueryClient()
+    client.setQueryData(['projects', 'all'], ['stale'])
+    const onSuccess = vi.fn()
+    const { result } = renderHook(() => useMutation('projects.update' as any, { onSuccess }), {
+      wrapper: wrapperFor(client),
+    })
+    await act(async () => {
+      await result.current.mutateAsync({ id: '1' })
+    })
+    expect(onSuccess).toHaveBeenCalledWith({ id: '1' }, { id: '1' }, undefined, expect.anything())
+    expect(client.getQueryState(['projects', 'all'])?.isInvalidated).toBe(true)
+  })
+
+  it('call runs a query or a mutation by name', async () => {
+    await expect(call('projects.list' as any, { owner: 'linus' })).resolves.toEqual(['linus'])
+    await expect(call('projects.update' as any, { id: '2' })).resolves.toEqual({ id: '2' })
+  })
+
+  it('explains an unknown name or the wrong kind', () => {
+    expect(() => queryOptions('projects.missing' as any)).toThrow(/projects\.missing/)
+    expect(() => queryOptions('projects.update' as any)).toThrow(/is a mutation/)
+    const client = new QueryClient()
+    expect(() =>
+      renderHook(() => useMutation('projects.list' as any), { wrapper: wrapperFor(client) }),
+    ).toThrow(/is a query/)
   })
 })

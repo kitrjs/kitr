@@ -24,6 +24,11 @@ export interface KitrManifest {
   kind?: 'package' | 'platform' | 'kit'
   /** Folder of markdown docs, relative to the package root. */
   docs?: string
+  /**
+   * The subpath exporting a `defineTypes()` generator that `kitr types` runs: `"./types"` means
+   * `<package>/types`. Its files land in the project's `.kitr/` folder.
+   */
+  types?: string
   /** The setup module's export path (`./kitr`), when the package ships one. */
   setup?: string
 }
@@ -65,6 +70,8 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
       !(Array.isArray(k[field]) && k[field].every((x) => typeof x === 'string'))
     )
       errors.push(`"${field}" must be a list of strings`)
+  if (k.types !== undefined && !(typeof k.types === 'string' && k.types.startsWith('./')))
+    errors.push('"types" must be a relative subpath such as "./types"')
   if (k.setup !== undefined && k.setup !== './kitr')
     errors.push('"setup" must be "./kitr" (the export the CLI loads)')
   if (k.kind !== undefined && !['package', 'platform', 'kit'].includes(k.kind as string))

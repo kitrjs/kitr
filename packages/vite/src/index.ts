@@ -21,6 +21,39 @@ export interface KitrPluginOptions {
   devtools?: boolean
   /** Which platform from kitrrc.ts this build is for. Default: `KITR_PLATFORM` (set by `kitr dev|build <name>`), else the first web platform. */
   platform?: string
+  /**
+   * Run `kitr types` when the build starts and again in dev whenever a watched file changes, so
+   * `.kitr/` is always current. Needs `@kitr/cli` installed (it is, in every kitr project).
+   * Default true.
+   */
+  types?: boolean
+}
+
+interface TypesRunner {
+  globs: string[]
+  generatorsFor(file: string): string[]
+  run(only?: string[]): Promise<unknown>
+}
+
+/**
+ * The `kitr types` runner from `@kitr/cli`, loaded lazily so the plugin itself stays light and a
+ * project without the CLI (a bare Vite setup) still builds; such a project runs `kitr types` itself.
+ */
+async function loadTypesRunner(root: string): Promise<TypesRunner | undefined> {
+  let cli: typeof import('@kitr/cli')
+  try {
+    cli = await import('@kitr/cli')
+  } catch {
+    return undefined
+  }
+  const ctx = cli.createContext({ root })
+  const generators = await cli.loadGenerators(ctx)
+  const rc = ctx.readRc()
+  return {
+    globs: cli.watchGlobsOf(generators, rc),
+    generatorsFor: (file) => cli.generatorsFor(generators, rc, file).map((g) => g.name),
+    run: (only) => cli.runTypes(ctx, { only, quiet: true }, generators),
+  }
 }
 
 /** Config files whose packages import Node built-ins; kept out of client builds. */
@@ -112,6 +145,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
             '#config': resolve(root, rc.directories.config ?? 'config'),
             '#components': resolve(root, rc.directories.components ?? 'app/components'),
             '#server': resolve(root, rc.directories.server ?? 'server'),
+            '#kitr': resolve(root, '.kitr'),
           },
         },
         optimizeDeps: { include },
@@ -159,7 +193,17 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       }
       return null
     },
-    configureServer(server) {
+    async buildStart() {
+      if (options.types === false) return
+      const types = await loadTypesRunner(root)
+      if (!types) return
+      try {
+        await types.run()
+      } catch (error) {
+        this.error(error as Error)
+      }
+    },
+    async configureServer(server) {
       const rcPath = findRc(root)
       if (rcPath) server.watcher.add(rcPath)
       server.watcher.on('change', (file) => {
@@ -169,6 +213,37 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           if (mod) server.moduleGraph.invalidateModule(mod)
         }
       })
+      if (options.types === false) return
+      const types = await loadTypesRunner(root)
+      if (!types) return
+      // Generators declare the globs they read; a change to a matching file re-runs just those.
+      for (const glob of types.globs) server.watcher.add(resolve(root, glob.split('/')[0]!))
+      const pending = new Set<string>()
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const onChange = (file: string) => {
+        const rel = file.startsWith(root)
+          ? file
+              .slice(root.length + 1)
+              .split('\\')
+              .join('/')
+          : file
+        const hit = types.generatorsFor(rel)
+        if (!hit.length) return
+        for (const name of hit) pending.add(name)
+        clearTimeout(timer)
+        timer = setTimeout(async () => {
+          const only = [...pending]
+          pending.clear()
+          try {
+            await types.run(only)
+          } catch (error) {
+            server.config.logger.error(`[kitr/vite] ${(error as Error).message}`)
+          }
+        }, 50)
+      }
+      server.watcher.on('add', onChange)
+      server.watcher.on('change', onChange)
+      server.watcher.on('unlink', onChange)
     },
   }
   plugins.push(core)

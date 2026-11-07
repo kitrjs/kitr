@@ -178,6 +178,19 @@ export interface AddContext extends ProjectInfo {
     extend(spec: string): void
     remove(spec: string): void
   }
+  types: {
+    /**
+     * Make the project ready for `kitr types` (a package with a `types` generator): the `#kitr/*`
+     * path and `.kitr` include in tsconfig.json, `.kitr` in .gitignore, `kitr types` before `tsc`
+     * in the typecheck script. Idempotent.
+     */
+    enable(): void
+  }
+  app: {
+    /** Pass `<name>` to `createApp({ ... })` in `app/app.ts`, importing it from `from`. Idempotent. */
+    option(name: string, from: string): void
+    removeOption(name: string, from: string): void
+  }
   /**
    * Replace one side-effect import (`import 'kitr/theme/styles.css'`) with another in a file,
    * or add `to` after the first import when neither is present. Skipped when the file is missing.

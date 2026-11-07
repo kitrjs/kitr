@@ -25,26 +25,28 @@ Many apps use actions for the UI and a handful of API routes for integrations.
 ## A server action
 
 ```sh
-kitr make:action tasks/rename
+kitr make:mutation tasks/rename
 ```
 
 ```ts
 // app/actions/tasks/rename.ts
-import { defineAction } from 'kitr/actions'
+import { defineMutation } from 'kitr/actions'
 import { z } from 'zod'
 
-export const renameTask = defineAction('tasks.rename', {
+export const renameTask = defineMutation('tasks.rename', {
   input: z.object({ id: z.string(), title: z.string().min(1) }),
   effects: (task) => ({ invalidate: [['tasks', 'list']] }),
   handler: async ({ input }) => db.tasks.update(input.id, { title: input.title }),
 })
 ```
 
-Call it from a form or a mutation. Validation failures reach the form's fields; the effect refreshes every task list:
+`kitr types` registers the name (it runs with `kitr dev`), so a component uses it with full types. Validation failures reach the form's fields; the effect refreshes every task list:
 
 ```tsx
-const rename = useKitrMutation(defineMutation(renameTask.mutation()))
+const rename = useMutation('tasks.rename')
 ```
+
+Reads are `defineQuery('tasks.list', { handler })`, used as `useSuspenseQuery('tasks.list')` in a component and `queryOptions('tasks.list')` in a loader.
 
 ## Live updates
 

@@ -1,7 +1,7 @@
 {
   "name": "@kitr/actions",
   "version": "0.1.0",
-  "description": "kitr/actions: defineAction over TanStack Start server functions, with validation, middleware, the kitr error shape and cache effects.",
+  "description": "kitr/actions: defineQuery and defineMutation over TanStack Start server functions, with validation, middleware, the kitr error shape and cache effects.",
   "kitr": {
     "name": "actions",
     "title": "Server actions",
@@ -12,11 +12,13 @@
       "@tanstack/react-start"
     ],
     "requires": [
-      "server"
+      "server",
+      "query"
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "types": "./types"
   },
   "type": "module",
   "license": "MIT",
@@ -40,6 +42,10 @@
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"
     },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -51,10 +57,12 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@kitr/core": "workspace:*"
+    "@kitr/core": "workspace:*",
+    "@kitr/query": "workspace:*"
   },
   "peerDependencies": {
-    "@tanstack/react-start": ">=1.120.0"
+    "@tanstack/react-start": ">=1.120.0",
+    "@tanstack/react-query": ">=5.80.0"
   },
   "devDependencies": {
     "tsdown": "^0.23.7",
@@ -62,7 +70,8 @@
     "@tanstack/react-start": "^1.169.4",
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
-    "vite": "^8.3.6"
+    "vite": "^8.3.6",
+    "@tanstack/react-query": "^5.107.1"
   },
   "keywords": [
     "kitr",

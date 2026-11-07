@@ -8,6 +8,7 @@ import { newCommand } from './commands/new'
 import { packageCheck } from './commands/package-check'
 import { build, config, dev, platforms, start } from './commands/platforms'
 import { serve } from './commands/serve'
+import { types } from './commands/types'
 import { upgrade } from './commands/upgrade'
 import { createContext, findProjectRoot, findRcPath, log } from './context'
 import { installedPackages } from './packages'
@@ -36,6 +37,17 @@ export {
   runPlatforms,
 } from './platforms'
 export { describeQuestions, resolveAnswers } from './questions'
+export type { TypesRunOptions, TypesRunResult } from './types'
+export {
+  createGenerateContext,
+  GENERATED_DIR,
+  generatorsFor,
+  loadGenerators,
+  platformsGenerator,
+  renderPlatforms,
+  runTypes,
+  watchGlobsOf,
+} from './types'
 export { versionOf, versions } from './versions'
 
 const info = defineCommand({
@@ -82,6 +94,7 @@ export const main = defineCommand({
     serve,
     platforms,
     config,
+    types,
     doctor,
     'package:check': packageCheck,
     eject,

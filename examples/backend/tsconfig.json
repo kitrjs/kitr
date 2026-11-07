@@ -25,6 +25,9 @@
       ],
       "#server/*": [
         "./server/*"
+      ],
+      "#kitr/*": [
+        "./.kitr/*"
       ]
     }
   },
@@ -33,6 +36,7 @@
     "config",
     "server",
     "platforms",
+    ".kitr/**/*",
     "kitrrc.ts",
     "test"
   ]

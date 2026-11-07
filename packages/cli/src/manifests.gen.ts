@@ -13,11 +13,13 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "@tanstack/react-start"
     ],
     "requires": [
-      "server"
+      "server",
+      "query"
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "types": "./types"
   },
   "analytics": {
     "package": "@kitr/analytics",

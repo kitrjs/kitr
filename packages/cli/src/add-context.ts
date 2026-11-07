@@ -118,6 +118,11 @@ export function createAddContext(
       extend: (spec) => codemods.extendRoutes(spec),
       remove: (spec) => codemods.removeRoutesExtension(spec),
     },
+    types: { enable: () => codemods.enableGeneratedTypes() },
+    app: {
+      option: (name, from) => codemods.registerAppOption(name, from),
+      removeOption: (name, from) => codemods.unregisterAppOption(name, from),
+    },
     replaceImport: (file, from, to) => codemods.replaceCssImport(file, from, to),
     server: {
       attach: (options) => codemods.attachToServer(options),

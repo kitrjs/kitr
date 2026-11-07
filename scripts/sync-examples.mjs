@@ -42,6 +42,7 @@ const ignored = new Set([
   '.output',
   '.tanstack',
   '.nitro',
+  '.kitr',
   'routeTree.gen.ts',
 ])
 

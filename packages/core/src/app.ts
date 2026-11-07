@@ -1,6 +1,8 @@
 import { ConfigStore } from './config'
 import { Container } from './container'
 import { DriverRegistry } from './drivers'
+import { type OperationLike, type OperationRegistry, operations } from './operations'
+import type { PlatformName } from './platforms'
 import { type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 import type { KitrNode } from './types'
 
@@ -22,7 +24,13 @@ export interface CreateAppOptions {
   /** Validated env object (from `createEnv`). Exposed as `app.env`. */
   env?: Record<string, unknown>
   /** The platform name this bundle was built for (`kitr dev site` → `site`). Default: from `import.meta.env.KITR_PLATFORM`. */
-  platform?: string
+  platform?: PlatformName
+  /**
+   * Every named query and mutation, by name: the `operations` map `kitr types` writes to
+   * `.kitr/actions.ts`. Registered process-wide, so `useQuery('projects.list')` and
+   * `call('projects.update', input)` resolve anywhere.
+   */
+  operations?: Record<string, OperationLike>
 }
 
 type Phase = 'created' | 'registered' | 'booted' | 'ready' | 'shutdown'
@@ -41,7 +49,9 @@ export class KitrApp {
   /** Native drivers registered by platform providers, resolved by capability packages. */
   readonly drivers = new DriverRegistry()
   /** The platform name from kitrrc.ts this bundle runs as, when known. */
-  readonly platform: string | undefined
+  readonly platform: PlatformName | undefined
+  /** The process-wide operation registry (see `operations` in `@kitr/core`). */
+  readonly operations: OperationRegistry = operations
   private inputs: ProviderInput[]
   private phase: Phase = 'created'
   private readying: Promise<this> | undefined
@@ -52,7 +62,8 @@ export class KitrApp {
     this.environment = options.environment ?? detectEnvironment()
     this.mode = options.mode ?? detectMode()
     this.env = options.env ?? {}
-    this.platform = options.platform ?? detectPlatform()
+    this.platform = (options.platform ?? detectPlatform()) as PlatformName | undefined
+    if (options.operations) this.operations.register(options.operations)
     this.inputs = [...(options.providers ?? [])]
     for (const [key, value] of Object.entries(options.config ?? {}))
       this.config.set(key, value as never)
@@ -129,6 +140,7 @@ export class KitrApp {
       env: this.env,
       drivers: this.drivers,
       platform: this.platform,
+      operations: this.operations,
       providers: this.providers,
       inputs: [],
       phase: this.phase,

@@ -47,13 +47,16 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `kind` | `'package'` (default), `'platform'`, `'kit'` | A platform is added as `kitr add web site`; a kit is used by `kitr new --kit` |
 | `requires` | string[] | Added first, in order, each with its own questions. Short names or full package names |
 | `client` | boolean | Refused in a project with no React |
+| `dev` | boolean | Installed as a devDependency (tooling the app never imports at run time, such as `testing`) |
 | `questions` | `Question[]` or `(project) => Question[]` | Asked on `add`; `--yes`, `CI` or no TTY takes the defaults |
 | `add(ctx)` / `remove(ctx)` | codemods | Run with the answers; `--dry-run` prints the plan |
 | `commands` | `() => import(...)` | A module of command objects (citty's shape), mounted as `kitr <name>`. The `<name>:` prefix is the convention; a core name or a name another package took is an error |
 | `generators` | `Record<string, Generator>` | Mounted as `kitr make:<kind>`; the project's `stubs/<kind>.ts` overrides the stub |
 | `doctor(project)` | `Finding[]` | Appended to `kitr doctor`. Pure: read, never write |
+| `types` | `() => import(...)` | A module exporting a `defineTypes()` generator that `kitr types` runs into `.kitr/` |
+| `wraps` | `Record<string, string>` | Upstream libraries this package re-exports, by the kitr entry to import instead; `kitr doctor` flags direct imports |
 | `vite` | `{ serverOnlyConfig, optimizeDeps, plugin, provider }` | Read by `@kitr/vite` when it builds a web platform |
-| `platform` | `{ factory, export, from }` | For `kind: 'platform'`: the `definePlatform` factory `kitrrc.ts` calls, and how it imports it |
+| `platform` | `{ factory, export, from, defaultName }` | For `kind: 'platform'`: the `definePlatform` factory `kitrrc.ts` calls, how it imports it, and the name `kitr add <type>` suggests |
 | `kit` | `{ platforms, packages, components, files }` | For `kind: 'kit'`: what `kitr new --kit` adds and writes |
 | `routes` | string | The module exporting this package's route-table extension |
 | `eject` | `Record<string, string>` | Import rewrites `kitr eject all` prints |
@@ -86,6 +89,10 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `ctx.tsconfig.addTypes(...)`, `.addLib(...)`, `.addInclude(...)`, `.addPaths({...})`, `.set(option, value)` | `tsconfig.json` |
 | `ctx.vite.addPlugin('tailwind', '@tailwindcss/vite')` | `plugins` in `vite.config.ts`, when the file exists |
 | `ctx.routes.extend('@kitr/api/routes')`, `.remove(...)` | the extensions list of the project's `defineRoutes([...])` call, in `directories.routeTable` (default `app/routes.ts`); created when missing |
+| `ctx.server.attach({ marker, import, line, first })` | one line (and its import) after `createServer()` in the server platform's entry, once; `first` puts it straight after `createServer()` for middleware that must see every request |
+| `ctx.replaceImport(file, from, to)` | swap one side-effect import for another (`kitr/theme/styles.css` for the Tailwind preset) |
+| `ctx.types.enable()` | the `#kitr/*` path and `.kitr` include in `tsconfig.json`, `.kitr` in `.gitignore`, `kitr types` before `tsc` in the typecheck script |
+| `ctx.app.option('operations', '#kitr/actions')`, `.removeOption(...)` | pass a named value to `createApp({ ... })` in `app/app.ts`, imported from the given module |
 
 The project facts it may read: `ctx.root`, `ctx.pm`, `ctx.pkg`, `ctx.rc` (packages, providers, directories, platforms), `ctx.isServerOnly`, `ctx.has('react')` (a dependency, present or queued), `ctx.hasPackage('server')` (in `kitrrc.ts`, or added earlier in this run), `ctx.exists(path)`, `ctx.read(path)`, and `ctx.answers`.
 

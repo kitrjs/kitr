@@ -35,7 +35,7 @@ vi.mock('@tanstack/react-start', () => ({
   createMiddleware: () => ({ server: (fn: unknown) => ({ fn }) }),
 }))
 
-const { defineAction, requireSession } = await import('../src')
+const { defineMutation, defineQuery, requireSession } = await import('../src')
 
 /** A minimal Standard Schema: `{ title: string }` with a trimmed, non-empty title. */
 const titleSchema = {
@@ -57,18 +57,19 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-describe('defineAction', () => {
+describe('defineQuery and defineMutation', () => {
   it('validates input, passes the parsed value to the handler and returns its result', async () => {
     const handler = vi.fn(({ input }: { input: { title: string } }) => ({ id: 1, ...input }))
-    const create = defineAction('projects.create', { input: titleSchema, handler })
+    const create = defineMutation('projects.create', { input: titleSchema, handler })
     await expect(create({ title: '  Launch  ' })).resolves.toEqual({ id: 1, title: 'Launch' })
     expect(handler.mock.calls[0]![0].input).toEqual({ title: 'Launch' })
     expect(built[0]!.method).toBe('POST')
+    expect(create.kind).toBe('mutation')
   })
 
   it('rejects invalid input with VALIDATION and field errors, without running the handler', async () => {
     const handler = vi.fn()
-    const create = defineAction('projects.create', { input: titleSchema, handler })
+    const create = defineMutation('projects.create', { input: titleSchema, handler })
     const error = await create({ title: ' ' }).catch((e) => e)
     expect(error).toBeInstanceOf(KitrError)
     expect(error.code).toBe('VALIDATION')
@@ -78,7 +79,7 @@ describe('defineAction', () => {
   })
 
   it('turns thrown KitrErrors into the same error on the caller, data included', async () => {
-    const archive = defineAction('projects.archive', {
+    const archive = defineMutation('projects.archive', {
       handler: () => {
         throw new KitrError('CONFLICT', 'Already archived', { data: { id: 7 } })
       },
@@ -92,7 +93,7 @@ describe('defineAction', () => {
   it('hides server errors from the browser in production and logs them', async () => {
     vi.stubEnv('NODE_ENV', 'production')
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const broken = defineAction('reports.build', {
+    const broken = defineQuery('reports.build', {
       handler: () => {
         throw new KitrError('INTERNAL', 'db password is hunter2', { data: { dsn: 'pg://x' } })
       },
@@ -111,14 +112,14 @@ describe('defineAction', () => {
   it('keeps server error messages in development, and client errors always', async () => {
     vi.stubEnv('NODE_ENV', 'development')
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    const broken = defineAction('x', {
+    const broken = defineQuery('x', {
       handler: () => {
         throw new Error('boom')
       },
     })
     expect((await broken().catch((e) => e)).message).toBe('boom')
     vi.stubEnv('NODE_ENV', 'production')
-    const conflict = defineAction('y', {
+    const conflict = defineMutation('y', {
       handler: () => {
         throw new KitrError('CONFLICT', 'Already archived')
       },
@@ -128,14 +129,14 @@ describe('defineAction', () => {
 
   it('does not log client errors', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const create = defineAction('projects.create', { input: titleSchema, handler: () => 1 })
+    const create = defineMutation('projects.create', { input: titleSchema, handler: () => 1 })
     await create({ title: '' }).catch(() => {})
     expect(log).not.toHaveBeenCalled()
   })
 
   it('passes the abort signal through to the handler', async () => {
     let seen: AbortSignal | undefined
-    const slow = defineAction('slow', {
+    const slow = defineQuery('slow', {
       handler: ({ signal }) => {
         seen = signal
         return true
@@ -146,51 +147,85 @@ describe('defineAction', () => {
     expect(seen).toBe(controller.signal)
   })
 
-  it('has a name, stable keys and the GET method when asked', () => {
-    const list = defineAction('projects.list', { method: 'GET', handler: () => [] })
+  it('a query is GET with a name, stable keys and ready-made query options', () => {
+    const list = defineQuery('projects.list', { handler: () => [] })
     expect(list.name).toBe('projects.list')
+    expect(list.kind).toBe('query')
     expect(list.key(undefined)).toEqual(['action', 'projects.list'])
-    const search = defineAction('projects.search', {
-      method: 'GET',
+    const search = defineQuery('projects.search', {
       input: titleSchema,
+      staleTime: 5_000,
       handler: () => [],
     })
     expect(search.key({ title: 'a' })).toEqual(['action', 'projects.search', { title: 'a' }])
+    const options = search.options({ title: 'a' })
+    expect(options.queryKey).toEqual(['action', 'projects.search', { title: 'a' }])
+    expect(options.staleTime).toBe(5_000)
+    expect(options.meta).toEqual({ source: 'action' })
     expect(built.map((b) => b.method)).toEqual(['GET', 'GET'])
   })
 
-  it('exposes a query contract that fetches through the action', async () => {
-    const get = defineAction('projects.get', {
-      method: 'GET',
+  it('a query fetches through its options and its contract', async () => {
+    const get = defineQuery('projects.get', {
       input: titleSchema,
       handler: ({ input }) => ({ found: input.title }),
     })
-    const contract = get.query()
-    expect(contract.source).toBe('action')
-    expect(contract.key({ title: 'x' })).toEqual(get.key({ title: 'x' }))
-    await expect(contract.fetch({ title: 'x' }, {})).resolves.toEqual({ found: 'x' })
+    expect(get.contract.source).toBe('action')
+    await expect(get.contract.fetch({ title: 'x' }, {})).resolves.toEqual({ found: 'x' })
+    await expect(
+      get.options({ title: 'y' }).queryFn!({ signal: new AbortController().signal } as any),
+    ).resolves.toEqual({ found: 'y' })
+    await expect(get.fetch({ title: 'z' })).resolves.toEqual({ found: 'z' })
   })
 
-  it('exposes a mutation contract with its cache effects', async () => {
+  it('a mutation carries its cache effects into the contract and mutation options', async () => {
     const effects = (project: { id: number }) => ({
       invalidate: [['projects', 'list']],
       id: project.id,
     })
-    const update = defineAction('projects.update', {
+    const update = defineMutation('projects.update', {
       input: titleSchema,
       effects: effects as any,
       handler: ({ input }) => ({ id: 3, ...input }),
     })
-    const contract = update.mutation()
-    expect(contract.source).toBe('action')
-    expect(contract.effects).toBe(effects)
-    await expect(contract.mutate({ title: 'New' })).resolves.toEqual({ id: 3, title: 'New' })
+    expect(update.kind).toBe('mutation')
+    expect(update.contract.source).toBe('action')
+    expect(update.contract.effects).toBe(effects)
+    await expect(update.mutate({ title: 'New' })).resolves.toEqual({ id: 3, title: 'New' })
+    expect(update.effectsFor({ id: 3, title: 'New' }, { title: 'New' })).toEqual({
+      invalidate: [['projects', 'list']],
+      id: 3,
+    })
+    const options = update.options({ queryClient: { invalidateQueries: vi.fn() } as any })
+    await expect(options.mutationFn!({ title: 'Again' }, {} as any)).resolves.toEqual({
+      id: 3,
+      title: 'Again',
+    })
+  })
+
+  it('run() validates and runs the handler in-process with the given context, skipping Start', async () => {
+    const rename = defineMutation('projects.rename', {
+      input: titleSchema,
+      handler: ({ input, context }) => ({
+        title: input.title,
+        user: (context as { session?: { user?: { id: string } } }).session?.user?.id,
+      }),
+    })
+    await expect(
+      rename.run({ title: ' Hi ' }, { context: { session: { user: { id: 'u9' } } } }),
+    ).resolves.toEqual({
+      title: 'Hi',
+      user: 'u9',
+    })
+    const error = await rename.run({ title: '' }).catch((e) => e)
+    expect(error).toBeInstanceOf(KitrError)
+    expect(error.code).toBe('VALIDATION')
   })
 
   it('registers middleware only when given', () => {
     const mw = [{ fn: () => {} }]
-    defineAction('a', { handler: () => 1 })
-    defineAction('b', { middleware: mw, handler: () => 1 })
+    defineQuery('a', { handler: () => 1 })
+    defineMutation('b', { middleware: mw, handler: () => 1 })
     expect(built[0]!.middleware).toBeUndefined()
     expect(built[1]!.middleware).toBe(mw)
   })

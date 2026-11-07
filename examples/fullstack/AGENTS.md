@@ -6,7 +6,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Import framework code from `kitr/*` entry points (`kitr/router`, `kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generators: `kitr make:route|action|controller|channel|store|form|queries`. Run `kitr doctor` after changes.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generators: `kitr make:route|query|mutation|controller|channel|store|form|queries`. Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
 
 ## kitr: router
 
@@ -88,8 +88,9 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: actions
 
-- `kitr make:action <feature>/<name>` writes `app/actions/<feature>/<name>.ts` with `defineAction('<feature>.<name>', { input, effects, handler })`.
-- Call actions from anywhere: `await updateProject(input)`; in components use `useKitrMutation(defineMutation(updateProject.mutation()))`. GET actions expose `.query()` for loaders.
+- `kitr make:query <feature>/<name>` and `kitr make:mutation <feature>/<name>` write `app/actions/<feature>/<name>.ts` with `defineQuery('<feature>.<name>', { input, staleTime, handler })` or `defineMutation('<feature>.<name>', { input, effects, handler })`.
+- `kitr types` (run by `kitr dev` and `kitr build`) writes `.kitr/actions.ts`; `app/app.ts` passes its `operations` to `createApp`.
+- In components use the name: `useQuery('projects.list', input)`, `useSuspenseQuery('projects.list', input)`, `useMutation('projects.update')` from `kitr/query`. In loaders use `queryOptions('projects.list', input)`. Outside React use `call('projects.update', input)` or import the definition and call it: `await updateProject(input)`.
 
 ## kitr: api
 

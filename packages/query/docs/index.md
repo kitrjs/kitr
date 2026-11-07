@@ -561,6 +561,39 @@ export function useMarkPaid(id: string) {
 }
 ```
 
+## Use a query or mutation by name
+
+[Server actions](/packages/actions) register every `defineQuery('orders.list', ...)` and `defineMutation('orders.ship', ...)` under its name, and `kitr types` writes those names into `.kitr/actions.ts` so they are typed. Every hook in `kitr/query` then takes the name as its first argument, the input as the second, and TanStack overrides as the third:
+
+```tsx
+// app/components/open-orders.tsx
+import { queryOptions, useMutation, useQuery, useSuspenseQuery } from 'kitr/query'
+
+export function OpenOrders() {
+  const { data } = useQuery('orders.list', { status: 'open' }, { refetchInterval: 10_000 })
+  const { data: orders } = useSuspenseQuery('orders.list', { status: 'open' })
+  const ship = useMutation('orders.ship', { onSuccess: () => toast('Shipped') })
+  return <ul>{orders.map((o) => <li key={o.id}>{o.customer}</li>)}</ul>
+}
+
+// In a loader:
+const options = queryOptions('orders.list', { status: 'open' })
+```
+
+The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[kitr/query] "orders.lsit" is not registered` with the names that are.
+
+`useMutation(definition)` works the same way as `useKitrMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
+
+```ts
+import { call } from 'kitr/query'
+
+const open = await call('orders.list', { status: 'open' })
+// => [{ id: 'ord_2', customer: 'Grace', total: 80, status: 'open' }]
+await call('orders.ship', { id: 'ord_2', carrier: 'UPS' })
+```
+
+Every hook also accepts the imported definition in place of the name, `useQuery(listOrders, input)`, and plain TanStack options as before. The three forms produce the same query options, so a component and a loader using different forms share one cache entry.
+
 ## Call a source without the cache
 
 `fetch(input, signal?)` on a query and `mutate(input)` on a mutation call the source directly. They skip the cache, skip effects and do not normalise errors to `KitrError`. Use them in scripts, server code or a test of the source itself:
