@@ -154,7 +154,9 @@ describe('web drivers', () => {
     let text = ''
     stubNavigator('clipboard', {
       readText: async () => text,
-      writeText: async (t: string) => void (text = t),
+      writeText: async (t: string) => {
+        text = t
+      },
     })
     const clip = webClipboard()!
     await clip.writeText('copied')
