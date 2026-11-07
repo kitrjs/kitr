@@ -19,4 +19,5 @@ export const dataTableFeatures = tableFeatures({
   columnVisibilityFeature,
 })
 
+/** The type of `dataTableFeatures`, for `ColumnDef<DataTableFeatures, Order>` and `useTable` generics. */
 export type DataTableFeatures = typeof dataTableFeatures

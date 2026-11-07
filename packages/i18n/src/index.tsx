@@ -5,10 +5,16 @@ import { initReactI18next } from 'react-i18next'
 export * from 'react-i18next'
 export { i18next }
 
+/**
+ * The options in `config/i18n.ts`: your strings per locale, the fallback locale and detection.
+ * Any other i18next init option passes straight through.
+ */
 export interface I18nConfig extends Omit<InitOptions, 'resources' | 'lng'> {
-  /** `{ en: { common: { hello: 'Hello' } } }` */
+  /** Every locale's strings, keyed by locale then namespace: `{ en: { common: { hello: 'Hello' } } }`. */
   resources: Record<string, Record<string, Record<string, unknown>>>
+  /** The locale used when nothing better matches, and the fallback for missing keys. */
   defaultLocale: string
+  /** The locales the app supports. Default: the keys of `resources`. */
   locales?: string[]
   /** Detect from `navigator.language` (client) or `Accept-Language` (server). Default true. */
   detect?: boolean
@@ -25,6 +31,7 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/i18n.ts`. Returns the object you pass, unchanged. */
 export const defineConfig = createDefineConfig<I18nConfig>()
 
 /** Keys of a resource bundle as `namespace:key.path` strings, for typed `t()`. */
@@ -34,6 +41,10 @@ export type TranslationKeys<R, Prefix extends string = ''> = {
     : TranslationKeys<R[K], `${Prefix}${K}.`>
 }[keyof R & string]
 
+/**
+ * Creates an isolated i18next instance from your config, already initialised with react-i18next.
+ * The locale is `initialLocale`, else the detected one when `detect` is on, else `defaultLocale`.
+ */
 export function createI18n(config: I18nConfig, initialLocale?: string): i18n {
   const {
     resources,
@@ -59,6 +70,10 @@ export function createI18n(config: I18nConfig, initialLocale?: string): i18n {
   return instance
 }
 
+/**
+ * In the browser, the saved choice under `storageKey` in localStorage, else the best match for
+ * `navigator.languages`. Returns `undefined` on the server or when nothing matches.
+ */
 export function detectLocale(supported: string[], storageKey = 'locale'): string | undefined {
   if (typeof window === 'undefined') return undefined
   try {

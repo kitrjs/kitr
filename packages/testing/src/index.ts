@@ -1,22 +1,31 @@
 import { type CreateAppOptions, createApp, type KitrApp } from '@kitr/core'
 
-/** A booted app for tests: `environment: 'test'`, your providers and config. */
+/**
+ * Creates and boots an app for one test, with `environment: 'test'` and the providers and config
+ * you pass. Use it to read services from the container or to render components with `renderWithKitr`.
+ */
 export async function createTestApp(options: CreateAppOptions = {}): Promise<KitrApp> {
   const app = createApp({ environment: 'test', ...options })
   await app.boot()
   return app
 }
 
+/** What every `createTestClient` call resolves to: the status, headers and parsed body of one response. */
 export interface TestResponse<T = unknown> {
+  /** The HTTP status code, such as `201` or `422`. */
   status: number
+  /** The response headers. */
   headers: Headers
+  /** The body parsed as JSON; the raw text when it is not JSON; `undefined` when it is empty. */
   body: T
+  /** The raw `Response`. Its body has already been read. */
   response: Response
 }
 
 /**
- * Request helper for API tests against anything with `fetch(request)`:
- * a kitr server, a Start handler, or a real URL.
+ * Request helper for API tests against anything with `fetch(request)`: a kitr server, a Start
+ * handler, or a real URL. It sends JSON, parses JSON back and adds `defaults.headers` to every call,
+ * without opening a port when given a handler.
  */
 export function createTestClient(
   target: { fetch(request: Request): Promise<Response> } | string,
@@ -71,4 +80,5 @@ export function createTestClient(
   }
 }
 
+/** Re-exported from `kitr/app`: creates an app without booting it, for tests that boot it themselves. */
 export { createApp }
