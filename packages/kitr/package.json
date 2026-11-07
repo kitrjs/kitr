@@ -1,7 +1,7 @@
 {
   "name": "kitr",
   "version": "0.1.0",
-  "description": "The kitr React framework: one import surface over TanStack, React Hook Form and friends, plus the kitr CLI.",
+  "description": "kitr: one way to build web, mobile, desktop and backend apps. One import surface over TanStack, React Hook Form, h3 and friends, plus the kitr CLI.",
   "type": "module",
   "license": "MIT",
   "repository": {

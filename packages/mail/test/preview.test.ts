@@ -35,6 +35,24 @@ describe('mail preview', () => {
     expect((await server.fetch(new Request('http://x/_kitr/mail/nope'))).status).toBe(404)
   })
 
+  it('reads previewPath from config/mail.ts and mounts nothing when it is false', async () => {
+    const moved = createServer({ logger: silentLogger, server: { healthPath: false } })
+    moved.app.config.set('mail', { from: 'hi@kitr.dev', previewPath: '/dev/mail' })
+    mailPreview(moved, [welcome])
+    expect((await moved.fetch(new Request('http://x/dev/mail/welcome'))).status).toBe(200)
+    expect((await moved.fetch(new Request('http://x/_kitr/mail/welcome'))).status).toBe(404)
+
+    const off = createServer({ logger: silentLogger, server: { healthPath: false } })
+    off.app.config.set('mail', { from: 'hi@kitr.dev', previewPath: false })
+    mailPreview(off, [welcome])
+    expect((await off.fetch(new Request('http://x/_kitr/mail'))).status).toBe(404)
+
+    const explicit = createServer({ logger: silentLogger, server: { healthPath: false } })
+    explicit.app.config.set('mail', { from: 'hi@kitr.dev', previewPath: false })
+    mailPreview(explicit, [welcome], { path: '/previews' })
+    expect((await explicit.fetch(new Request('http://x/previews/welcome'))).status).toBe(200)
+  })
+
   it('escapes props taken from the query string', async () => {
     const server = createServer({ logger: silentLogger, server: { healthPath: false } })
     mailPreview(server, [welcome])

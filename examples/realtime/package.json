@@ -16,7 +16,6 @@
     "@hookform/resolvers": "^7.0.3",
     "@kitr/api": "workspace:*",
     "@kitr/core": "workspace:*",
-    "@kitr/devtools": "workspace:*",
     "@kitr/forms": "workspace:*",
     "@kitr/logger": "workspace:*",
     "@kitr/query": "workspace:*",

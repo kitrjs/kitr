@@ -1,4 +1,4 @@
-import { defineSubscription, type UseSubscriptionOptions, useSubscription } from '@kitr/query'
+import { subscriptionFrom, type UseSubscriptionOptions, useSubscription } from '@kitr/query'
 import { useEffect, useState } from 'react'
 import { type ChannelHandle, channel, type SocketStatus, type SocketTransport } from './client'
 import type { ChannelDefinition, ChannelEventUnion, ChannelParams } from './protocol'
@@ -14,7 +14,7 @@ export function useChannel<C extends ChannelDefinition<any, any>>(
   options: UseSubscriptionOptions<ChannelEventUnion<C>> = {},
 ) {
   const [handle] = useState<ChannelHandle<C>>(() => channel(transport, definition))
-  const [subscription] = useState(() => defineSubscription(handle.subscription()))
+  const [subscription] = useState(() => subscriptionFrom(handle.subscription()))
   return useSubscription(subscription, params, options)
 }
 

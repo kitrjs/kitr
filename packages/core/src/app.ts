@@ -101,7 +101,14 @@ export class KitrApp {
       for (const p of this.providers) await p.boot?.(this)
       this.phase = 'booted'
       return this
-    })()
+    })().catch((error) => {
+      // A failed boot is not cached: the next boot() starts over (a transient DB or a fixed env
+      // var should not need a new app), so drop the providers this attempt resolved.
+      this.booting = undefined
+      this.providers.length = 0
+      this.phase = 'created'
+      throw error
+    })
     return this.booting
   }
 
@@ -167,6 +174,18 @@ export class KitrApp {
  */
 export function createApp(options?: CreateAppOptions): KitrApp {
   return new KitrApp(options)
+}
+
+/**
+ * Whether code that guards production behaviour (error masking, HSTS, Secure cookies) should
+ * treat this process as production: true when the app's mode is `production`, or, with no app at
+ * hand, when the bundle was built in production mode, or when `NODE_ENV` says so. Every kitr
+ * package reads this instead of `NODE_ENV` alone, so hosts that never set `NODE_ENV` (Cloudflare
+ * Workers, Deno Deploy) still get production defaults from the Vite build mode.
+ */
+export function inProduction(app?: { isProduction: boolean }): boolean {
+  if (app ? app.isProduction : detectMode() === 'production') return true
+  return globalProcess()?.env?.NODE_ENV === 'production'
 }
 
 function detectEnvironment(): AppEnvironment {

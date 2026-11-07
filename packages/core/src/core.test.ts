@@ -31,6 +31,24 @@ describe('Container', () => {
 })
 
 describe('KitrApp', () => {
+  it('retries boot after a provider fails to register', async () => {
+    let attempts = 0
+    const flaky = defineProvider({
+      name: 'flaky',
+      register(app) {
+        if (++attempts === 1) throw new Error('database down')
+        app.container.value('db', 'up')
+      },
+    })
+    const app = createApp({ providers: [flaky] })
+    await expect(app.boot()).rejects.toThrow('database down')
+    expect(app.status).toBe('created')
+    await app.boot()
+    expect(app.status).toBe('booted')
+    expect(app.container.use('db')).toBe('up')
+    expect(app.providers).toHaveLength(1)
+  })
+
   it('runs register, boot, wrap in order', async () => {
     const log: string[] = []
     const app = createApp({

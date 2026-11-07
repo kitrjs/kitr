@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useKitrMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
+import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
 import { ssrRoute } from 'kitr/seo'
 import { useStorage } from 'kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -48,7 +48,7 @@ function Room({ room }: { room: string }) {
   const { data: messages } = useSuspenseQuery(messagesQuery.options({ query: { room } }))
   const subscription = useMemo(() => chatSubscription(), [])
   const live = useSubscription(subscription, { room })
-  const send = useKitrMutation(sendMessage)
+  const send = useMutation(sendMessage)
   const [author, setAuthor] = useStorage(displayName)
   const [text, setText] = useState('')
   const bottom = useRef<HTMLDivElement>(null)

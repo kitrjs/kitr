@@ -87,7 +87,11 @@ export function generate() {
         '--registry',
         join(root, 'registry/dist'),
       ],
-      { cwd: tmp, stdio: 'pipe', env: { ...process.env, CI: '1', NO_COLOR: '1' } },
+      {
+        cwd: tmp,
+        stdio: 'pipe',
+        env: { ...process.env, CI: '1', NO_COLOR: '1', KITR_PREVIEW: '1' },
+      },
     )
     normalise(join(tmp, name), name)
     out[name] = join(tmp, name)

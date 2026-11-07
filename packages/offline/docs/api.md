@@ -30,6 +30,18 @@ function createOffline(client: QueryClient, config?: OfflineConfig, app?: KitrAp
 Build the offline service for a QueryClient: it saves successful queries and paused mutations
 to storage on a throttle (and when the page is hidden), and can restore them into the client.
 
+### registerMutationDefaults
+
+```ts
+function registerMutationDefaults(client: QueryClient): void;
+```
+
+A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do
+not survive a reload. Give every named mutation (`defineMutation('projects.rename', ...)` in
+kitr/actions, or one registered in `operations`) its defaults by name, so a mutation paused
+offline still runs, with its cache effects, after the app restarts. Mutations without a name
+need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
+
 ### useOffline
 
 ```ts

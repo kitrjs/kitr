@@ -8,10 +8,10 @@ order: 2
 
 `kitr/query` re-exports everything from `@tanstack/react-query` and adds the following.
 
-## defineQuery
+## queryFrom
 
 ```ts
-function defineQuery<TInput = void, TOutput = unknown>(contract: {
+function queryFrom<TInput = void, TOutput = unknown>(contract: {
   key: (input: TInput) => QueryKey
   fetch: (input: TInput, ctx: { signal?: AbortSignal }) => Promise<TOutput>
   staleTime?: number
@@ -26,10 +26,10 @@ function defineQuery<TInput = void, TOutput = unknown>(contract: {
 | `fetch(input, signal?)` | Call the source directly, bypassing the cache. |
 | `contract` | The full contract, for tooling. |
 
-## defineMutation
+## mutationFrom
 
 ```ts
-function defineMutation<TInput = void, TOutput = unknown>(contract: {
+function mutationFrom<TInput = void, TOutput = unknown>(contract: {
   mutate: (input: TInput) => Promise<TOutput>
   effects?: CacheEffect | ((result: TOutput, input: TInput) => CacheEffect)
   source?: string
@@ -42,21 +42,21 @@ function defineMutation<TInput = void, TOutput = unknown>(contract: {
 | `mutate(input)` | Call the source directly, without effects. |
 | `effectsFor(result, input)` | The effects for one result. |
 
-## useKitrMutation
+## useMutation
 
 ```ts
-function useKitrMutation<TInput, TOutput>(
-  definition: MutationDefinition<TInput, TOutput>,
+function useMutation<TInput, TOutput>(
+  definition: MutationDefinition<TInput, TOutput> | MutationName,
   overrides?: Omit<UseMutationOptions<TOutput, Error, TInput>, 'mutationFn'>,
 ): UseMutationResult<TOutput, Error, TInput>
 ```
 
-`useMutation` with effects applied to the active `QueryClient`. Your own `onSuccess` runs after the effects.
+TanStack's `useMutation`, plus two more forms: a mutation definition from `mutationFrom`, or a name `kitr types` registered. Both apply the mutation's cache effects to the active `QueryClient`, then your own `onSuccess`. Plain TanStack options pass straight through.
 
-## defineSubscription and useSubscription
+## subscriptionFrom and useSubscription
 
 ```ts
-function defineSubscription<TInput = void, TEvent = unknown>(contract: {
+function subscriptionFrom<TInput = void, TEvent = unknown>(contract: {
   key: (input: TInput) => QueryKey
   subscribe: (input: TInput, handlers: { next(event: TEvent): void; error?(e: KitrErrorShape): void }) => () => void
   effects?: (event: TEvent, input: TInput) => CacheEffect | void

@@ -1,6 +1,7 @@
 {
   "name": "@kitr/kit-desktop",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr new --kit desktop: The app kit in an Electron shell with a typed IPC contract and native dialogs. See the tauri kit for a Tauri shell.",
   "kitr": {
     "name": "desktop",
@@ -20,9 +21,6 @@
   },
   "homepage": "https://kitr.dev/docs/cli",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     "./kitr": {

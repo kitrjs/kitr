@@ -100,7 +100,7 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
       if (/queryClient\.invalidateQueries\(/.test(src) && !file.includes('/providers/'))
         out.push({
           level: 'info',
-          message: `${rel(ctx, file)} invalidates inline; prefer \`effects\` on defineMutation/defineAction`,
+          message: `${rel(ctx, file)} invalidates inline; prefer \`effects\` on mutationFrom/defineAction`,
         })
     }
   }

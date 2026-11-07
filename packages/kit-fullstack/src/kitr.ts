@@ -30,7 +30,6 @@ export default definePackage({
       'auth',
       'storage',
       'testing',
-      'devtools',
       'seo',
       'actions',
       'api',

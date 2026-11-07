@@ -101,8 +101,8 @@ Each endpoint is callable and has:
 | Member | Description |
 | --- | --- |
 | `(input?)` | Call it. Input is `{ params?, query?, body? }`, typed per route. |
-| `.query()` | A query contract for `defineQuery`. |
-| `.mutation({ effects? })` | A mutation contract for `defineMutation`. |
+| `.query()` | A query contract for `queryFrom`. |
+| `.mutation({ effects? })` | A mutation contract for `mutationFrom`. |
 | `.key(input?)` | The cache key: `['api', routeName, params, query]`. |
 | `.url(input?)` | The full URL. |
 | `.method`, `.path` | From the route. |

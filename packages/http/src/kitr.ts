@@ -20,7 +20,7 @@ export default definePackage({
     )
     ctx.agents.add(
       'http',
-      `- The HTTP client is \`app.container.use('http')\` (a ky instance). Wrap endpoints with \`httpQuery\`/\`httpMutation\` from \`kitr/http\` and pass them to \`defineQuery\`/\`defineMutation\`.\n- Errors are already \`KitrError\`; a 422 with \`fieldErrors\` maps onto form fields through \`<Form>\`.`,
+      `- The HTTP client is \`app.container.use('http')\` (a ky instance). Wrap endpoints with \`httpQuery\`/\`httpMutation\` from \`kitr/http\` and pass them to \`queryFrom\`/\`mutationFrom\`.\n- Errors are already \`KitrError\`; a 422 with \`fieldErrors\` maps onto form fields through \`<Form>\`.`,
     )
   },
   remove(ctx) {
@@ -35,7 +35,7 @@ export default definePackage({
         file: `${project.rc.directories.app ?? 'app'}/features/${naming.snake(name)}/queries.ts`,
       }),
       stub: ({ name }) => `import { createKeys } from 'kitr/app'
-import { defineMutation, defineQuery } from 'kitr/query'
+import { mutationFrom, queryFrom } from 'kitr/query'
 import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 
@@ -47,15 +47,15 @@ export interface ${naming.pascal(name)} {
   name: string
 }
 
-export const ${naming.camel(name)}ListQuery = defineQuery(
+export const ${naming.camel(name)}ListQuery = queryFrom(
   httpQuery<void, ${naming.pascal(name)}[]>(http, { path: '${naming.snake(name)}', key: () => ${naming.camel(name)}Keys.list() }),
 )
 
-export const ${naming.camel(name)}Query = defineQuery(
+export const ${naming.camel(name)}Query = queryFrom(
   httpQuery<string, ${naming.pascal(name)}>(http, { path: (id) => \`${naming.snake(name)}/\${id}\`, key: (id) => ${naming.camel(name)}Keys.detail(id) }),
 )
 
-export const update${naming.pascal(name)} = defineMutation(
+export const update${naming.pascal(name)} = mutationFrom(
   httpMutation<Partial<${naming.pascal(name)}> & { id: string }, ${naming.pascal(name)}>(http, {
     method: 'patch',
     path: (input) => \`${naming.snake(name)}/\${input.id}\`,

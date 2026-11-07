@@ -28,7 +28,6 @@ export default definePackage({
       'storage',
       'mocks',
       'testing',
-      'devtools',
     ],
     components: [
       'icon',

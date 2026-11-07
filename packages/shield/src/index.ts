@@ -1,4 +1,4 @@
-import { createDefineConfig, KitrError } from '@kitr/core'
+import { createDefineConfig, inProduction, KitrError } from '@kitr/core'
 import type { H3Event, Middleware } from 'h3'
 
 /** Options for `cors()` and the `cors` key of `config/shield.ts`. */
@@ -25,8 +25,10 @@ export interface CsrfOptions {
   methods?: string[]
   /** Paths that never need a token (webhooks). Prefix match. */
   ignore?: string[]
-  /** Add `Secure` to the cookie. Default: true when `NODE_ENV` is `production`. */
+  /** Add `Secure` to the cookie. Default: `production`. */
   secure?: boolean
+  /** Whether this is a production process. `shield(server)` fills it from the app's mode; standalone, `inProduction()` from `@kitr/core` decides. */
+  production?: boolean
 }
 
 /** Options for `rateLimit()` and the `rateLimit` key of `config/shield.ts`. */
@@ -67,6 +69,8 @@ export interface HeadersOptions {
   referrerPolicy?: string | false
   /** `Permissions-Policy`. Default `camera=(), microphone=(), geolocation=()`; false to leave it out. */
   permissionsPolicy?: string | false
+  /** Whether this is a production process, which turns HSTS on. `shield(server)` fills it from the app's mode; standalone, `inProduction()` from `@kitr/core` decides. */
+  production?: boolean
 }
 
 /** The options in `config/shield.ts`. Each key takes its middleware's options, or false to turn it off. */
@@ -99,7 +103,7 @@ const prefixed = (path: string, list: string[] | undefined) =>
 
 /** Middleware that sets nosniff, frame, referrer, permissions, CSP and (in production) HSTS headers on every response, errors included. */
 export function securityHeaders(options: HeadersOptions = {}): Middleware {
-  const production = (globalThis as any).process?.env?.NODE_ENV === 'production'
+  const production = options.production ?? inProduction()
   const {
     contentSecurityPolicy = DEFAULT_CSP,
     hsts = production ? 60 * 60 * 24 * 365 : false,
@@ -184,7 +188,7 @@ export function csrf(options: CsrfOptions = {}): Middleware {
     header = 'x-csrf-token',
     methods = ['POST', 'PUT', 'PATCH', 'DELETE'],
     ignore,
-    secure = (globalThis as any).process?.env?.NODE_ENV === 'production',
+    secure = options.production ?? inProduction(),
   } = options
   return async (event, next) => {
     let token = readCookie(event, cookie)
@@ -269,12 +273,23 @@ export function shieldMiddlewares(config: ShieldConfig = {}): Middleware[] {
   return list
 }
 
-/** Attach the shield to a kitr server (or any object with `use(middleware)`), reading `config/shield.ts`. */
-export function shield<S extends { use(middleware: Middleware): unknown; app?: { config: any } }>(
-  server: S,
-  config?: ShieldConfig,
-): S {
-  const resolved = config ?? server.app?.config.get('shield', {} as ShieldConfig) ?? {}
+/**
+ * Attach the shield to a kitr server (or any object with `use(middleware)`), reading
+ * `config/shield.ts`. Production (HSTS, Secure cookies) follows the app's mode, so a Workers or
+ * Deno deployment that never sets `NODE_ENV` still gets production defaults from the build.
+ */
+export function shield<
+  S extends {
+    use(middleware: Middleware): unknown
+    app?: { config: any; isProduction: boolean }
+  },
+>(server: S, config?: ShieldConfig): S {
+  const resolved: ShieldConfig = {
+    ...(config ?? server.app?.config.get('shield', {} as ShieldConfig) ?? {}),
+  }
+  const production = inProduction(server.app)
+  if (resolved.headers !== false) resolved.headers = { production, ...(resolved.headers ?? {}) }
+  if (resolved.csrf !== false) resolved.csrf = { production, ...(resolved.csrf ?? {}) }
   for (const m of shieldMiddlewares(resolved)) server.use(m)
   return server
 }

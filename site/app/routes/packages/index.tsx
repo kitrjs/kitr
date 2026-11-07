@@ -55,7 +55,7 @@ function Packages() {
           <h1>Packages</h1>
           <p className="muted">
             Pick the pieces your app needs. Each one is a single <code>kitr add</code> away, and
-            every page starts with a live example.
+            every page shows what that command changes and how to use the result.
           </p>
         </div>
         <label className="filter-input">
@@ -78,18 +78,21 @@ function Packages() {
               onClick={() => setCategory('all')}
               color="var(--line)"
               label="All packages"
-              count={packages.length + planned.length}
+              count={packages.length}
             />
-            {(Object.keys(categories) as Category[]).map((c) => (
-              <FilterButton
-                key={c}
-                active={category === c}
-                onClick={() => setCategory(c)}
-                color={categories[c].color}
-                label={categories[c].label}
-                count={[...packages, ...planned].filter((p) => p.category === c).length}
-              />
-            ))}
+            {/* Counts are shipped packages only; roadmap entries are listed below the grid. */}
+            {(Object.keys(categories) as Category[])
+              .filter((c) => packages.some((p) => p.category === c))
+              .map((c) => (
+                <FilterButton
+                  key={c}
+                  active={category === c}
+                  onClick={() => setCategory(c)}
+                  color={categories[c].color}
+                  label={categories[c].label}
+                  count={packages.filter((p) => p.category === c).length}
+                />
+              ))}
           </fieldset>
           <fieldset>
             <legend className="label">Runs on</legend>
@@ -102,7 +105,7 @@ function Packages() {
                 label={
                   r === 'all' ? 'Anywhere' : r === 'both' ? 'Client and server' : runsOn[r].label
                 }
-                count={[...packages, ...planned].filter((p) => matchesRuns(p.runsOn, r)).length}
+                count={packages.filter((p) => matchesRuns(p.runsOn, r)).length}
               />
             ))}
           </fieldset>
