@@ -6,7 +6,7 @@
   "scripts": {
     "content": "node scripts/content.mjs",
     "dev": "node scripts/content.mjs && vite",
-    "build": "node scripts/content.mjs && vite build",
+    "build": "node scripts/content.mjs && vite build && node scripts/404.mjs",
     "preview": "vite preview",
     "typecheck": "node scripts/content.mjs && tsc --noEmit"
   },

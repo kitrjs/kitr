@@ -1,6 +1,6 @@
 // Serves site/dist/client the way site/nginx.conf does in production, so browser tests see
 // what kitr.dev serves: prerendered <path>/index.html, <url>.md as markdown, immutable
-// assets, and the app shell for anything else (the client renders the 404 page).
+// assets, and /404.html with a 404 status for anything else.
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, normalize } from 'node:path'
@@ -32,9 +32,12 @@ createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)
   let found
   if (path.endsWith('.md') || path.startsWith('/assets/')) found = file(path)
-  else
-    found =
-      file(path) ?? file(join(path, 'index.html')) ?? file(`${path}.html`) ?? file('index.html')
+  else found = file(path) ?? file(join(path, 'index.html')) ?? file(`${path}.html`)
+  if (!found && !path.startsWith('/assets/') && file('404.html')) {
+    res.writeHead(404, { 'content-type': types['.html'] })
+    createReadStream(file('404.html')).pipe(res)
+    return
+  }
   if (!found) {
     res.writeHead(404, { 'content-type': 'text/plain' }).end('not found')
     return

@@ -4,7 +4,7 @@ import { Link } from '@tanstack/react-router'
 export function NotFound() {
   return (
     <main className="container not-found">
-      <p className="label">404</p>
+      <p className="label">404 · page not found</p>
       <h1 className="display">this part isn't in the box</h1>
       <p className="muted">
         The page you asked for doesn't exist, or it moved when packages were renamed. These are good

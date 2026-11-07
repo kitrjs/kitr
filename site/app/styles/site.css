@@ -658,10 +658,12 @@ kbd {
 }
 .platform-cards {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 .platform-card {
   display: flex;
+  min-width: 0;
   gap: 16px;
   align-items: flex-start;
   padding: 18px;

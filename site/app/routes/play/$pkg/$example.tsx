@@ -12,7 +12,13 @@ export const Route = createFileRoute('/play/$pkg/$example')({
   beforeLoad: ({ params }) => {
     if (!examples[keyFor(params.pkg, params.example)]) throw notFound()
   },
-  head: () => ({ meta: [{ title: 'kitr example' }, { name: 'robots', content: 'noindex' }] }),
+  head: () => ({
+    meta: [
+      { title: 'kitr example' },
+      { name: 'description', content: 'A live kitr example, running in your browser.' },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
   component: Play,
 })
 
