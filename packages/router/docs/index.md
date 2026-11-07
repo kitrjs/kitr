@@ -598,7 +598,7 @@ When two guards return the same key, the later one wins.
 
 ## Add fields to the router context
 
-Pass extra context with `context` and declare its type once, so every `beforeLoad` and loader sees it. This is how a session reaches the guards. Here it comes from an app service of your own named `session`:
+Pass extra context with `context` and declare its type once, so every `beforeLoad` and loader sees it. This is how a session reaches the guards. With `kitr/auth` installed, `createKitrRouter` already puts the live session in `context.session` (and the platform service in `context.platform` with `kitr/platform`), read from the container when a guard asks; the example below is for a session service of your own named `session`:
 
 ```tsx
 // app/router.tsx
@@ -670,6 +670,252 @@ declare module '@kitr/router' {
 `KitrRouterContext` starts with `app` and `queryClient`. The root route is created with `createRootRouteWithContext<KitrRouterContext>()`, so what you declare here is typed in every route. Augment `'@kitr/router'`, the module that declares the interface.
 
 Use a getter when the value changes after the router is created. TanStack Start builds the router before the app boots, so a plain `session: app.container.use('session')` would read it too early and throw `No binding named "session"`.
+
+## Stack pages like a native app
+
+In a phone app a tap on a list row pushes the detail over the list; the list stays where it was, scrolled to the same row, and swiping back reveals it. The browser's model is different: the list unmounts, the detail mounts, back mounts the list again from scratch. `<StackOutlet>` from `kitr/router/stack` gives the router the native model. Put it where a layout renders its children instead of `<Outlet>`:
+
+```tsx
+// app/routes/_app.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { requireAuth } from 'kitr/router'
+import { StackOutlet } from 'kitr/router/stack'
+
+export const Route = createFileRoute('/_app')({
+  beforeLoad: requireAuth(),
+  component: () => <StackOutlet />,
+})
+```
+
+Every route beneath `/_app` is now a page in the stack. Navigating deeper pushes; the page beneath stays mounted with its state, scroll position and playing media; history back pops it with the matching animation. Nothing else changes: links, loaders, search params and guards work as before, and the same route tree renders as plain pages on the server, during hydration and in a static build.
+
+```tsx
+// app/routes/_app/chats/index.tsx
+import { createFileRoute, Link } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_app/chats/')({
+  loader: ({ context }) => context.app.container.use('http').get<{ id: string; name: string }[]>('/chats'),
+  component: () => {
+    const chats = Route.useLoaderData()
+    return (
+      <ul>
+        {chats.map((chat) => (
+          <li key={chat.id}>
+            <Link to="/chats/$id" params={{ id: chat.id }}>{chat.name}</Link>
+          </li>
+        ))}
+      </ul>
+    )
+  },
+})
+```
+
+Opening `/chats/7` from that list pushes the chat over it; opening `/chats/9` from inside chat 7 pushes a second chat page, and each keeps its own params and data. Back pops to chat 7, back again to the list, still scrolled to where it was.
+
+| Prop | What it does |
+| --- | --- |
+| `keepAlive` | How many covered pages stay mounted per tab. Default `5`; `false` remounts every page on back, like a plain outlet. |
+| `motion` | `ios`, `android`, `plain` or `none`. Default: detected from the device; `none` when the user prefers reduced motion. |
+| `gestures` | Edge swipe back and drag to dismiss. Default: on for touch devices. Pass `{ edge, commitAt, velocity }` to tune. |
+| `onRootBack` | Back pressed with nothing to pop. Default: Android exits the app. |
+
+The stack renders inside a `position: relative` box that fills its parent. Give the parent a height (`100dvh` for a full-screen app) and the pages fill it. Pages are plain `<div data-kitr-stack-page>` elements with `data-presentation` and `data-active` attributes, so CSS can style them; `--kitr-stack-page-bg` sets their background.
+
+## Choose how a page arrives
+
+A route says how it is presented through `staticData`. The stack reads `presentation`, `keepAlive` and `stackParent`:
+
+```tsx
+// app/routes/_app/compose.tsx
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_app/compose')({
+  staticData: { presentation: 'cover', stackParent: '/' },
+  component: ComposePage,
+})
+```
+
+| Presentation | Arrives | Leaves |
+| --- | --- | --- |
+| `push` (default) | Slides in from the right (iOS), fades up (Android), cross-fades elsewhere. | Edge swipe, back button, `pop()`. |
+| `cover` | Rises over the whole screen. For a composer, a player, a checkout. | Drag down, back, `dismiss()`. |
+| `sheet` | Rises over the dimmed page beneath, which stays visible. For a picker, a menu, a share sheet. | Drag down, tap the scrim, back. |
+| `fullscreen` | Like `push`, with no swipe gesture. For a video, a camera, a map. | Back button, `pop()`. |
+
+`keepAlive: false` on a route tells the stack to unmount that page as soon as it is covered: a camera or a heavy map should not keep running under the next page.
+
+`stackParent` is for cold starts. When a notification opens `/chats/7` directly, there is no list beneath it; with `stackParent: '/chats'`, the stack puts the list under the chat on first render (the history gets both entries), so swipe back and the back button have somewhere to go. It applies only when the app started on that page; a push from inside the app already has its parent.
+
+```tsx
+// app/routes/_app/chats/$id.tsx
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_app/chats/$id')({
+  staticData: { stackParent: '/chats' },
+  component: ChatPage,
+})
+```
+
+## Swipe back and the back button
+
+On iOS, dragging from the left edge pulls the page away and shows the one beneath, with the system's parallax; letting go past 30% of the width (or flicking) pops, letting go earlier snaps back. Covers and sheets dismiss with a downward drag, but only when the content inside is scrolled to the top, so a long list scrolls before it dismisses. Android gets the same gestures without the edge requirement for sheets, and its hardware back button follows the platform's order:
+
+1. Handlers registered with `useBackHandler()`, newest first. A dialog registers one while it is open so back closes it.
+2. The stack pops a page when the current tab holds more than one.
+3. `<StackTabs>` switches to the first tab when another tab is at its root.
+4. `onRootBack`, then the browser's history when it has entries, then `platform.exit()` on Android.
+
+```tsx
+// app/components/confirm-dialog.tsx
+import { useBackHandler } from 'kitr/router/stack'
+
+export function ConfirmDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useBackHandler(() => {
+    onClose()
+    return true // handled: the stack does not pop
+  }, open)
+  return open ? <dialog open>Discard the draft?</dialog> : null
+}
+```
+
+Inside a page, `useStack()` tells it where it stands and how to leave:
+
+```tsx
+// app/components/page-header.tsx
+import { useStack } from 'kitr/router/stack'
+
+export function PageHeader({ title }: { title: string }) {
+  const stack = useStack()
+  return (
+    <header>
+      {stack.canPop ? <button type="button" onClick={stack.pop}>Back</button> : null}
+      <h1>{title}</h1>
+    </header>
+  )
+}
+```
+
+| `useStack()` field | Meaning |
+| --- | --- |
+| `depth` | Pages in the current tab. |
+| `canPop` | `depth > 1`. |
+| `pop()` / `dismiss()` | Go back one page (history back). |
+| `presentation` | How the current page arrived. |
+| `entry` | The current page's stack entry (id, href, route ids). |
+
+The back button needs the `platform` service from [`kitr/platform`](/packages/platform): the stack subscribes to `platform.onBackButton()` when the service is in the app's container. Without it the gestures and `useStack()` still work; only the hardware button has no listener.
+
+## Tabs that keep their stacks
+
+Tab bars in native apps keep a stack per tab: leave Home three pages deep, visit Search, come back and Home is still three pages deep. `<StackTabs>` does this over the same route tree, deciding which tab a URL belongs to by path:
+
+```tsx
+// app/routes/_app.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { StackTabs } from 'kitr/router/stack'
+
+export const Route = createFileRoute('/_app')({
+  component: () => (
+    <StackTabs
+      tabs={[
+        { id: 'home', to: '/', match: ['/', '/chats'] },
+        { id: 'search', to: '/search' },
+        { id: 'me', to: '/me' },
+      ]}
+    >
+      {({ tabs, current, select }) => (
+        <nav aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.id}
+              aria-current={current?.id === tab.id ? 'page' : undefined}
+              onClick={() => select(tab)}
+            >
+              {tab.id}
+            </button>
+          ))}
+        </nav>
+      )}
+    </StackTabs>
+  ),
+})
+```
+
+`select(tab)` opens the tab's last page, or its `to` the first time; selecting the current tab pops it to its root. `match` lists the paths a tab owns (a path and everything under it); by default a tab owns `to`. Pages of other tabs stay mounted and hidden, within the `keepAlive` limit per tab. The render prop draws the bar, so a phone gets a bottom bar and a desktop gets a sidebar from the same component.
+
+## Show a list beside the detail
+
+On a tablet or a desktop window the list and the detail fit side by side. `<SplitStack>` shows the list pane when the viewport is at least `minWidth` pixels wide and only the stack below that, so the phone keeps pushing the detail over the list:
+
+```tsx
+// app/routes/_app/chats.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { SplitStack, StackOutlet } from 'kitr/router/stack'
+import { ChatList } from '#app/components/chat-list'
+
+export const Route = createFileRoute('/_app/chats')({
+  component: () => (
+    <SplitStack master={<ChatList />} minWidth={768}>
+      <StackOutlet />
+    </SplitStack>
+  ),
+})
+```
+
+The index route under it is the list on a phone and a placeholder on a wide screen, because the list already shows on the left. `useSplitPane()` tells it which:
+
+```tsx
+// app/routes/_app/chats/index.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { useSplitPane } from 'kitr/router/stack'
+import { ChatList } from '#app/components/chat-list'
+
+export const Route = createFileRoute('/_app/chats/')({
+  component: () => {
+    const { split } = useSplitPane()
+    return split ? <p>Pick a chat</p> : <ChatList />
+  },
+})
+```
+
+`useSplitPane()` is `false` on the server and in the first client render, so the server output is the phone layout and the panes appear once the viewport is measured; nothing shifts for phones, which never split.
+
+## Limit a route to some platforms
+
+An app that ships as a marketing site, an authed web app and a phone app shares one route tree, but not every route belongs everywhere: the pricing page exists on `www` only, the account pages on the authed builds. `onlyPlatform()` is a `beforeLoad` guard that renders not-found (or redirects) on the other platforms:
+
+```tsx
+// app/routes/pricing.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { onlyPlatform } from 'kitr/router'
+
+export const Route = createFileRoute('/pricing')({
+  beforeLoad: onlyPlatform('www'),
+  component: PricingPage,
+})
+```
+
+```tsx
+// app/routes/_app/billing.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { guards, onlyPlatform, requireAuth } from 'kitr/router'
+
+export const Route = createFileRoute('/_app/billing')({
+  beforeLoad: guards(requireAuth(), onlyPlatform(['web', 'desktop'], { to: '/' })),
+  component: BillingPage,
+})
+```
+
+Keys are platform names from `kitrrc.ts` (`www`, `phone`), platform types (`web`, `mobile`, `desktop`), OS names (`ios`) or `native`. The guard reads `context.platform` (the service from `kitr/platform`, which `createKitrRouter` puts in the router context when the package is installed) and falls back to the build's `KITR_PLATFORM` and `KITR_PLATFORM_TYPE`, so it works in a project with no platform package. Because the platform of a build is a constant, the bundler also drops a component that branches on `import.meta.env.KITR_PLATFORM` from the builds where it never runs.
+
+| Guard | Where the route exists |
+| --- | --- |
+| `onlyPlatform('www')` | The `www` build only. |
+| `onlyPlatform(['web', 'desktop'])` | Every web and desktop build; a 404 on phones. |
+| `onlyPlatform('native', { to: '/download' })` | Native shells; the web redirects to the download page. |
+
+To render a route on the server on one platform and in the browser on another, see `ssrRoute()` with a per-platform table in [`kitr/seo`](/packages/seo).
 
 ## Set the page title and meta tags
 

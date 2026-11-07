@@ -134,3 +134,46 @@ describe('createKitrRouter', () => {
     expect(hub.log).toHaveBeenCalledWith('router', expect.stringMatching(/\/$/), expect.any(Object))
   })
 })
+
+describe('router context bindings', () => {
+  it('exposes the auth session and the platform service lazily from the container', async () => {
+    const app = createApp()
+    let session: { user: unknown } | null = null
+    app.container.value('auth', {
+      get session() {
+        return session
+      },
+    } as any)
+    app.container.value('platform', { name: 'site', type: 'web' } as any)
+    await app.boot()
+    const router = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const ctx = router.options.context as any
+    expect(ctx.session).toBeNull()
+    session = { user: { id: 1 } }
+    expect(ctx.session).toEqual({ user: { id: 1 } })
+    expect(ctx.platform).toEqual({ name: 'site', type: 'web' })
+  })
+
+  it('leaves session and platform undefined without those packages, and keeps an explicit session', async () => {
+    const app = createApp()
+    await app.boot()
+    const plain = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    expect((plain.options.context as any).session).toBeUndefined()
+    expect((plain.options.context as any).platform).toBeUndefined()
+    const explicit = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+      context: { session: { user: 'me' } },
+    })
+    expect((explicit.options.context as any).session).toEqual({ user: 'me' })
+  })
+})
