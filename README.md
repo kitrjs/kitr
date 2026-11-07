@@ -145,6 +145,8 @@ packages/
   core, react, router, query, http, forms, table, state, tailwind, theme,
   logger, server, api, actions, seo, realtime, auth, db, testing, mocks, i18n,
   analytics, monitoring, platform, storage, devtools,
+  cache, shield, mail, jobs, uploads, flags, consent, offline,
+  secure-storage, files, notifications, native, updater,
   web, desktop, mobile       # platform packages (server's platform lives in packages/server)
   vite, cli, kitr            # `kitr` is the umbrella package users install
 registry/                    # shadcn-compatible component registry (built to registry/dist)
@@ -175,6 +177,6 @@ The examples are exactly what the CLI generates (with workspace links instead of
 
 ## Status
 
-Pre-release. The API is settling and the version is `0.1.0` across every package (they release in lockstep). Not yet published to npm.
+Pre-release. The API is settling and the version is `0.1.0` across every package (they release in lockstep through changesets; `pnpm changeset` records a change and the release workflow publishes when a version PR is merged). Not yet published to npm.
 
 MIT.
