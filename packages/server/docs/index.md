@@ -102,7 +102,7 @@ export const server = createServer({
 | `LOG_LEVEL` | The server logger's level (`debug`, `info`, `warn`, `error`) when no logger provider is bound. `config/logger.ts` reads it too. |
 | `PORT` | The port `server/main.ts` listens on. `kitr dev` and `kitr start` set it from the platform options. |
 | `HOST` | The interface `server/main.ts` binds. `kitr dev` sets `localhost`, `kitr start` sets `0.0.0.0`. |
-| `NODE_ENV` | `production` hides the message and data of `5xx` responses. |
+| `NODE_ENV` | `production` hides the message and data of `5xx` responses. The app's mode (`kitr build`, Vite's production mode) does the same, so hosts that never set `NODE_ENV` are covered. |
 
 ### Platform options
 
@@ -495,7 +495,7 @@ A plain `Error` becomes `INTERNAL` with status `500`. In development its message
 ```
 
 > **Warning**
-> Only `NODE_ENV=production` hides `5xx` messages and `data`. A staging server without it sends internal error messages, such as database errors, to the client.
+> Only a production app (`kitr build`, or `NODE_ENV=production`) hides `5xx` messages and `data`. A staging server started from source in development mode sends internal error messages, such as database errors, to the client.
 
 `4xx` errors keep their message in every mode, so write those messages for the user.
 
