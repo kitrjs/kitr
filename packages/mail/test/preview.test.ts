@@ -34,4 +34,15 @@ describe('mail preview', () => {
     expect(await text.text()).toContain('Hello Ada')
     expect((await server.fetch(new Request('http://x/_kitr/mail/nope'))).status).toBe(404)
   })
+
+  it('escapes props taken from the query string', async () => {
+    const server = createServer({ logger: silentLogger, server: { healthPath: false } })
+    mailPreview(server, [welcome])
+    const page = await server.fetch(
+      new Request('http://x/_kitr/mail/welcome?name=%3Cscript%3Ealert(1)%3C/script%3E'),
+    )
+    const html = await page.text()
+    expect(html).not.toContain('<script>')
+    expect(html).toContain('&lt;script&gt;')
+  })
 })

@@ -135,17 +135,30 @@ export function parseInterval(text: string): number {
   return Number(m[1]) * units[m[2]!]!
 }
 
-function cronField(field: string, min: number, max: number): (value: number) => boolean {
+function cronField(
+  field: string,
+  min: number,
+  max: number,
+  expression: string,
+): (value: number) => boolean {
+  const bad = () => new Error(`[kitr/jobs] Bad cron "${expression}" (field "${field}")`)
+  const int = (text: string | undefined) => {
+    if (!text || !/^\d+$/.test(text)) throw bad()
+    return Number(text)
+  }
   const sets = field.split(',').map((part) => {
-    const [range, stepText] = part.split('/')
-    const step = stepText ? Number(stepText) : 1
+    const [range, stepText, extra] = part.split('/')
+    if (extra !== undefined) throw bad()
+    const step = stepText === undefined ? 1 : int(stepText)
     let lo = min
     let hi = max
     if (range !== '*') {
-      const [a, b] = range!.split('-').map(Number)
-      lo = a!
-      hi = b ?? (stepText ? max : a!)
+      const [a, b, more] = range!.split('-')
+      if (more !== undefined) throw bad()
+      lo = int(a)
+      hi = b !== undefined ? int(b) : stepText !== undefined ? max : lo
     }
+    if (step < 1 || lo < min || hi > max || lo > hi) throw bad()
     return (v: number) => v >= lo && v <= hi && (v - lo) % step === 0
   })
   return (v) => sets.some((s) => s(v))
@@ -156,12 +169,17 @@ export function cronMatches(expression: string, date: Date): boolean {
   const fields = expression.trim().split(/\s+/)
   if (fields.length !== 5) throw new Error(`[kitr/jobs] Bad cron "${expression}" (5 fields)`)
   const [mi, h, d, mo, w] = fields as [string, string, string, string, string]
+  // Weekday 7 is Sunday too, as in every cron.
+  const weekday = cronField(w, 0, 7, expression)
+  const dayOk = cronField(d, 1, 31, expression)(date.getDate())
+  const weekdayOk = weekday(date.getDay()) || (date.getDay() === 0 && weekday(7))
+  // Standard cron: when both day-of-month and weekday are restricted, either may match.
+  const day = d !== '*' && w !== '*' ? dayOk || weekdayOk : dayOk && weekdayOk
   return (
-    cronField(mi, 0, 59)(date.getMinutes()) &&
-    cronField(h, 0, 23)(date.getHours()) &&
-    cronField(d, 1, 31)(date.getDate()) &&
-    cronField(mo, 1, 12)(date.getMonth() + 1) &&
-    cronField(w, 0, 6)(date.getDay())
+    cronField(mi, 0, 59, expression)(date.getMinutes()) &&
+    cronField(h, 0, 23, expression)(date.getHours()) &&
+    day &&
+    cronField(mo, 1, 12, expression)(date.getMonth() + 1)
   )
 }
 
@@ -190,9 +208,24 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
 
   async function runOnce<P>(job: Job<P>, payload: P, attempt: number, id: string) {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), job.timeout ?? 60_000)
+    const ms = job.timeout ?? 60_000
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    // A job that ignores its signal still fails at the timeout, so it can't hold a worker slot
+    // (or `stop()`) forever.
+    const expired = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => {
+        const error = new Error(`[jobs] ${job.name} timed out after ${ms}ms`)
+        controller.abort(error)
+        reject(error)
+      }, ms)
+    })
     try {
-      return await job.run(payload, { app, attempt, jobId: id, signal: controller.signal })
+      return await Promise.race([
+        Promise.resolve().then(() =>
+          job.run(payload, { app, attempt, jobId: id, signal: controller.signal }),
+        ),
+        expired,
+      ])
     } finally {
       clearTimeout(timeout)
     }
@@ -204,8 +237,17 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
       log('warn', `[jobs] unknown job "${queued.name}" dropped`)
       return
     }
+    let payload: unknown
     try {
-      await runOnce(job, validate(job, queued.payload), queued.attempt, queued.id)
+      payload = validate(job, queued.payload)
+    } catch (error) {
+      // A payload that fails its schema will fail every retry too.
+      log('error', `[jobs] ${job.name} dropped: bad payload`, error)
+      config.onFailed?.(queued, error)
+      return
+    }
+    try {
+      await runOnce(job, payload, queued.attempt, queued.id)
     } catch (error) {
       const retries = job.retries ?? 3
       if (queued.attempt <= retries) {
@@ -219,20 +261,35 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
     }
   }
 
+  const dispatchScheduled = (job: Job<any>) =>
+    jobs.dispatch(job, undefined as never).catch((error) => {
+      log('error', `[jobs] could not queue scheduled ${job.name}`, error)
+    })
+
   async function tick() {
     if (!running) return
+    try {
+      await poll()
+    } catch (error) {
+      // A driver hiccup (Redis restart) must not stop the worker for good.
+      log('error', '[jobs] worker poll failed', error)
+    }
+    if (running) timer = setTimeout(tick, config.pollInterval ?? 500)
+  }
+
+  async function poll() {
     const now = Date.now()
     const minute = Math.floor(now / 60_000)
     if (minute !== lastCronMinute) {
       lastCronMinute = minute
       for (const job of registry.values())
         if (typeof job.schedule === 'string' && cronMatches(job.schedule, new Date(now)))
-          void jobs.dispatch(job, undefined as never)
+          void dispatchScheduled(job)
     }
     for (const [name, every] of intervals) {
       if (now - (lastRun.get(name) ?? 0) >= every) {
         lastRun.set(name, now)
-        void jobs.dispatch(registry.get(name)!, undefined as never)
+        void dispatchScheduled(registry.get(name)!)
       }
     }
     const room = concurrency - active.size
@@ -242,7 +299,6 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
         active.add(p)
       }
     }
-    timer = setTimeout(tick, config.pollInterval ?? 500)
   }
 
   for (const job of config.jobs ?? []) {
@@ -262,6 +318,8 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
         registry.set(job.name, job)
         if (job.schedule && typeof job.schedule === 'object')
           intervals.set(job.name, parseInterval(job.schedule.every))
+        // Check cron syntax now, not at the first tick in production.
+        else if (typeof job.schedule === 'string') cronMatches(job.schedule, new Date())
       }
       return jobs
     },
@@ -274,10 +332,11 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
     },
     async run(job, payload, attempt = 1) {
       const retries = job.retries ?? 3
+      const valid = validate(job, payload)
       let error: unknown
       for (let a = attempt; a <= retries + 1; a++) {
         try {
-          return await runOnce(job, validate(job, payload), a, crypto.randomUUID())
+          return await runOnce(job, valid, a, crypto.randomUUID())
         } catch (e) {
           error = e
           if (a <= retries)

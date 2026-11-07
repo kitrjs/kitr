@@ -277,16 +277,17 @@ export const update${pascal(name)}Schema = ${camel(name)}Schema.partial()
 
 export type ${pascal(name)}Input = z.infer<typeof ${camel(name)}Schema>
 `,
-  test: ({ name }) => `import { createTestApp, createTestClient } from 'kitr/testing'
+  test: ({ name }) => `import { createTestApp } from 'kitr/testing'
 import { describe, expect, it } from 'vitest'
 
 describe('${snake(name)}', () => {
-  it('works', async () => {
+  it('boots the app', async () => {
     const app = await createTestApp()
-    const client = createTestClient(app)
-    const res = await client.get('/api/health')
-    expect(res.status).toBe(200)
+    expect(app.status).toBe('booted')
   })
+
+  // HTTP: \`const client = createTestClient(server)\` with \`server\` from server/main.ts, then
+  // \`expect((await client.get('/api/health')).status).toBe(200)\`.
 })
 `,
   component: ({ name }) => `import type { ReactNode } from 'react'

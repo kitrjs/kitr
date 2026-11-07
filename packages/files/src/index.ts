@@ -97,7 +97,8 @@ const MIME: Record<string, string> = {
 }
 
 export function mimeFor(name: string, fallback = 'application/octet-stream'): string {
-  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  const dot = name.lastIndexOf('.')
+  const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : ''
   return MIME[ext] ?? fallback
 }
 
@@ -120,9 +121,20 @@ export function fromFile(file: File, path?: string): PickedFile {
   }
 }
 
+/** `'.PNG'`, `'png'` and `' png '` are the same extension; `'*'` and empty ones mean "any". */
+function extensions(filter: FileFilter): string[] {
+  return [
+    ...new Set(
+      filter.extensions
+        .map((e) => e.trim().replace(/^\.+/, '').toLowerCase())
+        .filter((e) => e && e !== '*'),
+    ),
+  ]
+}
+
 /** The `accept` string an `<input type="file">` needs for a set of filters. */
 export function acceptFor(filters: FileFilter[] = []): string {
-  return filters.flatMap((f) => f.extensions.map((e) => `.${e}`)).join(',')
+  return [...new Set(filters.flatMap((f) => extensions(f).map((e) => `.${e}`)))].join(',')
 }
 
 interface FsHandleWindow {
@@ -133,11 +145,15 @@ interface FsHandleWindow {
   }>
 }
 
+/** Picker types; a filter with no usable extension is left out (the picker throws on it). */
 function pickerTypes(filters: FileFilter[] = []) {
-  return filters.map((f) => ({
-    description: f.name,
-    accept: { 'application/octet-stream': f.extensions.map((e) => `.${e}`) },
-  }))
+  return filters
+    .map((f) => ({ description: f.name, exts: extensions(f) }))
+    .filter((f) => f.exts.length)
+    .map((f) => ({
+      description: f.description,
+      accept: { 'application/octet-stream': f.exts.map((e) => `.${e}`) },
+    }))
 }
 
 function isAbort(error: unknown) {

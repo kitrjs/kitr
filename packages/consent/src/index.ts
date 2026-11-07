@@ -84,8 +84,8 @@ export function createConsent(config: ConsentConfig = {}, app?: KitrApp): Consen
       decidedAt: new Date().toISOString(),
       version,
     }
-    cookie.set(record)
     current = record
+    cookie.set(record)
     if (app) getDevtools(app)?.log('consent', 'decided', record)
     for (const l of listeners) l(record)
   }
@@ -99,14 +99,18 @@ export function createConsent(config: ConsentConfig = {}, app?: KitrApp): Consen
     acceptAll: () => write(categories),
     rejectAll: () => write([]),
     reset() {
-      cookie.remove()
       current = empty
+      cookie.remove()
       for (const l of listeners) l(empty)
     },
     subscribe(listener) {
       listeners.add(listener)
+      // The cookie also fires for our own writes; only a change made elsewhere (another tab,
+      // another instance) is news, or every listener would hear each choice twice.
       const off = cookie.subscribe?.(() => {
-        current = load()
+        const next = load()
+        if (JSON.stringify(next) === JSON.stringify(current)) return
+        current = next
         listener(current)
       })
       return () => {

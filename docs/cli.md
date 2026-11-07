@@ -44,7 +44,7 @@
 | `make:mail welcome` | `server/mail/welcome.tsx` (`defineMail` with a preview) |
 | `make:service billing` | `server/services/billing_service.ts` (a class to bind in a provider) |
 | `make:validator project` | `app/validators/project.ts` (create/update zod schemas) |
-| `make:test projects` | `tests/projects.test.ts` (`createTestApp` + `createTestClient`) |
+| `make:test projects` | `test/projects.test.ts`, run by the project's vitest (`createTestApp`) |
 | `make:component user-card` | `app/components/user-card.tsx` |
 | `make:hook toggle` | `app/hooks/use-toggle.ts` |
 | `make:exception payment_failed` | `app/exceptions/payment_failed_error.ts` (a `KitrError` subclass) |

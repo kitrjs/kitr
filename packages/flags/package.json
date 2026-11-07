@@ -69,7 +69,9 @@
     "react-dom": "^19.3.1",
     "@kitr/react": "workspace:*",
     "h3": "^2.0.8",
-    "@types/node": "^22.19.0"
+    "@types/node": "^22.19.0",
+    "@kitr/server": "workspace:*",
+    "@kitr/logger": "workspace:*"
   },
   "kitr": {
     "name": "flags",

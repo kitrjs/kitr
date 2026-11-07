@@ -84,6 +84,8 @@ declare module '@kitr/core' {
 
 export const defineConfig = createDefineConfig<NotificationsConfig>()
 
+const MAX_TIMEOUT = 2 ** 31 - 1
+
 let counter = 0
 export function notificationId(): string {
   return `n-${Date.now().toString(36)}-${(counter++).toString(36)}`
@@ -114,17 +116,28 @@ export function createWebNotificationsDriver(config: { icon?: string } = {}): No
   const api = () => (typeof Notification === 'undefined' ? undefined : Notification)
   const toPermission = (p: string): NotificationPermission =>
     p === 'granted' ? 'granted' : p === 'denied' ? 'denied' : 'prompt'
-  const display = (options: NotificationOptions & { id: string }) => {
+  const display = async (options: NotificationOptions & { id: string }) => {
     const N = api()
     if (N?.permission !== 'granted') return
     shown.get(options.id)?.close()
-    const n = new N(options.title, {
+    const init = {
       body: options.body,
       icon: options.icon ?? config.icon,
       tag: options.channel ?? options.id,
       silent: options.silent,
       data: { id: options.id, url: options.url, data: options.data },
-    })
+    }
+    let n: Notification
+    try {
+      n = new N(options.title, init)
+    } catch (error) {
+      // Chrome on Android has no page notifications ("Illegal constructor"): only a service
+      // worker can show one. Taps then reach the worker's notificationclick, not onTap.
+      const sw = typeof navigator === 'undefined' ? undefined : navigator.serviceWorker
+      if (!sw?.controller) throw error
+      await (await sw.ready).showNotification(options.title, init)
+      return
+    }
     n.onclick = () => {
       window.focus()
       n.close()
@@ -137,17 +150,26 @@ export function createWebNotificationsDriver(config: { icon?: string } = {}): No
     name: 'web',
     permission: async () => (api() ? toPermission(api()!.permission) : 'unsupported'),
     request: async () => (api() ? toPermission(await api()!.requestPermission()) : 'unsupported'),
-    show: async (options) => display(options),
+    show: (options) => display(options),
     schedule: async (options) => {
-      const delay = Math.max(0, new Date(options.at).getTime() - Date.now())
+      const at = new Date(options.at).getTime()
       clearTimeout(timers.get(options.id))
-      timers.set(
-        options.id,
-        setTimeout(() => {
-          timers.delete(options.id)
-          display(options)
-        }, delay),
-      )
+      // setTimeout overflows past ~24.8 days and fires at once; wait in steps instead.
+      const wait = () => {
+        const delay = Math.max(0, at - Date.now())
+        timers.set(
+          options.id,
+          setTimeout(
+            () => {
+              if (at - Date.now() > 0) return wait()
+              timers.delete(options.id)
+              void display(options).catch(() => {})
+            },
+            Math.min(delay, MAX_TIMEOUT),
+          ),
+        )
+      }
+      wait()
     },
     cancel: async (id) => {
       clearTimeout(timers.get(id))
@@ -230,6 +252,10 @@ export function createNotifications(
       return id
     },
     async schedule(options) {
+      if (Number.isNaN(new Date(options.at).getTime()))
+        throw new Error(
+          `[kitr/notifications] schedule() needs a valid \`at\`, got ${String(options.at)}`,
+        )
       const id = options.id ?? notificationId()
       await driver.schedule({ ...options, id })
       log('schedule', { id, at: new Date(options.at).toISOString() })

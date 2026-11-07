@@ -15,8 +15,9 @@ describe('updater', () => {
     expect(updater.state).toMatchObject({ status: 'ready', progress: 1 })
     expect(driver.applied).toEqual([{ version: '1.1.0' }])
     expect(seen).toContain('downloading')
-    expect(await updater.check()).toBeNull()
-    expect(updater.state.status).toBe('up-to-date')
+    // Installed and waiting for the restart: a later check keeps it ready, not "available" again.
+    expect(await updater.check()).toEqual({ version: '1.1.0' })
+    expect(updater.state.status).toBe('ready')
   })
 
   it('dismisses a version and reacts to driver announcements', async () => {

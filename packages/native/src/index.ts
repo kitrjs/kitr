@@ -240,24 +240,81 @@ export function webCamera(): CameraDriver | null {
   }
 }
 
-/** WebAuthn user verification with a platform authenticator (Touch ID, Windows Hello). */
-export function webBiometrics(): BiometricsDriver | null {
+/**
+ * WebAuthn user verification with a platform authenticator (Touch ID, Windows Hello, Android
+ * screen lock). The first call registers a device-only credential for this site (that prompt is
+ * itself the check); later calls ask for that credential by id, so people without a passkey get
+ * the fingerprint or PIN prompt rather than an empty passkey picker. A local presence check, like
+ * the native ones: to prove identity to your server, verify a WebAuthn assertion there.
+ */
+export function webBiometrics(options: { storageKey?: string } = {}): BiometricsDriver | null {
   if (!hasWindow() || typeof PublicKeyCredential === 'undefined') return null
+  const key = options.storageKey ?? 'kitr:biometrics:credential'
+  const store = {
+    get: () => {
+      try {
+        return localStorage.getItem(key)
+      } catch {
+        return null
+      }
+    },
+    set: (value: string | null) => {
+      try {
+        if (value === null) localStorage.removeItem(key)
+        else localStorage.setItem(key, value)
+      } catch {}
+    },
+  }
+  const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+  const fromB64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
+  const challenge = () => crypto.getRandomValues(new Uint8Array(32))
+  const cancelled = (error: unknown) =>
+    error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'AbortError')
   return {
     available: () =>
       PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.().catch(() => false) ??
       Promise.resolve(false),
     async authenticate() {
+      const id = store.get()
       try {
-        const credential = await navigator.credentials.get({
+        if (id) {
+          const credential = await navigator.credentials.get({
+            publicKey: {
+              challenge: challenge(),
+              allowCredentials: [{ type: 'public-key', id: fromB64(id) }],
+              userVerification: 'required',
+              timeout: 60_000,
+            },
+          })
+          return credential !== null
+        }
+        const created = (await navigator.credentials.create({
           publicKey: {
-            challenge: crypto.getRandomValues(new Uint8Array(32)),
-            userVerification: 'required',
+            challenge: challenge(),
+            rp: { name: document.title || location.hostname },
+            user: {
+              id: crypto.getRandomValues(new Uint8Array(16)),
+              name: 'device-unlock',
+              displayName: 'This device',
+            },
+            pubKeyCredParams: [
+              { type: 'public-key', alg: -7 },
+              { type: 'public-key', alg: -257 },
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: 'platform',
+              userVerification: 'required',
+              residentKey: 'discouraged',
+            },
             timeout: 60_000,
           },
-        })
-        return credential !== null
-      } catch {
+        })) as PublicKeyCredential | null
+        if (!created) return false
+        store.set(toB64(created.rawId))
+        return true
+      } catch (error) {
+        // A stored credential the device no longer has: forget it so the next call registers anew.
+        if (id && !cancelled(error)) store.set(null)
         return false
       }
     },
@@ -322,11 +379,26 @@ function capability<T extends object>(
       }
     },
   })
-  const target = driver ?? unsupported
-  return Object.assign(Object.create(target as object) as T, {
+  const target = (driver ?? unsupported) as T
+  const meta: Capability<T> = {
     supported: driver != null,
     driver: target,
     name: driver ? label : 'unsupported',
+  }
+  // Methods run with the driver as `this`, so class-based platform drivers (private fields,
+  // `this.native`) work through the wrapper.
+  return new Proxy(target as object, {
+    get(t, prop) {
+      if (prop in meta) return meta[prop as keyof Capability<T>]
+      const value = Reflect.get(t, prop)
+      return typeof value === 'function' ? value.bind(t) : value
+    },
+    has: (t, prop) => prop in meta || Reflect.has(t, prop),
+    ownKeys: (t) => [...new Set([...Reflect.ownKeys(t), ...Object.keys(meta)])],
+    getOwnPropertyDescriptor: (t, prop) =>
+      prop in meta
+        ? { value: meta[prop as keyof Capability<T>], enumerable: true, configurable: true }
+        : Reflect.getOwnPropertyDescriptor(t, prop),
   }) as Capability<T> & T
 }
 

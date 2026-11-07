@@ -10,7 +10,13 @@ export const flagsProvider = defineProvider({
   name: 'flags',
   register(app) {
     const config = app.config.get('flags', {} as FlagsConfig)
-    app.container.singleton('flags', () => createFlags(config.definitions ?? {}, config, app))
+    // Scoped: each server request (a fork of the app) gets its own flags, resolved for its user,
+    // so `value()` and server rendering answer for that user and never for the last one resolved.
+    app.container.scoped('flags', (container) =>
+      createFlags(config.definitions ?? {}, config, app, {
+        keepSnapshot: app.isClient || container !== app.container,
+      }),
+    )
   },
   async boot(app) {
     if (!app.isClient) return
