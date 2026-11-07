@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
-import { PackageCard } from '#app/components/package-bits'
-import { type Category, categories, packages, type RunsOn, runsOn } from '#app/lib/catalog'
+import { PackageCard, PlannedCard } from '#app/components/package-bits'
+import {
+  type Category,
+  categories,
+  type PlannedStatus,
+  packages,
+  planned,
+  plannedStatus,
+  type RunsOn,
+  runsOn,
+} from '#app/lib/catalog'
 
 export const Route = createFileRoute('/packages/')({
   head: () => ({
@@ -27,18 +36,17 @@ function Packages() {
   const [runs, setRuns] = useState<RunsFilter>('all')
   const [query, setQuery] = useState('')
 
-  const shown = useMemo(() => {
+  const [shown, upcoming] = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return packages.filter(
-      (p) =>
-        (category === 'all' || p.category === category) &&
-        matchesRuns(p.runsOn, runs) &&
-        (!q ||
-          p.name.includes(q) ||
-          p.summary.toLowerCase().includes(q) ||
-          categories[p.category].label.toLowerCase().includes(q) ||
-          p.builtOn?.some((b) => b.toLowerCase().includes(q))),
-    )
+    const match = (p: (typeof packages)[number] | (typeof planned)[number]) =>
+      (category === 'all' || p.category === category) &&
+      matchesRuns(p.runsOn, runs) &&
+      (!q ||
+        p.name.includes(q) ||
+        p.summary.toLowerCase().includes(q) ||
+        categories[p.category].label.toLowerCase().includes(q) ||
+        p.builtOn?.some((b) => b.toLowerCase().includes(q)))
+    return [packages.filter(match), planned.filter(match)] as const
   }, [category, runs, query])
 
   return (
@@ -71,7 +79,7 @@ function Packages() {
               onClick={() => setCategory('all')}
               color="var(--line)"
               label="All packages"
-              count={packages.length}
+              count={packages.length + planned.length}
             />
             {(Object.keys(categories) as Category[]).map((c) => (
               <FilterButton
@@ -80,7 +88,7 @@ function Packages() {
                 onClick={() => setCategory(c)}
                 color={categories[c].color}
                 label={categories[c].label}
-                count={packages.filter((p) => p.category === c).length}
+                count={[...packages, ...planned].filter((p) => p.category === c).length}
               />
             ))}
           </fieldset>
@@ -95,7 +103,7 @@ function Packages() {
                 label={
                   r === 'all' ? 'Anywhere' : r === 'both' ? 'Client and server' : runsOn[r].label
                 }
-                count={packages.filter((p) => matchesRuns(p.runsOn, r)).length}
+                count={[...packages, ...planned].filter((p) => matchesRuns(p.runsOn, r)).length}
               />
             ))}
           </fieldset>
@@ -107,13 +115,34 @@ function Packages() {
           </Link>
         </aside>
 
-        <div className="card-grid" aria-live="polite">
-          {shown.map((p) => (
-            <PackageCard key={p.name} pkg={p} />
-          ))}
-          {!shown.length && (
+        <div className="package-sections" aria-live="polite">
+          <div className="card-grid">
+            {shown.map((p) => (
+              <PackageCard key={p.name} pkg={p} />
+            ))}
+          </div>
+          {!shown.length && !upcoming.length && (
             <p className="muted">No package matches. Try another word, or clear the filters.</p>
           )}
+          {(['building', 'next', 'later'] as PlannedStatus[]).map((status) => {
+            const list = upcoming.filter((p) => p.status === status)
+            if (!list.length) return null
+            return (
+              <section
+                key={status}
+                className="planned-section"
+                aria-labelledby={`planned-${status}`}
+              >
+                <h2 id={`planned-${status}`}>{plannedStatus[status].heading}</h2>
+                <p className="muted">{plannedStatus[status].text}</p>
+                <div className="card-grid">
+                  {list.map((p) => (
+                    <PlannedCard key={p.name} pkg={p} />
+                  ))}
+                </div>
+              </section>
+            )
+          })}
         </div>
       </div>
     </main>

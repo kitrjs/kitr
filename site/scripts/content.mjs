@@ -234,6 +234,20 @@ writeFileSync(
   ),
 )
 
+// Planned packages from the package map; a built package with the same name wins.
+const built = new Set(packages.map((p) => p.entry.name))
+const roadmap = JSON.parse(readFileSync(join(site, 'content/roadmap.json'), 'utf8'))
+const planned = roadmap.packages.filter((p) => !built.has(p.name))
+writeFileSync(join(out, 'planned.json'), JSON.stringify(planned, null, 2))
+for (const p of planned)
+  search.push({
+    url: `/packages#${p.name}`,
+    title: p.name,
+    section: p.status === 'later' ? 'Roadmap' : 'Coming soon',
+    heading: '',
+    text: p.summary,
+  })
+
 // ---------------------------------------------------------------- docs
 
 const nav = JSON.parse(readFileSync(join(site, 'content/docs/nav.json'), 'utf8'))

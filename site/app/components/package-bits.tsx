@@ -1,5 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import { categories, glyph, type PackageEntry, type RunsOn, runsOn } from '#app/lib/catalog'
+import {
+  categories,
+  glyph,
+  type PackageEntry,
+  type PlannedEntry,
+  plannedStatus,
+  type RunsOn,
+  runsOn,
+} from '#app/lib/catalog'
 import { Icon } from './icons'
 
 export function Tile({
@@ -55,5 +63,36 @@ export function PackageCard({ pkg }: { pkg: PackageEntry }) {
         <RunsOnBadge value={pkg.runsOn} />
       </span>
     </Link>
+  )
+}
+
+/** Not built yet: no link, a status badge, and what it will replace. */
+export function PlannedCard({ pkg }: { pkg: PlannedEntry }) {
+  return (
+    <article className="card card-planned" id={pkg.name}>
+      <span className="card-head">
+        <Tile pkg={pkg} />
+        <span className="mono card-name">{pkg.name}</span>
+        <span className={`badge badge-status status-${pkg.status}`}>
+          {plannedStatus[pkg.status].label}
+        </span>
+      </span>
+      <span className="card-summary">{pkg.summary}</span>
+      {pkg.replaces?.length ? (
+        <span className="muted card-note">
+          Replaces{' '}
+          {pkg.replaces.map((r, i) => (
+            <span key={r}>
+              {i > 0 && (i === pkg.replaces!.length - 1 ? ' and ' : ', ')}
+              <code>{r}</code>
+            </span>
+          ))}
+        </span>
+      ) : null}
+      <span className="badges">
+        <CategoryBadge category={pkg.category} />
+        <RunsOnBadge value={pkg.runsOn} />
+      </span>
+    </article>
   )
 }

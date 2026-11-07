@@ -701,6 +701,53 @@ kbd {
   line-height: 22px;
 }
 
+.package-sections {
+  flex: 999 1 600px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+.package-sections .card-grid {
+  flex: none;
+}
+.planned-section h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  line-height: 28px;
+}
+.planned-section > p {
+  margin: 0 0 20px;
+}
+.card-planned {
+  border-style: dashed;
+  background: var(--raised);
+  scroll-margin-top: 80px;
+}
+.card-planned:hover {
+  transform: none;
+  box-shadow: none;
+}
+.card-planned .tile {
+  opacity: 0.75;
+}
+.card-planned .badge-status {
+  margin-left: auto;
+}
+.card-note {
+  font-size: 14px;
+  line-height: 20px;
+}
+.badge-status {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.status-building {
+  border-color: var(--link);
+  color: var(--link);
+}
+
 /* ------------------------------------------------------------- docs layout */
 
 .docs-layout {
