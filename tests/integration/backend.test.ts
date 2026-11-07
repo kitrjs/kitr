@@ -1,3 +1,4 @@
+import { request } from 'node:http'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { freePort, root, startProcess } from './helpers'
@@ -46,13 +47,29 @@ describe('backend example over the network', () => {
     expect(res.headers.get('access-control-allow-origin')).toBeTruthy()
   })
 
-  it('rejects a body over the configured limit', async () => {
-    const res = await fetch(`${base}/api/health`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ blob: 'x'.repeat(2 * 1024 * 1024) }),
-    })
-    expect(res.status).toBe(413)
+  it('rejects a body over the configured limit before reading it', async () => {
+    // Announce a 2 MB body but send only the headers: the server must answer 413 from
+    // content-length alone and close. (Streaming the whole body races that close: the
+    // client can hit EPIPE before it reads the 413.)
+    const { status, connection } = await new Promise<{ status?: number; connection?: string }>(
+      (resolve, reject) => {
+        const req = request(`${base}/api/health`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'content-length': 2 * 1024 * 1024 },
+        })
+        req.on('response', (res) => {
+          res.resume()
+          resolve({ status: res.statusCode, connection: res.headers.connection })
+          req.destroy()
+        })
+        req.on('error', reject)
+        req.flushHeaders()
+      },
+    )
+    expect(status).toBe(413)
+    expect(connection).toBe('close')
+    // The server is still healthy afterwards.
+    expect((await fetch(`${base}/api/health`)).status).toBe(200)
   })
 
   it('accepts WebSocket subscriptions on /ws', async () => {
