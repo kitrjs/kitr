@@ -58,7 +58,8 @@
     "@types/react": "^19.3.0",
     "@kitr/server": "workspace:*",
     "h3": "^2.0.8",
-    "@types/node": "^22.19.0"
+    "@types/node": "^22.19.0",
+    "@kitr/react": "workspace:*"
   },
   "kitr": {
     "name": "monitoring",

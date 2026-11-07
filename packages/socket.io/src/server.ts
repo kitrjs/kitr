@@ -69,9 +69,11 @@ export function attachSocketIo(io: Server, options: SocketIoServerOptions): Sock
           throw KitrError.forbidden()
         if (msg.t === 'sub') {
           const topic = topicFor(channel.name, params)
+          const previous = subs.get(msg.id)
+          if (previous && previous !== topic) socket.leave(previous)
           subs.set(msg.id, topic)
           await socket.join(topic)
-          send({ t: 'ok', id: msg.id })
+          send({ t: 'ok', id: msg.id, p: params ?? null })
         } else if (msg.t === 'msg') {
           await channel.onMessage?.(msg.ev, msg.d, params, socket.data.kitrCtx)
         }

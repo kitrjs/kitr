@@ -1,11 +1,22 @@
 import { defineProvider, getDevtools } from '@kitr/core'
-import { lazy, type ReactNode, Suspense } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
 import { consoleAdapter } from './adapters'
 import { createAnalytics } from './analytics'
 import { devtoolsAdapter } from './devtools-adapter'
 import type { AnalyticsConfig } from './types'
 
 const PageViews = lazy(() => import('./react').then((m) => ({ default: m.TrackPageViews })))
+
+/** Loads the tracker after hydration, so no Suspense boundary exists while React matches server markup. */
+function AfterMount() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  return mounted ? (
+    <Suspense fallback={null}>
+      <PageViews />
+    </Suspense>
+  ) : null
+}
 
 /**
  * Binds `analytics` into the container from `config/analytics.ts` and, on the client,
@@ -30,13 +41,12 @@ export const analyticsProvider = defineProvider({
   devtools: (app) => import('./devtools').then((m) => m.panels(app)),
   wrap(children, app) {
     const config = app.config.get('analytics', {} as AnalyticsConfig)
-    if (config.pageViews === false || typeof window === 'undefined') return children
+    if (config.pageViews === false) return children
+    // Always the same tree on the server and the client; the tracker itself waits for mount.
     return (
       <>
         {children as ReactNode}
-        <Suspense fallback={null}>
-          <PageViews />
-        </Suspense>
+        <AfterMount />
       </>
     )
   },

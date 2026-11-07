@@ -128,7 +128,7 @@ export function DevtoolsOverlay({ app }: { app: KitrApp }) {
                   </div>
                 ) : null}
                 <PanelErrorBoundary key={current.id}>
-                  {current.render(app) as ReactNode}
+                  <PanelBody panel={current} app={app} />
                 </PanelErrorBoundary>
               </>
             ) : null}
@@ -276,6 +276,11 @@ function Palette({
 }
 
 import { Component } from 'react'
+
+/** Calls `render()` inside the boundary, so a panel that throws can't take the app down with it. */
+function PanelBody({ panel, app }: { panel: DevtoolsPanel; app: KitrApp }) {
+  return <>{panel.render(app) as ReactNode}</>
+}
 
 class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: unknown }> {
   state = { error: null as unknown }

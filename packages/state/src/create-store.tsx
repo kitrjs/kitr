@@ -1,10 +1,5 @@
-import { createContext, type ReactNode, useContext, useRef } from 'react'
-import {
-  createStore as createVanillaStore,
-  type StateCreator,
-  type StoreApi,
-  useStore,
-} from 'zustand'
+import { createContext, type ReactNode, useContext, useRef, useSyncExternalStore } from 'react'
+import { createStore as createVanillaStore, type StateCreator, type StoreApi } from 'zustand'
 import { devtools, type PersistOptions, persist } from 'zustand/middleware'
 
 export interface KitrStoreOptions<T> {
@@ -26,8 +21,10 @@ export function createKitrStore<T extends object>(
   options: KitrStoreOptions<T>,
   initializer: StateCreator<T, [], []>,
 ) {
-  const build = (): StoreApi<T> => {
-    let creator: StateCreator<T, any, any> = initializer
+  const build = (initialState?: Partial<T>): StoreApi<T> => {
+    let creator: StateCreator<T, any, any> = initialState
+      ? (set, get, api) => ({ ...initializer(set, get, api), ...initialState })
+      : initializer
     if (options.persist && typeof window !== 'undefined') {
       const persistOptions = typeof options.persist === 'object' ? options.persist : {}
       creator = persist(creator, {
@@ -58,8 +55,9 @@ export function createKitrStore<T extends object>(
   }) {
     const ref = useRef<StoreApi<T> | null>(null)
     if (!ref.current) {
-      ref.current = singleton ?? build()
-      if (initialState) ref.current.setState(initialState as T)
+      // On the server the initial state is baked into a fresh store, so SSR renders it.
+      ref.current = singleton ?? build(initialState)
+      if (singleton && initialState) singleton.setState(initialState as T)
     }
     return <Context.Provider value={ref.current}>{children}</Context.Provider>
   }
@@ -74,7 +72,11 @@ export function createKitrStore<T extends object>(
         `[kitr/state] Store "${options.name}" has no instance on the server. Wrap the tree in its <StoreProvider>.`,
       )
     }
-    return useStore(store, (selector ?? ((s) => s)) as (state: T) => U)
+    const select = (selector ?? ((s) => s)) as (state: T) => U
+    // The server snapshot is the current state (not zustand's initial state), so a store
+    // seeded through <StoreProvider initialState> renders the same on server and client.
+    const snapshot = () => select(store.getState())
+    return useSyncExternalStore(store.subscribe, snapshot, snapshot)
   }
 
   /** The client singleton, for use outside React (actions, loaders). Null on the server. */

@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { defineCommand } from 'citty'
 import { createContext } from '../context'
@@ -42,6 +43,15 @@ export const serve = defineCommand({
       }
       plugins.push(ws.plugin({}))
     } catch {}
+    // Start's bundle only answers routes; the client assets next to it (dist/client) are static files.
+    const middleware: unknown[] = []
+    const clientDir = resolve(entry, '..', '..', 'client')
+    if (existsSync(clientDir)) {
+      const { staticMiddleware } = (await import(
+        pathToFileURL(require.resolve('srvx/static')).href
+      )) as typeof import('srvx/static')
+      middleware.push(staticMiddleware({ dir: clientDir, maxAge: 60 * 60 * 24 * 365 }))
+    }
     const port = Number(args.port ?? process.env.PORT ?? 3000)
     const hostname = args.host ?? process.env.HOST ?? '0.0.0.0'
     const server = srvxServe({
@@ -49,6 +59,7 @@ export const serve = defineCommand({
       port,
       hostname,
       plugins: plugins as any,
+      middleware: middleware as any,
     })
     await server.ready()
     ctx.log.success(`serving ${args.entry} on ${server.url}`)

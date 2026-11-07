@@ -174,6 +174,18 @@ export class Codemods {
     this.ctx.touched.add(file)
   }
 
+  /** Remove a top-level package.json field if it still holds `value`. */
+  removePackageField(name: string, value: unknown) {
+    const pkgPath = this.ctx.path('package.json')
+    if (!existsSync(pkgPath)) return
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+    if (JSON.stringify(pkg[name]) !== JSON.stringify(value)) return
+    delete pkg[name]
+    if (!this.ctx.dryRun) writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+    this.ctx.pkg = pkg
+    this.ctx.touched.add('package.json')
+  }
+
   /** Set a top-level package.json field (`main`, `build`...). Overwrites. */
   setPackageField(name: string, value: unknown) {
     const pkgPath = this.ctx.path('package.json')
@@ -192,6 +204,25 @@ export class Codemods {
     pkg.scripts ??= {}
     if (pkg.scripts[name] === command) return
     pkg.scripts[name] = command
+    if (!this.ctx.dryRun) writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
+    this.ctx.pkg = pkg
+    this.ctx.touched.add('package.json')
+  }
+
+  /** Remove package.json scripts, but only ones still set to what the recipe wrote (`undefined` matches any). */
+  removeScripts(scripts: Record<string, string | undefined>) {
+    const pkgPath = this.ctx.path('package.json')
+    if (!existsSync(pkgPath)) return
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+    let changed = false
+    for (const [name, command] of Object.entries(scripts)) {
+      const current = pkg.scripts?.[name]
+      if (current === undefined) continue
+      if (command !== undefined && current !== command) continue
+      delete pkg.scripts[name]
+      changed = true
+    }
+    if (!changed) return
     if (!this.ctx.dryRun) writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
     this.ctx.pkg = pkg
     this.ctx.touched.add('package.json')

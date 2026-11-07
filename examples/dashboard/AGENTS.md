@@ -53,6 +53,13 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Guard routes with `beforeLoad: requireAuth()` (from `kitr/router`) on a layout route; permissions with `can('projects.update', { subject })` or `useCan()` in components.
 - The session is `useSession()` / `useUser()` from `kitr/auth`. Abilities are plain functions in `app/abilities.ts`, shared with the API middleware (`kitr/auth/server`).
 
+## kitr: storage
+
+- Persisted values are declared once in `app/storage.ts` (`defineStorage` for local/session storage, `defineCookie` for cookies) and never read through `localStorage`/`document.cookie` directly.
+- Components: `const [value, setValue] = useStorage(item)` / `useCookie(item)` from `kitr/storage/react`. Both are hydration-safe: the server and first render see the default.
+- Server side (actions, controllers): `cookies(event).get(item)` / `.set(item, value)` from `kitr/storage/server`; wrap the root route in `<CookieHeader value={request.headers.get('cookie')}>` so `useCookie` renders the right value during SSR.
+- Add `schema` (zod/valibot) to validate what comes back from storage, `version` + `migrate` when a shape changes, `ttl` to expire.
+
 ## kitr: mocks
 
 - Mocks live in `app/mocks/handlers.ts` (MSW). `VITE_MOCKS=true` enables them in dev; tests use `setupNodeMocks(handlers)`. Mock a kitr route table with `mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })`.
@@ -60,13 +67,6 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: testing
 
 - `pnpm test` runs Vitest. Components: `renderWithKitr(<X />, { app, queryData })` from `kitr/testing/react`. APIs: `createTestClient(server).get('/api/x')`. No running backend is needed.
-
-## kitr: storage
-
-- Persisted values are declared once in `app/storage.ts` (`defineStorage` for local/session storage, `defineCookie` for cookies) and never read through `localStorage`/`document.cookie` directly.
-- Components: `const [value, setValue] = useStorage(item)` / `useCookie(item)` from `kitr/storage/react`. Both are hydration-safe: the server and first render see the default.
-- Server side (actions, controllers): `cookies(event).get(item)` / `.set(item, value)` from `kitr/storage/server`; wrap the root route in `<CookieHeader value={request.headers.get('cookie')}>` so `useCookie` renders the right value during SSR.
-- Add `schema` (zod/valibot) to validate what comes back from storage, `version` + `migrate` when a shape changes, `ttl` to expire.
 
 ## kitr: devtools
 

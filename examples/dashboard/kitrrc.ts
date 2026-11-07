@@ -16,9 +16,9 @@ export default defineKitrConfig({
    '@kitr/tailwind',
    '@kitr/ui',
    '@kitr/auth',
+   '@kitr/storage',
    '@kitr/mocks',
    '@kitr/testing',
-   '@kitr/storage',
    '@kitr/devtools',
   ],
   providers: [

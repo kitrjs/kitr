@@ -42,6 +42,8 @@ export function createAuth<TUser, TCredentials>(
   const listeners = new Set<(s: Session<TUser>) => void>()
   const set = (next: Session<TUser> | null) => {
     if (next === null && session.user === null) return
+    // The adapter's onChange and our own call can report the same session: notify once.
+    if (next === session) return
     session = next ?? (anonymousSession as Session<TUser>)
     for (const l of listeners) l(session)
   }

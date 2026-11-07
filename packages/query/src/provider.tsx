@@ -47,7 +47,9 @@ export function createQueryClient(config: QueryConfig = {}): QueryClient {
 export const queryProvider: KitrProvider = defineProvider({
   name: 'query',
   register(app) {
-    app.container.singleton('queryClient', () => createQueryClient(app.config.get('query', {})))
+    // Scoped: on the server every request (a forked app) gets its own cache, so one user's
+    // data can never render for another. In the browser there is one app, so one client.
+    app.container.scoped('queryClient', () => createQueryClient(app.config.get('query', {})))
   },
   boot(app) {
     const hub = getDevtools(app)

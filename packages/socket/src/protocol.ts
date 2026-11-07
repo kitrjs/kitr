@@ -9,15 +9,19 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { t: 'ev'; ch: string; p: unknown; ev: string; d: unknown }
-  | { t: 'ok'; id: string }
+  /** `p` is the params after the channel's schema ran; events are routed by them. */
+  | { t: 'ok'; id: string; p?: unknown }
   | { t: 'err'; id?: string; e: KitrErrorShape }
   | { t: 'pong' }
 
 export interface ChannelEvent<TData = unknown, TParams = unknown> {
   /** Optional schema for the payload (validated on receive). */
   schema?: StandardSchemaV1<unknown, TData>
-  /** What this event does to the query cache on the client. */
-  effects?: (data: TData, params: TParams) => CacheEffect | void
+  /**
+   * What this event does to the query cache on the client. Method syntax on purpose: a channel
+   * without a payload schema can still annotate `data` (`effects(message: Message) {...}`).
+   */
+  effects?(data: TData, params: TParams): CacheEffect | void
 }
 
 export interface ChannelDefinition<
@@ -57,12 +61,17 @@ export type ChannelParams<C> = C extends ChannelDefinition<infer P, any> ? P : n
  */
 export function defineChannel<
   TParams = void,
-  const TEvents extends Record<string, ChannelEvent<any, TParams>> = Record<
-    string,
-    ChannelEvent<any, TParams>
-  >,
->(definition: ChannelDefinition<TParams, TEvents>): ChannelDefinition<TParams, TEvents> {
-  return definition
+  const TData extends Record<string, unknown> = Record<string, unknown>,
+>(
+  definition: Omit<ChannelDefinition<TParams, any>, 'events'> & {
+    // Mapped per event, so each `effects` gets the payload type of its own `schema`.
+    events: { [K in keyof TData]: ChannelEvent<TData[K], TParams> }
+  },
+): ChannelDefinition<TParams, { [K in keyof TData]: ChannelEvent<TData[K], TParams> }> {
+  return definition as ChannelDefinition<
+    TParams,
+    { [K in keyof TData]: ChannelEvent<TData[K], TParams> }
+  >
 }
 
 /** Stable topic string for a channel + params. */

@@ -45,6 +45,8 @@ interface Sub {
   id: string
   channel: string
   params: unknown
+  /** Where events for this subscription arrive: the server's normalised params. */
+  topic: string
   onEvent: (event: string, data: unknown) => void
   onError?: (e: KitrErrorShape) => void
 }
@@ -69,6 +71,21 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
     for (const l of statusListeners) l(s)
   }
   const send = (msg: ClientMessage) => ws.send(JSON.stringify(msg))
+  const unindex = (sub: Sub) => {
+    const set = byTopic.get(sub.topic)
+    set?.delete(sub)
+    if (set?.size === 0) byTopic.delete(sub.topic)
+  }
+  const index = (sub: Sub, topic: string) => {
+    unindex(sub)
+    sub.topic = topic
+    let set = byTopic.get(topic)
+    if (!set) {
+      set = new Set()
+      byTopic.set(topic, set)
+    }
+    set.add(sub)
+  }
 
   ws.addEventListener('open', () => {
     setStatus('open')
@@ -80,6 +97,11 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
     if (!msg) return
     if (msg.t === 'ev') {
       for (const sub of byTopic.get(topicFor(msg.ch, msg.p)) ?? []) sub.onEvent(msg.ev, msg.d)
+    } else if (msg.t === 'ok' && 'p' in msg) {
+      // The channel's params schema may have transformed the params (trim, lowercase,
+      // coerce); the server publishes under those, so listen there.
+      const sub = subs.get(msg.id)
+      if (sub) index(sub, topicFor(sub.channel, msg.p))
     } else if (msg.t === 'err') {
       const sub = msg.id ? subs.get(msg.id) : undefined
       if (sub?.onError) sub.onError(msg.e)
@@ -97,20 +119,14 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
     },
     subscribe(channel, params, onEvent, onError) {
       const id = `s${++counter}`
-      const sub: Sub = { id, channel, params, onEvent, onError }
       const topic = topicFor(channel, params)
+      const sub: Sub = { id, channel, params, topic, onEvent, onError }
       subs.set(id, sub)
-      let set = byTopic.get(topic)
-      if (!set) {
-        set = new Set()
-        byTopic.set(topic, set)
-      }
-      set.add(sub)
+      index(sub, topic)
       if (ws.readyState === ws.OPEN) send({ t: 'sub', id, ch: channel, p: params })
       return () => {
         subs.delete(id)
-        set.delete(sub)
-        if (set.size === 0) byTopic.delete(topic)
+        unindex(sub)
         if (ws.readyState === ws.OPEN) send({ t: 'unsub', id })
       }
     },

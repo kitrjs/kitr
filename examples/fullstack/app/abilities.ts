@@ -6,6 +6,6 @@ export interface User {
   role: 'admin' | 'member'
 }
 
-export const abilities = defineAbilities<User>({
-  'projects.update': (user, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,
+export const abilities = defineAbilities({
+  'projects.update': (user: User, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,
 })

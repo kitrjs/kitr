@@ -1,0 +1,72 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { isElectron } from 'kitr/electron'
+import { useEffect, useState } from 'react'
+import { ipc } from '#app/ipc'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { PageHeader } from '#components/ui/page-header'
+
+export const Route = createFileRoute('/')({
+  component: HomePage,
+})
+
+/**
+ * The same page runs in the browser (`pnpm dev`) and in Electron (`pnpm electron:dev`).
+ * `ipc.available` tells them apart; every call goes through the typed contract in electron/ipc.ts.
+ */
+function HomePage() {
+  const [version, setVersion] = useState<string>()
+  const [file, setFile] = useState<string | null>(null)
+  const [focused, setFocused] = useState(true)
+
+  useEffect(() => {
+    if (!ipc.available) return
+    void ipc.invoke('app.version').then(setVersion)
+    return ipc.on('app.focus', setFocused)
+  }, [])
+
+  return (
+    <main className="mx-auto max-w-2xl p-6">
+      <PageHeader
+        title="Desktop"
+        description="A kitr app with an Electron shell. The renderer is a normal Vite build."
+        actions={
+          <Badge variant={ipc.available ? 'default' : 'secondary'}>
+            {ipc.available ? 'Electron ' + (version ?? '…') : isElectron() ? 'Electron (no bridge)' : 'Browser'}
+          </Badge>
+        }
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Native dialogs</CardTitle>
+            <CardDescription>`ipc.invoke('dialog.openFile')` runs in the main process.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button
+              disabled={!ipc.available}
+              onClick={async () => setFile(await ipc.invoke('dialog.openFile', [{ name: 'Text', extensions: ['txt', 'md'] }]))}
+            >
+              Open a file…
+            </Button>
+            <p className="break-all text-sm text-muted-foreground">
+              {ipc.available ? (file ?? 'No file chosen.') : 'Available inside Electron.'}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Push events</CardTitle>
+            <CardDescription>Main pushes `app.focus` whenever the window focus changes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {ipc.available ? (focused ? 'Window is focused.' : 'Window is in the background.') : 'Available inside Electron.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  )
+}

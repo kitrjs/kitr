@@ -99,9 +99,14 @@ export function ThemeScript({
   storageKey?: string
   attribute?: string
 }) {
-  const code = `(function(){try{var k=${JSON.stringify(storageKey)};var t=localStorage.getItem(k)||'system';var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;document.documentElement.setAttribute(${JSON.stringify(attribute)},r);document.documentElement.style.colorScheme=r}catch(e){}})()`
+  const code = `(function(){try{var k=${inlineJson(storageKey)};var t=localStorage.getItem(k)||'system';var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;document.documentElement.setAttribute(${inlineJson(attribute)},r);document.documentElement.style.colorScheme=r}catch(e){}})()`
   // biome-ignore lint/security/noDangerouslySetInnerHtml: static, no user input
   return <script dangerouslySetInnerHTML={{ __html: code }} />
+}
+
+/** JSON that is safe inside an inline <script>: `<` can never close the tag. */
+function inlineJson(value: string): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c')
 }
 
 /** Read the theme cookie on the server to pass as `initialResolved`. */
@@ -109,6 +114,7 @@ export function themeFromCookie(
   cookieHeader: string | null | undefined,
   storageKey = 'kitr-theme',
 ): ResolvedTheme | undefined {
-  const match = cookieHeader?.match(new RegExp(`(?:^|; )${storageKey}=(light|dark)`))
+  const name = storageKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = cookieHeader?.match(new RegExp(`(?:^|;\\s*)${name}=(light|dark)`))
   return match?.[1] as ResolvedTheme | undefined
 }

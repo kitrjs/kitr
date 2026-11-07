@@ -8,6 +8,7 @@ kitr is a thin, opinionated layer over the libraries you would pick anyway: TanS
 pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API
 pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and sockets
 pnpm dlx kitr new my-api --kit server   # a pure backend. No React anywhere in the dependency graph.
+pnpm dlx kitr new my-saas --kit saas    # presets: saas, site, realtime, desktop, mobile. Real pages, controllers and tests to start from.
 ```
 
 Every command runs from flags alone, so coding agents and CI never hit a prompt. `kitr new` writes an `AGENTS.md` that `kitr add` keeps up to date.
@@ -149,7 +150,7 @@ pnpm test         # vitest across the monorepo
 pnpm lint         # biome
 ```
 
-The examples are exactly what the CLI generates (with workspace links instead of published versions). Regenerate one with `node packages/kitr/bin/kitr.mjs new examples/<name> --kit <kit> --no-install --no-git --registry ../registry/dist`.
+The examples are exactly what the CLI generates (with workspace links instead of published versions). Regenerate one with `node packages/kitr/bin/kitr.mjs new examples/<name> --kit <kit> --no-install --no-git --registry $PWD/registry/dist`, then see `examples/README.md` for the workspace links. Five of them are presets you can start from: `saas`, `site`, `realtime`, `desktop`, `mobile`.
 
 ## Docs
 

@@ -57,6 +57,7 @@ export const newCommand = defineCommand({
     if (kit.components?.length && kit.recipes.includes('ui')) {
       await addComponents(ctx, kit.components, { registry: args.registry, overwrite: true })
     }
+    await kit.extra?.(ctx, projectName)
     if (args.git && !existsSync(ctx.path('.git'))) {
       try {
         execSync('git init -q', { cwd: dir })
@@ -65,6 +66,14 @@ export const newCommand = defineCommand({
     if (args.install) {
       log.step(`${pm} install`)
       execSync(pm === 'yarn' ? 'yarn' : `${pm} install`, { cwd: dir, stdio: 'inherit' })
+      // Kit files are templates; let the project's own Biome format them and sort imports,
+      // so a fresh project passes its own `lint` script.
+      const biome = ctx.path('node_modules', '.bin', 'biome')
+      if (existsSync(biome)) {
+        try {
+          execSync(`"${biome}" check --write .`, { cwd: dir, stdio: 'pipe' })
+        } catch {}
+      }
     }
     log.plain('')
     log.success(

@@ -60,5 +60,36 @@
         "noComponentHookFactories": "off"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/test/**", "tests/**", "**/*.test.ts", "**/*.test.tsx", "**/*.test-d.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noChildrenProp": "off"
+          },
+          "suspicious": {
+            "noDocumentCookie": "off"
+          },
+          "complexity": {
+            "noCommaOperator": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["registry/src/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "error"
+          },
+          "style": {
+            "noNonNullAssertion": "warn"
+          }
+        }
+      }
+    }
+  ]
 }
