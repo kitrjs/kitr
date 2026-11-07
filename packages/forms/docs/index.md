@@ -260,10 +260,10 @@ In a project with [server actions](/packages/actions), the action validates with
 
 ```ts
 // app/actions/invoices/create_invoice.ts
-import { defineAction } from 'kitr/actions'
+import { defineMutation } from 'kitr/actions'
 import { newInvoiceSchema } from '#app/features/invoices/schema'
 
-export const createInvoice = defineAction('invoices.createInvoice', {
+export const createInvoice = defineMutation('invoices.create', {
   input: newInvoiceSchema,
   effects: { invalidate: [['invoices', 'list']] },
   handler: async ({ input }) => {
@@ -276,19 +276,18 @@ export const createInvoice = defineAction('invoices.createInvoice', {
 ```tsx
 // app/routes/invoices/new.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { defineMutation, useKitrMutation } from 'kitr/query'
-import { createInvoice } from '#app/actions/invoices/create_invoice'
+import { useMutation } from 'kitr/query'
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
-
-const createInvoiceMutation = defineMutation(createInvoice.mutation())
 
 export const Route = createFileRoute('/invoices/new')({ component: NewInvoicePage })
 
 function NewInvoicePage() {
-  const create = useKitrMutation(createInvoiceMutation)
+  const create = useMutation('invoices.create')
   return <NewInvoiceForm onCreate={(invoice) => create.mutateAsync(invoice)} />
 }
 ```
+
+`useMutation('invoices.create')` finds the mutation by the name you gave `defineMutation`; `kitr types` writes that name into `.kitr/actions.ts`, so the input is typed and a misspelt name is a type error.
 
 If someone bypasses the browser check, the action rejects with `VALIDATION` and the same messages land under the same fields.
 
@@ -325,13 +324,13 @@ For a rule the schema cannot check, such as "this customer exists", throw `KitrE
 
 ```ts
 // app/actions/invoices/create_invoice.ts
-import { defineAction } from 'kitr/actions'
+import { defineMutation } from 'kitr/actions'
 import { KitrError } from 'kitr/app'
 import { newInvoiceSchema } from '#app/features/invoices/schema'
 
 const customers = new Set(['grace@acme.com', 'linus@acme.com'])
 
-export const createInvoice = defineAction('invoices.createInvoice', {
+export const createInvoice = defineMutation('invoices.create', {
   input: newInvoiceSchema,
   handler: async ({ input }) => {
     if (!customers.has(input.customerEmail)) {

@@ -28,15 +28,13 @@ kitr add secure-storage
 
 What `kitr add` does:
 
-- Adds [Storage](/packages/storage) first when the project does not have it yet, because `secure-storage` requires `storage`. Every kit except `blank` and `server` already includes it.
-- Installs `@kitr/secure-storage`.
+- Installs `@kitr/secure-storage` (which brings `@kitr/storage` as a dependency) and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/secure-storage/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/secure-storage` to `packages` in `kitrrc.ts`.
 - Writes `config/secure-storage.ts` (shown under [Configure](#configure)).
 - Writes `app/secure.ts` with one typed item, `sessionItem` (shown under [Store your first secret](#store-your-first-secret)).
 - Adds a `## kitr: secure-storage` section to `AGENTS.md`: tokens and secrets go through `kitr/secure-storage` and `app/secure.ts`, never `defineStorage` or `localStorage`; `useSecureItem(item)` returns `[value, set, { loading, secure }]` and the value is `undefined` until the vault answers.
 
-It adds no environment variables or scripts. `kitr add secure-storage` asks no questions, and no kit includes it. It is a client package, so a server-only project skips it with a warning. To preview the changes:
+It adds no environment variables or scripts. `kitr add secure-storage` asks no questions, and no kit includes it. To preview the changes:
 
 ```sh
 kitr add secure-storage --dry-run
@@ -344,7 +342,7 @@ On the server the service is an in-memory store, so code shared with the client 
 | A registered vault | Whatever the driver wraps, such as Electron `safeStorage` | `true` when the driver says so |
 | Server | `createMemorySecureStorageDriver()`, in memory | `false` |
 
-Today [Desktop](/packages/desktop) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in the Keychain, the Keystore or Electron's `safeStorage`, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in the Keychain, the Keystore or Electron's `safeStorage`, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
 
 ## Errors
 
@@ -504,7 +502,7 @@ export default defineProvider({
 
 Create the provider with `kitr make:provider vault` and add `() => import('#app/providers/vault_provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, `secureStorage.secure` is now `true`, the session status drops "(browser storage)", and `requireSecure: true` lets writes through. In the web build `ipc.available` is `false`, so the browser fallback still applies.
 
-On Linux without a secret store, `safeStorage` falls back to a hard-coded password; check `safeStorage.getSelectedStorageBackend()` in main if that matters to you. In a Tauri app the same driver shape fits over a keyring plugin through Tauri commands. The `SecureStorageDriver` and `SecureItem` types are in the [API reference](/packages/secure-storage/api).
+On Linux without a secret store, `safeStorage` falls back to a hard-coded password; check `safeStorage.getSelectedStorageBackend()` in main if that matters to you. In a [Tauri](/packages/tauri) app the same driver shape fits over a keyring plugin through Tauri commands. The `SecureStorageDriver` and `SecureItem` types are in the [API reference](/packages/secure-storage/api).
 
 ## Next steps
 

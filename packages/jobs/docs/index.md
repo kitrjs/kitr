@@ -18,23 +18,30 @@ The examples on this page follow one scenario: Acme's app at `app.acme.com` gene
 kitr add jobs
 ```
 
-What `kitr add` does:
+What `kitr add` does, in order:
 
 - Installs `@kitr/jobs`. Jobs require the [server](/packages/server) package, so `kitr add` also adds `server` (and its `logger`) when the project does not have them yet.
 - Adds `'@kitr/jobs'` to `packages` and `() => import('@kitr/jobs/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/jobs.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Writes an example job, `server/jobs/example.ts`, exporting `exampleJob`.
-- Adds a `## kitr: jobs` section to `AGENTS.md` telling coding agents to put background work in `server/jobs/` and never `setTimeout` work in a request.
+- When you answer no to the worker question, adds a `worker` script (`kitr jobs:work`) to `package.json`.
+- Adds a `## kitr: jobs` section to `AGENTS.md` telling coding agents to put background work in `server/jobs/` and never `setTimeout` work in a request, plus a line about the separate worker when there is one.
 
-`kitr add jobs` adds no env variables or scripts and asks no questions. To edit `package.json` without running the package manager, pass the global flag:
+`kitr add jobs` asks one question. Agents and CI answer it with a flag:
+
+| Question | Default | Flag |
+| --- | --- | --- |
+| Run the job worker inside the server process? | yes | `--worker` / `--no-worker` |
 
 ```sh
-kitr add jobs --no-install
+kitr add jobs --no-worker
 ```
+
+With `--no-worker`, `config/jobs.ts` gets `worker: false` and the worker runs in its own process, as in [Run the worker in its own process](#run-the-worker-in-its-own-process). `kitr add jobs` adds no env variables. To edit `package.json` without running the package manager, pass `--no-install`.
 
 No kit includes jobs; add it to any kit with a server platform.
 
-`kitr remove jobs` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/jobs.ts`. Your jobs in `server/jobs/` stay.
+`kitr remove jobs` reverses every step above: the provider, the `packages` entry, the `worker` script, the `AGENTS.md` section, the dependency and `config/jobs.ts`. Your jobs in `server/jobs/` stay, because you may have edited them.
 
 ## Configure
 
@@ -441,7 +448,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
+Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it needs `server/main.ts` to export `app`, as shown in [Commands](#commands). `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
 
 `jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
 
@@ -506,8 +513,28 @@ The worker never throws: it logs these messages through the app's [logger](/pack
 
 | Command | What it does |
 | --- | --- |
+| `kitr jobs:list` | Loads `config/jobs.ts` and prints each job's name, retries, timeout and schedule. `--json` prints the rows as JSON. |
+| `kitr jobs:work` | Boots the app from `server/main.ts` and runs the worker in this process until `SIGINT` or `SIGTERM`, then waits for running jobs. `--entry <file>` boots another file. |
 | `kitr make:job <name>` | Writes a job to `server/jobs/<snake_name>.ts`. `--force` overwrites an existing file. |
 | `kitr eject stub job` | Copies the generator's template to `stubs/job.ts`, so `make:job` writes your own starting point. |
+
+`kitr jobs:list` reads the defaults when a job sets none (3 retries, a 60,000 ms timeout):
+
+```sh
+kitr jobs:list
+# name              retries  timeout  schedule
+# generate_invoice  3        60000
+# prune_sessions    3        60000    0 3 * * *
+```
+
+`kitr jobs:work` needs the entry file to export `app`. The generated `server/main.ts` exports `server`, so add one line to it before you use the command:
+
+```ts
+// server/main.ts
+export const app = server.app
+```
+
+`kitr doctor` adds one finding from this package: an info line when `config/jobs.ts` lists no jobs (`jobs: []`), with the fix `kitr make:job <name>`, then add it to `jobs: [...]`.
 
 `kitr make:job generate-invoice` writes `server/jobs/generate_invoice.ts`:
 

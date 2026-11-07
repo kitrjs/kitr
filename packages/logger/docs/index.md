@@ -31,7 +31,7 @@ What `kitr add` does:
 kitr add logger --no-install
 ```
 
-The [server](/packages/server) package requires the logger, so `kitr add server` adds it first, and the server recipe adds `LOG_LEVEL=info` to `.env.example`. Every kit with a server platform (`server`, `fullstack`, `saas`, `site`, `realtime`) already has it.
+The [server](/packages/server) package requires the logger, so `kitr add server` adds it first, and its setup adds `LOG_LEVEL=info` to `.env.example`. Every kit with a server platform (`server`, `fullstack`, `saas`, `site`, `realtime`) already has it.
 
 `kitr remove logger` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/logger.ts`.
 

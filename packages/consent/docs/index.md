@@ -20,8 +20,7 @@ kitr add consent
 
 What `kitr add` does:
 
-- Adds [storage](/packages/storage) first when the project does not have it, because the record is a storage cookie.
-- Installs `@kitr/consent`.
+- Installs `@kitr/consent`, which brings `kitr/storage` along as a dependency for its cookie.
 - Adds `() => import('@kitr/consent/provider')` to the end of `providers` and `'@kitr/consent'` to `packages` in `kitrrc.ts`.
 - Writes `config/consent.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Writes `app/components/consent-banner.tsx`, a banner with "Only necessary" and "Accept all" buttons, styled with Tailwind classes.
@@ -33,7 +32,7 @@ What `kitr add` does:
 kitr add consent --no-install
 ```
 
-No kit includes consent. It is a client package, so in a server-only project `kitr add consent` prints a warning and skips it.
+No kit includes consent. It does not add the [storage](/packages/storage) provider; add it with `kitr add storage` when you want `config/storage.ts` to set the cookie's prefix, `path` and `secure`.
 
 `kitr remove consent` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/consent.ts`. It leaves `app/components/consent-banner.tsx` and the place you mounted it, which you delete by hand. Visitors keep their `consent` cookie until it expires.
 
@@ -70,24 +69,7 @@ The record inside it is JSON:
 { "granted": ["necessary", "analytics"], "decidedAt": "2026-11-07T09:30:00.000Z", "version": 1 }
 ```
 
-`kitr add analytics` writes its config with `enabled` left at `true`. Before you ship a consent banner, set it to `false`:
-
-```ts
-// config/analytics.ts
-import { defineConfig, googleAnalytics } from 'kitr/analytics'
-import { env } from '#app/env'
-
-export default defineConfig({
-  adapters: env.VITE_GA_MEASUREMENT_ID
-    ? [googleAnalytics({ measurementId: env.VITE_GA_MEASUREMENT_ID })]
-    : [],
-  enabled: false,
-  globalProps: { app: env.VITE_APP_NAME },
-})
-```
-
-> **Warning**
-> With `enabled` left at `true`, analytics enables itself while the app boots, before the consent provider runs. That loads the vendor's script (`gtag.js`, Plausible or PostHog), which may set cookies, even though consent disables sending a moment later. Set `enabled: false` in `config/analytics.ts` so no tracking script loads before the visitor agrees.
+With the consent provider in `kitrrc.ts`, [analytics](/packages/analytics) starts disabled while the app boots, whatever `enabled` says in `config/analytics.ts` and wherever the two providers sit in the list. No vendor script (`gtag.js`, Plausible or PostHog) loads, and no vendor cookie is set, until the visitor grants the `analytics` category. You do not need to change `config/analytics.ts`.
 
 ## Show your first banner
 
@@ -253,7 +235,7 @@ export default defineConfig({
 })
 ```
 
-With `analytics: false`, consent never calls `analytics.enable()` or `disable()`. Use it when you run a cookieless service you are allowed to use without consent, and set `enabled: true` in `config/analytics.ts` again.
+With `analytics: false`, consent never calls `analytics.enable()` or `disable()`. Use it when you run a cookieless service you are allowed to use without consent. Analytics then starts as its own `enabled` option says, `true` by default.
 
 ## Load a second tracker for one category
 

@@ -20,16 +20,16 @@ kitr add actions
 
 What `kitr add` does:
 
-- Installs `@kitr/actions`, and [server](/packages/server) and [query](/packages/query) first when the project does not have them.
-- Adds `@kitr/actions` to `packages` in `kitrrc.ts`.
-- Creates an empty `app/actions/` folder (or `directories.actions` from `kitrrc.ts`).
+- Adds [server](/packages/server) and [query](/packages/query) first when the project does not have them, because actions require both.
+- Installs `@kitr/actions` and adds it to `packages` in `kitrrc.ts`. Actions register no provider.
 - Adds `#kitr/*` to `paths` and `.kitr/**/*` to `include` in `tsconfig.json`, and `.kitr` to `.gitignore`. Projects from `kitr new` already have both.
-- Prefixes the `typecheck` script with `kitr types &&`, so `tsc` always sees current names.
+- Prefixes the `typecheck` script with `kitr types &&`, so `tsc` always sees current names, and adds `#kitr/*` to the `imports` field of `package.json` when it has one.
+- Creates an empty `app/actions/` folder (or `directories.actions` from `kitrrc.ts`).
 - Edits `app/app.ts`: `import { operations } from '#kitr/actions'` and `createApp({ operations, ... })`.
 - Runs `kitr types` once dependencies are installed, which writes `.kitr/actions.ts`.
 - Appends an `actions` section to `AGENTS.md`.
 
-`kitr remove actions` reverses every step above except the `tsconfig.json` and `.gitignore` entries, which other generators use too. The `fullstack` and `saas` kits include actions.
+`kitr add actions` asks no questions. `kitr remove actions` takes `operations` out of `app/app.ts` and removes the `AGENTS.md` section, the `packages` entry and the dependency. It leaves the `tsconfig.json`, `.gitignore`, `imports` and `typecheck` changes, which other type generators use too, and your files in `app/actions/`. The `fullstack` and `saas` kits include actions.
 
 ## Configure
 

@@ -69,7 +69,7 @@ With `VITE_GA_MEASUREMENT_ID` empty the `adapters` list is empty, and the provid
 | Option | Default | Description |
 | --- | --- | --- |
 | `adapters` | `[]` | Where calls go. Each entry is an adapter such as `googleAnalytics()` or `plausible()`. When empty, the provider uses `consoleAdapter()` in development and nothing in production. |
-| `enabled` | `true` | Start sending at once. `false` queues every call (up to 100) until `analytics.enable()`. Use it with a consent banner. |
+| `enabled` | `true` | Start sending at once. `false` queues every call (up to 100) until `analytics.enable()`. With the [consent](/packages/consent) provider installed, analytics always starts disabled and consent enables it. |
 | `pageViews` | `true` | Send `page()` on every route change. `false` leaves page views to you. |
 | `globalProps` | none | Props merged into every `page()` and `track()` call, such as the app name or build id. Props on the call win. |
 | `debug` | development, when `adapters` is set and [devtools](/packages/devtools) is not installed | Print every call with `console.info('[analytics]', ...)` and print adapter errors with `console.warn`. Off when the provider falls back to the console adapter, which already prints each call. |
@@ -532,10 +532,9 @@ What happens to each call:
 - `disable()` empties the queue and stops sending. Calls made after it queue again and go out if `enable()` is called later.
 - `analytics.enabled` tells you which state you are in.
 
-The [consent](/packages/consent) package does all of this for you: it calls `enable()` when the visitor grants the `analytics` category and `disable()` when they withdraw it. With consent installed, never call `enable()` yourself; add `enabled: false` to `config/analytics.ts` and let the banner decide.
+The [consent](/packages/consent) package does all of this for you: it calls `enable()` when the visitor grants the `analytics` category and `disable()` when they withdraw it. When the consent provider is in `kitrrc.ts`, the analytics provider starts disabled on its own, wherever the two providers sit in the list and whatever `enabled` says in `config/analytics.ts`. No tracker script loads and no vendor cookie is set before the visitor agrees. With consent installed, never call `enable()` yourself; let the banner decide.
 
-> **Warning**
-> Without `enabled: false`, the provider enables analytics while the app boots, before any consent check runs. That loads `gtag.js` (or the Plausible or PostHog script), and the vendor may set cookies, even though [consent](/packages/consent) disables sending a moment later. Set `enabled: false` whenever you need consent first.
+The one exception is `analytics: false` in `config/consent.ts`, which tells consent not to manage analytics. Analytics then follows its own `enabled` option again.
 
 ## Add an adapter at run time
 
