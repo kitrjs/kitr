@@ -429,22 +429,27 @@ export const recipes: Record<string, Recipe> = {
   actions: r({
     name: 'actions',
     package: '@kitr/actions',
-    requires: ['server'],
+    requires: ['server', 'query'],
     client: true,
     description:
-      'defineAction over TanStack Start server functions: validation, middleware, one error shape, cache effects.',
+      'defineQuery and defineMutation over TanStack Start server functions: validation, middleware, one error shape, cache effects, and names generated for useQuery and useMutation.',
     configure(ctx, c) {
       c.installPackages(['@kitr/actions'])
       c.addPackage('@kitr/actions')
-      ctx.write('app/actions/.gitkeep', '')
+      c.enableGeneratedTypes()
+      const dir =
+        ctx.readRc().directories.actions ?? `${ctx.readRc().directories.app ?? 'app'}/actions`
+      ctx.write(`${dir}/.gitkeep`, '')
+      c.registerOperations()
       c.addAgentsSection(
         'actions',
-        `- \`kitr make:action <feature>/<name>\` writes \`app/actions/<feature>/<name>.ts\` with \`defineAction('<feature>.<name>', { input, effects, handler })\`.\n- Call actions from anywhere: \`await updateProject(input)\`; in components use \`useKitrMutation(defineMutation(updateProject.mutation()))\`. GET actions expose \`.query()\` for loaders.`,
+        `- \`kitr make:query <feature>/<name>\` and \`kitr make:mutation <feature>/<name>\` write \`${dir}/<feature>/<name>.ts\` with \`defineQuery('<feature>.<name>', { input, staleTime, handler })\` or \`defineMutation('<feature>.<name>', { input, effects, handler })\`.\n- \`kitr types\` (run by \`kitr dev\` and \`kitr build\`) writes \`.kitr/actions.ts\`; \`app/app.ts\` passes its \`operations\` to \`createApp\`.\n- In components use the name: \`useQuery('projects.list', input)\`, \`useSuspenseQuery('projects.list', input)\`, \`useMutation('projects.update')\` from \`kitr/query\`. In loaders use \`queryOptions('projects.list', input)\`. Outside React use \`call('projects.update', input)\` or import the definition and call it: \`await updateProject(input)\`.`,
       )
     },
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/actions')
       c.removePackages(['@kitr/actions'])
+      c.unregisterOperations()
       c.removeAgentsSection('actions')
     },
   }),

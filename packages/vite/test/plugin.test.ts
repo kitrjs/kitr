@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Plugin } from 'vite'
@@ -81,6 +81,25 @@ describe('kitr() plugin', () => {
     expect(config.define['import.meta.env.KITR_PACKAGES']).toBe(
       JSON.stringify(['@kitr/query', '@kitr/devtools', '@kitr/http']),
     )
+  })
+
+  it('aliases #kitr to the generated folder and writes it on buildStart', async () => {
+    const root = project({
+      'kitrrc.ts': `import { web } from 'kitr/web'\nexport default defineKitrConfig({ packages: [], providers: [], platforms: { site: web({ mode: 'spa' }) } })`,
+      'package.json': JSON.stringify({ name: 'app' }),
+    })
+    const { core, config } = await corePlugin(root)
+    expect(config.resolve.alias['#kitr']).toBe(join(root, '.kitr'))
+    await (core.buildStart as any).call({
+      error: (e: Error) => {
+        throw e
+      },
+    })
+    expect(readFileSync(join(root, '.kitr/platforms.d.ts'), 'utf8')).toContain(
+      "site: { type: 'web'; options: { mode: 'spa' } }",
+    )
+    const off = await corePlugin(project({ 'package.json': '{}' }), undefined, { types: false })
+    await (off.core.buildStart as any).call({})
   })
 
   it('strips the devtools provider from production builds only', async () => {

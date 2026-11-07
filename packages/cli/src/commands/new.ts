@@ -7,6 +7,7 @@ import { createContext, detectPackageManager, log, type PackageManager } from '.
 import { type KitName, kits } from '../kits'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { resolveRecipes } from '../recipes'
+import { generateTypesQuietly } from '../types'
 import { addComponents } from './ui'
 
 export const newCommand = defineCommand({
@@ -110,6 +111,7 @@ export const newCommand = defineCommand({
           execSync(`"${biome}" check --write .`, { cwd: dir, stdio: 'pipe' })
         } catch {}
       }
+      await generateTypesQuietly(ctx)
     }
     log.plain('')
     log.success(

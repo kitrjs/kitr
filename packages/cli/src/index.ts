@@ -6,7 +6,6 @@ import { cssTypes } from './commands/css-types'
 import { doctor } from './commands/doctor'
 import { eject } from './commands/eject'
 import {
-  makeAction,
   makeChannel,
   makeComponent,
   makeController,
@@ -16,8 +15,10 @@ import {
   makeJob,
   makeMail,
   makeMiddleware,
+  makeMutation,
   makeProvider,
   makeQueries,
+  makeQuery,
   makeRoute,
   makeService,
   makeStore,
@@ -28,6 +29,7 @@ import { newCommand } from './commands/new'
 import { packageCheck } from './commands/package-check'
 import { build, config, dev, platforms, start } from './commands/platforms'
 import { serve } from './commands/serve'
+import { types } from './commands/types'
 import { ui } from './commands/ui'
 import { upgrade } from './commands/upgrade'
 import { createContext } from './context'
@@ -50,6 +52,17 @@ export type { Recipe } from './recipes'
 export { recipeNames, recipes, resolveRecipes } from './recipes'
 export type { StubFn } from './stubs'
 export { naming, renderStub, stubs } from './stubs'
+export type { TypesRunOptions, TypesRunResult } from './types'
+export {
+  createGenerateContext,
+  GENERATED_DIR,
+  generatorsFor,
+  loadGenerators,
+  platformsGenerator,
+  renderPlatforms,
+  runTypes,
+  watchGlobsOf,
+} from './types'
 export { versionOf, versions } from './versions'
 
 const info = defineCommand({
@@ -90,7 +103,8 @@ export const main = defineCommand({
     add,
     remove,
     'make:route': makeRoute,
-    'make:action': makeAction,
+    'make:query': makeQuery,
+    'make:mutation': makeMutation,
     'make:controller': makeController,
     'make:middleware': makeMiddleware,
     'make:channel': makeChannel,
@@ -116,6 +130,7 @@ export const main = defineCommand({
     'api:sync': apiSync,
     'routes:list': routesList,
     'css:types': cssTypes,
+    types,
     doctor,
     'package:check': packageCheck,
     eject,

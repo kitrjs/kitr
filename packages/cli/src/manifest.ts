@@ -22,6 +22,11 @@ export interface KitrManifest {
   included?: boolean
   /** Folder of markdown docs, relative to the package root. */
   docs?: string
+  /**
+   * The subpath exporting a `defineTypes()` generator that `kitr types` runs: `"./types"` means
+   * `<package>/types`. Its files land in the project's `.kitr/` folder.
+   */
+  types?: string
 }
 
 export const categories = {
@@ -61,6 +66,8 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
       !(Array.isArray(k[field]) && k[field].every((x) => typeof x === 'string'))
     )
       errors.push(`"${field}" must be a list of strings`)
+  if (k.types !== undefined && !(typeof k.types === 'string' && k.types.startsWith('./')))
+    errors.push('"types" must be a relative subpath such as "./types"')
   if (known.length && Array.isArray(k.requires))
     for (const dep of k.requires)
       if (!known.includes(dep)) errors.push(`requires unknown package "${dep}"`)

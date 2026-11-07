@@ -3,6 +3,7 @@ import { Codemods } from '../codemods'
 import { createContext } from '../context'
 import { platformTypeNames } from '../platforms'
 import { recipeNames, recipes, resolveRecipes } from '../recipes'
+import { generateTypesQuietly } from '../types'
 import { addPlatformCommand } from './platforms'
 
 export const add = defineCommand({
@@ -50,6 +51,7 @@ export const add = defineCommand({
       ctx.log.success(`${recipe.name}: ${recipe.description}`)
     }
     await codemods.flush({ install: args.install })
+    if (args.install && !ctx.dryRun) await generateTypesQuietly(ctx)
     ctx.log.plain('')
     ctx.log.success(
       `${ctx.dryRun ? 'Would change' : 'Done. Changed'}: ${[...ctx.touched].join(', ') || 'nothing'}`,

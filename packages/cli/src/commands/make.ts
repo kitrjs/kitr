@@ -63,18 +63,25 @@ export const makeRoute = makeCommand('route', 'Create a page route in app/routes
       ?.replace(/[:$]/g, '') || 'home'
   return { file, vars: { path, name: base } }
 })
-export const makeAction = makeCommand(
-  'action',
-  'Create a server action in app/actions/<feature>/<name>.ts',
-  (ctx, name) => {
-    const [feature, action] = name.includes('/')
+const operationTarget =
+  (kind: 'query' | 'mutation') => (ctx: ReturnType<typeof createContext>, name: string) => {
+    const [feature, operation] = name.includes('/')
       ? (name.split('/') as [string, string])
       : ['app', name]
     return {
-      file: `${ctx.readRc().directories.app}/actions/${feature}/${naming.snake(action)}.ts`,
-      vars: { feature, name: action },
+      file: `${ctx.readRc().directories.actions ?? `${ctx.readRc().directories.app}/actions`}/${feature}/${naming.snake(operation)}.ts`,
+      vars: { feature, name: operation, kind },
     }
-  },
+  }
+export const makeQuery = makeCommand(
+  'query',
+  'Create a server query in app/actions/<feature>/<name>.ts (defineQuery)',
+  operationTarget('query'),
+)
+export const makeMutation = makeCommand(
+  'mutation',
+  'Create a server mutation in app/actions/<feature>/<name>.ts (defineMutation)',
+  operationTarget('mutation'),
 )
 export const makeController = makeCommand(
   'controller',
