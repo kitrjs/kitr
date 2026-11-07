@@ -8,6 +8,8 @@ import {
   type RunsOn,
   runsOn,
 } from '#app/lib/catalog'
+import { creditsFor } from '#app/lib/upstream'
+import { CreatorMark } from './creator-marks'
 import { Icon } from './icons'
 
 export function Tile({
@@ -55,17 +57,42 @@ export function RunsOnBadge({ value }: { value: RunsOn }) {
   )
 }
 
-export function PackageCard({ pkg }: { pkg: PackageEntry }) {
+/** Credits on a directory card: the marks of the projects a package is built on. */
+function Credits({ builtOn }: { builtOn?: string[] }) {
+  const credits = creditsFor(builtOn).filter((c) => c.mark && c.mark !== 'kitr')
+  if (!credits.length) return null
+  const by = credits.map((c) => c.name).join(' and ')
   return (
-    <Link to="/packages/$name" params={{ name: pkg.name }} className="card">
-      <span className="card-head">
-        <Tile pkg={pkg} />
-        <span className="mono card-name">{pkg.name}</span>
-      </span>
-      <span className="card-summary">{pkg.summary}</span>
-      <span className="badges">
-        <CategoryBadge category={pkg.category} />
-        <RunsOnBadge value={pkg.runsOn} />
+    <span className="dcard-credit" title={`Built on ${by}`}>
+      <span className="visually-hidden">Built on {by}</span>
+      {credits.map((c) => (
+        <CreatorMark key={c.name} name={c.mark!} size={18} />
+      ))}
+    </span>
+  )
+}
+
+/** One package in the directory: tile, name, a two-line summary, then where it runs. */
+export function DirectoryCard({
+  pkg,
+  showCategory = false,
+}: {
+  pkg: PackageEntry
+  showCategory?: boolean
+}) {
+  return (
+    <Link to="/packages/$name" params={{ name: pkg.name }} className="dcard">
+      <Tile pkg={pkg} size={40} />
+      <span className="dcard-body">
+        <span className="dcard-top">
+          <span className="mono dcard-name">{pkg.name}</span>
+          <Credits builtOn={pkg.builtOn} />
+        </span>
+        <span className="dcard-summary">{pkg.summary}</span>
+        <span className="badges">
+          {showCategory && <CategoryBadge category={pkg.category} />}
+          <RunsOnBadge value={pkg.runsOn} />
+        </span>
       </span>
     </Link>
   )
@@ -74,29 +101,31 @@ export function PackageCard({ pkg }: { pkg: PackageEntry }) {
 /** Not built yet: no link, a status badge, and what it will replace. */
 export function PlannedCard({ pkg }: { pkg: PlannedEntry }) {
   return (
-    <article className="card card-planned" id={pkg.name}>
-      <span className="card-head">
-        <Tile pkg={pkg} />
-        <span className="mono card-name">{pkg.name}</span>
-        <span className={`badge badge-status status-${pkg.status}`}>
-          {plannedStatus[pkg.status].label}
+    <article className="dcard dcard-planned" id={pkg.name}>
+      <Tile pkg={pkg} size={40} />
+      <span className="dcard-body">
+        <span className="dcard-top">
+          <span className="mono dcard-name">{pkg.name}</span>
+          <span className={`badge badge-status status-${pkg.status}`}>
+            {plannedStatus[pkg.status].label}
+          </span>
         </span>
-      </span>
-      <span className="card-summary">{pkg.summary}</span>
-      {pkg.replaces?.length ? (
-        <span className="muted card-note">
-          Replaces{' '}
-          {pkg.replaces.map((r, i) => (
-            <span key={r}>
-              {i > 0 && (i === pkg.replaces!.length - 1 ? ' and ' : ', ')}
-              <code>{r}</code>
-            </span>
-          ))}
+        <span className="dcard-summary">{pkg.summary}</span>
+        {pkg.replaces?.length ? (
+          <span className="muted dcard-note">
+            Replaces{' '}
+            {pkg.replaces.map((r, i) => (
+              <span key={r}>
+                {i > 0 && (i === pkg.replaces!.length - 1 ? ' and ' : ', ')}
+                <code>{r}</code>
+              </span>
+            ))}
+          </span>
+        ) : null}
+        <span className="badges">
+          <CategoryBadge category={pkg.category} />
+          <RunsOnBadge value={pkg.runsOn} />
         </span>
-      ) : null}
-      <span className="badges">
-        <CategoryBadge category={pkg.category} />
-        <RunsOnBadge value={pkg.runsOn} />
       </span>
     </article>
   )

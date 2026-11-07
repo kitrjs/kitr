@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 import { Command } from '#app/components/command'
 import { CreatorMark } from '#app/components/creator-marks'
 import { Icon, icons } from '#app/components/icons'
-import { PackageCard, Tile } from '#app/components/package-bits'
+import { DirectoryCard, Tile } from '#app/components/package-bits'
 import { PlatformTile, Rich, SoonBadge } from '#app/components/platform-bits'
 import { type Category, categories, findPackage, glyph, type PackageEntry } from '#app/lib/catalog'
 import { findPlatform, type PlatformEntry, platforms, unpublished } from '#app/lib/platforms'
@@ -181,9 +181,9 @@ function PlatformPage() {
                     : 'Their drivers switch to the native APIs underneath, with no code change.'}
               </span>
             </h3>
-            <div className="card-grid">
+            <div className="dir-grid">
               {native.map((pkg) => (
-                <PackageCard key={pkg.name} pkg={pkg} />
+                <DirectoryCard key={pkg.name} pkg={pkg} showCategory />
               ))}
             </div>
           </div>
