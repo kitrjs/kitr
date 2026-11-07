@@ -50,3 +50,18 @@ function UpdateBanner() {
 ## Drivers
 
 Platform packages register under the `updater` capability. Tests pass `createMemoryUpdaterDriver({ next })` and call `driver.announce(info)` to simulate a background update.
+
+## Where it runs
+
+| Where it runs | Driver |
+| --- | --- |
+| Browser | The service worker from the [web](/packages/web) platform's `pwa` option. Applying activates the new worker and reloads. |
+| Desktop | The Tauri or Electron updater, through the [desktop](/packages/desktop) package. It downloads, installs and restarts. |
+| iOS, Android | The store version, or a live-update bundle, through the [mobile](/packages/mobile) package |
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `checkOnBoot` | `true` | Check as soon as the app starts. |
+| `interval` | none | Check again every N milliseconds while the app is open. |
+| `auto` | `false` | Apply as soon as an update is ready, without asking. Fine for a kiosk, surprising for anyone halfway through a form. |
+| `driver` | the platform's | Replace the driver, for tests. |

@@ -6,7 +6,7 @@ order: 1
 
 # Feature flags
 
-Declare every flag once with a default. Providers answer per user; the server resolves once per request and hands the browser the same snapshot, so a page never flips after hydration.
+Feature flags let you merge unfinished work, turn a feature on for 10% of users, or switch something off in production without a deploy. `kitr/flags` makes them typed: every flag is declared once with a default, so a misspelt flag is a type error. Providers decide the value per user. The server resolves the flags once per request and hands the browser the same values, so a page never flips after it loads.
 
 ## Install
 
@@ -58,3 +58,24 @@ head: ({ loaderData }) => ({ scripts: [{ type: 'application/json', id: '__kitr_f
 ```
 
 `<FlagsScript values={...} />` from `kitr/flags/react` renders the same tag. In a pure SPA the provider calls `resolve()` at boot instead.
+
+## Providers
+
+| Provider | Answers from |
+| --- | --- |
+| `envFlagsProvider()` | Environment variables: `FLAG_NEW_DASHBOARD=true` sets `newDashboard`. Good for turning things on per environment. |
+| `percentageFlagsProvider({ newDashboard: 10 })` | A stable share of users, by user id. The same user always gets the same answer. |
+| `staticFlagsProvider(values)` | A fixed map, or a function of the context such as `({ user }) => ({ beta: user?.role === 'staff' })`. |
+| `openFeatureFlagsProvider(client, flags)` | Any [OpenFeature](https://openfeature.dev) client: LaunchDarkly, Flagsmith, Unleash, GrowthBook and others. |
+
+They're asked in order, and the first one with an answer wins. A provider is an object with `resolve(key, context)`, so writing one for your own database takes a few lines.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `definitions` | none | The flags from `app/flags.ts`. |
+| `providers` | none | Asked in order. With none, every flag is its default. |
+| `ttl` | `300` | Seconds the browser keeps its values before `refresh()` asks again. |
+
+## Tests
+
+`createFlags(definitions, { providers: [staticFlagsProvider({ newDashboard: true })] })` builds a flags service with fixed answers, so a test can check both sides of a flag.

@@ -6,7 +6,7 @@ order: 1
 
 # Offline
 
-The TanStack Query cache survives a reload and a lost connection: successful queries are persisted to storage and restored before the first render, mutations made offline wait and replay when the network returns.
+A train goes into a tunnel, the wifi drops, the app is reopened on a plane. With `kitr/offline`, the data the app already loaded is still there. Successful [queries](/packages/query) are saved to storage and restored before the first render, so the app opens with yesterday's data instead of a spinner. Changes made offline wait and are sent when the network comes back.
 
 ## Install
 
@@ -44,3 +44,16 @@ Mutations need no change: with TanStack Query's default `networkMode: 'online'` 
 ## Online state
 
 `bindOnlineManager(platform)` makes Query follow the `kitr/platform` driver, which the provider does when `platform` is installed; native shells report connectivity better than `navigator.onLine`.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `maxAge` | 24 hours | Milliseconds a saved snapshot stays usable. |
+| `include(queryKey)` | every successful query | Leave out queries that shouldn't be saved, like search results or anything sensitive. |
+| `throttle` | `1000` | Milliseconds to wait after a change before saving. |
+| `buster` | none | Change it, usually to the app version, and older snapshots are thrown away. |
+| `key` | `kitr:query-cache` | The storage key. |
+| `storage` | the app's local storage | Where the snapshot lives. On desktop and mobile it's the native store. |
+
+## What to leave out
+
+The snapshot is stored on the device in plain form. Leave out anything you wouldn't want on a shared computer, using `include`, and call `clear()` from `useOffline()` on sign-out.
