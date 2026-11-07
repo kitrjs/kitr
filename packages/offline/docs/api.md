@@ -27,17 +27,24 @@ Let TanStack Query's online state follow the platform driver (native shells repo
 function createOffline(client: QueryClient, config?: OfflineConfig, app?: KitrApp): Offline;
 ```
 
+Build the offline service for a QueryClient: it saves successful queries and paused mutations
+to storage on a throttle (and when the page is hidden), and can restore them into the client.
+
 ### useOffline
 
 ```ts
 function useOffline(app: KitrApp): Offline;
 ```
 
+The `offline` service from an app's container, for code outside React. Bound on the client only.
+
 ### defineConfig
 
 ```ts
 const defineConfig: <const C extends OfflineConfig>(config: C) => C;
 ```
+
+Type-checks `config/offline.ts`. Returns the object unchanged.
 
 ### Offline
 
@@ -51,11 +58,16 @@ interface Offline {
   clear(): void;
   /** Mutations waiting for the network. */
   pendingMutations(): number;
+  /** Whether TanStack Query's `onlineManager` currently says online. */
   isOnline(): boolean;
+  /** Called after a restore, after each throttled save, and when online state changes. Returns an unsubscribe function. */
   subscribe(listener: () => void): () => void;
+  /** True once `restore()` loaded a snapshot into the client. */
   readonly restored: boolean;
 }
 ```
+
+The `offline` service: restores and saves the query cache snapshot and reports network state.
 
 ### OfflineConfig
 
@@ -75,6 +87,8 @@ interface OfflineConfig {
   buster?: string;
 }
 ```
+
+Options for `config/offline.ts`: how long, where and what of the query cache is kept on the device.
 
 ## kitr/offline/react
 

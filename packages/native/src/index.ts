@@ -6,24 +6,35 @@ import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
  * the others; the web drivers use the matching browser API and report `supported: false` elsewhere.
  */
 
+/** Reads and writes plain text on the system clipboard. */
 export interface ClipboardDriver {
+  /** Resolves to the clipboard's text. Browsers ask permission first and reject when refused. */
   readText(): Promise<string>
+  /** Puts `text` on the clipboard. On the web, call it from a click or key press. */
   writeText(text: string): Promise<void>
 }
 
+/** What to hand to the share sheet. Every field is optional; most targets use `url` or `text`. */
 export interface SharePayload {
+  /** Title shown by targets that have one, such as an email subject. */
   title?: string
+  /** Body text. */
   text?: string
+  /** A link to share. */
   url?: string
+  /** Files to share. Check `canShare({ files })` first: not every device shares files. */
   files?: File[]
 }
 
+/** Opens the system share sheet. */
 export interface ShareDriver {
+  /** Whether this payload can be shared here, so a share button can hide itself. */
   canShare(payload: SharePayload): boolean
   /** Resolves to true when shared, false when dismissed. */
   share(payload: SharePayload): Promise<boolean>
 }
 
+/** The feel of a haptic: three impact strengths, three outcomes and a selection tick. */
 export type HapticKind =
   | 'light'
   | 'medium'
@@ -33,37 +44,55 @@ export type HapticKind =
   | 'error'
   | 'selection'
 
+/** Plays haptic feedback (a vibration pattern on the web). */
 export interface HapticsDriver {
+  /** Play the feedback for `kind`. */
   impact(kind: HapticKind): Promise<void>
 }
 
+/** A location fix, in the shape of the browser's `GeolocationCoordinates` plus its time. */
 export interface Position {
+  /** Degrees north of the equator. */
   latitude: number
+  /** Degrees east of Greenwich. */
   longitude: number
+  /** Radius of uncertainty, in metres. */
   accuracy: number
+  /** Metres above sea level, or null when unknown. */
   altitude?: number | null
+  /** Direction of travel in degrees from north, or null when unknown. */
   heading?: number | null
+  /** Metres per second, or null when unknown. */
   speed?: number | null
+  /** When the fix was taken, in milliseconds since the epoch. */
   timestamp: number
 }
 
+/** Reads the device's location once or continuously. */
 export interface GeolocationDriver {
+  /** Resolve the current position. `highAccuracy` asks for GPS; `timeout` is in milliseconds. */
   current(options?: { highAccuracy?: boolean; timeout?: number }): Promise<Position>
+  /** Call `listener` with each new position until the returned function is called. */
   watch(listener: (position: Position) => void, options?: { highAccuracy?: boolean }): () => void
 }
 
+/** A photo taken with the camera or picked from the library. */
 export interface Photo {
+  /** The image data (a `File` on the web). */
   blob: Blob
+  /** Its MIME type, such as `image/jpeg`. */
   type: string
   /** Where the image came from. */
   source: 'camera' | 'library'
 }
 
+/** Takes or picks a photo. */
 export interface CameraDriver {
   /** Take a photo (or, on the web, open the capture-enabled file input). */
   capture(options?: { source?: 'camera' | 'library'; quality?: number }): Promise<Photo | null>
 }
 
+/** Asks for a fingerprint, face or device PIN to confirm someone is at the device. */
 export interface BiometricsDriver {
   /** Whether the device has an enrolled biometric or device credential. */
   available(): Promise<boolean>
@@ -71,23 +100,35 @@ export interface BiometricsDriver {
   authenticate(options?: { reason?: string }): Promise<boolean>
 }
 
+/** What every capability on the `native` service carries next to its driver's methods. */
 export interface Capability<T> {
+  /** True when a driver exists for this capability here. */
   supported: boolean
+  /** The active driver (a stand-in that rejects with `UnsupportedError` when unsupported). */
   driver: T
+  /** Where the driver came from: `configured`, the registering platform, `native`, `web` or `unsupported`. */
   name: string
 }
 
+/** The `native` service: six device capabilities, each with its methods and its `supported` flag. */
 export interface Native {
+  /** Read and write the clipboard. */
   clipboard: Capability<ClipboardDriver> & ClipboardDriver
+  /** Open the share sheet. */
   share: Capability<ShareDriver> & ShareDriver
+  /** Play haptic feedback. */
   haptics: Capability<HapticsDriver> & HapticsDriver
+  /** Read or follow the device's location. */
   geolocation: Capability<GeolocationDriver> & GeolocationDriver
+  /** Take or pick a photo. */
   camera: Capability<CameraDriver> & CameraDriver
+  /** Confirm presence with a fingerprint, face or device PIN. */
   biometrics: Capability<BiometricsDriver> & BiometricsDriver
   /** Which capabilities have a working driver, for devtools and feature gating. */
   supported(): Record<NativeCapability, boolean>
 }
 
+/** The name of one of the six capabilities, as used in `supported()` and `app.drivers.register()`. */
 export type NativeCapability =
   | 'clipboard'
   | 'share'
@@ -96,6 +137,7 @@ export type NativeCapability =
   | 'camera'
   | 'biometrics'
 
+/** Options for `config/native.ts` and `createNative()`. */
 export interface NativeConfig {
   /** Replace individual drivers (tests, custom hardware). */
   drivers?: Partial<{
@@ -125,8 +167,10 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/native.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<NativeConfig>()
 
+/** Thrown when a method is called on a capability that has no driver here. `capability` names it. */
 export class UnsupportedError extends Error {
   constructor(public capability: NativeCapability) {
     super(`kitr/native: ${capability} is not supported on this platform`)
@@ -140,6 +184,7 @@ const hasWindow = () => typeof window !== 'undefined' && typeof navigator !== 'u
  * Web drivers
  * ------------------------------------------------------------------------- */
 
+/** Clipboard driver on the Clipboard API. Null where `navigator.clipboard` is missing (no HTTPS, no browser). */
 export function webClipboard(): ClipboardDriver | null {
   if (!hasWindow() || !navigator.clipboard) return null
   return {
@@ -148,6 +193,7 @@ export function webClipboard(): ClipboardDriver | null {
   }
 }
 
+/** Share driver on Web Share. Resolves false when dismissed; null where `navigator.share` is missing. */
 export function webShare(): ShareDriver | null {
   if (!hasWindow() || typeof navigator.share !== 'function') return null
   return {
@@ -175,6 +221,7 @@ const PATTERNS: Record<HapticKind, number | number[]> = {
   error: [50, 50, 50, 50, 50],
 }
 
+/** Haptics driver that maps each kind to a `navigator.vibrate` pattern. Null where vibration is missing. */
 export function webHaptics(): HapticsDriver | null {
   if (!hasWindow() || typeof navigator.vibrate !== 'function') return null
   return {
@@ -196,6 +243,7 @@ function toPosition(p: GeolocationPosition): Position {
   }
 }
 
+/** Geolocation driver on the browser Geolocation API. Null where `navigator.geolocation` is missing. */
 export function webGeolocation(): GeolocationDriver | null {
   if (!hasWindow() || !navigator.geolocation) return null
   return {
@@ -215,6 +263,10 @@ export function webGeolocation(): GeolocationDriver | null {
   }
 }
 
+/**
+ * Camera driver that opens a hidden image file input, with `capture` for the camera source.
+ * Resolves null when cancelled; null itself only where there is no `document`.
+ */
 export function webCamera(): CameraDriver | null {
   if (typeof document === 'undefined') return null
   return {
@@ -325,6 +377,10 @@ export function webBiometrics(options: { storageKey?: string } = {}): Biometrics
  * Memory drivers (tests, server)
  * ------------------------------------------------------------------------- */
 
+/**
+ * In-memory drivers for all six capabilities, for tests and the server. `shared` and `haptics_log`
+ * record what was shared and played; pass overrides to replace any driver.
+ */
 export function createMemoryNativeDrivers(overrides: NativeConfig['drivers'] = {}) {
   let clip = ''
   const shared: SharePayload[] = []
@@ -402,6 +458,10 @@ function capability<T extends object>(
   }) as Capability<T> & T
 }
 
+/**
+ * Build the `native` service. Per capability it uses `config.drivers`, else the driver a platform
+ * registered on `app`, else the web driver, else an unsupported stand-in.
+ */
 export function createNative(config: NativeConfig = {}, app?: KitrApp): Native {
   const pick = <K extends NativeCapability>(key: K, web: () => DriverTypesOf<K> | null) => {
     const configured = config.drivers?.[key] as DriverTypesOf<K> | undefined
@@ -444,6 +504,7 @@ type DriverTypesOf<K extends NativeCapability> = {
   biometrics: BiometricsDriver
 }[K]
 
+/** The app's `native` service, outside React. Same as `app.container.use('native')`. */
 export function useNative(app: KitrApp): Native {
   return app.container.use('native')
 }

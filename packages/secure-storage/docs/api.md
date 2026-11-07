@@ -16,11 +16,16 @@ Every export of `kitr/secure-storage`, `kitr/secure-storage/react`, `kitr/secure
 function createMemorySecureStorageDriver(name?: string): SecureStorageDriver;
 ```
 
+A vault in a `Map`, for tests and the server. `secure` is false; nothing survives a restart.
+
 ### createSecureStorage
 
 ```ts
 function createSecureStorage(config?: SecureStorageConfig, app?: KitrApp): SecureStorage;
 ```
+
+Build the `secureStorage` service. The driver is `config.driver`, else the vault registered on
+`app`, else the encrypted web fallback in a browser or the memory driver on the server.
 
 ### createWebSecureStorageDriver
 
@@ -38,7 +43,7 @@ function defineSecureItem<T>(key: string, options?: SecureItemOptions<T>): (stor
 ```
 
 A typed, subscribable secret: `const session = defineSecureItem<Session>('session')`.
-Bind it to an app with `session.bind(app.container.use('secureStorage'))` or use it through the provider.
+Call it with a service to bind it, `session(app.container.use('secureStorage'))`, or pass it to `useSecureItem`.
 
 ### useSecureStorage
 
@@ -46,23 +51,34 @@ Bind it to an app with `session.bind(app.container.use('secureStorage'))` or use
 function useSecureStorage(app: KitrApp): SecureStorage;
 ```
 
+The app's `secureStorage` service, outside React. Same as `app.container.use('secureStorage')`.
+
 ### defineConfig
 
 ```ts
 const defineConfig: <const C extends SecureStorageConfig>(config: C) => C;
 ```
 
+Types `config/secure-storage.ts`. Returns the object unchanged.
+
 ### SecureItem
 
 ```ts
 interface SecureItem<T> {
+  /** The key, without the service prefix. */
   key: string;
+  /** Resolve the value, or undefined when missing. Corrupt or invalid values are removed. */
   get(): Promise<T | undefined>;
+  /** Store the value and notify this item's subscribers. */
   set(value: T): Promise<void>;
+  /** Delete the value and notify this item's subscribers with undefined. */
   remove(): Promise<void>;
+  /** Hear writes made through this bound item; returns an unsubscribe function. */
   subscribe(listener: (value: T | undefined) => void): () => void;
 }
 ```
+
+A typed secret bound to a `SecureStorage` service, as returned by calling a `defineSecureItem` result.
 
 ### SecureItemOptions
 
@@ -78,21 +94,30 @@ interface SecureItemOptions<T> {
 }
 ```
 
+Options for `defineSecureItem`: a schema to check reads and a codec for non-JSON values.
+
 ### SecureStorage
 
 ```ts
 interface SecureStorage {
+  /** The active driver. */
   readonly driver: SecureStorageDriver;
   /** True when values live in an OS vault rather than the encrypted web fallback. */
   readonly secure: boolean;
+  /** Resolve the string stored under `key`, or null. */
   get(key: string): Promise<string | null>;
+  /** Store a string. Throws under `requireSecure` when no vault is registered. */
   set(key: string, value: string): Promise<void>;
+  /** Delete a key. */
   remove(key: string): Promise<void>;
   /** Keys written through this service (not every item in the vault). */
   keys(): Promise<string[]>;
+  /** Remove every key `keys()` returns, leaving other prefixes alone. */
   clear(): Promise<void>;
 }
 ```
+
+The `secureStorage` service: async string storage over the vault, under one key prefix.
 
 ### SecureStorageConfig
 
@@ -109,24 +134,29 @@ interface SecureStorageConfig {
 }
 ```
 
+Options for `config/secure-storage.ts` and `createSecureStorage()`.
+
 ### SecureStorageDriver
 
 ```ts
+/** What a vault implements. Keys arrive with the service's prefix already added. */
 interface SecureStorageDriver {
+  /** Shown in devtools, such as `web-crypto` or `memory`. */
   name: string;
   /** Backed by hardware or an OS vault (false for the web fallback). */
   secure: boolean;
+  /** Resolve the stored string, or null. */
   get(key: string): Promise<string | null>;
+  /** Store a string. */
   set(key: string, value: string): Promise<void>;
+  /** Delete a key. */
   remove(key: string): Promise<void>;
+  /** Every stored key. Optional: without it the service lists keys written this session. */
   keys?(): Promise<string[]>;
 }
 ```
 
-Secrets that must not sit in plain storage: auth tokens, API keys, refresh tokens.
-Platform packages register a `SecureStorageDriver` backed by the Keychain, the Android Keystore
-or Electron's safeStorage; on the web the fallback encrypts values with AES-GCM under a key
-kept in IndexedDB (non-extractable), so a copied `localStorage` entry is useless on its own.
+What a vault implements. Keys arrive with the service's prefix already added.
 
 ## kitr/secure-storage/react
 
@@ -151,6 +181,8 @@ The value is `undefined` until the vault answers (and always on the server).
 ```ts
 function useSecureStorage(): SecureStorage;
 ```
+
+The app's `secureStorage` service in a component.
 
 ## kitr/secure-storage/provider
 

@@ -2,6 +2,7 @@ import { useApp } from '@kitr/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { SecureItem, SecureStorage } from './index'
 
+/** The app's `secureStorage` service in a component. */
 export function useSecureStorage(): SecureStorage {
   return useApp().container.use('secureStorage')
 }

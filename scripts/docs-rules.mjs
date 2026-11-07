@@ -90,6 +90,10 @@ for (const { dir, pkg } of pkgs) {
   const ph = src.match(PLACEHOLDERS)
   if (ph) problems.push(`placeholder name "${ph[0]}"`)
 
+  // The site's prerender crawler follows href="/..." even inside code blocks, and fails on a 404.
+  const href = src.match(/href="\/(?!packages\/|docs\/)[^"]*"/)
+  if (href) problems.push(`${href[0]} would be crawled as a site page; use <Link to> or a full URL`)
+
   // Testing section shows real code.
   const testing = section(src, 'Testing')
   if (testing !== null && !/```/.test(testing)) problems.push('Testing section has no code')

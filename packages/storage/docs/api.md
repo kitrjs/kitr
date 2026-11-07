@@ -31,6 +31,8 @@ Build a driver over an async native store. `load` runs once at boot and fills th
 function createMemoryKvDriver(): KvDriver;
 ```
 
+The default `kv` driver: a Map with ttl support. Values are lost on restart and not shared between processes.
+
 ### createMemoryStorageDriver
 
 ```ts
@@ -99,11 +101,15 @@ and `set()` is a no-op, so the same module renders on both sides.
 function getKvDriver(): KvDriver;
 ```
 
+The active `kv` driver, creating the in-memory one on first use.
+
 ### getStorageDriver
 
 ```ts
 function getStorageDriver(name: StorageArea): StorageDriver | null;
 ```
+
+The driver behind an area: the platform driver, Web Storage, or null on the server.
 
 ### listStorage
 
@@ -121,6 +127,8 @@ Every key in an area, for the devtools panel.
 ```ts
 function logStorage(app: KitrApp, label: string, data?: unknown): void;
 ```
+
+Write a line to the devtools `storage` channel. Does nothing when devtools are off.
 
 ### notifyCookiesChanged
 
@@ -144,6 +152,8 @@ Parse a `Cookie` header into a map. Values are decoded with decodeURIComponent.
 function removeStorageKey(name: StorageArea, key: string): void;
 ```
 
+Delete one raw key from an area and notify subscribers. Used by the devtools panel.
+
 ### serializeCookie
 
 ```ts
@@ -158,13 +168,15 @@ Build a `Set-Cookie` value. `value === null` expires the cookie.
 function setCookieDefaults(defaults: Omit<CookieOptions, 'name'>): void;
 ```
 
+Attributes merged into every cookie this app writes. The provider sets them from `cookie` in config.
+
 ### setKvDriver
 
 ```ts
 function setKvDriver(driver: KvDriver): void;
 ```
 
-Set by the storage provider from `config/storage.ts` (`kv`). Any unstorage-shaped driver works.
+Set by the storage provider from `config/storage.ts` (`kv`). Any object with async get, set and remove over strings works.
 
 ### setStorageDriver
 
@@ -193,11 +205,15 @@ Set by the provider from `config/storage.ts`; items created later pick it up.
 const defineConfig: <const C extends StorageConfig>(config: C) => C;
 ```
 
+Type-checks `config/storage.ts`. Returns the object unchanged.
+
 ### jsonCodec
 
 ```ts
 const jsonCodec: <T>() => Codec<T>;
 ```
+
+The default codec for objects: `JSON.stringify` and `JSON.parse`.
 
 ### stringCodec
 
@@ -205,27 +221,38 @@ const jsonCodec: <T>() => Codec<T>;
 const stringCodec: Codec<string>;
 ```
 
+Stores strings as they are, with no quotes. The default for cookies whose default is a string.
+
 ### Codec
 
 ```ts
 interface Codec<T> {
+  /** Value to stored string. */
   encode(value: T): string;
+  /** Stored string to value. Throwing makes the item fall back to its default. */
   decode(raw: string): T;
 }
 ```
+
+Turns a value into the string that is stored and back. Pass one as `codec` to change the format.
 
 ### CookieItem
 
 ```ts
 interface CookieItem<T> {
+  /** The name it was defined with, without the config prefix. */
   readonly name: string;
+  /** Returned when the cookie is missing or invalid. */
   readonly default: T;
+  /** The attributes given to `defineCookie`. */
   readonly options: CookieOptions;
   /** Read from `document.cookie`, or from the given source on the server. */
   get(source?: CookieSource): T;
   /** Write `document.cookie` (client). On the server use `cookies(event).set(item, value)`. */
   set(value: T, options?: CookieOptions): void;
+  /** Expire the cookie in the browser. A no-op on the server. */
   remove(): void;
+  /** Fires after `set`, `remove` or `notifyCookiesChanged()` in this tab. */
   subscribe(listener: (value: T) => void): () => void;
   /** The `Set-Cookie` header value for this item. */
   serialize(value: T | null, options?: CookieOptions): string;
@@ -234,71 +261,103 @@ interface CookieItem<T> {
 }
 ```
 
+A typed cookie returned by `defineCookie`, readable on both sides.
+
 ### CookieItemOptions
 
 ```ts
 interface CookieItemOptions<T> extends CookieOptions {
+  /** Returned when the cookie is missing or invalid. */
   default: T;
+  /** Validate the decoded value (Standard Schema). Invalid → default. */
   schema?: StandardSchemaV1<unknown, T>;
   /** Default: JSON for objects, plain string for string defaults. */
   codec?: Codec<T>;
 }
 ```
 
+Options for `defineCookie`: the default, validation, format, and the cookie attributes.
+
 ### CookieOptions
 
 ```ts
 interface CookieOptions {
+  /** URL path the cookie is sent for. */
   path?: string;
+  /** Domain the cookie is sent to, e.g. `.acme.com` to share it with subdomains. */
   domain?: string;
   /** Seconds. */
   maxAge?: number;
+  /** Absolute expiry date. */
   expires?: Date;
+  /** Send only over HTTPS. Forced on when `sameSite` is `none`. */
   secure?: boolean;
   /** Server-set cookies only; the browser cannot write httpOnly cookies. */
   httpOnly?: boolean;
+  /** Cross-site sending rule. */
   sameSite?: 'lax' | 'strict' | 'none';
 }
 ```
+
+Attributes written into `Set-Cookie`. `path: '/'` and `sameSite: 'lax'` apply unless overridden.
 
 ### KvDriver
 
 ```ts
 interface KvDriver {
+  /** The raw string under `key`, or null when missing or expired. */
   get(key: string): Promise<string | null>;
+  /** Store a raw string; `ttl` is in milliseconds. */
   set(key: string, raw: string, options?: {
     ttl?: number;
   }): Promise<void>;
+  /** Delete one key. */
   remove(key: string): Promise<void>;
+  /** Keys starting with `prefix`. Optional; kitr does not call it. */
   keys?(prefix?: string): Promise<string[]>;
 }
 ```
+
+The server-side store behind `defineKv`: anything async with get, set and remove over strings.
+Wrap Redis, Cloudflare KV or a file in this shape and pass it as `kv` in `config/storage.ts`.
 
 ### KvItem
 
 ```ts
 interface KvItem<T> {
+  /** The name it was defined with, without the config prefix. */
   readonly key: string;
+  /** Returned when the key is missing, expired or invalid. */
   readonly default: T;
+  /** The stored value, or the default. */
   get(): Promise<T>;
+  /** Store a value, or compute it from the current one. `ttl` overrides the item's default. */
   set(value: T | ((current: T) => T), options?: {
     ttl?: number;
   }): Promise<void>;
+  /** Delete the stored value. */
   remove(): Promise<void>;
 }
 ```
+
+A typed server-side value returned by `defineKv`. Every method is async.
 
 ### KvItemOptions
 
 ```ts
 interface KvItemOptions<T> {
+  /** Returned when the key is missing, expired or invalid. */
   default: T;
+  /** Validate what comes back from the driver (Standard Schema). Invalid → default. */
   schema?: StandardSchemaV1<unknown, T>;
+  /** Format of the stored string. Default: JSON. */
   codec?: Codec<T>;
   /** Milliseconds to keep a value. */
   ttl?: number;
 }
 ```
+
+Options for `defineKv`: the default, validation, format and a default ttl.
 
 ### StorageConfig
 
@@ -313,16 +372,23 @@ interface StorageConfig {
 }
 ```
 
+Options for `config/storage.ts`: a key prefix, cookie defaults and the server-side kv driver.
+
 ### StorageDriver
 
 ```ts
 interface StorageDriver {
+  /** Shown in the devtools log, e.g. `web:local` or `capacitor:preferences`. */
   name: string;
   /** Load every stored key into memory before the first render. */
   hydrate?(): Promise<void>;
+  /** The raw string stored under `key`, or null. Must answer synchronously. */
   get(key: string): string | null;
+  /** Store a raw string. May persist in the background. */
   set(key: string, raw: string): void;
+  /** Delete one key. */
   remove(key: string): void;
+  /** Every stored key, for the devtools panel. */
   keys(): string[];
   /** Changes made elsewhere (another tab, the native side). */
   subscribe?(listener: (key: string | null) => void): () => void;
@@ -337,10 +403,15 @@ Reads are synchronous from a cache `hydrate()` fills at boot; writes go through 
 
 ```ts
 interface StorageItem<T> {
+  /** The name it was defined with, without the config prefix. */
   readonly key: string;
+  /** Which area it lives in. */
   readonly area: StorageArea;
+  /** The stored value, or the default when it is missing, invalid, expired or on the server. */
   get(): T;
+  /** Store a value, or compute it from the current one. A no-op on the server. */
   set(value: T | ((current: T) => T)): void;
+  /** Delete the stored value so `get()` returns the default. */
   remove(): void;
   /** Fires on set/remove here and in other tabs (`storage` event). */
   subscribe(listener: (value: T) => void): () => void;
@@ -349,23 +420,30 @@ interface StorageItem<T> {
 }
 ```
 
+A typed value in local or session storage, returned by `defineStorage`.
+
 ### StorageItemOptions
 
 ```ts
 interface StorageItemOptions<T> {
   /** Returned when the key is missing, unparsable, invalid or on the server. */
   default: T;
+  /** Where it is stored. Default `local`. */
   area?: StorageArea;
   /** Validate what comes back from storage (Standard Schema: zod, valibot...). Invalid → default. */
   schema?: StandardSchemaV1<unknown, T>;
+  /** Format of the stored envelope. Default: JSON. */
   codec?: Codec<T>;
   /** Bump when the shape changes; stored values with another version are migrated or dropped. */
   version?: number;
+  /** Converts a value stored under an older `version`. Without it, old values are dropped. */
   migrate?: (raw: unknown, fromVersion: number) => T;
   /** Keep this many ms, then treat as missing. Stored beside the value. */
   ttl?: number;
 }
 ```
+
+Options for `defineStorage`: the default, the area, and how stored values are checked.
 
 ### CookieSource
 
@@ -383,6 +461,8 @@ Anything that can hold cookies: a `Cookie` header string, a Headers object or `d
 type StorageArea = 'local' | 'session';
 ```
 
+`local` keeps a value until it is cleared; `session` keeps it for the current tab.
+
 ## kitr/storage/react
 
 ### CookieHeader
@@ -393,6 +473,9 @@ function CookieHeader({ value, children }: {
   children: ReactNode;
 }): import("react").FunctionComponentElement<import("react").ProviderProps<string | null | undefined>>;
 ```
+
+Gives `useCookie()` the request's `Cookie` header during server rendering, so the first
+HTML shows the stored value instead of the default. Wrap the tree once, in the root route.
 
 ### useCookie
 
@@ -437,9 +520,11 @@ Typed cookies on the server: `cookies(event)` in a controller or middleware,
 
 ```ts
 interface CookieEventLike {
+  /** The request; only its headers are read. */
   req: {
     headers: Headers;
   };
+  /** The response; `Set-Cookie` headers are appended here. */
   res: {
     headers: Headers;
   };
@@ -452,14 +537,18 @@ The parts of an h3 v2 event (or anything request/response shaped) that cookies n
 
 ```ts
 interface ServerCookies {
+  /** The item's value from the request's `Cookie` header, or its default. */
   get<T>(item: CookieItem<T>): T;
   /** Appends a `Set-Cookie` header; `httpOnly` and the other item options apply. */
   set<T>(item: CookieItem<T>, value: T, options?: CookieOptions): void;
+  /** Appends a `Set-Cookie` header that expires the cookie. */
   remove(item: CookieItem<unknown>): void;
   /** The raw `Cookie` header, for `<CookieHeader>` during SSR. */
   readonly header: string | null;
 }
 ```
+
+Typed cookie access for one request, returned by `cookies()`.
 
 ## kitr/storage/provider
 

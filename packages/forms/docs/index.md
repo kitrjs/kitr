@@ -388,13 +388,14 @@ For anything else that should react to the submit, call `useFormStatus()` inside
 ```tsx
 // app/features/invoices/cancel-link.tsx
 import { useFormStatus } from 'kitr/forms'
+import { Link } from 'kitr/router'
 
 export function CancelLink() {
   const { pending, isValid } = useFormStatus()
   return (
-    <a href="/invoices" aria-disabled={pending} data-ready={isValid || undefined}>
+    <Link to="/invoices" disabled={pending} data-ready={isValid || undefined}>
       Cancel
-    </a>
+    </Link>
   )
 }
 ```
