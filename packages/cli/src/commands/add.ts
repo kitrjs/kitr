@@ -8,6 +8,7 @@ import { loadPackage, resolvePackageName } from '../packages'
 import { parseFlags, platformTypeNames } from '../platforms'
 import { describeQuestions } from '../questions'
 import { recipeNames, recipes } from '../recipes'
+import { generateTypesQuietly } from '../types'
 import { addPlatformCommand } from './platforms'
 
 const OWN_FLAGS = new Set(['install', 'dry-run', 'verbose', 'yes', 'y', 'help', 'h'])
@@ -76,6 +77,7 @@ export const add = defineCommand({
     ctx.log.title(`Adding ${names.join(', ')}`)
     await configurePackages(ctx, codemods, names, { install: args.install, flags, yes: args.yes })
     await codemods.flush({ install: args.install })
+    if (args.install && !ctx.dryRun) await generateTypesQuietly(ctx)
     ctx.log.plain('')
     ctx.log.success(
       `${ctx.dryRun ? 'Would change' : 'Done. Changed'}: ${[...ctx.touched].join(', ') || 'nothing'}`,

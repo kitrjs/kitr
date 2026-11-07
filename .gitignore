@@ -4,6 +4,7 @@ dist
 .nitro
 .vinxi
 .tanstack
+.kitr
 *.tsbuildinfo
 .DS_Store
 coverage

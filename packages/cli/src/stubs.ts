@@ -37,14 +37,32 @@ function ${pascal(name)}Page() {
   )
 }
 `,
-  action: ({ name, feature }) => `import { defineAction } from 'kitr/actions'
+  query: ({ name, feature }) => `import { defineQuery } from 'kitr/actions'
 import { z } from 'zod'
 
 export const ${camel(name)}Input = z.object({
   id: z.string(),
 })
 
-export const ${camel(name)} = defineAction('${feature}.${camel(name)}', {
+/** \`useQuery('${feature}.${camel(name)}', { id })\` in a component; \`await ${camel(name)}({ id })\` anywhere. */
+export const ${camel(name)} = defineQuery('${feature}.${camel(name)}', {
+  input: ${camel(name)}Input,
+  staleTime: 30_000,
+  handler: async ({ input }) => {
+    // const db = useDb<AppDb>(useRequestApp())
+    return { id: input.id }
+  },
+})
+`,
+  mutation: ({ name, feature }) => `import { defineMutation } from 'kitr/actions'
+import { z } from 'zod'
+
+export const ${camel(name)}Input = z.object({
+  id: z.string(),
+})
+
+/** \`useMutation('${feature}.${camel(name)}')\` in a component; \`await ${camel(name)}({ id })\` anywhere. */
+export const ${camel(name)} = defineMutation('${feature}.${camel(name)}', {
   input: ${camel(name)}Input,
   // What the mutation does to the client cache after success.
   effects: (_result, input) => ({ invalidate: [['${feature}', 'list'], ['${feature}', 'detail', input.id]] }),

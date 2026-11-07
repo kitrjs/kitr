@@ -57,7 +57,7 @@ Server actions, API routes, external HTTP APIs and realtime channels all produce
 | `kitr/logger` | | `createLogger`, child loggers, request ids |
 | `kitr/server` | `h3` | `createServer` (standalone via srvx, or a `fetch` handler), request context, the `server()` platform |
 | `kitr/api` | | `defineRoutes`, controllers, validators, middleware, `toOpenApi`; `kitr/api/client` is the typed client |
-| `kitr/actions` | `@tanstack/react-start` server fns | `defineAction` with validation, middleware, one error shape, cache effects |
+| `kitr/actions` | `@tanstack/react-start` server fns | `defineQuery` and `defineMutation` with validation, middleware, one error shape, cache effects; `useQuery('projects.list')` by generated name |
 | `kitr/seo` | | `seo()`, `jsonLd()`, `ssrRoute()`, `cacheHeaders()`, `robotsTxt()`, prerender and sitemap config |
 | `kitr/realtime` | `partysocket`, `socket.io-client` | `defineChannel`, `createRealtimeClient` over `ws`, `socket.io` or `sse`; `kitr/realtime/server`, `kitr/realtime/react` |
 | `kitr/auth` | | `createAuth`, adapters (token, Better Auth, custom), `defineAbilities`, hooks; `kitr/auth/server` middleware |

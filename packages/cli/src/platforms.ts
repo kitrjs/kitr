@@ -500,6 +500,16 @@ export async function addPlatform(
 }
 
 /** Run one hook (`dev`, `build`, `start`, `scaffold`) for the named platforms. */
+/** `kitr types` before dev and build, so generated names are current before anything compiles. */
+async function generateTypes(ctx: ProjectContext) {
+  const { runTypes } = await import('./types')
+  const result = await runTypes(ctx, { quiet: !ctx.verbose })
+  if (result.written.length)
+    log.step(
+      `kitr types: ${result.written.length} file(s) written (${result.generators.join(', ')})`,
+    )
+}
+
 export async function runPlatforms(
   ctx: ProjectContext,
   hook: 'dev' | 'build' | 'start' | 'scaffold',
@@ -507,6 +517,7 @@ export async function runPlatforms(
   flags: Record<string, string | boolean> = {},
   mode: 'parallel' | 'sequential' = hook === 'build' ? 'sequential' : 'parallel',
 ) {
+  if (hook === 'dev' || hook === 'build') await generateTypes(ctx)
   const all = await loadPlatforms(ctx)
   const selected = selectPlatforms(all, names)
   const controller = new AbortController()

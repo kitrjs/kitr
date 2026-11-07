@@ -87,7 +87,8 @@ describe.each([
 ])('example %s', (name) => {
   const dir = join(root, 'examples', name)
 
-  it('typechecks', () => {
+  it('typechecks after kitr types', () => {
+    kitr(dir, 'types')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   })
 
@@ -127,7 +128,8 @@ describe('make:* generators produce code that typechecks and builds', () => {
 
   const generators: Array<[string, string, string]> = [
     ['make:route', 'reports', 'app/routes/reports.tsx'],
-    ['make:action', 'projects/archive', 'app/actions/projects/archive.ts'],
+    ['make:query', 'projects/list', 'app/actions/projects/list.ts'],
+    ['make:mutation', 'projects/archive', 'app/actions/projects/archive.ts'],
     ['make:controller', 'invoices', 'server/controllers/invoices_controller.ts'],
     ['make:middleware', 'audit', 'app/middleware/audit.ts'],
     ['make:channel', 'presence', 'app/channels/presence.ts'],

@@ -197,6 +197,93 @@ export class Codemods {
     this.ctx.touched.add('package.json')
   }
 
+  /**
+   * Make the project ready for `kitr types`: the `#kitr/*` path and `.kitr` include in
+   * tsconfig.json, `.kitr` in .gitignore, and `kitr types` before `tsc` in the typecheck script.
+   * Projects from `kitr new` have all of it; this brings older ones up to date. Idempotent.
+   */
+  enableGeneratedTypes() {
+    const tsPath = this.ctx.path('tsconfig.json')
+    if (existsSync(tsPath)) {
+      const ts = JSON.parse(readFileSync(tsPath, 'utf8'))
+      let changed = false
+      ts.compilerOptions ??= {}
+      ts.compilerOptions.paths ??= {}
+      if (!ts.compilerOptions.paths['#kitr/*']) {
+        ts.compilerOptions.paths['#kitr/*'] = ['./.kitr/*']
+        changed = true
+      }
+      ts.include ??= []
+      // A bare `.kitr` is skipped by tsc (dot folders), the explicit wildcard is not.
+      if (!ts.include.includes('.kitr/**/*')) {
+        ts.include.push('.kitr/**/*')
+        changed = true
+      }
+      if (changed) {
+        if (!this.ctx.dryRun) writeFileSync(tsPath, `${JSON.stringify(ts, null, 2)}\n`)
+        this.ctx.touched.add('tsconfig.json')
+      }
+    }
+    const ignorePath = this.ctx.path('.gitignore')
+    const ignore = existsSync(ignorePath) ? readFileSync(ignorePath, 'utf8') : ''
+    if (!ignore.split('\n').some((line) => line.trim() === '.kitr' || line.trim() === '.kitr/')) {
+      if (!this.ctx.dryRun)
+        writeFileSync(ignorePath, `${ignore}${ignore && !ignore.endsWith('\n') ? '\n' : ''}.kitr\n`)
+      this.ctx.touched.add('.gitignore')
+    }
+    const pkg = this.ctx.pkg
+    const typecheck: string | undefined = pkg.scripts?.typecheck
+    if (typecheck && !typecheck.includes('kitr types'))
+      this.setScript('typecheck', `kitr types && ${typecheck}`)
+    if (pkg.imports && !pkg.imports['#kitr/*']) {
+      this.setPackageField('imports', { ...pkg.imports, '#kitr/*': './.kitr/*' })
+    }
+  }
+
+  /**
+   * Pass the generated operations to `createApp` in `app/app.ts`: adds
+   * `import { operations } from '#kitr/actions'` and `operations` to the options. Idempotent.
+   */
+  registerOperations() {
+    const file = `${this.ctx.readRc().directories.app ?? 'app'}/app.ts`
+    const full = this.ctx.path(file)
+    if (!existsSync(full) || this.ctx.dryRun) return
+    const src = readFileSync(full, 'utf8')
+    if (src.includes("'#kitr/actions'")) return
+    const withImport = src.replace(
+      /^((?:import[^\n]*\n)+)/m,
+      `$1import { operations } from '#kitr/actions'\n`,
+    )
+    const next = withImport.replace(/createApp\(\{\s*/, (m) => `${m}operations, `)
+    if (next === src) {
+      this.ctx.log.warn(
+        `${file}: could not find createApp({ ... }); add \`operations\` from '#kitr/actions' yourself`,
+      )
+      return
+    }
+    writeFileSync(full, next)
+    this.ctx.touched.add(file)
+  }
+
+  unregisterOperations() {
+    const file = `${this.ctx.readRc().directories.app ?? 'app'}/app.ts`
+    const full = this.ctx.path(file)
+    if (!existsSync(full) || this.ctx.dryRun) return
+    const src = readFileSync(full, 'utf8')
+    if (!src.includes("'#kitr/actions'")) return
+    const next = src
+      .replace(/^import \{ operations \} from '#kitr\/actions'\n/m, '')
+      .replace(/(createApp\(\{\s*)operations,\s*/, '$1')
+      .replace(/,\s*operations(\s*\})/, '$1')
+    writeFileSync(full, next)
+    this.ctx.touched.add(file)
+  }
+
+  /** Set a package.json script, replacing what is there. */
+  setScript(name: string, command: string) {
+    this.addScript(name, command)
+  }
+
   /** Set a package.json script unless it exists. */
   addScript(name: string, command: string) {
     const pkgPath = this.ctx.path('package.json')

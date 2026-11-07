@@ -33,7 +33,8 @@
 | --- | --- |
 | `make:route projects/index` | `app/routes/projects/index.tsx` with route path `/projects/` |
 | `make:route projects/:id` | `app/routes/projects/$id.tsx` |
-| `make:action projects/create` | `app/actions/projects/create.ts` (`defineAction`) |
+| `make:query projects/list` | `app/actions/projects/list.ts` (`defineQuery('projects.list', ...)`) |
+| `make:mutation projects/create` | `app/actions/projects/create.ts` (`defineMutation('projects.create', ...)`) |
 | `make:controller projects [--resource]` | `server/controllers/projects_controller.ts` (index/show/store/update/destroy with `--resource`) |
 | `make:middleware audit` | `app/middleware/audit.ts` |
 | `make:channel chat` | `app/channels/chat.ts` (`defineChannel`) |
@@ -66,6 +67,41 @@ The default registry is kitr's own (`registry/dist` in this repo). Point `--regi
 | `kitr api:sync` | Loads the routes file (`server/routes.ts`), writes `openapi.json` (OpenAPI 3.1; schemas from zod, valibot or arktype when present) and `routes.gen.ts`, a plain route table for clients that cannot import the server. `--file`, `--out`. |
 | `kitr routes:list` | Prints the route table: method, path, name. |
 | `kitr css:types` | Writes a `.d.ts` beside every `*.module.css`. `--check` fails when stale. |
+
+## Type generation
+
+`kitr types` writes the project's generated types under `.kitr/`, a folder that is ignored by git, included in `tsconfig.json` and reachable as `#kitr/*`. `kitr dev` and `kitr build` run it first, the Vite plugin reruns the generator whose files changed while the dev server runs, `kitr new` and `kitr add` run it after installing, and the kits' `typecheck` script is `kitr types && tsc --noEmit`.
+
+| Command | What it does |
+| --- | --- |
+| `kitr types` | Runs every generator and writes the files whose content changed. |
+| `kitr types --check` | Lists stale files and exits non-zero instead of writing. For CI. |
+| `kitr types --watch` | Keeps running and regenerates on change, for editors without the dev server. |
+| `kitr types --only actions` | Runs one generator by name. |
+
+| Generator | From | Writes |
+| --- | --- | --- |
+| `platforms` (built in) | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`: the `KitrPlatforms` augmentation, so `app.platform` and `usePlatform().name` are the project's names. |
+| `actions` (`@kitr/actions`) | `app/actions/**/*.ts` | `.kitr/actions.ts`: `operations` and `actions` maps and the `Operations` augmentation behind `useQuery('projects.list')`. |
+
+A package adds a generator by exporting one from a `./types` subpath and naming it in its manifest:
+
+```ts
+// packages/<name>/src/types.ts
+import { defineTypes } from '@kitr/core'
+
+export default defineTypes({
+  name: 'channels',
+  watch: (rc) => [`${rc.directories.app ?? 'app'}/channels/**/*.ts`],
+  generate: (ctx) => [{ file: 'channels.d.ts', content: render(ctx.glob('app/channels', '**/*.ts')) }],
+})
+```
+
+```json
+{ "kitr": { "types": "./types" }, "exports": { "./types": "./dist/types.js" } }
+```
+
+`generate` is pure: it returns `{ file, content }` pairs relative to `.kitr/` and the runner writes them. `watch` says which files re-run it in dev. `kitr doctor` warns when `.kitr/` is stale.
 
 ## Leaving kitr
 

@@ -46,6 +46,28 @@ export {
   toKitrError,
 } from './errors'
 export {
+  defineTypes,
+  type GenerateContext,
+  type GeneratedFile,
+  type GenerateRcInfo,
+  globToRegExp,
+  isTypesGenerator,
+  pickTypesGenerator,
+  type TypesGenerator,
+} from './generate'
+export {
+  type MutationName,
+  type OperationInput,
+  type OperationLike,
+  type OperationName,
+  type OperationOf,
+  type OperationOutput,
+  OperationRegistry,
+  type Operations,
+  operations,
+  type QueryName,
+} from './operations'
+export {
   coerceOption,
   definePlatform,
   isPlatformInstance,
@@ -60,6 +82,7 @@ export {
   type PlatformOptionType,
   parseOptions,
 } from './platform'
+export type { KitrPlatforms, PlatformName, PlatformTypeOf } from './platforms'
 export { defineProvider, type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 export { defaultDirectories, defineKitrConfig, type KitrRc } from './rc'
 export {
