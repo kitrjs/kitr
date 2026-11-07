@@ -13,6 +13,7 @@ import type {
 } from 'electron'
 import type { IpcEvents, IpcSchema } from './client'
 
+/** One main-process handler per channel of the schema: Electron's invoke event, then the channel's arguments. */
 export type IpcHandlers<S extends IpcSchema> = {
   [K in keyof S]: (
     event: IpcMainInvokeEvent,
@@ -104,6 +105,7 @@ export function serveClient(protocol: typeof import('electron').protocol, client
   })
 }
 
+/** Options of `createMainWindow()`: every `BrowserWindow` option plus where to load the app from. */
 export interface MainWindowOptions extends BrowserWindowConstructorOptions {
   /** Dev server URL. kitr sets `ELECTRON_RENDERER_URL` for `kitr dev`. */
   devUrl?: string

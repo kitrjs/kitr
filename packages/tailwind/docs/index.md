@@ -24,8 +24,8 @@ What `kitr add` does:
 - Installs `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite`, `clsx`, `tailwind-merge` and `class-variance-authority`.
 - Adds `@kitr/tailwind` to `packages` in `kitrrc.ts`. The `kitr()` Vite plugin sees it there and loads `@tailwindcss/vite`.
 - Writes `config/tailwind.ts` (shown under [Configure](#configure)).
-- Writes `app/styles/app.css`, the stylesheet Tailwind starts from.
-- In `app/routes/__root.tsx`, replaces `import 'kitr/theme/styles.css'` with `import '#app/styles/app.css'`, or adds that import after the first import line when the file has neither.
+- Writes `app/styles/app.css`, the stylesheet Tailwind starts from. When `app/styles/tokens.css` exists (the [theme](/packages/theme) package writes it), the stylesheet imports it last, so your token values win over kitr's.
+- In `app/routes/__root.tsx`, replaces `import 'kitr/theme/styles.css'` with `import '#app/styles/app.css'`, or adds that import after the block of imports at the top of the file when it has neither.
 - Adds a `## kitr: tailwind` section to `AGENTS.md`: utilities map to kitr tokens, merge classes with `cn()`, dark mode is `data-theme="dark"` on `<html>`.
 
 It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits include tailwind, and so do the preset kits built on them.
@@ -51,7 +51,7 @@ export default defineConfig({
 | `entry` | `'app/styles/app.css'` | The stylesheet Tailwind starts from, relative to the project root. |
 | `preset` | `true` | Whether the app uses kitr's preset (`kitr/tailwind/preset.css`). |
 
-These two options record how the project is set up; the build does not read them today. Tailwind v4 is configured in CSS, so what actually happens is decided by the stylesheet. To change the entry, import a different file from `__root.tsx`. To drop the preset, remove its `@import` line ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` warns when `config/tailwind.ts` is missing, so keep the file.
+These two options record how the project is set up; the build does not read them today. Tailwind v4 is configured in CSS, so what actually happens is decided by the stylesheet. To change the entry, import a different file from `__root.tsx`. To drop the preset, remove its `@import` line ([Use plain Tailwind colours](#use-plain-tailwind-colours)).
 
 The stylesheet `kitr add` writes is the real configuration:
 
@@ -63,6 +63,8 @@ The stylesheet `kitr add` writes is the real configuration:
 
 @source '../';
 ```
+
+With `app/styles/tokens.css` present, `@import './tokens.css';` follows the theme import.
 
 - `@import 'tailwindcss'` loads Tailwind's base styles and utilities.
 - `@import 'kitr/tailwind/preset.css'` maps kitr's tokens onto Tailwind's theme, makes `dark:` follow `data-theme="dark"` and sets the page's base colours and font.
@@ -461,7 +463,7 @@ Most Tailwind problems in a kitr app come from one of a few causes. Check them i
 | A caller's `className` does not win | The component joins classes with a template string. | Use `cn(base, className)`. |
 | A custom class disappears when merged | tailwind-merge treats it as a conflicting class. | Extend it ([Teach cn() about your own tokens](#teach-cn-about-your-own-tokens)). |
 
-`kitr doctor` checks the parts kitr owns: it warns when `config/tailwind.ts` is missing and when `vite.config.ts` does not use the `kitr()` plugin. In the browser's devtools, a class that appears on the element but has no matching rule in the Styles panel was not generated; one that has a rule crossed out was overridden.
+`kitr doctor` checks the part kitr owns: it warns when `vite.config.ts` does not use the `kitr()` plugin. In the browser's devtools, a class that appears on the element but has no matching rule in the Styles panel was not generated; one that has a rule crossed out was overridden.
 
 ## Testing
 

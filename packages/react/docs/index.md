@@ -507,6 +507,45 @@ export async function refreshOpenInvoices(team: string) {
 
 `make()` awaits an async factory; `use()` does not. Both return the same cached instance.
 
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `kitr make:component <name>` | Writes a component to `app/components/<kebab-name>.tsx` (or your `directories.components`). `--force` overwrites an existing file. |
+| `kitr make:hook <name>` | Writes a hook to `app/hooks/use-<kebab-name>.ts`. `--force` overwrites an existing file. |
+| `kitr eject stub component`, `kitr eject stub hook` | Copies the generator's template to `stubs/<kind>.ts`, so `make:*` writes your own starting point. |
+
+`kitr make:component invoice-summary` writes `app/components/invoice-summary.tsx`:
+
+```tsx
+// app/components/invoice-summary.tsx
+import type { ReactNode } from 'react'
+
+export interface InvoiceSummaryProps {
+  children?: ReactNode
+  className?: string
+}
+
+export function InvoiceSummary({ children, className }: InvoiceSummaryProps) {
+  return <div className={className}>{children}</div>
+}
+```
+
+`kitr make:hook order-filter` writes `app/hooks/use-order-filter.ts`, a toggle you rename and grow:
+
+```ts
+// app/hooks/use-order-filter.ts
+import { useCallback, useState } from 'react'
+
+export function useOrderFilter(initial = false) {
+  const [value, setValue] = useState(initial)
+  const toggle = useCallback(() => setValue((v) => !v), [])
+  return { value, setValue, toggle }
+}
+```
+
+React adds no `kitr doctor` checks.
+
 ## Errors
 
 These are thrown during render, so React's nearest error boundary receives them. With the router, that is the route's error screen.

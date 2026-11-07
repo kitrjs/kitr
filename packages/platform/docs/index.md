@@ -8,7 +8,7 @@ order: 1
 
 An app that ships to the browser, a phone and a desktop window keeps asking the same questions: where am I running, am I online, did the user press back, which link opened me, how big is the notch. `kitr/platform` answers them once, with one `platform` service and a set of React hooks, so components never sniff user agents or check for `window.Capacitor`.
 
-It is built on the kitr driver registry: each platform package registers a `PlatformDriver` for the place it runs, and `kitr/platform` wraps whichever one is active, filling every gap with a browser default. [Web](/packages/web) registers the browser driver, [Mobile](/packages/mobile) the Capacitor driver and [Desktop](/packages/desktop) the Tauri and Electron drivers.
+It is built on the kitr driver registry: each platform package registers a `PlatformDriver` for the place it runs, and `kitr/platform` wraps whichever one is active, filling every gap with a browser default. [Web](/packages/web) registers the browser driver, [Mobile](/packages/mobile) the Capacitor driver, [Desktop](/packages/desktop) the Electron driver and [Tauri](/packages/tauri) the Tauri driver.
 
 It runs on both sides. In the browser and in native shells it reports the real device; during server rendering it returns safe defaults (online, in the foreground, no insets), so the first render matches the HTML. For device features such as the camera, biometrics or haptics, use [Native](/packages/native) instead.
 
@@ -20,18 +20,16 @@ The examples on this page follow the Acme orders app at `app.acme.com`, which ru
 kitr add platform
 ```
 
-What `kitr add platform` does:
+What `kitr add platform` does, in order:
 
-- Installs `@kitr/platform`.
-- Runs the [React](/packages/react) recipe first if it is missing.
+- Installs `@kitr/platform` and adds it to `packages` in `kitrrc.ts`. Platform requires [React](/packages/react), so `kitr add` runs its setup first when it is missing.
 - Adds `() => import('@kitr/platform/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/platform` to `packages` in `kitrrc.ts`.
 - Writes `config/platform.ts` (shown under Configure) and regenerates `config/index.ts`.
-- Adds a `kitr: platform` section to `AGENTS.md`: use the hooks from `kitr/platform/react` instead of user agents or `window.__TAURI__`, and `platform.is()` to match a type or an OS.
+- Adds a `## kitr: platform` section to `AGENTS.md`: use the hooks from `kitr/platform/react` instead of user agents or `window.__TAURI__`, `platform.is()` to match a type or an OS, and the web, desktop, tauri and mobile providers register the drivers.
 
 `kitr add platform` asks no questions and adds no env variables.
 
-You rarely run it by hand. `kitr add mobile` and `kitr add desktop` add it for you, because both platforms need it, and the `mobile` and `desktop` kits include it.
+You rarely run it by hand. `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it for you, because those platforms need it, and the `mobile` and `desktop` kits include it.
 
 `kitr remove platform` reverses every step above: it removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/platform.ts`, then lists the files that still import `kitr/platform`.
 
@@ -449,7 +447,8 @@ Platform providers register a driver for the `platform` capability. The registry
 | --- | --- | --- | --- |
 | `kitr/web/provider` | always | `web` | 0 |
 | `kitr/mobile/provider` | inside Capacitor | `mobile` | 10 |
-| `kitr/desktop/provider` | inside Tauri or Electron | `desktop` | 10 |
+| `kitr/desktop/provider` | inside Electron | `desktop` | 10 |
+| `kitr/tauri/provider` | inside Tauri | `desktop` | 10 |
 | none | no driver registered | `web` in a browser, `server` without `window` | |
 
 So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A driver may leave methods out; the service fills them in:
@@ -636,6 +635,6 @@ To make the kiosk a platform that `kitr dev` and `kitr build` can run, write a p
 - [API reference](/packages/platform/api)
 - [Web](/packages/web): the browser driver and installable apps
 - [Mobile](/packages/mobile): the Capacitor driver, deep link registration and native storage
-- [Desktop](/packages/desktop): the desktop shells
+- [Desktop](/packages/desktop): the Electron desktop shell, and [Tauri](/packages/tauri), its lighter alternative
 - [Offline](/packages/offline): queued writes and a cache that pauses without a connection
 - [Platforms](/docs/platforms): every platform type and the commands they share

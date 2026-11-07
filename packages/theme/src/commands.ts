@@ -79,6 +79,7 @@ export async function addComponents(
   await codemods.flush({ install: options.install })
 }
 
+/** `kitr ui`: the `add` and `list` subcommands for owned components from a shadcn-compatible registry. */
 export const ui = {
   meta: {
     name: 'ui',

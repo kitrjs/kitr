@@ -22,15 +22,13 @@ kitr add updater
 
 What `kitr add` does:
 
-- Adds [Platform](/packages/platform) first when the project does not have it yet, because `updater` requires `platform`. The `desktop` and `mobile` kits already include it.
-- Installs `@kitr/updater`.
+- Installs `@kitr/updater` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/updater/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/updater` to `packages` in `kitrrc.ts`.
 - Writes `config/updater.ts` (shown under [Configure](#configure)).
 - Writes `app/components/update-banner.tsx`, a banner that stays hidden until an update is ready (shown under [Show your first update banner](#show-your-first-update-banner)).
 - Adds a `## kitr: updater` section to `AGENTS.md`: `useUpdate()` from `kitr/updater/react` drives the banner, which is mounted once in the root layout; status runs idle, checking, available, downloading, ready; the web driver watches the service worker and desktop and mobile packages register theirs.
 
-It adds no environment variables or scripts. `kitr add updater` asks no questions, and no kit includes it. It is a client package, so a server-only project skips it with a warning. To preview the changes:
+It adds no environment variables or scripts. `kitr add updater` asks no questions, and no kit includes it. To preview the changes:
 
 ```sh
 kitr add updater --dry-run
@@ -327,7 +325,7 @@ export function checkWhenFocused(app: KitrApp) {
 | Desktop and mobile shells | The service-worker driver, unless a provider registers one | Same as the browser. |
 | Server | None; the provider binds nothing | Not available. |
 
-Today [Desktop](/packages/desktop) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `updater`. To update an installed app, register a driver for your shell's updater, as shown under [Extend](#extend).
+Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `updater`. To update an installed app, register a driver for your shell's updater, as shown under [Extend](#extend).
 
 ## Testing
 
@@ -519,7 +517,7 @@ export default defineProvider({
 
 Create the provider with `kitr make:provider electron_updater` and add `() => import('#app/providers/electron_updater_provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, the banner now shows the release version, the button shows download progress, and the app restarts on the new build. In the web build `ipc.available` is `false`, so the service-worker driver still applies.
 
-A Tauri app does the same with [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/): `check()` resolves to an update or `null`, and the update's `downloadAndInstall()` reports progress before you relaunch. The `UpdaterDriver` and `UpdateInfo` types are in the [API reference](/packages/updater/api).
+A [Tauri](/packages/tauri) app does the same with [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/): `check()` resolves to an update or `null`, and the update's `downloadAndInstall()` reports progress before you relaunch. The `UpdaterDriver` and `UpdateInfo` types are in the [API reference](/packages/updater/api).
 
 ## Next steps
 
@@ -527,5 +525,5 @@ A Tauri app does the same with [`@tauri-apps/plugin-updater`](https://v2.tauri.a
 - [Web](/packages/web): the `pwa` option that builds the service worker.
 - [vite-plugin-pwa prompt for update](https://vite-pwa-org.netlify.app/guide/prompt-for-update): how the waiting worker is built.
 - [electron-updater](https://www.electron.build/auto-update): publishing and signing desktop updates.
-- [Desktop](/packages/desktop): the shell an installed-app driver plugs into.
+- [Desktop](/packages/desktop): the Electron shell an installed-app driver plugs into. [Tauri](/packages/tauri) is the alternative shell.
 - [Offline](/packages/offline): keep data across versions, dropped when `VITE_APP_VERSION` changes.

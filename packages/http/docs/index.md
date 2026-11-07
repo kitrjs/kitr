@@ -30,8 +30,7 @@ What `kitr add` does:
 
 - Adds [Query](/packages/query) first if the project does not have it, because `http` requires it.
 - Installs `@kitr/http` and `ky`.
-- Adds `() => import('@kitr/http/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/http` to `packages` in `kitrrc.ts`.
+- Adds `'@kitr/http'` to `packages` and `() => import('@kitr/http/provider')` to `providers` in `kitrrc.ts`.
 - Adds `VITE_API_URL: e.url({ default: 'http://localhost:3333' })` to the `public` block of `createEnv` in `app/env.ts`.
 - Adds `VITE_API_URL=http://localhost:3333` to `.env.example`, and to `.env` when that file exists.
 - Writes `config/http.ts` (shown under [Configure](#configure)).

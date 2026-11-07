@@ -64,8 +64,12 @@ for (const { dir, pkg } of pkgs) {
     const s = readFileSync(setup, 'utf8')
     if (/^\s*(commands|generators)\s*[:(]/m.test(s) && !h2.includes('Commands'))
       problems.push('ships commands or generators but has no "Commands" section')
-    if (/^\s*questions\s*[:(]/m.test(s) && !/--\w/.test(section(src, 'Install') ?? ''))
-      problems.push('asks questions on add but the Install section shows no flags')
+    // Every question is a flag (`--worker` / `--no-worker`); Install shows each one.
+    const qs = s.match(/^\s*questions\s*:\s*\[([\s\S]*?)^\s*\],?\s*$/m)?.[1] ?? ''
+    const install = section(src, 'Install') ?? ''
+    for (const [, q] of qs.matchAll(/^\s{4,6}name:\s*'([\w-]+)'/gm))
+      if (!install.includes(`--${q}`) && !install.includes(`--no-${q}`))
+        problems.push(`asks "${q}" on add but the Install section doesn't show --${q}`)
   }
 
   // Configure: full config file plus the options table.

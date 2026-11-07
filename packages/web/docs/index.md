@@ -10,7 +10,7 @@ A marketing page that must load fast from a CDN, a dashboard behind a login, a s
 
 It is built on [Vite](https://vite.dev) and [TanStack Start](https://tanstack.com/start/latest), with [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for installable apps. kitr adds the platform contract on top: `kitr dev`, `kitr build` and `kitr start` know how to run each mode, `kitr config` edits the options, and `kitr doctor` checks the setup.
 
-The platform options run in the CLI and the Vite plugin; the hooks in `kitr/web/client` run in the browser. To ship the same app as a native iOS or Android app, add the [Mobile](/packages/mobile) platform next to this one. For a desktop window, use [Desktop](/packages/desktop). For an API with no UI, use the [Server](/packages/server) platform.
+The platform options run in the CLI and the Vite plugin; the hooks in `kitr/web/client` run in the browser. To ship the same app as a native iOS or Android app, add the [Mobile](/packages/mobile) platform next to this one. For a desktop window, use [Desktop](/packages/desktop), which ships the app in Electron; [Tauri](/packages/tauri) is the lighter alternative that uses the operating system's webview. For an API with no UI, use the [Server](/packages/server) platform.
 
 The examples on this page build the Acme orders app at `app.acme.com`: Ada's team lists orders and invoices in the browser, and later makes the app installable.
 
@@ -22,18 +22,17 @@ Add a web platform named `site`:
 kitr add web site
 ```
 
-`web` is the platform type and `site` is the name you address it by (`kitr dev site`). `kitr add web` with no name stops and prints `kitr add web <name> [--option value]   e.g. kitr add web site`, because `web` is a platform type, not a package.
+`web` is the platform type and `site` is the name you address it by (`kitr dev site`). `kitr add web` with no name uses the usual name for the type and prints `No name given: calling the web platform "site".`
 
-What `kitr add web site` does:
+What `kitr add web site` does, in order:
 
-- Installs `@kitr/web`, `@tanstack/react-start`, and `vite`, `@vitejs/plugin-react` and `@tanstack/router-plugin` as dev dependencies. With `--pwa` it adds `vite-plugin-pwa` (dev). With `--mode ssr` it adds `srvx`.
-- Adds `@kitr/web` to `packages` in `kitrrc.ts`.
+- Adds `@kitr/web` to `packages` in `kitrrc.ts` and installs it. The web package requires [Router](/packages/router), which requires [React](/packages/react), so `kitr add` runs their setup first when they are missing. Together they write `app/app.ts`, `app/client.tsx`, `app/router.tsx` and the starter routes.
+- Installs `@tanstack/react-start`, and `vite`, `@vitejs/plugin-react` and `@tanstack/router-plugin` as dev dependencies. With `--pwa` it adds `vite-plugin-pwa` (dev). With `--mode ssr` it adds `srvx`.
 - Adds `() => import('@kitr/web/provider')` to `providers` in `kitrrc.ts`.
 - Writes `site: web({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { web } from 'kitr/web'`.
-- Runs the [Router](/packages/router) recipe if it is missing, which runs the [React](/packages/react) recipe first. Together they write `app/app.ts`, `app/client.tsx`, `app/router.tsx` and the starter routes.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
-- With `--pwa`, writes `public/icons/README.md`, a note naming the two icons the manifest points at.
-- Adds a `kitr: platform site` section to `AGENTS.md`. It tells agents how `kitr dev`, `kitr build` and `kitr start` behave for the chosen mode, and with `pwa` to render an update banner once.
+- With `--pwa`, writes `public/icons/README.md`, a note naming the two icons the manifest points at. `--no-scaffold` skips this step.
+- Adds a `## kitr: platform site` section to `AGENTS.md`. It tells agents how `kitr dev`, `kitr build` and `kitr start` behave for the chosen mode, and with `pwa` to render an update banner once.
 
 `kitr/web` writes no `config/*.ts` file and adds no env variables.
 
@@ -126,7 +125,7 @@ A bad port fails the same way with `port: port must be a number between 0 and 65
 | `HOST` | The interface `kitr start` binds when no `--host` flag is given. |
 | `KITR_PLATFORM` | Set by `kitr dev`, `kitr build` and `kitr start` to the platform name. The Vite plugin uses it to pick the platform it builds. |
 
-The other platform types each have their own guide and options table: [Server](/packages/server), [Desktop](/packages/desktop) and [Mobile](/packages/mobile). [Platforms](/docs/platforms) lists them side by side.
+The other platform types each have their own guide and options table: [Server](/packages/server), [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile). [Platforms](/docs/platforms) lists them side by side.
 
 ## Ship your first page
 
@@ -580,7 +579,7 @@ export function Footer() {
 | Constant | Value |
 | --- | --- |
 | `import.meta.env.KITR_PLATFORM` | The platform name from `kitrrc.ts`, such as `'site'` or `'admin'`. |
-| `import.meta.env.KITR_PLATFORM_TYPE` | The platform type: `'web'`, `'mobile'` or `'desktop'`. |
+| `import.meta.env.KITR_PLATFORM_TYPE` | The platform type: `'web'`, `'mobile'`, `'desktop'` or `'tauri'`. |
 
 Without `KITR_PLATFORM` (a plain `vite` run), the plugin builds the first web platform in `kitrrc.ts`.
 
@@ -600,7 +599,7 @@ export function InstallHint() {
 }
 ```
 
-During server rendering the driver reports the OS as `'server'`. The web driver has the lowest priority, so inside a native shell the [Mobile](/packages/mobile) or [Desktop](/packages/desktop) driver wins.
+During server rendering the driver reports the OS as `'server'`. The web driver has the lowest priority, so inside a native shell the [Mobile](/packages/mobile), [Desktop](/packages/desktop) or [Tauri](/packages/tauri) driver wins.
 
 ## Build for production
 
@@ -649,13 +648,14 @@ For `spa`, tell the host to answer unknown paths with `index.html` (on Netlify, 
 
 | Command | What it does |
 | --- | --- |
-| `kitr add web <name>` | Adds a web platform: installs the packages, writes `platforms.<name>` in `kitrrc.ts`, runs the router recipe and adds the scripts. |
+| `kitr add web [name]` | Adds a web platform (named `site` when you leave the name out): installs the packages, adds router and React when missing, writes `platforms.<name>` in `kitrrc.ts` and adds the scripts. |
+| `kitr css:types` | Writes a `.d.ts` next to every `*.module.css` under `app/`, so CSS Module class names are typed. `--dir <dir>` scans another directory; `--check` writes nothing and exits with code 1 when a typing is stale. |
 | `kitr dev [names...]` | Runs `vite dev --port <port> --strictPort`, plus `--host` and `--open` when set. |
 | `kitr build [names...]` | Runs `vite build` into `dist/<name>`. |
 | `kitr start [names...]` | Serves `dist/<name>` with srvx: static files, the SPA fallback, or the `ssr` server bundle. |
 | `kitr config <name> [option] [value]` | Reads or sets an option in `kitrrc.ts`, validated first. `--unset` removes one. |
 | `kitr platforms` | Lists every platform with its options. |
-| `kitr platforms types` | Lists the platform types (`web`, `desktop`, `mobile`, `server`). |
+| `kitr platforms types` | Lists the platform types (`web`, `desktop`, `tauri`, `mobile`, `server`). |
 | `kitr platforms scaffold <name>` | Writes the platform's files that are missing (`public/icons/README.md` with `pwa`). Existing files are kept. |
 | `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`. |
 

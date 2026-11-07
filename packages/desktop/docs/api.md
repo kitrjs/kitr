@@ -35,9 +35,13 @@ interface DesktopOptions {
   port: number;
   /** Window title. Default the package name. */
   title?: string;
+  /** Initial window width in pixels. Default 1200. */
   width: number;
+  /** Initial window height in pixels. Default 800. */
   height: number;
+  /** Smallest width the user can resize the window to. */
   minWidth?: number;
+  /** Smallest height the user can resize the window to. */
   minHeight?: number;
   /** Reverse-DNS bundle id. Default `com.example.<app>`. */
   appId?: string;
@@ -45,6 +49,9 @@ interface DesktopOptions {
   devtools: boolean;
 }
 ```
+
+Options of `desktop()` in `kitrrc.ts`. Every option but `port` is written into the scaffolded
+`main.ts` and `electron-builder.yml` by `kitr add`; edit those files to change them later.
 
 ## kitr/desktop/client
 
@@ -70,27 +77,39 @@ True in an Electron renderer (checks the bridge, then the user agent).
 const IPC_BRIDGE_KEY = "kitrIpc";
 ```
 
+The `window` property the preload script exposes the bridge under, and the client reads by default.
+
 ### IpcBridge
 
 ```ts
 interface IpcBridge {
+  /** Call a handler in the main process and resolve with its return value. */
   invoke(channel: string, ...args: unknown[]): Promise<unknown>;
+  /** Listen to a channel the main process sends on. Returns the unsubscribe function. */
   on(channel: string, listener: (...args: unknown[]) => void): () => void;
+  /** Send a one-way message to `ipcMain.on()` listeners, with no reply. */
   send(channel: string, ...args: unknown[]): void;
 }
 ```
+
+The untyped bridge `exposeIpc()` puts on `window`; `createIpcClient()` wraps it with your schema's types.
 
 ### IpcClient
 
 ```ts
 type IpcClient<S extends IpcSchema, E extends IpcEvents = {}> = {
+  /** Call a command declared in the schema. Rejects when the bridge is missing or the handler throws. */
   invoke<K extends keyof S & string>(channel: K, ...args: Parameters<S[K]>): Promise<Awaited<ReturnType<S[K]>>>;
+  /** Listen to an event pushed from main. Returns the unsubscribe function; a no-op outside Electron. */
   on<K extends keyof E & string>(channel: K, listener: (...args: Parameters<E[K]>) => void): () => void;
+  /** Send a one-way, untyped message to `ipcMain.on()` listeners. Does nothing outside Electron. */
   send(channel: string, ...args: unknown[]): void;
   /** True when the preload bridge is present (running inside Electron). */
   readonly available: boolean;
 };
 ```
+
+The typed client `createIpcClient<Schema, Events>()` returns for the renderer.
 
 ### IpcEvents
 
@@ -208,6 +227,8 @@ interface MainWindowOptions extends BrowserWindowConstructorOptions {
 }
 ```
 
+Options of `createMainWindow()`: every `BrowserWindow` option plus where to load the app from.
+
 ### IpcHandlers
 
 ```ts
@@ -215,6 +236,8 @@ type IpcHandlers<S extends IpcSchema> = {
   [K in keyof S]: (event: IpcMainInvokeEvent, ...args: Parameters<S[K]>) => ReturnType<S[K]> | Promise<Awaited<ReturnType<S[K]>>>;
 };
 ```
+
+One main-process handler per channel of the schema: Electron's invoke event, then the channel's arguments.
 
 ## kitr/desktop/preload
 

@@ -47,6 +47,7 @@ function write(file: string, content: string) {
   writeFileSync(path, content)
 }
 
+/** `kitr api:sync`: writes the OpenAPI document and the client route table from the routes file. */
 export const apiSync = {
   meta: {
     name: 'api:sync',
@@ -87,6 +88,7 @@ export const apiSync = {
   },
 }
 
+/** `kitr routes:list`: prints every route with its method, path and name. */
 export const routesList = {
   meta: { name: 'routes:list', description: 'Print the API route table.' },
   args: { file: { type: 'string' } },
