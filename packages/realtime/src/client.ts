@@ -26,6 +26,11 @@ export interface SocketClientOptions {
   reconnect?: { maxRetries?: number; minReconnectionDelay?: number; maxReconnectionDelay?: number }
   /** Called for every server error that isn't tied to a subscription. */
   onError?: (error: KitrErrorShape) => void
+  /**
+   * Ping interval in ms while open. A connection that has not answered the previous ping by the
+   * next one is treated as dead and reconnected. Default 25 000; 0 disables.
+   */
+  heartbeat?: number
 }
 
 /** The connection state a transport reports: connecting, open or closed. */
@@ -99,14 +104,43 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
     set.add(sub)
   }
 
+  // Proxies and load balancers drop idle sockets without a close frame; pings keep the socket
+  // busy, and a missing pong shows the connection is gone so it can reconnect.
+  const heartbeat = options.heartbeat ?? 25_000
+  let pinger: ReturnType<typeof setInterval> | undefined
+  let awaitingPong = false
+  const stopHeartbeat = () => {
+    if (pinger) clearInterval(pinger)
+    pinger = undefined
+    awaitingPong = false
+  }
+  const startHeartbeat = () => {
+    stopHeartbeat()
+    if (!(heartbeat > 0)) return
+    pinger = setInterval(() => {
+      if (awaitingPong) {
+        stopHeartbeat()
+        ws.reconnect()
+        return
+      }
+      awaitingPong = true
+      send({ t: 'ping' })
+    }, heartbeat)
+  }
+
   ws.addEventListener('open', () => {
     setStatus('open')
+    startHeartbeat()
     for (const sub of subs.values()) send({ t: 'sub', id: sub.id, ch: sub.channel, p: sub.params })
   })
-  ws.addEventListener('close', () => setStatus('closed'))
+  ws.addEventListener('close', () => {
+    stopHeartbeat()
+    setStatus('closed')
+  })
   ws.addEventListener('message', (e) => {
     const msg = parseMessage<ServerMessage>((e as MessageEvent).data)
     if (!msg) return
+    awaitingPong = false
     if (msg.t === 'ev') {
       for (const sub of byTopic.get(topicFor(msg.ch, msg.p)) ?? []) sub.onEvent(msg.ev, msg.d)
     } else if (msg.t === 'ok' && 'p' in msg) {
@@ -146,6 +180,7 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
       send({ t: 'msg', ch: channel, p: params, ev: event, d: data })
     },
     close() {
+      stopHeartbeat()
       ws.close()
     },
   }

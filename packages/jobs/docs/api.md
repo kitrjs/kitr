@@ -186,8 +186,14 @@ interface JobsDriver {
   name: string;
   /** Store a job; called by `dispatch()` and for each retry. */
   push(job: QueuedJob): Promise<void>;
-  /** Jobs whose `runAt` has passed, removed from the queue. */
+  /**
+   * Jobs whose `runAt` has passed. A driver that implements `ack` should only reserve them here
+   * (hide them from other workers) and delete them in `ack`, so a worker that dies mid-job leaves
+   * the job to be picked up again. Without `ack`, pulled jobs are gone from the queue.
+   */
   pull(now: number, limit: number): Promise<QueuedJob[]>;
+  /** Called once a pulled job is done with: it ran, it failed for good, or its retry was queued. */
+  ack?(job: QueuedJob): Promise<void>;
   /** How many jobs are waiting. */
   size(): Promise<number>;
   /** Remove every waiting job. */

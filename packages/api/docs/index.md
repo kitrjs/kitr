@@ -88,14 +88,14 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `prefix` | none | Documents the prefix your routes share. The router does not read it: set the prefix with `router.group({ prefix: '/api' })` in `server/routes.ts`. |
+| `prefix` | none | The prefix every route shares, the part the web app forwards to the server. Set it on the routes with `router.group({ prefix: '/api' })` in `server/routes.ts`; `kitr api:sync` warns about any route outside it, because requests to it never reach the server. |
 | `openapi.path` | `'openapi.json'` | Where `kitr api:sync` writes the OpenAPI document. |
 | `openapi.title` | `'<package name> API'` | `info.title` in the document. |
 | `openapi.version` | `package.json` version | `info.version` in the document. |
-| `openapi.description` | none | Declared for `info.description`. `kitr api:sync` does not read it yet; pass `description` to `toOpenApi()` instead. |
-| `client.path` | `'app/api/client.ts'` | Declared for the client file. `kitr api:sync` does not read it yet. |
+| `openapi.description` | none | `info.description` in the document. |
+| `client.path` | `'app/api/client.ts'` | The typed client's file. `kitr api:sync` writes the route table, `routes.gen.ts`, next to it. Without it the table goes to `app/api/`, or `server/` in a project without one. |
 
-`kitr api:sync` reads `openapi.path`, `openapi.title` and `openapi.version` from the file's text, so keep them as plain string literals. API routes add no environment variables.
+`kitr api:sync` loads `config/api.ts` the way the app does, so the values can come from variables or imports. API routes add no environment variables.
 
 ## Build your first endpoint
 

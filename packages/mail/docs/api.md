@@ -101,14 +101,21 @@ function mailPreview<S extends {
   h3: {
     get(path: string, handler: (event: any) => unknown): unknown;
   };
+  app?: {
+    config: {
+      has(key: string): boolean;
+      get(key: string): unknown;
+    };
+  };
 }>(server: S, templates: MailTemplate<any>[], options?: {
   path?: string;
   mailer?: Mailer;
 }): S;
 ```
 
-Serves every registered template at `<previewPath>/<name>` in development (the `preview` props,
-or `?prop=value` from the query string), and an index listing them.
+Serves every registered template at `<previewPath>/<name>` (the `preview` props, or
+`?prop=value` from the query string), and an index listing them. The path is `options.path`,
+else `previewPath` from `config/mail.ts`, else `/_kitr/mail`; `previewPath: false` mounts nothing.
 
 ### useMailer
 
@@ -158,10 +165,7 @@ interface MailConfig {
   transport?: MailTransport;
   /** Default sender. */
   from?: Recipient;
-  /**
-   * Meant as the preview path (default `/_kitr/mail`; false disables). Not read today:
-   * `mailPreview()` takes its own `path` option.
-   */
+  /** Where `mailPreview()` serves templates (default `/_kitr/mail`); false turns the previews off. */
   previewPath?: string | false;
 }
 ```

@@ -22,6 +22,22 @@ type Envelope<T> = { ok: true; data: T } | { ok: false; error: KitrErrorShape }
 
 type InputOf<S> = S extends StandardSchemaV1 ? InferOutput<S> : void
 
+type UnionToIntersection<U> = (U extends unknown ? (u: U) => void : never) extends (
+  i: infer I,
+) => void
+  ? I
+  : never
+type ServerContextOf<M> = M extends { '~types': { allServerContext: infer C } }
+  ? C extends object
+    ? C
+    : {}
+  : {}
+
+/** The context a list of Start function middleware gives the handler: every middleware's `next({ context })`, merged. */
+export type MiddlewareContext<M extends ReadonlyArray<unknown>> = [M[number]] extends [never]
+  ? {}
+  : UnionToIntersection<ServerContextOf<M[number]>> & {}
+
 /** What a handler receives: the validated input, Start middleware context, and the request's abort signal. */
 export interface HandlerContext<TInput, TContext> {
   input: TInput
@@ -31,25 +47,42 @@ export interface HandlerContext<TInput, TContext> {
 }
 
 /** Options shared by `defineQuery` and `defineMutation`. */
-export interface DefineOperationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext> {
+export interface DefineOperationOptions<
+  S extends StandardSchemaV1 | undefined,
+  TOutput,
+  TContext,
+  M extends ReadonlyArray<unknown> = ReadonlyArray<unknown>,
+> {
   /** Any Standard Schema. Validated on the server; a failure reaches the caller as a VALIDATION error with field errors. */
   input?: S
-  /** TanStack Start function middleware (`createMiddleware({ type: 'function' })`). */
-  middleware?: ReadonlyArray<any>
+  /**
+   * TanStack Start function middleware (`createMiddleware({ type: 'function' })`). What each one
+   * passes to `next({ context })` is typed on the handler's `context`. An error thrown here reaches
+   * the caller the same way a handler error does, masked in production when it is a server error.
+   */
+  middleware?: M
   /** Runs on the server only. Its code, and anything it imports, never reaches the browser bundle. */
   handler: (ctx: HandlerContext<InputOf<S>, TContext>) => TOutput | Promise<TOutput>
 }
 
 /** The second argument of `defineQuery`: the shared options plus `staleTime`. */
-export interface DefineQueryOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext>
-  extends DefineOperationOptions<S, TOutput, TContext> {
+export interface DefineQueryOptions<
+  S extends StandardSchemaV1 | undefined,
+  TOutput,
+  TContext,
+  M extends ReadonlyArray<unknown> = ReadonlyArray<unknown>,
+> extends DefineOperationOptions<S, TOutput, TContext, M> {
   /** How long a result counts as fresh, in milliseconds. Carried into the query options. */
   staleTime?: number
 }
 
 /** The second argument of `defineMutation`: the shared options plus cache `effects`. */
-export interface DefineMutationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext>
-  extends DefineOperationOptions<S, TOutput, TContext> {
+export interface DefineMutationOptions<
+  S extends StandardSchemaV1 | undefined,
+  TOutput,
+  TContext,
+  M extends ReadonlyArray<unknown> = ReadonlyArray<unknown>,
+> extends DefineOperationOptions<S, TOutput, TContext, M> {
   /** Cache effects applied on the client after success. A function gets the result and the input. */
   effects?: CacheEffect | ((result: TOutput, input: InputOf<S>) => CacheEffect)
 }
@@ -106,10 +139,11 @@ export interface ServerMutation<TInput, TOutput, TContext = unknown>
 export function defineQuery<
   S extends StandardSchemaV1 | undefined = undefined,
   TOutput = unknown,
-  TContext = {},
+  const M extends ReadonlyArray<unknown> = [],
+  TContext = MiddlewareContext<M>,
 >(
   name: string,
-  options: DefineQueryOptions<S, TOutput, TContext>,
+  options: DefineQueryOptions<S, TOutput, TContext, M>,
 ): ServerQuery<InputOf<S>, TOutput, TContext> {
   type TInput = InputOf<S>
   const { serverFn, call, run } = build<S, TOutput, TContext>(name, 'GET', options)
@@ -141,10 +175,11 @@ export function defineQuery<
 export function defineMutation<
   S extends StandardSchemaV1 | undefined = undefined,
   TOutput = unknown,
-  TContext = {},
+  const M extends ReadonlyArray<unknown> = [],
+  TContext = MiddlewareContext<M>,
 >(
   name: string,
-  options: DefineMutationOptions<S, TOutput, TContext>,
+  options: DefineMutationOptions<S, TOutput, TContext, M>,
 ): ServerMutation<InputOf<S>, TOutput, TContext> {
   type TInput = InputOf<S>
   const { serverFn, call, run } = build<S, TOutput, TContext>(name, 'POST', options)
@@ -161,11 +196,48 @@ export function defineMutation<
   return definition as unknown as ServerMutation<TInput, TOutput, TContext>
 }
 
+/** The error envelope for a failed operation. Server errors are logged and, in production, masked. */
+function failure(name: string, error: unknown): Envelope<never> {
+  const kitrError = toKitrError(error)
+  const shape = kitrError.toJSON()
+  if (kitrError.status >= 500) {
+    console.error(`[kitr/actions] ${name} failed:`, error)
+    // Same rule as the kitr server: in production a server error's message and data
+    // stay in the server log and never reach the browser.
+    if ((globalThis as any).process?.env?.NODE_ENV === 'production') {
+      shape.message = 'Internal server error'
+      shape.data = undefined
+    }
+  }
+  return { ok: false, error: shape }
+}
+
+/** redirect() throws a Response and notFound() a marked object: both steer the router, so pass them on. */
+const steersRouter = (error: unknown) =>
+  error instanceof Response || (error as { isNotFound?: unknown } | null)?.isNotFound === true
+
+/**
+ * A function middleware that wraps the rest of the chain. When a later middleware throws, it
+ * answers with the error envelope as the function's result instead of letting Start send the raw
+ * error. A redirect or other Response is let through.
+ */
+function guard(name: string) {
+  return createMiddleware({ type: 'function' }).server((async (ctx: any) => {
+    const { next, ...rest } = ctx
+    try {
+      return await next()
+    } catch (error) {
+      if (steersRouter(error)) throw error
+      return { ...rest, result: failure(name, error) }
+    }
+  }) as any)
+}
+
 /** The Start server function, the client-side call and the in-process run, shared by both definitions. */
 function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
   name: string,
   method: 'GET' | 'POST',
-  options: DefineOperationOptions<S, TOutput, TContext>,
+  options: DefineOperationOptions<S, TOutput, TContext, ReadonlyArray<unknown>>,
 ) {
   type TInput = InputOf<S>
   const execute = async (
@@ -182,7 +254,9 @@ function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
     return options.handler({ input, context, signal })
   }
   let builder: any = createServerFn({ method })
-  if (options.middleware?.length) builder = builder.middleware(options.middleware)
+  // kitr's guard runs first, so an error thrown by any middleware becomes the same envelope a
+  // handler error does: typed on the client, and masked in production.
+  if (options.middleware?.length) builder = builder.middleware([guard(name), ...options.middleware])
   const serverFn: ServerFn<TOutput> = builder
     .validator((data: unknown) => data)
     .handler(
@@ -198,18 +272,8 @@ function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
         try {
           return { ok: true, data: await execute(data, context, signal) }
         } catch (error) {
-          const kitrError = toKitrError(error)
-          const shape = kitrError.toJSON()
-          if (kitrError.status >= 500) {
-            console.error(`[kitr/actions] ${name} failed:`, error)
-            // Same rule as the kitr server: in production a server error's message and data
-            // stay in the server log and never reach the browser.
-            if ((globalThis as any).process?.env?.NODE_ENV === 'production') {
-              shape.message = 'Internal server error'
-              shape.data = undefined
-            }
-          }
-          return { ok: false, error: shape }
+          if (steersRouter(error)) throw error
+          return failure(name, error)
         }
       },
     )

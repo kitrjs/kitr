@@ -303,7 +303,7 @@ When the cookie expires the browser deletes it, the record reads as undecided, a
 
 ## Show the banner without a flash
 
-On the server, the consent service has no cookie to read, so server-rendered HTML always contains the banner. For a visitor who already chose, the client then reads the cookie, renders nothing, and React reports a hydration mismatch while the banner flickers away. Render the banner only after the component has mounted:
+On the server, the consent service has no cookie to read, so server-rendered HTML always contains the banner. `useConsent()` hydrates with that same undecided state, so React reports no mismatch, then reads the cookie: for a visitor who already chose, the banner shows for a moment and goes away. To avoid that flash, render the banner only after the component has mounted:
 
 ```tsx
 // app/components/consent-banner.tsx
@@ -325,7 +325,7 @@ export function ConsentBanner() {
 }
 ```
 
-The server and the first client render both produce nothing, so hydration matches. Right after mount, the banner appears only for visitors who have not decided. In a single-page app (web `spa` mode), there is no server HTML and the generated banner works as it is.
+The server and the first client render both produce nothing, so nothing flashes. Right after mount, the banner appears only for visitors who have not decided. In a single-page app (web `spa` mode), there is no server HTML and the generated banner works as it is.
 
 ## Check a category before loading a script
 

@@ -11,10 +11,19 @@ export interface GuardSession {
 
 /** Options of `requireAuth()`: where anonymous visitors go and which search param remembers their page. */
 export interface RequireAuthOptions {
-  /** Where to send anonymous users. Default `/sign-in`. */
+  /** Where to send anonymous users. Default: `signInPath` from `config/auth.ts`, else `/sign-in`. */
   to?: string
   /** Name of the search param carrying the original URL. Default `redirect`. */
   redirectParam?: string | false
+}
+
+type AppWithConfig = { config: { has(key: string): boolean; get(key: string): unknown } }
+
+/** `signInPath` from `config/auth.ts`, when the app in the router context has one. */
+function signInPath(app: AppWithConfig | undefined): string | undefined {
+  if (!app?.config?.has('auth')) return undefined
+  const path = (app.config.get('auth') as { signInPath?: unknown } | undefined)?.signInPath
+  return typeof path === 'string' ? path : undefined
 }
 
 /**
@@ -24,18 +33,18 @@ export interface RequireAuthOptions {
  *   export const Route = createFileRoute('/_app')({ beforeLoad: requireAuth() })
  */
 export function requireAuth(options: RequireAuthOptions = {}) {
-  const { to = '/sign-in', redirectParam = 'redirect' } = options
+  const { redirectParam = 'redirect' } = options
   return ({
     context,
     location,
   }: {
-    context: { session?: GuardSession | null }
+    context: { session?: GuardSession | null; app?: AppWithConfig }
     location: { href: string }
   }) => {
     const session = context.session
     if (!session?.user) {
       throw redirect({
-        to,
+        to: options.to ?? signInPath(context.app) ?? '/sign-in',
         search: redirectParam ? ({ [redirectParam]: location.href } as any) : undefined,
       })
     }

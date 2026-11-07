@@ -238,6 +238,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       logger: requestLogger,
       startedAt: performance.now(),
       locals: {},
+      ip: clientIp(event, config.trustProxy),
     }
     event.context.kitr = ctx
     event.res.headers.set(config.requestIdHeader, requestId)
@@ -245,7 +246,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       const result = await next()
       requestLogger.debug(`${event.req.method} ${event.url.pathname}`, {
         status: event.res.status ?? 200,
-        ip: safeIp(event),
+        ip: ctx.ip,
         durationMs: Math.round(performance.now() - ctx.startedAt),
       })
       return result
@@ -256,7 +257,21 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
   return server
 }
 
-function safeIp(event: H3Event): string | undefined {
+/**
+ * The client's address. With `trustProxy` (true = one proxy, or a count), each trusted proxy
+ * appended the address it saw to `X-Forwarded-For`, so the entry that many places from the end is
+ * the client as the outermost trusted proxy saw it. Entries before that were sent by the client
+ * and are ignored. Without it, the socket's address.
+ */
+export function clientIp(event: H3Event, trustProxy: boolean | number = false): string | undefined {
+  const hops = trustProxy === true ? 1 : typeof trustProxy === 'number' ? trustProxy : 0
+  if (hops > 0) {
+    const chain = (event.req.headers.get('x-forwarded-for') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (chain.length) return chain[Math.max(0, chain.length - hops)]
+  }
   try {
     return getRequestIP(event)
   } catch {

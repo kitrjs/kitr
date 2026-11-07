@@ -68,6 +68,14 @@ export function createKitrRouter<TRouteTree extends AnyRoute>(
       <KitrProvider app={app}>{children}</KitrProvider>
     ),
   })
+  // `ssr` in config/seo.ts is the default for routes that set none; ssrRoute() still wins. It is
+  // written onto the routes because Start replaces the router's `defaultSsr` with its own.
+  const seo = rootApp.config.has('seo')
+    ? (rootApp.config.get('seo') as { ssr?: boolean | 'data-only' } | undefined)
+    : undefined
+  if (seo?.ssr !== undefined)
+    for (const route of Object.values(router.routesById) as Array<{ options: { ssr?: unknown } }>)
+      if (route.options.ssr === undefined) route.options.ssr = seo.ssr
   // Loaders read services from the container, so boot before the first load (idempotent).
   const load = router.load.bind(router)
   router.load = (async (...args: Parameters<typeof load>) => {

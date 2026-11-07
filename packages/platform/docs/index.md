@@ -51,9 +51,9 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links before routing, such as `'/open'` for `acme://open/orders/1042`. The scheme and host are always dropped first. Pass them to `deepLinkPath()`, as shown in "Route deep links". |
+| `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links before routing, such as `'/open'` for `acme://open/orders/1042`. The scheme and host are always dropped first. `useDeepLink()` and `platform.linkPath()` apply them, as shown in "Route deep links". |
 
-The provider does not read `deepLinkPrefixes` on its own. Read it with `useConfig('platform')` and hand it to `deepLinkPath()` where you route links.
+`useDeepLink()` and `platform.linkPath(url)` apply `deepLinkPrefixes` for you. `deepLinkPath(url, prefixes)` is the same function without the config, for tests and code outside the app.
 
 The `platform` service has no other options. Which driver it wraps depends on the platform providers listed in `kitrrc.ts`:
 
@@ -310,30 +310,23 @@ Wrap the handler in `useCallback`: the hook subscribes again whenever the functi
 
 ## Route deep links
 
-`useDeepLink()` receives URLs the OS hands the app while it runs: custom schemes (`acme://orders/1042`) and app links (`https://app.acme.com/orders/1042`). `deepLinkPath()` turns them into a router path:
+`useDeepLink()` receives URLs the OS hands the app while it runs: custom schemes (`acme://orders/1042`) and app links (`https://app.acme.com/orders/1042`). The handler gets the URL and its router path:
 
 ```tsx
 // app/components/deep-links.tsx
 import { useNavigate } from '@tanstack/react-router'
-import { useConfig } from 'kitr/react'
-import { deepLinkPath } from 'kitr/platform'
 import { useDeepLink } from 'kitr/platform/react'
 import { useCallback } from 'react'
 
 export function DeepLinks() {
   const navigate = useNavigate()
-  const { deepLinkPrefixes } = useConfig('platform')
-  useDeepLink(
-    useCallback(
-      (url) => void navigate({ to: deepLinkPath(url, deepLinkPrefixes) }),
-      [navigate, deepLinkPrefixes],
-    ),
-  )
+  // `path` is the URL with the scheme, host and deepLinkPrefixes removed.
+  useDeepLink(useCallback((_url, path) => void navigate({ to: path }), [navigate]))
   return null
 }
 ```
 
-Render `<DeepLinks />` once in the root route. `deepLinkPath()` drops the scheme and host, keeps the query and hash, then strips the first prefix that matches:
+Render `<DeepLinks />` once in the root route. Outside React, `app.container.use('platform').linkPath(url)` gives the same path. Both call `deepLinkPath(url, deepLinkPrefixes)`, which drops the scheme and host, keeps the query and hash, then strips the first prefix that matches:
 
 ```ts
 // app/features/links.ts

@@ -69,7 +69,7 @@ declare module '@kitr/core' {
 
 /** The options in `config/platform.ts`. */
 export interface PlatformConfig {
-  /** Path prefixes (`'/open'`) to strip from deep links; pass them to `deepLinkPath()`. The scheme and host are always dropped. */
+  /** Path prefixes (`'/open'`) to strip from deep links in `platform.linkPath()` and `useDeepLink()`. The scheme and host are always dropped. */
   deepLinkPrefixes?: string[]
 }
 
@@ -100,6 +100,8 @@ export interface Platform {
   onBackButton(listener: (info: { canGoBack: boolean }) => void): () => void
   /** URLs the OS opens in the running app. Returns an unsubscribe function. */
   onDeepLink(listener: (url: string) => void): () => void
+  /** The router path for a deep link: `deepLinkPath(url, deepLinkPrefixes)` with the prefixes from `config/platform.ts`. */
+  linkPath(url: string): string
   /** Connection changes. Returns an unsubscribe function. */
   onOnline(listener: (online: boolean) => void): () => void
   /** Safe-area insets in pixels. */
@@ -176,6 +178,11 @@ export function createPlatform(
     onAppState: (l) => (driver.onAppState ?? fallback.onAppState ?? noop)(l),
     onBackButton: (l) => (driver.onBackButton ?? noop)(l),
     onDeepLink: (l) => (driver.onDeepLink ?? noop)(l),
+    linkPath: (url) =>
+      deepLinkPath(
+        url,
+        app.config.has('platform') ? (app.config.get('platform').deepLinkPrefixes ?? []) : [],
+      ),
     onOnline: (l) => (driver.onOnline ?? fallback.onOnline ?? noop)(l),
     safeArea: () => driver.safeArea?.() ?? fallback.safeArea!(),
     openExternal: (url) => (driver.openExternal ?? fallback.openExternal!)(url),

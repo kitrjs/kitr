@@ -14,15 +14,15 @@ export interface SeoSite {
   locale?: string
 }
 
-/** Options for `config/seo.ts`. The build reads `prerender` and `site.url` from the file's source text. */
+/** Options for `config/seo.ts`. The build reads `prerender`, `site.url` and `robots`; `seo()` reads `site`; the router reads `ssr`. */
 export interface SeoConfig {
   /** Site-wide defaults for `seo()`. */
   site?: SeoSite
-  /** Intended default per-route rendering in `ssr` mode. Not read by kitr yet; use `ssrRoute()` per route. */
+  /** Default rendering for routes that set no `ssr` of their own (the router's `defaultSsr`). `ssrRoute()` overrides it per route. */
   ssr?: boolean | 'data-only'
   /** Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform prerenders everything. */
   prerender?: string[] | { routes: string[]; crawlLinks?: boolean }
-  /** Rules for `robotsTxt()`. `false` makes it return null. */
+  /** Rules for `robotsTxt()`, which the build writes to `robots.txt` unless `public/robots.txt` exists. `false` writes none. */
   robots?: false | { allow?: string[]; disallow?: string[]; sitemap?: boolean }
 }
 
@@ -32,8 +32,17 @@ declare module '@kitr/core' {
   }
 }
 
-/** Types the default export of `config/seo.ts`. */
-export const defineConfig = createDefineConfig<SeoConfig>()
+const typed = createDefineConfig<SeoConfig>()
+let configured: SeoConfig = {}
+
+/**
+ * Types the default export of `config/seo.ts`, and makes its `site` the defaults `seo()` uses:
+ * the config is imported (through `config/index.ts`) before any route renders.
+ */
+export const defineConfig: typeof typed = ((config: SeoConfig) => {
+  configured = config
+  return typed(config)
+}) as typeof typed
 
 /** What one page passes to `seo()`. Every field is optional; `site` supplies the defaults. */
 export interface SeoInput {
@@ -51,7 +60,7 @@ export interface SeoInput {
   noIndex?: boolean
   /** Joined into a `keywords` meta tag. */
   keywords?: string[]
-  /** Site defaults, usually `site` from `config/seo.ts`. `seo()` does not read the config itself. */
+  /** Site defaults. Default: `site` from `config/seo.ts`. */
   site?: SeoSite
 }
 
@@ -60,7 +69,7 @@ export interface SeoInput {
  * Covers title, description, Open Graph, Twitter cards, canonical and robots.
  */
 export function seo(input: SeoInput) {
-  const site = input.site ?? {}
+  const site = input.site ?? configured.site ?? {}
   const title = input.title
     ? site.name && input.title !== site.name
       ? `${input.title} · ${site.name}`
@@ -147,7 +156,7 @@ export function cacheHeaders(
   return { 'cache-control': parts.join(', ') }
 }
 
-/** `robots.txt` text from the config, or null when `robots` is false. kitr does not write the file; serve or write it yourself. */
+/** `robots.txt` text from the config, or null when `robots` is false. The build writes it for web platforms. */
 export function robotsTxt(config: SeoConfig): string | null {
   if (config.robots === false) return null
   const rules = config.robots ?? {}

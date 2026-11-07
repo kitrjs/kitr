@@ -51,7 +51,7 @@ export default defineConfig({
 | `entry` | `'app/styles/app.css'` | The stylesheet Tailwind starts from, relative to the project root. |
 | `preset` | `true` | Whether the app uses kitr's preset (`kitr/tailwind/preset.css`). |
 
-These two options record how the project is set up; the build does not read them today. Tailwind v4 is configured in CSS, so what actually happens is decided by the stylesheet. To change the entry, import a different file from `__root.tsx`. To drop the preset, remove its `@import` line ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` warns when `config/tailwind.ts` is missing, so keep the file.
+Tailwind v4 is configured in CSS, so the stylesheet decides what the build does, and these two options describe it. `kitr doctor` checks they agree: it reports an error when `entry` does not exist, and a warning when the entry does not import Tailwind, or imports kitr's preset while `preset` is false (or leaves it out while `preset` is true). To change the entry, import a different file from `__root.tsx` and set `entry`. To drop the preset, remove its `@import` line and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` also warns when `config/tailwind.ts` is missing, so keep the file.
 
 The stylesheet `kitr add` writes is the real configuration:
 

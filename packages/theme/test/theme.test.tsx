@@ -98,6 +98,40 @@ describe('ThemeScript', () => {
     expect(html.match(/<script/g)).toHaveLength(1)
     expect(html).not.toContain('</script><script>')
   })
+
+  // Regression: `tokens` in config/theme.ts was read by nothing, and the head script ignored the
+  // config's storageKey and attribute, so it applied a theme the provider then disagreed with.
+  it('takes storageKey, attribute and tokens from config/theme.ts', async () => {
+    const app = createApp({
+      environment: 'test',
+      config: {
+        theme: {
+          storageKey: 'my-theme',
+          attribute: 'data-mode',
+          tokens: {
+            light: { color: { primary: 'oklch(60% 0.2 150)' } },
+            dark: { color: { primary: 'oklch(70% 0.1 150)' } },
+          },
+        },
+      },
+    })
+    const html = renderToString(themeProvider.wrap!(<ThemeScript />, app) as any)
+    expect(html).toContain('my-theme')
+    expect(html).toContain('data-mode')
+    expect(html).toContain(':root:root {\n  --kitr-color-primary: oklch(60% 0.2 150);')
+    expect(html).toContain(
+      ':root:root[data-mode="dark"] {\n  --kitr-color-primary: oklch(70% 0.1 150);',
+    )
+  })
+
+  it('writes no style without tokens, and escapes values that try to close the tag', () => {
+    expect(renderToString(<ThemeScript />)).not.toContain('<style')
+    const html = renderToString(
+      <ThemeScript tokens={{ light: { color: { x: 'red</style><script>alert(1)</script>' } } }} />,
+    )
+    expect(html.match(/<script/g)).toHaveLength(1)
+    expect(html).not.toContain('</style><script>')
+  })
 })
 
 describe('themeFromCookie', () => {

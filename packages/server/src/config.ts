@@ -15,8 +15,13 @@ export interface ServerConfig {
    * The longest matching prefix wins. `mountUploads()` adds its own from `config/uploads.ts`.
    */
   bodyLimits?: Record<string, number>
-  /** Reserved for trusting `X-Forwarded-*` from a proxy in front of the server. Not read by the server yet. */
-  trustProxy?: boolean
+  /**
+   * Proxies in front of the server that append to `X-Forwarded-For`. `true` means one (a load
+   * balancer); a number counts them. The client IP (`ctx.request.ip()`, rate limits, logs) is then
+   * the address the outermost trusted proxy saw, which a client cannot forge. Default false: the
+   * socket's address.
+   */
+  trustProxy?: boolean | number
   /** Enable the WebSocket upgrade (needs `crossws`). Set by `@kitr/realtime`. */
   websocket?: boolean
   /** Header name for the request id. Default `x-request-id`. */

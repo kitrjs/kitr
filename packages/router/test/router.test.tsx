@@ -67,6 +67,25 @@ describe('createKitrRouter', () => {
     expect(router.options.defaultPreload).toBe('intent')
   })
 
+  // Regression: `ssr` in config/seo.ts was read by nothing.
+  it('applies ssr from config/seo.ts to routes that set none', () => {
+    const root = createRootRouteWithContext<KitrRouterContext>()({ component: () => <Outlet /> })
+    const plain = createRoute({ getParentRoute: () => root, path: '/', component: () => null })
+    const own = createRoute({
+      getParentRoute: () => root,
+      path: '/own',
+      ssr: true,
+      component: () => null,
+    })
+    const app = createApp({ config: { seo: { ssr: 'data-only' } } })
+    createKitrRouter({ routeTree: root.addChildren([plain, own]), app })
+    expect(plain.options.ssr).toBe('data-only')
+    expect(own.options.ssr).toBe(true)
+    const untouched = createRoute({ getParentRoute: () => root, path: '/x', component: () => null })
+    createKitrRouter({ routeTree: root.addChildren([untouched]), app: createApp() })
+    expect(untouched.options.ssr).toBeUndefined()
+  })
+
   it('renders the default not-found page', async () => {
     await mount('/nowhere')
     expect(await screen.findByText('Page not found')).toBeTruthy()

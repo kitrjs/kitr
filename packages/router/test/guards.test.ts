@@ -36,6 +36,24 @@ describe('requireAuth', () => {
     )
     expect(none.options.search).toBeUndefined()
   })
+
+  // Regression: `signInPath` in config/auth.ts was read by nothing, so a guard still sent
+  // anonymous visitors to /sign-in, a page the app did not have.
+  it('defaults to signInPath from config/auth.ts', async () => {
+    const { createApp } = await import('@kitr/core')
+    const app = createApp({ environment: 'test', config: { auth: { signInPath: '/login' } } })
+    const r = caught(() => requireAuth()({ context: { session: null, app }, location }))
+    expect(r.options.to).toBe('/login')
+    const explicit = caught(() =>
+      requireAuth({ to: '/elsewhere' })({ context: { session: null, app }, location }),
+    )
+    expect(explicit.options.to).toBe('/elsewhere')
+    const noAuthConfig = createApp({ environment: 'test' })
+    const fallback = caught(() =>
+      requireAuth()({ context: { session: null, app: noAuthConfig }, location }),
+    )
+    expect(fallback.options.to).toBe('/sign-in')
+  })
 })
 
 describe('can', () => {

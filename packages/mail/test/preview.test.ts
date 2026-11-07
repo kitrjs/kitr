@@ -45,4 +45,26 @@ describe('mail preview', () => {
     expect(html).not.toContain('<script>')
     expect(html).toContain('&lt;script&gt;')
   })
+
+  // Regression: `previewPath` in config/mail.ts was read by nothing.
+  it('serves at previewPath from config/mail.ts, and not at all when it is false', async () => {
+    const moved = createServer({
+      logger: silentLogger,
+      server: { healthPath: false },
+      config: { mail: { previewPath: '/dev/mail' } },
+    })
+    mailPreview(moved, [welcome])
+    expect((await moved.fetch(new Request('http://x/dev/mail/welcome'))).status).toBe(200)
+    expect((await moved.fetch(new Request('http://x/_kitr/mail/welcome'))).status).toBe(404)
+    const off = createServer({
+      logger: silentLogger,
+      server: { healthPath: false },
+      config: { mail: { previewPath: false } },
+    })
+    mailPreview(off, [welcome])
+    expect((await off.fetch(new Request('http://x/_kitr/mail'))).status).toBe(404)
+    // An explicit path still wins over the config.
+    mailPreview(off, [welcome], { path: '/here' })
+    expect((await off.fetch(new Request('http://x/here/welcome'))).status).toBe(200)
+  })
 })

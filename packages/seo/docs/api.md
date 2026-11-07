@@ -45,7 +45,17 @@ A JSON-LD script for `head().scripts`: `scripts: [jsonLd({ '@type': 'Article', h
 function robotsTxt(config: SeoConfig): string | null;
 ```
 
-`robots.txt` text from the config, or null when `robots` is false. kitr does not write the file; serve or write it yourself.
+`robots.txt` text from the config, or null when `robots` is false. The build writes it for web platforms.
+
+### safeJson
+
+```ts
+function safeJson(value: unknown): string;
+```
+
+JSON for inside a `<script>`: `<`, `>` and `&` as unicode escapes so a value such as
+`</script><script>…` from a user's title can't close the tag, and U+2028/U+2029 escaped too.
+Still valid JSON: parsers read the escapes back as the same characters.
 
 ### seo
 
@@ -72,10 +82,11 @@ Route option presets. Spread into `createFileRoute(...)({ ...ssrRoute('data-only
 ### defineConfig
 
 ```ts
-const defineConfig: <const C extends SeoConfig>(config: C) => C;
+const defineConfig: typeof typed;
 ```
 
-Types the default export of `config/seo.ts`.
+Types the default export of `config/seo.ts`, and makes its `site` the defaults `seo()` uses:
+the config is imported (through `config/index.ts`) before any route renders.
 
 ### SeoConfig
 
@@ -83,14 +94,14 @@ Types the default export of `config/seo.ts`.
 interface SeoConfig {
   /** Site-wide defaults for `seo()`. */
   site?: SeoSite;
-  /** Intended default per-route rendering in `ssr` mode. Not read by kitr yet; use `ssrRoute()` per route. */
+  /** Default rendering for routes that set no `ssr` of their own (the router's `defaultSsr`). `ssrRoute()` overrides it per route. */
   ssr?: boolean | 'data-only';
   /** Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform prerenders everything. */
   prerender?: string[] | {
     routes: string[];
     crawlLinks?: boolean;
   };
-  /** Rules for `robotsTxt()`. `false` makes it return null. */
+  /** Rules for `robotsTxt()`, which the build writes to `robots.txt` unless `public/robots.txt` exists. `false` writes none. */
   robots?: false | {
     allow?: string[];
     disallow?: string[];
@@ -99,7 +110,7 @@ interface SeoConfig {
 }
 ```
 
-Options for `config/seo.ts`. The build reads `prerender` and `site.url` from the file's source text.
+Options for `config/seo.ts`. The build reads `prerender`, `site.url` and `robots`; `seo()` reads `site`; the router reads `ssr`.
 
 ### SeoInput
 
@@ -119,7 +130,7 @@ interface SeoInput {
   noIndex?: boolean;
   /** Joined into a `keywords` meta tag. */
   keywords?: string[];
-  /** Site defaults, usually `site` from `config/seo.ts`. `seo()` does not read the config itself. */
+  /** Site defaults. Default: `site` from `config/seo.ts`. */
   site?: SeoSite;
 }
 ```

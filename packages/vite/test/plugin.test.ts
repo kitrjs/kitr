@@ -163,3 +163,38 @@ export default defineKitrConfig({
     expect((core.load as any)('react')).toBeNull()
   })
 })
+
+// Regression: `robots` in config/seo.ts only fed `robotsTxt()`, and nothing wrote robots.txt.
+describe('robots.txt', () => {
+  it('renders config/seo.ts with robotsTxt(), sitemap included', async () => {
+    const { robotsFor } = await import('../src')
+    const text = await robotsFor(join(__dirname, '../../../examples/site'))
+    expect(text).toContain('User-agent: *')
+    expect(text).toContain('Sitemap: https://example.com/sitemap.xml')
+  })
+
+  it('is null without config/seo.ts', async () => {
+    const { robotsFor } = await import('../src')
+    expect(await robotsFor(join(__dirname, '../../../examples/backend'))).toBeNull()
+  })
+
+  it('the build emits it for the client environment of a web platform only', async () => {
+    const { kitr } = await import('../src')
+    const root = join(__dirname, '../../../examples/site')
+    const plugins = (await Promise.all(kitr({ root, start: false }) as any[])).filter(Boolean)
+    const core = plugins.find((p: any) => p.name === 'kitr')
+    await core.config({ root }, { command: 'build', mode: 'production' })
+    const robots = plugins.find((p: any) => p.name === 'kitr:robots')
+    const emitted: any[] = []
+    const ctx = (name: string) => ({
+      environment: { name, config: { publicDir: join(root, 'no-public') } },
+      emitFile: (f: any) => emitted.push(f),
+      warn: () => {},
+    })
+    await robots.generateBundle.call(ctx('ssr'))
+    expect(emitted).toEqual([])
+    await robots.generateBundle.call(ctx('client'))
+    expect(emitted).toHaveLength(1)
+    expect(emitted[0]).toMatchObject({ type: 'asset', fileName: 'robots.txt' })
+  })
+})

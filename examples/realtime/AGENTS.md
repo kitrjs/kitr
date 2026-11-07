@@ -77,7 +77,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: realtime
 
 - Channels are defined once in `app/channels/*.ts` with `defineChannel`. The server emits with `realtime.use(channel, params).emit(event, data)` (server/realtime.ts); components subscribe with `useChannel(realtime(), channel, params)` from `kitr/realtime/react` and events update the query cache via `effects`.
-- Switch transports in `config/realtime.ts`: `socket.io` (rooms, adapters; client from `kitr/realtime/socket.io`) or `sse` (plain HTTP, no upgrade; server from `kitr/realtime/sse/server`).
+- Switch transports in `config/realtime.ts`: `sse` (plain HTTP, no upgrade) changes both the client and server/realtime.ts. `socket.io` (rooms, adapters) needs its own client from `kitr/realtime/socket.io` and `attachSocketIo` from `kitr/realtime/socket.io/server`.
 
 ## kitr: platform site
 

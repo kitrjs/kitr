@@ -256,6 +256,26 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   }
   plugins.push(core)
 
+  // robots.txt from `robots` in config/seo.ts, for web builds that ship no public/robots.txt.
+  plugins.push({
+    name: 'kitr:robots',
+    apply: 'build',
+    async generateBundle() {
+      const env = (
+        this as { environment?: { name: string; config?: { publicDir?: string | false } } }
+      ).environment
+      if (env && env.name !== 'client') return
+      if (platform && platform.type !== 'web') return
+      const publicDir = env?.config?.publicDir ?? resolve(root, 'public')
+      if (publicDir && existsSync(resolve(publicDir, 'robots.txt'))) return
+      const text = await robotsFor(root, rc.directories.config ?? 'config').catch((error) => {
+        this.warn(`config/seo.ts: robots.txt not written (${(error as Error).message})`)
+        return null
+      })
+      if (text) this.emitFile({ type: 'asset', fileName: 'robots.txt', source: text })
+    },
+  })
+
   // Every UI platform renders through TanStack Start: `ssr` streams on the server, `static`
   // prerenders every page, `spa` (and desktop/mobile shells) ship one prerendered shell.
   const useStart =
@@ -510,6 +530,22 @@ function arrayBlock(src: string, key: string): string {
     else if (src[i] === ']') depth--
   }
   return src.slice(from, i - 1)
+}
+
+/**
+ * The robots.txt for a project: `robotsTxt()` from kitr/seo over `config/seo.ts`, or null when
+ * there is no config/seo.ts or it sets `robots: false`.
+ */
+export async function robotsFor(root: string, configDir = 'config'): Promise<string | null> {
+  const path = resolve(root, configDir, 'seo.ts')
+  if (!existsSync(path)) return null
+  const { createJiti } = await import('jiti')
+  const jiti = createJiti(resolve(root, 'package.json'))
+  const config = await jiti.import<Record<string, unknown>>(path, { default: true })
+  const seo = await jiti
+    .import<{ robotsTxt: (c: unknown) => string | null }>('kitr/seo')
+    .catch(() => jiti.import<{ robotsTxt: (c: unknown) => string | null }>('@kitr/seo'))
+  return seo.robotsTxt(config ?? {})
 }
 
 /**

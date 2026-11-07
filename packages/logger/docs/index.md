@@ -62,7 +62,7 @@ export default defineConfig({
 | --- | --- |
 | `LOG_LEVEL` | The level in the generated config. Added to `.env.example` by the server package as `LOG_LEVEL=info`. Also read by the server when it has to create its own logger. |
 
-The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the browser there is usually no `process`, so the default is `pretty`; set `format` explicitly if you ship logs from the browser.
+The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the browser, with neither `format` nor `write` set, the logger skips formatting and calls the console directly: see [Log in the browser](#log-in-the-browser).
 
 ## Write your first log line
 
@@ -255,7 +255,7 @@ export function ArchiveProjectButton({ projectId }: { projectId: string }) {
 }
 ```
 
-Browser lines go to the browser console. Nothing is sent to your server; to collect client-side failures, use [monitoring](/packages/monitoring).
+Browser lines go to the browser console as `console.info('[app] project archived', { projectId })`: the matching console method for the level (`debug`, `info`, `warn`, `error`), the message, and the fields as an object you can expand, with no colour codes or JSON strings. Set `format` or `write` to get formatted lines instead. Nothing is sent to your server; to collect client-side failures, use [monitoring](/packages/monitoring).
 
 ## Time an operation
 

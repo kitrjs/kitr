@@ -2,7 +2,7 @@ import { defineProvider } from '@kitr/core'
 import { type ComponentType, lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { ThemeConfig } from './config'
-import { ThemeProvider } from './theme'
+import { ThemeConfigContext, ThemeProvider } from './theme'
 import { setToastImplementation } from './toast'
 
 type ToasterComponent = ComponentType<{ position?: string; richColors?: boolean }>
@@ -40,20 +40,22 @@ export const themeProvider = defineProvider({
   wrap(children, app) {
     const config = app.config.get('theme', {} as ThemeConfig)
     return (
-      <ThemeProvider
-        defaultTheme={config.default}
-        storageKey={config.storageKey}
-        attribute={config.attribute}
-        colors={config.colors}
-      >
-        {children as ReactNode}
-        <BodyPortal>
-          <Toaster
-            position={config.toaster?.position ?? 'bottom-right'}
-            richColors={config.toaster?.richColors ?? true}
-          />
-        </BodyPortal>
-      </ThemeProvider>
+      <ThemeConfigContext.Provider value={config}>
+        <ThemeProvider
+          defaultTheme={config.default}
+          storageKey={config.storageKey}
+          attribute={config.attribute}
+          colors={config.colors}
+        >
+          {children as ReactNode}
+          <BodyPortal>
+            <Toaster
+              position={config.toaster?.position ?? 'bottom-right'}
+              richColors={config.toaster?.richColors ?? true}
+            />
+          </BodyPortal>
+        </ThemeProvider>
+      </ThemeConfigContext.Provider>
     )
   },
 })

@@ -80,7 +80,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 | Option | Default | Description |
 | --- | --- | --- |
 | `adapter` | required | Where sessions come from: `tokenAdapter`, `betterAuthAdapter` or `customAdapter`. See "Adapters". |
-| `signInPath` | `'/sign-in'` | Documents your sign-in page. The router guard does not read it; pass the path to `requireAuth({ to })` when it differs from `/sign-in`. |
+| `signInPath` | `'/sign-in'` | Your sign-in page. `requireAuth()` sends anonymous visitors here, unless you pass it its own `to`. |
 | `eager` | `true` | Restore the session while the app boots, before the first render. `false` waits until you call `auth.load()`. |
 
 | Variable | Used for |

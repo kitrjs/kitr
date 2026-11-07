@@ -92,7 +92,7 @@ export default defineKitrConfig({
 | `targets` | `['ios', 'android']` | Native projects to create and build. Each must be `ios` or `android`. |
 | `appId` | `com.example.<app>` | Reverse-DNS bundle identifier. The default lower-cases the app name and drops everything but letters and digits: `acme-orders` gives `com.example.acmeorders`. |
 | `appName` | the package name | Name shown on the home screen. `acme-orders` becomes `Acme Orders`. |
-| `scheme` | | Custom URL scheme for deep links (`acme://`). Recorded in `kitrrc.ts`; see "Open deep links" for what you register yourself. |
+| `scheme` | | Custom URL scheme for deep links (`acme` opens `acme://...`). `kitr build` and `kitr dev` register it in the iOS `Info.plist` and the Android manifest; `kitr doctor` warns when a native project lacks it. |
 | `port` | `3100` | Port of the dev server the device loads with `kitr dev phone`. |
 | `capacitor` | | Extra [Capacitor config](https://capacitorjs.com/docs/config), such as `plugins`, merged last into `capacitor.config.ts`. |
 
@@ -381,23 +381,17 @@ Capacitor turns off the default back behaviour as soon as a listener is register
 
 ## Open deep links
 
-To open `acme://orders/1042` or `https://app.acme.com/orders/1042` in the app, register the scheme or domain in the native projects, then route the URL. This release records the `scheme` option but does not write it into the native projects, so register it yourself:
-
-- iOS: add the scheme under URL Types in Xcode (`CFBundleURLSchemes` in `Info.plist`), and Associated Domains for `https` links.
-- Android: add an `intent-filter` with `<data android:scheme="acme" />` to the main activity in `AndroidManifest.xml`.
-
-The [Capacitor deep links guide](https://capacitorjs.com/docs/guides/deep-links) has both in full. Then hand each URL to the router:
+To open `acme://orders/1042` in the app, set `scheme: 'acme'` on the platform in `kitrrc.ts`. The next `kitr build` or `kitr dev` adds it to `CFBundleURLSchemes` in the iOS `Info.plist` and as an `intent-filter` on the main activity in the Android manifest, once; edits you make to those files stay. `https` links (`https://app.acme.com/orders/1042`) need Associated Domains on iOS and an App Links `intent-filter` on Android, which you add yourself: the [Capacitor deep links guide](https://capacitorjs.com/docs/guides/deep-links) has both. Then hand each URL to the router:
 
 ```tsx
 // app/components/deep-links.tsx
 import { useNavigate } from '@tanstack/react-router'
-import { deepLinkPath } from 'kitr/platform'
 import { useDeepLink } from 'kitr/platform/react'
 import { useCallback } from 'react'
 
 export function DeepLinks() {
   const navigate = useNavigate()
-  useDeepLink(useCallback((url) => void navigate({ to: deepLinkPath(url) }), [navigate]))
+  useDeepLink(useCallback((_url, path) => void navigate({ to: path }), [navigate]))
   return null
 }
 
@@ -405,7 +399,7 @@ export function DeepLinks() {
 // https://app.acme.com/orders/1042?tab=invoices => /orders/1042?tab=invoices
 ```
 
-The mobile driver listens to Capacitor's `appUrlOpen` event, which fires when the OS hands the app a URL while it runs. [Platform](/packages/platform) documents `deepLinkPath()` and its prefixes.
+The mobile driver listens to Capacitor's `appUrlOpen` event, which fires when the OS hands the app a URL while it runs. The second argument is the router path: the scheme and host removed, then any `deepLinkPrefixes` from `config/platform.ts`. [Platform](/packages/platform) documents the prefixes.
 
 ## React to the app going to the background
 

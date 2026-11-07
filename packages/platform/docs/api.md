@@ -92,6 +92,8 @@ interface Platform {
   }) => void): () => void;
   /** URLs the OS opens in the running app. Returns an unsubscribe function. */
   onDeepLink(listener: (url: string) => void): () => void;
+  /** The router path for a deep link: `deepLinkPath(url, deepLinkPrefixes)` with the prefixes from `config/platform.ts`. */
+  linkPath(url: string): string;
   /** Connection changes. Returns an unsubscribe function. */
   onOnline(listener: (online: boolean) => void): () => void;
   /** Safe-area insets in pixels. */
@@ -111,7 +113,7 @@ The `platform` service: the active driver plus safe defaults for everything it l
 
 ```ts
 interface PlatformConfig {
-  /** Path prefixes (`'/open'`) to strip from deep links; pass them to `deepLinkPath()`. The scheme and host are always dropped. */
+  /** Path prefixes (`'/open'`) to strip from deep links in `platform.linkPath()` and `useDeepLink()`. The scheme and host are always dropped. */
   deepLinkPrefixes?: string[];
 }
 ```
@@ -213,10 +215,15 @@ Android hardware back button, desktop window close. Return nothing to let the de
 ### useDeepLink
 
 ```ts
-function useDeepLink(handler: (url: string) => void): void;
+function useDeepLink(handler: (url: string, path: string) => void): void;
 ```
 
-Deep links opened while the app runs. Pair with `deepLinkPath()` to hand them to the router.
+Deep links opened while the app runs. The handler gets the URL and the router path for it, with
+the scheme, host and `deepLinkPrefixes` from `config/platform.ts` removed:
+
+```ts
+useDeepLink(useCallback((_url, path) => void navigate({ to: path }), [navigate]))
+```
 
 ### useOnline
 

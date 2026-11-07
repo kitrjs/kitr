@@ -72,7 +72,7 @@ With `VITE_GA_MEASUREMENT_ID` empty the `adapters` list is empty, and the provid
 | `enabled` | `true` | Start sending at once. `false` queues every call (up to 100) until `analytics.enable()`. Use it with a consent banner. |
 | `pageViews` | `true` | Send `page()` on every route change. `false` leaves page views to you. |
 | `globalProps` | none | Props merged into every `page()` and `track()` call, such as the app name or build id. Props on the call win. |
-| `debug` | development, unless [devtools](/packages/devtools) is installed | Print every call with `console.info('[analytics]', ...)` and print adapter errors with `console.warn`. |
+| `debug` | development, when `adapters` is set and [devtools](/packages/devtools) is not installed | Print every call with `console.info('[analytics]', ...)` and print adapter errors with `console.warn`. Off when the provider falls back to the console adapter, which already prints each call. |
 | `events` | none | A type-only field that carries your event map. You never set it at run time. |
 
 | Variable | Used for |
@@ -126,7 +126,7 @@ Render it on the projects page and click it. In development, with no adapter con
 [analytics] track project.created { app: 'acme', id: 'prj_42' }
 ```
 
-The `app` prop comes from `globalProps` in `config/analytics.ts`. When [devtools](/packages/devtools) is not installed, the same line prints twice: once from `debug` logging and once from the console adapter. With devtools installed, it prints once and the call also appears in the Analytics panel.
+The `app` prop comes from `globalProps` in `config/analytics.ts`. The line prints once, from the console adapter the provider uses when `adapters` is empty. With [devtools](/packages/devtools) installed, the call also appears in the Analytics panel.
 
 Set `VITE_GA_MEASUREMENT_ID=G-ACME12345` in `.env`, restart the dev server, and the same click sends a `project.created` event to Google Analytics. No component changes.
 
@@ -167,7 +167,7 @@ export function PayButton({ invoiceId, amount }: { invoiceId: string; amount: nu
 }
 ```
 
-`track()` also has an untyped form, `track(event: string, props?)`, so TypeScript accepts any name and any props. A misspelt name such as `'invoce.paid'` compiles and is sent as a new event. Keep every name in `AppEvents` and pick it from autocomplete rather than typing it.
+With an event map, `track()` accepts only its names, each with its own props: a misspelt `'invoce.paid'`, a missing prop or a prop of the wrong type is a type error. Without one (`useAnalytics()` with no type argument), it takes any name and any props.
 
 Name events `object.action` in the past tense (`project.created`, `invoice.paid`), the way the generated file does. Most analytics services group events by name, and one naming rule keeps their dashboards readable.
 

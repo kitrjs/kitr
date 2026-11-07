@@ -7,6 +7,8 @@ import {
   useMemo,
   useState,
 } from 'react'
+import type { ThemeConfig } from './config'
+import { defineTokens, type TokenGroup } from './tokens'
 
 /** The user's choice: a fixed theme, or `'system'` to follow the operating system. */
 export type Theme = 'light' | 'dark' | 'system'
@@ -23,6 +25,9 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+/** `config/theme.ts`, provided by the theme provider so `<ThemeScript />` uses the same settings. */
+export const ThemeConfigContext = createContext<ThemeConfig | null>(null)
 
 /** Props of `ThemeProvider`. The theme provider in `kitrrc.ts` fills them from `config/theme.ts`. */
 export interface ThemeProviderProps {
@@ -119,17 +124,49 @@ export function useTheme(): ThemeContextValue {
   return ctx
 }
 
-/** Inline script for the document head; applies the stored theme before first paint. */
-export function ThemeScript({
-  storageKey = 'kitr-theme',
-  attribute = 'data-theme',
-}: {
+/**
+ * Inline script for the document head; applies the stored theme before first paint. Its
+ * `storageKey`, `attribute` and `tokens` default to `config/theme.ts` (through the theme
+ * provider), so the head and the provider always agree. `tokens` are emitted as a `<style>` of
+ * `--kitr-*` overrides: `light` on `:root`, `dark` under the dark attribute.
+ */
+export function ThemeScript(props: {
   storageKey?: string
   attribute?: string
+  tokens?: ThemeConfig['tokens']
 }) {
+  const config = useContext(ThemeConfigContext)
+  const storageKey = props.storageKey ?? config?.storageKey ?? 'kitr-theme'
+  const attribute = props.attribute ?? config?.attribute ?? 'data-theme'
+  const tokens = props.tokens ?? config?.tokens
   const code = `(function(){try{var k=${inlineJson(storageKey)};var t=localStorage.getItem(k)||'system';var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;document.documentElement.setAttribute(${inlineJson(attribute)},r);document.documentElement.style.colorScheme=r}catch(e){}})()`
-  // biome-ignore lint/security/noDangerouslySetInnerHtml: static, no user input
-  return <script dangerouslySetInnerHTML={{ __html: code }} />
+  const css = tokens ? tokenCss(tokens, attribute) : ''
+  return (
+    <>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static, no user input */}
+      <script dangerouslySetInnerHTML={{ __html: code }} />
+      {css ? (
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: config values, `<` escaped
+        <style data-kitr-tokens="" dangerouslySetInnerHTML={{ __html: css }} />
+      ) : null}
+    </>
+  )
+}
+
+/**
+ * The CSS for `config/theme.ts` tokens. `:root:root` outranks `kitr/theme/styles.css` (`:root`,
+ * `[data-theme="dark"]`) wherever the stylesheet loads. `<` is escaped so a value cannot close the tag.
+ */
+export function tokenCss(
+  tokens: { light?: TokenGroup; dark?: TokenGroup },
+  attribute = 'data-theme',
+): string {
+  let css = ''
+  if (tokens.light && Object.keys(tokens.light).length)
+    css += defineTokens(tokens.light).css(':root:root')
+  if (tokens.dark && Object.keys(tokens.dark).length)
+    css += defineTokens(tokens.dark).css(`:root:root[${attribute}="dark"]`)
+  return css.replace(/</g, '\\3c ')
 }
 
 /** JSON that is safe inside an inline <script>: `<` can never close the tag. */

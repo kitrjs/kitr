@@ -250,10 +250,53 @@ export function runChecks(ctx: ProjectContext): Finding[] {
       fix: 'kitr upgrade',
     })
 
+  out.push(...tailwindChecks(ctx))
+
   if (!ctx.exists('AGENTS.md'))
     out.push({
       level: 'info',
       message: 'No AGENTS.md; `kitr add` writes one so coding agents follow the conventions',
+    })
+  return out
+}
+
+/**
+ * `config/tailwind.ts` against the stylesheet it names: the `entry` exists and imports Tailwind,
+ * and imports kitr's preset exactly when `preset` is on.
+ */
+export function tailwindChecks(ctx: ProjectContext): Finding[] {
+  if (!ctx.exists('config/tailwind.ts')) return []
+  const config = ctx.read('config/tailwind.ts')
+  const entry = config.match(/entry\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? 'app/styles/app.css'
+  const preset = !/preset\s*:\s*false\b/.test(config)
+  if (!ctx.exists(entry))
+    return [
+      {
+        level: 'error',
+        message: `config/tailwind.ts names ${entry} as the stylesheet, but it does not exist`,
+        fix: `Create ${entry} with @import 'tailwindcss', or point \`entry\` at your stylesheet`,
+      },
+    ]
+  const css = ctx.read(entry)
+  const out: Finding[] = []
+  if (!/@import\s+['"]tailwindcss['"]/.test(css))
+    out.push({
+      level: 'warn',
+      message: `${entry} does not import Tailwind`,
+      fix: `Add @import 'tailwindcss'; at the top of ${entry}`,
+    })
+  const hasPreset = /@import\s+['"](?:kitr|@kitr)\/tailwind\/preset\.css['"]/.test(css)
+  if (preset && !hasPreset)
+    out.push({
+      level: 'warn',
+      message: `${entry} does not import kitr's preset, so utilities like bg-background have no tokens`,
+      fix: `Add @import 'kitr/tailwind/preset.css'; after Tailwind, or set preset: false`,
+    })
+  if (!preset && hasPreset)
+    out.push({
+      level: 'warn',
+      message: `config/tailwind.ts sets preset: false, but ${entry} still imports it`,
+      fix: `Remove the kitr/tailwind/preset.css import, or set preset: true`,
     })
   return out
 }

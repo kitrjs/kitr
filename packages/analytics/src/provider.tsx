@@ -45,7 +45,8 @@ export const analyticsProvider = defineProvider({
         : undefined
       const gated = consent !== undefined && consent.analytics !== false
       return createAnalytics({
-        debug: app.isDevelopment && !hub,
+        // The default console adapter already prints every call: debug would print it twice.
+        debug: app.isDevelopment && !hub && !!config.adapters?.length,
         ...config,
         ...(gated ? { enabled: false } : {}),
         adapters: all,

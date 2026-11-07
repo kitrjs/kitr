@@ -29,6 +29,7 @@ export function createRealtimeClient(config: RealtimeConfig = {}): SocketTranspo
   if (transport === 'sse')
     return createSseTransport({ url: config.url ?? config.path ?? '/events' })
   return createSocketClient({
+    heartbeat: config.heartbeat,
     url: () =>
       config.url ?? `${window.location.origin.replace(/^http/, 'ws')}${config.path ?? '/ws'}`,
   })

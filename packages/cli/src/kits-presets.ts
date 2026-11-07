@@ -486,7 +486,7 @@ export const Route = createFileRoute('/_app')({
     // so a value captured at creation time would be stale after sign-in.
     await context.app.boot()
     const session = context.app.container.use('auth').session as Session<User>
-    return requireAuth()({ context: { session }, location })
+    return requireAuth()({ context: { session, app: context.app }, location })
   },
   component: AppLayout,
 })
@@ -1579,8 +1579,11 @@ export type AppRoutes = typeof routes.$types
     'server/realtime.ts',
     `import { createRealtimeServer } from 'kitr/realtime/server'
 import { chatChannel } from '#app/channels/chat'
+import realtimeConfig from '../config/realtime'
 
+/** Transport and path come from config/realtime.ts. */
 export const realtime = createRealtimeServer({
+  ...realtimeConfig,
   channels: [chatChannel],
   // authorize: (request) => verify(request.headers.get('authorization')),
 })
@@ -1599,8 +1602,8 @@ import { realtime } from '#server/realtime'
 /** The kitr server behind Start's /api/* catch-all route; also what tests call. Providers from kitrrc.ts, config from config/. */
 export const server = createServer({ providers: rc.providers, config })
 mountRoutes(server, routes)
-// WebSocket upgrades on /api/ws, next to the REST routes.
-realtime.attach(server, '/api/ws')
+// Realtime on /api/ws (config/realtime.ts), next to the REST routes.
+realtime.attach(server)
 `,
   )
   write(

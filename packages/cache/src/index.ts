@@ -154,7 +154,8 @@ export function createCache(config: CacheConfig = {}): Cache {
     },
     async set(key, value, options = {}) {
       await driver.set(k(key), JSON.stringify(value ?? null), options.ttl ?? defaultTtl)
-      if (options.tags?.length) await driver.tag(k(key), options.tags)
+      // Tags carry the prefix too: apps sharing a Redis must not clear each other's entries.
+      if (options.tags?.length) await driver.tag(k(key), options.tags.map(k))
     },
     async has(key) {
       return (await driver.get(k(key))) !== undefined
@@ -181,7 +182,7 @@ export function createCache(config: CacheConfig = {}): Cache {
       return run
     },
     async invalidateTags(...tags) {
-      await driver.invalidateTags(tags)
+      await driver.invalidateTags(tags.map(k))
     },
     async clear() {
       await driver.clear()
