@@ -100,12 +100,42 @@ export const renameProject = defineMutation({
 - `invalidate` marks entries stale so they refetch (prefix match: `projectKeys.lists()` covers every filtered list).
 - `remove` drops entries entirely.
 
-Use it with `useKitrMutation`, which applies the effects for you:
+Use it with `useMutation`, which applies the effects for you when given a definition:
 
 ```tsx
-const rename = useKitrMutation(renameProject)
+import { useMutation } from 'kitr/query'
+
+const rename = useMutation(renameProject)
 rename.mutate({ id, name })
 ```
+
+`useKitrMutation(renameProject)` is the same thing under its older name.
+
+## Use a query or mutation by name
+
+[Server actions](/packages/actions) register every `defineQuery('projects.list', ...)` and `defineMutation('projects.rename', ...)` under its name, and `kitr types` writes those names into `.kitr/actions.ts` so they are typed. Every hook in `kitr/query` then takes the name as its first argument, the input as the second, and TanStack overrides as the third:
+
+```tsx
+import { queryOptions, useMutation, useQuery, useSuspenseQuery } from 'kitr/query'
+
+const { data } = useQuery('projects.list', { status: 'open' }, { refetchInterval: 10_000 })
+const { data: projects } = useSuspenseQuery('projects.list', { status: 'open' })
+const rename = useMutation('projects.rename', { onSuccess: () => toast('Renamed') })
+const options = queryOptions('projects.list', { status: 'open' }) // for loaders
+```
+
+The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[kitr/query] "projects.rnaem" is not registered` with the names that are.
+
+Outside React, `call` runs an operation by name: a query fetches, a mutation mutates. In the browser it is a request; on the server the handler runs in-process:
+
+```ts
+import { call } from 'kitr/query'
+
+const open = await call('projects.list', { status: 'open' })
+await call('projects.rename', { id: 'prj_42', name: 'Acme site' })
+```
+
+Every hook also accepts the imported definition in place of the name, `useQuery(listProjects, input)`, and plain TanStack options as before. The three forms produce the same query options, so a component and a loader using different forms share one cache entry.
 
 ## Live updates
 
