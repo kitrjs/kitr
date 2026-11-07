@@ -131,6 +131,15 @@ describe('createServer', () => {
     expect((await (await server.fetch(req('/client-error'))).json()).message).toBe('Name taken')
   })
 
+  it('hides 5xx details when the app mode is production, without NODE_ENV', async () => {
+    const server = createServer({ logger: silentLogger, mode: 'production' })
+    server.h3.get('/crash', () => {
+      throw new KitrError('INTERNAL', 'db password is hunter2', { data: { dsn: 'x' } })
+    })
+    const crash = await (await server.fetch(req('/crash'))).json()
+    expect(crash).toEqual({ code: 'INTERNAL', message: 'Internal server error', status: 500 })
+  })
+
   it('rejects bodies over the limit', async () => {
     const server = createServer({ logger: silentLogger, server: { bodyLimit: 10 } })
     server.h3.post('/upload', async (event) => ({ size: (await event.req.text()).length }))
