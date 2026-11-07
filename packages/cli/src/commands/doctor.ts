@@ -3,9 +3,8 @@ import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createProjectInfo } from '../add-context'
 import { createContext, type ProjectContext } from '../context'
-import { installedPackages } from '../packages'
-import { createPlatformContext, loadPlatforms, platformTypes } from '../platforms'
-import { recipes } from '../recipes'
+import { installedPackages, type LoadedPackage } from '../packages'
+import { createPlatformContext, loadPlatforms } from '../platforms'
 import { runTypes } from '../types'
 import { versions } from '../versions'
 
@@ -15,12 +14,17 @@ export interface Finding {
   fix?: string
 }
 
-/** Every check kitr knows how to run on a project. Each is pure: it reads, it never writes. */
-export function runChecks(ctx: ProjectContext): Finding[] {
+/**
+ * Every check kitr knows how to run on a project. Each is pure: it reads, it never writes.
+ * `loaded` is the setup module of every package in kitrrc.ts; what they declare (`client`,
+ * `wraps`) drives the checks, so the core names no package.
+ */
+export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Finding[] {
   const out: Finding[] = []
   const rc = ctx.readRc()
   const deps: Record<string, string> = { ...ctx.pkg.dependencies, ...ctx.pkg.devDependencies }
   const serverOnly = ctx.isServerOnly()
+  const definitions = new Map(loaded.map((l) => [l.package, l.definition]))
 
   if (!ctx.rcPath)
     out.push({
@@ -74,47 +78,9 @@ export function runChecks(ctx: ProjectContext): Finding[] {
     }
   }
 
-  // Legacy recipes that need a config file should have one. Packages with a setup module check themselves.
-  for (const name of rc.packages) {
-    const short = name.replace('@kitr/', '')
-    const recipe = recipes[short]
-    if (!recipe) continue
-    if (
-      !ctx.exists(rc.directories.config ?? 'config', `${short}.ts`) &&
-      ![
-        'react',
-        'router',
-        'actions',
-        'testing',
-        'mocks',
-        'table',
-        'state',
-        'forms',
-        'web',
-        'mobile',
-        'desktop',
-      ].includes(short)
-    ) {
-      out.push({
-        level: 'warn',
-        message: `config/${short}.ts is missing`,
-        fix: `kitr add ${short}`,
-      })
-    }
-  }
-
-  // Direct upstream imports where a kitr entry exists.
-  const upstream: Record<string, string> = {
-    '@tanstack/react-router': 'kitr/router',
-    '@tanstack/react-query': 'kitr/query',
-    '@tanstack/react-start': 'kitr/actions',
-    'react-hook-form': 'kitr/forms',
-    '@tanstack/react-table': 'kitr/table',
-    zustand: 'kitr/state',
-    ky: 'kitr/http',
-    h3: 'kitr/server',
-    'react-i18next': 'kitr/i18n',
-  }
+  // Direct upstream imports where a kitr entry exists: each package declares what it wraps.
+  const upstream: Record<string, string> = {}
+  for (const def of definitions.values()) Object.assign(upstream, def.wraps)
   const appDir = ctx.path(rc.directories.app ?? 'app')
   if (existsSync(appDir)) {
     for (const file of walk(appDir)) {
@@ -139,18 +105,11 @@ export function runChecks(ctx: ProjectContext): Finding[] {
     }
   }
 
-  // Server-only guard: React must not be present.
+  // Server-only guard: React, and any package that needs it, must not be present.
   if (serverOnly) {
-    for (const name of [
-      'react',
-      'react-dom',
-      '@kitr/react',
-      '@kitr/router',
-      '@kitr/query',
-      '@kitr/theme',
-      '@kitr/forms',
-    ]) {
-      if (name in deps)
+    for (const name of Object.keys(deps)) {
+      const client = name === 'react' || name === 'react-dom' || definitions.get(name)?.client
+      if (client)
         out.push({
           level: 'error',
           message: `server-only project depends on ${name}`,
@@ -178,20 +137,21 @@ export function runChecks(ctx: ProjectContext): Finding[] {
       })
   }
 
-  // Platforms: each one's package must be installed; a UI app needs at least one UI platform.
+  // Platforms: each one's package (what kitrrc.ts imports the factory from) must be installed and listed.
   const platformNames = Object.keys(rc.platforms)
   for (const [name, p] of Object.entries(rc.platforms)) {
-    const info = platformTypes[p.factory]
-    if (info && !(info.package in deps))
+    const pkg = platformPackage(p.source)
+    if (!pkg) continue
+    if (!(pkg in deps))
       out.push({
         level: 'error',
-        message: `platform ${name} needs ${info.package}`,
-        fix: `${ctx.pm} add ${info.package}`,
+        message: `platform ${name} needs ${pkg}`,
+        fix: `${ctx.pm} add ${pkg}`,
       })
-    if (info && !rc.packages.includes(info.package))
+    if (!rc.packages.includes(pkg))
       out.push({
         level: 'warn',
-        message: `${info.package} (platform ${name}) is not listed in kitrrc.ts packages`,
+        message: `${pkg} (platform ${name}) is not listed in kitrrc.ts packages`,
         fix: `kitr add ${p.factory} ${name}`,
       })
   }
@@ -201,7 +161,7 @@ export function runChecks(ctx: ProjectContext): Finding[] {
       message: 'kitrrc.ts has no platforms, so `kitr dev` has nothing to run',
       fix: serverOnly
         ? 'kitr add server api'
-        : 'kitr add web site (or desktop app, mobile phone, server api)',
+        : 'kitr add web site (`kitr platforms types` lists the rest)',
     })
   else if (
     !serverOnly &&
@@ -259,17 +219,20 @@ export function runChecks(ctx: ProjectContext): Finding[] {
 }
 
 /** Each installed package's own `doctor` hook. */
-export async function packageChecks(ctx: ProjectContext): Promise<Finding[]> {
+export async function packageChecks(
+  ctx: ProjectContext,
+  loaded?: LoadedPackage[],
+): Promise<Finding[]> {
   const out: Finding[] = []
   const info = createProjectInfo(ctx)
-  for (const loaded of await installedPackages(ctx)) {
-    if (!loaded.definition.doctor) continue
+  for (const pkg of loaded ?? (await installedPackages(ctx))) {
+    if (!pkg.definition.doctor) continue
     try {
-      out.push(...(await loaded.definition.doctor(info)))
+      out.push(...(await pkg.definition.doctor(info)))
     } catch (error) {
       out.push({
         level: 'error',
-        message: `${loaded.name}: doctor failed: ${(error as Error).message}`,
+        message: `${pkg.name}: doctor failed: ${(error as Error).message}`,
       })
     }
   }
@@ -301,6 +264,13 @@ export async function platformChecks(ctx: ProjectContext): Promise<Finding[]> {
     }
   }
   return out
+}
+
+/** `kitr/web` → `@kitr/web`; `@acme/shell` or `@acme/shell/platform` → `@acme/shell`; a relative path → none. */
+function platformPackage(source: string | undefined): string | undefined {
+  if (!source || source.startsWith('.') || source.startsWith('#')) return undefined
+  if (source.startsWith('kitr/')) return `@kitr/${source.split('/')[1]}`
+  return source.startsWith('@') ? source.split('/').slice(0, 2).join('/') : source.split('/')[0]
 }
 
 /** Generated types under `.kitr/` must match what the generators produce now. */
@@ -367,8 +337,9 @@ export const doctor = defineCommand({
   },
   async run({ args }) {
     const ctx = createContext()
-    const findings = runChecks(ctx)
-    findings.push(...(await packageChecks(ctx)))
+    const loaded = await installedPackages(ctx)
+    const findings = runChecks(ctx, loaded)
+    findings.push(...(await packageChecks(ctx, loaded)))
     findings.push(...(await platformChecks(ctx)))
     findings.push(...(await typesChecks(ctx)))
     if (args.json) {

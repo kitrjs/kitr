@@ -8,7 +8,7 @@ Every `kitr/*` import maps to one `@kitr/*` package. The umbrella `kitr` package
 2. **Add beside, never change.** kitr's additions are new names (`createKitrRouter`, `defineQuery`, `useUrlTableState`). The one exception is documented in [departures.md](departures.md): `kitr/forms` exports its own `Form` and re-exports React Hook Form's as `RhfForm`.
 3. **Providers are subpaths.** `kitr/query/provider`, `kitr/http/provider`, `kitr/theme/provider`, `kitr/auth/provider` export a provider as `default`, so `kitrrc.ts` can lazy-import them without pulling the rest of the package into the boot path.
 4. **Server entries never import React.** `kitr/server`, `kitr/api`, `kitr/logger`, `kitr/realtime/server`, `kitr/realtime/socket.io/server`, `kitr/realtime/sse/server`, `kitr/auth/server`, `kitr/db` and `kitr/testing` are safe in a Node-only project. `kitr/testing/react` is where `renderWithKitr` lives.
-5. **Platforms are packages.** `kitr/web`, `kitr/server`, `kitr/desktop` and `kitr/mobile` each export a factory built with `definePlatform` from `@kitr/core`. The core knows the contract, never a platform.
+5. **Platforms are packages.** `kitr/web`, `kitr/server`, `kitr/desktop`, `kitr/tauri` and `kitr/mobile` each export a factory built with `definePlatform` from `@kitr/core`. The core knows the contract, never a platform.
 6. **Optional peers.** `kitr` lists every `@kitr/*` package as an optional peer. `kitr add <name>` installs the ones you use; importing an entry whose package is missing fails at build time with a clear module-not-found, not at runtime.
 
 ## One exception you will hit
@@ -85,8 +85,10 @@ TanStack's route generator rewrites that specific import in every route file and
 | `kitr/devtools`, `kitr/devtools/provider` | `@kitr/devtools` | no (`kitr/devtools/ui` is React) |
 | `kitr/web`, `kitr/web/vite` | `@kitr/web` | no (CLI and build time) |
 | `kitr/web/client`, `kitr/web/provider` | `@kitr/web` | hooks need React |
-| `kitr/desktop`, `kitr/desktop/electron-main`, `kitr/desktop/electron-preload` | `@kitr/desktop` | no |
-| `kitr/desktop/client`, `kitr/desktop/tauri`, `kitr/desktop/electron`, `kitr/desktop/provider` | `@kitr/desktop` | `useTauriEvent` needs React |
+| `kitr/desktop`, `kitr/desktop/main`, `kitr/desktop/preload` | `@kitr/desktop` | no |
+| `kitr/desktop/client`, `kitr/desktop/provider` | `@kitr/desktop` | no |
+| `kitr/tauri` | `@kitr/tauri` | no (CLI) |
+| `kitr/tauri/client`, `kitr/tauri/provider` | `@kitr/tauri` | `useTauriEvent` needs React |
 | `kitr/mobile` | `@kitr/mobile` | no (CLI) |
 | `kitr/mobile/client`, `kitr/mobile/provider` | `@kitr/mobile` | no |
 | `kitr/vite` | `@kitr/vite` | no (build time) |

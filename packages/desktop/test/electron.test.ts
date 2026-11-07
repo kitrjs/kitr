@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createIpcClient, IPC_BRIDGE_KEY, isElectron } from '../src/electron'
-import { handleIpc } from '../src/electron-main'
-import { exposeIpc } from '../src/electron-preload'
+import { createIpcClient, IPC_BRIDGE_KEY, isElectron } from '../src/client'
+import { handleIpc } from '../src/main'
+import { exposeIpc } from '../src/preload'
 
 type Ipc = {
   'app.version': () => string

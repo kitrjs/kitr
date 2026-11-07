@@ -17,6 +17,7 @@
     ],
     "client": true,
     "docs": "docs",
+    "setup": "./kitr",
     "types": "./types"
   },
   "type": "module",
@@ -36,6 +37,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
     },
     "./types": {
       "types": "./dist/types.d.ts",

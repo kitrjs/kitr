@@ -12,7 +12,8 @@
       "react"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "type": "module",
   "license": "MIT",
@@ -43,6 +44,10 @@
     "./devtools": {
       "types": "./dist/devtools.d.ts",
       "default": "./dist/devtools.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
     },
     "./package.json": "./package.json"
   },

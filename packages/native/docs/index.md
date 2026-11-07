@@ -709,7 +709,7 @@ The Electron shell runs Node only in the main process, so a native driver there 
 
 ```ts
 // app/native/electron-clipboard.ts
-import { createIpcClient } from 'kitr/desktop/electron'
+import { createIpcClient } from 'kitr/desktop/client'
 import type { ClipboardDriver } from 'kitr/native'
 
 type ClipboardIpc = {
@@ -731,7 +731,7 @@ export function electronClipboard(): ClipboardDriver | undefined {
 ```ts
 // platforms/app/main.ts
 import { clipboard, ipcMain } from 'electron'
-import { handleIpc } from 'kitr/desktop/electron-main'
+import { handleIpc } from 'kitr/desktop/main'
 
 handleIpc<{ 'clipboard.read': () => string; 'clipboard.write': (text: string) => void }>(ipcMain, {
   'clipboard.read': () => clipboard.readText(),

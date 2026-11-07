@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { validateManifest } from '../src/manifest'
 import { manifests } from '../src/manifests.gen'
-import { recipes } from '../src/recipes'
+import { platformTypeNames } from '../src/platforms'
 
 const root = join(import.meta.dirname, '../..')
 const packages = readdirSync(root)
@@ -27,8 +27,13 @@ describe('package manifests', () => {
     expect(Object.keys(manifests).sort()).toEqual([...names].sort())
   })
 
-  it('every recipe has a manifest', () => {
-    for (const name of Object.keys(recipes)) expect(manifests[name], name).toBeDefined()
+  it('every package ships a setup module, and platforms say so', () => {
+    for (const { dir, pkg } of packages) {
+      if (pkg.kitr.included) continue
+      expect(pkg.kitr.setup, dir).toBe('./kitr')
+      expect(pkg.exports['./kitr'], dir).toBeDefined()
+    }
+    expect([...platformTypeNames].sort()).toEqual(['desktop', 'mobile', 'server', 'tauri', 'web'])
   })
 
   it('rejects a bad manifest', () => {

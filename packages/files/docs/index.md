@@ -624,7 +624,7 @@ Then implement them in the main process:
 // platforms/app/main.ts
 import { readFile, writeFile } from 'node:fs/promises'
 import { app, dialog, ipcMain, shell } from 'electron'
-import { handleIpc, handleKitrIpc } from 'kitr/desktop/electron-main'
+import { handleIpc, handleKitrIpc } from 'kitr/desktop/main'
 import type { Ipc } from './ipc'
 
 handleIpc<Ipc>(ipcMain, {
@@ -664,7 +664,7 @@ In the renderer, turn the IPC calls into a `FilesDriver` and register it under t
 ```ts
 // app/providers/electron-files.ts
 import { defineProvider } from 'kitr/app'
-import { createIpcClient } from 'kitr/desktop/electron'
+import { createIpcClient } from 'kitr/desktop/client'
 import { type FileData, type FilesDriver, mimeFor, type PickedFile, toBlob } from 'kitr/files'
 import type { Ipc } from '../../platforms/app/ipc'
 

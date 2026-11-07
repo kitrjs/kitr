@@ -39,7 +39,7 @@ export default defineKitrConfig({
   ],
   platforms: {
    site: web({ mode: 'spa' }),
-   app: desktop({ shell: 'electron' }),
+   app: desktop(),
   },
   directories: {
     app: 'app',

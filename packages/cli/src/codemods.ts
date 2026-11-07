@@ -154,6 +154,42 @@ export class Codemods {
     this.ctx.touched.add(file)
   }
 
+  /**
+   * Insert `line` (with its import) into the server entry once. By default it goes after the
+   * routes and anything attached before it; `first` puts it straight after `createServer()` so
+   * middleware that must see every request reads in the order it runs. The entry is the
+   * `server` platform's `entry` option when one is listed in kitrrc.ts, else `server/main.ts`.
+   */
+  attachToServer(options: { marker: string; import?: string; line: string; first?: boolean }) {
+    const file = this.serverEntry()
+    const full = this.ctx.path(file)
+    if (!existsSync(full)) return
+    const main = readFileSync(full, 'utf8')
+    if (main.includes(options.marker)) return
+    let next = options.import
+      ? main.replace(/(import \{ createServer \} from 'kitr\/server'\n)/, `$1${options.import}\n`)
+      : main
+    next = options.first
+      ? next.replace(/(export const server = createServer\([^\n]*\)\n)/, `$1${options.line}\n`)
+      : next.replace(
+          /(export const server = createServer\([^\n]*\)\n(?:(?:\/\/[^\n]*\n)?(?!export |const |\n)[^\n]+\n)*)/,
+          `$1${options.line}\n`,
+        )
+    if (next === main) return
+    if (!this.ctx.dryRun) writeFileSync(full, next)
+    this.ctx.touched.add(file)
+    this.ctx.log.step(`edit ${file}`)
+  }
+
+  /** The server platform's entry file from kitrrc.ts, default `server/main.ts`. */
+  serverEntry(): string {
+    const platform = Object.values(this.ctx.readRc().platforms).find((p) => p.factory === 'server')
+    const entry = platform?.options?.entry
+    return typeof entry === 'string'
+      ? entry
+      : `${this.ctx.readRc().directories.server ?? 'server'}/main.ts`
+  }
+
   /** Delete a file kitr generated earlier (e.g. index.html when switching to Start). */
   remove(file: string) {
     const full = this.ctx.path(file)
@@ -244,20 +280,21 @@ export class Codemods {
    * Pass the generated operations to `createApp` in `app/app.ts`: adds
    * `import { operations } from '#kitr/actions'` and `operations` to the options. Idempotent.
    */
-  registerOperations() {
+  /** Pass `<name>` (imported from `from`) to `createApp({ ... })` in app/app.ts. Idempotent. */
+  registerAppOption(name: string, from: string) {
     const file = `${this.ctx.readRc().directories.app ?? 'app'}/app.ts`
     const full = this.ctx.path(file)
     if (!existsSync(full) || this.ctx.dryRun) return
     const src = readFileSync(full, 'utf8')
-    if (src.includes("'#kitr/actions'")) return
+    if (src.includes(`'${from}'`)) return
     const withImport = src.replace(
       /^((?:import[^\n]*\n)+)/m,
-      `$1import { operations } from '#kitr/actions'\n`,
+      `$1import { ${name} } from '${from}'\n`,
     )
-    const next = withImport.replace(/createApp\(\{\s*/, (m) => `${m}operations, `)
+    const next = withImport.replace(/createApp\(\{\s*/, (m) => `${m}${name}, `)
     if (next === src) {
       this.ctx.log.warn(
-        `${file}: could not find createApp({ ... }); add \`operations\` from '#kitr/actions' yourself`,
+        `${file}: could not find createApp({ ... }); add \`${name}\` from '${from}' yourself`,
       )
       return
     }
@@ -265,16 +302,17 @@ export class Codemods {
     this.ctx.touched.add(file)
   }
 
-  unregisterOperations() {
+  unregisterAppOption(name: string, from: string) {
     const file = `${this.ctx.readRc().directories.app ?? 'app'}/app.ts`
     const full = this.ctx.path(file)
     if (!existsSync(full) || this.ctx.dryRun) return
     const src = readFileSync(full, 'utf8')
-    if (!src.includes("'#kitr/actions'")) return
+    if (!src.includes(`'${from}'`)) return
+    const escaped = from.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
     const next = src
-      .replace(/^import \{ operations \} from '#kitr\/actions'\n/m, '')
-      .replace(/(createApp\(\{\s*)operations,\s*/, '$1')
-      .replace(/,\s*operations(\s*\})/, '$1')
+      .replace(new RegExp(`^import \\{ ${name} \\} from '${escaped}'\\n`, 'm'), '')
+      .replace(new RegExp(`(createApp\\(\\{\\s*)${name},\\s*`), '$1')
+      .replace(new RegExp(`,\\s*${name}(\\s*\\})`), '$1')
     writeFileSync(full, next)
     this.ctx.touched.add(file)
   }
