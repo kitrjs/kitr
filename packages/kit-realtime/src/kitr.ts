@@ -1,13 +1,11 @@
-import { type AddContext, definePackage, displayName, startRoot } from '@kitr/core/package'
-
-const write = (ctx: AddContext, path: string, content: string) =>
-  ctx.write(path, content, { overwrite: true })
-
-const remove = (ctx: AddContext, ...paths: string[]) => {
-  for (const p of paths) ctx.unlink(p)
-}
-
-const addScript = (ctx: AddContext, name: string, command: string) => ctx.scripts.add(name, command)
+import {
+  type AddContext,
+  definePackage,
+  displayName,
+  removeFiles as remove,
+  startRoot,
+  writeTemplate as write,
+} from '@kitr/core/package'
 
 const routeTable = (routes: Array<[name: string, method: string, path: string]>) =>
   `// Route table for the typed client. Regenerate with \`kitr api:sync\`.\nexport const routeTable = ${JSON.stringify(
@@ -30,7 +28,7 @@ registerRoutes(api, [...routeTable])
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
   remove(ctx, 'app/routes/about.tsx', 'app/channels/example.ts')
-  addScript(ctx, 'api:sync', 'kitr api:sync')
+  ctx.scripts.add('api:sync', 'kitr api:sync')
 
   write(
     ctx,
