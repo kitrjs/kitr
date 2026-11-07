@@ -549,7 +549,7 @@ channel(transport, projectChannel)
 
 ## The server in the container
 
-The first `.ws()` or `.sse()` link on the table binds its server in the app container as `realtime`, typed as the WebSocket server. That is the one controllers, actions and jobs emit through, and a second link's server is reachable only through what `routes.compile('h3', server)` returned. To run a realtime server you build yourself, outside the table, `createRealtimeServer(options)` from `kitr/realtime/server` still returns one with `attach(server, path)`, and `realtimeProvider(options)` binds one as `realtime` without a route; `sseProvider` from `kitr/realtime/sse/server` does the same for SSE. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener.
+The first `.ws()` or `.sse()` link on the table binds its server in the app container as `realtime`, as the transport-neutral `RealtimeServer` (`use`, `attach`, `connections`). That is the one controllers, actions and jobs emit through, and a second link's server is reachable only through what `routes.compile('h3', server)` returned. To run a realtime server you build yourself, outside the table, `createRealtimeServer(options)` from `kitr/realtime/server` still returns one with `attach(server, path)`, and `realtimeProvider(options)` binds one as `realtime` without a route; `sseProvider` from `kitr/realtime/sse/server` does the same for SSE. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener.
 
 ## Transports
 

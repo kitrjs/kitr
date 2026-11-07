@@ -8,7 +8,12 @@ import {
 } from '@kitr/core'
 import type { KitrServer } from '@kitr/server'
 import type { ChannelDefinition } from './protocol'
-import { createSocketServer, type SocketServer, type SocketServerOptions } from './server'
+import {
+  createSocketServer,
+  type RealtimeServer,
+  type SocketServer,
+  type SocketServerOptions,
+} from './server'
 import { createSseServer, type SseServer, type SseServerOptions } from './sse-server'
 
 /** The type carried per socket route into `$types`. */
@@ -127,9 +132,22 @@ const ws = defineRouteExtension({
             : createSocketServer(entry.options as SocketServerOptions)
         realtime.attach(server, entry.path)
         mounted[entry.path] = realtime
-        // The first realtime server is what controllers and jobs emit through.
-        if (!server.app.container.has('realtime'))
-          server.app.container.value('realtime', realtime as SocketServer)
+        // The first realtime server is what controllers and jobs emit through, behind the
+        // transport-neutral `RealtimeServer` shape the container binding declares.
+        if (!server.app.container.has('realtime')) {
+          const bound: RealtimeServer = {
+            transport: entry.transport,
+            use: (channel, params) => realtime.use(channel, params),
+            attach(target, path) {
+              realtime.attach(target, path ?? entry.path)
+              return bound
+            },
+            get connections() {
+              return realtime.connections
+            },
+          }
+          server.app.container.value('realtime', bound)
+        }
       }
       return mounted
     },
