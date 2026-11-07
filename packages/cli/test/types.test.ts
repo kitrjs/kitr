@@ -55,6 +55,15 @@ describe('platforms generator', () => {
     const generators = await loadGenerators(silent())
     expect(generators.map((g) => g.name)).toEqual(['platforms'])
   })
+
+  it("loads a package's generator through its setup module's types hook", async () => {
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({ name: 'app', dependencies: { '@kitr/actions': '*', '@kitr/query': '*' } }),
+    )
+    const generators = await loadGenerators(silent())
+    expect(generators.map((g) => g.name)).toEqual(['platforms', 'actions'])
+  })
 })
 
 describe('runTypes', () => {

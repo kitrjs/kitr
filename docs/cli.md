@@ -84,7 +84,7 @@ The default registry is kitr's own (`registry/dist` in this repo). Point `--regi
 | `platforms` (built in) | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`: the `KitrPlatforms` augmentation, so `app.platform` and `usePlatform().name` are the project's names. |
 | `actions` (`@kitr/actions`) | `app/actions/**/*.ts` | `.kitr/actions.ts`: `operations` and `actions` maps and the `Operations` augmentation behind `useQuery('projects.list')`. |
 
-A package adds a generator by exporting one from a `./types` subpath and naming it in its manifest:
+A package adds a generator with `defineTypes()` and points its setup module at it with the `types` hook (`types: () => import('./types')` in `src/kitr.ts`). A package without a setup module can still name the subpath in its manifest (`"kitr": { "types": "./types" }`), which the runner falls back to:
 
 ```ts
 // packages/<name>/src/types.ts
@@ -97,8 +97,17 @@ export default defineTypes({
 })
 ```
 
-```json
-{ "kitr": { "types": "./types" }, "exports": { "./types": "./dist/types.js" } }
+```ts
+// packages/<name>/src/kitr.ts
+import { definePackage } from '@kitr/core/package'
+
+export default definePackage({
+  name: 'channels',
+  add(ctx) {
+    ctx.types.enable()
+  },
+  types: () => import('./types'),
+})
 ```
 
 `generate` is pure: it returns `{ file, content }` pairs relative to `.kitr/` and the runner writes them. `watch` says which files re-run it in dev. `kitr doctor` warns when `.kitr/` is stale.
