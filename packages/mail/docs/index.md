@@ -49,8 +49,7 @@ import { createResendTransport, defineConfig } from 'kitr/mail'
 /**
  * Without a transport, development logs every message and production refuses to boot, so a
  * missing RESEND_API_KEY can never print password reset links to production logs.
- * For SMTP, `pnpm add nodemailer`, then: createSmtpTransport(nodemailer, { host, port, auth })
- * with `import nodemailer from 'nodemailer'`.
+ * For SMTP: createSmtpTransport({ host, auth }).
  */
 export default defineConfig({
   from: process.env.MAIL_FROM ?? 'App <hello@example.com>',
@@ -60,13 +59,13 @@ export default defineConfig({
 })
 ```
 
-With `RESEND_API_KEY` set, messages go to Resend. Without it `transport` is unset: in development the provider uses the log transport, which prints each message to the console and keeps it in memory, and in production the provider refuses to boot. For SMTP, see [SMTP](#smtp).
+With `RESEND_API_KEY` set, messages go to Resend. Without it `transport` is unset: in development the provider uses the log transport, which prints each message to the console and keeps it in memory, and in production the provider refuses to boot. The comment's `createSmtpTransport({ host, auth })` is shorthand: the real call takes the nodemailer module first, as shown in [SMTP](#smtp).
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `from` | none | The default sender for every message, as `'Acme <orders@acme.com>'`, `'orders@acme.com'` or `{ email, name }`. `send()` throws when neither this nor the `from` send option is set. |
 | `transport` | the log transport, outside production | Where messages go. In production the provider refuses to boot when this is unset or is the log transport. |
-| `previewPath` | `/_kitr/mail` | Where `mailPreview()` serves the preview pages. `false` turns them off, so `mailPreview()` mounts nothing. A `{ path }` passed to `mailPreview()` wins. |
+| `previewPath` | `/_kitr/mail` | Where `mailPreview()` serves rendered templates in development. `false` turns the preview pages off; `{ path }` passed to `mailPreview()` wins over it. |
 
 | Variable | Used for |
 | --- | --- |

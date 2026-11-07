@@ -8,6 +8,7 @@ import {
   DEFAULT_CSP,
   rateLimit,
   securityHeaders,
+  shield,
   shieldMiddlewares,
 } from '../src'
 
@@ -44,6 +45,30 @@ describe('securityHeaders', () => {
     expect(prod.headers.get('strict-transport-security')).toBe(
       'max-age=31536000; includeSubDomains',
     )
+  })
+
+  it('shield(server) takes production from the app mode, not only NODE_ENV', async () => {
+    const prod = createServer({
+      logger: silentLogger,
+      mode: 'production',
+      server: { healthPath: false },
+    })
+    shield(prod, { rateLimit: false })
+    prod.h3.get('/ping', () => 'pong')
+    const res = await prod.fetch(req('/ping'))
+    expect(res.headers.get('strict-transport-security')).toBe('max-age=31536000; includeSubDomains')
+    expect(res.headers.get('set-cookie')).toContain('Secure')
+
+    const dev = createServer({
+      logger: silentLogger,
+      mode: 'development',
+      server: { healthPath: false },
+    })
+    shield(dev, { rateLimit: false })
+    dev.h3.get('/ping', () => 'pong')
+    const devRes = await dev.fetch(req('/ping'))
+    expect(devRes.headers.get('strict-transport-security')).toBeNull()
+    expect(devRes.headers.get('set-cookie')).not.toContain('Secure')
   })
 
   it('the default CSP forbids framing, plugins from other origins and foreign form posts', () => {

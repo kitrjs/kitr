@@ -88,7 +88,7 @@ Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `targets` | `ios,android` | Native projects; `kitr dev`/`kitr build` run `cap add <target>` the first time and `--target ios|android` picks one. |
+| `targets` | `ios,android` | Native projects; `kitr dev`/`kitr build` run `cap add <target>` the first time and `--target ios` or `--target android` picks one. |
 | `appId`, `appName` | | Bundle identifier and display name. |
 | `scheme` | | Custom URL scheme for deep links. |
 | `port` | `3100` | Dev server for live reload on the device. |

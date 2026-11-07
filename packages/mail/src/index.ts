@@ -100,7 +100,10 @@ export interface MailConfig {
   transport?: MailTransport
   /** Default sender. */
   from?: Recipient
-  /** Where `mailPreview()` serves templates (default `/_kitr/mail`); false turns the previews off. */
+  /**
+   * Meant as the preview path (default `/_kitr/mail`; false disables). Not read today:
+   * `mailPreview()` takes its own `path` option.
+   */
   previewPath?: string | false
 }
 
@@ -364,21 +367,21 @@ export function useMailer(app: KitrApp): Mailer {
 }
 
 /**
- * Serves every registered template at `<previewPath>/<name>` (the `preview` props, or
- * `?prop=value` from the query string), and an index listing them. The path is `options.path`,
- * else `previewPath` from `config/mail.ts`, else `/_kitr/mail`; `previewPath: false` mounts nothing.
+ * Serves every registered template at `<previewPath>/<name>` in development (the `preview` props,
+ * or `?prop=value` from the query string), and an index listing them. The path comes from
+ * `options.path`, then `previewPath` in `config/mail.ts` (read from `server.app` when the server
+ * has one), then `/_kitr/mail`; `previewPath: false` mounts nothing.
  */
 export function mailPreview<
   S extends {
     h3: { get(path: string, handler: (event: any) => unknown): unknown }
-    app?: { config: { has(key: string): boolean; get(key: string): unknown } }
+    app?: { config: { get(key: 'mail', fallback: MailConfig): MailConfig } }
   },
 >(server: S, templates: MailTemplate<any>[], options: { path?: string; mailer?: Mailer } = {}): S {
-  const configured = server.app?.config.has('mail')
-    ? (server.app.config.get('mail') as MailConfig).previewPath
-    : undefined
-  if (options.path === undefined && configured === false) return server
-  const base = (options.path ?? (configured || undefined) ?? '/_kitr/mail').replace(/\/$/, '')
+  const configured = server.app?.config.get('mail', {} as MailConfig).previewPath
+  const path = options.path ?? configured ?? '/_kitr/mail'
+  if (path === false) return server
+  const base = path.replace(/\/$/, '')
   const index = () =>
     new Response(
       `<!DOCTYPE html><meta charset="utf-8"><title>Mail previews</title><h1>Mail previews</h1><ul>${templates

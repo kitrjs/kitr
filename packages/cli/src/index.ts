@@ -81,7 +81,7 @@ export const main = defineCommand({
   meta: {
     name: 'kitr',
     description:
-      'kitr: the React framework where everything is an add-on. Every command runs from flags alone, so agents and CI never hit a prompt.',
+      'kitr: one way to build web, mobile, desktop and backend apps. Every command runs from flags alone, so agents and CI never hit a prompt.',
   },
   subCommands: {
     new: newCommand,

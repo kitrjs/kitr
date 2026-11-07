@@ -1,6 +1,7 @@
 import {
   type CacheEffect,
   type InferOutput,
+  inProduction,
   KitrError,
   type KitrErrorShape,
   type MutationContract,
@@ -204,7 +205,7 @@ function failure(name: string, error: unknown): Envelope<never> {
     console.error(`[kitr/actions] ${name} failed:`, error)
     // Same rule as the kitr server: in production a server error's message and data
     // stay in the server log and never reach the browser.
-    if ((globalThis as any).process?.env?.NODE_ENV === 'production') {
+    if (inProduction()) {
       shape.message = 'Internal server error'
       shape.data = undefined
     }
