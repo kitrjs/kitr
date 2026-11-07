@@ -30,6 +30,12 @@ export interface RateLimitOptions {
   max?: number
   /** Key a request. Default: the client IP. */
   key?: (event: H3Event) => string
+  /**
+   * Read the client IP from `X-Forwarded-For` (first entry). Only turn this on behind a proxy
+   * you control that overwrites the header: otherwise any client can send a new value with every
+   * request and is never limited. Default false: the address of the connection.
+   */
+  trustProxy?: boolean
   /** Where counters live. Default: this process. */
   store?: RateLimitStore
   /** Paths that are never limited. Prefix match. */
@@ -105,9 +111,14 @@ export function cors(options: CorsOptions = {}): Middleware {
     credentials = false,
     maxAge = 600,
   } = options
+  // Reflecting any origin with credentials lets every site make authenticated requests as the user.
+  if (origin === '*' && credentials)
+    throw new Error(
+      '[kitr/shield] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
+    )
   const allow = (from: string | null): string | null => {
     if (!origin) return null
-    if (origin === '*') return credentials && from ? from : '*'
+    if (origin === '*') return '*'
     if (!from) return null
     if (typeof origin === 'function') return origin(from) ? from : null
     return origin.includes(from) ? from : null
@@ -195,15 +206,22 @@ export function createMemoryRateLimitStore(): RateLimitStore {
   }
 }
 
+function clientIp(event: H3Event, trustProxy: boolean): string | undefined {
+  if (trustProxy) {
+    const forwarded = event.req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    if (forwarded) return forwarded
+  }
+  // srvx puts the connection's address on the request.
+  return (event.req as { ip?: string }).ip || undefined
+}
+
 /** Fixed-window rate limit with `RateLimit-*` headers and a 429 when exceeded. */
 export function rateLimit(options: RateLimitOptions = {}): Middleware {
   const {
     windowMs = 60_000,
     max = 100,
-    key = (event) =>
-      event.req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      (event as any).context?.clientAddress ||
-      'anonymous',
+    trustProxy = false,
+    key = (event) => clientIp(event, trustProxy) ?? 'anonymous',
     store = createMemoryRateLimitStore(),
     ignore,
   } = options

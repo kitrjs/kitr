@@ -129,12 +129,29 @@ async function loadOrCreateKey(): Promise<CryptoKey> {
     'encrypt',
     'decrypt',
   ])
-  if (db) await tx(db, 'readwrite', (s) => s.put(key, KEY_ID))
-  return key
+  if (!db) return key
+  // `add`, not `put`: when two tabs race on first use, the second must adopt the first tab's key
+  // rather than overwrite it and leave everything the first tab wrote undecryptable.
+  try {
+    await tx(db, 'readwrite', (s) => s.add(key, KEY_ID))
+    return key
+  } catch {
+    const winner = await tx<CryptoKey | undefined>(db, 'readonly', (s) => s.get(KEY_ID))
+    if (winner) return winner
+    throw new Error('kitr/secure-storage: could not store the encryption key')
+  }
 }
 
-const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
+// Chunked: spreading a large Uint8Array into fromCharCode overflows the call stack.
+const toBase64 = (bytes: Uint8Array) => {
+  let text = ''
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(text)
+}
 const fromBase64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
+/** The storage key is authenticated with each value, so ciphertext moved to another key fails. */
+const aad = (key: string) => new TextEncoder().encode(`kitr-secure:${key}`)
 
 /**
  * Encrypts values with AES-GCM before handing them to a `StorageDriver`. The key never leaves
@@ -153,7 +170,7 @@ export function createWebSecureStorageDriver(storage?: StorageDriver): SecureSto
       try {
         const [ivText, dataText] = raw.split('.')
         const plain = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: fromBase64(ivText!) },
+          { name: 'AES-GCM', iv: fromBase64(ivText!), additionalData: aad(k) },
           await key(),
           fromBase64(dataText!),
         )
@@ -166,7 +183,7 @@ export function createWebSecureStorageDriver(storage?: StorageDriver): SecureSto
     async set(k, value) {
       const iv = crypto.getRandomValues(new Uint8Array(12))
       const data = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
+        { name: 'AES-GCM', iv, additionalData: aad(k) },
         await key(),
         new TextEncoder().encode(value),
       )

@@ -44,8 +44,12 @@ export function createDiskUploadsDriver(
   const path = () => import('node:path')
   const safe = async (key: string) => {
     const p = await path()
-    const full = p.resolve(dir, key)
-    if (!full.startsWith(p.resolve(dir))) throw KitrError.forbidden('Bad upload key')
+    const root = p.resolve(dir)
+    const full = p.resolve(root, key)
+    // A plain startsWith would let `../uploads-evil/x` out of `uploads`; the separator keeps it in.
+    // Sidecar `.meta.json` files are the driver's own and never addressable as uploads.
+    if (!key || !full.startsWith(root + p.sep) || full.endsWith('.meta.json'))
+      throw KitrError.forbidden('Bad upload key')
     return full
   }
   return {
@@ -100,6 +104,25 @@ export interface Uploads {
 declare module '@kitr/core' {
   interface ContainerBindings {
     uploads: Uploads
+  }
+}
+
+/**
+ * Types a browser can show inline without running script from our origin. Anything else (HTML,
+ * SVG, XML, JavaScript) is served as a download, so an uploaded page can't act as the site.
+ */
+const INLINE_TYPES = /^(image\/(png|jpeg|gif|webp|avif|bmp|x-icon)|video\/[\w.+-]+|audio\/[\w.+-]+|application\/pdf|text\/plain)(\s*;.*)?$/i
+
+/** Headers for serving a stored file: never sniffed, sandboxed, and inline only when that is safe. */
+export function servedFileHeaders(type: string, name?: string): Record<string, string> {
+  const inline = INLINE_TYPES.test(type)
+  const filename = name ? `; filename="${name.replace(/["\\\r\n]/g, '_')}"` : ''
+  return {
+    'content-type': inline ? type : 'application/octet-stream',
+    'content-disposition': `${inline ? 'inline' : 'attachment'}${filename}`,
+    'x-content-type-options': 'nosniff',
+    'content-security-policy': "default-src 'none'; img-src 'self'; media-src 'self'; sandbox",
+    'cache-control': 'public, max-age=31536000, immutable',
   }
 }
 
@@ -179,10 +202,7 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
         const file = await driver.get(key)
         if (!file) throw KitrError.notFound('File')
         return new Response(file.data as BodyInit, {
-          headers: {
-            'content-type': file.type,
-            'cache-control': 'public, max-age=31536000, immutable',
-          },
+          headers: servedFileHeaders(file.type, key.split('/').pop()),
         })
       })
       return server
