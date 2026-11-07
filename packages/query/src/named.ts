@@ -171,9 +171,13 @@ export const useMutation: NamedUseMutation & typeof tanstackUseMutation = ((
   const op = resolve(source)
   if (!op) return tanstackUseMutation(source as any, overrides as any)
   const definition = asMutation(op, source)
+  const name = typeof source === 'string' ? source : op.name
   const extra = (overrides ?? {}) as MutationOverrides<unknown, unknown>
   const base = definition.options({ queryClient })
   return tanstackUseMutation({
+    // A named mutation is keyed by its name, so a paused one saved by kitr/offline finds its
+    // mutationFn again after the app restarts (mutationKeyFor).
+    ...(name ? { mutationKey: mutationKeyFor(name) } : {}),
     ...base,
     ...extra,
     onSuccess: async (result, input, ctx, mutation) => {
@@ -182,6 +186,11 @@ export const useMutation: NamedUseMutation & typeof tanstackUseMutation = ((
     },
   })
 }) as any
+
+/** The `mutationKey` every `useMutation(name)` call uses: `['kitr:mutation', name]`. */
+export function mutationKeyFor(name: string): readonly unknown[] {
+  return ['kitr:mutation', name]
+}
 
 /**
  * TanStack's `queryOptions`, plus the name and definition forms, for loaders and prefetching:

@@ -41,7 +41,7 @@ export function defineCommands<C extends CommandMap>(): Commands<C> {
   })
 }
 
-/** A query contract over a command, for `defineQuery(commandQuery(commands.greet, 'greet'))`. */
+/** A query contract over a command, for `queryFrom(commandQuery(commands.greet, 'greet'))`. */
 export function commandQuery<TInput, TOutput>(
   command: (args: TInput) => Promise<TOutput>,
   name: string,

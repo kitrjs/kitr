@@ -8,7 +8,7 @@ Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the rout
 | --- | --- | --- | --- | --- |
 | `react` | `@kitr/react` | client | | `<KitrProvider>`, `useApp()`, `useService()`, `useConfig()`. Added by `router`. |
 | `router` | `@kitr/router` | client | react | TanStack Router, `createKitrRouter`, `requireAuth()`, `can()`, default pending/error/404 routes, `app/router.tsx` and `app/client.tsx`. Every UI platform needs it. |
-| `query` | `@kitr/query` | client | | TanStack Query, `defineQuery`/`defineMutation`/`defineSubscription`, cache effects, `useSubscription`, a provider with sane defaults (30s stale, no retry on 4xx). |
+| `query` | `@kitr/query` | client | | TanStack Query, `queryFrom`/`mutationFrom`/`subscriptionFrom`, cache effects, `useSubscription`, a provider with sane defaults (30s stale, no retry on 4xx). |
 | `http` | `@kitr/http` | client | query | ky with bearer auth, refresh-once on 401, kitr/Adonis error normalisation; `httpQuery`/`httpMutation` contracts. |
 | `forms` | `@kitr/forms` | client | | React Hook Form, `useSchemaForm(schema)` for any Standard Schema library, `<Form>` that maps server `fieldErrors`, headless `<FormField>`. |
 | `table` | `@kitr/table` | client | | TanStack Table v9 (feature-sliced), `dataTableFeatures`, `useUrlTableState` for shareable sort/page/filter URLs. |

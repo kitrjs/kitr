@@ -34,7 +34,7 @@ What `kitr add` does:
 - Adds `@kitr/offline` to `packages` in `kitrrc.ts`.
 - Writes `config/offline.ts` (shown under [Configure](#configure)).
 - Adds `VITE_APP_VERSION` to the public variables in `app/env.ts` as `e.string({ default: '0.0.0' })`, and `VITE_APP_VERSION=0.0.0` to `.env.example` (and to `.env` when it exists).
-- Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, give mutations a `mutationKey` and an optimistic `onMutate`, and use `useOffline()` from `kitr/offline/react` for a status line.
+- Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, named mutations replay even after a restart, give any other mutation a `mutationKey` and `setMutationDefaults` and an optimistic `onMutate`, and use `useOffline()` from `kitr/offline/react` for a status line.
 
 `kitr add offline` asks no questions and adds no scripts. It is a client package, so in a server-only project it prints `offline is a client package; this project is server-only. Skipping.` and changes nothing. No kit includes it.
 
@@ -100,7 +100,7 @@ Nothing changes in your queries. A query that loaded once is saved, and the next
 ```tsx
 // app/routes/orders.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { defineQuery, useQuery } from 'kitr/query'
+import { queryFrom, useQuery } from 'kitr/query'
 
 interface Order {
   id: string
@@ -108,7 +108,7 @@ interface Order {
   total: number
 }
 
-export const ordersQuery = defineQuery({
+export const ordersQuery = queryFrom({
   key: () => ['orders', 'list'],
   fetch: async (_input, { signal }): Promise<Order[]> => {
     const res = await fetch('https://api.acme.com/orders', { signal })
@@ -282,7 +282,7 @@ Give each mutation a `mutationKey`, so it can be replayed after a reload (next s
 
 ```ts
 // app/features/orders/use-create-order.ts
-import { defineMutation, useKitrMutation, useQueryClient } from 'kitr/query'
+import { mutationFrom, useMutation, useQueryClient } from 'kitr/query'
 
 export interface Order {
   id: string
@@ -290,7 +290,7 @@ export interface Order {
   total: number
 }
 
-export const createOrder = defineMutation({
+export const createOrder = mutationFrom({
   mutate: async (input: { customer: string; total: number }): Promise<Order> => {
     const res = await fetch('https://api.acme.com/orders', {
       method: 'POST',
@@ -304,7 +304,7 @@ export const createOrder = defineMutation({
 
 export function useCreateOrder() {
   const queryClient = useQueryClient()
-  return useKitrMutation(createOrder, {
+  return useMutation(createOrder, {
     mutationKey: ['orders', 'create'],
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ['orders', 'list'] })
@@ -341,7 +341,9 @@ Don't catch the offline case yourself and retry with `setTimeout`: the mutation 
 
 ## Replay queued changes after a reload
 
-A paused mutation that is restored from a snapshot is data only: its function didn't survive the reload. Register the function for each `mutationKey` with TanStack's [`setMutationDefaults`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetmutationdefaults). TanStack copies the defaults into a mutation when it is restored, so they must be set **before** the offline provider restores the snapshot. Do it in the `register()` of a provider, which runs before any provider boots:
+A paused mutation that is restored from a snapshot is data only: its function didn't survive the reload. Named mutations need nothing from you: `useMutation('orders.create')` keys the mutation by its name, and before restoring, the offline provider gives every mutation in the operation registry (each `defineMutation('orders.create', …)` from [actions](/packages/actions)) its function and cache effects again. Once restored, it resumes them straight away when the device is online.
+
+For a mutation without a name, register the function for its `mutationKey` with TanStack's [`setMutationDefaults`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetmutationdefaults). TanStack copies the defaults into a mutation when it is restored, so they must be set **before** the offline provider restores the snapshot. Do it in the `register()` of a provider, which runs before any provider boots:
 
 ```ts
 // app/providers/offline-mutations.ts

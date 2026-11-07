@@ -1,16 +1,16 @@
 import type { MutationName, OperationInput, OperationOf, QueryName } from '@kitr/core'
 import { describe, expectTypeOf, it } from 'vitest'
-import { call, defineMutation, defineQuery, queryOptions, useMutation, useQuery } from '../src'
+import { call, mutationFrom, queryFrom, queryOptions, useMutation, useQuery } from '../src'
 
 /**
  * What `kitr types` writes into `.kitr/actions.ts`, by hand: two names augmenting `Operations`.
  */
-const listProjects = defineQuery<{ owner?: string }, string[]>({
+const listProjects = queryFrom<{ owner?: string }, string[]>({
   key: (input) => ['projects', input?.owner ?? 'all'],
   fetch: async () => [],
   source: 'action',
 })
-const updateProject = defineMutation<{ id: string; name: string }, { id: string }>({
+const updateProject = mutationFrom<{ id: string; name: string }, { id: string }>({
   mutate: async ({ id }) => ({ id }),
 })
 

@@ -294,7 +294,7 @@ The sort pattern allows dotted ids such as `customer.name`, so a column can sort
 
 ```ts
 // app/features/orders/queries.ts
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 import type { TableSearch } from 'kitr/table'
 import type { Order } from './columns'
 
@@ -303,7 +303,7 @@ export interface OrdersPage {
   total: number
 }
 
-export const ordersPageQuery = defineQuery<TableSearch, OrdersPage>({
+export const ordersPageQuery = queryFrom<TableSearch, OrdersPage>({
   key: (search) => ['orders', 'page', search],
   fetch: async (search, { signal }) => {
     const params = new URLSearchParams()

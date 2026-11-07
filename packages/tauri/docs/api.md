@@ -62,7 +62,7 @@ function commandMutation<TInput, TOutput>(command: (args: TInput) => Promise<TOu
 function commandQuery<TInput, TOutput>(command: (args: TInput) => Promise<TOutput>, name: string): Omit<QueryContract<TInput, TOutput>, 'kind'>;
 ```
 
-A query contract over a command, for `defineQuery(commandQuery(commands.greet, 'greet'))`.
+A query contract over a command, for `queryFrom(commandQuery(commands.greet, 'greet'))`.
 
 ### defineCommands
 
