@@ -1,28 +1,35 @@
 import { createDefineConfig, KitrError } from '@kitr/core'
 import type { H3Event, Middleware } from 'h3'
 
+/** Options for `cors()` and the `cors` key of `config/shield.ts`. */
 export interface CorsOptions {
   /** `'*'`, a list of origins, or a predicate. Default: same-origin only (no header). */
   origin?: '*' | string[] | ((origin: string) => boolean)
+  /** Methods a preflight allows. Default GET, POST, PUT, PATCH, DELETE, OPTIONS. */
   methods?: string[]
+  /** Request headers a preflight allows. Default Content-Type, Authorization, X-CSRF-Token, X-Requested-With. */
   headers?: string[]
+  /** Let the browser send cookies cross-origin. Refused together with `origin: '*'`. Default false. */
   credentials?: boolean
   /** Seconds a preflight answer may be cached. Default 600. */
   maxAge?: number
 }
 
+/** Options for `csrf()` and the `csrf` key of `config/shield.ts`. */
 export interface CsrfOptions {
   /** Cookie that carries the token. Default `kitr-csrf`. */
   cookie?: string
   /** Header the client sends it back in. Default `x-csrf-token`. */
   header?: string
-  /** Methods that need a token. Default: everything but GET, HEAD, OPTIONS. */
+  /** Methods that need a token. Default POST, PUT, PATCH and DELETE. */
   methods?: string[]
   /** Paths that never need a token (webhooks). Prefix match. */
   ignore?: string[]
+  /** Add `Secure` to the cookie. Default: true when `NODE_ENV` is `production`. */
   secure?: boolean
 }
 
+/** Options for `rateLimit()` and the `rateLimit` key of `config/shield.ts`. */
 export interface RateLimitOptions {
   /** Window length in milliseconds. Default 60 000. */
   windowMs?: number
@@ -42,27 +49,35 @@ export interface RateLimitOptions {
   ignore?: string[]
 }
 
+/** Where rate-limit counters live. Implement it over Redis to share limits between instances. */
 export interface RateLimitStore {
   /** Increment and return the count and when the window resets (ms epoch). */
   hit(key: string, windowMs: number): Promise<{ count: number; resetAt: number }>
 }
 
+/** Options for `securityHeaders()` and the `headers` key of `config/shield.ts`. */
 export interface HeadersOptions {
   /** `Content-Security-Policy`. A string, or false to leave it out. Default: a strict policy for an SPA/SSR app. */
   contentSecurityPolicy?: string | false
   /** `Strict-Transport-Security` max-age in seconds; false to leave it out. Default one year in production. */
   hsts?: number | false
+  /** `X-Frame-Options`. Default `DENY`; false to leave it out. */
   frameOptions?: 'DENY' | 'SAMEORIGIN' | false
+  /** `Referrer-Policy`. Default `strict-origin-when-cross-origin`; false to leave it out. */
   referrerPolicy?: string | false
-  /** `Permissions-Policy`. Default disables camera, microphone and geolocation unless `native` asks for them. */
+  /** `Permissions-Policy`. Default `camera=(), microphone=(), geolocation=()`; false to leave it out. */
   permissionsPolicy?: string | false
 }
 
+/** The options in `config/shield.ts`. Each key takes its middleware's options, or false to turn it off. */
 export interface ShieldConfig {
-  /** false turns the headers off. */
+  /** Security headers. On unless false. */
   headers?: HeadersOptions | false
+  /** CORS. Off unless set to an object. */
   cors?: CorsOptions | false
+  /** Double-submit cookie CSRF. On unless false. */
   csrf?: CsrfOptions | false
+  /** Fixed-window rate limit. On unless false. */
   rateLimit?: RateLimitOptions | false
 }
 
@@ -72,15 +87,17 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type the default export of `config/shield.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<ShieldConfig>()
 
+/** The Content-Security-Policy `securityHeaders()` sends when you don't set one: same-origin everything, inline scripts and styles allowed, no framing. */
 export const DEFAULT_CSP =
   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 const prefixed = (path: string, list: string[] | undefined) =>
   !!list?.some((p) => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`))
 
-/** Security headers on every response. */
+/** Middleware that sets nosniff, frame, referrer, permissions, CSP and (in production) HSTS headers on every response, errors included. */
 export function securityHeaders(options: HeadersOptions = {}): Middleware {
   const production = (globalThis as any).process?.env?.NODE_ENV === 'production'
   const {
@@ -102,7 +119,7 @@ export function securityHeaders(options: HeadersOptions = {}): Middleware {
   }
 }
 
-/** CORS with preflight answers. */
+/** Middleware that answers CORS preflights with 204 and adds `Access-Control-Allow-*` headers for allowed origins. Throws at once for `origin: '*'` with credentials. */
 export function cors(options: CorsOptions = {}): Middleware {
   const {
     origin,
@@ -188,6 +205,7 @@ export function csrf(options: CsrfOptions = {}): Middleware {
   }
 }
 
+/** The default rate-limit store: counters in this process, pruned past 10,000 keys. Each instance counts on its own. */
 export function createMemoryRateLimitStore(): RateLimitStore {
   const hits = new Map<string, { count: number; resetAt: number }>()
   return {

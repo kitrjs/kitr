@@ -2,6 +2,7 @@ import { createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
 import type { KyInstance } from 'ky'
 import { createHttpClient, type HttpClientOptions } from './client'
 
+/** The shape of `config/http.ts`: the same options `createHttpClient` takes. */
 export type HttpConfig = HttpClientOptions
 
 declare module '@kitr/core' {
@@ -13,6 +14,7 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types `config/http.ts`: `export default defineConfig({ baseUrl: env.VITE_API_URL })`. */
 export const defineConfig = createDefineConfig<HttpConfig>()
 
 /** Binds `http` (the ky client) into the container from `config/http.ts`. */

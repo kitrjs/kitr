@@ -1,7 +1,7 @@
 import { defineProvider, getDevtools } from '@kitr/core'
 import { type CacheConfig, createCache } from './index'
 
-/** Binds `cache` from `config/cache.ts` (memory driver by default). */
+/** Binds `cache` from `config/cache.ts` (memory driver by default) on the server; does nothing in the browser. */
 export const cacheProvider = defineProvider({
   name: 'cache',
   register(app) {

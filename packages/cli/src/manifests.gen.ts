@@ -203,7 +203,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "requires": [
       "server"
     ],
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   },
   "logger": {
     "package": "@kitr/logger",
@@ -559,6 +560,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "router"
     ],
     "client": true,
-    "docs": "docs"
+    "docs": "docs",
+    "setup": "./kitr"
   }
 }

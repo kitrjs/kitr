@@ -1,6 +1,7 @@
 import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
 import { type CookieItem, defineCookie } from '@kitr/storage'
 
+/** A consent category. `necessary` is always granted; the others are whatever `config.categories` lists. */
 export type ConsentCategory =
   | 'necessary'
   | 'analytics'
@@ -8,6 +9,7 @@ export type ConsentCategory =
   | 'preferences'
   | (string & {})
 
+/** What a visitor agreed to, stored as JSON in the consent cookie. */
 export interface ConsentRecord {
   /** Categories the visitor agreed to. `necessary` is always in. */
   granted: ConsentCategory[]
@@ -17,6 +19,7 @@ export interface ConsentRecord {
   version: number
 }
 
+/** Options for `config/consent.ts`: the categories offered, the version, the cookie and what to gate. */
 export interface ConsentConfig {
   /** What the banner offers. Default `['analytics', 'marketing']`. */
   categories?: ConsentCategory[]
@@ -32,21 +35,27 @@ export interface ConsentConfig {
   monitoring?: ConsentCategory | false
 }
 
+/** The consent service bound as `consent` in the container. Reads and writes the visitor's choice. */
 export interface Consent {
   /** The record, with `decidedAt` unset while the banner should show. */
   get(): ConsentRecord
   /** Has the visitor decided (for this version)? */
   decided(): boolean
+  /** Whether a category is granted for the current version. Always true for `necessary`. */
   has(category: ConsentCategory): boolean
   /** Grant exactly these categories (plus `necessary`). */
   grant(categories: ConsentCategory[]): void
+  /** Grant every configured category. */
   acceptAll(): void
   /** Decline everything but `necessary`. */
   rejectAll(): void
   /** Forget the choice so the banner shows again. */
   reset(): void
+  /** Call `listener` after every change to the choice. Returns the unsubscribe function. */
   subscribe(listener: (record: ConsentRecord) => void): () => void
+  /** The categories from config, in order. */
   readonly categories: ConsentCategory[]
+  /** The storage cookie that holds the record; `cookie.get(request.headers)` reads it on the server. */
   readonly cookie: CookieItem<ConsentRecord>
 }
 
@@ -59,8 +68,13 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types the default export of `config/consent.ts`. */
 export const defineConfig = createDefineConfig<ConsentConfig>()
 
+/**
+ * Build a consent service backed by a cookie. The provider calls it with the app (for devtools
+ * logging); tests and server code can call it without one.
+ */
 export function createConsent(config: ConsentConfig = {}, app?: KitrApp): Consent {
   const categories = config.categories ?? ['analytics', 'marketing']
   const version = config.version ?? 1
@@ -121,6 +135,7 @@ export function createConsent(config: ConsentConfig = {}, app?: KitrApp): Consen
   }
 }
 
+/** The consent service from an app's container. Not a hook; components use `useConsent()` from `kitr/consent/react`. */
 export function useConsent(app: KitrApp): Consent {
   return app.container.use('consent')
 }

@@ -2,6 +2,7 @@ import { useApp } from '@kitr/react'
 import { useCallback, useState } from 'react'
 import type { FileData, Files, OpenOptions, PickedFile, SaveOptions } from './index'
 
+/** The `files` service from the app in context. Use `useFileDialogs()` when you want a busy flag. */
 export function useFiles(): Files {
   return useApp().container.use('files')
 }

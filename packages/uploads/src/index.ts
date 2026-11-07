@@ -2,9 +2,13 @@ import { createDefineConfig } from '@kitr/core'
 
 /** What the server returns for every stored file, and what the client resolves with. */
 export interface UploadedFile {
+  /** The random id the file was stored under: the first segment of `key`. */
   id: string
+  /** The original file name, as the browser sent it. */
   name: string
+  /** Size in bytes. */
   size: number
+  /** The MIME type the browser declared. Not sniffed from the bytes. */
   type: string
   /** Where it can be fetched, when the driver serves files. */
   url?: string
@@ -12,6 +16,7 @@ export interface UploadedFile {
   key: string
 }
 
+/** The size, type and count limits checked in the browser (`checkFile`, `useUpload`) and on the server (`receive`). */
 export interface UploadRules {
   /** Bytes. Default 10 MiB. */
   maxSize?: number
@@ -21,6 +26,7 @@ export interface UploadRules {
   maxFiles?: number
 }
 
+/** The shape of `config/uploads.ts`: the default rules plus where files are stored and served. */
 export interface UploadsConfig extends UploadRules {
   /** Where files go. Default: `storage/uploads` on disk (`createDiskUploadsDriver`). */
   driver?: unknown
@@ -34,6 +40,7 @@ declare module '@kitr/core' {
   }
 }
 
+/** Typed identity helper for `config/uploads.ts`. */
 export const defineConfig = createDefineConfig<UploadsConfig>()
 
 /** `image/*` matches `image/png`; exact types match themselves; `.pdf` matches by extension. */
@@ -46,6 +53,7 @@ export function accepts(type: string, name: string, accept?: string[]): boolean 
   })
 }
 
+/** Options for `upload()` and `useUpload()`: where to send, extra form fields and headers, progress and cancel. */
 export interface UploadOptions {
   /** The endpoint, default `/api/uploads`. */
   url?: string
@@ -53,13 +61,20 @@ export interface UploadOptions {
   field?: string
   /** Extra fields sent with the file. */
   fields?: Record<string, string>
+  /** Extra request headers, such as a CSRF token. */
   headers?: Record<string, string>
+  /** Called as bytes go out, with `percent` from 0 to 100. Only the XHR path (browsers) reports progress. */
   onProgress?: (progress: { loaded: number; total: number; percent: number }) => void
+  /** Aborts the upload; the promise rejects with `UploadError('Upload cancelled', 0)`. */
   signal?: AbortSignal
   /** Sent with credentials (cookies). Default true. */
   credentials?: boolean
 }
 
+/**
+ * What `upload()` rejects with: the server's message and HTTP `status` (0 for network errors and
+ * cancels), and the parsed response `body`, which carries `fieldErrors` for rule violations.
+ */
 export class UploadError extends Error {
   constructor(
     message: string,
@@ -138,6 +153,7 @@ export function checkFile(file: File, rules: UploadRules = {}): string | null {
   return null
 }
 
+/** Formats a byte count for people: `formatBytes(10 * 1024 * 1024)` is `'10.0 MB'`. */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`

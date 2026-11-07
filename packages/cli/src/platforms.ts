@@ -8,10 +8,12 @@ import {
   type PlatformFactory,
   type PlatformInstance,
 } from '@kitr/core'
+import { resolvePackageName } from '@kitr/core/package'
 import { builders, generateCode, parseModule } from 'magicast'
 import type { Codemods } from './codemods'
+import { configurePackages } from './configure'
 import { log, type ProjectContext } from './context'
-import { resolveRecipes } from './recipes'
+import { loadPackage } from './packages'
 
 /**
  * Platforms answer "where does this app run?". They are packages, listed by name in kitrrc.ts:
@@ -280,14 +282,50 @@ export function createPlatformContext(
   }
 }
 
-/** Load a platform factory: from the project when installed there, else from the CLI's own dependencies. */
+/**
+ * Resolve a platform type to its package, import path and factory name. A package whose setup
+ * module says `kind: 'platform'` wins; the blessed table covers the rest until every platform
+ * package ships one.
+ */
+export async function resolvePlatformType(
+  ctx: ProjectContext,
+  type: string,
+): Promise<PlatformTypeInfo & { factoryFn?: PlatformFactory<any> }> {
+  let loaded: Awaited<ReturnType<typeof loadPackage>>
+  try {
+    loaded = await loadPackage(ctx, type)
+  } catch {
+    loaded = undefined
+  }
+  const def = loaded?.definition
+  if (loaded && def?.kind === 'platform' && def.platform) {
+    const entry =
+      def.platform.from ??
+      (loaded.package.startsWith('@kitr/') ? `kitr/${def.name}` : loaded.package)
+    return {
+      package: loaded.package,
+      entry,
+      module: loaded.package,
+      factory: def.platform.export,
+      description: def.platform.factory({}).definition.description ?? '',
+      factoryFn: def.platform.factory,
+    }
+  }
+  const info = platformTypes[type]
+  if (!info)
+    throw new Error(
+      `Unknown platform type "${type}". Types: ${platformTypeNames.join(', ')}, or a package whose setup module declares kind: 'platform'.`,
+    )
+  return info
+}
+
+/** Load a platform factory: from the package's setup module, else from the project, else from the CLI's own dependencies. */
 export async function loadFactory(
   ctx: ProjectContext,
   type: string,
 ): Promise<PlatformFactory<any>> {
-  const info = platformTypes[type]
-  if (!info)
-    throw new Error(`Unknown platform type "${type}". Types: ${platformTypeNames.join(', ')}`)
+  const info = await resolvePlatformType(ctx, type)
+  if (info.factoryFn) return info.factoryFn
   let mod: Record<string, unknown> | undefined
   try {
     const jiti = await projectJiti(ctx)
@@ -357,8 +395,9 @@ export function writeRcPlatform(
   name: string,
   type: string,
   options: Record<string, unknown>,
+  resolved?: PlatformTypeInfo,
 ) {
-  const info = platformTypes[type]
+  const info = resolved ?? platformTypes[type]
   if (!info) throw new Error(`Unknown platform type "${type}"`)
   editRcSource(ctx, (_mod, target, src, addImport) => {
     if (
@@ -419,9 +458,7 @@ export async function addPlatform(
   codemods: Codemods,
   add: AddPlatformOptions,
 ): Promise<PlatformInstance> {
-  const info = platformTypes[add.type]
-  if (!info)
-    throw new Error(`Unknown platform type "${add.type}". Types: ${platformTypeNames.join(', ')}`)
+  const info = await resolvePlatformType(ctx, add.type)
   if (!/^[a-z][a-z0-9_-]*$/i.test(add.name))
     throw new Error(
       `Platform name "${add.name}" must be a short identifier (site, api, app, phone...)`,
@@ -432,11 +469,16 @@ export async function addPlatform(
   codemods.installPackages([info.package, ...(instance.dependencies ?? [])])
   codemods.addPackage(info.package)
   if (instance.definition.provider) codemods.addProvider(instance.definition.provider)
-  writeRcPlatform(ctx, add.name, add.type, add.options ?? {})
-  for (const recipe of resolveRecipes(instance.definition.requires ?? [], rc.packages)) {
-    if (recipe.package && rc.packages.includes(recipe.package)) continue
-    await recipe.configure(ctx, codemods)
-    log.success(`${recipe.name} (needed by ${add.type})`)
+  writeRcPlatform(ctx, add.name, add.type, add.options ?? {}, info)
+  const required = instance.definition.requires ?? []
+  if (required.length) {
+    const steps = await configurePackages(ctx, codemods, required, {
+      install: true,
+      yes: true,
+      report: false,
+      added: new Set(rc.packages.map((p) => resolvePackageName(p))),
+    })
+    for (const step of steps) log.success(`${step.name} (needed by ${add.type})`)
   }
   for (const [script, command] of Object.entries({
     dev: 'kitr dev',

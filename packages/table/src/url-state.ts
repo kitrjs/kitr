@@ -8,16 +8,23 @@ import { useCallback, useMemo } from 'react'
 
 /** The search-param shape kitr tables use. Add it to your route's `validateSearch`. */
 export interface TableSearch {
+  /** One-based page number. Absent means page 1. */
   page?: number
+  /** Rows per page. Absent means the default page size. */
   size?: number
+  /** Sort columns, comma-separated, `-` for descending: `-total,customer`. */
   sort?: string
+  /** Column filters as column id to string value: `{ status: 'open' }`. */
   filter?: Record<string, string>
 }
 
+/** Options for `useUrlTableState`: the route's current search, a way to change it and the page size. */
 export interface UrlTableStateOptions {
+  /** The current table search params, usually `Route.useSearch()`. */
   search: TableSearch
   /** Merge a patch into the URL, e.g. `(patch) => navigate({ search: (s) => ({ ...s, ...patch }) })`. */
   setSearch: (patch: Partial<TableSearch>) => void
+  /** Rows per page when the URL has no `size`, and the size left out of the URL. Default 20. */
   defaultPageSize?: number
 }
 
@@ -94,6 +101,7 @@ export function parseSort(sort?: string): SortingState {
     )
 }
 
+/** Turns TanStack's sorting state into the URL's `sort` string: `[{ id: 'total', desc: true }]` becomes `-total`. */
 export function formatSort(sorting: SortingState): string {
   return sorting.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',')
 }

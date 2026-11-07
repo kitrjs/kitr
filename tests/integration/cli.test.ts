@@ -112,6 +112,20 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
   afterAll(() => remove(dir))
 
+  it('kitr add jobs --no-worker answers the question from the flag and mounts the package commands', () => {
+    const out = kitr(dir, 'add', 'jobs', '--no-install', '--no-worker')
+    expect(out).toMatch(/config\/jobs\.ts/)
+    const config = readFileSync(join(dir, 'config/jobs.ts'), 'utf8')
+    expect(config).toContain('worker: false')
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+    expect(pkg.scripts.worker).toBe('kitr jobs:work')
+    expect(pkg.dependencies['@kitr/jobs']).toBeDefined()
+    expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).toContain('@kitr/jobs/provider')
+    expect(kitr(dir, 'add', 'jobs', '--help')).toMatch(/--worker \/ --no-worker/)
+    expect(kitr(dir, '--help')).toMatch(/jobs:list/)
+    expect(kitr(dir, 'jobs:list')).toMatch(/example\s+3/)
+  })
+
   const generators: Array<[string, string, string]> = [
     ['make:route', 'reports', 'app/routes/reports.tsx'],
     ['make:query', 'projects/list', 'app/actions/projects/list.ts'],
@@ -158,6 +172,9 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
 
   it('the project still builds and typechecks with every generated file', () => {
+    // The example copy has no @kitr/jobs installed (only its own dependencies are linked), so
+    // drop the package wiring first; the generated jobs stay and import through `kitr/jobs`.
+    kitr(dir, 'remove', 'jobs', '--no-install')
     kitr(dir, 'build', 'site')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   }, 300_000)
@@ -250,6 +267,36 @@ describe('kitr add / remove', () => {
   })
 
   it('rejects an unknown package', () => {
-    expect(() => kitr(dir, 'add', 'nope', '--no-install')).toThrow()
+    expect(() => kitr(dir, 'add', 'nope', '--no-install')).toThrow(/Unknown package "nope"/)
+  })
+
+  it('a package with a setup module adds, is idempotent, and removes cleanly (jobs)', () => {
+    // A fresh copy, so the comparison below does not depend on what earlier tests left behind.
+    const dir = copyExample('dashboard')
+    // Requirements stay after a remove, so bring them in first and compare against that.
+    kitr(dir, 'add', '@kitr/server', '--no-install')
+    const start = snapshot(dir)
+    kitr(dir, 'add', 'jobs', '--no-install', '--yes')
+    const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+    for (const dep of ['@kitr/jobs', '@kitr/server', '@kitr/logger']) expect(rc).toContain(dep)
+    expect(readFileSync(join(dir, 'config/jobs.ts'), 'utf8')).toContain('worker: true')
+    expect(exists(dir, 'server/jobs/example.ts')).toBe(true)
+    expect(readFileSync(join(dir, 'AGENTS.md'), 'utf8')).toContain('## kitr: jobs')
+    const once = snapshot(dir)
+    kitr(dir, 'add', 'jobs', '--no-install', '--yes')
+    expect(snapshot(dir), 'add is idempotent').toEqual(once)
+    const findings = JSON.parse(kitr(dir, 'doctor', '--json')) as Array<{ message: string }>
+    expect(findings.some((f) => /jobs/.test(f.message) && /missing/.test(f.message))).toBe(false)
+    kitr(dir, 'remove', 'jobs', '--no-install')
+    const after = snapshot(dir)
+    expect(after['kitrrc.ts']).not.toContain('@kitr/jobs')
+    expect(after['config/jobs.ts']).toBeUndefined()
+    expect(after['AGENTS.md']).not.toContain('## kitr: jobs')
+    expect(JSON.parse(after['package.json']!).dependencies['@kitr/jobs']).toBeUndefined()
+    // The example job stays (the app may have edited it); everything kitr owns is back.
+    expect(after['server/jobs/example.ts']).toBeDefined()
+    // Everything kitr owns is back to what it was before `add jobs`.
+    for (const f of ['kitrrc.ts', 'package.json', 'AGENTS.md']) expect(after[f], f).toBe(start[f])
+    remove(dir)
   })
 })

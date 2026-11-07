@@ -9,11 +9,17 @@ import type { Logger } from '@kitr/logger'
 import type { RequestContext } from '@kitr/server'
 import { getQuery, getRequestIP, getRouterParams, type H3Event, readBody, redirect } from 'h3'
 
+/** The incoming request as handlers see it: `ctx.request`. */
 export interface KitrRequest {
+  /** HTTP method, upper case. */
   method: string
+  /** The full request URL. */
   url: URL
+  /** The request headers. */
   headers: Headers
+  /** One header value, or `null`. */
   header(name: string): string | null
+  /** The client IP, or `undefined` when the runtime does not expose it. */
   ip(): string | undefined
   /** Raw query params. Prefer `ctx.query` when a schema is set. */
   qs(): Record<string, string | string[]>
@@ -23,11 +29,17 @@ export interface KitrRequest {
   native: Request
 }
 
+/** Helpers for shaping the response: `ctx.response`. */
 export interface KitrResponse {
+  /** Set the status for the value the handler returns. */
   status(code: number): KitrResponse
+  /** Set a response header. */
   header(name: string, value: string): KitrResponse
+  /** A redirect response; return it from the handler. Default status 302. */
   redirect(location: string, status?: number): Response
+  /** An empty 204 response; return it from the handler. */
   noContent(): Response
+  /** A JSON response with your own status and headers; return it from the handler. */
   json(data: unknown, init?: ResponseInit): Response
 }
 
@@ -40,14 +52,23 @@ export interface HttpContext<
   Q = Record<string, string | string[]>,
   B = unknown,
 > {
+  /** The underlying h3 event. */
   event: H3Event
+  /** The request-scoped app: its container holds per-request services. */
   app: KitrApp
+  /** The request logger; adds the request id to every line. */
   logger: Logger
+  /** The request id from `@kitr/server`, or `''` outside a kitr server. */
   requestId: string
+  /** The incoming request. */
   request: KitrRequest
+  /** Status, headers and response helpers. */
   response: KitrResponse
+  /** Path parameters, validated when the route has a `params` schema. */
   params: P
+  /** Query values, validated when the route has a `query` schema. */
   query: Q
+  /** The parsed body on writes, validated when the route has a `body` schema. */
   body: B
   /** Set by middleware (auth puts `user` here). Shared with `@kitr/server`'s request context. */
   locals: Record<string, unknown>
@@ -58,6 +79,7 @@ export interface HttpContext<
   ): Promise<InferOutput<S>>
 }
 
+/** Build the HttpContext for an h3 event. The router calls it per request; use it to run a handler outside the router. */
 export async function createHttpContext(
   event: H3Event,
   fallbackApp: KitrApp,

@@ -10,8 +10,11 @@ declare module '@kitr/core' {
 
 const KitrContext = createContext<KitrApp | null>(null)
 
+/** Props of `KitrProvider` and `KitrBoot`: the app to put in context and the tree that reads it. */
 export interface KitrProviderProps {
+  /** The app from `app/app.ts`. Every provider's `wrap()` is rendered around `children`. */
   app: KitrApp
+  /** The tree that can call `useApp`, `useService` and `useConfig`. */
   children: ReactNode
 }
 
@@ -27,17 +30,28 @@ export function KitrProvider({ app, children }: KitrProviderProps) {
   return <KitrContext.Provider value={app}>{tree as ReactNode}</KitrContext.Provider>
 }
 
+/**
+ * The app in context: its container, config, env, mode, environment and platform.
+ * Throws when the component is not rendered inside `KitrProvider` (or `KitrBoot`, or the router).
+ */
 export function useApp(): KitrApp {
   const app = useContext(KitrContext)
   if (!app) throw new Error('[kitr/react] useApp() must be used inside <KitrProvider>.')
   return app
 }
 
-/** Read a container binding from a component. The binding must be resolved (it is after boot). */
+/**
+ * Read a container binding from a component, typed from `ContainerBindings` (`useService('http')`).
+ * The binding must be resolved, which it is after boot; an unknown key throws.
+ */
 export function useService<K extends Parameters<KitrApp['container']['use']>[0]>(key: K) {
   return useApp().container.use(key)
 }
 
+/**
+ * Read one package's config, as exported by `config/<name>.ts`, typed from `ConfigRegistry`.
+ * Throws when that config does not exist; use `useApp().config.get(key, fallback)` for optional config.
+ */
 export function useConfig<K extends Parameters<KitrApp['config']['get']>[0]>(key: K) {
   return useApp().config.get(key)
 }
@@ -62,5 +76,6 @@ export function KitrBoot({
   return <KitrProvider app={app}>{children}</KitrProvider>
 }
 
+// createApp, CreateAppOptions and KitrApp are documented where they are declared, in @kitr/core.
 export type { CreateAppOptions, KitrApp }
 export { createApp }

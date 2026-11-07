@@ -9,6 +9,7 @@ import {
 } from '@kitr/query'
 import { createMemoryStorageDriver, getStorageDriver, type StorageDriver } from '@kitr/storage'
 
+/** Options for `config/offline.ts`: how long, where and what of the query cache is kept on the device. */
 export interface OfflineConfig {
   /** Storage key for the cache snapshot. Default `kitr:query-cache`. */
   key?: string
@@ -24,6 +25,7 @@ export interface OfflineConfig {
   buster?: string
 }
 
+/** The `offline` service: restores and saves the query cache snapshot and reports network state. */
 export interface Offline {
   /** Load a stored snapshot into the client, if fresh. Resolves with whether one was found. */
   restore(): Promise<boolean>
@@ -33,8 +35,11 @@ export interface Offline {
   clear(): void
   /** Mutations waiting for the network. */
   pendingMutations(): number
+  /** Whether TanStack Query's `onlineManager` currently says online. */
   isOnline(): boolean
+  /** Called after a restore, after each throttled save, and when online state changes. Returns an unsubscribe function. */
   subscribe(listener: () => void): () => void
+  /** True once `restore()` loaded a snapshot into the client. */
   readonly restored: boolean
 }
 
@@ -47,6 +52,7 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type-checks `config/offline.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<OfflineConfig>()
 
 interface Snapshot {
@@ -55,6 +61,10 @@ interface Snapshot {
   state: DehydratedState
 }
 
+/**
+ * Build the offline service for a QueryClient: it saves successful queries and paused mutations
+ * to storage on a throttle (and when the page is hidden), and can restore them into the client.
+ */
 export function createOffline(
   client: QueryClient,
   config: OfflineConfig = {},
@@ -168,6 +178,7 @@ export function bindOnlineManager(platform: {
   })
 }
 
+/** The `offline` service from an app's container, for code outside React. Bound on the client only. */
 export function useOffline(app: KitrApp): Offline {
   return app.container.use('offline')
 }

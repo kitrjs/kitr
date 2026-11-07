@@ -78,7 +78,7 @@ The `description` of `index.md` must match the manifest `summary`. Follow the or
 
 Shell blocks that only contain `kitr` commands get the package-manager picker automatically. Link to other packages as `/packages/<name>`.
 
-Check the manifest and docs before publishing:
+Follow [docs/STYLE.md](https://github.com/kitrjs/kitr/blob/main/docs/STYLE.md) in the repo for the full rulebook. Check the manifest and docs before publishing:
 
 ```sh
 kitr package:check
@@ -104,7 +104,35 @@ Anything an example stores in the browser is namespaced to it, so examples never
 
 ## Setup with kitr add
 
-To let `kitr add` wire your package, export a `configure` function that receives the project and a set of codemods (install dependencies, add a provider to `kitrrc.ts`, write `config/<name>.ts`, append to `AGENTS.md`). Official packages define theirs in the CLI today; the same hook will load from your package in a coming release.
+To let `kitr add stripe` wire your package, export a setup module as `./kitr`:
+
+```ts
+// src/kitr.ts
+import { definePackage } from '@kitr/core/package'
+
+export default definePackage({
+  name: 'stripe',
+  requires: ['server'],
+  questions: [
+    { name: 'mode', type: 'select', message: 'Checkout mode?', default: 'hosted',
+      options: [{ value: 'hosted' }, { value: 'embedded' }] },
+  ],
+  add(ctx) {
+    ctx.provider.add('kitr-stripe/provider')
+    ctx.config('stripe', `export default { mode: '${ctx.answers.mode}' }\n`)
+    ctx.env.add({ STRIPE_SECRET_KEY: 'sk_test_...' })
+    ctx.agents.add('stripe', '- Payments go through the `stripe` service ...')
+  },
+  remove(ctx) {
+    ctx.provider.remove('kitr-stripe/provider')
+    ctx.agents.remove('stripe')
+  },
+  commands: () => import('./commands'),   // `kitr stripe:sync-products`
+  generators: { webhook: { description: 'A Stripe webhook handler', target, stub } },
+})
+```
+
+Every question is also a flag (`kitr add stripe --mode embedded`), so agents and CI never see a prompt. `add` and `remove` get codemods for the files kitr owns: `kitrrc.ts` providers, `config/<name>.ts`, `package.json` scripts and dependencies, `.env.example`, `AGENTS.md`, `tsconfig.json`, `vite.config.ts` and the route table; `ctx.write` and `ctx.edit` cover anything else. Add `"setup": "./kitr"` to the manifest and build the module beside your runtime code. The full contract, with every `ctx` method, is in the [package contract](/docs/package-contract) reference.
 
 ## Publishing
 

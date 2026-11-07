@@ -6,6 +6,7 @@ import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
  * to `<input type="file">` and a download link elsewhere.
  */
 
+/** A named group of extensions shown in a dialog's file-type menu, e.g. `Invoices (*.pdf)`. */
 export interface FileFilter {
   /** Shown in the dialog, e.g. `Images`. */
   name: string
@@ -13,36 +14,52 @@ export interface FileFilter {
   extensions: string[]
 }
 
+/** Options for `open()` and `pick()`. */
 export interface OpenOptions {
+  /** File types to offer. Merged with the `filters` in `config/files.ts`. */
   filters?: FileFilter[]
+  /** Let the person choose more than one file. Default false. */
   multiple?: boolean
   /** Dialog title where the platform shows one. */
   title?: string
 }
 
+/** Options for `save()`: the suggested name and, for the download fallback, the MIME type. */
 export interface SaveOptions {
   /** Suggested file name, with extension. */
   name: string
+  /** File types to offer. Merged with the `filters` in `config/files.ts`. */
   filters?: FileFilter[]
+  /** Dialog title where the platform shows one. */
   title?: string
   /** MIME type for the download fallback. Default from the extension or `application/octet-stream`. */
   type?: string
 }
 
+/** A file the person chose, the same shape on every platform. Its content is read on demand. */
 export interface PickedFile {
+  /** File name with extension, without a directory. */
   name: string
+  /** Size in bytes. */
   size: number
+  /** MIME type, or `''` when the platform doesn't know it. */
   type: string
   /** Absolute path on platforms that expose one (desktop, mobile). */
   path?: string
+  /** Read the content as UTF-8 text. */
   text(): Promise<string>
+  /** Read the content as bytes. */
   bytes(): Promise<Uint8Array>
+  /** Read the content as a Blob, e.g. to upload it. */
   blob(): Promise<Blob>
 }
 
+/** What `save()` accepts: text, a Blob or File, or raw bytes. */
 export type FileData = string | Blob | Uint8Array | ArrayBuffer
 
+/** The dialogs behind the `files` service. A platform or a test supplies one; the web driver is the fallback. */
 export interface FilesDriver {
+  /** Shown in devtools and on `files.driver.name`, e.g. `web` or `memory`. */
   name: string
   /** Show the open dialog. Resolves to [] when cancelled. */
   open(options: OpenOptions): Promise<PickedFile[]>
@@ -52,18 +69,25 @@ export interface FilesDriver {
   reveal?(path: string): Promise<void>
 }
 
+/** Options for `config/files.ts`. */
 export interface FilesConfig {
+  /** Use this driver instead of the platform's or the web one. Mostly for tests. */
   driver?: FilesDriver
   /** Filters added to every dialog, e.g. the app's own document type. */
   filters?: FileFilter[]
 }
 
+/** The `files` service bound in the container: open, pick and save through the active driver. */
 export interface Files {
+  /** The driver in use. */
   readonly driver: FilesDriver
+  /** Show the open dialog. Resolves to [] when cancelled. */
   open(options?: OpenOptions): Promise<PickedFile[]>
   /** Open exactly one file, or null when cancelled. */
   pick(options?: Omit<OpenOptions, 'multiple'>): Promise<PickedFile | null>
+  /** Save data where the person chooses. Resolves to the chosen name or path, or null when cancelled. */
   save(data: FileData, options: SaveOptions): Promise<string | null>
+  /** Open a path with the system's default app. Resolves without doing anything when the driver can't. */
   reveal(path: string): Promise<void>
 }
 
@@ -79,6 +103,7 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type-checks `config/files.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<FilesConfig>()
 
 const MIME: Record<string, string> = {
@@ -96,12 +121,14 @@ const MIME: Record<string, string> = {
   zip: 'application/zip',
 }
 
+/** The MIME type for a file name's extension, e.g. `invoice.pdf` → `application/pdf`. Unknown → `fallback`. */
 export function mimeFor(name: string, fallback = 'application/octet-stream'): string {
   const dot = name.lastIndexOf('.')
   const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : ''
   return MIME[ext] ?? fallback
 }
 
+/** Turn any `FileData` into a Blob of the given type. A Blob passes through unchanged. */
 export function toBlob(data: FileData, type: string): Blob {
   if (data instanceof Blob) return data
   if (typeof data === 'string') return new Blob([data], { type })
@@ -250,6 +277,7 @@ export function createMemoryFilesDriver(queue: PickedFile[] = []): FilesDriver &
   }
 }
 
+/** Build the `files` service: the given driver, else the platform's, else the web driver (memory on the server). */
 export function createFiles(config: FilesConfig = {}, app?: KitrApp): Files {
   const driver =
     config.driver ??
@@ -283,6 +311,7 @@ export function createFiles(config: FilesConfig = {}, app?: KitrApp): Files {
   }
 }
 
+/** The `files` service from an app's container, for code outside React. */
 export function useFiles(app: KitrApp): Files {
   return app.container.use('files')
 }

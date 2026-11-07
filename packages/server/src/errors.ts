@@ -14,6 +14,7 @@ export function errorToResponse(error: unknown, event?: H3Event): Response {
   return new Response(JSON.stringify(body), { status: kitrError.status, headers })
 }
 
+/** Turn anything thrown (a KitrError, an h3 HTTPError, a wrapped cause, a plain error) into a KitrError. */
 export function normaliseServerError(error: unknown): KitrError {
   if (isKitrError(error)) return toKitrError(error)
   // h3 wraps unknown errors in HTTPError (sometimes with the details object as `cause`);

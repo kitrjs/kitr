@@ -5,22 +5,33 @@ import type { ServerConfig } from './config'
 import { type RequestContext, runWithRequest } from './context'
 import { errorToResponse } from './errors'
 
+/** Options for `createServer()`: the app options (providers, config, mode) plus server overrides. */
 export interface CreateServerOptions extends CreateAppOptions {
   /** Reuse an existing app (e.g. shared with an SSR entry). */
   app?: KitrApp
+  /** Server options; override the `server` key of `config`. */
   server?: ServerConfig
+  /** Logger to use instead of the container's `logger` binding (`silentLogger` in tests). */
   logger?: Logger
 }
 
+/** Where `listen()` binds. Falls back to the server config. */
 export interface ListenOptions {
+  /** Port to listen on; `0` picks a free one. */
   port?: number
+  /** Interface to bind. */
   host?: string
 }
 
+/** The server `createServer()` returns: an h3 app with the kitr lifecycle, served by `listen()` or `fetch()`. */
 export interface KitrServer {
+  /** The kitr app: container, config and providers. */
   app: KitrApp
+  /** The underlying h3 app, for registering routes directly. */
   h3: H3
+  /** The server logger: the container's `logger` after boot, or a built-in one. */
   logger: Logger
+  /** The resolved server options, defaults filled in. */
   config: Required<
     Pick<
       ServerConfig,
@@ -37,6 +48,7 @@ export interface KitrServer {
     base: string,
     handler: H3 | { fetch: (req: Request) => Response | Promise<Response> },
   ): KitrServer
+  /** Add h3 middleware that runs for every request. */
   use(middleware: Middleware): KitrServer
   /** Start a standalone server (Node, Bun or Deno via srvx) and run providers' `ready()`. */
   listen(

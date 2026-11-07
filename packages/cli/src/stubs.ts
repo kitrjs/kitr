@@ -225,23 +225,6 @@ export default defineProvider({
   // wrap: (children) => <${pascal(name)}Context.Provider>{children}</${pascal(name)}Context.Provider>,
 })
 `,
-  job: ({ name }) => `import { defineJob } from 'kitr/jobs'
-import { z } from 'zod'
-
-export const ${camel(name)}Input = z.object({
-  id: z.string(),
-})
-
-/** List it in config/jobs.ts, then dispatch with \`useJobs(app).dispatch(${camel(name)}, { id })\`; it runs on the worker with retries. */
-export const ${camel(name)} = defineJob('${snake(name)}', {
-  schema: ${camel(name)}Input,
-  retries: 3,
-  // schedule: { every: '1h' },
-  async run({ id }, ctx) {
-    console.info(\`${snake(name)} \${id} (attempt \${ctx.attempt})\`)
-  },
-})
-`,
   mail: ({ name }) => `import { defineMail } from 'kitr/mail'
 
 export interface ${pascal(name)}Props {

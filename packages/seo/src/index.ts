@@ -1,22 +1,28 @@
 import { createDefineConfig } from '@kitr/core'
 
+/** Site-wide values for `seo()` and the build: name, canonical origin, default image, handle and locale. */
 export interface SeoSite {
+  /** Appended to page titles (`Pricing · Acme`) and sent as `og:site_name`. */
   name?: string
   /** Canonical origin (`https://example.com`). Turns on the sitemap for prerendered routes. */
   url?: string
+  /** Share image for pages that set none. Use an absolute URL. */
   image?: string
+  /** The site's X (Twitter) handle, sent as `twitter:site`. */
   twitter?: string
+  /** Sent as `og:locale`, such as `en_US`. */
   locale?: string
 }
 
+/** Options for `config/seo.ts`. The build reads `prerender` and `site.url` from the file's source text. */
 export interface SeoConfig {
   /** Site-wide defaults for `seo()`. */
   site?: SeoSite
-  /** Default per-route rendering for a web platform in `ssr` mode: true (full SSR), 'data-only' or false. */
+  /** Intended default per-route rendering in `ssr` mode. Not read by kitr yet; use `ssrRoute()` per route. */
   ssr?: boolean | 'data-only'
   /** Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform prerenders everything. */
   prerender?: string[] | { routes: string[]; crawlLinks?: boolean }
-  /** `robots.txt` rules written on build. `false` disables. */
+  /** Rules for `robotsTxt()`. `false` makes it return null. */
   robots?: false | { allow?: string[]; disallow?: string[]; sitemap?: boolean }
 }
 
@@ -26,16 +32,26 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types the default export of `config/seo.ts`. */
 export const defineConfig = createDefineConfig<SeoConfig>()
 
+/** What one page passes to `seo()`. Every field is optional; `site` supplies the defaults. */
 export interface SeoInput {
+  /** The page title, without the site name. */
   title?: string
+  /** The page summary for search results and share cards. */
   description?: string
+  /** Share image for this page; replaces `site.image`. Use an absolute URL. */
   image?: string
+  /** The page's canonical URL; falls back to `site.url`, so pass it on every page. */
   url?: string
+  /** `og:type`. Default `website`. */
   type?: 'website' | 'article' | 'product'
+  /** Adds `robots: noindex, nofollow`. */
   noIndex?: boolean
+  /** Joined into a `keywords` meta tag. */
   keywords?: string[]
+  /** Site defaults, usually `site` from `config/seo.ts`. `seo()` does not read the config itself. */
   site?: SeoSite
 }
 
@@ -97,7 +113,10 @@ export function ssrRoute(mode: boolean | 'data-only') {
   return { ssr: mode } as const
 }
 
-/** Cache-Control helper for Start's `headers` route option. */
+/**
+ * A `cache-control` header for TanStack Start's `headers` route option:
+ * `headers: () => cacheHeaders({ sMaxAge: 60 })`. Public unless `private` is set.
+ */
 export function cacheHeaders(
   options: {
     maxAge?: number
@@ -114,7 +133,7 @@ export function cacheHeaders(
   return { 'cache-control': parts.join(', ') }
 }
 
-/** `robots.txt` text from the config; the web platform writes it on build. */
+/** `robots.txt` text from the config, or null when `robots` is false. kitr does not write the file; serve or write it yourself. */
 export function robotsTxt(config: SeoConfig): string | null {
   if (config.robots === false) return null
   const rules = config.robots ?? {}

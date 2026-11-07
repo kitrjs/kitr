@@ -3,21 +3,27 @@
  * The same tokens feed `@kitr/tailwind`'s `@theme` block and vanilla CSS alike,
  * so switching styling approach never means re-typing colours.
  */
+/** A single token value: a CSS string such as `'0.5rem'`, or a number written without a unit. */
 export type TokenLeaf = string | number
+/** A nested object of tokens, such as `{ color: { primary: '#0ea5e9' } }`. Each leaf becomes one CSS variable. */
 export interface TokenGroup {
   [key: string]: TokenLeaf | TokenGroup
 }
 
+/** Every dotted path to a leaf of a token tree (`'color.primary'`), so token names are checked at compile time. */
 export type TokenPath<T, Prefix extends string = ''> = {
   [K in keyof T & string]: T[K] extends TokenLeaf
     ? `${Prefix}${K}`
     : TokenPath<T[K], `${Prefix}${K}.`>
 }[keyof T & string]
 
+/** What `defineTokens` returns: the tree itself plus helpers that name, reference and emit its CSS variables. */
 export interface DefineTokensResult<T extends TokenGroup> {
+  /** The token tree as passed in. */
   tokens: T
-  /** `--kitr-color-primary` style names, typed from the token tree. */
+  /** A `var()` reference for a path: `var('color.primary')` → `var(--kitr-color-primary)`. */
   var: (path: TokenPath<T>) => `var(--${string})`
+  /** The CSS variable name for a path: `name('color.primary')` → `--kitr-color-primary`. */
   name: (path: TokenPath<T>) => `--${string}`
   /** `:root { --kitr-...: ...; }` ready to drop into a stylesheet. */
   css: (selector?: string) => string
@@ -25,6 +31,10 @@ export interface DefineTokensResult<T extends TokenGroup> {
   flat: () => Record<string, string>
 }
 
+/**
+ * Turn a nested token object into CSS custom properties with typed names. The prefix defaults to
+ * `kitr`, so `color.primary` becomes `--kitr-color-primary`.
+ */
 export function defineTokens<const T extends TokenGroup>(
   tokens: T,
   options: { prefix?: string } = {},
@@ -54,7 +64,7 @@ export function defineTokens<const T extends TokenGroup>(
   }
 }
 
-/** kitr's default tokens. Override any of them in `config/theme.ts`. */
+/** kitr's light (default) tokens, the values `kitr/theme/styles.css` sets on `:root`. Override them in `app/styles/tokens.css`. */
 export const defaultTokens = defineTokens({
   color: {
     background: 'oklch(99% 0 0)',
@@ -76,6 +86,7 @@ export const defaultTokens = defineTokens({
   shadow: { sm: '0 1px 2px oklch(0% 0 0 / 0.06)', md: '0 4px 12px oklch(0% 0 0 / 0.08)' },
 })
 
+/** kitr's dark colour tokens, the values `kitr/theme/styles.css` sets under `[data-theme="dark"]`. Radius, font and shadow are shared with the light set. */
 export const darkTokens = defineTokens({
   color: {
     background: 'oklch(16% 0.01 260)',

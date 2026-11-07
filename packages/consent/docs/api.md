@@ -16,17 +16,24 @@ Every export of `kitr/consent`, `kitr/consent/react`, `kitr/consent/provider`, r
 function createConsent(config?: ConsentConfig, app?: KitrApp): Consent;
 ```
 
+Build a consent service backed by a cookie. The provider calls it with the app (for devtools
+logging); tests and server code can call it without one.
+
 ### useConsent
 
 ```ts
 function useConsent(app: KitrApp): Consent;
 ```
 
+The consent service from an app's container. Not a hook; components use `useConsent()` from `kitr/consent/react`.
+
 ### defineConfig
 
 ```ts
 const defineConfig: <const C extends ConsentConfig>(config: C) => C;
 ```
+
+Types the default export of `config/consent.ts`.
 
 ### Consent
 
@@ -36,19 +43,26 @@ interface Consent {
   get(): ConsentRecord;
   /** Has the visitor decided (for this version)? */
   decided(): boolean;
+  /** Whether a category is granted for the current version. Always true for `necessary`. */
   has(category: ConsentCategory): boolean;
   /** Grant exactly these categories (plus `necessary`). */
   grant(categories: ConsentCategory[]): void;
+  /** Grant every configured category. */
   acceptAll(): void;
   /** Decline everything but `necessary`. */
   rejectAll(): void;
   /** Forget the choice so the banner shows again. */
   reset(): void;
+  /** Call `listener` after every change to the choice. Returns the unsubscribe function. */
   subscribe(listener: (record: ConsentRecord) => void): () => void;
+  /** The categories from config, in order. */
   readonly categories: ConsentCategory[];
+  /** The storage cookie that holds the record; `cookie.get(request.headers)` reads it on the server. */
   readonly cookie: CookieItem<ConsentRecord>;
 }
 ```
+
+The consent service bound as `consent` in the container. Reads and writes the visitor's choice.
 
 ### ConsentConfig
 
@@ -69,6 +83,8 @@ interface ConsentConfig {
 }
 ```
 
+Options for `config/consent.ts`: the categories offered, the version, the cookie and what to gate.
+
 ### ConsentRecord
 
 ```ts
@@ -82,11 +98,15 @@ interface ConsentRecord {
 }
 ```
 
+What a visitor agreed to, stored as JSON in the consent cookie.
+
 ### ConsentCategory
 
 ```ts
 type ConsentCategory = 'necessary' | 'analytics' | 'marketing' | 'preferences' | (string & {});
 ```
+
+A consent category. `necessary` is always granted; the others are whatever `config.categories` lists.
 
 ## kitr/consent/react
 
@@ -105,8 +125,9 @@ function useConsent(): {
 };
 ```
 
-The consent record and the actions a banner needs. Hydration-safe: the server and the first
-render see "undecided", so the banner renders once on the client after mount.
+The consent record and the actions a banner needs; re-renders when the choice changes. The
+server always sees "undecided" while the browser reads the cookie on its first render, so in
+server-rendered apps render the banner only after mount.
 
 ## kitr/consent/provider
 

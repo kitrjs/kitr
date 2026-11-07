@@ -131,8 +131,11 @@ type Grouped<G extends RouteMap, O> = {
     : never
 }
 
+/** Options for `router.group()`. */
 export interface GroupOptions {
+  /** Path prefix joined onto every route inside. */
   prefix?: string
+  /** Middleware run before every route inside. */
   middleware?: Middleware[]
   /** Prefix for route names, e.g. `admin` makes `admin.projects.index`. */
   as?: string
@@ -151,6 +154,7 @@ export interface GroupOptions {
  *   export type AppRoutes = typeof routes.$types
  */
 export class Router<R extends RouteMap = {}> {
+  /** Every registered route, in order. */
   readonly routes: RouteEntry[] = []
   /** Phantom: the accumulated route types. Use `typeof routes.$types`. */
   declare readonly $types: R
@@ -187,6 +191,7 @@ export class Router<R extends RouteMap = {}> {
     return this as unknown as Router<any>
   }
 
+  /** Register a GET route. */
   get<
     Path extends string,
     H extends RouteHandler<Path, V>,
@@ -195,6 +200,7 @@ export class Router<R extends RouteMap = {}> {
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
     return this.add('GET', path, handler, options)
   }
+  /** Register a POST route. */
   post<
     Path extends string,
     H extends RouteHandler<Path, V>,
@@ -203,6 +209,7 @@ export class Router<R extends RouteMap = {}> {
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
     return this.add('POST', path, handler, options)
   }
+  /** Register a PUT route. */
   put<
     Path extends string,
     H extends RouteHandler<Path, V>,
@@ -211,6 +218,7 @@ export class Router<R extends RouteMap = {}> {
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
     return this.add('PUT', path, handler, options)
   }
+  /** Register a PATCH route. */
   patch<
     Path extends string,
     H extends RouteHandler<Path, V>,
@@ -219,6 +227,7 @@ export class Router<R extends RouteMap = {}> {
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
     return this.add('PATCH', path, handler, options)
   }
+  /** Register a DELETE route. */
   delete<
     Path extends string,
     H extends RouteHandler<Path, V>,
@@ -327,6 +336,7 @@ export class Router<R extends RouteMap = {}> {
   }
 }
 
+/** Join two path segments into one normalised path with a leading slash. */
 export function joinPath(base: string, path: string): string {
   const joined = `${base}/${path}`.replace(/\/{2,}/g, '/').replace(/\/$/, '')
   return joined === '' ? '/' : joined.startsWith('/') ? joined : `/${joined}`
@@ -339,6 +349,7 @@ export function defineRoutes<R extends RouteMap>(
   return define(new Router<{}>())
 }
 
+/** An empty router, for building routes outside `defineRoutes`. */
 export function createRouter(): Router<{}> {
   return new Router<{}>()
 }

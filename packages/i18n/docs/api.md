@@ -18,11 +18,17 @@ Re-exports `i18next`, `react-i18next` unchanged, plus the following.
 function createI18n(config: I18nConfig, initialLocale?: string): i18n;
 ```
 
+Creates an isolated i18next instance from your config, already initialised with react-i18next.
+The locale is `initialLocale`, else the detected one when `detect` is on, else `defaultLocale`.
+
 ### detectLocale
 
 ```ts
 function detectLocale(supported: string[], storageKey?: string): string | undefined;
 ```
+
+In the browser, the saved choice under `storageKey` in localStorage, else the best match for
+`navigator.languages`. Returns `undefined` on the server or when nothing matches.
 
 ### matchLocale
 
@@ -38,13 +44,17 @@ Pick the best supported locale from an `Accept-Language` header (server) or a la
 const defineConfig: <const C extends I18nConfig>(config: C) => C;
 ```
 
+Types `config/i18n.ts`. Returns the object you pass, unchanged.
+
 ### I18nConfig
 
 ```ts
 interface I18nConfig extends Omit<InitOptions, 'resources' | 'lng'> {
-  /** `{ en: { common: { hello: 'Hello' } } }` */
+  /** Every locale's strings, keyed by locale then namespace: `{ en: { common: { hello: 'Hello' } } }`. */
   resources: Record<string, Record<string, Record<string, unknown>>>;
+  /** The locale used when nothing better matches, and the fallback for missing keys. */
   defaultLocale: string;
+  /** The locales the app supports. Default: the keys of `resources`. */
   locales?: string[];
   /** Detect from `navigator.language` (client) or `Accept-Language` (server). Default true. */
   detect?: boolean;
@@ -52,6 +62,9 @@ interface I18nConfig extends Omit<InitOptions, 'resources' | 'lng'> {
   storageKey?: string;
 }
 ```
+
+The options in `config/i18n.ts`: your strings per locale, the fallback locale and detection.
+Any other i18next init option passes straight through.
 
 ### TranslationKeys
 

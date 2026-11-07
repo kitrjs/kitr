@@ -4,6 +4,7 @@ import { Icon, icons } from './icon'
 
 /* Small, dependency-free building blocks that contributed panels can reuse. */
 
+/** Any value as an expandable tree, styled like the built-in panels. `open` expands the first level. */
 export function JsonView({
   value,
   depth = 0,
@@ -54,6 +55,7 @@ function format(value: unknown): string {
   return String(value)
 }
 
+/** A two-column table of `[key, value]` rows; each value renders as a `JsonView`. */
 export function KeyValue({ rows }: { rows: Array<[string, unknown]> }) {
   return (
     <table className="kitr-dt-table">
@@ -71,6 +73,7 @@ export function KeyValue({ rows }: { rows: Array<[string, unknown]> }) {
   )
 }
 
+/** A small pill for counts and states. `tone` picks the colour: ok, warn, error, muted or info. */
 export function Badge({
   children,
   tone = 'muted',
@@ -81,10 +84,12 @@ export function Badge({
   return <span className={`kitr-dt-badge kitr-dt-badge-${tone}`}>{children}</span>
 }
 
+/** A row of buttons, spaced like a panel's action bar. */
 export function Toolbar({ children }: { children: ReactNode }) {
   return <div className="kitr-dt-toolbar">{children}</div>
 }
 
+/** A small button in the overlay's style. */
 export function Button({
   children,
   onClick,
@@ -131,6 +136,7 @@ export function LogList({
   )
 }
 
+/** The overlay's stylesheet as a string. The overlay injects it; panel bodies can use its `kitr-dt-*` classes. */
 export const styles = `
 .kitr-dt{position:fixed;z-index:2147483000;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e5e7eb}
 .kitr-dt *{box-sizing:border-box}

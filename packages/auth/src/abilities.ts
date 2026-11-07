@@ -5,10 +5,14 @@
  *     'projects.update': (user: User, project: Project) => project.ownerId === user.id || user.role === 'admin',
  *   })
  */
+/** One permission rule: true when `user` may act on `subject`. */
 export type AbilityCheck<TUser, TSubject = any> = (user: TUser, subject: TSubject) => boolean
 
+/** The result of `defineAbilities`: the rules plus `can` and `for` to check them. */
 export type Abilities<TUser, TMap extends Record<string, AbilityCheck<TUser, any>>> = {
+  /** The rules as given. */
   readonly map: TMap
+  /** Check one ability. False for anonymous users, unknown abilities and rules that throw. */
   can<K extends keyof TMap & string>(
     user: TUser | null | undefined,
     ability: K,
@@ -61,4 +65,5 @@ export function defineAbilities(map: Record<string, AbilityCheck<any, any>>): Ab
   }
 }
 
+/** The ability names of an `Abilities` object, as a string union. */
 export type AbilityName<A> = A extends Abilities<any, infer M> ? keyof M & string : string

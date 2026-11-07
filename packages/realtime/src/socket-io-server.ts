@@ -8,15 +8,21 @@ import {
   topicFor,
 } from './protocol'
 
+/** Options for `attachSocketIo`: the channels to serve, connection auth and an optional namespace. */
 export interface SocketIoServerOptions {
+  /** Every channel clients may subscribe to. */
   channels: ChannelDefinition<any, any>[]
   /** Authenticate a connection (`socket.handshake.auth`). Return context or throw. */
   authorize?: (socket: Socket) => unknown | Promise<unknown>
+  /** Serve channels on this Socket.IO namespace instead of the default `/`. */
   namespace?: string
 }
 
+/** Channels served over Socket.IO, as `attachSocketIo` returns them. */
 export interface SocketIoServer {
+  /** The Socket.IO server you passed in. */
   io: Server
+  /** Publish on a channel topic: `use(channel, params).emit(event, data)` emits to that topic's room. */
   use<C extends ChannelDefinition<any, any>>(
     channel: C,
     params: ChannelParams<C>,
@@ -24,12 +30,14 @@ export interface SocketIoServer {
 }
 
 /**
- * Serve kitr channels over a Socket.IO server. Rooms are channel topics, so the
+ * Serves kitr channels over an existing Socket.IO server. Rooms are channel topics, so the
  * Redis adapter and sticky sessions work as they do for any Socket.IO app.
  *
  *   const io = new Server(nodeServer)
  *   const sockets = attachSocketIo(io, { channels: [projectChannel] })
  *   sockets.use(projectChannel, { id }).emit('updated', project)
+ *
+ * Connections are authenticated once in a namespace middleware; each subscription runs the channel's `authorize`.
  */
 export function attachSocketIo(io: Server, options: SocketIoServerOptions): SocketIoServer {
   const nsp = options.namespace ? io.of(options.namespace) : io

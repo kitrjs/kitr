@@ -10,7 +10,7 @@ import {
 import type { RouteMap, RouteType } from './types'
 
 /**
- * The typed client. No codegen: it is typed from `typeof routes.$types`.
+ * Options for `createApiClient()`. The client is typed from `typeof routes.$types`, with no codegen:
  *
  *   const api = createApiClient<AppRoutes>({ baseUrl: env.VITE_API_URL })
  *   const project = await api.projects.show({ params: { id } })
@@ -18,12 +18,15 @@ import type { RouteMap, RouteType } from './types'
  *   useSuspenseQuery(projectQuery.options({ params: { id } }))
  */
 export interface ApiClientOptions {
+  /** Prepended to every path; `''` calls the same origin. */
   baseUrl: string
   /** Custom fetch (ky's `fetch`, a test fetch, or `server.fetch` for in-process calls). */
   fetch?: (input: Request) => Promise<Response>
+  /** Headers for every request; may be async. */
   headers?: () => Promise<HeadersInit> | HeadersInit
   /** Called before every request; return a bearer token. */
   getToken?: () => Promise<string | null | undefined> | string | null | undefined
+  /** Passed to `fetch`; `'include'` sends cookies cross-origin. */
   credentials?: RequestCredentials
 }
 
@@ -46,6 +49,7 @@ type InputFor<R extends RouteType> = (keyof R['params'] extends never
 
 type MaybeOptional<I> = {} extends I ? [input?: I] : [input: I]
 
+/** One typed route on the client: call it, or take its query and mutation contracts, key and URL. */
 export interface Endpoint<R extends RouteType> {
   (...args: MaybeOptional<InputFor<R>>): Promise<R['output']>
   /** Query contract for `defineQuery` (kitr/query). Input is the request input. */
@@ -54,9 +58,13 @@ export interface Endpoint<R extends RouteType> {
   mutation(options?: {
     effects?: CacheEffect | ((result: R['output'], input: InputFor<R>) => CacheEffect)
   }): Omit<MutationContract<InputFor<R>, R['output']>, 'kind'>
+  /** The query key for an input: `['api', name, params, query]`. */
   key(...args: MaybeOptional<InputFor<R>>): QueryKey
+  /** The full URL for an input, base URL included. */
   url(...args: MaybeOptional<InputFor<R>>): string
+  /** The route's HTTP method. */
   readonly method: R['method']
+  /** The route's path pattern. */
   readonly path: R['path']
 }
 
@@ -75,6 +83,7 @@ export type ApiClient<R> = {
     ApiClient<Children<R, H>>
 }
 
+/** Create the typed client from `typeof routes.$types`. Register the runtime route table with `registerRoutes` before calling named routes. */
 export function createApiClient<R extends RouteMap>(
   options: ApiClientOptions,
 ): ApiClient<R> & { $routes: R } {

@@ -2,6 +2,7 @@ import { useApp } from '@kitr/react'
 import { useCallback, useEffect, useState } from 'react'
 import type { NotificationPermission, Notifications, NotificationTap } from './index'
 
+/** The app's `notifications` service in a component. */
 export function useNotifications(): Notifications {
   return useApp().container.use('notifications')
 }

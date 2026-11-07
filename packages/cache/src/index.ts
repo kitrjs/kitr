@@ -1,20 +1,29 @@
 import { createDefineConfig, type KitrApp } from '@kitr/core'
 
-/** What a cache backend implements. Values are already serialised to strings by the cache. */
+/**
+ * What a cache backend implements: six async methods over string keys and string values.
+ * Values arrive already serialised to JSON by the cache, and keys already carry the prefix.
+ */
 export interface CacheDriver {
+  /** Shown in devtools and logs, e.g. `memory` or `redis`. */
   name: string
+  /** The stored string, or `undefined` when the key is missing or expired. */
   get(key: string): Promise<string | undefined>
   /** `ttl` in seconds; `undefined` keeps the entry until deleted. */
   set(key: string, value: string, ttl?: number): Promise<void>
+  /** Remove one key and forget its tags. */
   delete(key: string): Promise<void>
   /** Remove every key tagged with any of `tags`. */
   invalidateTags(tags: string[]): Promise<void>
   /** Record the tags of a key so `invalidateTags` can find it. */
   tag(key: string, tags: string[]): Promise<void>
+  /** Remove every key and every tag. */
   clear(): Promise<void>
 }
 
+/** The options in `config/cache.ts`, also accepted by `createCache()`. */
 export interface CacheConfig {
+  /** Where entries live. Default: `createMemoryCacheDriver()`. */
   driver?: CacheDriver
   /** Prepended to every key, so several apps can share one Redis. */
   prefix?: string
@@ -22,21 +31,31 @@ export interface CacheConfig {
   defaultTtl?: number
 }
 
+/** Per-entry options for `set()`, `remember()` and `cached()`. */
 export interface RememberOptions {
-  /** Seconds. */
+  /** Seconds the entry lives. Default: the cache's `defaultTtl`. */
   ttl?: number
+  /** Labels to clear the entry by later with `invalidateTags()`. */
   tags?: string[]
 }
 
+/** The cache service bound as `cache` in the container: JSON values over a driver, with TTLs and tags. */
 export interface Cache {
+  /** The parsed value, or `undefined` on a miss or after expiry. */
   get<T>(key: string): Promise<T | undefined>
+  /** Store a value as JSON (`undefined` is stored as `null`), with an optional ttl and tags. */
   set<T>(key: string, value: T, options?: RememberOptions): Promise<void>
+  /** Whether a live entry exists, including one holding `null`. */
   has(key: string): Promise<boolean>
+  /** Remove one entry. */
   delete(key: string): Promise<void>
   /** Return the cached value, or run `fn`, store its result and return it. Concurrent calls share one run. */
   remember<T>(key: string, fn: () => Promise<T> | T, options?: RememberOptions): Promise<T>
+  /** Remove every entry tagged with any of `tags`, whatever its key. */
   invalidateTags(...tags: string[]): Promise<void>
+  /** Remove every entry from the driver. */
   clear(): Promise<void>
+  /** The driver underneath, for its `name` or a raw read. */
   readonly driver: CacheDriver
 }
 
@@ -49,6 +68,7 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type the default export of `config/cache.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<CacheConfig>()
 
 /** In-process cache with TTLs and tags. The default; fine for one server, wrong for several. */
@@ -119,6 +139,7 @@ export function createMemoryCacheDriver(): CacheDriver {
   }
 }
 
+/** Build a cache without an app: what the provider binds, and what tests and scripts call directly. */
 export function createCache(config: CacheConfig = {}): Cache {
   const driver = config.driver ?? createMemoryCacheDriver()
   const prefix = config.prefix ?? ''
@@ -178,7 +199,7 @@ export function cached<Args extends unknown[], T>(
   return (...args) => cache.remember(options.key(...args), () => fn(...args), options)
 }
 
-/** The app's cache, from the container. */
+/** The app's cache, from the container. Pass `ctx.app` in a controller; throws if the cache provider is not registered. */
 export function useCache(app: KitrApp): Cache {
   return app.container.use('cache')
 }

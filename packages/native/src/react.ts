@@ -2,6 +2,7 @@ import { useApp } from '@kitr/react'
 import { useCallback, useEffect, useState } from 'react'
 import type { Native, Position, SharePayload } from './index'
 
+/** The app's `native` service in a component. */
 export function useNative(): Native {
   return useApp().container.use('native')
 }
@@ -31,7 +32,10 @@ export function useShare() {
   }
 }
 
-/** Current position, updated while mounted when `watch` is true. */
+/**
+ * `{ position, error, supported }`: the current position, read on mount and updated while mounted
+ * when `watch` is true. `error` holds a failure of the first read.
+ */
 export function useGeolocation(options: { watch?: boolean; highAccuracy?: boolean } = {}) {
   const { geolocation } = useNative()
   const [position, setPosition] = useState<Position | null>(null)

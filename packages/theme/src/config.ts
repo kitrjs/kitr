@@ -1,6 +1,7 @@
 import { createDefineConfig } from '@kitr/core'
 import type { TokenGroup } from './tokens'
 
+/** The options of `config/theme.ts`: the default theme, where it is stored, window colours, the toaster and the component registry. */
 export interface ThemeConfig {
   /** 'light' | 'dark' | 'system'. Default 'system'. */
   default?: 'light' | 'dark' | 'system'
@@ -8,7 +9,7 @@ export interface ThemeConfig {
   storageKey?: string
   /** Attribute set on <html>. Default 'data-theme'. */
   attribute?: string
-  /** Token overrides merged over kitr's defaults; emitted as CSS variables. */
+  /** Typed slot for token overrides. Not read by kitr yet; override `--kitr-*` variables in `app/styles/tokens.css`. */
   tokens?: { light?: TokenGroup; dark?: TokenGroup }
   /** `<meta name="theme-color">` and native window chrome per resolved theme. */
   colors?: { light?: string; dark?: string }
@@ -16,8 +17,11 @@ export interface ThemeConfig {
   registry?: string
   /** Where components are written. Default `app/components/ui`. */
   componentsDir?: string
+  /** The sonner toaster the provider mounts once `sonner` is installed. */
   toaster?: {
+    /** Where toasts appear. Default `'bottom-right'`. */
     position?: 'top-right' | 'top-center' | 'bottom-right' | 'bottom-center'
+    /** Coloured success, error, info and warning toasts. Default `true`. */
     richColors?: boolean
   }
 }
@@ -28,4 +32,5 @@ declare module '@kitr/core' {
   }
 }
 
+/** Type-check `config/theme.ts`: returns the object unchanged, with autocomplete for every `ThemeConfig` option. */
 export const defineConfig = createDefineConfig<ThemeConfig>()

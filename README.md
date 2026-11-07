@@ -169,6 +169,7 @@ The examples are exactly what the CLI generates (with workspace links instead of
 ## Docs
 
 - [docs/cli.md](docs/cli.md): every command and flag
+- [docs/package-contract.md](docs/package-contract.md): how a package plugs into `kitr add`, the CLI and the build
 - [docs/packages.md](docs/packages.md): what each package provides and when to add it
 - [docs/platforms.md](docs/platforms.md): web, server, desktop and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules

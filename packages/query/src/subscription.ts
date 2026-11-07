@@ -4,9 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import type { SubscriptionDefinition } from './contract'
 import { applyCacheEffect } from './effects'
 
+/** Options for `useSubscription`. */
 export interface UseSubscriptionOptions<TEvent> {
+  /** Set `false` to not subscribe yet. Default `true`. */
   enabled?: boolean
+  /** Called with every event, before its cache effects are applied. */
   onEvent?: (event: TEvent) => void
+  /** Called when the source reports an error; the hook's `status` becomes `'error'`. */
   onError?: (error: KitrErrorShape) => void
 }
 

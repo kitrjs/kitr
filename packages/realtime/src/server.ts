@@ -18,13 +18,17 @@ import {
   topicFor,
 } from './protocol'
 
+/** Options for `createSocketServer`: the channels it serves and how it authenticates connections. */
 export interface SocketServerOptions {
+  /** Every channel clients may subscribe to. Subscribing to any other name fails with `NOT_FOUND`. */
   channels: ChannelDefinition<any, any>[]
   /** Authenticate the upgrade. Return per-connection context (e.g. the user) or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>
 }
 
+/** Publishes events to every subscriber of one channel topic, as `server.use(channel, params)` returns it. */
 export interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
+  /** Send an event to every connection subscribed to this topic. A topic with no subscribers is a no-op. */
   emit<E extends keyof C['events'] & string>(
     event: E,
     data: C['events'][E] extends { schema: infer S }
@@ -37,6 +41,7 @@ export interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
   readonly size: number
 }
 
+/** The realtime server for the native WebSocket transport, as `createRealtimeServer` returns it. */
 export interface SocketServer {
   /** The h3 handler for the upgrade route: `server.h3.get('/ws', socket.handler)`. */
   handler: ReturnType<typeof defineWebSocketHandler>
@@ -47,6 +52,7 @@ export interface SocketServer {
   ): ChannelEmitter<C>
   /** Attach to a kitr server: registers the route and enables the upgrade. */
   attach(server: KitrServer, path?: string): SocketServer
+  /** Number of open connections. */
   readonly connections: number
 }
 
@@ -55,7 +61,10 @@ interface PeerState {
   subs: Map<string, { topic: string; channel: ChannelDefinition<any, any>; params: unknown }>
 }
 
-/** Native WebSocket server on crossws (via h3). Runs on Node, Bun, Deno and Cloudflare. */
+/**
+ * Creates the native WebSocket server on crossws (via h3). Runs on Node, Bun, Deno and Cloudflare.
+ * Attach it to a kitr server with `attach(server, path)`; emit with `use(channel, params).emit()`.
+ */
 export function createSocketServer(options: SocketServerOptions): SocketServer {
   const channels = new Map(options.channels.map((c) => [c.name, c]))
   const topics = new Map<string, Set<Peer>>()
@@ -191,7 +200,10 @@ declare module '@kitr/core' {
   }
 }
 
-/** Provider: binds `realtime` (the WebSocket server) in the container. */
+/**
+ * A provider that binds a WebSocket server as `realtime` in the container. It does not attach the
+ * route: call `attach()` on the bound server yourself. `path` is accepted but not used.
+ */
 export function realtimeProvider(options: SocketServerOptions & { path?: string }): KitrProvider {
   return defineProvider({
     name: 'realtime',
@@ -201,6 +213,7 @@ export function realtimeProvider(options: SocketServerOptions & { path?: string 
   })
 }
 
-/** The WebSocket server, under the transport-neutral name. */
+/** The WebSocket server factory under its transport-neutral name; same as `createSocketServer`. */
 export const createRealtimeServer = createSocketServer
+/** Alias of `SocketServer`. */
 export type RealtimeServer = SocketServer

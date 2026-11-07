@@ -32,6 +32,8 @@ Client-side check against the same rules the server enforces, so errors show bef
 function formatBytes(bytes: number): string;
 ```
 
+Formats a byte count for people: `formatBytes(10 * 1024 * 1024)` is `'10.0 MB'`.
+
 ### upload
 
 ```ts
@@ -51,19 +53,28 @@ class UploadError extends Error {
 }
 ```
 
+What `upload()` rejects with: the server's message and HTTP `status` (0 for network errors and
+cancels), and the parsed response `body`, which carries `fieldErrors` for rule violations.
+
 ### defineConfig
 
 ```ts
 const defineConfig: <const C extends UploadsConfig>(config: C) => C;
 ```
 
+Typed identity helper for `config/uploads.ts`.
+
 ### UploadedFile
 
 ```ts
 interface UploadedFile {
+  /** The random id the file was stored under: the first segment of `key`. */
   id: string;
+  /** The original file name, as the browser sent it. */
   name: string;
+  /** Size in bytes. */
   size: number;
+  /** The MIME type the browser declared. Not sniffed from the bytes. */
   type: string;
   /** Where it can be fetched, when the driver serves files. */
   url?: string;
@@ -84,17 +95,22 @@ interface UploadOptions {
   field?: string;
   /** Extra fields sent with the file. */
   fields?: Record<string, string>;
+  /** Extra request headers, such as a CSRF token. */
   headers?: Record<string, string>;
+  /** Called as bytes go out, with `percent` from 0 to 100. Only the XHR path (browsers) reports progress. */
   onProgress?: (progress: {
     loaded: number;
     total: number;
     percent: number;
   }) => void;
+  /** Aborts the upload; the promise rejects with `UploadError('Upload cancelled', 0)`. */
   signal?: AbortSignal;
   /** Sent with credentials (cookies). Default true. */
   credentials?: boolean;
 }
 ```
+
+Options for `upload()` and `useUpload()`: where to send, extra form fields and headers, progress and cancel.
 
 ### UploadRules
 
@@ -109,6 +125,8 @@ interface UploadRules {
 }
 ```
 
+The size, type and count limits checked in the browser (`checkFile`, `useUpload`) and on the server (`receive`).
+
 ### UploadsConfig
 
 ```ts
@@ -119,6 +137,8 @@ interface UploadsConfig extends UploadRules {
   publicPath?: string;
 }
 ```
+
+The shape of `config/uploads.ts`: the default rules plus where files are stored and served.
 
 ## kitr/uploads/react
 
@@ -142,17 +162,24 @@ Upload with progress from a component:
 const { send, progress, uploading, error } = useUpload({ accept: ['image/*'] })
 <input type="file" onChange={(e) => send(e.target.files)} />
 ```
+`send` checks every file against the rules first, then uploads; it resolves with the stored files and rethrows failures.
 
 ### UseUploadState
 
 ```ts
 interface UseUploadState {
+  /** The stored files from the last successful upload. */
   files: UploadedFile[];
+  /** Percent sent, 0 to 100. */
   progress: number;
+  /** True while a request is in flight. */
   uploading: boolean;
+  /** The last failure: a plain `Error` from the client-side check, or an `UploadError` from the request. */
   error: Error | null;
 }
 ```
+
+The state `useUpload()` returns next to `send`, `cancel` and `reset`.
 
 ## kitr/uploads/server
 
@@ -173,11 +200,16 @@ Files under a directory (default `storage/uploads`), loaded lazily so the browse
 function createMemoryUploadsDriver(): UploadsDriver;
 ```
 
+A driver that keeps files in a Map, for tests and demos. Everything is lost when the process exits.
+
 ### createUploads
 
 ```ts
 function createUploads(config?: UploadsConfig): Uploads;
 ```
+
+Creates the uploads service from a config: the driver (disk under `storage/uploads` by default)
+and the default rules. The provider calls it with `config/uploads.ts`; call it yourself in tests.
 
 ### mountUploads
 
@@ -205,6 +237,8 @@ Headers for serving a stored file: never sniffed, sandboxed, and inline only whe
 function useUploads(app: KitrApp): Uploads;
 ```
 
+Returns the `uploads` service the provider bound, for a controller or job: `useUploads(ctx.app)`.
+
 ### StoredFile
 
 ```ts
@@ -215,6 +249,8 @@ interface StoredFile {
   type: string;
 }
 ```
+
+A stored file's key, original name, size and type.
 
 ### Uploads
 
@@ -230,33 +266,42 @@ interface Uploads {
     type: string;
     data: Uint8Array;
   }): Promise<UploadedFile>;
+  /** Read a stored file's bytes and type, or `undefined`. */
   read(key: string): Promise<{
     data: Uint8Array;
     type: string;
   } | undefined>;
+  /** Delete a stored file through the driver. */
   remove(key: string): Promise<void>;
   /** Mount `POST <path>` (receive) and `GET <path>/:key` (serve) on a kitr server. */
   mount<S extends {
     h3: any;
     app?: KitrApp;
   }>(server: S, path?: string): S;
+  /** The driver files are stored with. */
   readonly driver: UploadsDriver;
 }
 ```
+
+The uploads service, as `createUploads` returns it and `useUploads(app)` reads it from the container.
 
 ### UploadsDriver
 
 ```ts
 interface UploadsDriver {
+  /** A short label, such as `disk` or `memory`. */
   name: string;
+  /** Write the bytes under `key`, keeping `type` so `get` can return it. */
   put(key: string, data: Uint8Array, meta: {
     type: string;
     name: string;
   }): Promise<void>;
+  /** Read a file back, or `undefined` when the key does not exist. */
   get(key: string): Promise<{
     data: Uint8Array;
     type: string;
   } | undefined>;
+  /** Delete a file. Deleting a missing key is not an error. */
   delete(key: string): Promise<void>;
   /** A URL for the key, when files are served (CDN, signed URL, the kitr route). */
   url?(key: string): string | Promise<string>;

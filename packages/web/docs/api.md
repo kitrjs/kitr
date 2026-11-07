@@ -61,13 +61,21 @@ platforms: { site: web({ mode: 'ssr', pwa: true, port: 3000 }) }
 
 ```ts
 interface PwaOptions {
+  /** Full app name in the install dialog. Default: the app name from package.json. */
   name?: string;
+  /** Name under the home-screen icon. Default: `name`, then the app name. */
   shortName?: string;
+  /** Manifest description. */
   description?: string;
+  /** Browser UI color. Default `#0f172a`. */
   themeColor?: string;
+  /** Splash screen background. Default `#ffffff`. */
   backgroundColor?: string;
+  /** How the installed app opens. Default `standalone`. */
   display?: 'standalone' | 'fullscreen' | 'minimal-ui' | 'browser';
+  /** Page the installed app opens on. Default `/`. */
   startUrl?: string;
+  /** Manifest icons. Default `/icons/icon-192.png` and `/icons/icon-512.png` (maskable). */
   icons?: Array<{
     src: string;
     sizes: string;
@@ -83,6 +91,8 @@ interface PwaOptions {
 }
 ```
 
+The manifest and service worker settings of an installable web platform, passed as `web({ pwa: { ... } })`.
+
 ### WebOptions
 
 ```ts
@@ -95,6 +105,7 @@ interface WebOptions {
   mode: WebMode;
   /** Dev server and production port. Default 3000. */
   port: number;
+  /** Interface to bind. Default: Vite's (localhost) in dev, `0.0.0.0` for `kitr start`. */
   host?: string;
   /** Installable app: manifest and service worker. `true` uses the app name; an object sets the manifest. */
   pwa: boolean | PwaOptions;
@@ -105,11 +116,15 @@ interface WebOptions {
 }
 ```
 
+Options of the web platform, as written in `web({ ... })` in kitrrc.ts and edited by `kitr config <name>`.
+
 ### WebMode
 
 ```ts
 type WebMode = 'static' | 'spa' | 'ssr';
 ```
+
+How a web platform renders: prerendered HTML (`static`), a client-rendered shell (`spa`) or per-request server rendering (`ssr`).
 
 ## kitr/web/client
 

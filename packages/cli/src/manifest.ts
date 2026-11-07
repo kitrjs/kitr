@@ -27,6 +27,8 @@ export interface KitrManifest {
    * `<package>/types`. Its files land in the project's `.kitr/` folder.
    */
   types?: string
+  /** The setup module's export path (`./kitr`), when the package ships one. */
+  setup?: string
 }
 
 export const categories = {
@@ -68,6 +70,8 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
       errors.push(`"${field}" must be a list of strings`)
   if (k.types !== undefined && !(typeof k.types === 'string' && k.types.startsWith('./')))
     errors.push('"types" must be a relative subpath such as "./types"')
+  if (k.setup !== undefined && k.setup !== './kitr')
+    errors.push('"setup" must be "./kitr" (the export the CLI loads)')
   if (known.length && Array.isArray(k.requires))
     for (const dep of k.requires)
       if (!known.includes(dep)) errors.push(`requires unknown package "${dep}"`)

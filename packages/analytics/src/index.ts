@@ -15,4 +15,5 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types the default export of `config/analytics.ts`: adapters, consent queueing, page views and global props. */
 export const defineConfig = createDefineConfig<AnalyticsConfig>()

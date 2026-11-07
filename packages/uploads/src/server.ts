@@ -2,6 +2,7 @@ import { type KitrApp, KitrError } from '@kitr/core'
 import type { H3Event } from 'h3'
 import { accepts, type UploadedFile, type UploadRules, type UploadsConfig } from './index'
 
+/** A stored file's key, original name, size and type. */
 export interface StoredFile {
   key: string
   name: string
@@ -11,14 +12,19 @@ export interface StoredFile {
 
 /** Where bytes go: disk, S3, R2, GCS. Keys are relative paths the driver owns. */
 export interface UploadsDriver {
+  /** A short label, such as `disk` or `memory`. */
   name: string
+  /** Write the bytes under `key`, keeping `type` so `get` can return it. */
   put(key: string, data: Uint8Array, meta: { type: string; name: string }): Promise<void>
+  /** Read a file back, or `undefined` when the key does not exist. */
   get(key: string): Promise<{ data: Uint8Array; type: string } | undefined>
+  /** Delete a file. Deleting a missing key is not an error. */
   delete(key: string): Promise<void>
   /** A URL for the key, when files are served (CDN, signed URL, the kitr route). */
   url?(key: string): string | Promise<string>
 }
 
+/** A driver that keeps files in a Map, for tests and demos. Everything is lost when the process exits. */
 export function createMemoryUploadsDriver(): UploadsDriver {
   const files = new Map<string, { data: Uint8Array; type: string }>()
   return {
@@ -89,15 +95,19 @@ export function createDiskUploadsDriver(
   }
 }
 
+/** The uploads service, as `createUploads` returns it and `useUploads(app)` reads it from the container. */
 export interface Uploads {
   /** Read a multipart request, apply the rules and store the files. Throws KitrError on violation. */
   receive(event: H3Event, rules?: UploadRules & { field?: string }): Promise<UploadedFile[]>
   /** Store bytes directly (from a job, a migration). */
   store(file: { name: string; type: string; data: Uint8Array }): Promise<UploadedFile>
+  /** Read a stored file's bytes and type, or `undefined`. */
   read(key: string): Promise<{ data: Uint8Array; type: string } | undefined>
+  /** Delete a stored file through the driver. */
   remove(key: string): Promise<void>
   /** Mount `POST <path>` (receive) and `GET <path>/:key` (serve) on a kitr server. */
   mount<S extends { h3: any; app?: KitrApp }>(server: S, path?: string): S
+  /** The driver files are stored with. */
   readonly driver: UploadsDriver
 }
 
@@ -133,6 +143,10 @@ const safeName = (name: string) =>
     .replace(/[^\w.-]+/g, '-')
     .slice(0, 120) || 'file'
 
+/**
+ * Creates the uploads service from a config: the driver (disk under `storage/uploads` by default)
+ * and the default rules. The provider calls it with `config/uploads.ts`; call it yourself in tests.
+ */
 export function createUploads(config: UploadsConfig = {}): Uploads {
   const driver =
     (config.driver as UploadsDriver | undefined) ??
@@ -212,6 +226,7 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
   return uploads
 }
 
+/** Returns the `uploads` service the provider bound, for a controller or job: `useUploads(ctx.app)`. */
 export function useUploads(app: KitrApp): Uploads {
   return app.container.use('uploads')
 }
