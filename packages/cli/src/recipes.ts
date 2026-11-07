@@ -381,7 +381,7 @@ export const recipes: Record<string, Recipe> = {
       )
       ctx.write(
         'server/routes.ts',
-        `import { cors, defineRoutes } from 'kitr/api'\nimport HealthController from '#server/controllers/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
+        `import { defineRoutes } from 'kitr/api'\nimport HealthController from '#server/controllers/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api' }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
       )
       ctx.write(
         'server/controllers/health_controller.ts',

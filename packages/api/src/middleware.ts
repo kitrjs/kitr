@@ -11,7 +11,10 @@ export function defineMiddleware<P = any, Q = any, B = any>(
 
 /** Options for `cors()`. */
 export interface CorsOptions {
-  /** Allowed origins: `'*'` (default), one origin, a list, or a predicate. */
+  /**
+   * Allowed origins: one origin, a list, a predicate, or `'*'` for a public API. Default none, so
+   * only same-origin requests (which need no CORS) get through: name the origins that may call you.
+   */
   origin?: string | string[] | ((origin: string) => boolean)
   /** Methods allowed on preflight. Default GET, POST, PUT, PATCH, DELETE, OPTIONS. */
   methods?: string[]
@@ -26,17 +29,25 @@ export interface CorsOptions {
 /** Marks middleware that answers preflight, so the router registers OPTIONS for its routes. */
 export const handlesPreflight = Symbol.for('kitr.api.handlesPreflight')
 
-/** CORS with sensible defaults; handles preflight. */
+/**
+ * CORS for the origins you list; handles preflight. Without `origin` no cross-origin caller is
+ * allowed. Throws at once for `origin: '*'` with credentials, which would let any site act as the user.
+ */
 export function cors(options: CorsOptions = {}): Middleware {
   const {
-    origin = '*',
+    origin,
     methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     headers = ['Content-Type', 'Authorization'],
     credentials = false,
     maxAge = 600,
   } = options
+  if (origin === '*' && credentials)
+    throw new Error(
+      '[kitr/api] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
+    )
   const allow = (reqOrigin: string | null): string | null => {
-    if (origin === '*') return credentials && reqOrigin ? reqOrigin : '*'
+    if (!origin) return null
+    if (origin === '*') return '*'
     if (!reqOrigin) return null
     if (typeof origin === 'function') return origin(reqOrigin) ? reqOrigin : null
     const list = Array.isArray(origin) ? origin : [origin]

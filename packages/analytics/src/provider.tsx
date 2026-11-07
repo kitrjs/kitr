@@ -35,7 +35,21 @@ export const analyticsProvider = defineProvider({
           : []
       const hub = getDevtools(app)
       const all = hub ? [...adapters, devtoolsAdapter(hub)] : adapters
-      return createAnalytics({ debug: app.isDevelopment && !hub, ...config, adapters: all })
+      // With kitr/consent installed (and gating analytics), start disabled whatever the order of
+      // providers: consent enables tracking once the visitor agrees, so no tracker script loads
+      // before that.
+      const consent = app.providers.some((p) => p.name === 'consent')
+        ? app.config.has('consent')
+          ? (app.config.get('consent') as { analytics?: unknown })
+          : {}
+        : undefined
+      const gated = consent !== undefined && consent.analytics !== false
+      return createAnalytics({
+        debug: app.isDevelopment && !hub,
+        ...config,
+        ...(gated ? { enabled: false } : {}),
+        adapters: all,
+      })
     })
   },
   devtools: (app) => import('./devtools').then((m) => m.panels(app)),
