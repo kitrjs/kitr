@@ -354,7 +354,8 @@ for (const group of guidesNavFile) {
   for (const slug of group.pages) {
     const path = join(site, 'content/guides', `${slug}.md`)
     const { data, body } = parseFrontmatter(readFileSync(path, 'utf8'))
-    if (!data.title || !data.description) throw new Error(`${path}: frontmatter needs title and description`)
+    if (!data.title || !data.description)
+      throw new Error(`${path}: frontmatter needs title and description`)
     const url = `/guides/${slug}`
     const list = (value) =>
       (value ?? '')
