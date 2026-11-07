@@ -179,7 +179,7 @@ The examples are exactly what the CLI generates (with workspace links instead of
 - [docs/packages.md](docs/packages.md): what each package provides and when to add it
 - [docs/platforms.md](docs/platforms.md): web, server, desktop, tauri and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
-- [docs/pure-backend.md](docs/pure-backend.md): kitr without React
+- [site/content/guides](site/content/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](site/content/guides/api-server.md)
 - [docs/departures.md](docs/departures.md): where the implementation improved on the design plan, and why
 
 ## Status

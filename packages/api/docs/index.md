@@ -1134,4 +1134,4 @@ To test one middleware, call it with a minimal context and a `next` function. Ea
 - [Auth](/packages/auth): `authMiddleware` and permissions for these routes
 - [Query](/packages/query): the contracts the client produces
 - [Forms](/packages/forms): showing `fieldErrors` on fields
-- [A backend without React](/docs/pure-backend)
+- [Build an API server without React](/guides/api-server)

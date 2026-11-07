@@ -776,5 +776,5 @@ Under Vitest the app environment is `test`, so `fetch()` boots providers but doe
 - [API routes](/packages/api): routes, controllers, validation and a typed client on this server
 - [Logger](/packages/logger): levels, formats and the request-scoped logger
 - [Realtime](/packages/realtime): WebSocket channels attached to this server
-- [A backend without React](/docs/pure-backend)
+- [Build an API server without React](/guides/api-server)
 - [h3 documentation](https://h3.dev)

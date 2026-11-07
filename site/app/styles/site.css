@@ -1063,6 +1063,71 @@ a.built-on-link:hover {
   color: var(--link);
 }
 
+/* ------------------------------------------------------------- guides */
+
+.guides-page {
+  padding-top: 48px;
+  padding-bottom: 64px;
+}
+.guide-group {
+  margin-top: 40px;
+}
+.guide-group h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  line-height: 28px;
+}
+.guide-group > p {
+  margin: 0 0 20px;
+  max-width: 640px;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.guide-card {
+  min-height: 190px;
+  gap: 10px;
+}
+.guide-card-title {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.guide-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.guide-tiles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.guide-more,
+.guide-time {
+  font-size: 13px;
+}
+.guide-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.guide-meta .kit-chips {
+  margin: 0;
+}
+.guide-meta .kit-chip {
+  gap: 6px;
+  padding-left: 5px;
+}
+.sidebar a.sidebar-home {
+  color: var(--muted);
+}
+
 /* ------------------------------------------------------------- docs layout */
 
 .docs-layout {

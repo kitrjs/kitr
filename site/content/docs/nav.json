@@ -14,22 +14,10 @@
     ]
   },
   {
-    "title": "Guides",
+    "title": "Concepts",
     "pages": [
       {
         "slug": "data"
-      },
-      {
-        "slug": "dashboard"
-      },
-      {
-        "slug": "fullstack"
-      },
-      {
-        "slug": "pure-backend",
-        "source": "../../../docs/pure-backend.md",
-        "title": "A backend without React",
-        "description": "Build an API server with controllers, a typed client and realtime channels, and no React anywhere."
       },
       {
         "slug": "agents"

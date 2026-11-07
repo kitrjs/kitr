@@ -950,4 +950,4 @@ export function withFallback(primary: MailTransport, backup: MailTransport): Mai
 - [Server](/packages/server): the server the mailer runs in.
 - [React Email](https://react.email/docs/introduction): components for email layouts.
 - [Resend](https://resend.com/docs) and [nodemailer](https://nodemailer.com/): the providers behind the built-in transports.
-- [Full-stack apps](/docs/fullstack): the guide to the server half of a kitr app.
+- [Build a full-stack app](/guides/fullstack-app): the guide to the server half of a kitr app.
