@@ -4,6 +4,16 @@
   "description": "The kitr CLI: new, add, remove, make:*, ui add, api:sync, doctor, eject, upgrade. Runs from flags with no prompts for agents and CI.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://kitr.dev/packages/cli",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "exports": {
     ".": {

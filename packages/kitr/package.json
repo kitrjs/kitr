@@ -4,6 +4,16 @@
   "description": "The kitr React framework: one import surface over TanStack, React Hook Form and friends, plus the kitr CLI.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/kitr"
+  },
+  "homepage": "https://kitr.dev",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "bin": {
     "kitr": "./bin/kitr.mjs"
