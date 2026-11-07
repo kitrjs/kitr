@@ -173,22 +173,33 @@ export function createResendTransport(options: {
   }
 }
 
-/** SMTP through nodemailer (`pnpm add nodemailer`), loaded on first send. */
-export function createSmtpTransport(options: {
-  host: string
-  port?: number
-  secure?: boolean
-  auth?: { user: string; pass: string }
-}): MailTransport {
-  let transporter: Promise<any> | undefined
+/** The part of nodemailer the SMTP transport uses; pass the module itself. */
+export interface NodemailerLike {
+  createTransport(options: unknown): {
+    sendMail(message: Record<string, unknown>): Promise<{ messageId?: string }>
+  }
+}
+
+/**
+ * SMTP through nodemailer (`pnpm add nodemailer`). Pass the module in so the bundler sees a real
+ * dependency: `createSmtpTransport(nodemailer, { host, port, auth })`.
+ */
+export function createSmtpTransport(
+  nodemailer: NodemailerLike | { default: NodemailerLike },
+  options: {
+    host: string
+    port?: number
+    secure?: boolean
+    auth?: { user: string; pass: string }
+  },
+): MailTransport {
+  const mod = 'default' in nodemailer ? nodemailer.default : nodemailer
+  let transporter: ReturnType<NodemailerLike['createTransport']> | undefined
   return {
     name: 'smtp',
     async send(message) {
-      const mod = 'nodemailer'
-      transporter ??= import(/* @vite-ignore */ mod).then((m) =>
-        (m.default ?? m).createTransport({ port: 587, ...options }),
-      )
-      const info = await (await transporter).sendMail({
+      transporter ??= mod.createTransport({ port: 587, ...options })
+      const info = await transporter.sendMail({
         from: formatAddress(message.from),
         to: message.to.map(formatAddress).join(', '),
         cc: message.cc?.map(formatAddress).join(', '),

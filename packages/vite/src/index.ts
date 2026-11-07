@@ -24,7 +24,7 @@ export interface KitrPluginOptions {
 }
 
 /** Config files whose packages import Node built-ins; kept out of client builds. */
-const SERVER_ONLY_CONFIG = ['server', 'api', 'db']
+const SERVER_ONLY_CONFIG = ['server', 'api', 'db', 'cache', 'shield', 'jobs', 'mail', 'uploads']
 
 interface RcPlatform {
   factory: string
@@ -145,7 +145,10 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         const serverOnly = loadOptions?.ssr ? [] : SERVER_ONLY_CONFIG
         const files = existsSync(dir)
           ? readdirSync(dir).filter(
-              (f) => /\.(ts|js|mts|mjs)$/.test(f) && !serverOnly.includes(f.replace(/\.\w+$/, '')),
+              (f) =>
+                /\.(ts|js|mts|mjs)$/.test(f) &&
+                !/^index\.\w+$/.test(f) && // the generated index the standalone server imports
+                !serverOnly.includes(f.replace(/\.\w+$/, '')),
             )
           : []
         const imports = files

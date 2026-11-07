@@ -107,7 +107,10 @@ describe('server()', () => {
         platforms: [api, { type: 'web' } as any],
       })
       api.scaffold!(f.ctx)
-      expect(f.files.get('server/main.ts')).toContain("import serverConfig from '#config/server'")
+      expect(f.files.get('server/main.ts')).toContain("import { config } from '../config'")
+      expect(f.files.get('server/main.ts')).toContain(
+        'createServer({ providers: rc.providers, config })',
+      )
       expect(f.files.get('server/main.ts')).not.toContain('mountRoutes')
       expect(f.files.get('app/routes/api.$.ts')).toContain(
         'ANY: ({ request }) => server.fetch(request)',

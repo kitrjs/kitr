@@ -194,3 +194,29 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
 export function useUploads(app: KitrApp): Uploads {
   return app.container.use('uploads')
 }
+
+/**
+ * Mount `POST <path>` (receive) and `GET <path>/**` (serve) on a kitr server from `server/main.ts`.
+ * The service is resolved per request, so this can run before the app has booted.
+ */
+export function mountUploads<S extends { h3: any; app: KitrApp }>(
+  server: S,
+  path = '/api/uploads',
+): S {
+  const base = path.replace(/\/$/, '')
+  server.h3.post(base, async (event: H3Event) => ({
+    files: await useUploads(server.app).receive(event),
+  }))
+  server.h3.get(`${base}/**`, async (event: H3Event) => {
+    const key = decodeURIComponent(new URL(event.req.url).pathname.slice(base.length + 1))
+    const file = await useUploads(server.app).driver.get(key)
+    if (!file) throw KitrError.notFound('File')
+    return new Response(file.data as BodyInit, {
+      headers: {
+        'content-type': file.type,
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    })
+  })
+  return server
+}

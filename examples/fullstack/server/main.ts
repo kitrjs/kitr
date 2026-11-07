@@ -1,11 +1,12 @@
 import { mountRoutes } from 'kitr/api'
 import { createServer } from 'kitr/server'
-import serverConfig from '#config/server'
+import { config } from '../config'
+import rc from '../kitrrc'
 import { realtime } from '#server/realtime'
 import { routes } from '#server/routes'
 
-/** The kitr server: what `kitr dev api` runs, what the web platform's /api route delegates to, what tests call. */
-export const server = createServer({ config: { server: serverConfig } })
+/** The kitr server: providers from kitrrc.ts, config from config/. What `kitr dev api` runs, what the web platform's /api route delegates to, what tests call. */
+export const server = createServer({ providers: rc.providers, config })
 mountRoutes(server, routes)
 // WebSocket upgrades on /api/ws, next to the routes.
 realtime.attach(server, '/api/ws')

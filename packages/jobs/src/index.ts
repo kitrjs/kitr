@@ -61,6 +61,8 @@ export interface JobsDriver {
 }
 
 export interface JobsConfig {
+  /** Jobs the worker knows about (`server/jobs/*.ts`). Dispatching by object registers on the fly. */
+  jobs?: Job<any>[]
   driver?: JobsDriver
   /** Jobs run at once per process. Default 5. */
   concurrency?: number
@@ -241,6 +243,12 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
       }
     }
     timer = setTimeout(tick, config.pollInterval ?? 500)
+  }
+
+  for (const job of config.jobs ?? []) {
+    registry.set(job.name, job)
+    if (job.schedule && typeof job.schedule === 'object')
+      intervals.set(job.name, parseInterval(job.schedule.every))
   }
 
   const jobs: Jobs = {

@@ -73,6 +73,10 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
   const h3 = new H3({
     onError: (error, event) => {
       const response = errorToResponse(error, event)
+      // A body nobody read is cancelled here with no reason, so the Node adapter does not
+      // print the error a second time when it tears the request stream down.
+      const body = event.req.body
+      if (body && !body.locked) body.cancel().catch(() => {})
       // 5xx are bugs or outages: record them with the request id so logs and the client's
       // error reference line up. 4xx are expected and stay at debug level with the request line.
       if (response.status >= 500) {
@@ -106,6 +110,9 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     },
     async fetch(request) {
       await server.boot()
+      // Serving through fetch() (Start's /api route, Workers) is serving too: providers' `ready`
+      // (job workers, schedulers) runs once here as it does on listen(). Tests stay quiet.
+      if (app.environment !== 'test') await app.ready()
       return h3.fetch(request)
     },
     mount(base, handler) {
