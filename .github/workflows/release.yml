@@ -1,7 +1,9 @@
 name: Release
 
 # Changesets opens a "Version packages" pull request as changesets land on main, and publishes
-# to npm when that pull request is merged. Needs an NPM_TOKEN secret with publish rights.
+# to npm when that pull request is merged. Needs an NPM_TOKEN secret with publish rights, and
+# "Allow GitHub Actions to create and approve pull requests" on under Settings > Actions > General.
+# Until the secret exists the job only says so, so main stays green.
 on:
   push:
     branches: [main]
@@ -16,19 +18,30 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
+      - name: Skip until NPM_TOKEN is set
+        if: env.NPM_TOKEN == ''
+        run: echo "::notice::NPM_TOKEN is not set, so nothing is versioned or published. Add the secret to enable releases."
       - uses: actions/checkout@v4
+        if: env.NPM_TOKEN != ''
         with:
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
+        if: env.NPM_TOKEN != ''
       - uses: actions/setup-node@v4
+        if: env.NPM_TOKEN != ''
         with:
           node-version: 22
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+        if: env.NPM_TOKEN != ''
       - run: pnpm build
+        if: env.NPM_TOKEN != ''
       - name: Version or publish
+        if: env.NPM_TOKEN != ''
         uses: changesets/action@v1
         with:
           version: pnpm version
@@ -37,5 +50,4 @@ jobs:
           title: "Version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

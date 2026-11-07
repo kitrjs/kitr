@@ -1,7 +1,6 @@
-import { createDefineConfig, defineProvider, type KitrProvider } from '@kitr/core'
+import { createDefineConfig } from '@kitr/core'
 import i18next, { type InitOptions, type i18n } from 'i18next'
-import type { ReactNode } from 'react'
-import { I18nextProvider, initReactI18next } from 'react-i18next'
+import { initReactI18next } from 'react-i18next'
 
 export * from 'react-i18next'
 export { i18next }
@@ -89,20 +88,3 @@ export function matchLocale(
   }
   return undefined
 }
-
-/** Binds `i18n` from `config/i18n.ts` and wraps the tree in I18nextProvider. */
-export const i18nProvider: KitrProvider = defineProvider({
-  name: 'i18n',
-  register(app) {
-    app.container.singleton('i18n', () =>
-      createI18n(app.config.get('i18n'), app.env.locale as string | undefined),
-    )
-  },
-  wrap(children, app) {
-    return (
-      <I18nextProvider i18n={app.container.use('i18n')}>{children as ReactNode}</I18nextProvider>
-    )
-  },
-})
-
-export default i18nProvider
