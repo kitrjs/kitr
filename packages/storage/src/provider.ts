@@ -24,10 +24,10 @@ export const storageProvider = defineProvider({
     if (driver) setStorageDriver(driver)
   },
   async boot(app) {
-    // Platform providers register their driver in their own `register`, which may run after
-    // this one (the order in kitrrc.ts is the order `kitr add` ran), so resolve again here.
+    // Platform providers (desktop, mobile) may be listed after storage, so their driver is only
+    // registered once every provider's register() has run: resolve again here, before anything renders.
     const driver = app.drivers.resolve('storage')
-    if (driver) setStorageDriver(driver)
+    if (driver && getStorageDriver('local') !== driver) setStorageDriver(driver)
     await driver?.hydrate?.()
     const hub = getDevtools(app)
     if (!hub) return

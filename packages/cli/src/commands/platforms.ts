@@ -178,11 +178,9 @@ export async function addPlatformCommand(
   const ctx = createContext({ dryRun: options.dryRun })
   const { words, flags } = parseFlags(rawArgs)
   const info = await resolvePlatformType(ctx, type)
-  const name = words[0]
-  if (!name)
-    throw new Error(
-      `kitr add ${type} <name> [--option value]   e.g. kitr add ${type} ${info.defaultName}`,
-    )
+  // `kitr add server` alone takes the usual name for that type (api, site, app, phone).
+  const name = words[0] ?? info.defaultName
+  if (!words[0]) ctx.log.info(`No name given: calling the ${type} platform "${name}".`)
   const platformOptions: Record<string, unknown> = {}
   const describe = info.factoryFn({}).definition.describe ?? {}
   for (const [key, raw] of Object.entries(flags)) {

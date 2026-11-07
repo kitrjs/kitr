@@ -149,6 +149,12 @@ export interface AddContext extends ProjectInfo {
     /** Remove a script, only if it still holds `command` when given. */
     remove(name: string, command?: string): void
   }
+  packageJson: {
+    /** Set a top-level package.json field (`msw`, `browserslist`...). Overwrites. */
+    set(field: string, value: unknown): void
+    /** Remove a top-level field, only if it still holds `value`. */
+    remove(field: string, value: unknown): void
+  }
   env: {
     /** Append to `.env.example` (and `.env` when present). */
     add(vars: Record<string, string>, comment?: string): void

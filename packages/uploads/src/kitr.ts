@@ -9,7 +9,7 @@ export default definePackage({
     ctx.provider.add('@kitr/uploads/provider')
     ctx.config(
       'uploads',
-      `import { defineConfig } from 'kitr/uploads'\n\nexport default defineConfig({\n  maxSize: 10 * 1024 * 1024,\n  accept: ['image/*', 'application/pdf'],\n  // Files go to storage/uploads and are served under publicPath. Pass a driver for S3/R2.\n  publicPath: '/uploads',\n})\n`,
+      `import { defineConfig } from 'kitr/uploads'\n\nexport default defineConfig({\n  maxSize: 10 * 1024 * 1024,\n  accept: ['image/*', 'application/pdf'],\n  // Files go to storage/uploads and are served by mountUploads() under publicPath. Pass a driver for S3/R2.\n  publicPath: '/api/uploads',\n})\n`,
     )
     ctx.server.attach({
       marker: 'mountUploads(',

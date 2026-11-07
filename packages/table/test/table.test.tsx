@@ -1,11 +1,15 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  type ClientTableFeatures,
+  type ColumnDef,
+  clientTableFeatures,
   dataTableFeatures,
   formatSort,
   parseSort,
   parseTableSearch,
   type TableSearch,
+  useTable,
   useUrlTableState,
 } from '../src'
 
@@ -113,5 +117,43 @@ describe('dataTableFeatures', () => {
       'rowPaginationFeature',
       'rowSortingFeature',
     ])
+  })
+})
+
+// Regression: the saas kit's projects page spread useUrlTableState (manual: server sorts and
+// pages) over data it already had in full, so clicking a header or Next changed nothing.
+describe('client-side tables', () => {
+  it('sort, filter and page in the browser with clientTableFeatures and manual: false', () => {
+    const rows = [
+      { name: 'Grace', total: 120, status: 'open' },
+      { name: 'Ada', total: 80, status: 'open' },
+      { name: 'Linus', total: 300, status: 'closed' },
+    ]
+    const columns: ColumnDef<ClientTableFeatures, (typeof rows)[number]>[] = [
+      { accessorKey: 'name' },
+      { accessorKey: 'total' },
+      { accessorKey: 'status' },
+    ]
+    const names = (search: TableSearch) => {
+      const { result } = renderHook(() => {
+        const state = useUrlTableState({
+          search,
+          setSearch: () => {},
+          defaultPageSize: 2,
+          manual: false,
+        })
+        return useTable({ features: clientTableFeatures, columns, data: rows, ...state })
+      })
+      return result.current.getRowModel().rows.map((r) => r.original.name)
+    }
+    expect(names({})).toEqual(['Grace', 'Ada'])
+    expect(names({ sort: '-total' })).toEqual(['Linus', 'Grace'])
+    expect(names({ sort: 'name', page: 2 })).toEqual(['Linus'])
+    expect(names({ filter: { status: 'open' }, sort: 'total' })).toEqual(['Ada', 'Grace'])
+  })
+
+  it('stays manual by default, for server-side data', () => {
+    const { result } = renderHook(() => useUrlTableState({ search: {}, setSearch: () => {} }))
+    expect(result.current.manualSorting).toBe(true)
   })
 })

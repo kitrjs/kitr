@@ -1,10 +1,10 @@
-import { cors, defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/api'
 import AuthController from '#server/controllers/auth_controller'
 import HealthController from '#server/controllers/health_controller'
 import ProjectsController from '#server/controllers/projects_controller'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .post('/auth/sign-in', [AuthController, 'signIn'], { name: 'auth.signIn' })

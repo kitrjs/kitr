@@ -79,6 +79,7 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | | |
 | --- | --- |
 | `ctx.deps.add('ioredis', { name: 'vite', dev: true })`, `ctx.deps.remove(...)` | `package.json` dependencies, installed once at the end |
+| `ctx.packageJson.set('msw', { workerDirectory: ['public'] })`, `ctx.packageJson.remove(...)` | A top-level `package.json` field; `remove` only when it still holds that value |
 | `ctx.provider.add('@kitr/jobs/provider')`, `.remove(...)` | the `providers` list in `kitrrc.ts` |
 | `ctx.config('jobs', source)` | `config/jobs.ts`, skipped when it exists |
 | `ctx.write(path, content, { overwrite })`, `ctx.unlink(path)` | any new file; delete a file kitr wrote |

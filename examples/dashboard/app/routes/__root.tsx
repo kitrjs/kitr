@@ -3,6 +3,7 @@ import { HeadContent, Link, Outlet, Scripts, createRootRouteWithContext } from '
 import type { ReactNode } from 'react'
 import css0 from 'kitr/theme/styles.css?url'
 import '#app/styles/app.css'
+import { ThemeScript } from 'kitr/theme'
 
 export const Route = createRootRouteWithContext<KitrRouterContext>()({
   head: () => ({
@@ -27,8 +28,9 @@ function RootLayout() {
 /** The HTML shell. Start streams it on the server and hydrates it on the client. */
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <HeadContent />
       </head>
       <body>

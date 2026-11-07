@@ -37,6 +37,7 @@ const startRoot = (options: {
 }) =>
   `import type { KitrRouterContext } from 'kitr/router'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+import { ThemeScript } from 'kitr/theme'
 import type { ReactNode } from 'react'
 import css from '#app/styles/app.css?url'
 ${options.imports}
@@ -61,6 +62,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
@@ -250,13 +252,13 @@ export default class AuthController {
   write(
     ctx,
     'server/routes.ts',
-    `import { cors, defineRoutes } from 'kitr/api'
+    `import { defineRoutes } from 'kitr/api'
 import AuthController from '#server/controllers/auth_controller'
 import HealthController from '#server/controllers/health_controller'
 import ProjectsController from '#server/controllers/projects_controller'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .post('/auth/sign-in', [AuthController, 'signIn'], { name: 'auth.signIn' })
@@ -684,7 +686,7 @@ function ProjectsPage() {
         description="Sorting and paging live in the URL, so links are shareable."
         actions={<Button onClick={() => setOpen(true)}>New project</Button>}
       />
-      <DataTable columns={columns} data={data} rowCount={data.length} {...tableState} />
+      <DataTable columns={columns} data={data} clientSide {...tableState} />
       <NewProjectDialog open={open} onOpenChange={setOpen} />
     </>
   )
@@ -1038,12 +1040,12 @@ export default class NewsletterController {
   write(
     ctx,
     'server/routes.ts',
-    `import { cors, defineRoutes } from 'kitr/api'
+    `import { defineRoutes } from 'kitr/api'
 import HealthController from '#server/controllers/health_controller'
 import NewsletterController from '#server/controllers/newsletter_controller'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .post('/newsletter', [NewsletterController, 'subscribe'], { name: 'newsletter.subscribe' }),
@@ -1545,12 +1547,12 @@ export default class MessagesController {
   write(
     ctx,
     'server/routes.ts',
-    `import { cors, defineRoutes } from 'kitr/api'
+    `import { defineRoutes } from 'kitr/api'
 import HealthController from '#server/controllers/health_controller'
 import MessagesController from '#server/controllers/messages_controller'
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
+  router.group({ prefix: '/api' }, (api) =>
     api
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .resource('messages', MessagesController, { only: ['index', 'store'] }),
@@ -2005,6 +2007,7 @@ const mobileExtra = (ctx: ProjectContext, name: string) => {
     'app/routes/__root.tsx',
     `import type { KitrRouterContext } from 'kitr/router'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+import { ThemeScript } from 'kitr/theme'
 import type { ReactNode } from 'react'
 import css from '#app/styles/app.css?url'
 import { PwaUpdate } from '#app/components/pwa-update'
@@ -2035,6 +2038,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">

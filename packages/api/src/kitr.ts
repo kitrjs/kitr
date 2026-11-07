@@ -15,7 +15,7 @@ export default definePackage({
     )
     ctx.write(
       'server/routes.ts',
-      `import { cors, defineRoutes } from 'kitr/api'\nimport HealthController from '#server/controllers/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
+      `import { defineRoutes } from 'kitr/api'\nimport HealthController from '#server/controllers/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api' }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
     )
     ctx.write(
       'server/controllers/health_controller.ts',
@@ -28,17 +28,26 @@ export default definePackage({
       line: 'mountRoutes(server, routes)',
       first: true,
     })
-    if (!serverOnly)
+    if (!serverOnly) {
+      // The client resolves route names through this table: without it every call throws
+      // "Unknown route". `kitr api:sync` rewrites it from server/routes.ts.
+      ctx.write(
+        'app/api/routes.gen.ts',
+        `// Route table for the typed client. Regenerate with \`kitr api:sync\`.\nexport const routeTable = ${JSON.stringify([{ name: 'health', method: 'GET', path: '/api/health' }], null, 2)} as const\n`,
+      )
       ctx.write(
         'app/api/client.ts',
-        `import { createApiClient } from 'kitr/api/client'\nimport type { AppRoutes } from '#server/routes'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\n`,
+        `import { createApiClient, registerRoutes } from 'kitr/api/client'\nimport type { AppRoutes } from '#server/routes'\nimport { routeTable } from './routes.gen'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\nregisterRoutes(api, [...routeTable])\n`,
       )
+    }
+    ctx.scripts.add('api:sync', 'kitr api:sync')
     ctx.agents.add(
       'api',
       `- Routes: \`server/routes.ts\` (\`defineRoutes\`), controllers in \`server/controllers/<name>_controller.ts\` (\`kitr make:controller <name> --resource\`). Validators go in \`static validation = { store: { body: schema } }\`.\n- Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.\n- The client is typed from \`typeof routes.$types\`; call \`registerRoutes(api, routes.toJSON())\` or use \`kitr api:sync\` to write the route table and openapi.json.`,
     )
   },
   remove(ctx) {
+    ctx.scripts.remove('api:sync', 'kitr api:sync')
     ctx.agents.remove('api')
   },
   commands: () => import('./commands'),

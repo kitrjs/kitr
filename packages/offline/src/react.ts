@@ -1,12 +1,23 @@
 import { useApp } from '@kitr/react'
 import { useCallback, useSyncExternalStore } from 'react'
 
+const serverOffline = {
+  subscribe: () => () => {},
+  isOnline: () => true,
+  pendingMutations: () => 0,
+  restored: false,
+  clear: () => {},
+  persist: () => {},
+}
+
 /**
  * `{ online, pending, restored }`: whether the network is up, how many mutations wait for it,
  * and whether the cache came from a stored snapshot. Hydration-safe: the server says online.
  */
 export function useOffline() {
-  const offline = useApp().container.use('offline')
+  // Bound in the browser only: during server rendering the hook answers "online, nothing pending".
+  const container = useApp().container
+  const offline = container.has('offline') ? container.use('offline') : serverOffline
   const subscribe = useCallback((notify: () => void) => offline.subscribe(notify), [offline])
   const online = useSyncExternalStore(
     subscribe,

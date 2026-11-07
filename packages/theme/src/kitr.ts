@@ -19,6 +19,31 @@ export default definePackage({
       'app/styles/tokens.css',
       `/* Override kitr tokens here. See kitr/theme/styles.css for the full list. */\n:root {\n  /* --kitr-color-primary: oklch(55% 0.2 262); */\n}\n`,
     )
+    // Load the overrides after kitr's tokens: through app.css when Tailwind owns the styles,
+    // otherwise straight from the root route.
+    if (ctx.exists('app/styles/app.css')) {
+      const css = ctx.read('app/styles/app.css')
+      if (!css.includes("'./tokens.css'"))
+        ctx.write(
+          'app/styles/app.css',
+          css.includes("@import 'kitr/theme/styles.css';\n")
+            ? css.replace(
+                "@import 'kitr/theme/styles.css';\n",
+                "@import 'kitr/theme/styles.css';\n@import './tokens.css';\n",
+              )
+            : `${css}@import './tokens.css';\n`,
+          { overwrite: true },
+        )
+    } else ctx.replaceImport('app/routes/__root.tsx', undefined, '#app/styles/tokens.css')
+    // Apply the stored theme before first paint: without it every load flashes the default.
+    ctx.edit('app/routes/__root.tsx', (_mod, src) =>
+      src.includes('<ThemeScript') || !src.includes('<HeadContent />')
+        ? src
+        : src
+            .replace(/^(import[^\n]*\n)(?!import)/m, "$1import { ThemeScript } from 'kitr/theme'\n")
+            .replace('<html lang="en">', '<html lang="en" suppressHydrationWarning>')
+            .replace(/( *)<HeadContent \/>/, '$1<ThemeScript />\n$1<HeadContent />'),
+    )
     ctx.agents.add(
       'theme',
       `- Theme: \`useTheme()\` from \`kitr/theme\` (\`theme\`, \`resolved\`, \`setTheme\`, \`toggle\`); \`data-theme="light|dark"\` on <html>. Put \`<ThemeScript />\` in the document head to avoid a flash.\n- Colours and radii come from the \`--kitr-*\` variables (\`kitr/theme/styles.css\`, overrides in \`app/styles/tokens.css\`); never hard-code them. Plain CSS helpers: \`pick()\`, \`vars()\`, \`dataAttrs()\` from \`kitr/theme\`.\n- Components live in \`app/components/ui/\` and are owned by the app: add more with \`kitr ui add <name>\` (shadcn-compatible registry); toasts via \`kitr ui add sonner\`.\n- Icons: Hugeicons in the stroke-rounded style through \`<Icon icon={Add01Icon} />\` from \`#components/ui/icon\` (\`kitr ui add icon\`), icons from \`@hugeicons/core-free-icons\`. No other icon set, no emoji or glyphs as icons.`,
@@ -26,6 +51,12 @@ export default definePackage({
     ctx.log.info('Pull components with `kitr ui add button input form`.')
   },
   remove(ctx) {
+    ctx.edit('app/routes/__root.tsx', (_mod, src) =>
+      src
+        .replace("import { ThemeScript } from 'kitr/theme'\n", '')
+        .replace('<html lang="en" suppressHydrationWarning>', '<html lang="en">')
+        .replace(/ *<ThemeScript \/>\n/, ''),
+    )
     ctx.provider.remove('@kitr/theme/provider')
     ctx.agents.remove('theme')
   },

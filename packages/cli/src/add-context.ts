@@ -83,6 +83,10 @@ export function createAddContext(
       add: (name, command) => codemods.addScript(name, command),
       remove: (name, command) => codemods.removeScripts({ [name]: command }),
     },
+    packageJson: {
+      set: (field, value) => codemods.setPackageField(field, value),
+      remove: (field, value) => codemods.removePackageField(field, value),
+    },
     env: {
       add: (vars, comment) => codemods.addEnv(vars, comment),
       schema: (scope, name, schema, example) => codemods.addEnvSchema(scope, name, schema, example),

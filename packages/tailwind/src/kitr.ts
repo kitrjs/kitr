@@ -19,7 +19,7 @@ export default definePackage({
     )
     ctx.write(
       'app/styles/app.css',
-      `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/theme/styles.css';\n\n@source '../';\n`,
+      `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/theme/styles.css';\n${ctx.exists('app/styles/tokens.css') ? "@import './tokens.css';\n" : ''}\n@source '../';\n`,
     )
     ctx.replaceImport('app/routes/__root.tsx', 'kitr/theme/styles.css', '#app/styles/app.css')
     ctx.agents.add(

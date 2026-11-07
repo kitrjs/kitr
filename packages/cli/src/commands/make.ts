@@ -54,7 +54,8 @@ export class ${naming.pascal(name)}Service {
   }
 }
 
-declare module 'kitr/app' {
+// Augment @kitr/core itself: kitr/app only re-exports it, so augmenting kitr/app types nothing.
+declare module '@kitr/core' {
   interface ContainerBindings {
     ${naming.camel(name)}: ${naming.pascal(name)}Service
   }

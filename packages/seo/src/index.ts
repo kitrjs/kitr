@@ -104,8 +104,22 @@ export function seo(input: SeoInput) {
 export function jsonLd(data: Record<string, unknown> & { '@type': string }) {
   return {
     type: 'application/ld+json',
-    children: JSON.stringify({ '@context': 'https://schema.org', ...data }),
+    children: safeJson({ '@context': 'https://schema.org', ...data }),
   }
+}
+
+/**
+ * JSON for inside a `<script>`: `<`, `>` and `&` as unicode escapes so a value such as
+ * `</script><script>…` from a user's title can't close the tag, and U+2028/U+2029 escaped too.
+ * Still valid JSON: parsers read the escapes back as the same characters.
+ */
+export function safeJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
 }
 
 /** Route option presets. Spread into `createFileRoute(...)({ ...ssrRoute('data-only'), ... })`. */

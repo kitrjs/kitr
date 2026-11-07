@@ -193,7 +193,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 
 The script changes `<html>` before React hydrates it, so React would warn that the attribute differs from the server's HTML; `suppressHydrationWarning` on `<html>` tells it this one difference is expected.
 
-The root route that `kitr add router` writes does not include `<ThemeScript />`, so add it yourself. It works the same in `ssr`, `static` and `spa` modes and in desktop and mobile shells, because it only reads `localStorage`.
+`kitr add theme` adds `<ThemeScript />` and `suppressHydrationWarning` to the root route `kitr add router` writes, and the kits include them. It works the same in `ssr`, `static` and `spa` modes and in desktop and mobile shells, because it only reads `localStorage`.
 
 If you changed `storageKey` or `attribute` in `config/theme.ts`, pass the same values: `<ThemeScript storageKey="acme-theme" attribute="data-mode" />`. The script reads its props, not the config. It escapes both values, so a key containing `</script>` cannot break out of the tag.
 
@@ -335,7 +335,7 @@ To change a token for the whole app, override its variable in `app/styles/tokens
 }
 ```
 
-`kitr add theme` writes this file but does not link it anywhere. Link it after `kitr/theme/styles.css` in the root route, so your values come later in the cascade and win:
+`kitr add theme` loads this file for you: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise with an import in the root route. If you move it, keep it after `kitr/theme/styles.css`, so your values come later in the cascade and win:
 
 ```tsx
 // app/routes/__root.tsx

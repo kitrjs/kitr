@@ -99,8 +99,8 @@ function useOffline(): {
   online: boolean;
   pending: number;
   restored: boolean;
-  clear: () => void;
-  persist: () => void;
+  clear: (() => void) | (() => void);
+  persist: (() => void) | (() => void);
 };
 ```
 

@@ -87,20 +87,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 | --- | --- |
 | `VITE_API_URL` | The API that answers `/me` and `/sign-in` in the generated config. |
 
-`kitr add auth` does not declare `VITE_API_URL`. The [HTTP](/packages/http) recipe does, and the `app` kit includes it. Without HTTP, add it to `app/env.ts` yourself:
-
-```ts
-// app/env.ts
-import { createEnv, env as e } from 'kitr/env'
-
-export const env = createEnv({
-  public: {
-    VITE_APP_NAME: e.string({ default: 'acme' }),
-    VITE_API_URL: e.url({ default: 'https://app.acme.com/api' }),
-  },
-  server: {},
-})
-```
+`kitr add auth` declares `VITE_API_URL` in `app/env.ts` (default `http://localhost:3333`) and adds the session to the router context in `app/router.tsx`, so `requireAuth()` works without more wiring.
 
 ## Show who is signed in
 
@@ -657,7 +644,7 @@ On the server, `authMiddleware` from `kitr/auth/server` reads the token, finds t
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/api'
 import { authMiddleware } from 'kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
 import ProjectsController from '#server/controllers/projects_controller'
@@ -666,7 +653,7 @@ import { findUserByToken } from '#server/services/sessions'
 const auth = authMiddleware<User>({ verify: (token) => findUserByToken(token), abilities })
 
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors(), auth] }, (api) =>
+  router.group({ prefix: '/api', middleware: [auth] }, (api) =>
     api.resource('projects', ProjectsController),
   ),
 )
