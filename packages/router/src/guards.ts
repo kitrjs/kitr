@@ -1,5 +1,5 @@
-import { KitrError } from '@kitr/core'
-import { redirect } from '@tanstack/react-router'
+import { buildPlatform, KitrError } from '@kitr/core'
+import { notFound, redirect } from '@tanstack/react-router'
 
 /** What the guards read from `context.session`: a user when signed in, and an optional permission check. */
 export interface GuardSession {
@@ -70,5 +70,48 @@ export function guards<Ctx>(...fns: Array<(ctx: Ctx) => unknown | Promise<unknow
       if (result && typeof result === 'object') merged = { ...merged, ...(result as object) }
     }
     return merged
+  }
+}
+
+/** What `onlyPlatform()` reads: the platform service when `@kitr/platform` is installed, else the build's name and type. */
+export interface GuardPlatform {
+  name?: string | undefined
+  type?: string
+  native?: boolean
+  os?: string
+}
+
+/** Options of `onlyPlatform()`: where other platforms go instead of a 404. */
+export interface OnlyPlatformOptions {
+  /** Redirect other platforms here instead of rendering not-found. */
+  to?: string
+}
+
+const platformMatches = (platform: GuardPlatform, keys: string[]) =>
+  keys.some(
+    (key) =>
+      key === platform.name ||
+      key === platform.type ||
+      key === platform.os ||
+      (key === 'native' && platform.native === true),
+  )
+
+/**
+ * `beforeLoad` guard that limits a route to some platforms: the marketing pages exist on the
+ * `www` build only, the account pages on the authed web app and the phone. Keys are platform
+ * names from kitrrc.ts, platform types (`web`, `mobile`), OS names or `native`. Other platforms
+ * get the route's not-found page, or a redirect with `to`. Reads `context.platform` (the service
+ * from `@kitr/platform`, put in context by `createKitrRouter`) and falls back to the build's
+ * `KITR_PLATFORM` / `KITR_PLATFORM_TYPE`, so it works with no platform package at all.
+ *
+ *   export const Route = createFileRoute('/pricing')({ beforeLoad: onlyPlatform('www') })
+ */
+export function onlyPlatform(platforms: string | string[], options: OnlyPlatformOptions = {}) {
+  const keys = Array.isArray(platforms) ? platforms : [platforms]
+  return ({ context }: { context: { platform?: GuardPlatform | null } }) => {
+    const current: GuardPlatform = context.platform ?? buildPlatform()
+    if (platformMatches(current, keys)) return
+    if (options.to) throw redirect({ to: options.to })
+    throw notFound()
   }
 }

@@ -1,4 +1,4 @@
-import { createDefineConfig } from '@kitr/core'
+import { type BuildPlatformKey, createDefineConfig, forBuildPlatform } from '@kitr/core'
 
 /** Site-wide values for `seo()` and the build: name, canonical origin, default image, handle and locale. */
 export interface SeoSite {
@@ -122,9 +122,19 @@ export function safeJson(value: unknown): string {
     .replace(/\u2029/g, '\\u2029')
 }
 
-/** Route option presets. Spread into `createFileRoute(...)({ ...ssrRoute('data-only'), ... })`. */
-export function ssrRoute(mode: boolean | 'data-only') {
-  return { ssr: mode } as const
+export type SsrMode = boolean | 'data-only'
+
+/**
+ * Route option presets. Spread into `createFileRoute(...)({ ...ssrRoute('data-only'), ... })`.
+ * A table picks the mode per platform at build time, by platform name from kitrrc.ts, then type,
+ * then `default`: `ssrRoute({ www: true, web: 'data-only', default: false })` renders the marketing
+ * build on the server, other web builds data-only, and native shells on the client.
+ */
+export function ssrRoute(
+  mode: SsrMode | (Partial<Record<BuildPlatformKey, SsrMode>> & { default: SsrMode }),
+): { ssr: SsrMode } {
+  if (typeof mode === 'object') return { ssr: forBuildPlatform(mode) }
+  return { ssr: mode }
 }
 
 /**

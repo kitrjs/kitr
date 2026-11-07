@@ -89,6 +89,7 @@ export default defineConfig({
     'src/realtime-sse.ts',
     'src/realtime.ts',
     'src/router.ts',
+    'src/router-stack.ts',
     'src/seo.ts',
     'src/server-platform.ts',
     'src/server.ts',

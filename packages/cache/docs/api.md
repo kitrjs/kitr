@@ -44,15 +44,10 @@ function createUnstorageCacheDriver(storage: UnstorageLike, options?: {
 }): CacheDriver;
 ```
 
-A cache driver over any unstorage instance, so several servers share one cache:
+A cache driver over any unstorage instance, so several servers share one cache: in
+`config/cache.ts`, `driver: createUnstorageCacheDriver(createStorage({ driver: redisDriver(...) }))`
+with `createStorage` from unstorage and the driver from `unstorage/drivers/redis` (or any other).
 
-```ts
-import { createStorage } from 'unstorage'
-import redisDriver from 'unstorage/drivers/redis'
-export default defineConfig({
-  driver: createUnstorageCacheDriver(createStorage({ driver: redisDriver({ url: env.REDIS_URL }) })),
-})
-```
 Expiry is checked on read, so drivers without native TTLs work too; the ttl is also passed to
 `setItem` for drivers that expire keys themselves (Redis, KV). Entries live under `base`
 (default `kitr-cache`), so `clear()` leaves the rest of the store alone.

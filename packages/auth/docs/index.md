@@ -508,6 +508,80 @@ export const Route = createFileRoute('/_app')({
 
 The `saas` kit uses this form. With tokens in `localStorage` the server can't see the session, so run guarded routes on the client only, for example with `ssrRoute(false)` from [SEO](/packages/seo).
 
+## Render by auth state on one URL
+
+Some pages exist for everyone but look different signed in: the home page is a landing for guests and a feed for members. A redirect to `/sign-in` is the wrong tool there; `<Authed>`, `<Guest>` and `authBranch()` render by the live session instead, on the same URL, so deep links, the back button and crawlers see one route:
+
+```tsx
+// app/routes/index.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { authBranch } from 'kitr/auth'
+import { Feed } from '#app/components/feed'
+import { Landing } from '#app/components/landing'
+
+export const Route = createFileRoute('/')({
+  component: authBranch({ authed: Feed, guest: Landing }),
+})
+```
+
+```tsx
+// app/components/comment-box.tsx
+import { Authed, Guest } from 'kitr/auth'
+import { Link } from '@tanstack/react-router'
+
+export function CommentBox() {
+  return (
+    <>
+      <Authed>
+        <textarea placeholder="Write a comment" />
+      </Authed>
+      <Guest>
+        <Link to="/sign-in">Sign in to comment</Link>
+      </Guest>
+    </>
+  )
+}
+```
+
+Both components take a `fallback` for the other state. They re-render on sign-in and sign-out, so a guest who signs in from a sheet sees the member view behind it at once. Keep `requireAuth()` for pages that must not render at all without a user; use these for pages that serve both.
+
+## Cookies on the web, tokens in native shells
+
+An SSR web app wants a cookie session: the server reads it on the first request and the page renders signed in. A phone or desktop shell has no cookie jar worth trusting across restarts and wants a bearer token in secure storage. One config serves both by picking the adapter per platform at build time:
+
+```ts
+// config/auth.ts
+import { betterAuthAdapter, defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { forPlatform } from 'kitr/platform'
+import { authClient } from '#app/auth-client'
+
+export default defineConfig({
+  adapter: forPlatform({
+    // Web builds: the Better Auth cookie session, read on the server too.
+    web: betterAuthAdapter(authClient),
+    // Native shells: a bearer token the API issues, kept across restarts.
+    default: tokenAdapter({
+      storage: localStorageTokens('acme:token'),
+      fetchUser: async (token) => {
+        const response = await fetch('https://api.acme.com/me', {
+          headers: { authorization: `Bearer ${token}` },
+        })
+        return response.ok ? response.json() : null
+      },
+      signIn: async (credentials) => {
+        const response = await fetch('https://api.acme.com/sign-in', {
+          method: 'POST',
+          body: JSON.stringify(credentials),
+        })
+        return response.json()
+      },
+    }),
+  }),
+})
+```
+
+`forPlatform()` resolves from `KITR_PLATFORM_TYPE` when the bundle is built, so the phone bundle never contains the cookie adapter and the web bundle never contains the token one. On the server side, `kitr/auth/server` middleware accepts both a cookie and a bearer header, so the same API serves every build. Swap `localStorageTokens()` for a storage backed by `kitr/secure-storage` to keep the token in the OS keychain.
+
 ## Define permissions
 
 Write each rule once, as a function of the user and an optional subject, in `app/abilities.ts`:

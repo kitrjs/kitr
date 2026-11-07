@@ -82,9 +82,24 @@ export {
   type PlatformOptionType,
   parseOptions,
 } from './platform'
-export type { KitrPlatforms, PlatformName, PlatformTypeOf } from './platforms'
+export {
+  type BuildPlatformKey,
+  buildPlatform,
+  forBuildPlatform,
+  type KitrPlatforms,
+  type PlatformName,
+  type PlatformNamesOf,
+  type PlatformTypeName,
+  type PlatformTypeOf,
+} from './platforms'
 export { defineProvider, type KitrProvider, type ProviderInput, resolveProvider } from './provider'
-export { defaultDirectories, defineKitrConfig, type KitrRc } from './rc'
+export {
+  defaultDirectories,
+  defineKitrConfig,
+  defineWorkspace,
+  type KitrRc,
+  type KitrWorkspace,
+} from './rc'
 export {
   type AnySchema,
   anySchema,
