@@ -31,6 +31,11 @@ export interface KitrManifest {
   types?: string
   /** The setup module's export path (`./kitr`), when the package ships one. */
   setup?: string
+  /**
+   * Not published yet: generated from `"private": true` in package.json. `kitr add` and
+   * `kitr new` refuse it without `--preview`, and kitr.dev marks it.
+   */
+  preview?: boolean
 }
 
 export const categories = {

@@ -1,11 +1,19 @@
-import { isKitrError, KitrError, toKitrError } from '@kitr/core'
+import { inProduction, isKitrError, KitrError, toKitrError } from '@kitr/core'
 import { type H3Event, HTTPError } from 'h3'
 
-/** Convert anything thrown in a handler into kitr's wire shape with the right status. */
-export function errorToResponse(error: unknown, event?: H3Event): Response {
+/**
+ * Convert anything thrown in a handler into kitr's wire shape with the right status. In
+ * production (`options.production`, default from `inProduction()`) a 5xx keeps its message and
+ * data in the server log and sends `Internal server error`.
+ */
+export function errorToResponse(
+  error: unknown,
+  event?: H3Event,
+  options: { production?: boolean } = {},
+): Response {
   const kitrError = normaliseServerError(error)
   const body = kitrError.toJSON()
-  if (kitrError.status >= 500 && (globalThis as any).process?.env?.NODE_ENV === 'production') {
+  if (kitrError.status >= 500 && (options.production ?? inProduction())) {
     body.message = 'Internal server error'
     body.data = undefined
   }

@@ -500,8 +500,8 @@ export type AppRoutes = typeof routes.$types
     'app/pages/home.tsx',
     `import { useSchemaForm } from 'kitr/forms'
 import { useTranslation } from 'kitr/i18n'
-import { useKitrMutation } from 'kitr/query'
-import { defineMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { Link } from 'kitr/router'
 import { useState } from 'react'
 import { api } from '#app/api/client'
@@ -510,7 +510,7 @@ import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 
-const subscribe = defineMutation(api.newsletter.subscribe.mutation())
+const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
 
 export default function HomePage() {
   const { t } = useTranslation()
@@ -546,7 +546,7 @@ export default function HomePage() {
 
 function Newsletter() {
   const { t } = useTranslation()
-  const mutation = useKitrMutation(subscribe)
+  const mutation = useMutation(subscribe)
   const [done, setDone] = useState(false)
   const form = useSchemaForm(subscribeSchema, { defaultValues: { email: '' } })
   return (
@@ -769,7 +769,6 @@ export default definePackage({
       'storage',
       'analytics',
       'testing',
-      'devtools',
       'seo',
       'api',
     ],

@@ -6,7 +6,7 @@
 
 | Command | What it does |
 | --- | --- |
-| `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank` (the wiring files only: no platform, no React, no server, no Vite; `kitr add <platform> <name>` brings each), `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed channels), `desktop` (the app kit in an Electron shell with typed IPC), `tauri` (the same in a Tauri shell with typed Rust commands), `mobile` (the app kit as a PWA and a Capacitor shell). `--platform site=web,api=server` replaces the kit's platforms; `--mode`, `--pwa`, `--runtime`, `--targets`, `--port` set their options. Every kit but `blank` is a package (`@kitr/kit-saas`); `--kit @acme/starter` runs a kit from any npm package. `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
+| `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank` (the wiring files only: no platform, no React, no server, no Vite; `kitr add <platform> <name>` brings each), `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed channels), `desktop` (the app kit in an Electron shell with typed IPC), `tauri` (the same in a Tauri shell with typed Rust commands), `mobile` (the app kit as a PWA and a Capacitor shell). `--platform site=web,api=server` replaces the kit's platforms; `--mode`, `--pwa`, `--runtime`, `--targets`, `--port` set their options. Every kit but `blank` is a package (`@kitr/kit-saas`); `--kit @acme/starter` runs a kit from any npm package. See [kits.md](kits.md). `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
 | `kitr add <pkg...>` | Install the package(s), ask each one's questions (every question is a flag: `kitr add jobs --no-worker`; `--yes` takes the defaults), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`; adding `router` adds `react`). Any npm package that ships a kitr setup module works (`kitr add @acme/stripe`); see [package-contract.md](package-contract.md). `kitr add <pkg> --help` prints its questions. `--dry-run`, `--no-install`. |
 | `kitr <pkg>:<cmd>` | Commands the installed packages contribute (`kitr jobs:list`, `kitr jobs:work`). `kitr --help` lists them after the core commands. |
 | `kitr add <type> <name> [--option value]` | Adds a platform (`web`, `server`, `desktop`, `tauri`, `mobile`): `kitr add web admin --mode spa`, `kitr add desktop app --title Acme`. Installs the platform package and the packages it needs, writes `platforms.<name>` into `kitrrc.ts`, scaffolds `platforms/<name>/` for native shells and adds the `dev`/`build`/`start` scripts. See [platforms.md](platforms.md). |
@@ -24,6 +24,31 @@
 | `kitr start [names...]` | Serves the builds (`kitr serve` is an alias). |
 | `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms and their effective options; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
 | `kitr config <name> [option] [value] [--unset]` | Reads or sets one platform option in `kitrrc.ts`, validated against the platform's schema: `kitr config site port 4000`. `KITR_<NAME>_<OPTION>` overrides any option at run time. |
+
+## Workspaces
+
+A monorepo with several kitr apps (an authed web app, a marketing site, a phone app) puts a `kitr.workspace.ts` at its root:
+
+```ts
+// kitr.workspace.ts
+import { defineWorkspace } from 'kitr'
+
+export default defineWorkspace({
+  apps: { www: 'apps/www', app: 'apps/app', phone: 'apps/phone' },
+})
+```
+
+Each app is a complete kitr project with its own `kitrrc.ts`; shared code is ordinary workspace packages. The CLI reads the file statically, like `kitrrc.ts`.
+
+| Command | What it does |
+| --- | --- |
+| `kitr workspace [--json]` | Lists the apps with their platforms and packages. |
+| `kitr dev` / `kitr start` (at the root) | Runs the command in every app side by side. |
+| `kitr build` / `kitr types` / `kitr doctor` / `kitr platforms` / `kitr info` (at the root) | Runs the command in every app, one after another. Exit code 1 when any fails. |
+| `kitr build phone` | An app name as a word selects that app; the rest of the words are passed on (`kitr build phone ios` builds the `ios` platform of the `phone` app). |
+| `kitr --app phone add jobs` | Runs any command inside one app without `cd`. `KITR_APP=phone` does the same. |
+
+Inside an app directory every command is the app's own, as if there were no workspace.
 
 ## Generators
 

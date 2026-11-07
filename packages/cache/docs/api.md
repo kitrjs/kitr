@@ -36,6 +36,22 @@ function createMemoryCacheDriver(): CacheDriver;
 
 In-process cache with TTLs and tags. The default; fine for one server, wrong for several.
 
+### createUnstorageCacheDriver
+
+```ts
+function createUnstorageCacheDriver(storage: UnstorageLike, options?: {
+  base?: string;
+}): CacheDriver;
+```
+
+A cache driver over any unstorage instance, so several servers share one cache: in
+`config/cache.ts`, `driver: createUnstorageCacheDriver(createStorage({ driver: redisDriver(...) }))`
+with `createStorage` from unstorage and the driver from `unstorage/drivers/redis` (or any other).
+
+Expiry is checked on read, so drivers without native TTLs work too; the ttl is also passed to
+`setItem` for drivers that expire keys themselves (Redis, KV). Entries live under `base`
+(default `kitr-cache`), so `clear()` leaves the rest of the store alone.
+
 ### useCache
 
 ```ts
@@ -128,6 +144,22 @@ interface RememberOptions {
 ```
 
 Per-entry options for `set()`, `remember()` and `cached()`.
+
+### UnstorageLike
+
+```ts
+interface UnstorageLike {
+  getItem(key: string): Promise<unknown>;
+  setItem(key: string, value: string, options?: {
+    ttl?: number;
+  }): Promise<void>;
+  removeItem(key: string): Promise<void>;
+  getKeys(base?: string): Promise<string[]>;
+}
+```
+
+The part of an [unstorage](https://unstorage.unjs.io) `Storage` the cache uses. Any unstorage
+instance fits, whatever its driver: Redis, Upstash, Cloudflare KV, Vercel KV, the filesystem.
 
 ## kitr/cache/provider
 

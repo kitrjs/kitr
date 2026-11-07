@@ -5,24 +5,18 @@ import {
   type SubscriptionContract,
   toKitrError,
 } from '@kitr/core'
-import {
-  type QueryClient,
-  queryOptions,
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { type QueryClient, queryOptions, type UseMutationOptions } from '@tanstack/react-query'
 import { applyCacheEffect } from './effects'
 
-/** What `defineQuery` returns: the contract plus `key`, `options` and `fetch` helpers for one query. */
-export type QueryDefinition<TInput, TOutput> = ReturnType<typeof defineQuery<TInput, TOutput>>
+/** What `queryFrom` returns: the contract plus `key`, `options` and `fetch` helpers for one query. */
+export type QueryDefinition<TInput, TOutput> = ReturnType<typeof queryFrom<TInput, TOutput>>
 
 /**
  * Turns a query contract from any source (HTTP, API routes, actions or hand-written) into a reusable query.
  * `orderQuery.options(id)` gives TanStack `queryOptions` for `useQuery`, `useSuspenseQuery` or
  * `ensureQueryData` in a loader, with failures normalised to `KitrError`.
  */
-export function defineQuery<TInput = void, TOutput = unknown>(
+export function queryFrom<TInput = void, TOutput = unknown>(
   contract: Omit<QueryContract<TInput, TOutput>, 'kind'>,
 ) {
   const full: QueryContract<TInput, TOutput> = { kind: 'query', ...contract }
@@ -47,7 +41,7 @@ export function defineQuery<TInput = void, TOutput = unknown>(
   }
 }
 
-/** What `defineMutation` returns: a mutation contract with helpers to run it through TanStack with its cache effects. */
+/** What `mutationFrom` returns: a mutation contract with helpers to run it through TanStack with its cache effects. */
 export interface MutationDefinition<TInput, TOutput> {
   /** Always `'mutation'`; tells definitions apart at run time. */
   readonly kind: 'mutation'
@@ -63,9 +57,9 @@ export interface MutationDefinition<TInput, TOutput> {
 
 /**
  * Turns a mutation contract from any source into a reusable mutation whose `effects`
- * (set, invalidate, remove) are applied to the cache on success. Run it with `useKitrMutation`.
+ * (set, invalidate, remove) are applied to the cache on success. Run it with `useMutation`.
  */
-export function defineMutation<TInput = void, TOutput = unknown>(
+export function mutationFrom<TInput = void, TOutput = unknown>(
   contract: Omit<MutationContract<TInput, TOutput>, 'kind'>,
 ): MutationDefinition<TInput, TOutput> {
   const full: MutationContract<TInput, TOutput> = { kind: 'mutation', ...contract }
@@ -92,27 +86,7 @@ export function defineMutation<TInput = void, TOutput = unknown>(
   }
 }
 
-/**
- * `useMutation` for a kitr mutation definition, with cache effects wired to the active QueryClient.
- * `useMutation(definition)` from `kitr/query` does the same; this name stays for existing code.
- */
-export function useKitrMutation<TInput, TOutput>(
-  definition: MutationDefinition<TInput, TOutput>,
-  overrides: Omit<UseMutationOptions<TOutput, Error, TInput>, 'mutationFn'> = {},
-) {
-  const queryClient = useQueryClient()
-  const base = definition.options({ queryClient })
-  return useMutation<TOutput, Error, TInput>({
-    ...base,
-    ...overrides,
-    onSuccess: async (result, input, ctx, mutation) => {
-      await base.onSuccess?.(result, input, ctx, mutation)
-      await overrides.onSuccess?.(result, input, ctx, mutation)
-    },
-  })
-}
-
-/** What `defineSubscription` returns: an event stream contract that `useSubscription` opens. */
+/** What `subscriptionFrom` returns: an event stream contract that `useSubscription` opens. */
 export interface SubscriptionDefinition<TInput, TEvent> {
   /** Always `'subscription'`; tells definitions apart at run time. */
   readonly kind: 'subscription'
@@ -126,7 +100,7 @@ export interface SubscriptionDefinition<TInput, TEvent> {
  * Turns a stream of events (a socket channel, an SSE feed) into a subscription whose
  * `effects` land in the same cache that queries read. Open it with `useSubscription`.
  */
-export function defineSubscription<TInput = void, TEvent = unknown>(
+export function subscriptionFrom<TInput = void, TEvent = unknown>(
   contract: Omit<SubscriptionContract<TInput, TEvent>, 'kind'>,
 ): SubscriptionDefinition<TInput, TEvent> {
   const full: SubscriptionContract<TInput, TEvent> = { kind: 'subscription', ...contract }

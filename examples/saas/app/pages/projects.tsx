@@ -1,8 +1,18 @@
 import { useAnalytics } from 'kitr/analytics/react'
 import { useSchemaForm } from 'kitr/forms'
-import { useKitrMutation, useSuspenseQuery } from 'kitr/query'
+<<<<<<< HEAD:examples/saas/app/pages/projects.tsx
+import { useMutation, useSuspenseQuery } from 'kitr/query'
 import { getRouteApi } from 'kitr/router'
 import { type ColumnDef, type DataTableFeatures, useUrlTableState } from 'kitr/table'
+=======
+import { useMutation, useSuspenseQuery } from 'kitr/query'
+import {
+  type ColumnDef,
+  type DataTableFeatures,
+  parseTableSearch,
+  useUrlTableState,
+} from 'kitr/table'
+>>>>>>> origin/main:examples/saas/app/routes/_app/projects.tsx
 import { useState } from 'react'
 import type { AppEvents } from '#app/analytics'
 import { createProject, deleteProject, projectsQuery } from '#app/features/projects/queries'
@@ -30,7 +40,7 @@ export default function ProjectsPage() {
     setSearch: (patch) => navigate({ search: (prev: typeof search) => ({ ...prev, ...patch }) }),
   })
   const { data } = useSuspenseQuery(projectsQuery.options({}))
-  const remove = useKitrMutation(deleteProject)
+  const remove = useMutation(deleteProject)
   const [open, setOpen] = useState(false)
 
   const columns: ColumnDef<DataTableFeatures, Project>[] = [
@@ -87,7 +97,7 @@ function NewProjectDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const create = useKitrMutation(createProject)
+  const create = useMutation(createProject)
   const analytics = useAnalytics<AppEvents>()
   const form = useSchemaForm(createProjectSchema, { defaultValues: { name: '', status: 'active' } })
   return (

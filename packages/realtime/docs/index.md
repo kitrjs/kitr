@@ -321,18 +321,18 @@ Changing `params` resubscribes. `app/realtime.ts` opens the connection the first
 
 ## Subscribe with useSubscription
 
-`channel(transport, definition)` binds a channel to a transport. Its `subscription()` is a kitr subscription contract, so `useSubscription` and `defineSubscription` from [query](/packages/query) take it directly. Use this when your queries file already holds the other contracts for a feature:
+`channel(transport, definition)` binds a channel to a transport. Its `subscription()` is a kitr subscription contract, so `useSubscription` and `subscriptionFrom` from [query](/packages/query) take it directly. Use this when your queries file already holds the other contracts for a feature:
 
 ```ts
 // app/features/projects/queries.ts
-import { defineSubscription } from 'kitr/query'
+import { subscriptionFrom } from 'kitr/query'
 import { channel } from 'kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
 
 /** Call inside a component, so the socket opens in the browser. */
 export const projectSubscription = () =>
-  defineSubscription(channel(realtime(), projectChannel).subscription())
+  subscriptionFrom(channel(realtime(), projectChannel).subscription())
 ```
 
 ```tsx

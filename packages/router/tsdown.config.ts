@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/kitr.ts', 'src/routes.tsx'],
+  entry: ['src/index.ts', 'src/kitr.ts', 'src/routes.tsx', 'src/stack.ts'],
   format: ['esm'],
   dts: true,
   clean: true,

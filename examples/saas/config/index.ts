@@ -2,7 +2,6 @@
 import analytics from './analytics'
 import api from './api'
 import auth from './auth'
-import devtools from './devtools'
 import http from './http'
 import logger from './logger'
 import monitoring from './monitoring'
@@ -17,7 +16,6 @@ export const config = {
   analytics,
   api,
   auth,
-  devtools,
   http,
   logger,
   monitoring,

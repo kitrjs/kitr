@@ -19,7 +19,6 @@
     "@kitr/analytics": "workspace:*",
     "@kitr/api": "workspace:*",
     "@kitr/core": "workspace:*",
-    "@kitr/devtools": "workspace:*",
     "@kitr/forms": "workspace:*",
     "@kitr/i18n": "workspace:*",
     "@kitr/logger": "workspace:*",

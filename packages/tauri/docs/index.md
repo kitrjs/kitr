@@ -341,15 +341,15 @@ The rejected value is the Rust error as serialised, a plain string here, not an 
 
 ## Read a command with a query
 
-To cache a command's result, share it between components and refresh it after a change, wrap it with `commandQuery(command, name)` and pass the result to `defineQuery` from [Query](/packages/query):
+To cache a command's result, share it between components and refresh it after a change, wrap it with `commandQuery(command, name)` and pass the result to `queryFrom` from [Query](/packages/query):
 
 ```ts
 // app/features/orders/queries.ts
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 import { commandQuery } from 'kitr/tauri/client'
 import { commands } from '#app/commands'
 
-export const ordersByStatus = defineQuery(commandQuery(commands.list_orders, 'list_orders'))
+export const ordersByStatus = queryFrom(commandQuery(commands.list_orders, 'list_orders'))
 ```
 
 ```ts
@@ -400,11 +400,11 @@ Then wrap it. The effects say which cached queries to refresh when it succeeds:
 
 ```ts
 // app/features/orders/mutations.ts
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { commandMutation } from 'kitr/tauri/client'
 import { commands } from '#app/commands'
 
-export const shipOrder = defineMutation(
+export const shipOrder = mutationFrom(
   commandMutation(commands.ship_order, {
     effects: { invalidate: [['tauri', 'list_orders']] },
   }),
@@ -413,11 +413,11 @@ export const shipOrder = defineMutation(
 
 ```tsx
 // app/features/orders/ship-button.tsx
-import { useKitrMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
 import { shipOrder } from './mutations'
 
 export function ShipButton({ id }: { id: string }) {
-  const ship = useKitrMutation(shipOrder)
+  const ship = useMutation(shipOrder)
   return (
     <button type="button" disabled={ship.isPending} onClick={() => ship.mutate({ id, carrier: 'UPS' })}>
       {ship.isPending ? 'Shipping…' : 'Ship order'}

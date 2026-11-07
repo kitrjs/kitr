@@ -785,17 +785,17 @@ Every endpoint produces [Query](/packages/query) contracts. `query()` uses the e
 
 ```tsx
 // app/features/orders/orders_page.tsx
-import { defineMutation, defineQuery, useKitrMutation, useSuspenseQuery } from 'kitr/query'
+import { mutationFrom, queryFrom, useMutation, useSuspenseQuery } from 'kitr/query'
 import { api } from '#app/api/client'
 
-const ordersQuery = defineQuery(api.orders.index.query())
-const createOrder = defineMutation(
+const ordersQuery = queryFrom(api.orders.index.query())
+const createOrder = mutationFrom(
   api.orders.store.mutation({ effects: { invalidate: [['api', 'orders.index']] } }),
 )
 
 export function OrdersPage() {
   const { data: orders } = useSuspenseQuery(ordersQuery.options({}))
-  const create = useKitrMutation(createOrder)
+  const create = useMutation(createOrder)
   return (
     <section>
       <ul>
@@ -1153,4 +1153,4 @@ To test one middleware, call it with a minimal context and a `next` function. Ea
 - [Auth](/packages/auth): `authMiddleware` and permissions for these routes
 - [Query](/packages/query): the contracts the client produces
 - [Forms](/packages/forms): showing `fieldErrors` on fields
-- [A backend without React](/docs/pure-backend)
+- [Build an API server without React](/guides/api-server)

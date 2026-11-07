@@ -1,7 +1,7 @@
 {
   "name": "kitr",
   "version": "0.1.0",
-  "description": "The kitr React framework: one import surface over TanStack, React Hook Form and friends, plus the kitr CLI.",
+  "description": "kitr: one way to build web, mobile, desktop and backend apps. One import surface over TanStack, React Hook Form, h3 and friends, plus the kitr CLI.",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -43,6 +43,10 @@
       "types": "./dist/router-routes.d.ts",
       "default": "./dist/router-routes.js"
     },
+    "./router/stack": {
+      "types": "./dist/router-stack.d.ts",
+      "default": "./dist/router-stack.js"
+    },
     "./query": {
       "types": "./dist/query.d.ts",
       "default": "./dist/query.js"
@@ -66,6 +70,23 @@
     "./table": {
       "types": "./dist/table.d.ts",
       "default": "./dist/table.js"
+    },
+    "./animation": {
+      "types": "./dist/animation.d.ts",
+      "default": "./dist/animation.js"
+    },
+    "./animation/provider": {
+      "types": "./dist/animation-provider.d.ts",
+      "default": "./dist/animation-provider.js"
+    },
+    "./animation/page-transitions.css": "./styles/animation-page-transitions.css",
+    "./3d": {
+      "types": "./dist/3d.d.ts",
+      "default": "./dist/3d.js"
+    },
+    "./3d/drei": {
+      "types": "./dist/3d-drei.d.ts",
+      "default": "./dist/3d-drei.js"
     },
     "./state": {
       "types": "./dist/state.d.ts",
@@ -508,6 +529,8 @@
     "@kitr/server": "workspace:*",
     "@kitr/state": "workspace:*",
     "@kitr/table": "workspace:*",
+    "@kitr/animation": "workspace:*",
+    "@kitr/3d": "workspace:*",
     "@kitr/tailwind": "workspace:*",
     "@kitr/testing": "workspace:*",
     "@kitr/vite": "workspace:*",
@@ -590,6 +613,12 @@
       "optional": true
     },
     "@kitr/table": {
+      "optional": true
+    },
+    "@kitr/animation": {
+      "optional": true
+    },
+    "@kitr/3d": {
       "optional": true
     },
     "@kitr/tailwind": {
@@ -720,6 +749,8 @@
     "@kitr/server": "workspace:*",
     "@kitr/state": "workspace:*",
     "@kitr/table": "workspace:*",
+    "@kitr/animation": "workspace:*",
+    "@kitr/3d": "workspace:*",
     "@kitr/tailwind": "workspace:*",
     "@kitr/testing": "workspace:*",
     "@kitr/vite": "workspace:*",

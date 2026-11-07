@@ -1,8 +1,10 @@
-import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
+import { createDefineConfig, getDevtools, type KitrApp, operations } from '@kitr/core'
 import {
   type DehydratedState,
   dehydrate,
   hydrate,
+  type MutationDefinition,
+  mutationKeyFor,
   onlineManager,
   type QueryClient,
   type QueryKey,
@@ -96,8 +98,13 @@ export function createOffline(
           storage.remove(key)
           return false
         }
+        registerMutationDefaults(client)
         hydrate(client, snap.state)
         restored = true
+        // TanStack resumes paused mutations when the network comes back; when it is already
+        // back by the time the snapshot loads, nothing would, so resume them now.
+        if (snap.state.mutations.length && onlineManager.isOnline())
+          void client.resumePausedMutations().catch((error) => log('resume failed', error))
         log('restored', {
           queries: snap.state.queries.length,
           mutations: snap.state.mutations.length,
@@ -165,6 +172,22 @@ export function createOffline(
   }
   onlineManager.subscribe(notify)
   return offline
+}
+
+/**
+ * A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do
+ * not survive a reload. Give every named mutation (`defineMutation('projects.rename', ...)` in
+ * kitr/actions, or one registered in `operations`) its defaults by name, so a mutation paused
+ * offline still runs, with its cache effects, after the app restarts. Mutations without a name
+ * need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
+ */
+export function registerMutationDefaults(client: QueryClient): void {
+  for (const name of operations.names()) {
+    const op = operations.get(name)
+    if (op.kind !== 'mutation') continue
+    const definition = op as unknown as MutationDefinition<unknown, unknown>
+    client.setMutationDefaults(mutationKeyFor(name), definition.options({ queryClient: client }))
+  }
 }
 
 /** Let TanStack Query's online state follow the platform driver (native shells report it better than `navigator.onLine`). */

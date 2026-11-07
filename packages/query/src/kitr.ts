@@ -13,7 +13,7 @@ export default definePackage({
     )
     ctx.agents.add(
       'query',
-      `- Import from \`kitr/query\`, never from \`@tanstack/react-query\` directly.\n- Every data source becomes \`defineQuery(...)\` / \`defineMutation(...)\` in \`app/features/<name>/queries.ts\`. Components use \`useSuspenseQuery(x.options(input))\`.\n- Route loaders call \`context.queryClient.ensureQueryData(x.options(input))\` so data is fetched once for server and client.\n- Mutations declare \`effects\` (invalidate/set keys). Never call \`queryClient.invalidateQueries\` inline in components.`,
+      `- Import from \`kitr/query\`, never from \`@tanstack/react-query\` directly.\n- Every data source becomes \`queryFrom(...)\` / \`mutationFrom(...)\` in \`app/features/<name>/queries.ts\`. Components use \`useSuspenseQuery(x.options(input))\`.\n- Route loaders call \`context.queryClient.ensureQueryData(x.options(input))\` so data is fetched once for server and client.\n- Mutations declare \`effects\` (invalidate/set keys). Never call \`queryClient.invalidateQueries\` inline in components.`,
     )
   },
   remove(ctx) {

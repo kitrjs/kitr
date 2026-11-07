@@ -5,7 +5,20 @@ description: What each file and folder in a kitr app is for.
 
 # Project structure
 
-A new app from the `app` kit looks like this. Folders appear as you add packages, so a `blank` app has fewer.
+A `blank` project is seven files, and every folder below arrives with the package that needs it:
+
+```
+my-app/
+├── kitrrc.ts              # which packages, providers and platforms the project has: empty to start
+├── package.json           # kitr and @kitr/core; typecheck, lint and kitr scripts
+├── tsconfig.json          # Node only, until a platform adds the browser types
+├── biome.json
+├── .env.example           # each package adds the variables it reads
+├── .gitignore
+└── AGENTS.md              # conventions for coding assistants, kept up to date by kitr add
+```
+
+`kitr add web site` is what most projects do next: the web platform requires `vite`, `react` and `router`, so that one command writes `vite.config.ts`, `app/`, and the `dev`, `build` and `start` scripts. The `app` kit runs the same adds for you and looks like this:
 
 ```
 my-app/
@@ -24,7 +37,7 @@ my-app/
 ├── config/                # one file per package that has options
 ├── kitrrc.ts              # which packages are installed and wired
 ├── AGENTS.md              # conventions for coding assistants, kept up to date by kitr add
-└── vite.config.ts         # one line: plugins: [kitr()]
+└── vite.config.ts         # one line: plugins: [kitr()]; written by kitr add vite
 ```
 
 ## The three files that wire everything
@@ -41,7 +54,7 @@ Group code by what it does for the user rather than what kind of file it is:
 
 ```
 app/features/projects/
-├── queries.ts        # defineQuery / defineMutation for projects
+├── queries.ts        # queryFrom / mutationFrom for projects
 ├── project-form.tsx
 └── project-list.tsx
 ```
@@ -60,4 +73,4 @@ app/
 └── channels/           # realtime channels (kitr add realtime)
 ```
 
-A `server` app has no `app/routes.ts` or React at all; its endpoints live in `server/routes.ts`. See [A backend without React](/docs/pure-backend).
+A `server` app has no `app/routes.ts` or React at all; its endpoints live in `server/routes.ts`. See [Build an API server without React](/guides/api-server).

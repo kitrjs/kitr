@@ -12,7 +12,7 @@ export default definePackage({
     ctx.env.schema('public', 'VITE_APP_VERSION', "e.string({ default: '0.0.0' })", '0.0.0')
     ctx.agents.add(
       'offline',
-      `- Successful queries are persisted and restored before the first render; mutations made offline pause and replay on reconnect (TanStack's default \`networkMode\`). Give mutations a \`mutationKey\` and an optimistic \`onMutate\`. \`useOffline()\` from \`kitr/offline/react\` gives \`{ online, pending, restored }\` for a status line.`,
+      `- Successful queries are persisted and restored before the first render; mutations made offline pause and replay on reconnect (TanStack's default \`networkMode\`). Named mutations (\`useMutation('projects.rename')\`) replay even after the app restarts; give any other mutation a \`mutationKey\` and \`setMutationDefaults\`, and an optimistic \`onMutate\`. \`useOffline()\` from \`kitr/offline/react\` gives \`{ online, pending, restored }\` for a status line.`,
     )
   },
   remove(ctx) {

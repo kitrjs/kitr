@@ -183,6 +183,8 @@ test.describe('in the browser', () => {
     '/packages/query',
     '/docs/cli',
     '/docs/platforms',
+    '/platforms',
+    '/platforms/desktop',
     '/packages/server',
   ]
 
@@ -213,6 +215,27 @@ test.describe('in the browser', () => {
     await expect(page).toHaveURL(/\/packages$/)
     await expect(page.locator('h1')).toHaveCount(1)
     expect(await page.evaluate(() => (window as any).__kitrMarker)).toBe(1)
+  })
+
+  test('package search on a phone shows matches right under the box', async ({ page, baseURL }) => {
+    await isolate(page)
+    const errors = watchErrors(page, new URL(baseURL!).origin)
+    await page.setViewportSize({ width: 375, height: 667 })
+    await page.goto('/packages')
+    await page.waitForLoadState('networkidle')
+    const name = (await page.locator('a.dcard .dcard-name').last().textContent())!.trim()
+    await page.getByRole('searchbox', { name: 'Filter packages' }).fill(name)
+    await expect(page).toHaveURL(new RegExp(`[?&]q=${name}`))
+    const first = page.locator('.dcard').first()
+    await expect(first.locator('.dcard-name')).toHaveText(name)
+    // With the keyboard up a phone shows roughly the top 350px: the match has to be there.
+    await page.getByRole('searchbox', { name: 'Filter packages' }).focus()
+    await page.waitForTimeout(600)
+    const box = await first.boundingBox()
+    expect(box!.y, 'first match sits under the search box').toBeLessThan(350)
+    await page.getByRole('button', { name: 'Clear' }).first().click()
+    await expect(page).toHaveURL(/\/packages$/)
+    expect(errors).toEqual([])
   })
 
   test('an unknown page shows the not-found page', async ({ page }) => {

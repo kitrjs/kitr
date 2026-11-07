@@ -27,6 +27,9 @@ const upstreams: Record<string, Upstream> = {
     mark: 'tanstack',
   },
   'TanStack Start': { name: 'TanStack Start', url: 'https://tanstack.com/start', mark: 'tanstack' },
+  motion: { name: 'Motion', url: 'https://motion.dev' },
+  '@react-three/fiber': { name: 'React Three Fiber', url: 'https://r3f.docs.pmnd.rs' },
+  three: { name: 'three.js', url: 'https://threejs.org', mark: 'threedotjs' },
   h3: { name: 'H3', url: 'https://h3.dev', mark: 'h3' },
   crossws: { name: 'crossws', url: 'https://crossws.h3.dev', mark: 'unjs' },
   partysocket: {

@@ -1,6 +1,7 @@
 {
   "name": "@kitr/uploads",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr/uploads: multipart uploads with size and type limits on the server, a disk driver and a driver interface for object storage, and upload progress in the browser.",
   "keywords": [
     "kitr",
@@ -15,9 +16,6 @@
   },
   "homepage": "https://kitr.dev/packages/uploads",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     ".": {

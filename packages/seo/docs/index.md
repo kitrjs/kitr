@@ -497,6 +497,23 @@ export default function ReportsPage() {
 
 A route that does not render on the server sends no page content to crawlers. Keep `ssr: true` on anything you want found. See TanStack Start's [selective SSR](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr) for how it combines with parent routes.
 
+When one route tree serves several platforms, the mode can differ per platform. A table resolves at build time by platform name from `kitrrc.ts`, then platform type, then `default`:
+
+```tsx
+// app/routes/index.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { ssrRoute } from 'kitr/seo'
+
+export const Route = createFileRoute('/')({
+  // The marketing build renders on the server for crawlers; the authed web app runs the loader
+  // on the server and renders in the browser; native shells have no server at all.
+  ...ssrRoute({ www: true, web: 'data-only', default: false }),
+  component: HomePage,
+})
+```
+
+The `www` build gets `{ ssr: true }`, every other web build `{ ssr: 'data-only' }`, and the phone and desktop builds `{ ssr: false }`. The value is a constant in each bundle, so there is no run-time check.
+
 ## Cache pages at the CDN
 
 `cacheHeaders()` builds a `cache-control` header for TanStack Start's `headers` route option:

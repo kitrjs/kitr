@@ -59,11 +59,14 @@ function shield<S extends {
   use(middleware: Middleware): unknown;
   app?: {
     config: any;
+    isProduction: boolean;
   };
 }>(server: S, config?: ShieldConfig): S;
 ```
 
-Attach the shield to a kitr server (or any object with `use(middleware)`), reading `config/shield.ts`.
+Attach the shield to a kitr server (or any object with `use(middleware)`), reading
+`config/shield.ts`. Production (HSTS, Secure cookies) follows the app's mode, so a Workers or
+Deno deployment that never sets `NODE_ENV` still gets production defaults from the build.
 
 ### shieldMiddlewares
 
@@ -120,8 +123,10 @@ interface CsrfOptions {
   methods?: string[];
   /** Paths that never need a token (webhooks). Prefix match. */
   ignore?: string[];
-  /** Add `Secure` to the cookie. Default: true when `NODE_ENV` is `production`. */
+  /** Add `Secure` to the cookie. Default: `production`. */
   secure?: boolean;
+  /** Whether this is a production process. `shield(server)` fills it from the app's mode; standalone, `inProduction()` from `@kitr/core` decides. */
+  production?: boolean;
 }
 ```
 
@@ -141,6 +146,8 @@ interface HeadersOptions {
   referrerPolicy?: string | false;
   /** `Permissions-Policy`. Default `camera=(), microphone=(), geolocation=()`; false to leave it out. */
   permissionsPolicy?: string | false;
+  /** Whether this is a production process, which turns HSTS on. `shield(server)` fills it from the app's mode; standalone, `inProduction()` from `@kitr/core` decides. */
+  production?: boolean;
 }
 ```
 

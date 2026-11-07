@@ -15,6 +15,7 @@ import {
   ComputerIcon,
   ComputerPhoneSyncIcon,
   CreditCardIcon,
+  CubeIcon,
   DashboardSquare02Icon,
   Database01Icon,
   DatabaseIcon,
@@ -33,6 +34,7 @@ import {
   LiveStreaming02Icon,
   Mail01Icon,
   MaskIcon,
+  Motion02Icon,
   Notification01Icon,
   NotificationSquareIcon,
   Package01Icon,
@@ -59,6 +61,7 @@ import {
   ZapIcon,
 } from '@hugeicons/core-free-icons'
 import type { IconSvgElement } from '@hugeicons/react'
+import kitsJson from '#app/generated/kits.json'
 import packagesJson from '#app/generated/packages.json'
 import plannedJson from '#app/generated/planned.json'
 
@@ -177,6 +180,8 @@ const glyphs: Record<string, IconSvgElement> = {
   http: Globe02Icon,
   state: Layers01Icon,
   table: Table02Icon,
+  animation: Motion02Icon,
+  '3d': CubeIcon,
   db: Database01Icon,
   server: ServerStack02Icon,
   api: ApiIcon,
@@ -232,36 +237,15 @@ const glyphs: Record<string, IconSvgElement> = {
 }
 export const glyph = (name: string): IconSvgElement => glyphs[name] ?? Package01Icon
 
-export const kits = [
-  {
-    name: 'blank',
-    text: 'Router and query. Add the rest as you go.',
-    packages: ['router', 'query'],
-  },
-  {
-    name: 'app',
-    text: 'A logged-in app on an existing API, with forms, tables and auth.',
-    packages: [
-      'router',
-      'query',
-      'http',
-      'forms',
-      'table',
-      'state',
-      'theme',
-      'auth',
-      'mocks',
-      'testing',
-    ],
-  },
-  {
-    name: 'fullstack',
-    text: 'The app kit plus server rendering, server actions, an API and realtime channels.',
-    packages: ['router', 'query', 'forms', 'auth', 'seo', 'actions', 'api', 'realtime'],
-  },
-  {
-    name: 'server',
-    text: 'A pure backend with controllers and a typed client. No React.',
-    packages: ['server', 'api', 'db', 'logger', 'realtime', 'testing'],
-  },
-]
+export interface KitEntry {
+  name: string
+  text: string
+  /** `site: web`, `api: server`. */
+  platforms: string[]
+  /** Short package names the kit adds. */
+  packages: string[]
+  components: number
+}
+
+/** Generated from the kit packages' setup modules by scripts/content.mjs. */
+export const kits = kitsJson as KitEntry[]

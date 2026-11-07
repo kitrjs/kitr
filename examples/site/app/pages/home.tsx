@@ -1,7 +1,7 @@
 import { useSchemaForm } from 'kitr/forms'
 import { useTranslation } from 'kitr/i18n'
-import { useKitrMutation } from 'kitr/query'
-import { defineMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { Link } from 'kitr/router'
 import { useState } from 'react'
 import { api } from '#app/api/client'
@@ -10,7 +10,15 @@ import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 
-const subscribe = defineMutation(api.newsletter.subscribe.mutation())
+<<<<<<< HEAD:examples/site/app/pages/home.tsx
+const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
+=======
+export const Route = createFileRoute('/')({
+  component: HomePage,
+})
+
+const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
+>>>>>>> origin/main:examples/site/app/routes/index.tsx
 
 export default function HomePage() {
   const { t } = useTranslation()
@@ -46,7 +54,7 @@ export default function HomePage() {
 
 function Newsletter() {
   const { t } = useTranslation()
-  const mutation = useKitrMutation(subscribe)
+  const mutation = useMutation(subscribe)
   const [done, setDone] = useState(false)
   const form = useSchemaForm(subscribeSchema, { defaultValues: { email: '' } })
   return (

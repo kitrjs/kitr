@@ -93,6 +93,23 @@ export function createKitrRouter(
         queryClient ??
         (app.container.has('queryClient') ? app.container.use('queryClient') : undefined),
     })
+  // The session (`@kitr/auth`) and the platform (`@kitr/platform`) the same way: live getters,
+  // so `requireAuth()` sees the session the auth provider restores during boot and
+  // `onlyPlatform()` sees the platform service, without the app wiring either by hand.
+  const lazyBinding = (
+    field: 'session' | 'platform',
+    binding: 'auth' | 'platform',
+    pick: (service: any) => unknown,
+  ) => {
+    if (context && field in context) return
+    Object.defineProperty(routerContext, field, {
+      enumerable: true,
+      configurable: true,
+      get: () => (app.container.has(binding) ? pick(app.container.use(binding)) : undefined),
+    })
+  }
+  lazyBinding('session', 'auth', (auth) => auth?.session ?? null)
+  lazyBinding('platform', 'platform', (platform) => platform)
   const router = createRouter({
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,

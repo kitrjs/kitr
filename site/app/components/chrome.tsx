@@ -14,6 +14,9 @@ export function Header() {
           <Logo />
         </Link>
         <div className="nav-links">
+          <Link to="/platforms" activeProps={{ 'aria-current': 'page' }}>
+            Platforms
+          </Link>
           <Link to="/packages" activeProps={{ 'aria-current': 'page' }}>
             Packages
           </Link>
@@ -24,6 +27,9 @@ export function Header() {
             activeProps={{ 'aria-current': 'page' }}
           >
             Docs
+          </Link>
+          <Link to="/guides" activeProps={{ 'aria-current': 'page' }}>
+            Guides
           </Link>
           <Link to="/about" activeProps={{ 'aria-current': 'page' }}>
             About
@@ -51,6 +57,7 @@ const footerLinks: Array<{ title: string; links: Array<{ label: string; to: stri
     title: 'Learn',
     links: [
       { label: 'Getting started', to: '/docs/getting-started' },
+      { label: 'Guides', to: '/guides' },
       { label: 'Project structure', to: '/docs/project-structure' },
       { label: 'Platforms', to: '/docs/platforms' },
       { label: 'CLI reference', to: '/docs/cli' },
@@ -59,8 +66,8 @@ const footerLinks: Array<{ title: string; links: Array<{ label: string; to: stri
   {
     title: 'Build',
     links: [
+      { label: 'Platforms', to: '/platforms' },
       { label: 'All packages', to: '/packages' },
-      { label: 'Data and caching', to: '/packages/query' },
       { label: 'Forms', to: '/packages/forms' },
       { label: 'Build a package', to: '/docs/building-packages' },
     ],

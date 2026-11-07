@@ -42,6 +42,7 @@ export default defineConfig({
         pages: [
           { path: '/' },
           { path: '/packages' },
+          { path: '/guides' },
           { path: '/about' },
           { path: '/404' },
           ...playPages,

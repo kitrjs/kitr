@@ -8,7 +8,7 @@ order: 1
 
 Every app remembers a few things between visits: a collapsed sidebar, the last orders someone searched for, the language they picked. `kitr/storage` lets you declare each of those values once, with a type and a default, and then read and write it anywhere without touching `localStorage` or `document.cookie` yourself. Bad, old or missing values fall back to the default, other tabs stay in sync, and server rendering never breaks.
 
-It is built on [Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) and [HTTP cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), and adds types, schema validation, versions with migrations, expiry, hydration-safe React hooks, and a native store on desktop and mobile. Storage items run in the browser; cookies run on both sides, and `defineKv` keeps a value on the server.
+It is built on [Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) and [HTTP cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), and adds types, schema validation, versions with migrations, expiry, hydration-safe React hooks, and a native store on desktop and mobile. Storage items run in the browser; cookies run on both sides. For a value every request on the server shares, use [cache](/packages/cache).
 
 Don't use it for login tokens or other secrets: anything in Web Storage is readable by every script on the page. Use [Secure storage](/packages/secure-storage) for those.
 
@@ -80,7 +80,7 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `prefix` | `''` | Added in front of every storage key, cookie name and kv key. `sidebar` is stored as `acme:sidebar`. |
+| `prefix` | `''` | Added in front of every storage key and cookie name. `sidebar` is stored as `acme:sidebar`. |
 | `cookie` | `{}` | Attributes merged into every cookie this app writes. An item's own options and the options passed to `set()` win over these. |
 | `cookie.path` | `'/'` | The URL path a cookie is sent for. |
 | `cookie.domain` | none | The domain a cookie is sent to. `.acme.com` shares it with every subdomain. |
@@ -89,11 +89,10 @@ export default defineConfig({
 | `cookie.secure` | `false` | Send only over HTTPS. Always on when `sameSite` is `'none'`. |
 | `cookie.httpOnly` | `false` | Hide the cookie from browser scripts. Only cookies set by the server can be `httpOnly`. |
 | `cookie.sameSite` | `'lax'` | `'lax'`, `'strict'` or `'none'`. |
-| `kv` | in-memory | The driver behind `defineKv` on the server. See [Write a kv driver](#write-a-kv-driver). |
 
 `kitr/storage` adds no environment variables. `import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
 
-The provider applies this file in `register()`: it sets the prefix, the cookie defaults and the kv driver. It switches storage items to the platform's native store when a platform registered one, and checks again in `boot()` for a platform provider listed after it. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
+The provider applies this file in `register()`: it sets the prefix and the cookie defaults. It switches storage items to the platform's native store when a platform registered one, and checks again in `boot()` for a platform provider listed after it. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
 
 Changing `prefix` in a live app makes every saved value look missing, because the keys change. Users see the defaults again; nothing is migrated.
 
@@ -603,49 +602,6 @@ serializeCookie('utm_source', null)
 
 An item can do the same for its own value: `localeCookie.serialize('de')` returns the full `Set-Cookie` value with the prefix, and `localeCookie.decode('de')` turns one raw value into the typed value or the default.
 
-## Keep a value for the whole server
-
-`defineKv` stores a value on the server that every request shares: a maintenance banner, a counter, a cached lookup from a slow vendor API. It looks like a storage item, but every method is async:
-
-```ts
-// server/state/banner.ts
-import { defineKv } from 'kitr/storage'
-
-export const banner = defineKv('banner', { default: { text: '', level: 'info' as 'info' | 'warning' } })
-```
-
-```ts
-// server/controllers/banner_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { banner } from '#server/state/banner'
-
-export default class BannerController {
-  async show() {
-    return banner.get()
-  }
-
-  async update({ body }: HttpContext<{}, {}, { text: string }>) {
-    await banner.set({ text: body.text, level: 'warning' }, { ttl: 6 * 60 * 60 * 1000 })
-    return banner.get()
-  }
-}
-```
-
-```ts
-await banner.get() // => { text: '', level: 'info' }
-await banner.set({ text: 'Maintenance at 22:00', level: 'warning' }, { ttl: 6 * 60 * 60 * 1000 })
-await banner.get() // => { text: 'Maintenance at 22:00', level: 'warning' }
-// six hours later
-await banner.get() // => { text: '', level: 'info' }
-```
-
-`ttl` is in milliseconds. Set it on the item (`defineKv('rates', { default: {}, ttl: 60_000 })`) to apply it to every write, or on one `set()` to override it. `set()` also takes a function of the current value, which reads then writes; two requests doing that at the same moment can overwrite each other, so use your store's own atomic commands for counters that must be exact.
-
-`schema` and `codec` work as they do on storage items, and the config `prefix` applies to kv keys too.
-
-> **Warning**
-> The default kv driver keeps values in the server's memory. They are lost on every restart and deploy, and each server process or serverless instance has its own copy. Set a `kv` driver in `config/storage.ts` before you rely on a value in production.
-
 ## Store values natively on desktop and mobile
 
 Storage items use the platform's own store when a platform registers a driver, and Web Storage otherwise. You declare and read items the same way everywhere; only where the bytes go changes. The storage provider hydrates the native store before the first render, so `get()` stays synchronous and already holds the saved values.
@@ -775,7 +731,7 @@ To check what the server renders before hydration, call `renderToString` from `r
 
 ## Extend
 
-Two interfaces plug into storage: `StorageDriver`, the synchronous store behind `defineStorage` items on a platform, and `KvDriver`, the async store behind `defineKv` on the server. Their full types are in the [API reference](/packages/storage/api).
+One interface plugs into storage: `StorageDriver`, the synchronous store behind `defineStorage` items on a platform. Its full type is in the [API reference](/packages/storage/api). For a value every request on the server shares, use [cache](/packages/cache).
 
 ### Write a storage driver
 
@@ -836,47 +792,6 @@ export default defineKitrConfig({
 ```
 
 The driver with the highest `priority` wins when several are registered; platform drivers default to `10`. `session` items keep an in-memory driver. To replace both areas directly, for example in a test or a script, call `setStorageDriver(driver, { session: otherDriver })`.
-
-### Write a kv driver
-
-A `KvDriver` has async `get`, `set` and `remove` over strings; `set` receives `{ ttl }` in milliseconds, and `keys(prefix)` is optional. This one wraps [ioredis](https://github.com/redis/ioredis):
-
-```ts
-// server/lib/redis-kv.ts
-import Redis from 'ioredis'
-import type { KvDriver } from 'kitr/storage'
-
-export function redisKv(url: string): KvDriver {
-  const redis = new Redis(url)
-  return {
-    get: (key) => redis.get(key),
-    async set(key, raw, options) {
-      if (options?.ttl) await redis.set(key, raw, 'PX', options.ttl)
-      else await redis.set(key, raw)
-    },
-    async remove(key) {
-      await redis.del(key)
-    },
-    keys: (prefix = '') => redis.keys(`${prefix}*`),
-  }
-}
-```
-
-Set it as `kv` in config. Every `defineKv` item then reads and writes Redis, under the same `prefix`:
-
-```ts
-// config/storage.ts
-import { defineConfig } from 'kitr/storage'
-import { redisKv } from '#server/lib/redis-kv'
-
-export default defineConfig({
-  prefix: 'acme:',
-  cookie: { path: '/', sameSite: 'lax', secure: import.meta.env?.PROD ?? false },
-  kv: redisKv(process.env.REDIS_URL ?? 'redis://localhost:6379'),
-})
-```
-
-The kv driver only runs on the server. Keep `config/storage.ts` free of server-only imports if the browser bundle loads it, or build the driver in a server-only provider and call `setKvDriver(redisKv(url))` from its `register()`.
 
 ## Devtools
 

@@ -1,7 +1,7 @@
 {
   "name": "kitr",
   "short_name": "kitr",
-  "description": "The React framework where everything is an add-on.",
+  "description": "One way to build everything: the TypeScript framework for web, mobile, desktop and backend apps.",
   "start_url": "/",
   "display": "browser",
   "background_color": "#FFFFFF",

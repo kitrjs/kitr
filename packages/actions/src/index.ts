@@ -1,6 +1,7 @@
 import {
   type CacheEffect,
   type InferOutput,
+  inProduction,
   KitrError,
   type KitrErrorShape,
   type MutationContract,
@@ -11,8 +12,8 @@ import {
   validate,
 } from '@kitr/core'
 import {
-  defineMutation as defineMutationContract,
-  defineQuery as defineQueryContract,
+  mutationFrom as defineMutationContract,
+  queryFrom as defineQueryContract,
   type MutationDefinition,
   type QueryDefinition,
 } from '@kitr/query'
@@ -204,7 +205,7 @@ function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
             console.error(`[kitr/actions] ${name} failed:`, error)
             // Same rule as the kitr server: in production a server error's message and data
             // stay in the server log and never reach the browser.
-            if ((globalThis as any).process?.env?.NODE_ENV === 'production') {
+            if (inProduction()) {
               shape.message = 'Internal server error'
               shape.data = undefined
             }

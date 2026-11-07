@@ -1,4 +1,9 @@
-import { createDefineConfig, type KitrApp } from '@kitr/core'
+import {
+  createDefineConfig,
+  type KitrApp,
+  type PlatformName,
+  type PlatformTypeName,
+} from '@kitr/core'
 
 /**
  * Where the app runs, as one API. Platform packages register a `PlatformDriver`;
@@ -71,6 +76,85 @@ declare module '@kitr/core' {
 export interface PlatformConfig {
   /** Path prefixes (`'/open'`) to strip from deep links; pass them to `deepLinkPath()`. The scheme and host are always dropped. */
   deepLinkPrefixes?: string[]
+  /** Width classes and the first-render guess for `useFormFactor()`. */
+  formFactor?: FormFactorOptions
+}
+
+/** The width class of the viewport: a phone, a small tablet or a large window. */
+export type WidthClass = 'compact' | 'medium' | 'expanded'
+/** The primary input: a finger or a mouse/trackpad. */
+export type InputKind = 'touch' | 'pointer'
+/** Which way the viewport is taller or wider. */
+export type Orientation = 'portrait' | 'landscape'
+
+/**
+ * What `useFormFactor()` answers: the three axes a responsive multi-platform app branches on,
+ * kept apart on purpose. Layout follows `width`, affordances (hover, hit sizes) follow `input`,
+ * idioms follow the platform itself (`usePlatform()`).
+ */
+export interface FormFactor {
+  width: WidthClass
+  input: InputKind
+  orientation: Orientation
+  /** False on the server and during the first client render, when the values are the configured fallback. */
+  ready: boolean
+}
+
+/** Options of `useFormFactor()` and of `formFactor` in `config/platform.ts`. */
+export interface FormFactorOptions {
+  /** Minimum widths in CSS pixels. Default `{ medium: 768, expanded: 1024 }`. */
+  breakpoints?: { medium?: number; expanded?: number }
+  /**
+   * What the server and the first client render assume. Default: `expanded` + `pointer` in a desktop
+   * shell, `compact` + `touch` everywhere else (which is what a phone, the most common SSR visitor, is).
+   */
+  fallback?: Partial<Pick<FormFactor, 'width' | 'input' | 'orientation'>>
+}
+
+/** Where `medium` and `expanded` start, in CSS pixels, when `formFactor.breakpoints` is not configured. */
+export const defaultBreakpoints = { medium: 768, expanded: 1024 } as const
+
+/** Classify a width in CSS pixels. */
+export function widthClass(
+  width: number,
+  breakpoints: FormFactorOptions['breakpoints'] = {},
+): WidthClass {
+  const medium = breakpoints.medium ?? defaultBreakpoints.medium
+  const expanded = breakpoints.expanded ?? defaultBreakpoints.expanded
+  if (width >= expanded) return 'expanded'
+  if (width >= medium) return 'medium'
+  return 'compact'
+}
+
+/** The form factor a browser window reports right now. Not for the server: use `fallbackFormFactor()` there. */
+export function readFormFactor(
+  win: Pick<Window, 'innerWidth' | 'innerHeight' | 'matchMedia'>,
+  options: FormFactorOptions = {},
+): FormFactor {
+  const coarse = win.matchMedia?.('(pointer: coarse)').matches ?? false
+  const hover = win.matchMedia?.('(hover: hover)').matches ?? true
+  return {
+    width: widthClass(win.innerWidth, options.breakpoints),
+    // A touch screen with a hover-capable pointer attached (a laptop with a touch screen) counts as pointer.
+    input: coarse && !hover ? 'touch' : 'pointer',
+    orientation: win.innerHeight > win.innerWidth ? 'portrait' : 'landscape',
+    ready: true,
+  }
+}
+
+/** The form factor assumed before the window can be measured: a desktop shell is wide with a pointer, everything else is a phone. */
+export function fallbackFormFactor(
+  platform: Pick<Platform, 'type'>,
+  options: FormFactorOptions = {},
+): FormFactor {
+  const desktop = platform.type === 'desktop' || platform.type === 'tauri'
+  return {
+    width: desktop ? 'expanded' : 'compact',
+    input: desktop ? 'pointer' : 'touch',
+    orientation: desktop ? 'landscape' : 'portrait',
+    ...options.fallback,
+    ready: false,
+  }
 }
 
 /** Typed helper for `config/platform.ts`. */
@@ -86,8 +170,12 @@ export interface Platform {
   readonly os: PlatformOs | string
   /** Installed as an app: a standalone PWA or any native shell. */
   readonly standalone: boolean
-  /** The platform name from kitrrc.ts the bundle was built for, when known. */
-  readonly name: string | undefined
+  /**
+   * The platform name from kitrrc.ts the bundle was built for, when known. After `kitr types`
+   * it is the union of the names in `kitrrc.ts` (`'site' | 'phone'`), so `platform.name === 'tablet'`
+   * is a compile error in a project with no such platform.
+   */
+  readonly name: PlatformName | undefined
   /** The active driver, for anything the service does not wrap. */
   readonly driver: PlatformDriver
   /** Whether the device reports a connection. */
@@ -108,8 +196,8 @@ export interface Platform {
   openExternal(url: string): Promise<void>
   /** Close the app where the driver supports it; resolves and does nothing elsewhere. */
   exit(): Promise<void>
-  /** `platform.is('mobile')`, `platform.is('ios')`: matches the type or the OS. */
-  is(what: PlatformType | PlatformOs): boolean
+  /** `platform.is('mobile')`, `platform.is('ios')`, `platform.is('phone')`: matches the type, the OS or the platform name from kitrrc.ts. */
+  is(what: PlatformType | PlatformOs | PlatformName): boolean
 }
 
 const noop = () => () => {}
@@ -180,23 +268,66 @@ export function createPlatform(
     safeArea: () => driver.safeArea?.() ?? fallback.safeArea!(),
     openExternal: (url) => (driver.openExternal ?? fallback.openExternal!)(url),
     exit: () => driver.exit?.() ?? Promise.resolve(),
-    is: (what) => driver.type === what || driver.os() === what,
+    is: (what) => driver.type === what || driver.os() === what || platform.name === what,
   }
   return platform
 }
 
 /**
+ * The platform name this bundle was built for, as a build-time constant: `kitr dev phone` defines
+ * `import.meta.env.KITR_PLATFORM` as `'phone'`, and `kitr types` types it as the union of the names in
+ * kitrrc.ts. Compare it directly (`if (platformName() === 'phone')`) and the bundler drops the other
+ * branch, which is how a page or a feature stays out of a platform's bundle entirely. Undefined
+ * outside a kitr build (tests, plain Node).
+ */
+export function platformName(): PlatformName | undefined {
+  const meta = (import.meta as unknown as { env?: { KITR_PLATFORM?: string } }).env
+  const name = meta?.KITR_PLATFORM
+  return (name || undefined) as PlatformName | undefined
+}
+
+/** The type (`web`, `mobile`, `desktop`...) of the platform this bundle was built for, from `import.meta.env.KITR_PLATFORM_TYPE`. */
+export function platformType(): PlatformTypeName | undefined {
+  const meta = (import.meta as unknown as { env?: { KITR_PLATFORM_TYPE?: string } }).env
+  const type = meta?.KITR_PLATFORM_TYPE
+  return (type || undefined) as PlatformTypeName | undefined
+}
+
+/** Keys `perPlatform()` and `forPlatform()` accept: a platform name from kitrrc.ts, a type, an OS, `native`, or `default`. */
+export type PlatformKey = PlatformName | PlatformType | PlatformOs | 'native'
+
+/**
+ * Resolve a per-platform table at build time, from `import.meta.env.KITR_PLATFORM` and
+ * `KITR_PLATFORM_TYPE`, so the choice costs nothing at run time and needs no app instance:
+ *
+ *   export const Route = createFileRoute('/feed')({ ...forPlatform({ www: { ssr: true }, default: { ssr: false } }) })
+ *
+ * The platform name wins over its type, then `default`. Outside a kitr build the table's `default` is returned.
+ */
+export function forPlatform<T>(table: Partial<Record<PlatformKey, T>> & { default: T }): T {
+  const name = platformName()
+  if (name !== undefined && name in table) return (table as Record<string, T>)[name] as T
+  const type = platformType()
+  if (type !== undefined && type in table) return (table as Record<string, T>)[type] as T
+  return table.default
+}
+
+/**
  * Pick an implementation per platform without branching in components:
  *   const save = perPlatform(platform, { web: () => download, mobile: () => share, desktop: () => saveDialog })
- * Keys are platform types or OS names; `native` covers every native shell; `default` is required.
+ * Keys are platform names from kitrrc.ts, platform types or OS names; `native` covers every native
+ * shell; `default` is required. The most specific wins: name, then OS, then type, then `native`.
  */
 export function perPlatform<T>(
-  platform: Pick<Platform, 'type' | 'os' | 'native'>,
-  impls: Partial<Record<PlatformType | PlatformOs | 'native', () => T>> & { default: () => T },
+  platform: Pick<Platform, 'type' | 'os' | 'native'> & { name?: PlatformName | undefined },
+  impls: Partial<Record<PlatformKey, () => T>> & { default: () => T },
 ): T {
-  const os = impls[platform.os as PlatformOs]
+  const table = impls as Record<string, (() => T) | undefined>
+  const name = platform.name !== undefined ? table[platform.name] : undefined
+  if (name) return name()
+  const os = table[platform.os]
   if (os) return os()
-  const type = impls[platform.type as PlatformType]
+  const type = table[platform.type]
   if (type) return type()
   if (platform.native && impls.native) return impls.native()
   return impls.default()

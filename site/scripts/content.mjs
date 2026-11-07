@@ -6,7 +6,7 @@
 // Output goes to app/generated (gitignored) and public/llms*.txt.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import rehypeSlug from 'rehype-slug'
 import rehypeStringify from 'rehype-stringify'
 import remarkGfm from 'remark-gfm'
@@ -16,6 +16,7 @@ import { createHighlighter } from 'shiki'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 import { ogImage, readCatalog, touchIcon } from './og.mjs'
+import { buildPlatforms } from './platforms.mjs'
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repo = resolve(site, '..')
@@ -178,10 +179,49 @@ for (const dir of readdirSync(join(repo, 'packages')).sort()) {
   })
 }
 
+// ---------------------------------------------------------------- kits
+
+// Every kit but blank is a package (`kind: 'kit'`); its built setup module says what it sets up.
+// Needs `pnpm build` first, like the examples.
+const kitOrder = [
+  'app',
+  'fullstack',
+  'server',
+  'saas',
+  'site',
+  'realtime',
+  'desktop',
+  'tauri',
+  'mobile',
+]
+const kits = [
+  {
+    name: 'blank',
+    text: 'The wiring files and nothing else: no platform, no React, no server. kitr add brings each.',
+    platforms: [],
+    packages: [],
+    components: 0,
+  },
+]
+for (const name of kitOrder) {
+  const dist = join(repo, 'packages', `kit-${name}`, 'dist/kitr.js')
+  if (!existsSync(dist)) throw new Error(`${dist} is missing: run pnpm build first`)
+  const { default: definition } = await import(pathToFileURL(dist).href)
+  const kit = definition.kit
+  kits.push({
+    name: definition.name,
+    text: kit.description,
+    platforms: Object.entries(kit.platforms ?? {}).map(([n, p]) => `${n}: ${p.type}`),
+    packages: kit.packages.map((p) => (typeof p === 'string' ? p : p.name)),
+    components: kit.components?.length ?? 0,
+  })
+}
+
 rmSync(out, { recursive: true, force: true })
 for (const dir of ['docs', 'packages', 'og'])
   rmSync(join(site, 'public', dir), { recursive: true, force: true })
 mkdirSync(join(out, 'pages'), { recursive: true })
+writeFileSync(join(out, 'kits.json'), JSON.stringify(kits, null, 2))
 
 const search = []
 const llms = []
@@ -303,6 +343,58 @@ for (const group of nav) {
   docsNav.push({ title: group.title, items })
 }
 writeFileSync(join(out, 'docs-nav.json'), JSON.stringify(docsNav, null, 2))
+
+// ---------------------------------------------------------------- guides
+
+// Task walkthroughs that span several packages: site/content/guides/<slug>.md, grouped by nav.json.
+const guidesNavFile = JSON.parse(readFileSync(join(site, 'content/guides/nav.json'), 'utf8'))
+const guidesNav = []
+for (const group of guidesNavFile) {
+  const items = []
+  for (const slug of group.pages) {
+    const path = join(site, 'content/guides', `${slug}.md`)
+    const { data, body } = parseFrontmatter(readFileSync(path, 'utf8'))
+    if (!data.title || !data.description)
+      throw new Error(`${path}: frontmatter needs title and description`)
+    const url = `/guides/${slug}`
+    const list = (value) =>
+      (value ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    const usesPackages = list(data.packages)
+    // The platform types the guide ships to (web, server, desktop, tauri, mobile), for platform pages.
+    const platforms = list(data.platforms)
+    for (const name of usesPackages)
+      if (!packages.some((p) => p.entry.name === name))
+        throw new Error(`${path}: "packages" names ${name}, which is not a package`)
+    const rendered = await render(body)
+    writePage(`guides__${slug}`, {
+      url,
+      title: data.title,
+      description: data.description,
+      section: group.title,
+      packages: usesPackages,
+      platforms,
+      time: data.time,
+      blocks: rendered.blocks,
+      toc: rendered.toc,
+      editUrl: `${repoUrl}/edit/main/${relative(repo, path)}`,
+    })
+    items.push({
+      slug,
+      title: data.title,
+      description: data.description,
+      packages: usesPackages,
+      platforms,
+      time: data.time,
+    })
+    addSearch(url, data.title, 'Guides', rendered, data.description)
+    llms.push({ url, title: data.title, description: data.description, body })
+  }
+  guidesNav.push({ title: group.title, description: group.description, items })
+}
+writeFileSync(join(out, 'guides-nav.json'), JSON.stringify(guidesNav, null, 2))
 writeFileSync(join(out, 'search.json'), JSON.stringify(search))
 
 // ---------------------------------------------------------------- home page code
@@ -318,24 +410,6 @@ const highlight = (code, lang) =>
 writeFileSync(
   join(out, 'home-code.json'),
   JSON.stringify({
-    platforms: highlight(
-      `// kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
-import { desktop } from 'kitr/desktop'
-import { mobile } from 'kitr/mobile'
-import { server } from 'kitr/server'
-import { web } from 'kitr/web'
-
-export default defineKitrConfig({
-  platforms: {
-    site: web({ mode: 'ssr', pwa: true }),
-    api: server({ runtime: 'node', port: 3001 }),
-    app: desktop({ title: 'Acme' }),
-    phone: mobile({ appId: 'com.acme.app', appName: 'Acme' }),
-  },
-})`,
-      'ts',
-    ),
     contract: highlight(
       `// app/features/projects/queries.ts
 export const projectsQuery = defineQuery({
@@ -357,6 +431,18 @@ export const renameProject = defineMutation({
   }),
 )
 
+// ---------------------------------------------------------------- platforms
+
+const platformPages = buildPlatforms({
+  repo,
+  site,
+  out,
+  highlight,
+  packages,
+  docs: llms,
+  parseFrontmatter,
+})
+
 // ---------------------------------------------------------------- SEO: OG images, sitemap, robots
 
 const base = 'https://kitr.dev'
@@ -377,6 +463,26 @@ const seoPages = [
     title: 'Packages',
     description: `${packages.length} packages and platforms, each a single kitr add away.`,
   },
+  {
+    path: '/guides',
+    title: 'Guides',
+    description:
+      'Step-by-step walkthroughs: build an app, add sign-in and live updates, test and deploy it, write a package, and move to kitr.',
+    kind: 'Guides',
+  },
+  {
+    path: '/platforms',
+    title: 'Platforms',
+    description: 'Web, server, desktop and mobile from one app. Mix them in one project.',
+    kind: 'Platforms',
+  },
+  ...platformPages.map((p) => ({
+    path: `/platforms/${p.type}`,
+    title: p.type === 'desktop' ? 'Desktop with Electron' : p.name,
+    description: p.tagline,
+    kind: `Platform · ${p.targets.join(', ')}`,
+    tile: { icon: catalog.glyphs[p.type] ?? 'Package01Icon', color: p.color },
+  })),
   {
     path: '/about',
     title: 'A box of parts that fit together',
@@ -412,6 +518,14 @@ for (const group of docsNav)
       kind: `Docs · ${group.title}`,
     })
   }
+for (const group of guidesNav)
+  for (const item of group.items)
+    seoPages.push({
+      path: `/guides/${item.slug}`,
+      title: item.title,
+      description: item.description,
+      kind: `Guide · ${group.title}`,
+    })
 
 mkdirSync(join(site, 'public/og'), { recursive: true })
 const ogId = (path) => (path === '/' ? 'home' : path.slice(1).replace(/\//g, '-'))
@@ -422,7 +536,7 @@ await Promise.all(
 )
 writeFileSync(join(site, 'public/apple-touch-icon.png'), await touchIcon(site))
 
-const today = new Date().toISOString().slice(0, 10)
+// No <lastmod>: every page would carry the build date, which teaches crawlers to ignore it.
 writeFileSync(
   join(site, 'public/sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>
@@ -430,7 +544,7 @@ writeFileSync(
 ${seoPages
   .map(
     (p) =>
-      `  <url><loc>${base}${p.path}</loc><lastmod>${today}</lastmod><priority>${p.path === '/' ? '1.0' : p.path.split('/').length > 3 ? '0.6' : '0.8'}</priority></url>`,
+      `  <url><loc>${base}${p.path}</loc><priority>${p.path === '/' ? '1.0' : p.path.split('/').length > 3 ? '0.6' : '0.8'}</priority></url>`,
   )
   .join('\n')}
 </urlset>
@@ -452,6 +566,12 @@ const index = [
   '',
   ...llms
     .filter((p) => p.url.startsWith('/docs'))
+    .map((p) => `- [${p.title}](${base}${p.url}.md): ${p.description ?? ''}`),
+  '',
+  '## Guides',
+  '',
+  ...llms
+    .filter((p) => p.url.startsWith('/guides'))
     .map((p) => `- [${p.title}](${base}${p.url}.md): ${p.description ?? ''}`),
   '',
   '## Packages',

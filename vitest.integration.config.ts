@@ -13,5 +13,8 @@ export default defineConfig({
     testTimeout: 120_000,
     hookTimeout: 120_000,
     fileParallelism: false,
+    // The suites also cover the preview packages (desktop, tauri, mobile, jobs...), which the CLI
+    // refuses without it. One test checks the refusal with it unset.
+    env: { KITR_PREVIEW: '1' },
   },
 })

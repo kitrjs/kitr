@@ -3,13 +3,12 @@ import {
   getStorageDriver,
   type StorageConfig,
   setCookieDefaults,
-  setKvDriver,
   setStorageDriver,
   setStoragePrefix,
 } from './index'
 
 /**
- * Applies `config/storage.ts` (key prefix, cookie defaults, kv driver), switches `defineStorage`
+ * Applies `config/storage.ts` (key prefix, cookie defaults), switches `defineStorage`
  * items to the platform's native driver when one is registered, hydrates it before the first
  * render, and contributes the Storage panel to the devtools.
  */
@@ -19,7 +18,6 @@ export const storageProvider = defineProvider({
     const config = app.config.get('storage', {} as StorageConfig)
     if (config.prefix) setStoragePrefix(config.prefix)
     if (config.cookie) setCookieDefaults(config.cookie)
-    if (config.kv) setKvDriver(config.kv)
     const driver = app.drivers.resolve('storage')
     if (driver) setStorageDriver(driver)
   },

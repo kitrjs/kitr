@@ -62,7 +62,7 @@ Also not in the plan. `@kitr/devtools` follows the provider model: the hub is a 
 
 ## Packages ship their own setup
 
-The CLI used to hold every package's setup as a recipe, so adding a package meant editing the CLI, and a community package could not be added at all. A package now exports a setup module (`<package>/kitr`, written with `definePackage` from `@kitr/core/package`) with its questions, codemods, commands, generators and doctor checks, and the CLI discovers it from the installed package. The questions are also flags, so the "no prompts in CI" rule survives. See [package-contract.md](package-contract.md). The official packages move onto it one by one; the recipes left in the CLI are the fallback for the rest.
+The CLI used to hold every package's setup as a recipe, so adding a package meant editing the CLI, and a community package could not be added at all. A package now exports a setup module (`<package>/kitr`, written with `definePackage` from `@kitr/core/package`) with its questions, codemods, commands, generators and doctor checks, and the CLI discovers it from the installed package. The questions are also flags, so the "no prompts in CI" rule survives. See [package-contract.md](package-contract.md). Every official package is on it, kits and platforms included (`@kitr/kit-saas`, `@kitr/web`), so the CLI holds no package-specific code and a community package is added exactly like an official one.
 
 ## Extra commands
 
