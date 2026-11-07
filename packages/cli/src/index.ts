@@ -16,6 +16,7 @@ import {
   makeStore,
 } from './commands/make'
 import { newCommand } from './commands/new'
+import { packageCheck } from './commands/package-check'
 import { serve } from './commands/serve'
 import { ui } from './commands/ui'
 import { upgrade } from './commands/upgrade'
@@ -85,6 +86,7 @@ export const main = defineCommand({
     serve,
     'css:types': cssTypes,
     doctor,
+    'package:check': packageCheck,
     eject,
     upgrade,
     info,

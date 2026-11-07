@@ -51,3 +51,12 @@ describe('package manifests', () => {
     ])
   })
 })
+
+describe('kitr package:check', () => {
+  it('passes for every package with docs', async () => {
+    const { checkPackage } = await import('../src/commands/package-check')
+    for (const { dir, pkg } of packages)
+      if (existsSync(join(root, dir, pkg.kitr.docs ?? 'docs', 'index.md')))
+        expect(checkPackage(join(root, dir)), dir).toEqual([])
+  })
+})
