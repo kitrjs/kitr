@@ -1,12 +1,12 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { naming } from '@kitr/core/package'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Codemods } from '../src/codemods'
 import { runChecks } from '../src/commands/doctor'
-import { createContext, detectPackageManager, findProjectRoot, readRcInfo } from '../src/context'
-import { naming } from '@kitr/core/package'
 import { coreGenerators, renderStub } from '../src/commands/make'
+import { createContext, detectPackageManager, findProjectRoot, readRcInfo } from '../src/context'
 import { versionOf, versions } from '../src/versions'
 
 const dirs: string[] = []

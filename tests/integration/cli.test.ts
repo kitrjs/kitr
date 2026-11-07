@@ -154,7 +154,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
     ['make:queries', 'invoices', 'app/features/invoices/queries.ts'],
     ['make:provider', 'flags', 'app/providers/flags_provider.ts'],
     ['make:job', 'SendReceipt', 'server/jobs/send_receipt.ts'],
-    ['make:mail', 'welcome', 'server/mail/welcome.tsx'],
+    ['make:mail', 'invoice', 'server/mail/invoice.tsx'],
     ['make:service', 'billing', 'server/services/billing_service.ts'],
     ['make:validator', 'project', 'app/validators/project.ts'],
     ['make:test', 'billing', 'test/billing.test.ts'],
@@ -292,7 +292,7 @@ describe('kitr add / remove', () => {
     // A fresh copy, so the comparison below does not depend on what earlier tests left behind.
     const dir = copyExample('dashboard')
     // Requirements stay after a remove, so bring them in first and compare against that.
-    kitr(dir, 'add', '@kitr/server', '--no-install')
+    kitr(dir, 'add', 'server', 'api', '--no-install')
     const start = snapshot(dir)
     kitr(dir, 'add', 'jobs', '--no-install', '--yes')
     const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')

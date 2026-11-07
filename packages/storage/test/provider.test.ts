@@ -1,6 +1,13 @@
 import { createApp } from '@kitr/core'
 import { afterEach, describe, expect, it } from 'vitest'
-import { defineCookie, defineStorage, setCookieDefaults, setStoragePrefix } from '../src'
+import {
+  createMemoryStorageDriver,
+  defineCookie,
+  defineStorage,
+  getStorageDriver,
+  setCookieDefaults,
+  setStoragePrefix,
+} from '../src'
 import storageProvider from '../src/provider'
 import { cookies } from '../src/server'
 
@@ -36,5 +43,16 @@ describe('storage provider', () => {
     expect(item.get()).toBe(1)
     item.set(2)
     expect(item.get()).toBe(1)
+  })
+
+  it('picks up a platform driver registered by a provider listed after it', async () => {
+    const native = createMemoryStorageDriver('native:test')
+    const platform = {
+      name: 'shell',
+      register: (app: any) => app.drivers.register('storage', native, { platform: 'desktop' }),
+    }
+    const app = createApp({ providers: [storageProvider, platform] })
+    await app.boot()
+    expect(getStorageDriver('local')?.name).toBe('native:test')
   })
 })
