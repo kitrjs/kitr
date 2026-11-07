@@ -18,23 +18,30 @@ The examples on this page follow one scenario: Acme's app at `app.acme.com` gene
 kitr add jobs
 ```
 
-What `kitr add` does:
+What `kitr add` does, in order:
 
 - Installs `@kitr/jobs`. Jobs require the [server](/packages/server) package, so `kitr add` also adds `server` (and its `logger`) when the project does not have them yet.
 - Adds `'@kitr/jobs'` to `packages` and `() => import('@kitr/jobs/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/jobs.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Writes an example job, `server/jobs/example.ts`, exporting `exampleJob`.
-- Adds a `## kitr: jobs` section to `AGENTS.md` telling coding agents to put background work in `server/jobs/` and never `setTimeout` work in a request.
+- When you answer no to the worker question, adds a `worker` script (`kitr jobs:work`) to `package.json`.
+- Adds a `## kitr: jobs` section to `AGENTS.md` telling coding agents to put background work in `server/jobs/` and never `setTimeout` work in a request, plus a line about the separate worker when there is one.
 
-`kitr add jobs` adds no env variables or scripts and asks no questions. To edit `package.json` without running the package manager, pass the global flag:
+`kitr add jobs` asks one question. Agents and CI answer it with a flag:
+
+| Question | Default | Flag |
+| --- | --- | --- |
+| Run the job worker inside the server process? | yes | `--worker` / `--no-worker` |
 
 ```sh
-kitr add jobs --no-install
+kitr add jobs --no-worker
 ```
+
+With `--no-worker`, `config/jobs.ts` gets `worker: false` and the worker runs in its own process, as in [Run the worker in its own process](#run-the-worker-in-its-own-process). `kitr add jobs` adds no env variables. To edit `package.json` without running the package manager, pass `--no-install`.
 
 No kit includes jobs; add it to any kit with a server platform.
 
-`kitr remove jobs` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/jobs.ts`. Your jobs in `server/jobs/` stay.
+`kitr remove jobs` reverses every step above: the provider, the `packages` entry, the `worker` script, the `AGENTS.md` section, the dependency and `config/jobs.ts`. Your jobs in `server/jobs/` stay, because you may have edited them.
 
 ## Configure
 
