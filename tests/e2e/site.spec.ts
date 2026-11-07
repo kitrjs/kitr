@@ -215,10 +215,7 @@ test.describe('in the browser', () => {
     expect(await page.evaluate(() => (window as any).__kitrMarker)).toBe(1)
   })
 
-  test('package search on a phone shows matches right under the box', async ({
-    page,
-    baseURL,
-  }) => {
+  test('package search on a phone shows matches right under the box', async ({ page, baseURL }) => {
     await isolate(page)
     const errors = watchErrors(page, new URL(baseURL!).origin)
     await page.setViewportSize({ width: 375, height: 667 })
