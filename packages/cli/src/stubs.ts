@@ -214,7 +214,7 @@ export const ${camel(name)}Input = z.object({
   id: z.string(),
 })
 
-/** Dispatch with \`jobs.dispatch(${camel(name)}, { id })\`; runs on the worker with retries. */
+/** List it in config/jobs.ts, then dispatch with \`useJobs(app).dispatch(${camel(name)}, { id })\`; it runs on the worker with retries. */
 export const ${camel(name)} = defineJob('${snake(name)}', {
   schema: ${camel(name)}Input,
   retries: 3,
