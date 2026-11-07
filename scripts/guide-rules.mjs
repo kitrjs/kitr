@@ -40,6 +40,15 @@ const packages = new Set(
     .map((f) => JSON.parse(readFileSync(f, 'utf8')).kitr?.name)
     .filter(Boolean),
 )
+// Packages kept off npm for now (`"private": true`): a guide only teaches what ships.
+const unreleased = new Set(
+  readdirSync('packages')
+    .map((d) => join('packages', d, 'package.json'))
+    .filter(existsSync)
+    .map((f) => JSON.parse(readFileSync(f, 'utf8')))
+    .filter((p) => p.private && p.kitr?.name)
+    .map((p) => p.kitr.name),
+)
 const docs = new Set([
   ...readdirSync(docsDir)
     .filter((f) => f.endsWith('.md'))
@@ -74,6 +83,7 @@ for (const slug of [...guides].sort()) {
     .map((s) => s.trim())
     .filter(Boolean))
     if (!packages.has(name)) problems.push(`frontmatter lists unknown package "${name}"`)
+    else if (unreleased.has(name)) problems.push(`frontmatter lists unreleased package "${name}"`)
   if (!listed.has(slug)) problems.push('not listed in nav.json')
 
   const h2 = [...src.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim())
@@ -99,6 +109,7 @@ for (const slug of [...guides].sort()) {
   const prose = stripCode(src)
   for (const [, name] of prose.matchAll(/\]\(\/packages\/([^)/#]+)/g))
     if (!packages.has(name)) problems.push(`links to unknown package "${name}"`)
+    else if (unreleased.has(name)) problems.push(`links to unreleased package "${name}"`)
   for (const [, page] of prose.matchAll(/\]\(\/docs\/([^)/#]+)/g))
     if (!docs.has(page)) problems.push(`links to unknown doc "/docs/${page}"`)
   for (const [, page] of prose.matchAll(/\]\(\/guides\/([^)/#]+)/g))

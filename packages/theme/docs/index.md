@@ -500,7 +500,7 @@ Keys become kebab-case. `true` gives an empty attribute; `false`, `null` and `un
 
 ## Build component variants
 
-`kitr/theme` re-exports [class-variance-authority](https://cva.style) as `cva` (with `VariantProps` and its `cx` as `cvaCx`) and [clsx](https://github.com/lukeed/clsx) as `clsx` and `cx`. The registry components use them, and so can yours:
+`kitr/theme` re-exports [class-variance-authority](https://cva.style) as `cva` (with `VariantProps`) and [clsx](https://github.com/lukeed/clsx) as `clsx` and `cx`. The registry components use them, and so can yours:
 
 ```tsx
 // app/components/ui/badge.tsx

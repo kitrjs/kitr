@@ -24,6 +24,8 @@
     "sync:examples": "node scripts/sync-examples.mjs",
     "manifests": "node scripts/sync-manifests.mjs",
     "manifests:check": "node scripts/sync-manifests.mjs --check",
+    "readmes": "node scripts/package-readmes.mjs",
+    "readmes:check": "node scripts/package-readmes.mjs --check",
     "docs:check": "node scripts/docs-check.mjs",
     "docs:rules": "node scripts/docs-rules.mjs",
     "docs:guides": "node scripts/guide-rules.mjs",

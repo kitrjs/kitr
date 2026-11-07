@@ -6,7 +6,7 @@
 // Output goes to app/generated (gitignored) and public/llms*.txt.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import rehypeSlug from 'rehype-slug'
 import rehypeStringify from 'rehype-stringify'
 import remarkGfm from 'remark-gfm'
@@ -16,6 +16,7 @@ import { createHighlighter } from 'shiki'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 import { ogImage, readCatalog, touchIcon } from './og.mjs'
+import { buildPlatforms } from './platforms.mjs'
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repo = resolve(site, '..')
@@ -178,10 +179,49 @@ for (const dir of readdirSync(join(repo, 'packages')).sort()) {
   })
 }
 
+// ---------------------------------------------------------------- kits
+
+// Every kit but blank is a package (`kind: 'kit'`); its built setup module says what it sets up.
+// Needs `pnpm build` first, like the examples.
+const kitOrder = [
+  'app',
+  'fullstack',
+  'server',
+  'saas',
+  'site',
+  'realtime',
+  'desktop',
+  'tauri',
+  'mobile',
+]
+const kits = [
+  {
+    name: 'blank',
+    text: 'The wiring files and nothing else: no platform, no React, no server. kitr add brings each.',
+    platforms: [],
+    packages: [],
+    components: 0,
+  },
+]
+for (const name of kitOrder) {
+  const dist = join(repo, 'packages', `kit-${name}`, 'dist/kitr.js')
+  if (!existsSync(dist)) throw new Error(`${dist} is missing: run pnpm build first`)
+  const { default: definition } = await import(pathToFileURL(dist).href)
+  const kit = definition.kit
+  kits.push({
+    name: definition.name,
+    text: kit.description,
+    platforms: Object.entries(kit.platforms ?? {}).map(([n, p]) => `${n}: ${p.type}`),
+    packages: kit.packages.map((p) => (typeof p === 'string' ? p : p.name)),
+    components: kit.components?.length ?? 0,
+  })
+}
+
 rmSync(out, { recursive: true, force: true })
 for (const dir of ['docs', 'packages', 'og'])
   rmSync(join(site, 'public', dir), { recursive: true, force: true })
 mkdirSync(join(out, 'pages'), { recursive: true })
+writeFileSync(join(out, 'kits.json'), JSON.stringify(kits, null, 2))
 
 const search = []
 const llms = []
@@ -369,24 +409,6 @@ const highlight = (code, lang) =>
 writeFileSync(
   join(out, 'home-code.json'),
   JSON.stringify({
-    platforms: highlight(
-      `// kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
-import { desktop } from 'kitr/desktop'
-import { mobile } from 'kitr/mobile'
-import { server } from 'kitr/server'
-import { web } from 'kitr/web'
-
-export default defineKitrConfig({
-  platforms: {
-    site: web({ mode: 'ssr', pwa: true }),
-    api: server({ runtime: 'node', port: 3001 }),
-    app: desktop({ title: 'Acme' }),
-    phone: mobile({ appId: 'com.acme.app', appName: 'Acme' }),
-  },
-})`,
-      'ts',
-    ),
     contract: highlight(
       `// app/features/projects/queries.ts
 export const projectsQuery = defineQuery({
@@ -407,6 +429,18 @@ export const renameProject = defineMutation({
     ),
   }),
 )
+
+// ---------------------------------------------------------------- platforms
+
+const platformPages = buildPlatforms({
+  repo,
+  site,
+  out,
+  highlight,
+  packages,
+  docs: llms,
+  parseFrontmatter,
+})
 
 // ---------------------------------------------------------------- SEO: OG images, sitemap, robots
 
@@ -432,9 +466,22 @@ const seoPages = [
     path: '/guides',
     title: 'Guides',
     description:
-      'Step-by-step walkthroughs: build an app, ship it to phones and desktops, deploy it, and move to kitr.',
+      'Step-by-step walkthroughs: build an app, add sign-in and live updates, test and deploy it, write a package, and move to kitr.',
     kind: 'Guides',
   },
+  {
+    path: '/platforms',
+    title: 'Platforms',
+    description: 'Web, server, desktop and mobile from one app. Mix them in one project.',
+    kind: 'Platforms',
+  },
+  ...platformPages.map((p) => ({
+    path: `/platforms/${p.type}`,
+    title: p.type === 'desktop' ? 'Desktop with Electron' : p.name,
+    description: p.tagline,
+    kind: `Platform · ${p.targets.join(', ')}`,
+    tile: { icon: catalog.glyphs[p.type] ?? 'Package01Icon', color: p.color },
+  })),
   {
     path: '/about',
     title: 'A box of parts that fit together',

@@ -215,17 +215,17 @@ VITE_API_URL=http://localhost:3001/api
 import type { NewOrder, Order, OrdersPage } from '@acme/contracts/orders'
 import { createKeys } from 'kitr/app'
 import { httpMutation, httpQuery } from 'kitr/http'
-import { defineMutation, defineQuery } from 'kitr/query'
+import { mutationFrom, queryFrom } from 'kitr/query'
 import { app } from '#app/app'
 
 const http = app.container.use('http')
 export const orderKeys = createKeys('orders')
 
-export const ordersQuery = defineQuery(
+export const ordersQuery = queryFrom(
   httpQuery<void, OrdersPage>(http, { path: 'orders', key: () => orderKeys.lists() }),
 )
 
-export const createOrder = defineMutation(
+export const createOrder = mutationFrom(
   httpMutation<NewOrder, Order>(http, { path: 'orders', effects: { invalidate: [orderKeys.lists()] } }),
 )
 ```

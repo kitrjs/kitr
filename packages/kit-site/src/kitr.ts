@@ -466,8 +466,8 @@ function SiteFooter() {
     `import { createFileRoute } from '@tanstack/react-router'
 import { useSchemaForm } from 'kitr/forms'
 import { useTranslation } from 'kitr/i18n'
-import { useKitrMutation } from 'kitr/query'
-import { defineMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { Link } from 'kitr/router'
 import { useState } from 'react'
 import { api } from '#app/api/client'
@@ -480,7 +480,7 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
-const subscribe = defineMutation(api.newsletter.subscribe.mutation())
+const subscribe = mutationFrom(api.newsletter.subscribe.mutation())
 
 function HomePage() {
   const { t } = useTranslation()
@@ -516,7 +516,7 @@ function HomePage() {
 
 function Newsletter() {
   const { t } = useTranslation()
-  const mutation = useKitrMutation(subscribe)
+  const mutation = useMutation(subscribe)
   const [done, setDone] = useState(false)
   const form = useSchemaForm(subscribeSchema, { defaultValues: { email: '' } })
   return (
@@ -760,7 +760,6 @@ export default definePackage({
       'storage',
       'analytics',
       'testing',
-      'devtools',
       'seo',
       'api',
     ],

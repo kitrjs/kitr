@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { type CacheDriver, createCache, createMemoryCacheDriver } from '../src'
+import {
+  type CacheDriver,
+  createCache,
+  createMemoryCacheDriver,
+  createUnstorageCacheDriver,
+} from '../src'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -204,5 +209,63 @@ describe('createCache', () => {
       cache.remember('b', async () => 'B'),
     ])
     expect([a, b]).toEqual(['A', 'B'])
+  })
+})
+
+describe('unstorage cache driver', () => {
+  const make = async () => {
+    const { createStorage } = await import('unstorage')
+    const storage = createStorage()
+    return { storage, driver: createUnstorageCacheDriver(storage) }
+  }
+
+  it('stores, reads and deletes through any unstorage instance', async () => {
+    const { driver } = await make()
+    await driver.set('a', '{"n":1}')
+    expect(await driver.get('a')).toBe('{"n":1}')
+    await driver.delete('a')
+    expect(await driver.get('a')).toBeUndefined()
+  })
+
+  it('expires on read, for drivers without native ttls', async () => {
+    vi.useFakeTimers()
+    const { driver } = await make()
+    await driver.set('k', 'v', 2)
+    vi.advanceTimersByTime(1999)
+    expect(await driver.get('k')).toBe('v')
+    vi.advanceTimersByTime(1)
+    expect(await driver.get('k')).toBeUndefined()
+  })
+
+  it('invalidates by tag, and a re-set key loses its old tags', async () => {
+    const { driver } = await make()
+    await driver.set('user:1', 'a')
+    await driver.set('user:2', 'b')
+    await driver.tag('user:1', ['team:a'])
+    await driver.tag('user:2', ['team:a'])
+    await driver.set('user:2', 'new')
+    await driver.invalidateTags(['team:a'])
+    expect(await driver.get('user:1')).toBeUndefined()
+    expect(await driver.get('user:2')).toBe('new')
+  })
+
+  it('clear() leaves keys outside its base alone', async () => {
+    const { storage, driver } = await make()
+    await storage.setItem('other', 'keep')
+    await driver.set('x', '1')
+    await driver.clear()
+    expect(await driver.get('x')).toBeUndefined()
+    expect(await storage.getItem('other')).toBe('keep')
+  })
+
+  it('backs createCache: remember, tags and prefixes', async () => {
+    const { driver } = await make()
+    const cache = createCache({ driver, prefix: 'app1:' })
+    let runs = 0
+    const load = () => cache.remember('report', async () => ++runs, { tags: ['reports'] })
+    expect(await load()).toBe(1)
+    expect(await load()).toBe(1)
+    await cache.invalidateTags('reports')
+    expect(await load()).toBe(2)
   })
 })

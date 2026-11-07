@@ -21,19 +21,19 @@ Components only ever use queries, mutations and subscriptions. Swap a REST endpo
 
 ```ts
 // An existing REST API (kitr add http)
-defineQuery(httpQuery(http, { path: 'projects', key: () => projectKeys.list() }))
+queryFrom(httpQuery(http, { path: 'projects', key: () => projectKeys.list() }))
 
 // Your own API routes (kitr add api)
-defineQuery(api.projects.index.query())
+queryFrom(api.projects.index.query())
 
-// A server action (kitr add actions)
-defineQuery(listProjects.query())
+// A server action (kitr add actions) is already a query: use it by name
+useQuery('projects.list')
 
 // Hand-written, for anything else
-defineQuery({ key: () => projectKeys.list(), fetch: () => getProjectsSomehow() })
+queryFrom({ key: () => projectKeys.list(), fetch: () => getProjectsSomehow() })
 ```
 
-All four give you the same object, used the same way:
+All of them give you the same object, used the same way:
 
 ```tsx
 const { data } = useSuspenseQuery(projectsQuery.options())
@@ -44,7 +44,7 @@ const { data } = useSuspenseQuery(projectsQuery.options())
 The most common bug in data-heavy apps is a screen that shows stale data after a save. kitr fixes it at the source: a mutation declares what it changes.
 
 ```ts
-export const renameProject = defineMutation(
+export const renameProject = mutationFrom(
   api.projects.update.mutation({
     effects: (project) => ({
       set: [{ key: projectKeys.detail(project.id), data: project }], // update this entry now

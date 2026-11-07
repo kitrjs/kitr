@@ -124,7 +124,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "kind": "platform",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "devtools": {
     "package": "@kitr/devtools",
@@ -135,7 +136,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "client",
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "files": {
     "package": "@kitr/files",
@@ -149,7 +151,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "flags": {
     "package": "@kitr/flags",
@@ -220,7 +223,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "server"
     ],
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "logger": {
     "package": "@kitr/logger",
@@ -266,7 +270,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "preview": true
   },
   "mocks": {
     "package": "@kitr/mocks",
@@ -307,7 +312,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "notifications": {
     "package": "@kitr/notifications",
@@ -321,7 +327,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "offline": {
     "package": "@kitr/offline",
@@ -353,7 +360,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "query": {
     "package": "@kitr/query",
@@ -428,7 +436,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "seo": {
     "package": "@kitr/seo",
@@ -545,7 +554,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "testing": {
     "package": "@kitr/testing",
@@ -592,7 +602,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "uploads": {
     "package": "@kitr/uploads",
@@ -605,7 +616,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "server"
     ],
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "vite": {
     "package": "@kitr/vite",
@@ -662,7 +674,8 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "fullstack": {
     "package": "@kitr/kit-fullstack",
@@ -682,7 +695,8 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   },
   "realtime": {
     "package": "@kitr/kit-realtime",
@@ -732,6 +746,7 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "preview": true
   }
 }

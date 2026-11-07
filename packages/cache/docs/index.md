@@ -8,7 +8,7 @@ order: 1
 
 Some reads are slow or expensive: a project report that joins six tables, a call to a rate-limited exchange-rate API, an invoice PDF summary rendered from a template. `kitr/cache` keeps the result for a while, so the next request gets it straight from memory or Redis. When the data changes, you clear every cached result about it with one tag instead of hunting down keys.
 
-The package is a small layer of its own, not a wrapper: values are stored as JSON through a six-method driver, with a memory driver built in and a [Redis](https://redis.io/docs/latest/) driver a few lines away. On top of a plain key-value store it adds expiry times, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
+The package is a small layer of its own, not a wrapper: values are stored as JSON through a six-method driver, with a memory driver built in and an [unstorage](https://unstorage.unjs.io) driver for Redis, Upstash, Cloudflare KV and the rest. On top of a plain key-value store it adds expiry times, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
 
 It runs on the server only. The provider does nothing in the browser. To cache what the API returns on the client, use [query](/packages/query), which already does.
 
@@ -41,7 +41,7 @@ It adds no env variables, no scripts and asks no questions. No kit includes the 
 import { defineConfig } from 'kitr/cache'
 
 export default defineConfig({
-  // In-memory by default. For several instances pass a shared driver (Redis, Upstash) as `driver`.
+  // In-memory by default. For several instances pass a shared driver: createUnstorageCacheDriver(...).
   prefix: 'acme-app:',
   defaultTtl: 300,
 })
@@ -53,7 +53,7 @@ export default defineConfig({
 | `prefix` | `''` | Prepended to every key before it reaches the driver, so several apps can share one Redis. |
 | `defaultTtl` | `300` | Seconds an entry lives when `set()`, `remember()` or `cached()` is called without a `ttl`. |
 
-The cache reads no env variables itself. A Redis driver usually reads `REDIS_URL`; see [Redis](#redis).
+The cache reads no env variables itself. A Redis driver usually reads `REDIS_URL`; see [unstorage](#unstorage).
 
 Config files are TypeScript, so you can choose values per environment in the file. To keep entries short-lived in development while you iterate on a report:
 
@@ -414,7 +414,8 @@ A driver decides where entries live. The cache talks to it through six methods o
 | Driver | Shared between instances | Survives a restart | Use for |
 | --- | --- | --- | --- |
 | Memory (default) | No | No | Development, tests, one server process |
-| Redis | Yes | Yes | Production with more than one instance |
+| unstorage (built in) | Yes | Yes | Production: Redis, Upstash, Cloudflare KV, Vercel KV or the filesystem |
+| Hand-written Redis | Yes | Yes | Full control over the Redis commands |
 
 ### Memory
 
@@ -433,9 +434,33 @@ export default defineConfig({
 
 Each server process has its own copy, and it empties when the process restarts. Once you run two instances behind a load balancer, `invalidateTags()` on one instance leaves the other serving the old value until its ttl runs out. Move to a shared store before that happens.
 
+### unstorage
+
+`createUnstorageCacheDriver` stores entries through any [unstorage](https://unstorage.unjs.io) instance, so one line picks the backend from unstorage's [drivers](https://unstorage.unjs.io/drivers): Redis, Upstash, Cloudflare KV, Vercel KV, the filesystem and more. Install unstorage and the client its driver needs:
+
+```sh
+pnpm add unstorage ioredis
+```
+
+```ts
+// config/cache.ts
+import { createUnstorageCacheDriver, defineConfig } from 'kitr/cache'
+import { createStorage } from 'unstorage'
+import redisDriver from 'unstorage/drivers/redis'
+
+export default defineConfig({
+  driver: createUnstorageCacheDriver(
+    createStorage({ driver: redisDriver({ url: process.env.REDIS_URL }) }),
+  ),
+  prefix: 'acme-app:',
+})
+```
+
+Expiry is checked on every read, so drivers without native expiry work too; the ttl is also passed to drivers that expire keys themselves, such as Redis. Entries live under the `kitr-cache` base (pass `{ base: 'other' }` as the second argument to change it), and `clear()` only removes keys under that base. Like the memory driver, overwriting a key drops the old value's tags.
+
 ### Redis
 
-Install a Redis client. This example uses [ioredis](https://github.com/redis/ioredis):
+To talk to Redis directly instead, write the driver yourself. Install a Redis client. This example uses [ioredis](https://github.com/redis/ioredis):
 
 ```sh
 pnpm add ioredis

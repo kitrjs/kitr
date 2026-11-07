@@ -24,7 +24,7 @@ const pkgs = readdirSync('packages')
   .filter(({ file }) => existsSync(file))
   .map(({ dir, file }) => ({ dir, pkg: JSON.parse(readFileSync(file, 'utf8')) }))
   .filter(({ pkg }) => pkg.kitr && (!only.size || only.has(pkg.kitr.name)))
-  // Kits are documented on the kits page, not one guide each (as in docs-check.mjs).
+  // Kits are documented together in docs/kits.md, not one guide each.
   .filter(({ pkg }) => pkg.kitr.kind !== 'kit')
 
 const headings = (src) =>

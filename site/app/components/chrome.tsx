@@ -14,6 +14,9 @@ export function Header() {
           <Logo />
         </Link>
         <div className="nav-links">
+          <Link to="/platforms" activeProps={{ 'aria-current': 'page' }}>
+            Platforms
+          </Link>
           <Link to="/packages" activeProps={{ 'aria-current': 'page' }}>
             Packages
           </Link>
@@ -63,8 +66,8 @@ const footerLinks: Array<{ title: string; links: Array<{ label: string; to: stri
   {
     title: 'Build',
     links: [
+      { label: 'Platforms', to: '/platforms' },
       { label: 'All packages', to: '/packages' },
-      { label: 'Data and caching', to: '/packages/query' },
       { label: 'Forms', to: '/packages/forms' },
       { label: 'Build a package', to: '/docs/building-packages' },
     ],

@@ -105,7 +105,7 @@ Rules on top of the writing rules above:
 
 1. **Continue an earlier guide's app rather than starting a new one**, when one fits. The testing, deploy and sign-in guides all build on `acme-projects` from the full-stack guide, so a reader can follow them in a row.
 2. **Link packages, don't re-document them.** A guide shows the code the goal needs and links `/packages/<name>` for every option. When a guide needs more than a package's docs explain, fix the package docs first.
-3. **Only document what ships.** A guide uses packages, commands and options that exist on `main`. Packages that are deferred or being redesigned get a guide when they ship, not before.
+3. **Only document what ships.** A guide uses packages, commands and options that exist on `main` and are published. Packages marked `"private": true` (deferred or being redesigned) get a guide when they ship; the checker rejects links to them.
 4. **Say where it stops.** When kitr has no answer (incremental static regeneration, `next/image`), say so in a table with what to do instead.
 5. **Floors:** 1,000 prose words and 10 code blocks. Most guides land at 1,800 to 3,000 words.
 
@@ -142,10 +142,9 @@ The "Make kitr core minimal and fully opt-in" work moves each package's setup ou
 - **Configure documents what `ctx.config()` writes.** The code block in Configure is the same text the codemod writes, comments included, so a reader comparing the two sees no difference.
 - **Commands documents `commands` and `generators`.** Every entry in those maps is a row in the Commands table. `doctor` checks are documented as a short list under Commands ("`kitr doctor` warns when ...").
 - **Remove is one sentence** at the end of Install: "`kitr remove <name>` reverses every step above", plus anything it leaves behind on purpose.
-- **Kits become packages**, so a kit's docs follow this file too, with the Tasks replaced by a walkthrough of the pages, controllers and tests the kit scaffolds.
+- **Kits are packages** (`@kitr/kit-<name>`), documented together in `docs/kits.md`: one section per kit with its platforms, packages, components and a walkthrough of the pages, controllers and tests it scaffolds, instead of a guide per kit.
 - The platform packages (web, server, desktop, mobile) own their options, scaffold and tooling, so their guides carry the full options table today held in `docs/platforms.md`. That page becomes an index linking to the four guides.
 
-Until the rework lands for a package, document what the CLI recipe does today, in the same list form, so the content is right when the code moves.
 
 ## Gap list
 

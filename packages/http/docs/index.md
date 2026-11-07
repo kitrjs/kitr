@@ -98,14 +98,14 @@ export default defineConfig({
 
 ## Load your first endpoint
 
-Describe the endpoint once in the feature's `queries.ts`. `httpQuery` turns it into a query contract, and `defineQuery` turns that into something components and loaders use:
+Describe the endpoint once in the feature's `queries.ts`. `httpQuery` turns it into a query contract, and `queryFrom` turns that into something components and loaders use:
 
 ```ts
 // app/features/orders/queries.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpQuery } from 'kitr/http'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 
 export interface Order {
   id: string
@@ -117,7 +117,7 @@ export interface Order {
 const http = app.container.use('http')
 export const orderKeys = createKeys('orders')
 
-export const ordersQuery = defineQuery(
+export const ordersQuery = queryFrom(
   httpQuery<void, Order[]>(http, {
     path: 'orders',
     key: () => orderKeys.list(),
@@ -229,27 +229,27 @@ export const billing = app.container.use('http').extend({
 
 ## Turn an endpoint into a query
 
-`httpQuery(client, options)` returns a query contract that sends a `GET`. Pass it to `defineQuery`:
+`httpQuery(client, options)` returns a query contract that sends a `GET`. Pass it to `queryFrom`:
 
 ```ts
 // app/features/orders/queries.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpQuery } from 'kitr/http'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 import type { Order } from './types'
 
 const http = app.container.use('http')
 export const orderKeys = createKeys('orders')
 
-export const orderQuery = defineQuery(
+export const orderQuery = queryFrom(
   httpQuery<string, Order>(http, {
     path: (id) => `orders/${id}`,
     key: (id) => orderKeys.detail(id),
   }),
 )
 
-export const ordersQuery = defineQuery(
+export const ordersQuery = queryFrom(
   httpQuery<{ status?: Order['status']; page: number }, Order[]>(http, {
     path: 'orders',
     key: (filters) => orderKeys.list(filters),
@@ -279,7 +279,7 @@ An API you don't control can change shape. Give `httpQuery` or `httpMutation` a 
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpQuery } from 'kitr/http'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 import { z } from 'zod'
 
 const http = app.container.use('http')
@@ -292,7 +292,7 @@ const invoice = z.object({
   paidAt: z.string().nullable(),
 })
 
-export const invoicesQuery = defineQuery(
+export const invoicesQuery = queryFrom(
   httpQuery(http, {
     path: 'invoices',
     key: () => invoiceKeys.list(),
@@ -311,26 +311,26 @@ The key is the path to the bad value (`0.total`: the first invoice's `total`). T
 
 ## Turn an endpoint into a mutation
 
-`httpMutation(client, options)` returns a mutation contract. Pass it to `defineMutation` and run it with `useKitrMutation`. Declare `effects` so every screen showing the changed data updates:
+`httpMutation(client, options)` returns a mutation contract. Pass it to `mutationFrom` and run it with `useMutation`. Declare `effects` so every screen showing the changed data updates:
 
 ```ts
 // app/features/orders/queries.ts
 import { app } from '#app/app'
 import { httpMutation } from 'kitr/http'
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
 const http = app.container.use('http')
 
-export const createOrder = defineMutation(
+export const createOrder = mutationFrom(
   httpMutation<{ customer: string; total: number }, Order>(http, {
     path: 'orders',
     effects: { invalidate: [orderKeys.lists()] },
   }),
 )
 
-export const shipOrder = defineMutation(
+export const shipOrder = mutationFrom(
   httpMutation<{ id: string; carrier: string }, Order>(http, {
     method: 'post',
     path: (input) => `orders/${input.id}/ship`,
@@ -345,11 +345,11 @@ export const shipOrder = defineMutation(
 
 ```tsx
 // app/features/orders/ship-button.tsx
-import { useKitrMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
 import { shipOrder } from './queries'
 
 export function ShipButton({ id }: { id: string }) {
-  const ship = useKitrMutation(shipOrder)
+  const ship = useMutation(shipOrder)
   return (
     <button type="button" disabled={ship.isPending} onClick={() => ship.mutate({ id, carrier: 'UPS' })}>
       Ship
@@ -376,12 +376,12 @@ export function ShipButton({ id }: { id: string }) {
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpMutation } from 'kitr/http'
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 
 const http = app.container.use('http')
 export const projectKeys = createKeys('projects')
 
-export const deleteProject = defineMutation(
+export const deleteProject = mutationFrom(
   httpMutation<{ id: string }, void>(http, {
     method: 'delete',
     path: ({ id }) => `projects/${id}`,
@@ -392,7 +392,7 @@ export const deleteProject = defineMutation(
   }),
 )
 
-export const renameProject = defineMutation(
+export const renameProject = mutationFrom(
   httpMutation<{ id: string; name: string }, { id: string; name: string }>(http, {
     method: 'patch',
     path: ({ id }) => `projects/${id}`,
@@ -411,12 +411,12 @@ export const renameProject = defineMutation(
 ```ts
 // app/features/invoices/import.ts
 import { app } from '#app/app'
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { invoiceKeys } from './queries'
 
 const http = app.container.use('http')
 
-export const importInvoices = defineMutation({
+export const importInvoices = mutationFrom({
   mutate: async (file: File) => {
     const form = new FormData()
     form.append('file', file)
@@ -539,11 +539,11 @@ For one slow endpoint, pass `options` to the contract instead of changing every 
 // app/features/reports/queries.ts
 import { app } from '#app/app'
 import { httpQuery } from 'kitr/http'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 
 const http = app.container.use('http')
 
-export const yearlyReportQuery = defineQuery(
+export const yearlyReportQuery = queryFrom(
   httpQuery<number, { year: number; revenue: number }>(http, {
     path: (year) => `reports/${year}`,
     key: (year) => ['reports', year],
@@ -660,7 +660,7 @@ It writes `app/features/orders/queries.ts`:
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineMutation, defineQuery } from 'kitr/query'
+import { mutationFrom, queryFrom } from 'kitr/query'
 import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 
@@ -672,15 +672,15 @@ export interface Orders {
   name: string
 }
 
-export const ordersListQuery = defineQuery(
+export const ordersListQuery = queryFrom(
   httpQuery<void, Orders[]>(http, { path: 'orders', key: () => ordersKeys.list() }),
 )
 
-export const ordersQuery = defineQuery(
+export const ordersQuery = queryFrom(
   httpQuery<string, Orders>(http, { path: (id) => `orders/${id}`, key: (id) => ordersKeys.detail(id) }),
 )
 
-export const updateOrders = defineMutation(
+export const updateOrders = mutationFrom(
   httpMutation<Partial<Orders> & { id: string }, Orders>(http, {
     method: 'patch',
     path: (input) => `orders/${input.id}`,

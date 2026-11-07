@@ -31,7 +31,7 @@ The `app` kit is made for exactly this: a single-page web app that talks to an A
 kitr new acme-admin --kit app
 ```
 
-It installs and wires [Router](/packages/router), [Query](/packages/query), [HTTP](/packages/http), [Forms](/packages/forms), [Table](/packages/table), [State](/packages/state), [Tailwind](/packages/tailwind), [Theme](/packages/theme), [Auth](/packages/auth), [Storage](/packages/storage), [Mocks](/packages/mocks), [Testing](/packages/testing) and [Devtools](/packages/devtools), and copies a set of UI components into `app/components/ui/`. The parts this guide touches:
+It installs and wires [Router](/packages/router), [Query](/packages/query), [HTTP](/packages/http), [Forms](/packages/forms), [Table](/packages/table), [State](/packages/state), [Tailwind](/packages/tailwind), [Theme](/packages/theme), [Auth](/packages/auth), [Storage](/packages/storage), [Mocks](/packages/mocks) and [Testing](/packages/testing), and copies a set of UI components into `app/components/ui/`. The parts this guide touches:
 
 ```
 acme-admin/
@@ -309,7 +309,7 @@ It writes `app/features/orders/queries.ts` with a list query, a detail query and
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
 import { httpMutation, httpQuery } from 'kitr/http'
-import { defineMutation, defineQuery } from 'kitr/query'
+import { mutationFrom, queryFrom } from 'kitr/query'
 import type { TableSearch } from 'kitr/table'
 import { app } from '#app/app'
 
@@ -329,7 +329,7 @@ export interface OrdersPage {
   total: number
 }
 
-export const ordersPageQuery = defineQuery(
+export const ordersPageQuery = queryFrom(
   httpQuery<TableSearch, OrdersPage>(http, {
     path: 'orders',
     key: (search) => orderKeys.list(search),
@@ -342,7 +342,7 @@ export const ordersPageQuery = defineQuery(
   }),
 )
 
-export const createOrder = defineMutation(
+export const createOrder = mutationFrom(
   httpMutation<{ customer: string; total: number }, Order>(http, {
     path: 'orders',
     effects: { invalidate: [orderKeys.lists()] },
@@ -445,7 +445,7 @@ The page runs the mutation with `mutateAsync` and goes back to the table when it
 import { createFileRoute } from '@tanstack/react-router'
 import { useNavigate } from 'kitr/router'
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
-import { useKitrMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
 import { createOrder } from '#app/features/orders/queries'
 import { newOrderSchema } from '#app/features/orders/schema'
 
@@ -454,7 +454,7 @@ export const Route = createFileRoute('/_app/orders/new')({
 })
 
 function NewOrderPage() {
-  const create = useKitrMutation(createOrder)
+  const create = useMutation(createOrder)
   const navigate = useNavigate()
   const form = useSchemaForm(newOrderSchema, { defaultValues: { customer: '', total: '' } })
 

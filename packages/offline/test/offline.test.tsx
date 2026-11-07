@@ -1,5 +1,5 @@
-import { createApp } from '@kitr/core'
-import { onlineManager, QueryClient } from '@kitr/query'
+import { createApp, operations } from '@kitr/core'
+import { mutationFrom, mutationKeyFor, onlineManager, QueryClient } from '@kitr/query'
 import queryProvider from '@kitr/query/provider'
 import { createMemoryStorageDriver } from '@kitr/storage'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -61,6 +61,50 @@ describe('offline', () => {
     onlineManager.setOnline(true)
     await vi.waitFor(() => expect(run).toHaveBeenCalledWith(1, expect.anything()))
     client.unmount()
+  })
+
+  it('replays a named mutation paused offline after the app restarts', async () => {
+    const storage = createMemoryStorageDriver()
+    const sent: string[] = []
+    const rename = Object.assign(
+      mutationFrom({
+        mutate: async (title: string) => {
+          sent.push(title)
+          return { title }
+        },
+        effects: (result) => ({ set: [{ key: ['project'], data: result }] }),
+      }),
+      { name: 'projects.rename' },
+    )
+    operations.register({ 'projects.rename': rename as never })
+    try {
+      // Before the restart: the mutation pauses offline and lands in the snapshot.
+      const before = new QueryClient()
+      before.mount()
+      const offline = createOffline(before, { storage, throttle: 1 })
+      onlineManager.setOnline(false)
+      const m = before.getMutationCache().build(before, {
+        mutationKey: mutationKeyFor('projects.rename'),
+        mutationFn: async (title: string) => title,
+      })
+      void m.execute('Renamed')
+      await vi.waitFor(() => expect(offline.pendingMutations()).toBe(1))
+      await vi.waitFor(() =>
+        expect(JSON.parse(storage.get('kitr:query-cache')!).state.mutations).toHaveLength(1),
+      )
+      before.unmount()
+
+      // After the restart: a fresh client, back online. The function comes from the registry.
+      onlineManager.setOnline(true)
+      const after = new QueryClient()
+      after.mount()
+      expect(await createOffline(after, { storage }).restore()).toBe(true)
+      await vi.waitFor(() => expect(sent).toEqual(['Renamed']))
+      await vi.waitFor(() => expect(after.getQueryData(['project'])).toEqual({ title: 'Renamed' }))
+      after.unmount()
+    } finally {
+      operations.reset()
+    }
   })
 
   it('restores at boot through the provider', async () => {
