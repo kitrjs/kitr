@@ -25,6 +25,31 @@
 | `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms and their effective options; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
 | `kitr config <name> [option] [value] [--unset]` | Reads or sets one platform option in `kitrrc.ts`, validated against the platform's schema: `kitr config site port 4000`. `KITR_<NAME>_<OPTION>` overrides any option at run time. |
 
+## Workspaces
+
+A monorepo with several kitr apps (an authed web app, a marketing site, a phone app) puts a `kitr.workspace.ts` at its root:
+
+```ts
+// kitr.workspace.ts
+import { defineWorkspace } from 'kitr'
+
+export default defineWorkspace({
+  apps: { www: 'apps/www', app: 'apps/app', phone: 'apps/phone' },
+})
+```
+
+Each app is a complete kitr project with its own `kitrrc.ts`; shared code is ordinary workspace packages. The CLI reads the file statically, like `kitrrc.ts`.
+
+| Command | What it does |
+| --- | --- |
+| `kitr workspace [--json]` | Lists the apps with their platforms and packages. |
+| `kitr dev` / `kitr start` (at the root) | Runs the command in every app side by side. |
+| `kitr build` / `kitr types` / `kitr doctor` / `kitr platforms` / `kitr info` (at the root) | Runs the command in every app, one after another. Exit code 1 when any fails. |
+| `kitr build phone` | An app name as a word selects that app; the rest of the words are passed on (`kitr build phone ios` builds the `ios` platform of the `phone` app). |
+| `kitr --app phone add jobs` | Runs any command inside one app without `cd`. `KITR_APP=phone` does the same. |
+
+Inside an app directory every command is the app's own, as if there were no workspace.
+
 ## Generators
 
 `kitr make:<kind> <name>` writes one file from a stub. `--force` overwrites. Stubs can be customised per project: `kitr eject stub <kind>` copies it to `stubs/<kind>.ts`, and `make:*` prefers the ejected version.

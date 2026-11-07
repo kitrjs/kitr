@@ -10,6 +10,7 @@ import {
   localStorageTokens,
   tokenAdapter,
 } from '../src'
+import { Authed, authBranch, Guest } from '../src/components'
 import { useAuth, useCan, useSession, useUser } from '../src/hooks'
 import authProvider from '../src/provider'
 import { createSession } from '../src/session'
@@ -243,5 +244,34 @@ describe('betterAuthAdapter', () => {
     await expect(failing.signIn?.({ email: '', password: '' })).rejects.toMatchObject({
       code: 'UNAUTHORIZED',
     })
+  })
+})
+
+describe('auth-aware rendering', () => {
+  it('Authed, Guest and authBranch follow the session without a route change', async () => {
+    const app = await bootWith(adapterWith(null))
+    const Home = () => <p>home for members</p>
+    const Landing = () => <p>landing for guests</p>
+    const Page = authBranch({ authed: Home, guest: Landing })
+    render(
+      <KitrProvider app={app}>
+        <Authed fallback={<p>please sign in</p>}>
+          <p>welcome back</p>
+        </Authed>
+        <Guest>
+          <p>guest banner</p>
+        </Guest>
+        <Page />
+      </KitrProvider>,
+    )
+    expect(screen.getByText('please sign in')).toBeTruthy()
+    expect(screen.getByText('guest banner')).toBeTruthy()
+    expect(screen.getByText('landing for guests')).toBeTruthy()
+    await act(async () => {
+      await app.container.use('auth').signIn({ id: 'u1' })
+    })
+    expect(screen.getByText('welcome back')).toBeTruthy()
+    expect(screen.queryByText('guest banner')).toBeNull()
+    expect(screen.getByText('home for members')).toBeTruthy()
   })
 })

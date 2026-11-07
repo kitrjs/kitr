@@ -112,6 +112,22 @@ dist/<name>/         # build output per platform
 kitrrc.ts
 ```
 
+## One route tree, many apps
+
+A product that ships as a marketing site, an authed web app, a phone app and a desktop app shares one route tree and one set of components. kitr keeps the differences at the edges:
+
+| Need | Tool |
+| --- | --- |
+| A route that exists on some platforms only | `onlyPlatform('www')` guard in `kitr/router` |
+| Server rendering on the site, client rendering in the shells | `ssrRoute({ www: true, default: false })` in `kitr/seo` |
+| A guest landing and a member feed on the same URL | `authBranch()`, `<Authed>`, `<Guest>` in `kitr/auth` |
+| A different adapter, implementation or layout per platform | `forPlatform()` (build time) and `perPlatform()` (run time) in `kitr/platform` |
+| A piece of UI on some platforms or form factors | `<Only>`, `<Except>`, `useFormFactor()` in `kitr/platform/react` |
+| Native stack navigation: push, swipe back, tabs, sheets | `<StackOutlet>`, `<StackTabs>`, `<SplitStack>` in `kitr/router/stack` |
+| Compile-time branches on the build | `import.meta.env.KITR_PLATFORM`, typed after `kitr types` |
+
+When the apps are separate projects in one repository, `kitr.workspace.ts` names them and the CLI fans out from the root; see [Workspaces](cli.md#workspaces).
+
 ## Writing a platform package
 
 ```ts

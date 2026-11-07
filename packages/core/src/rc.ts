@@ -47,3 +47,24 @@ export const defaultDirectories = {
 export function defineKitrConfig(rc: KitrRc): KitrRc {
   return { ...rc, directories: { ...defaultDirectories, ...rc.directories } }
 }
+
+/**
+ * The shape of `kitr.workspace.ts`, at the root of a monorepo that holds several kitr apps:
+ *
+ *   export default defineWorkspace({ apps: { web: 'apps/web', phone: 'apps/phone' } })
+ *
+ * Each app is a full kitr project (its own `kitrrc.ts`, `app/`, `config/`). From the workspace
+ * root, `kitr dev` runs every app, `kitr build phone` builds one, and `--app web` (or `KITR_APP`)
+ * points any command at one app without `cd`. Shared code lives in `packages/*` as ordinary
+ * workspace packages; kitr adds nothing there.
+ */
+export interface KitrWorkspace {
+  /** The apps by name, as directories relative to the workspace root. */
+  apps: Record<string, string>
+  /** Shared package directories, listed for tooling (`kitr doctor`, the site). Default `packages/*`. */
+  packages?: string[]
+}
+
+export function defineWorkspace(workspace: KitrWorkspace): KitrWorkspace {
+  return { packages: ['packages/*'], ...workspace }
+}

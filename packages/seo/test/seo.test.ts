@@ -60,6 +60,16 @@ describe('seo', () => {
 describe('route helpers', () => {
   it('ssrRoute and cacheHeaders', () => {
     expect(ssrRoute('data-only')).toEqual({ ssr: 'data-only' })
+    process.env.KITR_PLATFORM = 'www'
+    process.env.KITR_PLATFORM_TYPE = 'web'
+    try {
+      expect(ssrRoute({ www: true, default: false })).toEqual({ ssr: true })
+      expect(ssrRoute({ web: 'data-only', default: false })).toEqual({ ssr: 'data-only' })
+      expect(ssrRoute({ phone: false, default: true })).toEqual({ ssr: true })
+    } finally {
+      delete process.env.KITR_PLATFORM
+      delete process.env.KITR_PLATFORM_TYPE
+    }
     expect(cacheHeaders()).toEqual({ 'cache-control': 'public' })
     expect(
       cacheHeaders({ maxAge: 0, sMaxAge: 60, staleWhileRevalidate: 30, private: true }),
