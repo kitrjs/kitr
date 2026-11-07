@@ -1,18 +1,13 @@
 [
   {
     "title": "Build an app",
-    "description": "Start from an empty folder and finish with a working app, its data, its sign-in and its tests.",
-    "pages": ["dashboard", "fullstack-app", "api-server", "live-updates", "authentication"]
-  },
-  {
-    "title": "Ship everywhere",
-    "description": "Take the same app/ folder to phones, desktops and all of them at once.",
-    "pages": ["mobile-app", "desktop-app", "hybrid-app"]
+    "description": "Start from an empty folder and finish with a working app, its data, its sign-in and its updates.",
+    "pages": ["dashboard", "fullstack-app", "api-server", "authentication", "live-updates"]
   },
   {
     "title": "Organise, test and deploy",
-    "description": "Grow from one app to several, keep them tested, and put them in production.",
-    "pages": ["monorepo", "testing", "deploy"]
+    "description": "Keep the app tested, put it in production, and grow from one app to several.",
+    "pages": ["testing", "deploy", "monorepo"]
   },
   {
     "title": "Extend and migrate",

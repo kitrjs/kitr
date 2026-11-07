@@ -489,5 +489,5 @@ Among its other checks, `kitr doctor` fails when a server-only project starts im
 - [Deploy to production](/guides/deploy): Docker, Node hosts, Bun, and Cloudflare Workers.
 - [API routes](/packages/api): lazy controllers, middleware, rate limits, raw responses and every client option.
 - [Server](/packages/server): request-scoped services, health checks, graceful shutdown and tracing.
-- [Jobs](/packages/jobs) and [Mail](/packages/mail): send the invoice email in the background.
+- [Mail](/packages/mail): email the invoice to the customer when it is created.
 - [Run kitr in a monorepo](/guides/monorepo): share `AppRoutes` with the frontend through a workspace package.

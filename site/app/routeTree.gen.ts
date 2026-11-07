@@ -14,6 +14,8 @@ import { Route as R404RouteImport } from './routes/404'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as DocsSlugRouteImport } from './routes/docs/$slug'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as GuidesSlugRouteImport } from './routes/guides/$slug'
 import { Route as PackagesIndexRouteImport } from './routes/packages/index'
 import { Route as PackagesNameRouteImport } from './routes/packages/$name'
 import { Route as PackagesNamePageRouteImport } from './routes/packages/$name_.$page'
@@ -44,6 +46,16 @@ const DocsSlugRoute = DocsSlugRouteImport.update({
   path: '/docs/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PackagesIndexRoute = PackagesIndexRouteImport.update({
   id: '/packages/',
   path: '/packages/',
@@ -70,8 +82,10 @@ export interface FileRoutesByFullPath {
   '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/docs/$slug': typeof DocsSlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/packages/$name': typeof PackagesNameRoute
   '/docs/': typeof DocsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/packages/': typeof PackagesIndexRoute
   '/packages/$name/$page': typeof PackagesNamePageRoute
   '/play/$pkg/$example': typeof PlayPkgExampleRoute
@@ -81,8 +95,10 @@ export interface FileRoutesByTo {
   '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/docs/$slug': typeof DocsSlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/packages/$name': typeof PackagesNameRoute
   '/docs': typeof DocsIndexRoute
+  '/guides': typeof GuidesIndexRoute
   '/packages': typeof PackagesIndexRoute
   '/packages/$name/$page': typeof PackagesNamePageRoute
   '/play/$pkg/$example': typeof PlayPkgExampleRoute
@@ -93,8 +109,10 @@ export interface FileRoutesById {
   '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/docs/$slug': typeof DocsSlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/packages/$name': typeof PackagesNameRoute
   '/docs/': typeof DocsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/packages/': typeof PackagesIndexRoute
   '/packages/$name_/$page': typeof PackagesNamePageRoute
   '/play/$pkg/$example': typeof PlayPkgExampleRoute
@@ -106,8 +124,10 @@ export interface FileRouteTypes {
     | '/404'
     | '/about'
     | '/docs/$slug'
+    | '/guides/$slug'
     | '/packages/$name'
     | '/docs/'
+    | '/guides/'
     | '/packages/'
     | '/packages/$name/$page'
     | '/play/$pkg/$example'
@@ -117,8 +137,10 @@ export interface FileRouteTypes {
     | '/404'
     | '/about'
     | '/docs/$slug'
+    | '/guides/$slug'
     | '/packages/$name'
     | '/docs'
+    | '/guides'
     | '/packages'
     | '/packages/$name/$page'
     | '/play/$pkg/$example'
@@ -128,8 +150,10 @@ export interface FileRouteTypes {
     | '/404'
     | '/about'
     | '/docs/$slug'
+    | '/guides/$slug'
     | '/packages/$name'
     | '/docs/'
+    | '/guides/'
     | '/packages/'
     | '/packages/$name_/$page'
     | '/play/$pkg/$example'
@@ -140,8 +164,10 @@ export interface RootRouteChildren {
   R404Route: typeof R404Route
   AboutRoute: typeof AboutRoute
   DocsSlugRoute: typeof DocsSlugRoute
+  GuidesSlugRoute: typeof GuidesSlugRoute
   PackagesNameRoute: typeof PackagesNameRoute
   DocsIndexRoute: typeof DocsIndexRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
   PackagesIndexRoute: typeof PackagesIndexRoute
   PackagesNamePageRoute: typeof PackagesNamePageRoute
   PlayPkgExampleRoute: typeof PlayPkgExampleRoute
@@ -184,6 +210,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/guides/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/packages/': {
       id: '/packages/'
       path: '/packages'
@@ -220,8 +260,10 @@ const rootRouteChildren: RootRouteChildren = {
   R404Route: R404Route,
   AboutRoute: AboutRoute,
   DocsSlugRoute: DocsSlugRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
   PackagesNameRoute: PackagesNameRoute,
   DocsIndexRoute: DocsIndexRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
   PackagesIndexRoute: PackagesIndexRoute,
   PackagesNamePageRoute: PackagesNamePageRoute,
   PlayPkgExampleRoute: PlayPkgExampleRoute,

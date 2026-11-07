@@ -150,7 +150,7 @@ export default class OrdersController {
 
 Emit after the write succeeds, with data you built from your own records. The server does not validate what you pass to `emit`; the schema protects clients from a malformed event, not the server from sending one.
 
-The same call works in a server action, a [job](/packages/jobs) or a webhook handler: anything on the server that imports `#server/realtime`.
+The same call works in a server action, a scheduled task or a webhook handler: anything on the server that imports `#server/realtime`.
 
 ## Subscribe on the board
 

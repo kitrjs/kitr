@@ -432,7 +432,7 @@ it('answers 404 for a project in another team', async () => {
 npm test
 ```
 
-The first request boots the server's app with every provider in `kitrrc.ts`, as `kitr dev` does, including the database. Point `DATABASE_URL` at a throwaway database in `.env.test`, or replace the client with a fake as the [DB guide](/packages/db#testing) shows. [Test your app](/guides/testing) covers components, pages and CI.
+The first request boots the server's app with every provider in `kitrrc.ts`, as `kitr dev` does, including the database. Point it at a throwaway database, never the one you develop against: [Test your app](/guides/testing) sets one up with `.env.test`, and covers components, pages and CI.
 
 ## Ship it
 
@@ -449,4 +449,4 @@ npm start
 - [Add live updates](/guides/live-updates): typed events that write straight into the cache.
 - [Actions](/packages/actions): middleware, calling actions from loaders and jobs, and the generated registry.
 - [API routes](/packages/api): resources, middleware, rate limits, OpenAPI and the typed client.
-- [Ship your app to iPhone and Android](/guides/mobile-app): reuse this API from a native app.
+- [Keep several apps in one repository](/guides/monorepo): split the API and the site into apps that share a package of schemas.

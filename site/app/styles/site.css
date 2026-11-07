@@ -1109,6 +1109,7 @@ a.built-on-link:hover {
 .guide-more,
 .guide-time {
   font-size: 13px;
+  white-space: nowrap;
 }
 .guide-meta {
   display: flex;
@@ -1912,4 +1913,16 @@ a.built-on-link:hover {
     font-size: 34px;
     line-height: 40px;
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

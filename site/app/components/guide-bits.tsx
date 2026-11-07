@@ -11,7 +11,8 @@ export function GuideCard({ guide }: { guide: GuideItem }) {
       <span className="guide-card-title">{guide.title}</span>
       <span className="card-summary">{guide.description}</span>
       <span className="guide-card-foot">
-        <span className="guide-tiles" aria-label={`Uses ${used.map((p) => p.name).join(', ')}`}>
+        <span className="guide-tiles">
+          <span className="sr-only">Uses {used.map((p) => p.name).join(', ')}</span>
           {used.slice(0, 6).map((p) => (
             <Tile key={p.name} pkg={p} size={26} />
           ))}

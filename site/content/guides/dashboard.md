@@ -540,4 +540,4 @@ The mock handler above ignores `sort`, so the names come back in insertion order
 - [Table](/packages/table): filters, row selection, column visibility and client-side tables.
 - [Forms](/packages/forms): editing an existing record, repeating fields and custom inputs.
 - [Deploy to production](/guides/deploy): ship the `spa` build to any static host.
-- [Ship your app to iPhone and Android](/guides/mobile-app): the same dashboard as a native app.
+- [Deploy to production](/guides/deploy): ship the SPA to a static host.
