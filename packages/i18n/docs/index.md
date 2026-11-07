@@ -14,7 +14,7 @@ order: 1
 kitr add i18n
 ```
 
-This installs `@kitr/i18n`, `i18next` and `react-i18next`. It writes `app/locales/en.ts` and `config/i18n.ts`.
+This installs `@kitr/i18n`, `i18next` and `react-i18next`, adds `@kitr/i18n/provider` to `kitrrc.ts` and writes `app/locales/en.ts` and `config/i18n.ts`.
 
 ## Write strings
 

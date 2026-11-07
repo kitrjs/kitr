@@ -128,6 +128,10 @@
       "types": "./dist/i18n.d.ts",
       "default": "./dist/i18n.js"
     },
+    "./i18n/provider": {
+      "types": "./dist/i18n-provider.d.ts",
+      "default": "./dist/i18n-provider.js"
+    },
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"

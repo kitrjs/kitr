@@ -618,7 +618,7 @@ export const recipes: Record<string, Recipe> = {
     description: 'react-i18next with typed keys, locale detection and a provider.',
     configure(ctx, c) {
       c.installPackages(['@kitr/i18n', 'i18next', 'react-i18next'])
-      c.addProvider('@kitr/i18n')
+      c.addProvider('@kitr/i18n/provider')
       c.addPackage('@kitr/i18n')
       ctx.write(
         'app/locales/en.ts',
@@ -634,7 +634,7 @@ export const recipes: Record<string, Recipe> = {
       )
     },
     unconfigure(_ctx, c) {
-      c.removeProvider('@kitr/i18n')
+      c.removeProvider('@kitr/i18n/provider')
       c.removePackage('@kitr/i18n')
       c.removePackages(['@kitr/i18n', 'i18next', 'react-i18next'])
       c.removeAgentsSection('i18n')
