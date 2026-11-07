@@ -1,4 +1,4 @@
-import { type AddContext, definePackage } from '@kitr/core/package'
+import { type AddContext, definePackage, displayName, startRoot } from '@kitr/core/package'
 
 const write = (ctx: AddContext, path: string, content: string) =>
   ctx.write(path, content, { overwrite: true })
@@ -9,73 +9,12 @@ const remove = (ctx: AddContext, ...paths: string[]) => {
 
 const addScript = (ctx: AddContext, name: string, command: string) => ctx.scripts.add(name, command)
 
-const startRoot = (options: {
-  imports: string
-  head: string
-  body: string
-  extra?: string
-  /** Extra route options (loader, beforeLoad…), inserted before `component`. */
-  route?: string
-  /** Statements at the top of RootLayout. */
-  prelude?: string
-  /** Opening and closing JSX around the layout body. */
-  wrap?: [open: string, close: string]
-}) =>
-  `import type { KitrRouterContext } from 'kitr/router'
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
-import type { ReactNode } from 'react'
-import css from '#app/styles/app.css?url'
-${options.imports}
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
-${options.head}
-    links: [{ rel: 'stylesheet', href: css }],
-  }),
-${options.route ?? ''}  component: RootLayout,
-})
-
-function RootLayout() {
-${options.prelude ?? ''}  return (
-    <RootDocument>
-${options.wrap ? `${options.wrap[0]}\n` : ''}${options.body}
-${options.wrap ? `${options.wrap[1]}\n` : ''}    </RootDocument>
-  )
-}
-${options.extra ?? ''}
-/** The HTML shell. Start streams it on the server and hydrates it on the client. */
-function RootDocument({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-        <HeadContent />
-      </head>
-      <body className="min-h-screen bg-background text-foreground antialiased">
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  )
-}
-`
-
 const routeTable = (routes: Array<[name: string, method: string, path: string]>) =>
   `// Route table for the typed client. Regenerate with \`kitr api:sync\`.\nexport const routeTable = ${JSON.stringify(
     routes.map(([name, method, path]) => ({ name, method, path })),
     null,
     2,
   )} as const\n`
-
-function displayName(name: string) {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/^example-/, '')
-    .split(/[-_.\s]+/)
-    .filter(Boolean)
-    .map((w) => w[0]!.toUpperCase() + w.slice(1))
-    .join(' ')
-}
 
 const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
 import type { AppRoutes } from '#server/routes'

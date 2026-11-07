@@ -372,3 +372,78 @@ export function resolvePackageName(name: string): string {
 export function shortPackageName(name: string): string {
   return name.startsWith('@kitr/') ? name.slice('@kitr/'.length) : name
 }
+
+// ---------------------------------------------------------------- kit helpers
+
+/** Options for `startRoot()`: the pieces a kit puts into the generated `app/routes/__root.tsx`. */
+export interface StartRootOptions {
+  imports: string
+  head: string
+  body: string
+  extra?: string
+  /** Extra route options (loader, beforeLoad…), inserted before `component`. */
+  route?: string
+  /** Statements at the top of RootLayout. */
+  prelude?: string
+  /** Opening and closing JSX around the layout body. */
+  wrap?: [open: string, close: string]
+}
+
+/**
+ * The `app/routes/__root.tsx` every TanStack Start kit writes: head, stylesheet, `ThemeScript`,
+ * `HeadContent` and `Scripts`, with the kit's imports, providers and layout spliced in. Shared so
+ * the saas, site and realtime kits stay identical where they agree.
+ */
+export const startRoot = (options: StartRootOptions): string =>
+  `import type { KitrRouterContext } from 'kitr/router'
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+import { ThemeScript } from 'kitr/theme'
+import type { ReactNode } from 'react'
+import css from '#app/styles/app.css?url'
+${options.imports}
+export const Route = createRootRouteWithContext<KitrRouterContext>()({
+  head: () => ({
+${options.head}
+    links: [{ rel: 'stylesheet', href: css }],
+  }),
+${options.route ?? ''}  component: RootLayout,
+})
+
+function RootLayout() {
+${options.prelude ?? ''}  return (
+    <RootDocument>
+${options.wrap ? `${options.wrap[0]}\n` : ''}${options.body}
+${options.wrap ? `${options.wrap[1]}\n` : ''}    </RootDocument>
+  )
+}
+${options.extra ?? ''}
+/** The HTML shell. Start streams it on the server and hydrates it on the client. */
+function RootDocument({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+        <HeadContent />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  )
+}
+`
+
+/**
+ * A human name for a scaffolded app from its package name: `@acme/example-order-desk` becomes
+ * `Order Desk`. Kits use it for page titles and window titles.
+ */
+export function displayName(name: string) {
+  return name
+    .replace(/^@[^/]+\//, '')
+    .replace(/^example-/, '')
+    .split(/[-_.\s]+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(' ')
+}
