@@ -22,13 +22,15 @@ What `kitr add` does:
 
 - Adds [react](/packages/react) first if the project does not have it, because theme requires it.
 - Installs `@kitr/theme`.
-- Adds the provider to `kitrrc.ts`: `() => import('@kitr/theme/provider')`, and `'@kitr/theme'` to `packages`.
+- Adds `'@kitr/theme'` to `packages` and `() => import('@kitr/theme/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/theme.ts` (shown under Configure).
 - Writes `app/styles/tokens.css`, an empty `:root` block for your token overrides.
+- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import 'kitr/theme/styles.css';`. Without it, it adds `import '#app/styles/tokens.css'` to `app/routes/__root.tsx`.
+- Edits `app/routes/__root.tsx` to apply the saved theme before first paint: imports `ThemeScript` from `kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A root route that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
 - Adds a `theme` section to `AGENTS.md`: use `useTheme()`, put `<ThemeScript />` in the document head, take colours and radii from the `--kitr-*` variables, keep components in `app/components/ui/` and add them with `kitr ui add`, and use Hugeicons through `<Icon />`.
 - Adds no environment variables and no scripts. When it finishes it prints `Pull components with kitr ui add button input form`.
 
-`kitr add` skips files that already exist. It asks no questions; `--no-install` skips the package manager and `--dry-run` prints the plan.
+`kitr add` skips `config/theme.ts` and `tokens.css` when they already exist. It asks no questions; `--no-install` skips the package manager and `--dry-run` prints the plan.
 
 ```sh
 kitr add theme --dry-run
@@ -38,7 +40,7 @@ The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits 
 
 The base stylesheet, `kitr/theme/styles.css`, is linked by the root route that [router](/packages/router) writes, so it is in place before you add theme. With [tailwind](/packages/tailwind), `app/styles/app.css` imports it instead.
 
-`kitr remove theme` removes the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css` and the components in `app/components/ui/` stay, because they are yours.
+`kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning` from the root route, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and the components in `app/components/ui/` stay, because they are yours.
 
 ## Configure
 
@@ -754,7 +756,7 @@ Don't render a second `ThemeProvider` inside a kitr app. The provider already wr
 | --- | --- |
 | `kitr ui add <names...>` | Copies components and their registry dependencies into `componentsDir`, and installs the npm packages they need. Flags: `--registry <url or dir>`, `--overwrite`, `--no-install`. |
 | `kitr ui list` | Lists the components in the registry with a one-line description. Flag: `--registry`. |
-| `kitr css:types` | Writes a typed `.d.ts` next to every `*.module.css` under `app`. Flags: `--dir <dir>`, `--check` to fail on stale files instead of writing. |
+| `kitr css:types` | From the [web](/packages/web) platform, not theme: writes a typed `.d.ts` next to every `*.module.css` under `app`. Flags: `--dir <dir>`, `--check` to fail on stale files instead of writing. |
 
 ```sh
 kitr ui add theme-toggle

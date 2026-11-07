@@ -22,8 +22,7 @@ What `kitr add` does:
 
 - Adds the [server](/packages/server) package first if the project does not have it yet.
 - Installs `@kitr/db` (you use it through `kitr/db`).
-- Adds `() => import('@kitr/db')` to `providers` in `kitrrc.ts`.
-- Adds `'@kitr/db'` to `packages` in `kitrrc.ts`.
+- Adds `'@kitr/db'` to `packages` and `() => import('@kitr/db')` to `providers` in `kitrrc.ts`.
 - Appends `DATABASE_URL=postgres://localhost:5432/app` under a `# Database` comment to `.env.example`, and to `.env` when it exists.
 - Writes `config/db.ts` (shown under Configure). An existing file is left alone.
 - Regenerates `config/index.ts`, the config list the standalone server imports.
@@ -31,7 +30,7 @@ What `kitr add` does:
 
 `kitr add db` asks no questions. Pass `--dry-run` to print the changes without writing them, or `--no-install` to skip the package manager run.
 
-The `server` kit (`kitr new acme-api --kit server`) already includes db. `kitr remove db` reverses every step above and deletes `config/db.ts`. It leaves your ORM packages and schema files in place.
+The `server` kit (`kitr new acme-api --kit server`) already includes db. `kitr remove db` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/db.ts`. It leaves `DATABASE_URL` in `.env.example`, and your ORM packages and schema files in place.
 
 ## Configure
 
@@ -183,14 +182,14 @@ On the server, an [action](/packages/actions) handler has no `ctx`. Get the requ
 // app/actions/projects/rename.ts
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { defineAction } from 'kitr/actions'
+import { defineMutation } from 'kitr/actions'
 import { useDb } from 'kitr/db'
 import { useRequestApp } from 'kitr/server'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
-export const renameProject = defineAction('projects.rename', {
+export const renameProject = defineMutation('projects.rename', {
   input: z.object({ id: z.string(), name: z.string().min(2) }),
   effects: (project) => ({ invalidate: [['projects', 'list']], set: [{ key: ['projects', 'detail', project.id], data: project }] }),
   handler: async ({ input }) => {

@@ -29,12 +29,11 @@ kitr add query
 What `kitr add` does:
 
 - Installs `@kitr/query` and `@tanstack/react-query`, and `@tanstack/react-query-devtools` as a dev dependency.
-- Adds `() => import('@kitr/query/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/query` to `packages` in `kitrrc.ts`.
+- Adds `'@kitr/query'` to `packages` and `() => import('@kitr/query/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/query.ts` (shown under [Configure](#configure)).
 - Adds a `## kitr: query` section to `AGENTS.md` with four rules: import from `kitr/query`, keep each feature's queries in `app/features/<name>/queries.ts`, load data in route loaders with `ensureQueryData`, and declare cache `effects` on mutations instead of calling `invalidateQueries` in components.
 
-`kitr add query` asks no questions. Every kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
+`kitr add query` asks no questions. Every UI kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
 
 ```sh
 kitr add query --dry-run

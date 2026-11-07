@@ -25,15 +25,17 @@ What `kitr add` does:
 - Adds `@kitr/mocks` to `dependencies` and `msw` to `devDependencies`, and installs them. Pass `--no-install` to skip the install.
 - Adds `'@kitr/mocks'` to `packages` in `kitrrc.ts`. It registers no provider: mocks start only when your code calls them.
 - Writes `app/mocks/handlers.ts` with one handler for `*/me`, unless the file exists.
-- Writes `app/mocks/browser.ts`, which exports `enableMocks()`, unless the file exists.
+- Writes `app/mocks/browser.ts`, which exports `enableMocks()`, unless the file exists. It starts the worker only in development and only when `VITE_MOCKS` is exactly `'true'`.
+- Sets `"msw": { "workerDirectory": ["public"] }` in `package.json`, so MSW's own install step writes and refreshes `public/mockServiceWorker.js`.
+- Adds a `mocks:init` script (`msw init public`) that writes the worker on demand.
 - Adds `VITE_MOCKS=false` to `.env.example`, and to `.env` when it exists, under the comment `# Set true to serve app/mocks/handlers.ts in the browser`.
 - Adds a `## kitr: mocks` section to `AGENTS.md`: handlers live in `app/mocks/handlers.ts`, `VITE_MOCKS=true` turns them on in development, tests use `setupNodeMocks(handlers)`, and a kitr route table is mocked with `mockRoutes(routes.toJSON(), baseUrl, { ... })`.
 
-It adds no scripts, writes no config file and asks no questions. Mocks are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `desktop` and `mobile` kits include it.
+It writes no config file and asks no questions. Mocks are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `desktop` and `mobile` kits include it.
 
-`kitr add` does not copy MSW's service worker into your public folder. Do it once before you turn mocks on in the browser; see [Turn mocks on in the browser](#turn-mocks-on-in-the-browser).
+The worker file appears in `public/` when the package manager installs `msw`. If it is missing, for example after `--no-install`, run `pnpm mocks:init`; see [Turn mocks on in the browser](#turn-mocks-on-in-the-browser).
 
-`kitr remove mocks` takes `'@kitr/mocks'` out of `kitrrc.ts`, removes `@kitr/mocks` and `msw` from `package.json` and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `kitr/mocks`. It leaves `app/mocks/`, the `VITE_MOCKS` line and `public/mockServiceWorker.js` for you to delete.
+`kitr remove mocks` takes `'@kitr/mocks'` out of `kitrrc.ts`, removes `@kitr/mocks`, `msw`, the `msw` field and the `mocks:init` script from `package.json` and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `kitr/mocks`. It leaves `app/mocks/`, the `VITE_MOCKS` line and `public/mockServiceWorker.js` for you to delete.
 
 ## Configure
 
@@ -109,13 +111,13 @@ The leading `*` matches any origin, so the handler answers whether your [http](/
 
 ## Turn mocks on in the browser
 
-MSW needs its worker script served from your site's root. Copy it into `public/` once, and commit it:
+MSW needs its worker script served from your site's root. `kitr add mocks` records `public` as MSW's worker folder in `package.json`, so the install writes `public/mockServiceWorker.js` and every later install refreshes it. If the file is missing, write it with the script `kitr add` added, and commit it:
 
 ```sh
-npx msw init public --save
+pnpm mocks:init
 ```
 
-`--save` records the folder in `package.json`, so MSW updates the file when you upgrade it. Then start the worker in `app/client.tsx`, before the app boots, so the first request is already mocked:
+Then start the worker in `app/client.tsx`, before the app boots, so the first request is already mocked:
 
 ```tsx
 // app/client.tsx
@@ -450,7 +452,7 @@ The responses `kitr/mocks` builds itself:
 | `INTERNAL` (500) | A resolver threw something that is not a `KitrError`, or `kitrErrorResponse` got a plain error. | Throw a `KitrError` with the code you mean, or fix the resolver. |
 | `VALIDATION` (422) | `mockValidationError` answered. | Expected: the form should show `fieldErrors`. |
 
-When the browser shows `Failed to register a ServiceWorker` or a 404 for `/mockServiceWorker.js`, the worker file is missing. Run `npx msw init public --save`.
+When the browser shows `Failed to register a ServiceWorker` or a 404 for `/mockServiceWorker.js`, the worker file is missing. Run `pnpm mocks:init`.
 
 ## Testing
 

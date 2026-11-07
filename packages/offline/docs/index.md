@@ -28,15 +28,19 @@ kitr add offline
 
 What `kitr add` does:
 
-- Adds [Query](/packages/query) and [Storage](/packages/storage) first, when the project doesn't have them, because `offline` requires both.
-- Installs `@kitr/offline`.
-- Adds `() => import('@kitr/offline/provider')` to `providers` in `kitrrc.ts`, after the query and storage providers.
-- Adds `@kitr/offline` to `packages` in `kitrrc.ts`.
+- Installs `@kitr/offline` and adds it to `packages` in `kitrrc.ts`.
+- Adds `() => import('@kitr/offline/provider')` to the end of `providers` in `kitrrc.ts`.
 - Writes `config/offline.ts` (shown under [Configure](#configure)).
 - Adds `VITE_APP_VERSION` to the public variables in `app/env.ts` as `e.string({ default: '0.0.0' })`, and `VITE_APP_VERSION=0.0.0` to `.env.example` (and to `.env` when it exists).
 - Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, give mutations a `mutationKey` and an optimistic `onMutate`, and use `useOffline()` from `kitr/offline/react` for a status line.
 
-`kitr add offline` asks no questions and adds no scripts. It is a client package, so in a server-only project it prints `offline is a client package; this project is server-only. Skipping.` and changes nothing. No kit includes it.
+`kitr add offline` asks no questions and adds no scripts. No kit includes it.
+
+The provider reads the `queryClient` that [Query](/packages/query) binds, and the snapshot goes through [Storage](/packages/storage). `kitr add offline` does not add either package, so add them in the same command when the project lacks them:
+
+```sh
+kitr add query storage offline
+```
 
 `kitr remove offline` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, deletes `config/offline.ts`, and lists the files that still import `kitr/offline`. It leaves `VITE_APP_VERSION` in `app/env.ts` and `.env.example`, and leaves Query and Storage installed.
 

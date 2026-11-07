@@ -44,23 +44,27 @@ No kit includes mail; add it to any kit with a server platform (`fullstack`, `se
 
 ```ts
 // config/mail.ts
-import { createLogTransport, createResendTransport, defineConfig } from 'kitr/mail'
+import { createResendTransport, defineConfig } from 'kitr/mail'
 
-/** Development logs every message; production needs a transport: Resend here, or createSmtpTransport(nodemailer, { host, auth }). */
+/**
+ * Without a transport, development logs every message and production refuses to boot, so a
+ * missing RESEND_API_KEY can never print password reset links to production logs.
+ * For SMTP: createSmtpTransport({ host, auth }).
+ */
 export default defineConfig({
   from: process.env.MAIL_FROM ?? 'App <hello@example.com>',
   transport: process.env.RESEND_API_KEY
     ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })
-    : createLogTransport(),
+    : undefined,
 })
 ```
 
-With `RESEND_API_KEY` set, messages go to Resend. Without it they go to the log transport, which prints each message to the console and keeps it in memory.
+With `RESEND_API_KEY` set, messages go to Resend. Without it `transport` is unset: in development the provider uses the log transport, which prints each message to the console and keeps it in memory, and in production the provider refuses to boot. The comment's `createSmtpTransport({ host, auth })` is shorthand: the real call takes the nodemailer module first, as shown in [SMTP](#smtp).
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `from` | none | The default sender for every message, as `'Acme <orders@acme.com>'`, `'orders@acme.com'` or `{ email, name }`. `send()` throws when neither this nor the `from` send option is set. |
-| `transport` | the log transport, outside production | Where messages go. The provider refuses to boot in production when this is unset. |
+| `transport` | the log transport, outside production | Where messages go. In production the provider refuses to boot when this is unset or is the log transport. |
 | `previewPath` | `/_kitr/mail` | Declared in `MailConfig`, but `mailPreview()` does not read it today. Pass `{ path }` to `mailPreview()` to move the preview pages. |
 
 | Variable | Used for |
@@ -69,9 +73,6 @@ With `RESEND_API_KEY` set, messages go to Resend. Without it they go to the log 
 | `MAIL_FROM` | The default sender, such as `Acme <orders@acme.com>`. |
 
 Set `MAIL_FROM` to an address on a domain you have verified with your provider. Resend and most SMTP services reject a sender on an unverified domain.
-
-> **Warning**
-> The generated config falls back to the log transport whenever `RESEND_API_KEY` is empty, in production too. The provider only refuses to boot when `transport` is unset, so a production server with a missing key boots, sends nothing, and prints every email (password reset links included) to its logs. Make production fail instead, as shown in [Send in production](#send-in-production).
 
 ## Send your first email
 
@@ -594,7 +595,7 @@ export default defineConfig({
 | --- | --- | --- |
 | `print` | `true` | `false` keeps messages without printing them. |
 
-No env variables. The kept messages are never cleared, so the list grows for as long as the process runs. Do not use it as a production transport.
+No env variables. The kept messages are never cleared, so the list grows for as long as the process runs. The provider refuses to boot in production with the log transport, set or defaulted, so emails never land in production logs.
 
 ### Resend
 
@@ -665,18 +666,18 @@ The connection is created on the first `send()`, not at boot, so a wrong passwor
 
 ### Pick a transport per environment
 
-Choose in `config/mail.ts` with plain conditions. This one sends through SMTP on staging, Resend in production and logs elsewhere:
+Choose in `config/mail.ts` with plain conditions. This one sends through Resend when its key is set, SMTP when a host is set, and leaves `transport` unset otherwise, so development logs and production refuses to boot:
 
 ```ts
 // config/mail.ts
-import { createLogTransport, createResendTransport, createSmtpTransport, defineConfig } from 'kitr/mail'
+import { createResendTransport, createSmtpTransport, defineConfig } from 'kitr/mail'
 import nodemailer from 'nodemailer'
 
 const transport = process.env.RESEND_API_KEY
   ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })
   : process.env.SMTP_HOST
     ? createSmtpTransport(nodemailer, { host: process.env.SMTP_HOST, port: 2525 })
-    : createLogTransport()
+    : undefined
 
 export default defineConfig({ from: 'Acme <orders@acme.com>', transport })
 ```
@@ -685,25 +686,14 @@ Point `SMTP_HOST` at [Mailpit](https://mailpit.axllent.org/) or a similar local 
 
 ## Send in production
 
-The provider throws `[kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).` at boot when the app runs in production and `transport` is unset. The generated config always sets one, so change it to leave `transport` unset in production when the key is missing:
+The provider checks `transport` at boot when the app runs in production. With `transport` unset it throws `[kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).`; with the log transport it throws `[kitr/mail] The log transport prints every email (reset links included) and is not allowed in production; set Resend, SMTP or your own transport in config/mail.ts.` The generated config leaves `transport` unset when `RESEND_API_KEY` is empty, so a deploy with a missing key fails at boot:
 
-```ts
-// config/mail.ts
-import { createLogTransport, createResendTransport, defineConfig } from 'kitr/mail'
-
-const production = process.env.NODE_ENV === 'production'
-
-export default defineConfig({
-  from: process.env.MAIL_FROM ?? 'Acme <orders@acme.com>',
-  transport: process.env.RESEND_API_KEY
-    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })
-    : production
-      ? undefined
-      : createLogTransport(),
-})
+```sh
+RESEND_API_KEY= NODE_ENV=production kitr start
+# fails at boot: [kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).
 ```
 
-Now a deploy with a missing key fails at boot instead of quietly logging emails. Before you go live:
+Set the key on the host and the same deploy boots and sends. Before you go live:
 
 - Verify the sending domain with your provider and set SPF, DKIM and DMARC records for it.
 - Set `MAIL_FROM` to an address on that domain.
@@ -746,6 +736,7 @@ Every error is a plain `Error` whose message starts with `[kitr/mail]`. Nothing 
 | `Line break in header "<name>".` | A header value contains CR or LF. | Strip line breaks from the value. |
 | `Resend <status>: <body>` | Resend answered with an error status. | Read the body: usually an unverified domain or a bad key. |
 | `Set a transport in config/mail.ts (Resend, SMTP or your own).` | Boot in production with `transport` unset. | Set a transport, or the env variable that selects one. |
+| `The log transport prints every email (reset links included) and is not allowed in production; ...` | Boot in production with the log transport. | Use Resend, SMTP or your own transport in production. |
 
 SMTP errors come from nodemailer unchanged.
 

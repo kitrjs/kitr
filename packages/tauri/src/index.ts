@@ -1,17 +1,25 @@
 import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
 
+/**
+ * Options of `tauri()` in `kitrrc.ts`. They are written into the scaffolded `tauri.conf.json` by
+ * `kitr add`, which the Tauri CLI reads; edit that file to change them later.
+ */
 export interface TauriOptions {
-  /** Dev server port the window loads from with `kitr dev <name>`. Default 3200. */
+  /** Dev server port the window loads from with `kitr dev <name>`, also written as `build.devUrl`. Default 3200. */
   port: number
   /** Window title. Default the package name. */
   title?: string
+  /** Initial window width in pixels. Default 1200. */
   width: number
+  /** Initial window height in pixels. Default 800. */
   height: number
+  /** Smallest width the user can resize the window to. */
   minWidth?: number
+  /** Smallest height the user can resize the window to. */
   minHeight?: number
   /** Reverse-DNS bundle id. Default `com.example.<app>`. */
   appId?: string
-  /** Open devtools in dev. Default true. */
+  /** Accepted for parity with `desktop()`; the Tauri scaffold does not use it. Default true. */
   devtools: boolean
 }
 

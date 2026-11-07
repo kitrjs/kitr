@@ -10,7 +10,7 @@ Your customers want the app on their phone, with an icon on the home screen, the
 
 It is built on [Capacitor](https://capacitorjs.com/docs): your client build runs in the system WebView, and Capacitor plugins reach native APIs. kitr adds the platform on top: `kitr dev` runs the app on a simulator with live reload, `kitr build` builds the bundle and syncs it into the Xcode and Android Studio projects, and `kitr/mobile/provider` registers the native drivers.
 
-The provider and `kitr/mobile/client` run in the app, in the WebView and in a plain browser alike. The platform hooks (`kitr dev`, `kitr build`) run in the CLI on your machine. For an installable web app with no store listing, the PWA option of the [Web](/packages/web) platform is enough. For desktop windows, use [Desktop](/packages/desktop).
+The provider and `kitr/mobile/client` run in the app, in the WebView and in a plain browser alike. The platform hooks (`kitr dev`, `kitr build`) run in the CLI on your machine. For an installable web app with no store listing, the PWA option of the [Web](/packages/web) platform is enough. For desktop windows, use [Desktop](/packages/desktop) (Electron) or its alternative, [Tauri](/packages/tauri).
 
 The examples on this page ship the Acme orders app to phones: Ada's field team checks orders and invoices on iPhone and Android, with the same code the browser runs at `app.acme.com`.
 
@@ -22,18 +22,17 @@ Add a mobile platform named `phone`:
 kitr add mobile phone
 ```
 
-`mobile` is the platform type and `phone` is the name you address it by (`kitr dev phone`). `kitr add mobile` with no name stops and prints `kitr add mobile <name> [--option value]   e.g. kitr add mobile phone`.
+`mobile` is the platform type and `phone` is the name you address it by (`kitr dev phone`). `kitr add mobile` with no name uses the usual name for the type and prints `No name given: calling the mobile platform "phone".`
 
-What `kitr add mobile phone` does:
+What `kitr add mobile phone` does, in order:
 
-- Installs `@kitr/mobile`, `@capacitor/core`, `@capacitor/app` and `@capacitor/preferences`, `@capacitor/cli` as a dev dependency, and one package per target: `@capacitor/ios` and `@capacitor/android`.
-- Adds `@kitr/mobile` to `packages` in `kitrrc.ts`.
+- Adds `@kitr/mobile` to `packages` in `kitrrc.ts` and installs it. The mobile package requires [Router](/packages/router) (and [React](/packages/react) before it), [Platform](/packages/platform), which writes `config/platform.ts`, and [Storage](/packages/storage), which writes `config/storage.ts` and `app/storage.ts`, so `kitr add` runs their setup first when they are missing.
+- Installs `@capacitor/core`, `@capacitor/app` and `@capacitor/preferences`, `@capacitor/cli` as a dev dependency, and one package per target: `@capacitor/ios` and `@capacitor/android`.
 - Adds `() => import('@kitr/mobile/provider')` to `providers` in `kitrrc.ts`.
 - Writes `phone: mobile({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { mobile } from 'kitr/mobile'`.
-- Runs the recipes the platform needs when they are missing: [Router](/packages/router) (and [React](/packages/react) before it), [Platform](/packages/platform), which writes `config/platform.ts`, and [Storage](/packages/storage), which writes `config/storage.ts` and `app/storage.ts`.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
 - Writes `platforms/phone/capacitor.config.ts` (shown under Configure) and `platforms/phone/.gitignore`, which ignores `ios/App/Pods`, `ios/App/build`, `android/build`, `android/app/build` and `android/.gradle`.
-- Adds a `kitr: platform phone` section to `AGENTS.md`: how to run and build, never to sniff user agents, and to wrap other Capacitor plugins in `nativeOnly()`.
+- Adds a `## kitr: platform phone` section to `AGENTS.md`: how to run and build, never to sniff user agents, and to wrap other Capacitor plugins in `nativeOnly()`.
 
 It does not create the `ios/` and `android/` projects. The first `kitr build phone` or `kitr dev phone` runs `cap add` for each target.
 
@@ -133,7 +132,7 @@ export default config
 | `KITR_PHONE_<OPTION>` | Overrides one option for one run of the CLI: `KITR_PHONE_PORT=3300 kitr dev phone`, `KITR_PHONE_TARGETS=android kitr build phone`. |
 | `KITR_PLATFORM` | Set to `phone` by `kitr dev` and `kitr build`, so the Vite plugin builds this platform into `dist/phone`. |
 
-The other platform types each have their own guide and options table: [Web](/packages/web), [Server](/packages/server) and [Desktop](/packages/desktop). [Platforms](/docs/platforms) lists them side by side.
+The other platform types each have their own guide and options table: [Web](/packages/web), [Server](/packages/server), [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri). [Platforms](/docs/platforms) lists them side by side.
 
 ## Run the app on a phone
 
@@ -453,8 +452,7 @@ export const lastOrderId = defineStorage('lastOrderId', { default: '' })
 
 Nothing changes in the code that reads or writes the item. The driver loads every key at boot, so reads stay synchronous, and writes go to Preferences in the background. `session` items stay in memory.
 
-> **Warning**
-> The storage provider picks its driver while it registers, so `@kitr/mobile/provider` must come before `@kitr/storage/provider` in the `providers` list of `kitrrc.ts`. With the order reversed, items stay in WebView `localStorage`, which iOS may clear, and the data is lost. `kitr add mobile` keeps the right order only when it adds storage itself; check the list when storage was already installed, and in projects made from the `mobile` kit.
+The storage provider looks for a native driver again when the app boots, after every provider has registered, so the order of `@kitr/mobile/provider` and `@kitr/storage/provider` in `kitrrc.ts` does not matter.
 
 ## Open links in the system browser
 
@@ -501,7 +499,7 @@ export function AboutVersion() {
 
 | Command | What it does |
 | --- | --- |
-| `kitr add mobile <name>` | Adds a mobile platform: installs Capacitor, writes `platforms.<name>`, runs the router, platform and storage recipes, writes `platforms/<name>/capacitor.config.ts`. |
+| `kitr add mobile [name]` | Adds a mobile platform (named `phone` when you leave the name out): installs Capacitor, writes `platforms.<name>`, runs the router, platform and storage recipes, writes `platforms/<name>/capacitor.config.ts`. |
 | `kitr dev <name>` | Creates the native project if needed, starts Vite on the LAN and runs `cap run <target> --no-sync` against it. Flags: `--target`, `--device`, `--host`, `--port`. |
 | `kitr build <name>` | Runs `vite build`, `cap add` for missing targets and `cap sync`. Flags: `--target`, `--open`. |
 | `kitr config <name> [option] [value]` | Reads or sets an option in `kitrrc.ts`. `--unset` removes one. |
