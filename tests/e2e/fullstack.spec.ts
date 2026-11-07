@@ -70,7 +70,10 @@ test.describe('api', () => {
 })
 
 test.describe('websockets', () => {
-  test('a browser subscription receives events emitted from an API route', async ({ page, baseURL }) => {
+  test('a browser subscription receives events emitted from an API route', async ({
+    page,
+    baseURL,
+  }) => {
     await page.goto('/e2e/socket')
     await expect(page.getByTestId('status')).toHaveText('open')
     // The subscription is confirmed asynchronously; retry the emit until it lands.

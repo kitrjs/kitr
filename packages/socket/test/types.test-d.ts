@@ -50,3 +50,17 @@ describe('channel types', () => {
     handle.key({ slug: 'x' })
   })
 })
+
+describe('channels without a payload schema', () => {
+  it('accept an annotated effects payload', () => {
+    interface Message {
+      text: string
+    }
+    defineChannel<{ room: string }>({
+      name: 'chat',
+      events: {
+        message: { effects: (_m: Message, { room }) => ({ invalidate: [['chat', room]] }) },
+      },
+    })
+  })
+})

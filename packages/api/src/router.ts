@@ -53,7 +53,10 @@ type ValidatorsOf<H, V> = [V] extends [never]
     : undefined
   : V extends Validators
     ? V
-    : undefined
+    : // Resource routes pass `undefined`: the controller's `static validation` types them.
+      H extends readonly [infer C, infer M extends string]
+      ? ControllerValidators<C, M>
+      : undefined
 
 type RouteFor<Method extends HttpMethod, Path extends string, H, V> = RouteType<
   Method,

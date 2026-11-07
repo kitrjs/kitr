@@ -1,4 +1,4 @@
-import { createApp, KitrError } from '@kitr/core'
+import { createApp, defineProvider, KitrError } from '@kitr/core'
 import { QueryClient } from '@tanstack/react-query'
 import { act, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
@@ -88,6 +88,32 @@ describe('createKitrRouter', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     await mount('/boom', 'forbidden')
     expect(await screen.findByText("You don't have access to this page.")).toBeTruthy()
+  })
+
+  it('works when created before the app boots: queryClient resolves lazily and load boots', async () => {
+    const queryClient = new QueryClient()
+    const app = createApp({
+      providers: [
+        defineProvider({
+          name: 'query',
+          register: (a) => a.container.value('queryClient', queryClient),
+        }),
+      ],
+    })
+    const router = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    expect(app.status).toBe('created')
+    expect((router.options.context as any).queryClient).toBeUndefined()
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+      await router.load()
+    })
+    expect(app.status).toBe('booted')
+    expect((router.options.context as any).queryClient).toBe(queryClient)
+    expect(await screen.findByText('home with app with client')).toBeTruthy()
   })
 
   it('logs navigations to devtools', async () => {

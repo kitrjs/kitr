@@ -17,8 +17,11 @@ export type ServerMessage =
 export interface ChannelEvent<TData = unknown, TParams = unknown> {
   /** Optional schema for the payload (validated on receive). */
   schema?: StandardSchemaV1<unknown, TData>
-  /** What this event does to the query cache on the client. */
-  effects?: (data: TData, params: TParams) => CacheEffect | void
+  /**
+   * What this event does to the query cache on the client. Method syntax on purpose: a channel
+   * without a payload schema can still annotate `data` (`effects(message: Message) {...}`).
+   */
+  effects?(data: TData, params: TParams): CacheEffect | void
 }
 
 export interface ChannelDefinition<

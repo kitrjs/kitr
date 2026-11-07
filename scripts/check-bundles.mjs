@@ -146,7 +146,8 @@ for (const [dir, pkg] of manifests) {
     for (const [cond, file] of Object.entries(conds)) {
       if (typeof file !== 'string') continue
       if (file.includes('*')) continue
-      if (!existsSync(join(pkgDir, file))) fail(name, `exports["${sub}"].${cond} → ${file} is missing`)
+      if (!existsSync(join(pkgDir, file)))
+        fail(name, `exports["${sub}"].${cond} → ${file} is missing`)
     }
     if (conds.default && /\.m?js$/.test(conds.default) && existsSync(join(pkgDir, conds.default)))
       entries.push({ spec: `${name}${sub.slice(1)}`, file: join(pkgDir, conds.default) })
@@ -190,7 +191,10 @@ for (const [dir, pkg] of manifests) {
     for (const f of files) size += gzipSync(readFileSync(f)).length
     const budget = budgets[spec] ?? budgets[name] ?? defaultBudget
     if (size > budget)
-      fail(spec, `${(size / 1024).toFixed(1)} kB gzip over the ${(budget / 1024).toFixed(0)} kB budget`)
+      fail(
+        spec,
+        `${(size / 1024).toFixed(1)} kB gzip over the ${(budget / 1024).toFixed(0)} kB budget`,
+      )
   }
 }
 
@@ -224,7 +228,9 @@ try {
 
 const checked = [...manifests.values()].length
 if (failures.length) {
-  console.error(`Bundle checks failed (${failures.length}):\n${failures.map((f) => `  - ${f}`).join('\n')}`)
+  console.error(
+    `Bundle checks failed (${failures.length}):\n${failures.map((f) => `  - ${f}`).join('\n')}`,
+  )
   process.exit(1)
 }
 console.log(`Bundle checks passed for ${checked} packages.`)

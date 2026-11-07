@@ -1,3 +1,6 @@
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
 
 /**
@@ -8,8 +11,10 @@ import { defineConfig, devices } from '@playwright/test'
  *   dashboard-dev   the same app on the Vite dev server, where devtools load
  *   fullstack       TanStack Start build served by `kitr serve` (SSR, API, WebSockets)
  */
-const kitr = 'node ../../../../packages/kitr/bin/kitr.mjs'
-const vite = '../../../../node_modules/.bin/vite'
+const root = fileURLToPath(new URL('.', import.meta.url))
+const apps = join(tmpdir(), 'kitr-e2e-apps')
+const kitr = `node ${join(root, 'packages/kitr/bin/kitr.mjs')}`
+const vite = join(root, 'node_modules/.bin/vite')
 const ports = { dashboard: 4410, dashboardDev: 4411, fullstack: 4412 }
 
 export default defineConfig({
@@ -39,19 +44,19 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `node tests/e2e/prepare.mjs dashboard dashboard --build && cd tests/e2e/.apps/dashboard && ${vite} preview --host 127.0.0.1 --port ${ports.dashboard} --strictPort`,
+      command: `node tests/e2e/prepare.mjs dashboard dashboard --build && cd ${apps}/dashboard && ${vite} preview --host 127.0.0.1 --port ${ports.dashboard} --strictPort`,
       url: `http://127.0.0.1:${ports.dashboard}`,
       timeout: 240_000,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `node tests/e2e/prepare.mjs dashboard dashboard-dev && cd tests/e2e/.apps/dashboard-dev && ${vite} --host 127.0.0.1 --port ${ports.dashboardDev} --strictPort`,
+      command: `node tests/e2e/prepare.mjs dashboard dashboard-dev && cd ${apps}/dashboard-dev && ${vite} --host 127.0.0.1 --port ${ports.dashboardDev} --strictPort`,
       url: `http://127.0.0.1:${ports.dashboardDev}`,
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `node tests/e2e/prepare.mjs fullstack fullstack --build && cd tests/e2e/.apps/fullstack && ${kitr} serve --host 127.0.0.1 --port ${ports.fullstack}`,
+      command: `node tests/e2e/prepare.mjs fullstack fullstack --build && cd ${apps}/fullstack && ${kitr} serve --host 127.0.0.1 --port ${ports.fullstack}`,
       url: `http://127.0.0.1:${ports.fullstack}/api/health`,
       timeout: 240_000,
       reuseExistingServer: !process.env.CI,

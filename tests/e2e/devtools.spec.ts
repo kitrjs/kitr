@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('kitr:devtools'))
+  // Start from a clean overlay once per test; reloads within the test keep what was persisted.
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('e2e:cleared')) return
+    sessionStorage.setItem('e2e:cleared', '1')
+    localStorage.removeItem('kitr:devtools')
+  })
 })
 
 test('the overlay opens from the trigger and the shortcut, and lists panels', async ({ page }) => {

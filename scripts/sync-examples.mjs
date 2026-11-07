@@ -23,7 +23,16 @@ import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-export const examples = { backend: 'server', dashboard: 'app', fullstack: 'fullstack' }
+export const examples = {
+  backend: 'server',
+  dashboard: 'app',
+  fullstack: 'fullstack',
+  saas: 'saas',
+  site: 'site',
+  realtime: 'realtime',
+  desktop: 'desktop',
+  mobile: 'mobile',
+}
 /** Build output and generated files that are not part of the kit. */
 const ignored = new Set([
   'node_modules',

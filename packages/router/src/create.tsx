@@ -41,8 +41,17 @@ export function createKitrRouter<TRouteTree extends AnyRoute>(
   // time) while the app is a module singleton. Fork it so request-scoped services, like the
   // query cache, and the `router` binding below belong to this request only.
   const app = typeof window === 'undefined' ? rootApp.fork() : rootApp
-  const client =
-    queryClient ?? (app.container.has('queryClient') ? app.container.use('queryClient') : undefined)
+  // The router can be created before the app has booted (Start calls getRouter() first), when
+  // providers haven't registered `queryClient` yet. Resolve it when a loader first reads it.
+  const routerContext: Record<string, unknown> = { app, ...context }
+  if (!context || !('queryClient' in context))
+    Object.defineProperty(routerContext, 'queryClient', {
+      enumerable: true,
+      configurable: true,
+      get: () =>
+        queryClient ??
+        (app.container.has('queryClient') ? app.container.use('queryClient') : undefined),
+    })
   const router = createRouter({
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
@@ -52,11 +61,17 @@ export function createKitrRouter<TRouteTree extends AnyRoute>(
     defaultNotFoundComponent: DefaultNotFound,
     defaultStructuralSharing: true,
     ...rest,
-    context: { app, queryClient: client, ...context } as any,
+    context: routerContext as any,
     Wrap: ({ children }: { children: ReactNode }) => (
       <KitrProvider app={app}>{children}</KitrProvider>
     ),
   })
+  // Loaders read services from the container, so boot before the first load (idempotent).
+  const load = router.load.bind(router)
+  router.load = (async (...args: Parameters<typeof load>) => {
+    if (app.status === 'created' || app.status === 'registered') await app.boot()
+    return load(...args)
+  }) as typeof router.load
   // Devtools and services can reach the router without importing the route tree.
   app.container.value('router', router as unknown as AnyRouter)
   const hub = getDevtools(app)
