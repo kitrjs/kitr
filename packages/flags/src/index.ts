@@ -44,7 +44,10 @@ export interface FlagsConfig {
   definitions?: FlagDefinitions
   /** First provider with an answer wins. */
   providers?: FlagsProvider[]
-  /** Seconds a resolved snapshot stays fresh in the browser. Declared for a coming refresh; not read yet. */
+  /**
+   * Seconds a resolved snapshot stays fresh in the browser. After that the client resolves again,
+   * with the context of its last `resolve()`, so a flag turned off reaches open tabs. Default: never.
+   */
   ttl?: number
 }
 
@@ -112,7 +115,17 @@ export function createFlags<D extends FlagDefinitions>(
   // One server process answers many users at once: a per-request resolution must never become
   // the shared snapshot that `value()` reads, or one user's targeting would leak to another.
   const shared = options.keepSnapshot ?? !app?.isServer
+  // In the browser, a snapshot older than `ttl` seconds is resolved again for the same context.
+  const ttl = shared && app?.isClient && config.ttl && config.ttl > 0 ? config.ttl * 1000 : 0
+  let lastContext: FlagContext = {}
+  let refresh: ReturnType<typeof setTimeout> | undefined
+  const scheduleRefresh = () => {
+    if (!ttl) return
+    if (refresh) clearTimeout(refresh)
+    refresh = setTimeout(() => void flags.resolve(lastContext).catch(() => {}), ttl)
+  }
   const notify = () => {
+    scheduleRefresh()
     for (const l of listeners) l()
     getDevtools(app ?? ({ container: { has: () => false } } as any))?.log(
       'flags',
@@ -128,6 +141,7 @@ export function createFlags<D extends FlagDefinitions>(
     value: (key) => (key in values ? values[key] : defaults[key]) as never,
     isEnabled: (key) => flags.value(key) === true,
     async resolve(context = {}) {
+      if (shared) lastContext = context
       // A provider that is down (or throws) is skipped: the next one, then the default, answers.
       const ready = new Set<FlagsProvider>()
       for (const p of providers) {

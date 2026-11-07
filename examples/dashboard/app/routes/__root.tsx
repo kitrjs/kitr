@@ -1,8 +1,7 @@
 import type { KitrRouterContext } from 'kitr/router'
 import { HeadContent, Link, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
 import type { ReactNode } from 'react'
-import css0 from 'kitr/theme/styles.css?url'
-import '#app/styles/app.css'
+import css0 from '#app/styles/app.css?url'
 import { ThemeScript } from 'kitr/theme'
 
 export const Route = createRootRouteWithContext<KitrRouterContext>()({

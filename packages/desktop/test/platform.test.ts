@@ -34,6 +34,11 @@ describe('desktop()', () => {
     const main = f.files.get('platforms/app/main.ts')!
     expect(main).not.toMatch(/nodeIntegration:\s*true/)
     expect(main).not.toMatch(/contextIsolation:\s*false/)
+    // The preload limits the renderer to the channels ipc.ts declares.
+    expect(f.files.get('platforms/app/preload.ts')).toContain('allow: allowChannels(channels)')
+    expect(f.files.get('platforms/app/ipc.ts')).toContain(
+      'satisfies Record<keyof Ipc | keyof IpcPush, true>',
+    )
   })
 
   it('builds the client, main and preload, then packages unless --no-pack', async () => {

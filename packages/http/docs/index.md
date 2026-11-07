@@ -62,8 +62,10 @@ export default defineConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `baseUrl` | none | Prefix for every relative path. `http.get('orders')` with `baseUrl: 'https://api.acme.com/v1'` requests `https://api.acme.com/v1/orders`. |
-| `getToken` | none | Called before every request. Return a token (or a promise of one) to send it; return `null` or `undefined` to send none. |
-| `refresh` | none | Called once when a response is `401`. Return `true` when a new token is ready; the request then retries once with it. |
+| `getToken` | none | Called before every request with the container. Return a token (or a promise of one) to send it; return `null` or `undefined` to send none. |
+| `refresh` | none | Called once when a response is `401`, with the container. Return `true` when a new token is ready; the request then retries once with it. |
+
+In `config/http.ts`, `getToken` and `refresh` receive the container the client belongs to. On a server that is the request's own container, because the provider builds one `http` client per request, so `getToken: (container) => container.use('auth').getToken()` sends the token of the user being served and never another's. In the browser it is the app's container. `createHttpClient()` called directly takes the same options without the container.
 | `onUnauthorized` | none | Called with the `KitrError` whenever a request finally fails with `401`, for example to send the user to sign in. |
 | `authHeader` | `'Authorization'` | Header that carries the token. With the default the value is `Bearer <token>`; any other header gets the raw token. |
 | `retry` | `{ limit: 2, methods: ['get', 'put', 'head', 'delete', 'options', 'trace'] }` | ky's retry rule. `POST` and `PATCH` are never retried, so a write is never sent twice. |

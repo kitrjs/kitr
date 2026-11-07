@@ -26,7 +26,7 @@ What `kitr add` does:
 - Adds `() => import('@kitr/native/provider')` to `providers` in `kitrrc.ts`.
 - Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
 
-It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It needs no other kitr package: the web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
+It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It adds [platform](/packages/platform) first when the project lacks it. The web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
 
 ```sh
 kitr add native --dry-run

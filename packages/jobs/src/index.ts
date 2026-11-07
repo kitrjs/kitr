@@ -70,8 +70,14 @@ export interface JobsDriver {
   name: string
   /** Store a job; called by `dispatch()` and for each retry. */
   push(job: QueuedJob): Promise<void>
-  /** Jobs whose `runAt` has passed, removed from the queue. */
+  /**
+   * Jobs whose `runAt` has passed. A driver that implements `ack` should only reserve them here
+   * (hide them from other workers) and delete them in `ack`, so a worker that dies mid-job leaves
+   * the job to be picked up again. Without `ack`, pulled jobs are gone from the queue.
+   */
   pull(now: number, limit: number): Promise<QueuedJob[]>
+  /** Called once a pulled job is done with: it ran, it failed for good, or its retry was queued. */
+  ack?(job: QueuedJob): Promise<void>
   /** How many jobs are waiting. */
   size(): Promise<number>
   /** Remove every waiting job. */
@@ -137,6 +143,8 @@ export const defineConfig = createDefineConfig<JobsConfig>()
 /** The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between processes. */
 export function createMemoryJobsDriver(): JobsDriver {
   const queue: QueuedJob[] = []
+  // Pulled but not finished. In memory a crash loses them anyway; a durable driver puts them back.
+  const reserved = new Map<string, QueuedJob>()
   return {
     name: 'memory',
     async push(job) {
@@ -146,13 +154,18 @@ export function createMemoryJobsDriver(): JobsDriver {
     async pull(now, limit) {
       const due: QueuedJob[] = []
       while (queue.length && queue[0]!.runAt <= now && due.length < limit) due.push(queue.shift()!)
+      for (const job of due) reserved.set(job.id, job)
       return due
+    },
+    async ack(job) {
+      reserved.delete(job.id)
     },
     async size() {
       return queue.length
     },
     async clear() {
       queue.length = 0
+      reserved.clear()
     },
   }
 }
@@ -201,17 +214,17 @@ export function cronMatches(expression: string, date: Date): boolean {
   if (fields.length !== 5) throw new Error(`[kitr/jobs] Bad cron "${expression}" (5 fields)`)
   const [mi, h, d, mo, w] = fields as [string, string, string, string, string]
   // Weekday 7 is Sunday too, as in every cron.
+  // Parse every field before matching any, so a bad one throws whatever the date is.
+  const minute = cronField(mi, 0, 59, expression)
+  const hour = cronField(h, 0, 23, expression)
+  const dayOfMonth = cronField(d, 1, 31, expression)
+  const month = cronField(mo, 1, 12, expression)
   const weekday = cronField(w, 0, 7, expression)
-  const dayOk = cronField(d, 1, 31, expression)(date.getDate())
+  const dayOk = dayOfMonth(date.getDate())
   const weekdayOk = weekday(date.getDay()) || (date.getDay() === 0 && weekday(7))
   // Standard cron: when both day-of-month and weekday are restricted, either may match.
   const day = d !== '*' && w !== '*' ? dayOk || weekdayOk : dayOk && weekdayOk
-  return (
-    cronField(mi, 0, 59, expression)(date.getMinutes()) &&
-    cronField(h, 0, 23, expression)(date.getHours()) &&
-    day &&
-    cronField(mo, 1, 12, expression)(date.getMonth() + 1)
-  )
+  return minute(date.getMinutes()) && hour(date.getHours()) && day && month(date.getMonth() + 1)
 }
 
 /** Create the jobs service without the provider, for scripts and tests. Takes the same options as `config/jobs.ts`. */
@@ -227,7 +240,14 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
   const lastRun = new Map<string, number>()
   const log = (level: 'info' | 'warn' | 'error', msg: string, data?: unknown) => {
     const logger: any = app.container.has('logger') ? app.container.use('logger') : undefined
-    logger?.[level]?.(msg, data)
+    // An Error's message and stack are not enumerable: passed as-is, a JSON log shows `{}`.
+    const fields =
+      data instanceof Error
+        ? { error: { name: data.name, message: data.message, stack: data.stack } }
+        : data === undefined || (typeof data === 'object' && data !== null)
+          ? data
+          : { data }
+    logger?.[level]?.(msg, fields)
   }
 
   const validate = <P>(job: Job<P>, payload: unknown): P => {
@@ -264,6 +284,14 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
   }
 
   async function execute(queued: QueuedJob) {
+    try {
+      await handle(queued)
+    } finally {
+      await driver.ack?.(queued)
+    }
+  }
+
+  async function handle(queued: QueuedJob) {
     const job = registry.get(queued.name)
     if (!job) {
       log('warn', `[jobs] unknown job "${queued.name}" dropped`)
@@ -284,7 +312,11 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
       const retries = job.retries ?? 3
       if (queued.attempt <= retries) {
         const wait = (job.backoff ?? 1000) * 2 ** (queued.attempt - 1)
-        log('warn', `[jobs] ${job.name} failed (attempt ${queued.attempt}), retry in ${wait}ms`)
+        log(
+          'warn',
+          `[jobs] ${job.name} failed (attempt ${queued.attempt}), retry in ${wait}ms`,
+          error,
+        )
         await driver.push({ ...queued, attempt: queued.attempt + 1, runAt: Date.now() + wait })
       } else {
         log('error', `[jobs] ${job.name} failed after ${queued.attempt} attempts`, error)
@@ -337,6 +369,8 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
     registry.set(job.name, job)
     if (job.schedule && typeof job.schedule === 'object')
       intervals.set(job.name, parseInterval(job.schedule.every))
+    // A typo in config/jobs.ts fails the boot, not the first tick in production.
+    else if (typeof job.schedule === 'string') cronMatches(job.schedule, new Date())
   }
 
   const jobs: Jobs = {

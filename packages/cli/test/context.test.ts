@@ -263,6 +263,39 @@ describe('doctor', () => {
       expect(f.fix, f.message).toBeTruthy()
   })
 
+  // Regression: `entry` and `preset` in config/tailwind.ts were read by nothing.
+  it('checks config/tailwind.ts against the stylesheet it names', () => {
+    const base = {
+      'package.json': JSON.stringify({ dependencies: { kitr: '1' } }),
+      'kitrrc.ts': rc,
+    }
+    const tailwind = (findings: ReturnType<typeof runChecks>) =>
+      findings.filter((f) => /tailwind|stylesheet|preset/i.test(f.message)).map((f) => f.level)
+    const missing = project({
+      ...base,
+      'config/tailwind.ts': "export default defineConfig({ entry: 'app/styles/main.css' })",
+    })
+    expect(tailwind(runChecks(createContext({ root: missing })))).toEqual(['error'])
+    const noPreset = project({
+      ...base,
+      'config/tailwind.ts': 'export default defineConfig({ preset: true })',
+      'app/styles/app.css': "@import 'tailwindcss';\n",
+    })
+    expect(tailwind(runChecks(createContext({ root: noPreset })))).toEqual(['warn'])
+    const presetOff = project({
+      ...base,
+      'config/tailwind.ts': 'export default defineConfig({ preset: false })',
+      'app/styles/app.css': "@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n",
+    })
+    expect(tailwind(runChecks(createContext({ root: presetOff })))).toEqual(['warn'])
+    const good = project({
+      ...base,
+      'config/tailwind.ts': "export default defineConfig({ entry: 'app/styles/app.css' })",
+      'app/styles/app.css': "@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n",
+    })
+    expect(tailwind(runChecks(createContext({ root: good })))).toEqual([])
+  })
+
   it('reports no errors for the generated examples', () => {
     for (const example of ['backend', 'dashboard', 'fullstack']) {
       const findings = runChecks(
@@ -270,6 +303,10 @@ describe('doctor', () => {
       )
       expect(
         findings.filter((f) => f.level === 'error'),
+        example,
+      ).toEqual([])
+      expect(
+        findings.filter((f) => /stylesheet|preset|Tailwind/.test(f.message)),
         example,
       ).toEqual([])
     }

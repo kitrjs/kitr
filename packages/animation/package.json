@@ -11,6 +11,9 @@
     "builtOn": [
       "motion"
     ],
+    "requires": [
+      "react"
+    ],
     "client": true,
     "docs": "docs",
     "setup": "./kitr"

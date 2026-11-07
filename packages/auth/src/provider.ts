@@ -6,7 +6,7 @@ import { anonymousSession } from './session'
 export interface AuthConfig<TUser = unknown, TCredentials = unknown> {
   /** Where sessions come from: `tokenAdapter`, `betterAuthAdapter` or `customAdapter`. */
   adapter: AuthAdapter<TUser, TCredentials>
-  /** Your sign-in page. Documentation only: `requireAuth()` takes its own `to` (default `/sign-in`). */
+  /** Your sign-in page, where `requireAuth()` sends anonymous visitors unless given its own `to`. Default `/sign-in`. */
   signInPath?: string
   /** Load the session during boot (default true). Set false to defer to the first guarded route. */
   eager?: boolean

@@ -25,8 +25,8 @@ What `kitr add` does:
 - Adds `'@kitr/realtime'` to `packages` in `kitrrc.ts`. Realtime registers no provider.
 - Writes `config/realtime.ts` (shown under Configure).
 - Writes `app/channels/example.ts`, a sample channel named `example` with one `message` event.
-- Writes `server/realtime.ts`, which creates the WebSocket server with `exampleChannel`.
-- Adds `realtime.attach(server, '<path>')` to `server/main.ts` when that file exists, with the path from `config/realtime.ts`.
+- Writes `server/realtime.ts`, which creates the server for `config/realtime.ts` (WebSocket by default) with `exampleChannel`.
+- Adds `realtime.attach(server)` to `server/main.ts` when that file exists; the route goes at `path` from `config/realtime.ts`.
 - In a React app, writes `app/realtime.ts`, which opens one client connection per tab on first use.
 - Regenerates `config/index.ts`, the config list the standalone server imports.
 - Adds a `## kitr: realtime` section to `AGENTS.md` that says where channels live, how the server emits and how components subscribe, and how to switch transports.
@@ -56,14 +56,14 @@ export default defineConfig({
 
 In a project without React, the path is `'/ws'` instead of `'/api/ws'`.
 
-The client reads this file through `createRealtimeClient(config)`. The server does not read it: `server/realtime.ts` decides which server to create, and `server/main.ts` passes the path to `attach`. Keep the two in step when you change either.
+Both ends read this file. The client passes it to `createRealtimeClient(config)`; `server/realtime.ts` spreads it into `createRealtimeServer({ ...realtimeConfig, channels })`, which picks the WebSocket or SSE server from `transport`, and `attach(server)` listens at `path`. Changing `transport` or `path` here changes both. Socket.IO is the exception: it needs a Socket.IO server, so it is set up by hand (see [Socket.IO](#socketio)).
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `transport` | `'websocket'` | `'websocket'` (crossws and partysocket), `'socket.io'` (rooms, adapters) or `'sse'` (one-way stream over HTTP, control messages over POST). |
 | `path` | `'/ws'`, or `'/events'` for `sse` | Where the server listens. The client connects to the same origin at this path. |
 | `url` | same origin at `path` | A full URL for the client, such as `wss://realtime.acme.com/ws`, when the realtime server is on another host. |
-| `heartbeat` | `25000` | Declared for a client ping interval in milliseconds. The built-in clients do not read it yet. |
+| `heartbeat` | `25000` | WebSocket only: milliseconds between client pings. A ping still unanswered when the next one is due means the connection is dead, and the client reconnects. `0` turns pings off. |
 
 Realtime adds no environment variables.
 
@@ -563,7 +563,7 @@ export const server = createServer({
 })
 mountRoutes(server, routes)
 await server.boot()
-server.app.container.use('realtime').attach(server, '/ws')
+server.app.container.use('realtime').attach(server)
 ```
 
 ```ts
@@ -579,17 +579,17 @@ export default class ProjectsController {
 }
 ```
 
-The provider only binds the server; it does not register the route, and its `path` option is not used. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener. For SSE, `sseProvider` from `kitr/realtime/sse/server` does the same.
+The provider binds the server for the `transport` and `path` in `config/realtime.ts`; options passed to `realtimeProvider()` win over the file. It does not register the route, because a provider has no server: `attach(server)` does, at `path`. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener. `sseProvider` from `kitr/realtime/sse/server` always binds an SSE server.
 
 ## Transports
 
-All three transports implement one client interface and share the wire protocol, so channels, `effects`, `useChannel` and `emit` are identical. What changes is the server object in `server/realtime.ts`, its `attach` call, and the client the app creates.
+All three transports implement one client interface and share the wire protocol, so channels, `effects`, `useChannel` and `emit` are identical. For `websocket` and `sse`, `transport` in `config/realtime.ts` is the only thing to change: `createRealtimeClient` and `createRealtimeServer` both follow it. Socket.IO needs its own client and server, set up below.
 
 | `transport` | Client | Server | Use it when |
 | --- | --- | --- | --- |
-| `websocket` | `createSocketClient` (partysocket) | `createRealtimeServer` (crossws via h3) | The default. Two-way, low latency, runs on Node, Bun, Deno and Cloudflare. |
+| `websocket` | `createSocketClient` (partysocket) | `createRealtimeServer`, which uses `createSocketServer` (crossws via h3) | The default. Two-way, low latency, runs on Node, Bun, Deno and Cloudflare. |
 | `socket.io` | `createSocketIoClient` | `attachSocketIo` | You need several server instances (Redis adapter) or already run Socket.IO. |
-| `sse` | `createSseTransport` (EventSource plus POST) | `createSseServer` | Your host or proxy does not allow WebSocket upgrades. |
+| `sse` | `createSseTransport` (EventSource plus POST) | `createRealtimeServer`, which uses `createSseServer` | Your host or proxy does not allow WebSocket upgrades. |
 
 ### WebSocket
 
@@ -599,8 +599,9 @@ The default. `kitr add realtime` sets it up: `crossws` on the server, `partysock
 // server/realtime.ts
 import { createRealtimeServer } from 'kitr/realtime/server'
 import { projectChannel } from '#app/channels/projects'
+import realtimeConfig from '../config/realtime'
 
-export const realtime = createRealtimeServer({ channels: [projectChannel] })
+export const realtime = createRealtimeServer({ ...realtimeConfig, channels: [projectChannel] })
 ```
 
 ```ts
@@ -614,11 +615,11 @@ import { routes } from './routes'
 
 export const server = createServer({ providers: rc.providers, config })
 mountRoutes(server, routes)
-// WebSocket upgrades on /api/ws, next to the routes.
-realtime.attach(server, '/api/ws')
+// Realtime on /api/ws (config/realtime.ts), next to the routes.
+realtime.attach(server)
 ```
 
-`attach(server, path)` registers the upgrade route on the server's h3 app and turns on `websocket` for `server.listen()`. Without `crossws` installed, `listen()` throws `[kitr/server] websocket: true needs the crossws package. Run kitr add socket.` See the [crossws docs](https://crossws.unjs.io) for runtime adapters.
+`attach(server, path?)` registers the upgrade route on the server's h3 app and turns on `websocket` for `server.listen()`. Without `crossws` installed, `listen()` throws `[kitr/server] websocket: true needs the crossws package. Run kitr add socket.` See the [crossws docs](https://crossws.unjs.io) for runtime adapters.
 
 ### Socket.IO
 
@@ -700,7 +701,7 @@ export function realtime(): SocketTransport {
 
 ### Server-Sent Events
 
-SSE needs no extra packages. The server streams events over one long `GET`; the client subscribes and sends with `POST`s to the same path.
+SSE needs no extra packages. The server streams events over one long `GET`; the client subscribes and sends with `POST`s to the same path. Set the transport in config, and the `server/realtime.ts` and `app/realtime.ts` that `kitr add` wrote switch with it:
 
 ```ts
 // config/realtime.ts
@@ -714,30 +715,18 @@ export default defineConfig({
 
 ```ts
 // server/realtime.ts
-import { createSseServer } from 'kitr/realtime/sse/server'
+import { createRealtimeServer } from 'kitr/realtime/server'
 import { projectChannel } from '#app/channels/projects'
+import realtimeConfig from '../config/realtime'
 
-export const realtime = createSseServer({
+export const realtime = createRealtimeServer({
+  ...realtimeConfig,
   channels: [projectChannel],
   keepAlive: 15_000,
 })
 ```
 
-```ts
-// server/main.ts
-import { mountRoutes } from 'kitr/api'
-import { createServer } from 'kitr/server'
-import { config } from '../config'
-import rc from '../kitrrc'
-import { realtime } from './realtime'
-import { routes } from './routes'
-
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-realtime.attach(server, '/api/events')
-```
-
-The `app/realtime.ts` that `kitr add` wrote already works: `createRealtimeClient` returns `createSseTransport({ url: config.url ?? config.path })` for `sse`. To pass headers on the control `POST`s, create the transport yourself:
+`realtime.attach(server)` in `server/main.ts` now registers the stream's `GET` and `POST` at `/api/events`, and `createRealtimeClient` returns `createSseTransport({ url: config.url ?? config.path })`. `createSseServer` from `kitr/realtime/sse/server` is the same server without the config. To pass headers on the control `POST`s, create the transport yourself:
 
 ```ts
 // app/realtime.ts
@@ -762,7 +751,7 @@ export function realtime(): SocketTransport {
 | `headers` (client) | none | Headers for the control `POST`s, or a function returning them. |
 | `onError` (client) | none | Errors without a subscription, and failed `POST`s as `NETWORK`. |
 
-`EventSource` cannot set headers, so the stream authenticates by cookie (it is opened with credentials) or by a `?token=` in the URL. With SSE, subscribe with params already in the form the `params` schema outputs: the SSE server does not send normalised params back, so a subscription with `' prj_1 '` receives nothing. See [MDN on Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
+`EventSource` cannot set headers, so the stream authenticates by cookie (it is opened with credentials) or by a `?token=` in the URL. As with WebSocket, the server sends back the params the `params` schema output, so a subscription with `' prj_1 '` receives events emitted for `'prj_1'`. See [MDN on Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
 
 ## Run more than one server instance
 

@@ -1,9 +1,16 @@
-import { createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
+import { type Container, createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
 import type { KyInstance } from 'ky'
 import { createHttpClient, type HttpClientOptions } from './client'
 
-/** The shape of `config/http.ts`: the same options `createHttpClient` takes. */
-export type HttpConfig = HttpClientOptions
+/**
+ * The shape of `config/http.ts`: the options `createHttpClient` takes, except that `getToken` and
+ * `refresh` receive the container of the request (or the app, in the browser), so a token read
+ * from a service belongs to the user being served: `getToken: (c) => c.use('auth').getToken()`.
+ */
+export interface HttpConfig extends Omit<HttpClientOptions, 'getToken' | 'refresh'> {
+  getToken?: (container: Container) => ReturnType<NonNullable<HttpClientOptions['getToken']>>
+  refresh?: (container: Container) => Promise<boolean>
+}
 
 declare module '@kitr/core' {
   interface ConfigRegistry {
@@ -21,8 +28,15 @@ export const defineConfig = createDefineConfig<HttpConfig>()
 export const httpProvider = defineProvider({
   name: 'http',
   register(app) {
-    app.container.singleton('http', () => {
-      const config = app.config.get('http', {})
+    // Scoped: on the server every request builds its own client, so one user's token never
+    // reaches another's request. In the browser there is one container, so one client.
+    app.container.scoped('http', (container) => {
+      const { getToken, refresh, ...rest } = app.config.get('http', {})
+      const config: HttpClientOptions = {
+        ...rest,
+        getToken: getToken && (() => getToken(container)),
+        refresh: refresh && (() => refresh(container)),
+      }
       const hub = getDevtools(app)
       if (!hub) return createHttpClient(config)
       // Development: every request shows up in the devtools Log panel under "http".

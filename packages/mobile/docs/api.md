@@ -10,6 +10,24 @@ Every export of `kitr/mobile`, `kitr/mobile/client`, `kitr/mobile/provider`, rea
 
 ## kitr/mobile
 
+### addScheme
+
+```ts
+function addScheme(target: MobileTarget, source: string, scheme: string): string;
+```
+
+Add `scheme` to a native project's Info.plist (CFBundleURLTypes) or Android manifest (an
+intent filter on the launcher activity). Returns the source unchanged when it is already there
+or the file has no place for it.
+
+### declaresScheme
+
+```ts
+function declaresScheme(target: MobileTarget, source: string, scheme: string): boolean;
+```
+
+Whether a native project's Info.plist or manifest already declares `scheme`.
+
 ### mobile
 
 ```ts
@@ -25,6 +43,14 @@ kitr dev phone --target ios      # live reload on a simulator or device
 kitr build phone                 # builds the web bundle and syncs it into both projects
 ```
 
+### schemeFiles
+
+```ts
+const schemeFiles: Record<MobileTarget, string>;
+```
+
+Where each native project declares its URL schemes.
+
 ### MobileOptions
 
 ```ts
@@ -35,7 +61,10 @@ interface MobileOptions {
   appId?: string;
   /** Name shown on the home screen. Default the package name. */
   appName?: string;
-  /** Custom URL scheme for deep links (`acme://`). Recorded in kitrrc.ts; register it in the native projects yourself. */
+  /**
+   * Custom URL scheme for deep links (`acme` opens `acme://...`). `kitr build` and `kitr dev`
+   * register it in the iOS Info.plist and the Android manifest; `kitr doctor` checks it is there.
+   */
   scheme?: string;
   /** Dev server port the device loads from with `kitr dev <name>`. Default 3100. */
   port: number;

@@ -60,6 +60,30 @@ export const list = {
   },
 }
 
+interface BootableApp {
+  boot(): Promise<unknown>
+  container: { use(name: string): unknown }
+}
+
+/**
+ * The app behind a server entry. The generated server/main.ts exports `server`, whose `app` is
+ * the one to boot; an entry may also export `app` itself.
+ */
+export async function loadApp(root: string, entry: string): Promise<BootableApp> {
+  const file = resolve(root, entry)
+  if (!existsSync(file)) throw new Error(`${entry} not found`)
+  const { createJiti } = await import('jiti')
+  const jiti = createJiti(file, { interopDefault: false, alias: aliases(root) })
+  const mod = (await jiti.import(file)) as {
+    app?: BootableApp
+    server?: { app?: BootableApp }
+    default?: { app?: BootableApp }
+  }
+  const app = mod.app ?? mod.server?.app ?? mod.default?.app
+  if (!app) throw new Error(`${entry} exports neither \`server\` nor \`app\``)
+  return app
+}
+
 export const work = {
   meta: {
     name: 'jobs:work',
@@ -69,20 +93,14 @@ export const work = {
   args: {
     entry: {
       type: 'string',
-      description: 'The server entry that exports `app`. Default server/main.ts',
+      description: 'The server entry that exports `server` (or `app`). Default server/main.ts',
       default: 'server/main.ts',
     },
   },
   async run({ args }: { args: { entry: string } }) {
-    const root = process.cwd()
-    const file = resolve(root, args.entry)
-    if (!existsSync(file)) throw new Error(`${args.entry} not found`)
-    const { createJiti } = await import('jiti')
-    const jiti = createJiti(file, { interopDefault: true, alias: aliases(root) })
-    const mod = (await jiti.import(file)) as { app?: { boot(): Promise<unknown>; container: any } }
-    if (!mod.app) throw new Error(`${args.entry} does not export \`app\``)
-    await mod.app.boot()
-    const jobs = mod.app.container.use('jobs') as { start(): void; stop(): Promise<void> }
+    const app = await loadApp(process.cwd(), args.entry)
+    await app.boot()
+    const jobs = app.container.use('jobs') as { start(): void; stop(): Promise<void> }
     jobs.start()
     console.log('jobs worker running (ctrl-c to stop)')
     await new Promise<void>((done) => {

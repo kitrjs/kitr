@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { aborted, fakePlatformContext } from '../../../tests/setup/platform-context'
-import { mobile } from '../src'
+import { addScheme, declaresScheme, mobile } from '../src'
 
 describe('mobile()', () => {
   it('defaults to both targets and validates them', () => {
@@ -121,5 +121,65 @@ describe('mobile()', () => {
     expect(findings.find((x) => x.level === 'info')?.message).toBe(
       'phone: the ios project is not created yet',
     )
+  })
+
+  // Regression: `scheme` was recorded in kitrrc.ts and nothing else, so acme:// links never
+  // opened the app.
+  describe('scheme', () => {
+    const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+\t<key>CFBundleName</key>
+\t<string>App</string>
+</dict>
+</plist>
+`
+    const manifest = `<manifest>
+    <application>
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+`
+
+    it('adds the scheme to Info.plist and the manifest once', () => {
+      const ios = addScheme('ios', plist, 'acme')
+      expect(declaresScheme('ios', ios, 'acme')).toBe(true)
+      expect(ios).toContain('<key>CFBundleURLTypes</key>')
+      expect(addScheme('ios', ios, 'acme')).toBe(ios)
+      const second = addScheme('ios', ios, 'other')
+      expect(second.match(/CFBundleURLTypes/g)).toHaveLength(1)
+      expect(declaresScheme('ios', second, 'other')).toBe(true)
+      const android = addScheme('android', manifest, 'acme')
+      expect(android).toContain('<data android:scheme="acme" />')
+      expect(android.indexOf('android:scheme')).toBeLessThan(android.indexOf('</activity>'))
+      expect(addScheme('android', android, 'acme')).toBe(android)
+    })
+
+    it('build registers it in both native projects, and doctor notices when it is missing', async () => {
+      const phone = mobile({ scheme: 'acme' })
+      const f = fakePlatformContext(phone, {
+        name: 'phone',
+        files: {
+          'package.json': '{}',
+          'platforms/phone/ios/App/App/Info.plist': plist,
+          'platforms/phone/android/app/src/main/AndroidManifest.xml': manifest,
+        },
+      })
+      const warnings = () => (phone.doctor!(f.ctx) as any[]).filter((x) => /scheme/.test(x.message))
+      expect(warnings()).toHaveLength(2)
+      await phone.build!(f.ctx)
+      expect(f.files.get('platforms/phone/ios/App/App/Info.plist')).toContain(
+        '<string>acme</string>',
+      )
+      expect(f.files.get('platforms/phone/android/app/src/main/AndroidManifest.xml')).toContain(
+        'android:scheme="acme"',
+      )
+      expect(warnings()).toEqual([])
+    })
   })
 })

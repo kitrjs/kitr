@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { cacheHeaders, seo, ssrRoute } from '../src'
 
 describe('seo', () => {
@@ -90,5 +90,22 @@ describe('jsonLd escaping', () => {
     // As it lands in the page: still exactly one closing tag.
     const html = `<script type="${script.type}">${script.children}</script>`
     expect(html.match(/<\/script>/gi)).toHaveLength(1)
+  })
+})
+
+// Regression: `seo()` never read config/seo.ts, so every page lost the site name, image and
+// canonical origin unless it passed `site` itself.
+describe('seo() reads config/seo.ts', () => {
+  it('uses the site from defineConfig, and an explicit site still wins', async () => {
+    vi.resetModules()
+    const mod = await import('../src')
+    expect(mod.seo({ title: 'Pricing' }).meta).toContainEqual({ title: 'Pricing' })
+    mod.defineConfig({ site: { name: 'Acme', url: 'https://acme.dev' } })
+    const head = mod.seo({ title: 'Pricing' })
+    expect(head.meta).toContainEqual({ title: 'Pricing · Acme' })
+    expect(head.links).toEqual([{ rel: 'canonical', href: 'https://acme.dev' }])
+    expect(mod.seo({ title: 'Pricing', site: { name: 'Other' } }).meta).toContainEqual({
+      title: 'Pricing · Other',
+    })
   })
 })

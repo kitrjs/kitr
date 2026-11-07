@@ -26,6 +26,7 @@ export function createSseTransport(options: SseTransportOptions): SocketTranspor
     {
       channel: string
       params: unknown
+      topic: string
       onEvent: (e: string, d: unknown) => void
       onError?: (e: KitrErrorShape) => void
     }
@@ -37,6 +38,20 @@ export function createSseTransport(options: SseTransportOptions): SocketTranspor
   let connectionId: string | undefined
   let source: EventSource | undefined
 
+  const listen = (id: string, topic: string) => {
+    const sub = subs.get(id)
+    if (!sub) return
+    const old = byTopic.get(sub.topic)
+    old?.delete(id)
+    if (old?.size === 0) byTopic.delete(sub.topic)
+    sub.topic = topic
+    let set = byTopic.get(topic)
+    if (!set) {
+      set = new Set()
+      byTopic.set(topic, set)
+    }
+    set.add(id)
+  }
   const setStatus = (s: SocketStatus) => {
     status = s
     for (const l of listeners) l(s)
@@ -71,6 +86,11 @@ export function createSseTransport(options: SseTransportOptions): SocketTranspor
       if (msg.t === 'ev') {
         for (const id of byTopic.get(topicFor(msg.ch, msg.p)) ?? [])
           subs.get(id)?.onEvent(msg.ev, msg.d)
+      } else if (msg.t === 'ok' && 'p' in msg) {
+        // The channel's params schema may have transformed the params (trim, lowercase,
+        // coerce); the server publishes under those, so listen there.
+        const sub = subs.get(msg.id)
+        if (sub) listen(msg.id, topicFor(sub.channel, msg.p))
       } else if (msg.t === 'err') {
         const sub = msg.id ? subs.get(msg.id) : undefined
         if (sub?.onError) sub.onError(msg.e)
@@ -96,18 +116,15 @@ export function createSseTransport(options: SseTransportOptions): SocketTranspor
     subscribe(channel, params, onEvent, onError) {
       const id = `s${++counter}`
       const topic = topicFor(channel, params)
-      subs.set(id, { channel, params, onEvent, onError })
-      let set = byTopic.get(topic)
-      if (!set) {
-        set = new Set()
-        byTopic.set(topic, set)
-      }
-      set.add(id)
+      subs.set(id, { channel, params, topic, onEvent, onError })
+      listen(id, topic)
       void post({ t: 'sub', id, ch: channel, p: params })
       return () => {
+        const sub = subs.get(id)
         subs.delete(id)
-        set.delete(id)
-        if (set.size === 0) byTopic.delete(topic)
+        const set = sub ? byTopic.get(sub.topic) : undefined
+        set?.delete(id)
+        if (sub && set?.size === 0) byTopic.delete(sub.topic)
         void post({ t: 'unsub', id })
       }
     },

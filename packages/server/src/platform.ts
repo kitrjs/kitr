@@ -89,7 +89,7 @@ export const server = definePlatform<ServerPlatformOptions>(
         ? (ctx.read('config/realtime.ts').match(/path\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? '/ws')
         : '/ws'
       const attach = realtime
-        ? `// WebSocket upgrades on ${realtimePath}, next to the routes.\nrealtime.attach(server, '${realtimePath}')\n`
+        ? `// Realtime on ${realtimePath} (config/realtime.ts), next to the routes.\nrealtime.attach(server)\n`
         : ''
       ctx.write(
         options.entry,

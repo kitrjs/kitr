@@ -20,6 +20,8 @@ export interface RequestContext {
   startedAt: number
   /** Free-form bag for middleware (auth puts `user` here). */
   locals: Record<string, unknown>
+  /** The client's IP address, through `trustProxy` proxies. Undefined when the runtime does not say. */
+  ip?: string
 }
 
 const storage = new AsyncLocalStorage<RequestContext>()

@@ -54,6 +54,15 @@ function readRcPlatforms(src: string): Record<string, RcPlatform>;
 
 Static read of `platforms: { site: web({ mode: 'ssr' }) }`: names, factories and literal options.
 
+### robotsFor
+
+```ts
+function robotsFor(root: string, configDir?: string): Promise<string | null>;
+```
+
+The robots.txt for a project: `robotsTxt()` from kitr/seo over `config/seo.ts`, or null when
+there is no config/seo.ts or it sets `robots: false`.
+
 ### KitrPluginOptions
 
 ```ts
