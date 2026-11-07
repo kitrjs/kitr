@@ -11,8 +11,8 @@ import {
   validate,
 } from '@kitr/core'
 import {
-  defineMutation as defineMutationContract,
-  defineQuery as defineQueryContract,
+  mutationFrom as defineMutationContract,
+  queryFrom as defineQueryContract,
   type MutationDefinition,
   type QueryDefinition,
 } from '@kitr/query'

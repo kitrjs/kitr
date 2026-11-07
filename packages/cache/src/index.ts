@@ -160,13 +160,9 @@ interface Envelope {
 }
 
 /**
- * A cache driver over any unstorage instance, so several servers share one cache:
- *
- *   import { createStorage } from 'unstorage'
- *   import redisDriver from 'unstorage/drivers/redis'
- *   export default defineConfig({
- *     driver: createUnstorageCacheDriver(createStorage({ driver: redisDriver({ url: env.REDIS_URL }) })),
- *   })
+ * A cache driver over any unstorage instance, so several servers share one cache: in
+ * `config/cache.ts`, `driver: createUnstorageCacheDriver(createStorage({ driver: redisDriver(...) }))`
+ * with `createStorage` from unstorage and the driver from `unstorage/drivers/redis` (or any other).
  *
  * Expiry is checked on read, so drivers without native TTLs work too; the ttl is also passed to
  * `setItem` for drivers that expire keys themselves (Redis, KV). Entries live under `base`
@@ -199,7 +195,8 @@ export function createUnstorageCacheDriver(
     return env
   }
   const write = (key: string, env: Envelope) => {
-    const ttl = env.e === undefined ? undefined : Math.max(1, Math.ceil((env.e - Date.now()) / 1000))
+    const ttl =
+      env.e === undefined ? undefined : Math.max(1, Math.ceil((env.e - Date.now()) / 1000))
     return storage.setItem(entry(key), JSON.stringify(env), ttl === undefined ? undefined : { ttl })
   }
   return {

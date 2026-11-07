@@ -31,6 +31,7 @@ jobs:
           done
           pnpm -C examples/backend exec kitr build api
       - run: pnpm manifests:check
+      - run: pnpm readmes:check
       - run: pnpm docs:check --strict
       # Warns until every guide follows docs/STYLE.md; the rollout flips it to --strict.
       - run: pnpm docs:rules
