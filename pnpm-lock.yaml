@@ -1971,6 +1971,150 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/kit-app:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-desktop:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-fullstack:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-mobile:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-realtime:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-saas:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-server:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-site:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/kit-tauri:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/kitr:
     dependencies:
       '@kitr/cli':
@@ -2025,6 +2169,33 @@ importers:
       '@kitr/jobs':
         specifier: workspace:*
         version: link:../jobs
+      '@kitr/kit-app':
+        specifier: workspace:*
+        version: link:../kit-app
+      '@kitr/kit-desktop':
+        specifier: workspace:*
+        version: link:../kit-desktop
+      '@kitr/kit-fullstack':
+        specifier: workspace:*
+        version: link:../kit-fullstack
+      '@kitr/kit-mobile':
+        specifier: workspace:*
+        version: link:../kit-mobile
+      '@kitr/kit-realtime':
+        specifier: workspace:*
+        version: link:../kit-realtime
+      '@kitr/kit-saas':
+        specifier: workspace:*
+        version: link:../kit-saas
+      '@kitr/kit-server':
+        specifier: workspace:*
+        version: link:../kit-server
+      '@kitr/kit-site':
+        specifier: workspace:*
+        version: link:../kit-site
+      '@kitr/kit-tauri':
+        specifier: workspace:*
+        version: link:../kit-tauri
       '@kitr/logger':
         specifier: workspace:*
         version: link:../logger

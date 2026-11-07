@@ -75,6 +75,7 @@ export type Category =
   | 'device'
   | 'insights'
   | 'dev-tools'
+  | 'kits'
 
 export type RunsOn = 'client' | 'server' | 'both'
 
@@ -153,6 +154,7 @@ export const categories: Record<Category, { label: string; color: string }> = {
   device: { label: 'Device features', color: '#E879F9' },
   insights: { label: 'Analytics & errors', color: '#E0B872' },
   'dev-tools': { label: 'Developer tools', color: '#94A3B8' },
+  kits: { label: 'Kits', color: '#C4B5FD' },
 }
 
 export const runsOn: Record<RunsOn, { label: string; background: string; icon: IconSvgElement }> = {

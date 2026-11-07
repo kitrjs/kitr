@@ -80,6 +80,8 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 `kitr new <dir> --platform admin=web,api=server --mode spa --runtime bun` replaces a kit's platforms; `--targets`, `--pwa` and `--port` set the first platform's options.
 
+Every kit but `blank` is a package of its own (`@kitr/kit-saas`, `@kitr/kit-server`), a setup module with `kind: 'kit'` that names the platforms, the packages with their answers, the registry components and the files to write. The CLI loads it the way it loads any setup module, runs it once and never lists it in the project: a kit is a template, not a dependency. `kitr new my-app --kit @acme/starter` runs a kit from any npm package the same way.
+
 ## Roadmap
 
 Later: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce. Each lands as a package with a recipe, docs and a `make:*` command where one fits.

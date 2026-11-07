@@ -153,11 +153,12 @@ packages/
   logger, server, api, actions, seo, realtime, auth, db, testing, mocks, i18n,
   analytics, monitoring, platform, storage, devtools,
   web, desktop, tauri, mobile  # platform packages (server's platform lives in packages/server)
+  kit-app, kit-server, kit-fullstack, kit-saas, kit-site, kit-realtime, kit-desktop, kit-tauri, kit-mobile  # kits
   vite, cli, kitr            # `kitr` is the umbrella package users install
 registry/                    # shadcn-compatible component registry (built to registry/dist)
 examples/
   blank, dashboard, fullstack, backend,        # kitr new --kit blank | app | fullstack | server
-  saas, site, realtime, desktop, tauri, mobile  # the presets
+  saas, site, realtime, desktop, tauri, mobile  # the preset kits
 docs/                        # entry points, CLI, packages, platforms, pure backend, departures
 ```
 

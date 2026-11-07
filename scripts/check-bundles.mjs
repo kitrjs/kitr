@@ -119,6 +119,13 @@ const budgets = {
   '@kitr/desktop': 20 * 1024,
   '@kitr/tauri': 20 * 1024,
   '@kitr/web': 16 * 1024,
+  // Kit packages are nothing but file templates.
+  '@kitr/kit-saas': 40 * 1024,
+  '@kitr/kit-site': 40 * 1024,
+  '@kitr/kit-realtime': 32 * 1024,
+  '@kitr/kit-desktop': 16 * 1024,
+  '@kitr/kit-tauri': 16 * 1024,
+  '@kitr/kit-mobile': 16 * 1024,
 }
 
 const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]))
