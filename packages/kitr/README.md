@@ -1,6 +1,6 @@
 # kitr
 
-The kitr React framework: one import surface over TanStack, React Hook Form and friends, plus the kitr CLI.
+kitr: one way to build web, mobile, desktop and backend apps. One import surface over TanStack, React Hook Form, h3 and friends, plus the kitr CLI.
 
 ```sh
 pnpm dlx kitr new my-app
