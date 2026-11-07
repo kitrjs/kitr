@@ -201,6 +201,43 @@ export function sentry(
   }
 }
 
+/** Mirrors reports into the kitr devtools (channel "errors"). Added automatically in development. */
+export function devtoolsReporter(hub: {
+  log(
+    channel: string,
+    label: string,
+    data?: unknown,
+    level?: 'debug' | 'info' | 'warn' | 'error',
+  ): void
+}): Reporter {
+  return {
+    name: 'devtools',
+    captureException: (error, context) =>
+      hub.log(
+        'errors',
+        error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+        { error, ...context },
+        'error',
+      ),
+    captureMessage: (message, context) =>
+      hub.log('errors', message, context, context?.level === 'warning' ? 'warn' : 'info'),
+    addBreadcrumb: (crumb) =>
+      hub.log(
+        'breadcrumbs',
+        `${crumb.category ?? 'crumb'}: ${crumb.message ?? ''}`,
+        crumb.data,
+        'debug',
+      ),
+    setUser: (user) =>
+      hub.log(
+        'errors',
+        user ? `user ${user.id ?? ''}` : 'user cleared',
+        user ?? undefined,
+        'debug',
+      ),
+  }
+}
+
 /** Prints reports. The default reporter in development. */
 export function consoleReporter(): Reporter {
   return {

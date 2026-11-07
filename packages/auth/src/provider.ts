@@ -1,4 +1,4 @@
-import { createDefineConfig, defineProvider, type KitrProvider } from '@kitr/core'
+import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } from '@kitr/core'
 import type { AuthAdapter, Session } from './session'
 import { anonymousSession } from './session'
 
@@ -96,8 +96,17 @@ export const authProvider: KitrProvider = defineProvider({
   },
   async boot(app) {
     const config = app.config.get('auth')
-    if (config.eager !== false) await app.container.use('auth').load()
+    const auth = app.container.use('auth')
+    const hub = getDevtools(app)
+    if (hub) {
+      auth.subscribe((session) => {
+        hub.log('auth', session.user ? 'signed in' : 'signed out', session.user ?? undefined)
+        hub.notify()
+      })
+    }
+    if (config.eager !== false) await auth.load()
   },
+  devtools: () => import('./devtools').then((m) => m.panels()),
 })
 
 export default authProvider

@@ -139,6 +139,8 @@ function globalProcess(): { env?: Record<string, string | undefined> } | undefin
 function detectMode(): AppMode {
   const meta = (import.meta as unknown as { env?: { MODE?: string; DEV?: boolean } }).env
   if (meta?.MODE === 'test') return 'test'
+  // `vite build --mode development` keeps NODE_ENV=production (so DEV is false) but the mode is what the app asked for.
+  if (meta?.MODE === 'development' || meta?.MODE === 'production') return meta.MODE
   if (typeof meta?.DEV === 'boolean') return meta.DEV ? 'development' : 'production'
   const nodeEnv = (globalThis as any).process?.env?.NODE_ENV as string | undefined
   if (nodeEnv === 'test') return 'test'

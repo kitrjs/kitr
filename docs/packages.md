@@ -29,9 +29,15 @@ Add any of these with `kitr add <name>`. "Client" packages are refused in server
 | `pwa` | `@kitr/pwa` | client | | Installable app: manifest and service worker from `config/pwa.ts` via vite-plugin-pwa; `useInstallPrompt`, `useOnline`, `useServiceWorker` with an update banner component. |
 | `electron` | `@kitr/electron` | client | | Desktop with Electron: electron-vite config for main/preload/renderer, a typed IPC schema shared by all three, `createMainWindow` with secure defaults, electron-builder packaging. |
 | `tauri` | `@kitr/tauri` | client | | Desktop and mobile with Tauri 2: `src-tauri/` scaffold (Cargo, lib.rs, capabilities), Vite tuned for the webview, `defineCommands<Commands>()` for typed Rust commands, `commandQuery`/`commandMutation`, events. |
+| `storage` | `@kitr/storage` | any | | `defineStorage` (typed local/session items with schema, version+migrate, ttl, cross-tab sync) and `defineCookie` readable on both sides; `useStorage`/`useCookie` hydration-safe hooks; `cookies(event)` on the server. |
+| `devtools` | `@kitr/devtools` | client | | The development overlay: App, Router, Query, Auth, Storage, Errors, Analytics and Log panels, a command palette, and a hub any package logs to. Providers add panels with a `devtools()` method. Dropped from production builds by the Vite plugin. |
 | `capacitor` | `@kitr/capacitor` | client | | iOS and Android with Capacitor: config in `config/capacitor.ts` mirrored to `capacitor.config.ts`, `isNative`/`platform`/`perPlatform`, `useBackButton`, `useAppUrlOpen`, `useAppState`, `nativeOnly`. |
 
 Always present: `@kitr/core` (app, container, providers, config, env, errors, contracts), `@kitr/react` in React apps, `@kitr/router` in React apps, `@kitr/vite` for the build, `@kitr/cli` through the `kitr` binary.
+
+## Devtools
+
+`kitr add devtools` (in every React kit by default) mounts a bottom panel in development: ctrl/cmd+shift+K toggles it, ctrl/cmd+shift+P opens a command palette with every package's actions. Each package contributes its own panel through the provider's `devtools(app)` method, and logs through `getDevtools(app)?.log(channel, label, data)`, which is `null` in production. Out of the box: App (mode, providers, container, config, env), Router (location, matches, loader data, navigation log), Query (cache with invalidate/refetch/remove), Auth (session, sign out), Storage (local/session/cookies with remove), Errors (captured exceptions and breadcrumbs), Analytics (events, enable/disable) and Log (http requests, logger records, every channel). The kitr Vite plugin leaves the provider out of production builds, so nothing of it ships.
 
 ## Platform add-ons
 

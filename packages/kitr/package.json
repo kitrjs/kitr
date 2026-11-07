@@ -207,6 +207,34 @@
       "types": "./dist/monitoring-server.d.ts",
       "default": "./dist/monitoring-server.js"
     },
+    "./storage": {
+      "types": "./dist/storage.d.ts",
+      "default": "./dist/storage.js"
+    },
+    "./storage/react": {
+      "types": "./dist/storage-react.d.ts",
+      "default": "./dist/storage-react.js"
+    },
+    "./storage/server": {
+      "types": "./dist/storage-server.d.ts",
+      "default": "./dist/storage-server.js"
+    },
+    "./storage/provider": {
+      "types": "./dist/storage-provider.d.ts",
+      "default": "./dist/storage-provider.js"
+    },
+    "./devtools": {
+      "types": "./dist/devtools.d.ts",
+      "default": "./dist/devtools.js"
+    },
+    "./devtools/provider": {
+      "types": "./dist/devtools-provider.d.ts",
+      "default": "./dist/devtools-provider.js"
+    },
+    "./devtools/ui": {
+      "types": "./dist/devtools-ui.d.ts",
+      "default": "./dist/devtools-ui.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -251,7 +279,9 @@
     "@kitr/electron": "workspace:*",
     "@kitr/tauri": "workspace:*",
     "@kitr/capacitor": "workspace:*",
-    "@kitr/monitoring": "workspace:*"
+    "@kitr/monitoring": "workspace:*",
+    "@kitr/storage": "workspace:*",
+    "@kitr/devtools": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@kitr/actions": {
@@ -340,6 +370,12 @@
     },
     "@kitr/monitoring": {
       "optional": true
+    },
+    "@kitr/storage": {
+      "optional": true
+    },
+    "@kitr/devtools": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -373,6 +409,8 @@
     "@kitr/electron": "workspace:*",
     "@kitr/tauri": "workspace:*",
     "@kitr/capacitor": "workspace:*",
-    "@kitr/monitoring": "workspace:*"
+    "@kitr/monitoring": "workspace:*",
+    "@kitr/storage": "workspace:*",
+    "@kitr/devtools": "workspace:*"
   }
 }

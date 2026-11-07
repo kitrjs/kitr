@@ -29,6 +29,8 @@
 "@kitr/electron": minor
 "@kitr/tauri": minor
 "@kitr/capacitor": minor
+"@kitr/storage": minor
+"@kitr/devtools": minor
 "@kitr/vite": minor
 "@kitr/cli": minor
 ---

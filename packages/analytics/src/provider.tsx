@@ -1,7 +1,8 @@
-import { defineProvider } from '@kitr/core'
+import { defineProvider, getDevtools } from '@kitr/core'
 import { lazy, type ReactNode, Suspense } from 'react'
 import { consoleAdapter } from './adapters'
 import { createAnalytics } from './analytics'
+import { devtoolsAdapter } from './devtools-adapter'
 import type { AnalyticsConfig } from './types'
 
 const PageViews = lazy(() => import('./react').then((m) => ({ default: m.TrackPageViews })))
@@ -21,9 +22,12 @@ export const analyticsProvider = defineProvider({
         : app.isDevelopment
           ? [consoleAdapter()]
           : []
-      return createAnalytics({ debug: app.isDevelopment, ...config, adapters })
+      const hub = getDevtools(app)
+      const all = hub ? [...adapters, devtoolsAdapter(hub)] : adapters
+      return createAnalytics({ debug: app.isDevelopment && !hub, ...config, adapters: all })
     })
   },
+  devtools: (app) => import('./devtools').then((m) => m.panels(app)),
   wrap(children, app) {
     const config = app.config.get('analytics', {} as AnalyticsConfig)
     if (config.pageViews === false || typeof window === 'undefined') return children

@@ -1,4 +1,4 @@
-import { createDefineConfig, defineProvider } from '@kitr/core'
+import { createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
 
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'silent'
 const levels: Record<LogLevel, number> = {
@@ -138,9 +138,30 @@ export const defineConfig = createDefineConfig<LoggerConfig>()
 export const loggerProvider = defineProvider({
   name: 'logger',
   register(app) {
-    app.container.singleton('logger', () => createLogger(app.config.get('logger', {})))
+    app.container.singleton('logger', () => {
+      const config = app.config.get('logger', {})
+      const hub = getDevtools(app)
+      if (!hub) return createLogger(config)
+      // Development: every record also lands in the devtools Log panel under "logger".
+      const write = config.write ?? ((line: string) => console.log(line))
+      return createLogger({
+        ...config,
+        write: (line, record) => {
+          write(line, record)
+          const { level, msg, time, name, ...fields } = record
+          hub.log('logger', msg, Object.keys(fields).length ? fields : undefined, levelOf(level))
+        },
+      })
+    })
   },
 })
+
+function levelOf(level: LogLevel): 'debug' | 'info' | 'warn' | 'error' {
+  if (level === 'trace' || level === 'debug') return 'debug'
+  if (level === 'warn') return 'warn'
+  if (level === 'error' || level === 'fatal') return 'error'
+  return 'info'
+}
 
 export default loggerProvider
 

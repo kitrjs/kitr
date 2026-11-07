@@ -21,6 +21,13 @@ export {
   type QueryKey,
   type SubscriptionContract,
 } from './contract'
+export {
+  type DevtoolsAction,
+  type DevtoolsEntry,
+  type DevtoolsHub,
+  type DevtoolsPanel,
+  getDevtools,
+} from './devtools'
 export { type CreateEnvOptions, createEnv, type Env, env } from './env'
 export {
   type FieldErrors,

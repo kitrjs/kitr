@@ -574,4 +574,100 @@ export const native = {
       c.removeAgentsSection('capacitor')
     },
   }),
+  storage: r({
+    name: 'storage',
+    package: '@kitr/storage',
+    description:
+      'Typed localStorage/sessionStorage items and cookies with one API on the client and the server; SSR-safe hooks.',
+    configure(ctx, c) {
+      const serverOnly = ctx.isServerOnly()
+      c.installPackages(['@kitr/storage'])
+      c.addProvider('@kitr/storage/provider')
+      c.addPackage('@kitr/storage')
+      ctx.write(
+        'config/storage.ts',
+        `import { defineConfig } from 'kitr/storage'
+
+export default defineConfig({
+  // Prefixes every storage key and cookie name so several apps on one origin never collide.
+  prefix: '${(ctx.pkg.name ?? 'app').replace(/^@[^/]+\//, '').replace(/[^a-z0-9]+/gi, '-')}:',
+  cookie: { path: '/', sameSite: 'lax', secure: import.meta.env?.PROD ?? false },
+})
+`,
+      )
+      ctx.write(
+        'app/storage.ts',
+        serverOnly
+          ? `import { defineCookie } from 'kitr/storage'
+
+/** Cookies are typed once and read with \`cookies(event).get(item)\` from kitr/storage/server. */
+export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
+`
+          : `import { defineCookie, defineStorage } from 'kitr/storage'
+
+/**
+ * Every persisted value, in one file, typed. Components read them with
+ * \`useStorage(item)\` / \`useCookie(item)\` from kitr/storage/react; plain code with \`item.get()\`.
+ */
+export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
+
+export const recentSearches = defineStorage<string[]>('recent-searches', {
+  default: [],
+  area: 'session',
+  version: 1,
+})
+
+/** Readable on the server too (\`localeCookie.get(request.headers)\`), so SSR picks the right locale. */
+export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
+`,
+      )
+      c.addAgentsSection(
+        'storage',
+        serverOnly
+          ? `- Cookies: declare with \`defineCookie\` in \`app/storage.ts\`; in controllers use \`const jar = cookies(ctx.event)\` from \`kitr/storage/server\`, then \`jar.get(item)\` / \`jar.set(item, value, { httpOnly: true })\`.`
+          : `- Persisted values are declared once in \`app/storage.ts\` (\`defineStorage\` for local/session storage, \`defineCookie\` for cookies) and never read through \`localStorage\`/\`document.cookie\` directly.\n- Components: \`const [value, setValue] = useStorage(item)\` / \`useCookie(item)\` from \`kitr/storage/react\`. Both are hydration-safe: the server and first render see the default.\n- Server side (actions, controllers): \`cookies(event).get(item)\` / \`.set(item, value)\` from \`kitr/storage/server\`; wrap the root route in \`<CookieHeader value={request.headers.get('cookie')}>\` so \`useCookie\` renders the right value during SSR.\n- Add \`schema\` (zod/valibot) to validate what comes back from storage, \`version\` + \`migrate\` when a shape changes, \`ttl\` to expire.`,
+      )
+    },
+    unconfigure(_ctx, c) {
+      c.removeProvider('@kitr/storage/provider')
+      c.removePackage('@kitr/storage')
+      c.removePackages(['@kitr/storage'])
+      c.removeAgentsSection('storage')
+    },
+  }),
+  devtools: r({
+    name: 'devtools',
+    package: '@kitr/devtools',
+    client: true,
+    description:
+      'The development overlay: app, router, query cache, auth, http, storage, errors and analytics panels, a command palette, and a log every package writes to. Stripped from production builds.',
+    configure(ctx, c) {
+      c.installPackages(['@kitr/devtools'])
+      c.addProvider('@kitr/devtools/provider')
+      c.addPackage('@kitr/devtools')
+      ctx.write(
+        'config/devtools.ts',
+        `import { defineConfig } from 'kitr/devtools'
+
+/** Development only. The kitr() Vite plugin drops the provider from production builds. */
+export default defineConfig({
+  position: 'bottom-left',
+  // ctrl/cmd+shift+<key> toggles the overlay; ctrl/cmd+shift+P opens the command palette.
+  shortcutKey: 'k',
+  maxEntries: 500,
+})
+`,
+      )
+      c.addAgentsSection(
+        'devtools',
+        `- In development a "k" button (ctrl/cmd+shift+K) opens the kitr devtools: App, Router, Query, Auth, Storage, Errors, Analytics and Log panels, plus a command palette (ctrl/cmd+shift+P) with every package's actions.\n- Log from anywhere with \`getDevtools(app)?.log('channel', 'label', data)\` (\`kitr/devtools\`); it is null in production so the call costs nothing.\n- A provider adds its own panel with a \`devtools(app)\` method returning \`DevtoolsPanel[]\` (lazy-import the React parts); reuse \`JsonView\`, \`KeyValue\`, \`LogList\` from \`kitr/devtools/ui\`.`,
+      )
+    },
+    unconfigure(_ctx, c) {
+      c.removeProvider('@kitr/devtools/provider')
+      c.removePackage('@kitr/devtools')
+      c.removePackages(['@kitr/devtools'])
+      c.removeAgentsSection('devtools')
+    },
+  }),
 }

@@ -23,6 +23,8 @@ export default defineKitrConfig({
    '@kitr/actions',
    '@kitr/api',
    '@kitr/socket',
+   '@kitr/storage',
+   '@kitr/devtools',
   ],
   providers: [
    () => import('@kitr/query/provider'),
@@ -30,6 +32,8 @@ export default defineKitrConfig({
    () => import('@kitr/ui/provider'),
    () => import('@kitr/auth/provider'),
    () => import('@kitr/logger'),
+   () => import('@kitr/storage/provider'),
+   () => import('@kitr/devtools/provider'),
   ],
   directories: {
     app: 'app',

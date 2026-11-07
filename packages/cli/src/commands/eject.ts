@@ -72,4 +72,6 @@ export const REWRITES: Record<string, string> = {
   'kitr/electron': 'electron ipcMain/ipcRenderer + contextBridge',
   'kitr/tauri': '@tauri-apps/api (invoke, listen, emit)',
   'kitr/capacitor': '@capacitor/core + @capacitor/app',
+  'kitr/storage': 'localStorage / document.cookie (+ a cookie parser)',
+  'kitr/devtools': 'nothing; development only',
 }

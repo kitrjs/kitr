@@ -1,8 +1,9 @@
-import { defineProvider } from '@kitr/core'
+import { defineProvider, getDevtools } from '@kitr/core'
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import {
   consoleReporter,
   createMonitoring,
+  devtoolsReporter,
   installGlobalHandlers,
   type Monitoring,
   type MonitoringConfig,
@@ -46,11 +47,13 @@ export const monitoringProvider = defineProvider({
   register(app) {
     app.container.singleton('monitoring', () => {
       const config = app.config.get('monitoring', {} as MonitoringConfig)
-      const reporters = config.reporters?.length
+      const hub = getDevtools(app)
+      const base = config.reporters?.length
         ? config.reporters
         : app.isDevelopment
           ? [consoleReporter()]
           : []
+      const reporters = hub ? [...base, devtoolsReporter(hub)] : base
       return createMonitoring({
         debug: app.isDevelopment,
         ...config,
@@ -59,6 +62,7 @@ export const monitoringProvider = defineProvider({
       })
     })
   },
+  devtools: () => import('./devtools').then((m) => m.panels()),
   boot(app) {
     const config = app.config.get('monitoring', {} as MonitoringConfig)
     if (config.globalHandlers !== false && app.isClient)

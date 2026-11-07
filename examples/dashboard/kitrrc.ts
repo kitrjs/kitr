@@ -18,12 +18,16 @@ export default defineKitrConfig({
    '@kitr/auth',
    '@kitr/mocks',
    '@kitr/testing',
+   '@kitr/storage',
+   '@kitr/devtools',
   ],
   providers: [
    () => import('@kitr/query/provider'),
    () => import('@kitr/http/provider'),
    () => import('@kitr/ui/provider'),
    () => import('@kitr/auth/provider'),
+   () => import('@kitr/storage/provider'),
+   () => import('@kitr/devtools/provider'),
   ],
   directories: {
     app: 'app',
