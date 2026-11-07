@@ -17,7 +17,7 @@ interface RegistryItem {
 function registryUrl(ctx: ProjectContext, override?: string): string {
   if (override) return override
   if (process.env.KITR_REGISTRY) return process.env.KITR_REGISTRY
-  const cfg = ctx.exists('config/ui.ts') ? ctx.read('config/ui.ts') : ''
+  const cfg = ctx.exists('config/theme.ts') ? ctx.read('config/theme.ts') : ''
   return cfg.match(/registry\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? DEFAULT_REGISTRY
 }
 
@@ -40,8 +40,8 @@ export async function addComponents(
 ) {
   const base = registryUrl(ctx, options.registry)
   const componentsDir =
-    (ctx.exists('config/ui.ts') &&
-      ctx.read('config/ui.ts').match(/componentsDir\s*:\s*['"]([^'"]+)['"]/)?.[1]) ||
+    (ctx.exists('config/theme.ts') &&
+      ctx.read('config/theme.ts').match(/componentsDir\s*:\s*['"]([^'"]+)['"]/)?.[1]) ||
     `${ctx.readRc().directories.components}/ui`
   const codemods = new Codemods(ctx)
   const done = new Set<string>()

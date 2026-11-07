@@ -3,20 +3,30 @@ import { recipeNames, recipes, resolveRecipes } from '../src/recipes'
 import { displayName } from '../src/recipes-addons'
 
 describe('recipes', () => {
-  it('registers the platform add-ons beside the core packages', () => {
-    for (const name of ['analytics', 'monitoring', 'pwa', 'electron', 'tauri', 'capacitor'])
+  it('registers the capability add-ons beside the core packages', () => {
+    for (const name of [
+      'analytics',
+      'monitoring',
+      'platform',
+      'storage',
+      'theme',
+      'seo',
+      'realtime',
+    ])
       expect(recipeNames).toContain(name)
-    expect(recipes.electron?.client).toBe(true)
+    for (const gone of ['pwa', 'electron', 'tauri', 'capacitor', 'ui', 'styling', 'ssr', 'socket'])
+      expect(recipeNames).not.toContain(gone)
+    expect(recipes.platform?.client).toBe(true)
     expect(recipes.monitoring?.client).toBeUndefined()
   })
 
   it('resolves requires in dependency order', () => {
-    expect(resolveRecipes(['socket'], []).map((r) => r.name)).toEqual([
+    expect(resolveRecipes(['realtime'], []).map((r) => r.name)).toEqual([
       'logger',
       'server',
-      'socket',
+      'realtime',
     ])
-    expect(resolveRecipes(['socket'], ['@kitr/server']).map((r) => r.name)).toEqual(['socket'])
+    expect(resolveRecipes(['realtime'], ['@kitr/server']).map((r) => r.name)).toEqual(['realtime'])
   })
 
   it('derives product names from package names', () => {

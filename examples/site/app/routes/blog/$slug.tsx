@@ -1,7 +1,9 @@
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
 import { createFileRoute } from '@tanstack/react-router'
 import { Link, notFound } from 'kitr/router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { getPost } from '#app/content/posts'
+import { Icon } from '#components/ui/icon'
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: ({ params }) => {
@@ -26,8 +28,12 @@ function PostPage() {
   const post = Route.useLoaderData()
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
-      <Link to="/blog" className="text-sm text-muted-foreground hover:underline">
-        ← Blog
+      <Link
+        to="/blog"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+      >
+        <Icon icon={ArrowLeft01Icon} size={14} />
+        Blog
       </Link>
       <article className="mt-4">
         <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>

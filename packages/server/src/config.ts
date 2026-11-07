@@ -9,7 +9,7 @@ export interface ServerConfig {
   bodyLimit?: number
   /** Trust `X-Forwarded-*` from a proxy in front of the server. */
   trustProxy?: boolean
-  /** Enable the WebSocket upgrade (needs `crossws`). Set by `@kitr/socket`. */
+  /** Enable the WebSocket upgrade (needs `crossws`). Set by `@kitr/realtime`. */
   websocket?: boolean
   /** Header name for the request id. Default `x-request-id`. */
   requestIdHeader?: string

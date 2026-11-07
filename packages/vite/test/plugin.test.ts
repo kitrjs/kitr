@@ -20,7 +20,7 @@ afterEach(() => {
 })
 
 const rc = `export default defineKitrConfig({
-  packages: ['@kitr/query', '@kitr/devtools', '@kitr/tauri'],
+  packages: ['@kitr/query', '@kitr/devtools', '@kitr/http'],
   providers: [
     () => import('@kitr/query/provider'),
     // () => import('@kitr/disabled/provider'),
@@ -79,7 +79,7 @@ describe('kitr() plugin', () => {
     ])
     expect(config.resolve.alias['#config']).toBe(join(root, 'settings'))
     expect(config.define['import.meta.env.KITR_PACKAGES']).toBe(
-      JSON.stringify(['@kitr/query', '@kitr/devtools', '@kitr/tauri']),
+      JSON.stringify(['@kitr/query', '@kitr/devtools', '@kitr/http']),
     )
   })
 
@@ -95,10 +95,19 @@ describe('kitr() plugin', () => {
     expect(forcedOff.load('virtual:kitr/providers')).not.toContain('devtools')
   })
 
-  it('applies the Tauri dev-server settings when @kitr/tauri is added', async () => {
-    const { config } = await corePlugin(project({ 'kitrrc.ts': rc }))
-    expect(config.server).toEqual({ port: 1420, strictPort: true })
+  it('applies the desktop shell settings for a Tauri platform', async () => {
+    const root = project({
+      'kitrrc.ts': `import { desktop } from 'kitr/desktop'
+export default defineKitrConfig({
+  platforms: { app: desktop({ shell: 'tauri', port: 3200 }) },
+  packages: ['@kitr/router'],
+  providers: [],
+})`,
+    })
+    const { config } = await corePlugin(root, undefined, { platform: 'app' })
+    expect(config.server).toEqual({ port: 3200, strictPort: true })
     expect(config.envPrefix).toContain('TAURI_ENV_*')
+    expect(config.build.outDir).toBe('dist/app')
   })
 
   it('works without kitrrc.ts, config dir or package.json', async () => {

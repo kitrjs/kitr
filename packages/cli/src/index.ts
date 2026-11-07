@@ -1,4 +1,5 @@
-import { runMain as cittyRunMain, defineCommand } from 'citty'
+import { runMain as cittyRunMain, defineCommand, runCommand } from 'citty'
+import pc from 'picocolors'
 import { add, remove } from './commands/add'
 import { apiSync, routesList } from './commands/api'
 import { cssTypes } from './commands/css-types'
@@ -17,6 +18,7 @@ import {
 } from './commands/make'
 import { newCommand } from './commands/new'
 import { packageCheck } from './commands/package-check'
+import { build, config, dev, platforms, start } from './commands/platforms'
 import { serve } from './commands/serve'
 import { ui } from './commands/ui'
 import { upgrade } from './commands/upgrade'
@@ -29,6 +31,13 @@ export { addComponents, DEFAULT_REGISTRY } from './commands/ui'
 export type { ProjectContext, RcInfo } from './context'
 export { createContext, findProjectRoot, readRcInfo } from './context'
 export { kits } from './kits'
+export {
+  addPlatform,
+  createPlatformContext,
+  loadPlatforms,
+  platformTypes,
+  runPlatforms,
+} from './platforms'
 export type { Recipe } from './recipes'
 export { recipeNames, recipes, resolveRecipes } from './recipes'
 export type { StubFn } from './stubs'
@@ -50,6 +59,7 @@ const info = defineCommand({
           kitr: ctx.kitrVersion,
           packageManager: ctx.pm,
           serverOnly: ctx.isServerOnly(),
+          platforms: rc.platforms,
           packages: rc.packages,
           providers: rc.providers,
           directories: rc.directories,
@@ -80,10 +90,15 @@ export const main = defineCommand({
     'make:form': makeForm,
     'make:queries': makeQueries,
     'make:provider': makeProvider,
+    dev,
+    build,
+    start,
+    serve,
+    platforms,
+    config,
     ui,
     'api:sync': apiSync,
     'routes:list': routesList,
-    serve,
     'css:types': cssTypes,
     doctor,
     'package:check': packageCheck,
@@ -93,6 +108,20 @@ export const main = defineCommand({
   },
 })
 
-export function runMain(argv = process.argv.slice(2)) {
-  return cittyRunMain(main, { rawArgs: argv })
+export async function runMain(argv = process.argv.slice(2)) {
+  if (
+    argv.includes('--help') ||
+    argv.includes('-h') ||
+    (argv.length === 1 && argv[0] === '--version')
+  )
+    return cittyRunMain(main, { rawArgs: argv })
+  try {
+    await runCommand(main, { rawArgs: argv })
+  } catch (error) {
+    // Print the message only; the stack is noise for a user-facing error. DEBUG=1 shows it.
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`\n${pc.red('✖')} ${message}`)
+    if (process.env.DEBUG && error instanceof Error) console.error(error.stack)
+    process.exitCode = 1
+  }
 }

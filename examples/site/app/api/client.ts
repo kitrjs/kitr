@@ -1,5 +1,5 @@
 import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from './routes'
+import type { AppRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
 /** Typed, no codegen: route names, params, bodies and outputs come from the router. */

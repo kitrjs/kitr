@@ -6,7 +6,7 @@ import { categories, findPackage, glyph, kits } from '#app/lib/catalog'
 
 export const Route = createFileRoute('/')({ component: Home })
 
-const mosaic = ['query', 'api', 'forms', 'auth', 'state', 'socket', 'table', 'ui', 'server']
+const mosaic = ['query', 'api', 'forms', 'auth', 'state', 'realtime', 'table', 'theme', 'server']
 
 const terminal = [
   {
@@ -14,19 +14,19 @@ const terminal = [
     cmd: 'kitr new my-app --kit app',
     out: [
       ['ok', '✓ created my-app from the app kit'],
-      ['dim', '  router · query · http · forms · table · state · ui · auth · mocks · testing'],
+      ['dim', '  router · query · http · forms · table · state · theme · auth · mocks · testing'],
       ['ok', '✓ wrote AGENTS.md'],
       ['info', '→ cd my-app && npm run dev'],
     ],
   },
   {
     label: 'kitr add',
-    cmd: 'kitr add socket',
+    cmd: 'kitr add realtime',
     out: [
       ['ok', '+ @kitr/logger   (required by server)'],
-      ['ok', '+ @kitr/server   (required by socket)'],
-      ['ok', '+ @kitr/socket'],
-      ['info', '~ kitrrc.ts · config/socket.ts · AGENTS.md'],
+      ['ok', '+ @kitr/server   (required by realtime)'],
+      ['ok', '+ @kitr/realtime'],
+      ['info', '~ kitrrc.ts · config/realtime.ts · AGENTS.md'],
     ],
   },
   {

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { server } from '#app/api/server'
+import { server } from '#server/main'
 
 describe('newsletter', () => {
   it('subscribes a valid email', async () => {

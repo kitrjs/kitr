@@ -2,29 +2,47 @@
   {
     "title": "Start here",
     "pages": [
-      { "slug": "getting-started" },
-      { "slug": "project-structure" },
-      { "slug": "configuration" }
+      {
+        "slug": "getting-started"
+      },
+      {
+        "slug": "project-structure"
+      },
+      {
+        "slug": "configuration"
+      }
     ]
   },
   {
     "title": "Guides",
     "pages": [
-      { "slug": "data" },
-      { "slug": "dashboard" },
-      { "slug": "fullstack" },
+      {
+        "slug": "data"
+      },
+      {
+        "slug": "dashboard"
+      },
+      {
+        "slug": "fullstack"
+      },
       {
         "slug": "pure-backend",
         "source": "../../../docs/pure-backend.md",
         "title": "A backend without React",
-        "description": "Build an API server with controllers, a typed client and sockets, and no React anywhere."
+        "description": "Build an API server with controllers, a typed client and realtime channels, and no React anywhere."
       },
-      { "slug": "agents" }
+      {
+        "slug": "agents"
+      }
     ]
   },
   {
     "title": "Extending kitr",
-    "pages": [{ "slug": "building-packages" }]
+    "pages": [
+      {
+        "slug": "building-packages"
+      }
+    ]
   },
   {
     "title": "Reference",
@@ -34,6 +52,18 @@
         "source": "../../../docs/cli.md",
         "title": "CLI",
         "description": "Every kitr command and flag."
+      },
+      {
+        "slug": "platforms",
+        "source": "../../../docs/platforms.md",
+        "title": "Platforms",
+        "description": "Web, server, desktop and mobile platforms: options, commands and layout."
+      },
+      {
+        "slug": "packages",
+        "source": "../../../docs/packages.md",
+        "title": "Packages",
+        "description": "What each package provides, which kit includes it, and the roadmap."
       },
       {
         "slug": "entry-points",

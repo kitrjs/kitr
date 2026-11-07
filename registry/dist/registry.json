@@ -10,6 +10,7 @@
       "description": "Sidebar + top bar layout with navigation links, user menu slot and theme toggle.",
       "registryDependencies": [
         "button",
+        "icon",
         "theme-toggle"
       ],
       "dependencies": []
@@ -56,7 +57,8 @@
       "title": "Data table",
       "description": "TanStack Table with sorting, pagination and URL-bound state via kitr/table.",
       "registryDependencies": [
-        "button"
+        "button",
+        "icon"
       ],
       "dependencies": []
     },
@@ -89,6 +91,17 @@
         "label"
       ],
       "dependencies": []
+    },
+    {
+      "name": "icon",
+      "type": "registry:ui",
+      "title": "Icon",
+      "description": "Hugeicons in the stroke-rounded style: round caps, round joins, soft corners, currentColor.",
+      "registryDependencies": [],
+      "dependencies": [
+        "@hugeicons/react",
+        "@hugeicons/core-free-icons"
+      ]
     },
     {
       "name": "input",
@@ -157,6 +170,16 @@
       "dependencies": []
     },
     {
+      "name": "sonner",
+      "type": "registry:ui",
+      "title": "Toaster",
+      "description": "Toasts with sonner, themed by kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
+      "registryDependencies": [],
+      "dependencies": [
+        "sonner"
+      ]
+    },
+    {
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",
@@ -168,9 +191,10 @@
       "name": "theme-toggle",
       "type": "registry:ui",
       "title": "Theme toggle",
-      "description": "Light/dark toggle using kitr/ui's useTheme.",
+      "description": "Light/dark toggle using kitr/theme's useTheme.",
       "registryDependencies": [
-        "button"
+        "button",
+        "icon"
       ],
       "dependencies": []
     }

@@ -1,6 +1,6 @@
 import { createTestClient } from 'kitr/testing'
 import { expect, it } from 'vitest'
-import { server } from '../server'
+import { server } from '../server/main'
 
 it('answers health', async () => {
   const client = createTestClient(server)

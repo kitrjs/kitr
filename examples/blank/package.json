@@ -1,0 +1,41 @@
+{
+  "name": "@kitr/example-blank",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "kitr dev",
+    "build": "kitr build",
+    "start": "kitr start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "kitr": "kitr"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/query": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/router": "workspace:*",
+    "@kitr/web": "workspace:*",
+    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-router": "^1.170.46",
+    "@tanstack/react-start": "^1.169.4",
+    "kitr": "workspace:*",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@kitr/vite": "workspace:*",
+    "@tanstack/react-query-devtools": "^5.107.1",
+    "@tanstack/react-router-devtools": "^1.167.2",
+    "@tanstack/router-plugin": "^1.168.48",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

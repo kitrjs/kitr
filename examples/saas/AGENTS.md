@@ -5,9 +5,23 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: conventions
 
 - Import framework code from `kitr/*` entry points (`kitr/router`, `kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
+- Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generators: `kitr make:route|action|controller|channel|store|form|queries`. Run `kitr doctor` after changes.
+
+## kitr: router
+
 - Routes are files in `app/routes` (TanStack Router file routes). `app/routeTree.gen.ts` is generated; never edit it.
 - In route files, import `createFileRoute` / `createLazyFileRoute` from `@tanstack/react-router` (the route generator owns that import). Everything else comes from `kitr/router`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`. Generators: `kitr make:route|action|controller|channel|store|form|queries`. Run `kitr doctor` after changes.
+- The root route (`app/routes/__root.tsx`) renders the HTML document: TanStack Start streams it on the server (web `ssr`), prerenders it (`static`) or ships one shell (`spa`, desktop, mobile). Keep it platform-neutral.
+
+## kitr: logger
+
+- Log through `ctx.logger` (request-scoped, carries the request id) or `app.container.use('logger')`. Never `console.log` in server code.
+
+## kitr: server
+
+- Server code lives under `server/` and never imports React. Services come from the request-scoped container (`useRequestApp()`), logs from `ctx.logger`.
+- `server/main.ts` (written by the server platform) exports `server`; providers' `ready`/`shutdown` run on `server.listen()`. A web platform in `ssr` mode answers `/api/*` through the same object via `app/routes/api.$.ts`.
 
 ## kitr: query
 
@@ -34,19 +48,16 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Client state only. `kitr make:store <name>` writes `app/stores/<name>.ts` using `createKitrStore`. Server data belongs in queries, not stores.
 
-## kitr: styling
-
-- Plain CSS and CSS Modules are first-class: `import styles from './x.module.css'`, run `kitr css:types` for typed class names, compose with `pick()` from `kitr/styling`.
-- Colours and radii come from the `--kitr-*` variables; never hard-code them.
-
 ## kitr: tailwind
 
 - Tailwind v4: utilities map to kitr tokens (`bg-background`, `text-primary`, `rounded-md`). Use `cn()` from `kitr/tailwind` to merge classes. Dark mode is `data-theme="dark"` on <html>, toggled by `useTheme()`.
 
-## kitr: ui
+## kitr: theme
 
-- Components live in `app/components/ui/` and are owned by the app: edit them freely. Add more with `kitr ui add <name>` (shadcn-compatible registry).
-- Toasts: `toast.success('Saved')` from `kitr/ui`. Theme: `useTheme()`. Import `kitr/ui/styles.css` once (done in app/styles/app.css).
+- Theme: `useTheme()` from `kitr/theme` (`theme`, `resolved`, `setTheme`, `toggle`); `data-theme="light|dark"` on <html>. Put `<ThemeScript />` in the document head to avoid a flash.
+- Colours and radii come from the `--kitr-*` variables (`kitr/theme/styles.css`, overrides in `app/styles/tokens.css`); never hard-code them. Plain CSS helpers: `pick()`, `vars()`, `dataAttrs()` from `kitr/theme`.
+- Components live in `app/components/ui/` and are owned by the app: add more with `kitr ui add <name>` (shadcn-compatible registry); toasts via `kitr ui add sonner`.
+- Icons: Hugeicons in the stroke-rounded style through `<Icon icon={Add01Icon} />` from `#components/ui/icon` (`kitr ui add icon`), icons from `@hugeicons/core-free-icons`. No other icon set, no emoji or glyphs as icons.
 
 ## kitr: auth
 
@@ -70,22 +81,14 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`kitr/devtools`); it is null in production so the call costs nothing.
 - A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `kitr/devtools/ui`.
 
-## kitr: logger
+## kitr: seo
 
-- Log through `ctx.logger` (request-scoped, carries the request id) or `app.container.use('logger')`. Never `console.log` in server code.
-
-## kitr: server
-
-- Server code never imports React. Services come from the request-scoped container (`useRequestApp()`), logs from `ctx.logger`.
-- Providers' `ready`/`shutdown` run on `server.listen()`; in TanStack Start the server is a fetch handler (`server.fetch`).
-
-## kitr: ssr
-
-- Routes render on the server by default; use `...ssrRoute('data-only')` for heavy, non-SEO pages. `head: () => seo({ title, description })` from `kitr/ssr` writes meta tags.
+- `head: () => seo({ title, description })` from `kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
+- Use `...ssrRoute('data-only')` for heavy, non-SEO pages; `cacheHeaders({ sMaxAge })` for the CDN.
 
 ## kitr: api
 
-- Routes: `app/api/routes.ts` (`defineRoutes`), controllers in `app/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
+- Routes: `server/routes.ts` (`defineRoutes`), controllers in `server/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
 - Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.
 - The client is typed from `typeof routes.$types`; call `registerRoutes(api, routes.toJSON())` or use `kitr api:sync` to write the route table and openapi.json.
 
@@ -100,3 +103,14 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Unhandled errors, rejections and render errors are reported automatically (window handlers + the error boundary the provider wraps). For caught errors: `useService('monitoring').captureException(error, { extra })`.
 - `monitoring.setUser({ id })` after sign-in, `setUser(null)` on sign-out; `addBreadcrumb({ category, message })` before risky steps.
 - Expected failures (kitr 4xx, aborted requests) are dropped by default; tune `shouldReport` in `config/monitoring.ts`. On the server: `server.use(reportErrors(monitoring))` from `kitr/monitoring/server`.
+
+## kitr: platform site
+
+- `kitr dev <name>` runs Vite on the platform's port; `kitr build` writes `dist/<name>`; `kitr start` serves it (the Start server bundle).
+- Routes render on the server by default; `ssrRoute(false)` from kitr/seo opts a route out.
+
+## kitr: platform api
+
+- `kitr dev <name>` runs server/main.ts with tsx watch; `kitr start <name>` runs the production server; tests import `server` from it and call `server.fetch(new Request(...))`, no port needed.
+- Routes live in `server/routes.ts` (`defineRoutes`), controllers in `server/controllers/`. Config comes from `config/server.ts`; the port comes from the platform options in kitrrc.ts, `PORT` or `kitr dev <name> --port`.
+- Never import React or browser APIs under `server/`; this entry must stay runnable without a DOM.

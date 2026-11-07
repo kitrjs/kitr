@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useAppState, useBackButton } from 'kitr/capacitor'
-import { useInstallPrompt, useOnline } from 'kitr/pwa'
+import { useAppState, useBackButton, useOnline, usePlatform } from 'kitr/platform/react'
+import { useInstallPrompt } from 'kitr/web/client'
 import { useCallback, useState } from 'react'
-import { native } from '#app/native'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
@@ -14,9 +13,10 @@ export const Route = createFileRoute('/')({
 
 /**
  * One page, three homes: the browser, the installed PWA, and the Capacitor shell on iOS/Android.
- * Everything below works in all three; the native hooks are no-ops on the web.
+ * Everything below works in all three; `kitr/platform` answers the same way everywhere.
  */
 function HomePage() {
+  const platform = usePlatform()
   const online = useOnline()
   const install = useInstallPrompt()
   const active = useAppState()
@@ -28,7 +28,7 @@ function HomePage() {
       <PageHeader
         title="Mobile"
         description="Platform-aware without user-agent sniffing."
-        actions={<Badge variant="secondary">{native.platform}</Badge>}
+        actions={<Badge variant="secondary">{platform.type} · {platform.os}</Badge>}
       />
       <div className="grid gap-4">
         <Card>
@@ -44,7 +44,7 @@ function HomePage() {
           <CardHeader>
             <CardTitle>Install</CardTitle>
             <CardDescription>
-              The service worker and manifest come from config/pwa.ts; `useInstallPrompt()` wraps the browser prompt.
+              The manifest and service worker come from the web platform's pwa option in kitrrc.ts; `useInstallPrompt()` wraps the browser prompt.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-3">
@@ -56,7 +56,7 @@ function HomePage() {
                 ? 'Installed.'
                 : install.canInstall
                   ? 'Ready to install.'
-                  : native.isNative
+                  : platform.native
                     ? 'Running inside the native shell.'
                     : 'Open in a browser that supports installation.'}
             </span>

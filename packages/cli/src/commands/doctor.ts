@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createContext, type ProjectContext } from '../context'
+import { createPlatformContext, loadPlatforms, platformTypes } from '../platforms'
 import { recipes } from '../recipes'
 import { versions } from '../versions'
 
@@ -39,7 +40,7 @@ export function runChecks(ctx: ProjectContext): Finding[] {
   for (const name of Object.keys(deps)) {
     if (
       name.startsWith('@kitr/') &&
-      !['@kitr/cli', '@kitr/core', '@kitr/react', '@kitr/vite', '@kitr/testing'].includes(name) &&
+      !['@kitr/cli', '@kitr/core', '@kitr/vite', '@kitr/testing'].includes(name) &&
       !rc.packages.includes(name)
     ) {
       out.push({
@@ -83,11 +84,12 @@ export function runChecks(ctx: ProjectContext): Finding[] {
         'actions',
         'testing',
         'mocks',
-        'styling',
         'table',
         'state',
         'forms',
-        'socket.io',
+        'web',
+        'mobile',
+        'desktop',
       ].includes(short)
     ) {
       out.push({
@@ -142,7 +144,7 @@ export function runChecks(ctx: ProjectContext): Finding[] {
       '@kitr/react',
       '@kitr/router',
       '@kitr/query',
-      '@kitr/ui',
+      '@kitr/theme',
       '@kitr/forms',
     ]) {
       if (name in deps)
@@ -172,6 +174,51 @@ export function runChecks(ctx: ProjectContext): Finding[] {
         fix: "import { kitr } from 'kitr/vite' and add kitr() to plugins",
       })
   }
+
+  // Platforms: each one's package must be installed; a UI app needs at least one UI platform.
+  const platformNames = Object.keys(rc.platforms)
+  for (const [name, p] of Object.entries(rc.platforms)) {
+    const info = platformTypes[p.factory]
+    if (info && !(info.package in deps))
+      out.push({
+        level: 'error',
+        message: `platform ${name} needs ${info.package}`,
+        fix: `${ctx.pm} add ${info.package}`,
+      })
+    if (info && !rc.packages.includes(info.package))
+      out.push({
+        level: 'warn',
+        message: `${info.package} (platform ${name}) is not listed in kitrrc.ts packages`,
+        fix: `kitr add ${p.factory} ${name}`,
+      })
+  }
+  if (!platformNames.length)
+    out.push({
+      level: serverOnly || 'react' in deps ? 'error' : 'info',
+      message: 'kitrrc.ts has no platforms, so `kitr dev` has nothing to run',
+      fix: serverOnly
+        ? 'kitr add server api'
+        : 'kitr add web site (or desktop app, mobile phone, server api)',
+    })
+  else if (
+    !serverOnly &&
+    'react' in deps &&
+    !Object.values(rc.platforms).some((p) => p.factory !== 'server')
+  )
+    out.push({
+      level: 'warn',
+      message: 'React is installed but no UI platform is listed',
+      fix: 'kitr add web site',
+    })
+  if (
+    Object.values(rc.platforms).some((p) => p.factory === 'server') &&
+    !ctx.exists('server/main.ts')
+  )
+    out.push({
+      level: 'error',
+      message: 'server/main.ts is missing',
+      fix: 'kitr platforms scaffold <server platform name>',
+    })
 
   // Version drift against the blessed set.
   for (const [name, wanted] of Object.entries(versions)) {
@@ -205,6 +252,33 @@ export function runChecks(ctx: ProjectContext): Finding[] {
       level: 'info',
       message: 'No AGENTS.md; `kitr add` writes one so coding agents follow the conventions',
     })
+  return out
+}
+
+/** Each platform's own `doctor` hook, run with the real instances from kitrrc.ts. */
+export async function platformChecks(ctx: ProjectContext): Promise<Finding[]> {
+  const out: Finding[] = []
+  let all: Awaited<ReturnType<typeof loadPlatforms>>
+  try {
+    all = await loadPlatforms(ctx)
+  } catch (error) {
+    return [
+      { level: 'error', message: `kitrrc.ts could not be loaded: ${(error as Error).message}` },
+    ]
+  }
+  const instances = Object.values(all)
+  for (const [name, instance] of Object.entries(all)) {
+    if (!instance.doctor) continue
+    try {
+      out.push(
+        ...(await instance.doctor(
+          createPlatformContext(ctx, name, instance, { platforms: instances }),
+        )),
+      )
+    } catch (error) {
+      out.push({ level: 'error', message: `${name}: doctor failed: ${(error as Error).message}` })
+    }
+  }
   return out
 }
 
@@ -256,9 +330,10 @@ export const doctor = defineCommand({
     json: { type: 'boolean', description: 'Print findings as JSON', default: false },
     strict: { type: 'boolean', description: 'Exit non-zero on warnings too', default: false },
   },
-  run({ args }) {
+  async run({ args }) {
     const ctx = createContext()
     const findings = runChecks(ctx)
+    findings.push(...(await platformChecks(ctx)))
     if (args.json) {
       console.log(JSON.stringify(findings, null, 2))
     } else {

@@ -1,0 +1,81 @@
+{
+  "name": "@kitr/theme",
+  "version": "0.1.0",
+  "description": "kitr/theme: design tokens and light/dark/system theming with no flash on load, cookie-backed for SSR, synced to the native status bar and window chrome.",
+  "kitr": {
+    "name": "theme",
+    "title": "Theme",
+    "summary": "Light, dark and system themes with no flash on load, design tokens, toasts, and the components you copy into your app.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "CSS variables",
+      "shadcn/ui",
+      "sonner"
+    ],
+    "requires": [
+      "react"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./styles.css": "./styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "styles.css",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "clsx": "^2.1.1",
+    "class-variance-authority": "^0.7.1"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "sonner": ">=1.5.0"
+  },
+  "peerDependenciesMeta": {
+    "sonner": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@types/react-dom": "^19.3.0",
+    "sonner": "^2.0.8",
+    "@kitr/react": "workspace:*",
+    "@testing-library/react": "^16.3.3"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

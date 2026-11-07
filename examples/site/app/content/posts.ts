@@ -25,7 +25,7 @@ export const posts: Post[] = [
     excerpt: 'Static HTML for the pages that are static, SSR for the rest.',
     date: '2026-10-16',
     body: [
-      'config/ssr.ts lists the routes to prerender and crawls links from them at build time, so this post is a plain HTML file on the CDN.',
+      'config/seo.ts lists the routes to prerender and crawls links from them at build time, so this post is a plain HTML file on the CDN.',
       'Pages that depend on the request keep rendering on the server; heavy, non-SEO pages can opt out with ssrRoute(false).',
     ],
   },

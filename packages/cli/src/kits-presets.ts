@@ -80,7 +80,7 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
   )} as const\n`
 
 const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from './routes'
+import type { AppRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
 /** Typed, no codegen: route names, params, bodies and outputs come from the router. */
@@ -126,7 +126,7 @@ export interface Project {
 
   write(
     ctx,
-    'app/controllers/projects_controller.ts',
+    'server/controllers/projects_controller.ts',
     `import type { HttpContext } from 'kitr/api'
 import { KitrError } from 'kitr/app'
 import {
@@ -199,7 +199,7 @@ export default class ProjectsController {
 
   write(
     ctx,
-    'app/controllers/auth_controller.ts',
+    'server/controllers/auth_controller.ts',
     `import type { HttpContext } from 'kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
@@ -249,11 +249,11 @@ export default class AuthController {
 
   write(
     ctx,
-    'app/api/routes.ts',
+    'server/routes.ts',
     `import { cors, defineRoutes } from 'kitr/api'
-import AuthController from '#app/controllers/auth_controller'
-import HealthController from '#app/controllers/health_controller'
-import ProjectsController from '#app/controllers/projects_controller'
+import AuthController from '#server/controllers/auth_controller'
+import HealthController from '#server/controllers/health_controller'
+import ProjectsController from '#server/controllers/projects_controller'
 
 export const routes = defineRoutes((router) =>
   router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
@@ -295,7 +295,7 @@ import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
 /**
- * Tokens come from this app's own API (app/controllers/auth_controller.ts).
+ * Tokens come from this app's own API (server/controllers/auth_controller.ts).
  * Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}) when you have a real identity provider.
  */
 const adapter = tokenAdapter<User>({
@@ -466,10 +466,12 @@ function SignInPage() {
     `import { createFileRoute } from '@tanstack/react-router'
 import { type Session, useAuth, useUser } from 'kitr/auth'
 import { Outlet, requireAuth, useNavigate } from 'kitr/router'
-import { ssrRoute } from 'kitr/ssr'
+import { ssrRoute } from 'kitr/seo'
+import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'
+import { Icon } from '#components/ui/icon'
 
 /**
  * Pathless layout: everything under it needs a session. The guard runs on the client only
@@ -495,8 +497,8 @@ function AppLayout() {
     <AppShell
       brand="${brand}"
       nav={[
-        { to: '/', label: 'Overview' },
-        { to: '/projects', label: 'Projects' },
+        { to: '/', label: 'Overview', icon: <Icon icon={Home01Icon} /> },
+        { to: '/projects', label: 'Projects', icon: <Icon icon={Folder01Icon} /> },
       ]}
       user={
         <div className="flex items-center gap-2 text-sm">
@@ -509,6 +511,7 @@ function AppLayout() {
               await navigate({ to: '/sign-in', search: { redirect: undefined } })
             }}
           >
+            <Icon icon={Logout01Icon} />
             Sign out
           </Button>
         </div>
@@ -735,7 +738,7 @@ function NewProjectDialog({
     'test/api.test.ts',
     `// @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { server } from '#app/api/server'
+import { server } from '#server/main'
 
 const json = (body: unknown) => ({
   method: 'POST',
@@ -983,7 +986,7 @@ export const posts: Post[] = [
     excerpt: 'Static HTML for the pages that are static, SSR for the rest.',
     date: '2026-10-16',
     body: [
-      'config/ssr.ts lists the routes to prerender and crawls links from them at build time, so this post is a plain HTML file on the CDN.',
+      'config/seo.ts lists the routes to prerender and crawls links from them at build time, so this post is a plain HTML file on the CDN.',
       'Pages that depend on the request keep rendering on the server; heavy, non-SEO pages can opt out with ssrRoute(false).',
     ],
   },
@@ -1014,7 +1017,7 @@ export type Subscribe = z.infer<typeof subscribeSchema>
   )
   write(
     ctx,
-    'app/controllers/newsletter_controller.ts',
+    'server/controllers/newsletter_controller.ts',
     `import type { HttpContext } from 'kitr/api'
 import { type Subscribe, subscribeSchema } from '#app/features/newsletter/schema'
 
@@ -1034,10 +1037,10 @@ export default class NewsletterController {
   )
   write(
     ctx,
-    'app/api/routes.ts',
+    'server/routes.ts',
     `import { cors, defineRoutes } from 'kitr/api'
-import HealthController from '#app/controllers/health_controller'
-import NewsletterController from '#app/controllers/newsletter_controller'
+import HealthController from '#server/controllers/health_controller'
+import NewsletterController from '#server/controllers/newsletter_controller'
 
 export const routes = defineRoutes((router) =>
   router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
@@ -1063,8 +1066,8 @@ export type AppRoutes = typeof routes.$types
 
   write(
     ctx,
-    'config/ssr.ts',
-    `import { defineConfig } from 'kitr/ssr'
+    'config/seo.ts',
+    `import { defineConfig } from 'kitr/seo'
 
 export default defineConfig({
   ssr: true,
@@ -1083,7 +1086,7 @@ export default defineConfig({
 import { getRequest } from '@tanstack/react-start/server'
 import { useTranslation } from 'kitr/i18n'
 import { Link } from 'kitr/router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { LocaleSwitch } from '#app/components/locale-switch'
 import { LocaleProvider } from '#app/locale'
 import { localeCookie } from '#app/storage'
@@ -1244,7 +1247,7 @@ function Newsletter() {
     ctx,
     'app/routes/pricing.tsx',
     `import { createFileRoute } from '@tanstack/react-router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
@@ -1293,7 +1296,7 @@ function PricingPage() {
     'app/routes/blog/index.tsx',
     `import { createFileRoute } from '@tanstack/react-router'
 import { Link } from 'kitr/router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { posts } from '#app/content/posts'
 import { PageHeader } from '#components/ui/page-header'
 
@@ -1328,10 +1331,12 @@ function BlogIndexPage() {
   write(
     ctx,
     'app/routes/blog/$slug.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
+    `import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
+import { createFileRoute } from '@tanstack/react-router'
 import { Link, notFound } from 'kitr/router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { getPost } from '#app/content/posts'
+import { Icon } from '#components/ui/icon'
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: ({ params }) => {
@@ -1356,8 +1361,12 @@ function PostPage() {
   const post = Route.useLoaderData()
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
-      <Link to="/blog" className="text-sm text-muted-foreground hover:underline">
-        ← Blog
+      <Link
+        to="/blog"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+      >
+        <Icon icon={ArrowLeft01Icon} size={14} />
+        Blog
       </Link>
       <article className="mt-4">
         <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
@@ -1381,7 +1390,7 @@ function PostPage() {
     'test/newsletter.test.ts',
     `// @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { server } from '#app/api/server'
+import { server } from '#server/main'
 
 describe('newsletter', () => {
   it('subscribes a valid email', async () => {
@@ -1447,7 +1456,7 @@ export interface Message {
   write(
     ctx,
     'app/channels/chat.ts',
-    `import { defineChannel } from 'kitr/socket'
+    `import { defineChannel } from 'kitr/realtime'
 import { api } from '#app/api/client'
 import type { Message } from '#app/features/chat/schema'
 
@@ -1471,9 +1480,9 @@ export const chatChannel = defineChannel<{ room: string }>({
 
   write(
     ctx,
-    'app/controllers/messages_controller.ts',
+    'server/controllers/messages_controller.ts',
     `import type { HttpContext } from 'kitr/api'
-import { sockets } from '#app/api/socket'
+import { realtime } from '#server/realtime'
 import { chatChannel } from '#app/channels/chat'
 import {
   type Message,
@@ -1525,7 +1534,7 @@ export default class MessagesController {
     const list = history(body.room)
     list.push(message)
     if (list.length > 100) list.shift()
-    sockets.use(chatChannel, { room: body.room }).emit('message', message)
+    realtime.use(chatChannel, { room: body.room }).emit('message', message)
     response.status(201)
     return message
   }
@@ -1535,10 +1544,10 @@ export default class MessagesController {
 
   write(
     ctx,
-    'app/api/routes.ts',
+    'server/routes.ts',
     `import { cors, defineRoutes } from 'kitr/api'
-import HealthController from '#app/controllers/health_controller'
-import MessagesController from '#app/controllers/messages_controller'
+import HealthController from '#server/controllers/health_controller'
+import MessagesController from '#server/controllers/messages_controller'
 
 export const routes = defineRoutes((router) =>
   router.group({ prefix: '/api', middleware: [cors()] }, (api) =>
@@ -1565,11 +1574,11 @@ export type AppRoutes = typeof routes.$types
 
   write(
     ctx,
-    'app/api/socket.ts',
-    `import { createSocketServer } from 'kitr/socket/server'
+    'server/realtime.ts',
+    `import { createRealtimeServer } from 'kitr/realtime/server'
 import { chatChannel } from '#app/channels/chat'
 
-export const sockets = createSocketServer({
+export const realtime = createRealtimeServer({
   channels: [chatChannel],
   // authorize: (request) => verify(request.headers.get('authorization')),
 })
@@ -1577,24 +1586,24 @@ export const sockets = createSocketServer({
   )
   write(
     ctx,
-    'app/api/server.ts',
+    'server/main.ts',
     `import { mountRoutes } from 'kitr/api'
 import { createServer } from 'kitr/server'
-import { routes } from '#app/api/routes'
-import { sockets } from '#app/api/socket'
+import { routes } from '#server/routes'
+import { realtime } from '#server/realtime'
 import serverConfig from '#config/server'
 
 /** The kitr server behind Start's /api/* catch-all route; also what tests call. */
 export const server = createServer({ config: { server: serverConfig } })
 mountRoutes(server, routes)
 // WebSocket upgrades on /api/ws, next to the REST routes.
-sockets.attach(server, '/api/ws')
+realtime.attach(server, '/api/ws')
 `,
   )
   write(
     ctx,
-    'config/socket.ts',
-    `import { defineConfig } from 'kitr/socket'
+    'config/realtime.ts',
+    `import { defineConfig } from 'kitr/realtime'
 
 export default defineConfig({
   path: '/api/ws',
@@ -1604,16 +1613,16 @@ export default defineConfig({
   )
   write(
     ctx,
-    'app/socket.ts',
-    `import { type SocketTransport, createSocketClient } from 'kitr/socket'
-import socketConfig from '#config/socket'
+    'app/realtime.ts',
+    `import { type SocketTransport, createSocketClient } from 'kitr/realtime'
+import realtimeConfig from '#config/realtime'
 
 let transport: SocketTransport | undefined
 
 /** One connection per tab, opened on first use (so nothing connects during SSR). */
 export function getSocket(): SocketTransport {
   transport ??= createSocketClient({
-    url: () => window.location.origin.replace(/^http/, 'ws') + socketConfig.path,
+    url: () => window.location.origin.replace(/^http/, 'ws') + realtimeConfig.path,
   })
   return transport
 }
@@ -1624,10 +1633,10 @@ export function getSocket(): SocketTransport {
     ctx,
     'app/features/chat/queries.ts',
     `import { defineMutation, defineQuery, defineSubscription } from 'kitr/query'
-import { channel } from 'kitr/socket'
+import { channel } from 'kitr/realtime'
 import { api } from '#app/api/client'
 import { chatChannel } from '#app/channels/chat'
-import { getSocket } from '#app/socket'
+import { getSocket } from '#app/realtime'
 
 export const messagesQuery = defineQuery(api.messages.index.query())
 
@@ -1671,7 +1680,7 @@ export const displayName = defineStorage('chat:name', { default: '' })
     'app/routes/index.tsx',
     `import { createFileRoute } from '@tanstack/react-router'
 import { useKitrMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
-import { ssrRoute } from 'kitr/ssr'
+import { ssrRoute } from 'kitr/seo'
 import { useStorage } from 'kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { chatSubscription, messagesQuery, sendMessage } from '#app/features/chat/queries'
@@ -1787,7 +1796,7 @@ function Room({ room }: { room: string }) {
     'test/messages.test.ts',
     `// @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { server } from '#app/api/server'
+import { server } from '#server/main'
 
 describe('messages', () => {
   it('stores a message and lists it for the room', async () => {
@@ -1829,7 +1838,7 @@ const desktopExtra = (ctx: ProjectContext, name: string) => {
     ctx,
     'app/routes/index.tsx',
     `import { createFileRoute } from '@tanstack/react-router'
-import { isElectron } from 'kitr/electron'
+import { isElectron } from 'kitr/desktop/client'
 import { useEffect, useState } from 'react'
 import { ipc } from '#app/ipc'
 import { Badge } from '#components/ui/badge'
@@ -1842,8 +1851,8 @@ export const Route = createFileRoute('/')({
 })
 
 /**
- * The same page runs in the browser (\`pnpm dev\`) and in Electron (\`pnpm electron:dev\`).
- * \`ipc.available\` tells them apart; every call goes through the typed contract in electron/ipc.ts.
+ * The same page runs in the browser (\`kitr dev site\`) and in Electron (\`kitr dev app\`).
+ * \`ipc.available\` tells them apart; every call goes through the typed contract in platforms/app/ipc.ts.
  */
 function HomePage() {
   const [version, setVersion] = useState<string>()
@@ -1860,7 +1869,7 @@ function HomePage() {
     <main className="mx-auto max-w-2xl p-6">
       <PageHeader
         title="${brand}"
-        description="A kitr app with an Electron shell. The renderer is a normal Vite build."
+        description="A kitr app with an Electron shell. The window loads the same client build the web platform ships."
         actions={
           <Badge variant={ipc.available ? 'default' : 'secondary'}>
             {ipc.available ? 'Electron ' + (version ?? '…') : isElectron() ? 'Electron (no bridge)' : 'Browser'}
@@ -1914,20 +1923,64 @@ const mobileExtra = (ctx: ProjectContext, name: string) => {
     ctx,
     'app/routes/__root.tsx',
     `import type { KitrRouterContext } from 'kitr/router'
-import { Outlet, createRootRouteWithContext } from 'kitr/router'
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+import type { ReactNode } from 'react'
+import css from '#app/styles/app.css?url'
 import { PwaUpdate } from '#app/components/pwa-update'
-import '#app/styles/app.css'
 
 export const Route = createRootRouteWithContext<KitrRouterContext>()({
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+    ],
+    links: [{ rel: 'stylesheet', href: css }, { rel: 'manifest', href: '/manifest.webmanifest' }],
+  }),
   component: RootLayout,
 })
 
 function RootLayout() {
   return (
-    <>
+    <RootDocument>
       <Outlet />
       <PwaUpdate />
-    </>
+    </RootDocument>
+  )
+}
+
+/** The HTML shell: one page for the browser, the installed PWA and the Capacitor WebView. */
+function RootDocument({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  )
+}
+`,
+  )
+  write(
+    ctx,
+    'app/components/pwa-update.tsx',
+    `import { useServiceWorker } from 'kitr/web/client'
+
+/** Registers the service worker and shows a one-line banner when a new version is waiting. */
+export function PwaUpdate() {
+  const sw = useServiceWorker()
+  if (!sw.needRefresh) return null
+  return (
+    <div role="status" className="fixed bottom-4 right-4 rounded-md bg-foreground px-3 py-2 text-sm text-background shadow">
+      A new version is available.{' '}
+      <button type="button" className="underline" onClick={() => sw.update()}>
+        Reload
+      </button>
+    </div>
   )
 }
 `,
@@ -1936,10 +1989,9 @@ function RootLayout() {
     ctx,
     'app/routes/index.tsx',
     `import { createFileRoute } from '@tanstack/react-router'
-import { useAppState, useBackButton } from 'kitr/capacitor'
-import { useInstallPrompt, useOnline } from 'kitr/pwa'
+import { useAppState, useBackButton, useOnline, usePlatform } from 'kitr/platform/react'
+import { useInstallPrompt } from 'kitr/web/client'
 import { useCallback, useState } from 'react'
-import { native } from '#app/native'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
@@ -1951,9 +2003,10 @@ export const Route = createFileRoute('/')({
 
 /**
  * One page, three homes: the browser, the installed PWA, and the Capacitor shell on iOS/Android.
- * Everything below works in all three; the native hooks are no-ops on the web.
+ * Everything below works in all three; \`kitr/platform\` answers the same way everywhere.
  */
 function HomePage() {
+  const platform = usePlatform()
   const online = useOnline()
   const install = useInstallPrompt()
   const active = useAppState()
@@ -1965,7 +2018,7 @@ function HomePage() {
       <PageHeader
         title="${brand}"
         description="Platform-aware without user-agent sniffing."
-        actions={<Badge variant="secondary">{native.platform}</Badge>}
+        actions={<Badge variant="secondary">{platform.type} · {platform.os}</Badge>}
       />
       <div className="grid gap-4">
         <Card>
@@ -1981,7 +2034,7 @@ function HomePage() {
           <CardHeader>
             <CardTitle>Install</CardTitle>
             <CardDescription>
-              The service worker and manifest come from config/pwa.ts; \`useInstallPrompt()\` wraps the browser prompt.
+              The manifest and service worker come from the web platform's pwa option in kitrrc.ts; \`useInstallPrompt()\` wraps the browser prompt.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-3">
@@ -1993,7 +2046,7 @@ function HomePage() {
                 ? 'Installed.'
                 : install.canInstall
                   ? 'Ready to install.'
-                  : native.isNative
+                  : platform.native
                     ? 'Running inside the native shell.'
                     : 'Open in a browser that supports installation.'}
             </span>
@@ -2028,6 +2081,7 @@ function displayName(name: string) {
 }
 
 const appComponents = [
+  'icon',
   'button',
   'input',
   'label',
@@ -2045,21 +2099,20 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
   saas: {
     name: 'saas',
     description:
-      'A logged-in product on its own API: sign-in, a guarded app shell, a projects CRUD with a data table, analytics and monitoring. TanStack Start.',
+      'A logged-in product on its own API: sign-in, a guarded app shell, a projects CRUD with a data table, analytics and monitoring. Server-rendered web plus an API server.',
+    platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
     recipes: [
       'http',
       'forms',
       'table',
       'state',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'auth',
       'storage',
       'testing',
       'devtools',
-      'server',
-      'ssr',
+      'seo',
       'api',
       'analytics',
       'monitoring',
@@ -2071,22 +2124,22 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
   site: {
     name: 'site',
     description:
-      'A marketing site: SSR with prerendering, SEO heads, i18n (en/de), a blog and a newsletter form on a controller.',
+      'A marketing site: server-rendered with prerendering, SEO heads, i18n (en/de), a blog and a newsletter form on a controller.',
+    platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
     recipes: [
+      'query',
       'forms',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'i18n',
       'storage',
       'analytics',
       'testing',
       'devtools',
-      'server',
-      'ssr',
+      'seo',
       'api',
     ],
-    components: ['button', 'input', 'label', 'card', 'form', 'page-header', 'theme-toggle'],
+    components: ['icon', 'button', 'input', 'label', 'card', 'form', 'page-header', 'theme-toggle'],
     base: baseReact,
     extra: siteExtra,
   },
@@ -2094,18 +2147,18 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
     name: 'realtime',
     description:
       'A chat room: typed WebSocket channels that feed the query cache, a messages controller, rooms in the URL.',
+    platforms: { site: { type: 'web', options: { mode: 'ssr' } }, api: { type: 'server' } },
     recipes: [
+      'query',
       'forms',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'storage',
       'testing',
       'devtools',
-      'server',
-      'ssr',
+      'seo',
       'api',
-      'socket',
+      'realtime',
     ],
     components: ['button', 'input', 'label', 'card', 'badge', 'page-header'],
     base: baseReact,
@@ -2113,21 +2166,25 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
   },
   desktop: {
     name: 'desktop',
-    description: 'The app kit in an Electron shell with a typed IPC contract and native dialogs.',
+    description:
+      'The app kit in an Electron shell with a typed IPC contract and native dialogs. Pass --shell tauri for Tauri.',
+    platforms: {
+      site: { type: 'web', options: { mode: 'spa' } },
+      app: { type: 'desktop', options: { shell: 'electron' } },
+    },
     recipes: [
       'http',
       'forms',
       'table',
       'state',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'auth',
       'storage',
       'mocks',
       'testing',
       'devtools',
-      'electron',
+      'platform',
     ],
     components: appComponents,
     base: baseReact,
@@ -2137,21 +2194,23 @@ export const presetKits: Record<'saas' | 'site' | 'realtime' | 'desktop' | 'mobi
     name: 'mobile',
     description:
       'The app kit as an installable PWA and a Capacitor shell: online state, install prompt, native lifecycle hooks.',
+    platforms: {
+      site: { type: 'web', options: { mode: 'spa', pwa: true } },
+      phone: { type: 'mobile' },
+    },
     recipes: [
       'http',
       'forms',
       'table',
       'state',
-      'styling',
       'tailwind',
-      'ui',
+      'theme',
       'auth',
       'storage',
       'mocks',
       'testing',
       'devtools',
-      'pwa',
-      'capacitor',
+      'platform',
     ],
     components: appComponents,
     base: baseReact,

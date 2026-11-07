@@ -245,7 +245,7 @@ export const kits = [
       'forms',
       'table',
       'state',
-      'ui',
+      'theme',
       'auth',
       'mocks',
       'testing',
@@ -253,12 +253,12 @@ export const kits = [
   },
   {
     name: 'fullstack',
-    text: 'The app kit plus server rendering, server actions, an API and sockets.',
-    packages: ['router', 'query', 'forms', 'auth', 'ssr', 'actions', 'api', 'socket'],
+    text: 'The app kit plus server rendering, server actions, an API and realtime channels.',
+    packages: ['router', 'query', 'forms', 'auth', 'seo', 'actions', 'api', 'realtime'],
   },
   {
     name: 'server',
     text: 'A pure backend with controllers and a typed client. No React.',
-    packages: ['server', 'api', 'db', 'logger', 'testing'],
+    packages: ['server', 'api', 'db', 'logger', 'realtime', 'testing'],
   },
 ]

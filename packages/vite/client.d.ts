@@ -7,4 +7,7 @@ declare module 'virtual:kitr/config' {
 }
 interface ImportMetaEnv {
   readonly KITR_PACKAGES: string[]
+  /** The platform name from kitrrc.ts this bundle was built for (`kitr dev|build <name>`). */
+  readonly KITR_PLATFORM: string
+  readonly KITR_PLATFORM_TYPE: string
 }

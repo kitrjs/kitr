@@ -56,7 +56,7 @@ app/
 ├── api/routes.ts       # API routes (kitr add api)
 ├── controllers/        # one class per resource
 ├── actions/            # server actions (kitr add actions)
-└── channels/           # socket channels (kitr add socket)
+└── channels/           # realtime channels (kitr add realtime)
 ```
 
 A `server` app has no `app/routes` or React at all. See [A backend without React](/docs/pure-backend).

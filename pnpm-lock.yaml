@@ -80,12 +80,12 @@ importers:
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@kitr/realtime':
+        specifier: workspace:*
+        version: link:../../packages/realtime
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@kitr/socket':
-        specifier: workspace:*
-        version: link:../../packages/socket
       crossws:
         specifier: ^0.4.17
         version: 0.4.17(srvx@1.0.8)
@@ -118,11 +118,90 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@22.20.5)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(msw@3.0.4(@types/node@22.20.5)(typescript@5.9.3)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
+  examples/blank:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@kitr/query':
+        specifier: workspace:*
+        version: link:../../packages/query
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../../packages/react
+      '@kitr/router':
+        specifier: workspace:*
+        version: link:../../packages/router
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
+      '@tanstack/react-query':
+        specifier: ^5.107.1
+        version: 5.107.1(@types/react@19.3.0)(react@19.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.170.46
+        version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-start':
+        specifier: ^1.169.4
+        version: 1.169.4(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      kitr:
+        specifier: workspace:*
+        version: link:../../packages/kitr
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 2.6.6
+        version: 2.6.6
+      '@kitr/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
+      '@tanstack/react-query-devtools':
+        specifier: ^5.107.1
+        version: 5.107.1(@tanstack/react-query@5.107.1(@types/react@19.3.0)(react@19.3.1))(@types/react@19.3.0)(csstype@3.2.3)(react@19.3.1)
+      '@tanstack/react-router-devtools':
+        specifier: ^1.167.2
+        version: 1.167.2(@tanstack/react-router@1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@tanstack/router-core@1.171.39)(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/router-plugin':
+        specifier: ^1.168.48
+        version: 1.168.48(@tanstack/react-router@1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(esbuild@0.28.2)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^6.2.1
+        version: 6.2.1(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.6
+        version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@22.20.5)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(msw@3.0.4(@types/node@22.20.5)(typescript@5.9.3)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+
   examples/dashboard:
     dependencies:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -156,18 +235,18 @@ importers:
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/table':
         specifier: workspace:*
         version: link:../../packages/table
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -177,6 +256,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-start':
+        specifier: ^1.169.4
+        version: 1.169.4(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       '@tanstack/react-table':
         specifier: ^9.3.1
         version: 9.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -201,9 +283,6 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
@@ -274,18 +353,24 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@kitr/desktop':
+        specifier: workspace:*
+        version: link:../../packages/desktop
       '@kitr/devtools':
         specifier: workspace:*
         version: link:../../packages/devtools
-      '@kitr/electron':
-        specifier: workspace:*
-        version: link:../../packages/electron
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms
@@ -295,6 +380,9 @@ importers:
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
       '@kitr/query':
         specifier: workspace:*
         version: link:../../packages/query
@@ -310,18 +398,18 @@ importers:
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/table':
         specifier: workspace:*
         version: link:../../packages/table
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -331,6 +419,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-start':
+        specifier: ^1.169.4
+        version: 1.169.4(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       '@tanstack/react-table':
         specifier: ^9.3.1
         version: 9.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -355,9 +446,6 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
@@ -437,6 +525,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/actions':
         specifier: workspace:*
         version: link:../../packages/actions
@@ -467,36 +561,36 @@ importers:
       '@kitr/react':
         specifier: workspace:*
         version: link:../../packages/react
+      '@kitr/realtime':
+        specifier: workspace:*
+        version: link:../../packages/realtime
       '@kitr/router':
         specifier: workspace:*
         version: link:../../packages/router
+      '@kitr/seo':
+        specifier: workspace:*
+        version: link:../../packages/seo
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@kitr/socket':
-        specifier: workspace:*
-        version: link:../../packages/socket
-      '@kitr/ssr':
-        specifier: workspace:*
-        version: link:../../packages/ssr
       '@kitr/state':
         specifier: workspace:*
         version: link:../../packages/state
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/table':
         specifier: workspace:*
         version: link:../../packages/table
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -542,9 +636,6 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
@@ -600,6 +691,9 @@ importers:
       happy-dom:
         specifier: ^21.0.4
         version: 21.0.4
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -612,21 +706,33 @@ importers:
 
   examples/mobile:
     dependencies:
+      '@capacitor/android':
+        specifier: ^8.6.0
+        version: 8.6.0(@capacitor/core@8.6.0)
       '@capacitor/app':
         specifier: ^8.1.2
         version: 8.1.2(@capacitor/core@8.6.0)
       '@capacitor/core':
         specifier: ^8.6.0
         version: 8.6.0
+      '@capacitor/ios':
+        specifier: ^8.6.0
+        version: 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/preferences':
+        specifier: ^8.0.0
+        version: 8.0.1(@capacitor/core@8.6.0)
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@kitr/capacitor':
-        specifier: workspace:*
-        version: link:../../packages/capacitor
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -639,12 +745,15 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/mobile':
+        specifier: workspace:*
+        version: link:../../packages/mobile
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
-      '@kitr/pwa':
+      '@kitr/platform':
         specifier: workspace:*
-        version: link:../../packages/pwa
+        version: link:../../packages/platform
       '@kitr/query':
         specifier: workspace:*
         version: link:../../packages/query
@@ -660,18 +769,18 @@ importers:
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/table':
         specifier: workspace:*
         version: link:../../packages/table
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -681,6 +790,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-start':
+        specifier: ^1.169.4
+        version: 1.169.4(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
       '@tanstack/react-table':
         specifier: ^9.3.1
         version: 9.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -705,9 +817,6 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
@@ -805,30 +914,30 @@ importers:
       '@kitr/react':
         specifier: workspace:*
         version: link:../../packages/react
+      '@kitr/realtime':
+        specifier: workspace:*
+        version: link:../../packages/realtime
       '@kitr/router':
         specifier: workspace:*
         version: link:../../packages/router
+      '@kitr/seo':
+        specifier: workspace:*
+        version: link:../../packages/seo
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@kitr/socket':
-        specifier: workspace:*
-        version: link:../../packages/socket
-      '@kitr/ssr':
-        specifier: workspace:*
-        version: link:../../packages/ssr
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -868,9 +977,6 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
@@ -923,6 +1029,9 @@ importers:
       happy-dom:
         specifier: ^21.0.4
         version: 21.0.4
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -938,6 +1047,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -974,30 +1089,30 @@ importers:
       '@kitr/router':
         specifier: workspace:*
         version: link:../../packages/router
+      '@kitr/seo':
+        specifier: workspace:*
+        version: link:../../packages/seo
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@kitr/ssr':
-        specifier: workspace:*
-        version: link:../../packages/ssr
       '@kitr/state':
         specifier: workspace:*
         version: link:../../packages/state
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/table':
         specifier: workspace:*
         version: link:../../packages/table
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -1037,9 +1152,6 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
@@ -1095,6 +1207,9 @@ importers:
       happy-dom:
         specifier: ^21.0.4
         version: 21.0.4
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1110,6 +1225,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -1140,24 +1261,24 @@ importers:
       '@kitr/router':
         specifier: workspace:*
         version: link:../../packages/router
+      '@kitr/seo':
+        specifier: workspace:*
+        version: link:../../packages/seo
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@kitr/ssr':
-        specifier: workspace:*
-        version: link:../../packages/ssr
       '@kitr/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../../packages/styling
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -1197,9 +1318,6 @@ importers:
       react-i18next:
         specifier: ^18.0.0
         version: 18.0.0(i18next@27.0.0(typescript@5.9.3))(react@19.3.1)(typescript@5.9.3)
-      sonner:
-        specifier: ^2.0.8
-        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
@@ -1252,6 +1370,9 @@ importers:
       happy-dom:
         specifier: ^21.0.4
         version: 21.0.4
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1383,31 +1504,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/capacitor:
-    dependencies:
-      '@kitr/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@capacitor/app':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@8.6.0)
-      '@capacitor/core':
-        specifier: ^8.6.0
-        version: 8.6.0
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      react:
-        specifier: ^19.3.1
-        version: 19.3.1
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   packages/cli:
     dependencies:
       '@clack/prompts':
@@ -1416,6 +1512,18 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/desktop':
+        specifier: workspace:*
+        version: link:../desktop
+      '@kitr/mobile':
+        specifier: workspace:*
+        version: link:../mobile
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../web
       citty:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1477,8 +1585,57 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/desktop:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@tauri-apps/api':
+        specifier: ^2.12.4
+        version: 2.12.4
+      '@tauri-apps/plugin-opener':
+        specifier: ^2.5.0
+        version: 2.7.2
+      '@tauri-apps/plugin-process':
+        specifier: ^2.3.0
+        version: 2.4.0
+      '@tauri-apps/plugin-store':
+        specifier: ^2.4.0
+        version: 2.5.0
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      electron:
+        specifier: ^45.2.3
+        version: 45.2.3
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/devtools:
     dependencies:
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
@@ -1498,25 +1655,6 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/electron:
-    dependencies:
-      '@kitr/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@types/node':
-        specifier: ^22.19.0
-        version: 22.20.5
-      electron:
-        specifier: ^45.2.3
-        version: 45.2.3
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -1614,18 +1752,15 @@ importers:
       '@kitr/auth':
         specifier: workspace:*
         version: link:../auth
-      '@kitr/capacitor':
-        specifier: workspace:*
-        version: link:../capacitor
       '@kitr/db':
         specifier: workspace:*
         version: link:../db
+      '@kitr/desktop':
+        specifier: workspace:*
+        version: link:../desktop
       '@kitr/devtools':
         specifier: workspace:*
         version: link:../devtools
-      '@kitr/electron':
-        specifier: workspace:*
-        version: link:../electron
       '@kitr/forms':
         specifier: workspace:*
         version: link:../forms
@@ -1638,63 +1773,60 @@ importers:
       '@kitr/logger':
         specifier: workspace:*
         version: link:../logger
+      '@kitr/mobile':
+        specifier: workspace:*
+        version: link:../mobile
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../mocks
       '@kitr/monitoring':
         specifier: workspace:*
         version: link:../monitoring
-      '@kitr/pwa':
+      '@kitr/platform':
         specifier: workspace:*
-        version: link:../pwa
+        version: link:../platform
       '@kitr/query':
         specifier: workspace:*
         version: link:../query
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
+      '@kitr/realtime':
+        specifier: workspace:*
+        version: link:../realtime
       '@kitr/router':
         specifier: workspace:*
         version: link:../router
+      '@kitr/seo':
+        specifier: workspace:*
+        version: link:../seo
       '@kitr/server':
         specifier: workspace:*
         version: link:../server
-      '@kitr/socket':
-        specifier: workspace:*
-        version: link:../socket
-      '@kitr/socket.io':
-        specifier: workspace:*
-        version: link:../socket.io
-      '@kitr/ssr':
-        specifier: workspace:*
-        version: link:../ssr
       '@kitr/state':
         specifier: workspace:*
         version: link:../state
       '@kitr/storage':
         specifier: workspace:*
         version: link:../storage
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../styling
       '@kitr/table':
         specifier: workspace:*
         version: link:../table
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../tailwind
-      '@kitr/tauri':
-        specifier: workspace:*
-        version: link:../tauri
       '@kitr/testing':
         specifier: workspace:*
         version: link:../testing
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../ui
+        version: link:../theme
       '@kitr/vite':
         specifier: workspace:*
         version: link:../vite
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../web
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -1708,6 +1840,43 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/mobile:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@capacitor/app':
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.6.0)
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/preferences':
+        specifier: ^8.0.0
+        version: 8.0.1(@capacitor/core@8.6.0)
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -1765,11 +1934,14 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/pwa:
+  packages/platform:
     dependencies:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../react
     devDependencies:
       '@types/node':
         specifier: ^22.19.0
@@ -1786,12 +1958,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-      vite:
-        specifier: ^8.3.6
-        version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
-      vite-plugin-pwa:
-        specifier: ^2.0.0
-        version: 2.0.0(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/query:
     dependencies:
@@ -1837,6 +2003,52 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/realtime:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@kitr/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@kitr/query':
+        specifier: workspace:*
+        version: link:../query
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      crossws:
+        specifier: ^0.4.17
+        version: 0.4.17(srvx@1.0.8)
+      h3:
+        specifier: ^2.0.8
+        version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
+      partysocket:
+        specifier: ^1.3.0
+        version: 1.3.0(react@19.3.1)
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      socket.io:
+        specifier: ^4.8.4
+        version: 4.8.4
+      socket.io-client:
+        specifier: ^4.8.4
+        version: 4.8.4
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/router:
     dependencies:
       '@kitr/core':
@@ -1868,6 +2080,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/seo:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/server:
     dependencies:
       '@kitr/core':
@@ -1889,87 +2117,6 @@ importers:
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/socket:
-    dependencies:
-      '@kitr/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@kitr/logger':
-        specifier: workspace:*
-        version: link:../logger
-      '@kitr/server':
-        specifier: workspace:*
-        version: link:../server
-      '@types/node':
-        specifier: ^22.19.0
-        version: 22.20.5
-      crossws:
-        specifier: ^0.4.17
-        version: 0.4.17(srvx@1.0.8)
-      h3:
-        specifier: ^2.0.8
-        version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
-      partysocket:
-        specifier: ^1.3.0
-        version: 1.3.0(react@19.3.1)
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/socket.io:
-    dependencies:
-      '@kitr/core':
-        specifier: workspace:*
-        version: link:../core
-      '@kitr/socket':
-        specifier: workspace:*
-        version: link:../socket
-    devDependencies:
-      '@types/node':
-        specifier: ^22.19.0
-        version: 22.20.5
-      socket.io:
-        specifier: ^4.8.4
-        version: 4.8.4
-      socket.io-client:
-        specifier: ^4.8.4
-        version: 4.8.4
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/ssr:
-    dependencies:
-      '@kitr/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@tanstack/react-router':
-        specifier: ^1.170.46
-        version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      react:
-        specifier: ^19.3.1
-        version: 19.3.1
-      react-dom:
-        specifier: ^19.3.1
-        version: 19.3.1(react@19.3.1)
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -2027,22 +2174,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/styling:
-    dependencies:
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-    devDependencies:
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   packages/table:
     dependencies:
       '@kitr/core':
@@ -2093,28 +2224,6 @@ importers:
         specifier: ^8.3.6
         version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
-  packages/tauri:
-    dependencies:
-      '@kitr/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      '@tauri-apps/api':
-        specifier: ^2.12.4
-        version: 2.12.4
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      react:
-        specifier: ^19.3.1
-        version: 19.3.1
-      tsdown:
-        specifier: ^0.23.7
-        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   packages/testing:
     dependencies:
       '@kitr/core':
@@ -2155,18 +2264,27 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/ui:
+  packages/theme:
     dependencies:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+    devDependencies:
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
-      '@kitr/styling':
-        specifier: workspace:*
-        version: link:../styling
-    devDependencies:
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -2198,6 +2316,9 @@ importers:
         specifier: ^2.7.0
         version: 2.7.0
     devDependencies:
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../web
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -2223,11 +2344,51 @@ importers:
         specifier: ^8.3.6
         version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
+  packages/web:
+    dependencies:
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      crossws:
+        specifier: ^0.4.17
+        version: 0.4.17(srvx@1.0.8)
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      srvx:
+        specifier: ^1.0.8
+        version: 1.0.8
+      tsdown:
+        specifier: ^0.23.7
+        version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.6
+        version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vite-plugin-pwa:
+        specifier: ^2.0.0
+        version: 2.0.0(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+
   registry:
     dependencies:
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
       '@kitr/forms':
         specifier: workspace:*
         version: link:../packages/forms
@@ -2240,9 +2401,9 @@ importers:
       '@kitr/tailwind':
         specifier: workspace:*
         version: link:../packages/tailwind
-      '@kitr/ui':
+      '@kitr/theme':
         specifier: workspace:*
-        version: link:../packages/ui
+        version: link:../packages/theme
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -2264,6 +2425,9 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: ^19.3.0
@@ -2938,6 +3102,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@capacitor/android@8.6.0':
+    resolution: {integrity: sha512-6IJS0TCfV/F/8+324CCwYd3xL6r+TH0W7zzaxYzPz9IV3YWCNvsZDuCCPHUIBC5iASb9od827ddSJ6rz+9Pu1Q==}
+    peerDependencies:
+      '@capacitor/core': ^8.6.0
+
   '@capacitor/app@8.1.2':
     resolution: {integrity: sha512-uKBlsrXH0IdvUn69e/KKYbZ32A06pcrUdG8LWuZ/6y33YMXZXLEEdNSwl+jKS/SrsTWqnePs8EqSWaiQM3mUGA==}
     peerDependencies:
@@ -2950,6 +3119,16 @@ packages:
 
   '@capacitor/core@8.6.0':
     resolution: {integrity: sha512-9F2zzuGYTJu+wqmQSEmqnFBfGrhC/njjMCfmxbvg9mq8xJT4wNh5pxbMFZxvW/yDhYJWPEBFQxeqzfo1gKrvxg==}
+
+  '@capacitor/ios@8.6.0':
+    resolution: {integrity: sha512-Y2PE4zoBqMrSTWoVMJmX2byBznjn6egmATzoEUJiGVbVubkNpAvkF/tl0SBKDyP67ngyedTx1tQq5IGYIhby1A==}
+    peerDependencies:
+      '@capacitor/core': ^8.6.0
+
+  '@capacitor/preferences@8.0.1':
+    resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   '@changesets/apply-release-plan@8.1.1':
     resolution: {integrity: sha512-nk2Hbq3M9NeHMdaIRBDvawKrQJzXB9sGyBUE5yWnIKtvdcNCPj75zBekJYr0gTT2ecJH3eFeTrc8eisPImcv0Q==}
@@ -4291,6 +4470,15 @@ packages:
 
   '@tauri-apps/api@2.12.4':
     resolution: {integrity: sha512-pVmfis+4zT8H0Qhp3xPZx9Ju7kpzvA6rr/PSJPyuwfvucTQ8sVt61NYU9KMkK703UFlYadFmjKA4HhybOtN0gg==}
+
+  '@tauri-apps/plugin-opener@2.7.2':
+    resolution: {integrity: sha512-LyybP1VSzTMQiaFYcsbAse47KpivlyXdLZMQzGLEnkgQacGESnpjAfFoQ6h5sqWgAdZDH9szYjPzHMpv0Sz+TQ==}
+
+  '@tauri-apps/plugin-process@2.4.0':
+    resolution: {integrity: sha512-GddrmsSLAYrLa/yTXlXK/YRDzUgYeeOnUXTbiyvJWkmI424RmDPD3FVLeqcon7rv6O6ZfhBilcrHWnSo7o6hIQ==}
+
+  '@tauri-apps/plugin-store@2.5.0':
+    resolution: {integrity: sha512-+ykjiQwMJCSk/U2enHA8peKBWgDKgrP7JfZnGwQpqzwA0nVtKTc0LCyxWr2whOrcQoQqtUdr9NVdDZpfKpT1Xw==}
 
   '@testing-library/dom@10.4.2':
     resolution: {integrity: sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==}
@@ -8080,6 +8268,10 @@ snapshots:
   '@biomejs/cli-win32-x64@2.6.6':
     optional: true
 
+  '@capacitor/android@8.6.0(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
   '@capacitor/app@8.1.2(@capacitor/core@8.6.0)':
     dependencies:
       '@capacitor/core': 8.6.0
@@ -8110,6 +8302,14 @@ snapshots:
   '@capacitor/core@8.6.0':
     dependencies:
       tslib: 2.9.1
+
+  '@capacitor/ios@8.6.0(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/preferences@8.0.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
 
   '@changesets/apply-release-plan@8.1.1':
     dependencies:
@@ -9396,6 +9596,18 @@ snapshots:
   '@tanstack/virtual-file-routes@1.162.0': {}
 
   '@tauri-apps/api@2.12.4': {}
+
+  '@tauri-apps/plugin-opener@2.7.2':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-process@2.4.0':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-store@2.5.0':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
 
   '@testing-library/dom@10.4.2':
     dependencies:

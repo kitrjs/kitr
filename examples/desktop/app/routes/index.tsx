@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { isElectron } from 'kitr/electron'
+import { isElectron } from 'kitr/desktop/client'
 import { useEffect, useState } from 'react'
 import { ipc } from '#app/ipc'
 import { Badge } from '#components/ui/badge'
@@ -12,8 +12,8 @@ export const Route = createFileRoute('/')({
 })
 
 /**
- * The same page runs in the browser (`pnpm dev`) and in Electron (`pnpm electron:dev`).
- * `ipc.available` tells them apart; every call goes through the typed contract in electron/ipc.ts.
+ * The same page runs in the browser (`kitr dev site`) and in Electron (`kitr dev app`).
+ * `ipc.available` tells them apart; every call goes through the typed contract in platforms/app/ipc.ts.
  */
 function HomePage() {
   const [version, setVersion] = useState<string>()
@@ -30,7 +30,7 @@ function HomePage() {
     <main className="mx-auto max-w-2xl p-6">
       <PageHeader
         title="Desktop"
-        description="A kitr app with an Electron shell. The renderer is a normal Vite build."
+        description="A kitr app with an Electron shell. The window loads the same client build the web platform ships."
         actions={
           <Badge variant={ipc.available ? 'default' : 'secondary'}>
             {ipc.available ? 'Electron ' + (version ?? '…') : isElectron() ? 'Electron (no bridge)' : 'Browser'}

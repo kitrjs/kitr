@@ -1,17 +1,20 @@
 import { defineCommand } from 'citty'
 import { Codemods } from '../codemods'
 import { createContext } from '../context'
+import { platformTypeNames } from '../platforms'
 import { recipeNames, recipes, resolveRecipes } from '../recipes'
+import { addPlatformCommand } from './platforms'
 
 export const add = defineCommand({
   meta: {
     name: 'add',
-    description: 'Add kitr packages: installs deps, registers providers, writes config and stubs.',
+    description:
+      'Add kitr packages (`kitr add auth forms`) or a platform (`kitr add web site --mode ssr`): installs deps, registers providers, writes config and stubs.',
   },
   args: {
     packages: {
       type: 'positional',
-      description: `One or more of: ${recipeNames.join(', ')}`,
+      description: `A platform type (${platformTypeNames.join(', ')}) followed by its name, or packages: ${recipeNames.join(', ')}`,
       required: true,
     },
     install: {
@@ -23,6 +26,11 @@ export const add = defineCommand({
     verbose: { type: 'boolean', default: false },
   },
   async run({ args, rawArgs }) {
+    if (platformTypeNames.includes(args.packages))
+      return addPlatformCommand(args.packages, rawArgs.slice(1), {
+        install: args.install,
+        dryRun: args['dry-run'],
+      })
     const ctx = createContext({ dryRun: args['dry-run'], verbose: args.verbose })
     const names = [args.packages, ...rawArgs.slice(1).filter((a) => !a.startsWith('-'))]
     const installed = ctx.readRc().packages
@@ -46,7 +54,8 @@ export const add = defineCommand({
     ctx.log.success(
       `${ctx.dryRun ? 'Would change' : 'Done. Changed'}: ${[...ctx.touched].join(', ') || 'nothing'}`,
     )
-    if (names.includes('ui')) ctx.log.info('Pull components with `kitr ui add button input form`.')
+    if (names.includes('theme'))
+      ctx.log.info('Pull components with `kitr ui add button input form`.')
   },
 })
 

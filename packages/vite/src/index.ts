@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { basename, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Plugin, PluginOption } from 'vite'
 
 export interface KitrPluginOptions {
@@ -18,15 +19,52 @@ export interface KitrPluginOptions {
   router?: Record<string, unknown>
   /** Include `@kitr/devtools/provider`. Default: never in production builds, always otherwise. */
   devtools?: boolean
+  /** Which platform from kitrrc.ts this build is for. Default: `KITR_PLATFORM` (set by `kitr dev|build <name>`), else the first web platform. */
+  platform?: string
 }
 
 /** Config files whose packages import Node built-ins; kept out of client builds. */
 const SERVER_ONLY_CONFIG = ['server', 'api', 'db']
 
+interface RcPlatform {
+  factory: string
+  source?: string
+  options?: Record<string, any>
+}
+
 interface RcInfo {
   packages: string[]
   providers: string[]
   directories: Record<string, string>
+  platforms: Record<string, RcPlatform>
+}
+
+type WebMode = 'static' | 'spa' | 'ssr'
+
+/** The platform this Vite process builds for, and what it means for Start. */
+interface ActivePlatform {
+  name: string
+  type: string
+  mode: WebMode
+  options: Record<string, any>
+}
+
+function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | undefined {
+  const entries = Object.entries(rc.platforms)
+  const pick = wanted
+    ? entries.find(([n]) => n === wanted)
+    : (entries.find(([, p]) => p.factory === 'web') ??
+      entries.find(([, p]) => p.factory !== 'server'))
+  // No platforms at all: a project that wires Vite itself (legacy or custom). A wrong name is an error.
+  if (wanted && !pick && entries.length)
+    throw new Error(
+      `[kitr/vite] KITR_PLATFORM=${wanted} is not a platform in kitrrc.ts (have: ${entries.map(([n]) => n).join(', ') || 'none'})`,
+    )
+  if (!pick) return undefined
+  const [name, p] = pick
+  const options = p.options ?? {}
+  const mode: WebMode = p.factory === 'web' ? (options.mode ?? 'spa') : 'spa'
+  return { name, type: p.factory, mode, options }
 }
 
 /**
@@ -36,9 +74,11 @@ interface RcInfo {
  * - pre-declares `optimizeDeps` for the blessed stack so dev start never rediscovers.
  */
 export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
-  let root = options.root ?? process.cwd()
+  let root = options.root ?? defaultRoot()
   let rc = readRc(root)
   let stripDevtools = false
+  const wantedPlatform = options.platform ?? process.env.KITR_PLATFORM
+  let platform = pickPlatform(rc, wantedPlatform)
   const plugins: PluginOption[] = []
 
   const core: Plugin = {
@@ -49,26 +89,39 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         options.devtools === false || (env.command === 'build' && env.mode === 'production')
       root = options.root ?? config.root ?? process.cwd()
       rc = readRc(root)
+      platform = pickPlatform(rc, wantedPlatform)
       const include = blessedDeps(root)
-      // Tauri's webview needs a fixed port and sees TAURI_ENV_* at build time.
-      const tauri = rc.packages.includes('@kitr/tauri')
-        ? {
-            clearScreen: false,
-            server: { port: 1420, strictPort: true },
-            envPrefix: ['VITE_', 'TAURI_ENV_*'],
-          }
-        : {}
+      const port = platform?.options.port
+      // Tauri's webview sees TAURI_ENV_* at build time; every native shell wants a fixed port.
+      const shell =
+        platform?.type === 'desktop'
+          ? {
+              clearScreen: false,
+              ...(platform.options.shell !== 'electron'
+                ? { envPrefix: ['VITE_', 'TAURI_ENV_*'] }
+                : {}),
+            }
+          : {}
       return {
-        ...tauri,
+        ...shell,
+        ...(typeof port === 'number'
+          ? { server: { port, strictPort: true }, preview: { port } }
+          : {}),
+        ...(platform ? { build: { outDir: `dist/${platform.name}` } } : {}),
         resolve: {
           alias: {
             '#app': resolve(root, rc.directories.app ?? 'app'),
             '#config': resolve(root, rc.directories.config ?? 'config'),
             '#components': resolve(root, rc.directories.components ?? 'app/components'),
+            '#server': resolve(root, rc.directories.server ?? 'server'),
           },
         },
         optimizeDeps: { include },
-        define: { 'import.meta.env.KITR_PACKAGES': JSON.stringify(rc.packages) },
+        define: {
+          'import.meta.env.KITR_PACKAGES': JSON.stringify(rc.packages),
+          'import.meta.env.KITR_PLATFORM': JSON.stringify(platform?.name ?? ''),
+          'import.meta.env.KITR_PLATFORM_TYPE': JSON.stringify(platform?.type ?? ''),
+        },
       }
     },
     resolveId(id) {
@@ -119,7 +172,11 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   }
   plugins.push(core)
 
-  const useStart = options.start ?? rc.packages.includes('@kitr/server')
+  // Every UI platform renders through TanStack Start: `ssr` streams on the server, `static`
+  // prerenders every page, `spa` (and desktop/mobile shells) ship one prerendered shell.
+  const useStart =
+    options.start ??
+    (rc.packages.includes('@kitr/router') || !!platform || rc.packages.includes('@kitr/server'))
   const routesDirectory = options.routesDirectory ?? rc.directories.routes ?? 'app/routes'
   const generatedRouteTree =
     options.generatedRouteTree ?? join(rc.directories.app ?? 'app', 'routeTree.gen.ts')
@@ -132,6 +189,23 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         const srcDirectory = rc.directories.app ?? 'app'
         const rel = (p: string) =>
           p.startsWith(`${srcDirectory}/`) ? p.slice(srcDirectory.length + 1) : p
+        const seo = readPrerender(root, rc.directories.config ?? 'config')
+        const mode = platform?.mode ?? 'ssr'
+        const modeOptions =
+          mode === 'spa'
+            ? { spa: { enabled: true, prerender: { outputPath: '/index.html' } } }
+            : mode === 'static'
+              ? {
+                  pages: [{ path: '/' }, ...(seo.pages ?? []).filter((p) => p.path !== '/')],
+                  prerender: {
+                    enabled: true,
+                    crawlLinks: true,
+                    autoSubfolderIndex: true,
+                    ...seo.prerender,
+                  },
+                  ...(seo.sitemap ? { sitemap: seo.sitemap } : {}),
+                }
+              : seo
         return tanstackStart({
           srcDirectory,
           router: {
@@ -139,7 +213,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
             generatedRouteTree: rel(generatedRouteTree),
             ...options.router,
           },
-          ...readPrerender(root, rc.directories.config ?? 'config'),
+          ...modeOptions,
           // Vite 8's SSR environment has `dispatchFetch`, which Start reads as "someone else serves dev";
           // nobody does, so ask Start to mount its own dev middleware.
           vite: { installDevServerMiddleware: true, ...(startOptions.vite as object | undefined) },
@@ -162,10 +236,57 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   const useTailwind = options.tailwind ?? rc.packages.includes('@kitr/tailwind')
   if (useTailwind)
     plugins.push(import('@tailwindcss/vite').then((m) => m.default()).catch(() => null))
+  if (platform?.type === 'web' && platform.options.pwa) {
+    const active = platform
+    plugins.push(
+      import('@kitr/web/vite')
+        .then((m) => m.kitrPwa(active.options as any, appName(root)))
+        .catch((error) => {
+          console.warn(
+            `[kitr/vite] ${active.name}: pwa is on but vite-plugin-pwa could not load (${(error as Error).message})`,
+          )
+          return null
+        }),
+    )
+  }
   return plugins
 }
 
+function appName(root: string): string {
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
+    return String(pkg.name ?? 'app')
+      .replace(/^@[^/]+\//, '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, (c: string) => c.toUpperCase())
+  } catch {
+    return 'App'
+  }
+}
+
 export default kitr
+
+/**
+ * The project root before Vite tells us: the working directory when it holds a kitrrc, otherwise the
+ * directory of the config file that called `kitr()` (a monorepo running `vitest` from its root reaches
+ * every project's config with the repo root as cwd).
+ */
+function defaultRoot(): string {
+  const cwd = process.cwd()
+  if (findRc(cwd)) return cwd
+  const stack = new Error().stack ?? ''
+  for (const m of stack.matchAll(/at (?:.+? \()?(file:\/\/\S+?|\/\S+?)(?:\?\S*)?:\d+:\d+\)?$/gm)) {
+    const file = m[1]!.startsWith('file://') ? fileURLToPath(m[1]!) : m[1]!
+    if (!/vite\.config|vitest\.config|vitest\.workspace/.test(basename(file))) continue
+    // Vite bundles the config into <root>/node_modules/.vite-temp/; walk up to the kitrrc.
+    let dir = dirname(file)
+    while (dir !== dirname(dir)) {
+      if (findRc(dir)) return dir
+      dir = dirname(dir)
+    }
+  }
+  return cwd
+}
 
 function findRc(root: string): string | undefined {
   for (const name of ['kitrrc.ts', 'kitrrc.mts', 'kitrrc.js', 'kitrrc.mjs']) {
@@ -186,8 +307,11 @@ export function readRc(root: string): RcInfo {
       routes: 'app/routes',
       config: 'config',
       components: 'app/components',
+      server: 'server',
+      platforms: 'platforms',
       stubs: 'stubs',
     },
+    platforms: {},
   }
   if (!path) return info
   const src = stripComments(readFileSync(path, 'utf8'))
@@ -199,7 +323,53 @@ export function readRc(root: string): RcInfo {
   info.packages = [...packagesBlock.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]!)
   const dirs = src.match(/directories\s*:\s*\{([\s\S]*?)\}/)?.[1] ?? ''
   for (const m of dirs.matchAll(/(\w+)\s*:\s*['"]([^'"]+)['"]/g)) info.directories[m[1]!] = m[2]!
+  info.platforms = readRcPlatforms(src)
   return info
+}
+
+/** Static read of `platforms: { site: web({ mode: 'ssr' }) }`: names, factories and literal options. */
+export function readRcPlatforms(src: string): Record<string, RcPlatform> {
+  const out: Record<string, RcPlatform> = {}
+  const imports = new Map<string, string>()
+  for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g))
+    for (const name of m[1]!.split(',')) {
+      const parts = name.trim().split(/\s+as\s+/)
+      const local = (parts[1] ?? parts[0])!.trim()
+      if (local) imports.set(local, m[2]!)
+    }
+  const start = src.search(/platforms\s*:\s*\{/)
+  if (start < 0) return out
+  const open = src.indexOf('{', start)
+  let depth = 0
+  let end = open
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++
+    else if (src[i] === '}' && --depth === 0) {
+      end = i
+      break
+    }
+  }
+  const block = src.slice(open + 1, end)
+  const entry = /(\w+)\s*:\s*(\w+)\s*\(/g
+  for (let m = entry.exec(block); m; m = entry.exec(block)) {
+    const argStart = m.index + m[0].length
+    let d = 1
+    let i = argStart
+    for (; i < block.length && d > 0; i++) {
+      if (block[i] === '(') d++
+      else if (block[i] === ')') d--
+    }
+    const arg = block.slice(argStart, i - 1).trim()
+    let options: Record<string, unknown> | undefined
+    if (arg) {
+      try {
+        options = new Function(`return (${arg})`)()
+      } catch {}
+    }
+    out[m[1]!] = { factory: m[2]!, source: imports.get(m[2]!), options }
+    entry.lastIndex = i
+  }
+  return out
 }
 
 const blessed = [
@@ -259,7 +429,7 @@ function arrayBlock(src: string, key: string): string {
 }
 
 /**
- * Static read of `config/ssr.ts`: `prerender: ['/a']` or `{ routes: [...], crawlLinks }` becomes
+ * Static read of `config/seo.ts`: `prerender: ['/a']` or `{ routes: [...], crawlLinks }` becomes
  * Start's `pages` + `prerender`, and `site.url` turns on the sitemap. No execution needed.
  */
 export function readPrerender(
@@ -270,18 +440,20 @@ export function readPrerender(
   prerender?: Record<string, unknown>
   sitemap?: Record<string, unknown>
 } {
-  const path = resolve(root, configDir, 'ssr.ts')
-  if (!existsSync(path)) return {}
+  const path = [resolve(root, configDir, 'seo.ts'), resolve(root, configDir, 'ssr.ts')].find(
+    existsSync,
+  )
+  if (!path) return {}
   const src = readFileSync(path, 'utf8')
+  const host = src.match(/site\s*:\s*\{[\s\S]*?url\s*:\s*['"]([^'"]+)['"]/)?.[1]
   const block = src.match(/prerender\s*:\s*(\{[\s\S]*?\}|\[[\s\S]*?\])/)?.[1]
-  if (!block) return {}
+  if (!block) return host ? { sitemap: { enabled: true, host } } : {}
   const list = block.startsWith('[')
     ? block
     : (block.match(/routes\s*:\s*(\[[\s\S]*?\])/)?.[1] ?? '[]')
   const routes = [...list.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]!)
-  if (!routes.length) return {}
+  if (!routes.length) return host ? { sitemap: { enabled: true, host } } : {}
   const crawlLinks = /crawlLinks\s*:\s*true/.test(block)
-  const host = src.match(/site\s*:\s*\{[\s\S]*?url\s*:\s*['"]([^'"]+)['"]/)?.[1]
   return {
     pages: routes.map((p) => ({ path: p })),
     prerender: { enabled: true, crawlLinks, autoSubfolderIndex: true },

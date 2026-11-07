@@ -27,6 +27,17 @@ export interface RcInfo {
   packages: string[]
   providers: string[]
   directories: Record<string, string>
+  /** `platforms: { site: web({...}) }`, read statically: the key and the factory it calls. */
+  platforms: Record<string, RcPlatform>
+}
+
+export interface RcPlatform {
+  /** The factory called (`web`, `server`...), which is the platform type for kitr's packages. */
+  factory: string
+  /** Where the factory is imported from, when it is (`kitr/web`). */
+  source?: string
+  /** Literal options, when they parse as JSON-ish; otherwise undefined. */
+  options?: Record<string, unknown>
 }
 
 export const log = {
@@ -76,8 +87,11 @@ export function readRcInfo(rcPath: string | undefined): RcInfo {
       routes: 'app/routes',
       config: 'config',
       components: 'app/components',
+      server: 'server',
+      platforms: 'platforms',
       stubs: 'stubs',
     },
+    platforms: {},
   }
   if (!rcPath || !existsSync(rcPath)) return info
   const src = stripComments(readFileSync(rcPath, 'utf8'))
@@ -89,7 +103,55 @@ export function readRcInfo(rcPath: string | undefined): RcInfo {
   info.packages = [...packagesBlock.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]!)
   const dirs = src.match(/directories\s*:\s*\{([\s\S]*?)\}/)?.[1] ?? ''
   for (const m of dirs.matchAll(/(\w+)\s*:\s*['"]([^'"]+)['"]/g)) info.directories[m[1]!] = m[2]!
+  info.platforms = readRcPlatforms(src)
   return info
+}
+
+/** Static read of the `platforms` dictionary. Nothing is executed; `loadPlatforms()` does that. */
+export function readRcPlatforms(src: string): Record<string, RcPlatform> {
+  const out: Record<string, RcPlatform> = {}
+  const imports = new Map<string, string>()
+  for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g))
+    for (const name of m[1]!.split(',')) {
+      const parts = name.trim().split(/\s+as\s+/)
+      const local = (parts[1] ?? parts[0])!.trim()
+      if (local) imports.set(local, m[2]!)
+    }
+  const start = src.search(/platforms\s*:\s*\{/)
+  if (start < 0) return out
+  const open = src.indexOf('{', start)
+  let depth = 0
+  let end = open
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++
+    else if (src[i] === '}' && --depth === 0) {
+      end = i
+      break
+    }
+  }
+  const block = src.slice(open + 1, end)
+  const entry = /(\w+)\s*:\s*(\w+)\s*\(/g
+  for (let m = entry.exec(block); m; m = entry.exec(block)) {
+    const name = m[1]!
+    const factory = m[2]!
+    const argStart = m.index + m[0].length
+    let d = 1
+    let i = argStart
+    for (; i < block.length && d > 0; i++) {
+      if (block[i] === '(') d++
+      else if (block[i] === ')') d--
+    }
+    const arg = block.slice(argStart, i - 1).trim()
+    let options: Record<string, unknown> | undefined
+    if (arg) {
+      try {
+        options = new Function(`return (${arg})`)()
+      } catch {}
+    }
+    out[name] = { factory, source: imports.get(factory), options }
+    entry.lastIndex = i
+  }
+  return out
 }
 
 export function createContext(
@@ -132,9 +194,11 @@ export function createContext(
     readRc: () => readRcInfo(ctx.rcPath ?? findRcPath(root)),
     isServerOnly() {
       const deps = { ...ctx.pkg.dependencies, ...ctx.pkg.devDependencies }
+      const rc = ctx.readRc()
       return (
         !('react' in deps) &&
-        ('@kitr/server' in deps || ctx.readRc().packages.includes('@kitr/server'))
+        !rc.packages.includes('@kitr/react') &&
+        ('@kitr/server' in deps || rc.packages.includes('@kitr/server'))
       )
     },
   }

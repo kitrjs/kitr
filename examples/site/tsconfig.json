@@ -29,14 +29,24 @@
       ],
       "#components/*": [
         "./app/components/*"
+      ],
+      "#server/*": [
+        "./server/*"
       ]
     }
   },
   "include": [
     "app",
     "config",
+    "server",
+    "platforms",
     "kitrrc.ts",
     "vite.config.ts",
     "test"
+  ],
+  "exclude": [
+    "platforms/**/src-tauri",
+    "platforms/**/ios",
+    "platforms/**/android"
   ]
 }

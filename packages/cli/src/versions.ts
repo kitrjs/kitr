@@ -23,6 +23,8 @@ export const versions: Record<string, string> = {
   'socket.io': '^4.8.4',
   'socket.io-client': '^4.8.4',
   sonner: '^2.0.8',
+  '@hugeicons/react': '^1.1.10',
+  '@hugeicons/core-free-icons': '^4.4.0',
   tailwindcss: '^4.3.5',
   '@tailwindcss/vite': '^4.3.5',
   'class-variance-authority': '^0.7.1',
@@ -51,6 +53,13 @@ export const versions: Record<string, string> = {
   '@capacitor/core': '^8.6.0',
   '@capacitor/app': '^8.1.2',
   '@capacitor/cli': '^8.6.0',
+  '@capacitor/preferences': '^8.0.0',
+  '@capacitor/ios': '^8.6.0',
+  '@capacitor/android': '^8.6.0',
+  '@tauri-apps/plugin-store': '^2.4.0',
+  '@tauri-apps/plugin-opener': '^2.5.0',
+  '@tauri-apps/plugin-process': '^2.3.0',
+  wrangler: '^4.0.0',
 }
 
 export function versionOf(name: string): string {

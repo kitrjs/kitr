@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { freePort, root, startProcess } from './helpers'
 
-/** The server kit as users run it: `node --import tsx server.ts`, real sockets, real signals. */
+/** The server kit as users run it: `node --import tsx server/main.ts`, real sockets, real signals. */
 describe('backend example over the network', () => {
   const dir = join(root, 'examples/backend')
   let base: string
@@ -16,7 +16,7 @@ describe('backend example over the network', () => {
     server = await startProcess(
       dir,
       process.execPath,
-      ['--import', 'tsx', 'server.ts'],
+      ['--import', 'tsx', 'server/main.ts'],
       `${base}/healthz`,
       { PORT: String(port), LOG_LEVEL: 'warn' },
     )

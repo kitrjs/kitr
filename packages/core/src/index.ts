@@ -28,6 +28,13 @@ export {
   type DevtoolsPanel,
   getDevtools,
 } from './devtools'
+export {
+  type DriverKey,
+  type DriverOf,
+  type DriverRegistration,
+  DriverRegistry,
+  type DriverTypes,
+} from './drivers'
 export { type CreateEnvOptions, createEnv, type Env, env } from './env'
 export {
   type FieldErrors,
@@ -38,6 +45,21 @@ export {
   type KitrErrorShape,
   toKitrError,
 } from './errors'
+export {
+  coerceOption,
+  definePlatform,
+  isPlatformInstance,
+  type PlatformContext,
+  type PlatformDefinition,
+  type PlatformDependency,
+  type PlatformFactory,
+  type PlatformFinding,
+  type PlatformHooks,
+  type PlatformInstance,
+  type PlatformOptionSpec,
+  type PlatformOptionType,
+  parseOptions,
+} from './platform'
 export { defineProvider, type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 export { defaultDirectories, defineKitrConfig, type KitrRc } from './rc'
 export {

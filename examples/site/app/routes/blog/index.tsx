@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Link } from 'kitr/router'
-import { seo } from 'kitr/ssr'
+import { seo } from 'kitr/seo'
 import { posts } from '#app/content/posts'
 import { PageHeader } from '#components/ui/page-header'
 

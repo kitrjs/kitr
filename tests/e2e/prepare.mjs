@@ -45,19 +45,19 @@ const fixtures = join(root, 'tests/e2e/fixtures', example)
 if (existsSync(fixtures)) cpSync(fixtures, join(target, 'app'), { recursive: true })
 
 // Fixture API route: lets a test push an event down a socket channel.
-const routesFile = join(target, 'app/api/routes.ts')
-if (existsSync(routesFile) && existsSync(join(target, 'app/api/socket.ts'))) {
+const routesFile = join(target, 'server/routes.ts')
+if (existsSync(routesFile) && existsSync(join(target, 'server/realtime.ts'))) {
   let src = readFileSync(routesFile, 'utf8')
-  src = `import { exampleChannel } from '#app/channels/example'\nimport { sockets } from '#app/api/socket'\n${src}`
+  src = `import { exampleChannel } from '#app/channels/example'\nimport { realtime } from '#server/realtime'\n${src}`
   src = src.replace(
     "api.get('/health'",
-    "api.post('/e2e/emit', async (ctx) => { const body = ctx.body as { room: string; text: string }; sockets.use(exampleChannel, { room: body.room }).emit('message', body.text); return { sent: true } }, { name: 'e2e.emit' })\n      .get('/health'",
+    "api.post('/e2e/emit', async (ctx) => { const body = ctx.body as { room: string; text: string }; realtime.use(exampleChannel, { room: body.room }).emit('message', body.text); return { sent: true } }, { name: 'e2e.emit' })\n      .get('/health'",
   )
   writeFileSync(routesFile, src)
 }
 
 if (flags.includes('--build')) {
-  execFileSync(join(root, 'node_modules/.bin/vite'), ['build', '--logLevel', 'warn'], {
+  execFileSync(process.execPath, [join(root, 'packages/kitr/bin/kitr.mjs'), 'build', 'site'], {
     cwd: target,
     stdio: 'inherit',
   })

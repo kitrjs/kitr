@@ -1,39 +1,104 @@
-import type { Codemods } from './codemods'
 import type { ProjectContext } from './context'
-import { manifests } from './manifests.gen'
+import { type Recipe, r } from './recipe'
 import { addonRecipes } from './recipes-addons'
 
-export interface Recipe {
-  name: string
-  /** npm package this recipe installs, if any (recipes without one are setup-only). */
-  package?: string
-  description: string
-  /** Other recipes that must be present first. */
-  requires?: string[]
-  /** Client-side recipe: refused in server-only projects. */
-  client?: boolean
-  configure(ctx: ProjectContext, codemods: Codemods): void | Promise<void>
-  unconfigure?(ctx: ProjectContext, codemods: Codemods): void | Promise<void>
-}
-
-type RecipeSetup = Pick<Recipe, 'name' | 'package' | 'configure' | 'unconfigure'>
-
-/** A recipe's description, requires and client flag come from its package's `kitr` block. */
-const r = (setup: RecipeSetup): Recipe => {
-  const m = manifests[setup.name]
-  if (!m) throw new Error(`@kitr/${setup.name} has no "kitr" block in its package.json`)
-  return {
-    ...setup,
-    description: m.summary,
-    ...(m.requires?.length ? { requires: m.requires } : {}),
-    ...(m.client ? { client: true } : {}),
-  }
-}
+export type { Recipe } from './recipe'
 
 export const recipes: Record<string, Recipe> = {
+  react: r({
+    name: 'react',
+    package: '@kitr/react',
+    client: true,
+    description:
+      'React, the kitr app object and the provider tree (`KitrProvider`). Every UI platform needs it.',
+    configure(ctx, c) {
+      c.installPackages([
+        '@kitr/react',
+        'react',
+        'react-dom',
+        { name: '@vitejs/plugin-react', dev: true },
+        { name: '@types/react', dev: true },
+        { name: '@types/react-dom', dev: true },
+      ])
+      c.addPackage('@kitr/react')
+      ctx.write(
+        'app/env.ts',
+        `import { createEnv, env as e } from 'kitr/env'\n\n/** Validated at startup. Public vars (VITE_*) ship to the browser; server vars throw if read there. */\nexport const env = createEnv({\n  public: {\n    VITE_APP_NAME: e.string({ default: '${ctx.pkg.name ?? 'app'}' }),\n  },\n  server: {},\n})\n`,
+      )
+      ctx.write(
+        'app/app.ts',
+        `import { createApp } from 'kitr/app'\nimport { config } from 'virtual:kitr/config'\nimport { providers } from 'virtual:kitr/providers'\nimport { env } from './env'\n\n/** One app object: providers from kitrrc.ts, config from config/*.ts, both as static imports. */\nexport const app = createApp({ providers, config, env })\n`,
+      )
+    },
+    unconfigure(_ctx, c) {
+      c.removePackage('@kitr/react')
+      c.removePackages([
+        '@kitr/react',
+        'react',
+        'react-dom',
+        '@vitejs/plugin-react',
+        '@types/react',
+        '@types/react-dom',
+      ])
+    },
+  }),
+  router: r({
+    name: 'router',
+    package: '@kitr/router',
+    requires: ['react'],
+    client: true,
+    description:
+      'TanStack Router file routes under app/routes, rendered by TanStack Start on every UI platform.',
+    configure(ctx, c) {
+      c.installPackages([
+        '@kitr/router',
+        '@tanstack/react-router',
+        '@tanstack/react-start',
+        { name: '@tanstack/router-plugin', dev: true },
+        { name: '@tanstack/react-router-devtools', dev: true },
+      ])
+      c.addPackage('@kitr/router')
+      ctx.write(
+        'app/router.tsx',
+        `import { createKitrRouter } from 'kitr/router'\nimport { app } from './app'\nimport { routeTree } from './routeTree.gen'\n\nexport function getRouter() {\n  return createKitrRouter({ routeTree, app })\n}\n\ndeclare module '@tanstack/react-router' {\n  interface Register {\n    router: ReturnType<typeof getRouter>\n  }\n}\n`,
+      )
+      // Boot providers before hydrating, so the first client render matches the server's HTML.
+      ctx.write(
+        'app/client.tsx',
+        `import { StartClient } from '@tanstack/react-start/client'\nimport { StrictMode, startTransition } from 'react'\nimport { hydrateRoot } from 'react-dom/client'\nimport { app } from './app'\n\n/** Start's client entry, with the kitr app booted first so providers are ready when the tree hydrates. */\napp.boot().then(() => {\n  startTransition(() => {\n    hydrateRoot(\n      document,\n      <StrictMode>\n        <StartClient />\n      </StrictMode>,\n    )\n  })\n})\n`,
+      )
+      ctx.write('app/routes/__root.tsx', startRootRoute(['kitr/theme/styles.css']))
+      ctx.write(
+        'app/routes/index.tsx',
+        `import { createFileRoute } from '@tanstack/react-router'\n\nexport const Route = createFileRoute('/')({\n  component: HomePage,\n})\n\nfunction HomePage() {\n  return (\n    <main style={{ padding: 24 }}>\n      <h1>${ctx.pkg.name ?? 'app'}</h1>\n      <p>Edit <code>app/routes/index.tsx</code>. Add a page with <code>kitr make:route</code>.</p>\n    </main>\n  )\n}\n`,
+      )
+      ctx.write(
+        'app/routes/about.tsx',
+        `import { createFileRoute } from '@tanstack/react-router'\n\nexport const Route = createFileRoute('/about')({\n  component: () => <main style={{ padding: 24 }}>About</main>,\n})\n`,
+      )
+      c.addAgentsSection(
+        'router',
+        `- Routes are files in \`app/routes\` (TanStack Router file routes). \`app/routeTree.gen.ts\` is generated; never edit it.\n- In route files, import \`createFileRoute\` / \`createLazyFileRoute\` from \`@tanstack/react-router\` (the route generator owns that import). Everything else comes from \`kitr/router\`.\n- The root route (\`app/routes/__root.tsx\`) renders the HTML document: TanStack Start streams it on the server (web \`ssr\`), prerenders it (\`static\`) or ships one shell (\`spa\`, desktop, mobile). Keep it platform-neutral.`,
+      )
+    },
+    unconfigure(_ctx, c) {
+      c.removePackage('@kitr/router')
+      c.removePackages([
+        '@kitr/router',
+        '@tanstack/react-router',
+        '@tanstack/react-start',
+        '@tanstack/router-plugin',
+        '@tanstack/react-router-devtools',
+      ])
+      c.removeAgentsSection('router')
+    },
+  }),
   query: r({
     name: 'query',
     package: '@kitr/query',
+    client: true,
+    description:
+      "TanStack Query over kitr's data contract: defineQuery, defineMutation, useSubscription.",
     configure(ctx, c) {
       c.installPackages([
         '@kitr/query',
@@ -61,6 +126,10 @@ export const recipes: Record<string, Recipe> = {
   http: r({
     name: 'http',
     package: '@kitr/http',
+    client: true,
+    requires: ['query'],
+    description:
+      'ky client with auth headers, token refresh and kitr error normalisation; httpQuery/httpMutation contracts.',
     configure(ctx, c) {
       c.installPackages(['@kitr/http', 'ky'])
       c.addProvider('@kitr/http/provider')
@@ -90,6 +159,9 @@ export const recipes: Record<string, Recipe> = {
   forms: r({
     name: 'forms',
     package: '@kitr/forms',
+    client: true,
+    description:
+      'React Hook Form with Standard Schema resolvers, <Form> with server-error mapping, <FormField>.',
     configure(ctx, c) {
       c.installPackages(['@kitr/forms', 'react-hook-form', '@hookform/resolvers', 'zod'])
       c.addPackage('@kitr/forms')
@@ -108,6 +180,8 @@ export const recipes: Record<string, Recipe> = {
   table: r({
     name: 'table',
     package: '@kitr/table',
+    client: true,
+    description: 'TanStack Table with sorting, pagination and filters bound to URL search params.',
     configure(_ctx, c) {
       c.installPackages(['@kitr/table', '@tanstack/react-table'])
       c.addPackage('@kitr/table')
@@ -125,6 +199,8 @@ export const recipes: Record<string, Recipe> = {
   state: r({
     name: 'state',
     package: '@kitr/state',
+    client: true,
+    description: 'Zustand with an SSR-safe store factory (per-request stores on the server).',
     configure(ctx, c) {
       c.installPackages(['@kitr/state', 'zustand'])
       c.addPackage('@kitr/state')
@@ -140,30 +216,12 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('state')
     },
   }),
-  styling: r({
-    name: 'styling',
-    package: '@kitr/styling',
-    configure(ctx, c) {
-      c.installPackages(['@kitr/styling'])
-      c.addPackage('@kitr/styling')
-      ctx.write(
-        'app/styles/tokens.css',
-        `/* Override kitr tokens here. See kitr/ui/styles.css for the full list. */\n:root {\n  /* --kitr-color-primary: oklch(55% 0.2 262); */\n}\n`,
-      )
-      c.addAgentsSection(
-        'styling',
-        `- Plain CSS and CSS Modules are first-class: \`import styles from './x.module.css'\`, run \`kitr css:types\` for typed class names, compose with \`pick()\` from \`kitr/styling\`.\n- Colours and radii come from the \`--kitr-*\` variables; never hard-code them.`,
-      )
-    },
-    unconfigure(_ctx, c) {
-      c.removePackage('@kitr/styling')
-      c.removePackages(['@kitr/styling'])
-      c.removeAgentsSection('styling')
-    },
-  }),
   tailwind: r({
     name: 'tailwind',
     package: '@kitr/tailwind',
+    requires: ['react'],
+    client: true,
+    description: 'Tailwind v4 via the Vite plugin, the kitr preset (tokens as @theme) and cn().',
     configure(ctx, c) {
       c.installPackages([
         '@kitr/tailwind',
@@ -180,9 +238,9 @@ export const recipes: Record<string, Recipe> = {
       )
       ctx.write(
         'app/styles/app.css',
-        `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/ui/styles.css';\n\n@source '../';\n`,
+        `@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n@import 'kitr/theme/styles.css';\n\n@source '../';\n`,
       )
-      c.replaceCssImport('app/routes/__root.tsx', 'kitr/ui/styles.css', '#app/styles/app.css')
+      c.replaceCssImport('app/routes/__root.tsx', 'kitr/theme/styles.css', '#app/styles/app.css')
       c.addAgentsSection(
         'tailwind',
         `- Tailwind v4: utilities map to kitr tokens (\`bg-background\`, \`text-primary\`, \`rounded-md\`). Use \`cn()\` from \`kitr/tailwind\` to merge classes. Dark mode is \`data-theme="dark"\` on <html>, toggled by \`useTheme()\`.`,
@@ -194,32 +252,43 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('tailwind')
     },
   }),
-  ui: r({
-    name: 'ui',
-    package: '@kitr/ui',
+  theme: r({
+    name: 'theme',
+    package: '@kitr/theme',
+    requires: ['react'],
+    client: true,
+    description:
+      'Design tokens and light/dark/system theming with no flash on load, cookie-backed for SSR, synced to native chrome. Components come from the registry (`kitr ui add`).',
     configure(ctx, c) {
-      c.installPackages(['@kitr/ui', 'sonner'])
-      c.addProvider('@kitr/ui/provider')
-      c.addPackage('@kitr/ui')
+      c.installPackages(['@kitr/theme'])
+      c.addProvider('@kitr/theme/provider')
+      c.addPackage('@kitr/theme')
       ctx.write(
-        'config/ui.ts',
-        `import { defineConfig } from 'kitr/ui'\n\nexport default defineConfig({\n  theme: { default: 'system' },\n  toaster: { position: 'bottom-right' },\n  // Any shadcn-compatible registry. Default: kitr's.\n  // registry: 'https://raw.githubusercontent.com/kitrjs/kitr/main/registry/dist',\n  componentsDir: 'app/components/ui',\n})\n`,
+        'config/theme.ts',
+        `import { defineConfig } from 'kitr/theme'\n\nexport default defineConfig({\n  default: 'system',\n  // Window chrome / <meta name="theme-color"> per theme.\n  colors: { light: '#ffffff', dark: '#0a0a0a' },\n  // Any shadcn-compatible registry for \`kitr ui add\`. Default: kitr's.\n  // registry: 'https://raw.githubusercontent.com/kitrjs/kitr/main/registry/dist',\n  componentsDir: 'app/components/ui',\n})\n`,
+      )
+      ctx.write(
+        'app/styles/tokens.css',
+        `/* Override kitr tokens here. See kitr/theme/styles.css for the full list. */\n:root {\n  /* --kitr-color-primary: oklch(55% 0.2 262); */\n}\n`,
       )
       c.addAgentsSection(
-        'ui',
-        `- Components live in \`app/components/ui/\` and are owned by the app: edit them freely. Add more with \`kitr ui add <name>\` (shadcn-compatible registry).\n- Toasts: \`toast.success('Saved')\` from \`kitr/ui\`. Theme: \`useTheme()\`. Import \`kitr/ui/styles.css\` once (done in app/styles/app.css).`,
+        'theme',
+        `- Theme: \`useTheme()\` from \`kitr/theme\` (\`theme\`, \`resolved\`, \`setTheme\`, \`toggle\`); \`data-theme="light|dark"\` on <html>. Put \`<ThemeScript />\` in the document head to avoid a flash.\n- Colours and radii come from the \`--kitr-*\` variables (\`kitr/theme/styles.css\`, overrides in \`app/styles/tokens.css\`); never hard-code them. Plain CSS helpers: \`pick()\`, \`vars()\`, \`dataAttrs()\` from \`kitr/theme\`.\n- Components live in \`app/components/ui/\` and are owned by the app: add more with \`kitr ui add <name>\` (shadcn-compatible registry); toasts via \`kitr ui add sonner\`.\n- Icons: Hugeicons in the stroke-rounded style through \`<Icon icon={Add01Icon} />\` from \`#components/ui/icon\` (\`kitr ui add icon\`), icons from \`@hugeicons/core-free-icons\`. No other icon set, no emoji or glyphs as icons.`,
       )
     },
     unconfigure(_ctx, c) {
-      c.removeProvider('@kitr/ui/provider')
-      c.removePackage('@kitr/ui')
-      c.removePackages(['@kitr/ui', 'sonner'])
-      c.removeAgentsSection('ui')
+      c.removeProvider('@kitr/theme/provider')
+      c.removePackage('@kitr/theme')
+      c.removePackages(['@kitr/theme'])
+      c.removeAgentsSection('theme')
     },
   }),
   auth: r({
     name: 'auth',
     package: '@kitr/auth',
+    client: true,
+    description:
+      'Session in router context, requireAuth()/can() guards, token and Better Auth adapters, API middleware.',
     configure(ctx, c) {
       c.installPackages(['@kitr/auth'])
       c.addProvider('@kitr/auth/provider')
@@ -247,6 +316,7 @@ export const recipes: Record<string, Recipe> = {
   logger: r({
     name: 'logger',
     package: '@kitr/logger',
+    description: 'Structured logger with levels, children and request ids. No dependencies.',
     configure(ctx, c) {
       c.installPackages(['@kitr/logger'])
       c.addProvider('@kitr/logger')
@@ -270,92 +340,83 @@ export const recipes: Record<string, Recipe> = {
   server: r({
     name: 'server',
     package: '@kitr/server',
+    requires: ['logger'],
+    description:
+      'The server runtime on h3: request context, errors, lifecycle. Run it as a platform: `kitr add server api`.',
     configure(ctx, c) {
-      const serverOnly = !('react' in { ...ctx.pkg.dependencies })
       c.installPackages(['@kitr/server', 'h3', 'srvx'])
-      if (!serverOnly) c.installPackages(['@tanstack/react-start'])
       c.addPackage('@kitr/server')
       ctx.write(
         'config/server.ts',
-        `import { defineConfig } from 'kitr/server'\n\nexport default defineConfig({\n  port: Number(process.env.PORT ?? 3000),\n  host: '0.0.0.0',\n  healthPath: '/healthz',\n  bodyLimit: 1024 * 1024,\n})\n`,
+        `import { defineConfig } from 'kitr/server'\n\nexport default defineConfig({\n  healthPath: '/healthz',\n  bodyLimit: 1024 * 1024,\n})\n`,
       )
-      c.addEnv({ PORT: '3000', LOG_LEVEL: 'info' }, 'Server')
-      if (serverOnly) {
-        ctx.write(
-          'server.ts',
-          `import { createServer } from 'kitr/server'\nimport { mountRoutes } from 'kitr/api'\nimport rc from './kitrrc'\nimport { config } from './config'\nimport { routes } from './start/routes'\n\n/** Providers from kitrrc.ts, config from config/index.ts (kept in sync by \`kitr add\`). */\nexport const server = createServer({ providers: rc.providers, config })\nmountRoutes(server, routes)\n\nif (import.meta.main ?? process.argv[1]?.endsWith('server.ts')) {\n  server.listen()\n}\n`,
-        )
-      } else {
-        // TanStack Start owns app/server.ts and app/client.tsx, so the kitr API server lives next to the routes.
-        ctx.write(
-          'app/api/server.ts',
-          `import { createServer } from 'kitr/server'\nimport { mountRoutes } from 'kitr/api'\nimport serverConfig from '#config/server'\nimport { routes } from '#app/api/routes'\n\n/** The kitr server behind Start's /api/* catch-all route; also what tests call. */\nexport const server = createServer({ config: { server: serverConfig } })\nmountRoutes(server, routes)\n`,
-        )
-        // Start renders the whole document, so the root route becomes the HTML shell and the SPA entry goes away.
-        const rootPath = 'app/routes/__root.tsx'
-        const current = ctx.exists(rootPath) ? ctx.read(rootPath) : ''
-        const cssImports = [...current.matchAll(/^import '([^']+\.css)'$/gm)].map((m) => m[1]!)
-        if (!current.includes('<Scripts')) {
-          ctx.write(
-            rootPath,
-            startRootRoute(cssImports.length ? cssImports : ['kitr/ui/styles.css']),
-            { overwrite: true },
-          )
-        }
-        // Boot providers before hydrating, so the first client render matches the server's HTML.
-        ctx.write(
-          'app/client.tsx',
-          `import { StartClient } from '@tanstack/react-start/client'\nimport { StrictMode, startTransition } from 'react'\nimport { hydrateRoot } from 'react-dom/client'\nimport { app } from './app'\n\n/** Start's client entry, with the kitr app booted first so providers are ready when the tree hydrates. */\napp.boot().then(() => {\n  startTransition(() => {\n    hydrateRoot(\n      document,\n      <StrictMode>\n        <StartClient />\n      </StrictMode>,\n    )\n  })\n})\n`,
-        )
-        c.remove('index.html')
-        c.remove('app/main.tsx')
-        c.addScript('start', 'kitr serve')
-      }
+      c.addEnv({ LOG_LEVEL: 'info' }, 'Server')
+      if (!Object.values(ctx.readRc().platforms).some((p) => p.factory === 'server'))
+        ctx.log.info('Run the server as a platform: `kitr add server api` (writes server/main.ts).')
       c.addAgentsSection(
         'server',
-        `- Server code never imports React. Services come from the request-scoped container (\`useRequestApp()\`), logs from \`ctx.logger\`.\n- Providers' \`ready\`/\`shutdown\` run on \`server.listen()\`; in TanStack Start the server is a fetch handler (\`server.fetch\`).`,
+        `- Server code lives under \`server/\` and never imports React. Services come from the request-scoped container (\`useRequestApp()\`), logs from \`ctx.logger\`.\n- \`server/main.ts\` (written by the server platform) exports \`server\`; providers' \`ready\`/\`shutdown\` run on \`server.listen()\`. A web platform in \`ssr\` mode answers \`/api/*\` through the same object via \`app/routes/api.$.ts\`.`,
       )
     },
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/server')
-      c.removePackages(['@kitr/server', 'h3', 'srvx', '@tanstack/react-start'])
+      c.removePackages(['@kitr/server', 'h3', 'srvx'])
       c.removeAgentsSection('server')
     },
   }),
   api: r({
     name: 'api',
     package: '@kitr/api',
+    requires: ['server'],
+    description:
+      'Adonis-style router, controllers, validators, middleware; typed client with no codegen; OpenAPI via api:sync.',
     configure(ctx, c) {
-      const serverOnly = !('react' in { ...ctx.pkg.dependencies })
+      const serverOnly = !hasReact(ctx)
       c.installPackages(['@kitr/api'])
       c.addPackage('@kitr/api')
       ctx.write(
         'config/api.ts',
         `import { defineConfig } from 'kitr/api'\n\nexport default defineConfig({\n  prefix: '/api',\n  openapi: { path: 'openapi.json', title: '${ctx.pkg.name ?? 'app'} API', version: '0.1.0' },\n})\n`,
       )
-      const routesPath = serverOnly ? 'start/routes.ts' : 'app/api/routes.ts'
-      const controllersAlias = serverOnly ? '#controllers' : '#app/controllers'
       ctx.write(
-        routesPath,
-        `import { cors, defineRoutes } from 'kitr/api'\nimport HealthController from '${controllersAlias}/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('${controllersAlias}/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
+        'server/routes.ts',
+        `import { cors, defineRoutes } from 'kitr/api'\nimport HealthController from '#server/controllers/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api', middleware: [cors()] }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
       )
       ctx.write(
-        `${serverOnly ? 'app' : 'app'}/controllers/health_controller.ts`,
+        'server/controllers/health_controller.ts',
         `import type { HttpContext } from 'kitr/api'\n\nexport default class HealthController {\n  async show({ requestId }: HttpContext) {\n    return { ok: true, requestId }\n  }\n}\n`,
       )
+      // A server platform added earlier wrote server/main.ts without the router; mount it now.
+      if (ctx.exists('server/main.ts')) {
+        const main = ctx.read('server/main.ts')
+        if (!main.includes('mountRoutes'))
+          ctx.write(
+            'server/main.ts',
+            main
+              .replace(
+                "import { createServer } from 'kitr/server'\n",
+                "import { createServer } from 'kitr/server'\nimport { mountRoutes } from 'kitr/api'\n",
+              )
+              .replace(
+                /\nimport rc from '\.\.\/kitrrc'\n/,
+                "\nimport rc from '../kitrrc'\nimport { routes } from './routes'\n",
+              )
+              .replace(
+                /(export const server = createServer\([^\n]*\)\n)/,
+                '$1mountRoutes(server, routes)\n',
+              ),
+            { overwrite: true },
+          )
+      }
       if (!serverOnly) {
         ctx.write(
-          'app/routes/api.$.ts',
-          `import { createFileRoute } from '@tanstack/react-router'\nimport { server } from '#app/api/server'\n\n/** Every /api/* request goes to the kitr router. */\nexport const Route = createFileRoute('/api/$')({\n  server: {\n    handlers: {\n      ANY: ({ request }) => server.fetch(request),\n    },\n  },\n})\n`,
-        )
-        ctx.write(
           'app/api/client.ts',
-          `import { createApiClient } from 'kitr/api/client'\nimport type { AppRoutes } from './routes'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\n`,
+          `import { createApiClient } from 'kitr/api/client'\nimport type { AppRoutes } from '#server/routes'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\n`,
         )
       }
       c.addAgentsSection(
         'api',
-        `- Routes: \`${routesPath}\` (\`defineRoutes\`), controllers in \`app/controllers/<name>_controller.ts\` (\`kitr make:controller <name> --resource\`). Validators go in \`static validation = { store: { body: schema } }\`.\n- Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.\n- The client is typed from \`typeof routes.$types\`; call \`registerRoutes(api, routes.toJSON())\` or use \`kitr api:sync\` to write the route table and openapi.json.`,
+        `- Routes: \`server/routes.ts\` (\`defineRoutes\`), controllers in \`server/controllers/<name>_controller.ts\` (\`kitr make:controller <name> --resource\`). Validators go in \`static validation = { store: { body: schema } }\`.\n- Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.\n- The client is typed from \`typeof routes.$types\`; call \`registerRoutes(api, routes.toJSON())\` or use \`kitr api:sync\` to write the route table and openapi.json.`,
       )
     },
     unconfigure(_ctx, c) {
@@ -367,8 +428,12 @@ export const recipes: Record<string, Recipe> = {
   actions: r({
     name: 'actions',
     package: '@kitr/actions',
+    requires: ['server'],
+    client: true,
+    description:
+      'defineAction over TanStack Start server functions: validation, middleware, one error shape, cache effects.',
     configure(ctx, c) {
-      c.installPackages(['@kitr/actions', '@tanstack/react-start'])
+      c.installPackages(['@kitr/actions'])
       c.addPackage('@kitr/actions')
       ctx.write('app/actions/.gitkeep', '')
       c.addAgentsSection(
@@ -382,84 +447,80 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('actions')
     },
   }),
-  ssr: r({
-    name: 'ssr',
-    package: '@kitr/ssr',
+  seo: r({
+    name: 'seo',
+    package: '@kitr/seo',
+    client: true,
+    description:
+      'seo() head helpers, JSON-LD, per-route rendering defaults, prerender list, robots and sitemap, cache headers.',
     configure(ctx, c) {
-      c.installPackages(['@kitr/ssr'])
-      c.addPackage('@kitr/ssr')
+      c.installPackages(['@kitr/seo'])
+      c.addPackage('@kitr/seo')
       ctx.write(
-        'config/ssr.ts',
-        `import { defineConfig } from 'kitr/ssr'\n\nexport default defineConfig({\n  ssr: true,\n  prerender: [],\n  site: { name: '${ctx.pkg.name ?? 'My app'}' },\n})\n`,
+        'config/seo.ts',
+        `import { defineConfig } from 'kitr/seo'\n\nexport default defineConfig({\n  site: { name: '${ctx.pkg.name ?? 'My app'}' },\n  // Routes prerendered at build time by a web platform in ssr mode; a static web platform prerenders everything.\n  prerender: [],\n})\n`,
       )
       c.addAgentsSection(
-        'ssr',
-        `- Routes render on the server by default; use \`...ssrRoute('data-only')\` for heavy, non-SEO pages. \`head: () => seo({ title, description })\` from \`kitr/ssr\` writes meta tags.`,
+        'seo',
+        `- \`head: () => seo({ title, description })\` from \`kitr/seo\` writes title, Open Graph, Twitter and canonical tags; \`jsonLd({...})\` adds structured data. Site defaults live in \`config/seo.ts\`.\n- Use \`...ssrRoute('data-only')\` for heavy, non-SEO pages; \`cacheHeaders({ sMaxAge })\` for the CDN.`,
       )
     },
     unconfigure(_ctx, c) {
-      c.removePackage('@kitr/ssr')
-      c.removePackages(['@kitr/ssr'])
-      c.removeAgentsSection('ssr')
+      c.removePackage('@kitr/seo')
+      c.removePackages(['@kitr/seo'])
+      c.removeAgentsSection('seo')
     },
   }),
-  socket: r({
-    name: 'socket',
-    package: '@kitr/socket',
+  realtime: r({
+    name: 'realtime',
+    package: '@kitr/realtime',
+    requires: ['server'],
+    description:
+      'Typed channels with interchangeable transports: WebSocket (default), Socket.IO or SSE. Events feed the query cache.',
     configure(ctx, c) {
-      const serverOnly = !('react' in { ...ctx.pkg.dependencies })
-      c.installPackages(['@kitr/socket', 'crossws', ...(serverOnly ? [] : ['partysocket'])])
-      c.addPackage('@kitr/socket')
+      const serverOnly = !hasReact(ctx)
+      c.installPackages(['@kitr/realtime', 'crossws', ...(serverOnly ? [] : ['partysocket'])])
+      c.addPackage('@kitr/realtime')
       ctx.write(
-        'config/socket.ts',
-        `import { defineConfig } from 'kitr/socket'\n\nexport default defineConfig({\n  path: '${serverOnly ? '/ws' : '/api/ws'}',\n  transport: 'websocket',\n})\n`,
+        'config/realtime.ts',
+        `import { defineConfig } from 'kitr/realtime'\n\nexport default defineConfig({\n  // websocket (default), socket.io or sse: the channels and hooks stay the same.\n  transport: 'websocket',\n  path: '${serverOnly ? '/ws' : '/api/ws'}',\n})\n`,
       )
       ctx.write(
         'app/channels/example.ts',
-        `import { defineChannel } from 'kitr/socket'\n\n/** One definition for both ends. The client applies \`effects\`; the server checks \`authorize\`. */\nexport const exampleChannel = defineChannel<{ room: string }>({\n  name: 'example',\n  events: {\n    message: { effects: () => ({ invalidate: [['messages']] }) },\n  },\n  authorize: () => true,\n})\n`,
+        `import { defineChannel } from 'kitr/realtime'\n\n/** One definition for both ends. The client applies \`effects\`; the server checks \`authorize\`. */\nexport const exampleChannel = defineChannel<{ room: string }>({\n  name: 'example',\n  events: {\n    message: { effects: () => ({ invalidate: [['messages']] }) },\n  },\n  authorize: () => true,\n})\n`,
       )
       ctx.write(
-        serverOnly ? 'start/socket.ts' : 'app/api/socket.ts',
-        `import { createSocketServer } from 'kitr/socket/server'\nimport { exampleChannel } from '#app/channels/example'\n\n/** Attached to the server in ${serverOnly ? 'server.ts' : 'app/api/server.ts'}. Emit from a controller: sockets.use(exampleChannel, { room }).emit('message', data) */\nexport const sockets = createSocketServer({\n  channels: [exampleChannel],\n  // authorize: (request) => verify(request.headers.get('authorization')),\n})\n`,
+        'server/realtime.ts',
+        `import { createRealtimeServer } from 'kitr/realtime/server'\nimport { exampleChannel } from '#app/channels/example'\n\n/** Attached in server/main.ts; from a controller: realtime.use(exampleChannel, { room }).emit('message', data) */\nexport const realtime = createRealtimeServer({\n  channels: [exampleChannel],\n  // authorize: (request) => verify(request.headers.get('authorization')),\n})\n`,
       )
-      wireSockets(ctx, serverOnly)
+      attachRealtime(ctx)
+      if (!serverOnly)
+        ctx.write(
+          'app/realtime.ts',
+          `import { createRealtimeClient, type SocketTransport } from 'kitr/realtime'\nimport realtimeConfig from '#config/realtime'\n\nlet transport: SocketTransport | undefined\n\n/** One connection per tab, opened on first use (so nothing connects during SSR). */\nexport function realtime(): SocketTransport {\n  transport ??= createRealtimeClient(realtimeConfig)\n  return transport\n}\n`,
+        )
       c.addAgentsSection(
-        'socket',
-        `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\`. Server emits with \`sockets.use(channel, params).emit(event, data)\`; the client subscribes with \`useSubscription(channel(socket, def).subscription(), params)\` and events update the query cache via \`effects\`.`,
-      )
-    },
-    unconfigure(ctx, c) {
-      unwireSockets(ctx)
-      c.removePackage('@kitr/socket')
-      c.removePackages(['@kitr/socket', 'crossws', 'partysocket'])
-      c.removeAgentsSection('socket')
-    },
-  }),
-  'socket.io': r({
-    name: 'socket.io',
-    package: '@kitr/socket.io',
-    configure(ctx, c) {
-      const serverOnly = !('react' in { ...ctx.pkg.dependencies })
-      c.installPackages([
-        '@kitr/socket.io',
-        'socket.io',
-        ...(serverOnly ? [] : ['socket.io-client']),
-      ])
-      c.addPackage('@kitr/socket.io')
-      c.addAgentsSection(
-        'socket.io',
-        `- Transport swap: \`createSocketIoClient()\` from \`kitr/socket.io\` replaces \`createSocketClient()\`; the server uses \`attachSocketIo(io, { channels })\` on the Node http server returned by \`server.listen()\`.`,
+        'realtime',
+        `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\`. The server emits with \`realtime.use(channel, params).emit(event, data)\` (server/realtime.ts); components subscribe with \`useChannel(realtime(), channel, params)\` from \`kitr/realtime/react\` and events update the query cache via \`effects\`.\n- Switch transports in \`config/realtime.ts\`: \`socket.io\` (rooms, adapters; client from \`kitr/realtime/socket.io\`) or \`sse\` (plain HTTP, no upgrade; server from \`kitr/realtime/sse/server\`).`,
       )
     },
     unconfigure(_ctx, c) {
-      c.removePackage('@kitr/socket.io')
-      c.removePackages(['@kitr/socket.io', 'socket.io', 'socket.io-client'])
-      c.removeAgentsSection('socket.io')
+      c.removePackage('@kitr/realtime')
+      c.removePackages([
+        '@kitr/realtime',
+        'crossws',
+        'partysocket',
+        'socket.io',
+        'socket.io-client',
+      ])
+      c.removeAgentsSection('realtime')
     },
   }),
   db: r({
     name: 'db',
     package: '@kitr/db',
+    requires: ['server'],
+    description: 'Bind any ORM as `db` with connect/disconnect in the lifecycle. No ORM shipped.',
     configure(ctx, c) {
       c.installPackages(['@kitr/db'])
       c.addProvider('@kitr/db')
@@ -484,8 +545,9 @@ export const recipes: Record<string, Recipe> = {
   testing: r({
     name: 'testing',
     package: '@kitr/testing',
+    description: 'Vitest, Testing Library, renderWithKitr and a request client for API tests.',
     configure(ctx, c) {
-      const serverOnly = !('react' in { ...ctx.pkg.dependencies })
+      const serverOnly = !hasReact(ctx)
       c.installPackages([
         { name: '@kitr/testing', dev: true },
         { name: 'vitest', dev: true },
@@ -505,7 +567,7 @@ export const recipes: Record<string, Recipe> = {
       ctx.write(
         'test/example.test.ts',
         serverOnly
-          ? `import { createTestClient } from 'kitr/testing'\nimport { expect, it } from 'vitest'\nimport { server } from '../server'\n\nit('answers health', async () => {\n  const client = createTestClient(server)\n  const res = await client.get<{ ok: boolean }>('/api/health')\n  expect(res.status).toBe(200)\n  expect(res.body.ok).toBe(true)\n})\n`
+          ? `import { createTestClient } from 'kitr/testing'\nimport { expect, it } from 'vitest'\nimport { server } from '../server/main'\n\nit('answers health', async () => {\n  const client = createTestClient(server)\n  const res = await client.get<{ ok: boolean }>('/api/health')\n  expect(res.status).toBe(200)\n  expect(res.body.ok).toBe(true)\n})\n`
           : `import { expect, it } from 'vitest'\n\nit('runs', () => {\n  expect(1 + 1).toBe(2)\n})\n`,
       )
       c.addAgentsSection(
@@ -522,6 +584,9 @@ export const recipes: Record<string, Recipe> = {
   mocks: r({
     name: 'mocks',
     package: '@kitr/mocks',
+    client: true,
+    description:
+      'MSW handlers from route tables and contracts, for dev without a backend and for tests.',
     configure(ctx, c) {
       c.installPackages(['@kitr/mocks', { name: 'msw', dev: true }])
       c.addPackage('@kitr/mocks')
@@ -548,6 +613,8 @@ export const recipes: Record<string, Recipe> = {
   i18n: r({
     name: 'i18n',
     package: '@kitr/i18n',
+    client: true,
+    description: 'react-i18next with typed keys, locale detection and a provider.',
     configure(ctx, c) {
       c.installPackages(['@kitr/i18n', 'i18next', 'react-i18next'])
       c.addProvider('@kitr/i18n')
@@ -572,54 +639,10 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('i18n')
     },
   }),
-  ...Object.fromEntries(
-    Object.entries(addonRecipes).map(([name, recipe]) => {
-      const m = manifests[name]
-      return [name, m ? { ...recipe, description: m.summary } : recipe]
-    }),
-  ),
+  ...addonRecipes,
 }
 
 export const recipeNames = Object.keys(recipes)
-
-const socketWiring = {
-  server: {
-    file: 'server.ts',
-    importLine: "import { sockets } from './start/socket'\n",
-    attachLine: 'sockets.attach(server, config.socket.path)\n',
-  },
-  start: {
-    file: 'app/api/server.ts',
-    importLine: "import { sockets } from '#app/api/socket'\n",
-    // Start forwards /api/* to the kitr server, upgrade requests included.
-    attachLine: "sockets.attach(server, '/api/ws')\n",
-  },
-}
-
-/** Attach the socket server where the HTTP server is created, so `/ws` answers out of the box. */
-function wireSockets(ctx: ProjectContext, serverOnly: boolean) {
-  const w = serverOnly ? socketWiring.server : socketWiring.start
-  if (!ctx.exists(w.file)) return
-  let src = ctx.read(w.file)
-  if (src.includes('sockets.attach(')) return
-  const anchor = 'mountRoutes(server, routes)\n'
-  if (!src.includes(anchor)) return
-  src = src.replace(anchor, `${anchor}${w.attachLine}`)
-  const imports = [...src.matchAll(/^import .*\n/gm)]
-  const last = imports[imports.length - 1]
-  const at = last ? last.index! + last[0].length : 0
-  src = src.slice(0, at) + w.importLine + src.slice(at)
-  ctx.write(w.file, src, { overwrite: true })
-}
-
-function unwireSockets(ctx: ProjectContext) {
-  for (const w of Object.values(socketWiring)) {
-    if (!ctx.exists(w.file)) continue
-    const src = ctx.read(w.file)
-    const next = src.replace(w.importLine, '').replace(w.attachLine, '')
-    if (next !== src) ctx.write(w.file, next, { overwrite: true })
-  }
-}
 
 /** Resolve a recipe list with its `requires` closure, in dependency order. */
 export function resolveRecipes(names: string[], installed: string[]): Recipe[] {
@@ -636,6 +659,32 @@ export function resolveRecipes(names: string[], installed: string[]): Recipe[] {
   }
   for (const n of names) visit(n)
   return out
+}
+
+/** React is present once its recipe ran, even before package.json is flushed. */
+export function hasReact(ctx: ProjectContext): boolean {
+  return 'react' in { ...ctx.pkg.dependencies } || ctx.readRc().packages.includes('@kitr/react')
+}
+
+/** Add `realtime.attach(server, path)` to server/main.ts when the server platform wrote it first. */
+export function attachRealtime(ctx: ProjectContext) {
+  if (!ctx.exists('server/main.ts')) return
+  const main = ctx.read('server/main.ts')
+  if (main.includes('realtime.attach')) return
+  const path = ctx.exists('config/realtime.ts')
+    ? (ctx.read('config/realtime.ts').match(/path\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? '/ws')
+    : '/ws'
+  const serverOnly = !hasReact(ctx)
+  const importLine = serverOnly
+    ? "import { realtime } from './realtime'\n"
+    : "import { realtime } from '#server/realtime'\n"
+  const next = main
+    .replace(/(import \{ createServer \} from 'kitr\/server'\n)/, `$1${importLine}`)
+    .replace(
+      /(export const server = createServer\([^\n]*\)\n(?:mountRoutes\(server, routes\)\n)?)/,
+      `$1// WebSocket upgrades on ${path}, next to the routes.\nrealtime.attach(server, '${path}')\n`,
+    )
+  if (next !== main) ctx.write('server/main.ts', next, { overwrite: true })
 }
 
 /** The root route for TanStack Start: renders the document, head tags and scripts. */

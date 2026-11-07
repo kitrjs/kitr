@@ -98,7 +98,7 @@ On the server, one process renders pages for many users at once. A plain module-
 - **In the browser**, the store is a single shared instance, so it works without any provider.
 - **On the server**, each `<StoreProvider>` creates a fresh store for that render.
 
-If you render on the server (with [SSR](/packages/ssr) or server actions), wrap the part of the tree that uses the store:
+If you render on the server (with [SSR](/packages/seo) or server actions), wrap the part of the tree that uses the store:
 
 ```tsx
 // app/routes/__root.tsx

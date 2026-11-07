@@ -28,8 +28,15 @@ const serverEntries = new Set([
   '@kitr/server',
   '@kitr/api',
   '@kitr/db',
-  '@kitr/socket/server',
-  '@kitr/socket.io/server',
+  '@kitr/realtime/server',
+  '@kitr/realtime/socket.io/server',
+  '@kitr/realtime/sse/server',
+  '@kitr/seo',
+  '@kitr/theme/server',
+  '@kitr/web',
+  '@kitr/desktop',
+  '@kitr/mobile',
+  '@kitr/server/platform',
   '@kitr/auth/server',
   '@kitr/storage/server',
   '@kitr/testing',
@@ -43,31 +50,56 @@ const browserEntries = new Set([
   '@kitr/query/provider',
   '@kitr/router',
   '@kitr/forms',
-  '@kitr/ui',
+  '@kitr/theme',
   '@kitr/state',
   '@kitr/storage',
   '@kitr/storage/react',
   '@kitr/http',
-  '@kitr/socket',
+  '@kitr/realtime',
+  '@kitr/realtime/socket.io',
+  '@kitr/realtime/sse',
+  '@kitr/realtime/react',
   '@kitr/auth',
   '@kitr/i18n',
   '@kitr/table',
-  '@kitr/styling',
   '@kitr/devtools',
   '@kitr/analytics',
   '@kitr/monitoring',
-  '@kitr/pwa',
-  '@kitr/tauri',
-  '@kitr/capacitor',
+  '@kitr/web/client',
+  '@kitr/desktop/client',
+  '@kitr/desktop/tauri',
+  '@kitr/desktop/electron',
+  '@kitr/mobile/client',
+  '@kitr/platform',
+  '@kitr/platform/react',
+  '@kitr/seo',
   '@kitr/actions',
 ])
 /** Entries that legitimately need a host at import time (a DOM, Electron, Vite). */
-const skipNodeImport = new Set(['@kitr/electron/main', '@kitr/electron/preload', '@kitr/kitr'])
+const skipNodeImport = new Set([
+  '@kitr/desktop/electron-main',
+  '@kitr/desktop/electron-preload',
+  '@kitr/kitr',
+])
 /** Gzip budget per entry file, bytes. Generous; the point is catching a dependency bundled in. */
 /** Packages whose dist contains code templates (import lines inside strings): skip import scans. */
-const codegen = new Set(['@kitr/cli', '@kitr/vite', 'kitr'])
+const codegen = new Set([
+  '@kitr/cli',
+  '@kitr/vite',
+  '@kitr/web',
+  '@kitr/desktop',
+  '@kitr/mobile',
+  '@kitr/server',
+  'kitr',
+])
 const defaultBudget = 12 * 1024
-const budgets = { '@kitr/cli': 60 * 1024, '@kitr/vite': 30 * 1024, '@kitr/devtools': 20 * 1024 }
+const budgets = {
+  '@kitr/cli': 80 * 1024,
+  '@kitr/vite': 30 * 1024,
+  '@kitr/devtools': 20 * 1024,
+  '@kitr/desktop': 20 * 1024,
+  '@kitr/web': 16 * 1024,
+}
 
 const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]))
 const importRe =
@@ -205,7 +237,7 @@ for (const [dir, pkg] of manifests)
     const spec = `${pkg.name}${sub.slice(1)}`
     const file = typeof target === 'string' ? target : target?.default
     if (sub === './package.json' || skipNodeImport.has(spec) || !file?.endsWith('.js')) continue
-    if (dir === 'kitr' || dir === 'electron') continue
+    if (dir === 'kitr') continue
     importable.push([spec, pathToFileURL(join(packagesDir, dir, file)).href])
   }
 const script = `

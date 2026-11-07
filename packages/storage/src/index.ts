@@ -11,11 +11,40 @@ export interface StorageConfig {
   prefix?: string
   /** Defaults merged into every cookie. */
   cookie?: Omit<CookieOptions, 'name'>
+  /** Server-side key-value store behind `defineKv` (app scope). Default: in-memory. */
+  kv?: KvDriver
+}
+
+/**
+ * What a platform supplies to back `defineStorage` items: Capacitor Preferences on mobile,
+ * the Tauri store or an Electron JSON file on desktop, Web Storage in the browser.
+ * Reads are synchronous from a cache `hydrate()` fills at boot; writes go through in the background.
+ */
+export interface StorageDriver {
+  name: string
+  /** Load every stored key into memory before the first render. */
+  hydrate?(): Promise<void>
+  get(key: string): string | null
+  set(key: string, raw: string): void
+  remove(key: string): void
+  keys(): string[]
+  /** Changes made elsewhere (another tab, the native side). */
+  subscribe?(listener: (key: string | null) => void): () => void
+}
+
+export interface KvDriver {
+  get(key: string): Promise<string | null>
+  set(key: string, raw: string, options?: { ttl?: number }): Promise<void>
+  remove(key: string): Promise<void>
+  keys?(prefix?: string): Promise<string[]>
 }
 
 declare module '@kitr/core' {
   interface ConfigRegistry {
     storage: StorageConfig
+  }
+  interface DriverTypes {
+    storage: StorageDriver
   }
 }
 
@@ -79,7 +108,7 @@ interface Envelope {
 const listenersByKey = new Map<string, Set<() => void>>()
 let crossTabInstalled = false
 
-function area(name: StorageArea): Storage | null {
+function webStorage(name: StorageArea): Storage | null {
   try {
     if (typeof window === 'undefined') return null
     const s = name === 'local' ? window.localStorage : window.sessionStorage
@@ -91,10 +120,120 @@ function area(name: StorageArea): Storage | null {
   }
 }
 
+/** Web Storage as a driver. Null outside a browser, so items fall back to their defaults. */
+export function createWebStorageDriver(name: StorageArea): StorageDriver | null {
+  const s = webStorage(name)
+  if (!s) return null
+  return {
+    name: `web:${name}`,
+    get: (key) => s.getItem(key),
+    set: (key, raw) => s.setItem(key, raw),
+    remove: (key) => s.removeItem(key),
+    keys: () => {
+      const out: string[] = []
+      for (let i = 0; i < s.length; i++) {
+        const key = s.key(i)
+        if (key !== null) out.push(key)
+      }
+      return out
+    },
+    subscribe: (listener) => {
+      if (typeof window === 'undefined') return () => {}
+      const handler = (e: StorageEvent) => {
+        if (e.storageArea === s) listener(e.key)
+      }
+      window.addEventListener('storage', handler)
+      return () => window.removeEventListener('storage', handler)
+    },
+  }
+}
+
+/** In-memory driver: tests, the server, and `session` items on native platforms. */
+export function createMemoryStorageDriver(name = 'memory'): StorageDriver {
+  const map = new Map<string, string>()
+  return {
+    name,
+    get: (key) => map.get(key) ?? null,
+    set: (key, raw) => void map.set(key, raw),
+    remove: (key) => void map.delete(key),
+    keys: () => [...map.keys()],
+  }
+}
+
+/**
+ * Build a driver over an async native store. `load` runs once at boot and fills the cache;
+ * `write`/`erase` run in the background after each change, so reads stay synchronous.
+ */
+export function createAsyncStorageDriver(options: {
+  name: string
+  load(): Promise<Record<string, string>>
+  write(key: string, raw: string): Promise<void>
+  erase(key: string): Promise<void>
+  onError?: (error: unknown) => void
+}): StorageDriver {
+  const cache = new Map<string, string>()
+  const fail = options.onError ?? ((e) => console.error(`[kitr/storage] ${options.name}:`, e))
+  return {
+    name: options.name,
+    async hydrate() {
+      try {
+        for (const [k, v] of Object.entries(await options.load())) cache.set(k, v)
+      } catch (e) {
+        fail(e)
+      }
+    },
+    get: (key) => cache.get(key) ?? null,
+    set: (key, raw) => {
+      cache.set(key, raw)
+      options.write(key, raw).catch(fail)
+    },
+    remove: (key) => {
+      cache.delete(key)
+      options.erase(key).catch(fail)
+    },
+    keys: () => [...cache.keys()],
+  }
+}
+
+const drivers: { local?: StorageDriver | null; session?: StorageDriver | null } = {}
+const driverUnsubscribers: Array<() => void> = []
+
+/**
+ * Replace the Web Storage backing with a platform driver. Called by the storage provider when a
+ * platform registered one (`app.drivers.register('storage', driver)`); `session` items keep an
+ * in-memory driver unless `areas` says otherwise.
+ */
+export function setStorageDriver(
+  driver: StorageDriver,
+  areas: { local?: StorageDriver; session?: StorageDriver } = {},
+) {
+  drivers.local = areas.local ?? driver
+  drivers.session = areas.session ?? createMemoryStorageDriver('memory:session')
+  for (const stop of driverUnsubscribers.splice(0)) stop()
+  for (const d of [drivers.local, drivers.session]) {
+    const stop = d.subscribe?.((key) => {
+      if (key === null) for (const set of listenersByKey.values()) for (const l of set) l()
+      else emit(key)
+    })
+    if (stop) driverUnsubscribers.push(stop)
+  }
+}
+
+export function getStorageDriver(name: StorageArea): StorageDriver | null {
+  if (drivers[name] === undefined) drivers[name] = createWebStorageDriver(name)
+  return drivers[name] ?? null
+}
+
+function area(name: StorageArea): StorageDriver | null {
+  return getStorageDriver(name)
+}
+
 function installCrossTab() {
   if (crossTabInstalled || typeof window === 'undefined') return
   crossTabInstalled = true
+  // Web Storage events for the default drivers; platform drivers wire their own in setStorageDriver.
   window.addEventListener('storage', (e) => {
+    if (drivers.local && drivers.local.name !== 'web:local') return
     if (!e.key) return
     for (const l of listenersByKey.get(e.key) ?? []) l()
   })
@@ -154,7 +293,7 @@ export function defineStorage<T>(name: string, options: StorageItemOptions<T>): 
     get() {
       const s = area(areaName)
       if (!s) return options.default
-      const raw = s.getItem(fullKey())
+      const raw = s.get(fullKey())
       // Same raw string → same object identity, which useSyncExternalStore needs.
       if (cache && cache.raw === raw) return cache.value
       const value = parse(raw)
@@ -168,7 +307,7 @@ export function defineStorage<T>(name: string, options: StorageItemOptions<T>): 
       const env: Envelope = { v: version, d: value }
       if (options.ttl) env.e = Date.now() + options.ttl
       try {
-        s.setItem(fullKey(), (codec as Codec<Envelope>).encode(env))
+        s.set(fullKey(), (codec as Codec<Envelope>).encode(env))
       } catch {
         // Quota exceeded: keep running with the in-memory value.
         cache = { raw: null, value }
@@ -176,7 +315,7 @@ export function defineStorage<T>(name: string, options: StorageItemOptions<T>): 
       emit(fullKey())
     },
     remove() {
-      area(areaName)?.removeItem(fullKey())
+      area(areaName)?.remove(fullKey())
       cache = undefined
       emit(fullKey())
     },
@@ -379,19 +518,107 @@ export function notifyCookiesChanged() {
 export function listStorage(name: StorageArea): Array<{ key: string; raw: string | null }> {
   const s = area(name)
   if (!s) return []
-  const out: Array<{ key: string; raw: string | null }> = []
-  for (let i = 0; i < s.length; i++) {
-    const key = s.key(i)
-    if (key !== null) out.push({ key, raw: s.getItem(key) })
-  }
-  return out
+  return s.keys().map((key) => ({ key, raw: s.get(key) }))
 }
 
 export function removeStorageKey(name: StorageArea, key: string) {
-  area(name)?.removeItem(key)
+  area(name)?.remove(key)
   emit(key)
 }
 
 export function logStorage(app: KitrApp, label: string, data?: unknown) {
   getDevtools(app)?.log('storage', label, data)
+}
+
+/* ----------------------------------------------------------------------------
+ * App scope: a server-side key-value store
+ * ------------------------------------------------------------------------- */
+
+export function createMemoryKvDriver(): KvDriver {
+  const map = new Map<string, { raw: string; expires?: number }>()
+  return {
+    async get(key) {
+      const hit = map.get(key)
+      if (!hit) return null
+      if (hit.expires !== undefined && hit.expires < Date.now()) {
+        map.delete(key)
+        return null
+      }
+      return hit.raw
+    },
+    async set(key, raw, options) {
+      map.set(key, { raw, expires: options?.ttl ? Date.now() + options.ttl : undefined })
+    },
+    async remove(key) {
+      map.delete(key)
+    },
+    async keys(prefix = '') {
+      return [...map.keys()].filter((k) => k.startsWith(prefix))
+    },
+  }
+}
+
+let kvDriver: KvDriver | undefined
+/** Set by the storage provider from `config/storage.ts` (`kv`). Any unstorage-shaped driver works. */
+export function setKvDriver(driver: KvDriver) {
+  kvDriver = driver
+}
+export function getKvDriver(): KvDriver {
+  kvDriver ??= createMemoryKvDriver()
+  return kvDriver
+}
+
+export interface KvItemOptions<T> {
+  default: T
+  schema?: StandardSchemaV1<unknown, T>
+  codec?: Codec<T>
+  /** Milliseconds to keep a value. */
+  ttl?: number
+}
+
+export interface KvItem<T> {
+  readonly key: string
+  readonly default: T
+  get(): Promise<T>
+  set(value: T | ((current: T) => T), options?: { ttl?: number }): Promise<void>
+  remove(): Promise<void>
+}
+
+/**
+ * A value shared by the whole app on the server (`scope: 'app'`): feature state, counters,
+ * cached lookups. Backed by memory unless `config/storage.ts` sets a `kv` driver
+ * (Redis, Cloudflare KV, a file... anything with get/set/remove).
+ *
+ *   const banner = defineKv('banner', { default: { text: '' } })
+ *   await banner.set({ text: 'Maintenance at 22:00' })
+ */
+export function defineKv<T>(name: string, options: KvItemOptions<T>): KvItem<T> {
+  const codec = options.codec ?? jsonCodec<T>()
+  const fullKey = () => `${keyPrefix}${name}`
+  const decode = (raw: string | null): T => {
+    if (raw === null) return options.default
+    try {
+      const data = codec.decode(raw)
+      if (options.schema) {
+        const result = validateSync(options.schema, data)
+        return result.success ? result.data : options.default
+      }
+      return data
+    } catch {
+      return options.default
+    }
+  }
+  const item: KvItem<T> = {
+    key: name,
+    default: options.default,
+    get: async () => decode(await getKvDriver().get(fullKey())),
+    async set(next, setOptions) {
+      const value = typeof next === 'function' ? (next as (c: T) => T)(await item.get()) : next
+      await getKvDriver().set(fullKey(), codec.encode(value), {
+        ttl: setOptions?.ttl ?? options.ttl,
+      })
+    },
+    remove: () => getKvDriver().remove(fullKey()),
+  }
+  return item
 }

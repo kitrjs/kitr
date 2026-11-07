@@ -332,7 +332,7 @@ export function joinPath(base: string, path: string): string {
   return joined === '' ? '/' : joined.startsWith('/') ? joined : `/${joined}`
 }
 
-/** Entry point for `start/routes.ts`. Returns the router with accumulated types. */
+/** Entry point for `server/routes.ts`. Returns the router with accumulated types. */
 export function defineRoutes<R extends RouteMap>(
   define: (router: Router<{}>) => Router<R>,
 ): Router<R> {

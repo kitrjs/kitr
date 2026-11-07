@@ -4,14 +4,15 @@ Each example is the unmodified output of a CLI kit, with `kitr`/`@kitr/*` pointe
 
 | Directory | Command | Try |
 | --- | --- | --- |
-| `backend/` | `kitr new backend --kit server` | `pnpm dev`, then `curl localhost:3000/api/health` |
+| `blank/` | `kitr new blank --kit blank` | `pnpm dev` (`kitr dev site`) |
+| `backend/` | `kitr new backend --kit server` | `pnpm dev` (`kitr dev api`), then `curl localhost:3001/api/health` |
 | `dashboard/` | `kitr new dashboard --kit app` | `pnpm dev` |
-| `fullstack/` | `kitr new fullstack --kit fullstack` | `pnpm build && pnpm start` (SSR on `/`, API on `/api/health`) |
+| `fullstack/` | `kitr new fullstack --kit fullstack` | `pnpm dev` runs `site` (SSR on :3000) and `api` (:3001); `pnpm build && pnpm start` serves `dist/site` |
 | `saas/` | `kitr new saas --kit saas` | `pnpm build && pnpm start`, sign in with any email and the password `password`, then create a project |
-| `site/` | `kitr new site --kit site` | `pnpm build` prerenders `/`, `/pricing`, `/blog` and every post into `dist/client`; `pnpm start` serves them plus the newsletter API |
+| `site/` | `kitr new site --kit site` | `pnpm build` prerenders `/`, `/pricing`, `/blog` and every post into `dist/site/client`; `pnpm start` serves them plus the newsletter API |
 | `realtime/` | `kitr new realtime --kit realtime` | `pnpm build && pnpm start`, open two tabs and chat: messages arrive over `/api/ws` |
-| `desktop/` | `kitr new desktop --kit desktop` | `pnpm dev` in a browser, `pnpm electron:dev` for the Electron window with native dialogs |
-| `mobile/` | `kitr new mobile --kit mobile` | `pnpm build && pnpm preview` for the installable PWA; `pnpm cap add ios` then `pnpm cap:ios` for the native shell |
+| `desktop/` | `kitr new desktop --kit desktop` | `kitr dev site` in a browser, `kitr dev app` for the Electron window with native dialogs (`platforms/app/`) |
+| `mobile/` | `kitr new mobile --kit mobile` | `kitr build site && kitr start site` for the installable PWA; `kitr dev phone --target ios` for the Capacitor shell (`platforms/phone/`) |
 
 The last five are presets: the same base as `app`/`fullstack` plus real pages, controllers and tests that show the packages working together. They are the fastest way to see what a package does, and `kitr new --kit <preset>` gives you the same files to start from.
 
