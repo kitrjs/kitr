@@ -183,6 +183,8 @@ test.describe('in the browser', () => {
     '/packages/query',
     '/docs/cli',
     '/docs/platforms',
+    '/platforms',
+    '/platforms/desktop',
     '/packages/server',
   ]
 
