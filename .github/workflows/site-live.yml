@@ -4,7 +4,7 @@ name: kitr.dev live checks
 # every page reachable, no broken links, SEO basics, llms.txt, phone layout, no errors.
 on:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 jobs:

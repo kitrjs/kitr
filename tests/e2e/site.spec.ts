@@ -182,6 +182,8 @@ test.describe('in the browser', () => {
     '/docs/getting-started',
     '/packages/query',
     '/docs/cli',
+    '/docs/platforms',
+    '/packages/server',
   ]
 
   for (const path of pages) {
