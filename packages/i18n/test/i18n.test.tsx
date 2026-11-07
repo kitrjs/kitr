@@ -2,7 +2,8 @@ import { createApp } from '@kitr/core'
 import { KitrProvider } from '@kitr/react'
 import { render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createI18n, detectLocale, i18nProvider, matchLocale, useTranslation } from '../src'
+import { createI18n, detectLocale, matchLocale, useTranslation } from '../src'
+import { i18nProvider } from '../src/provider'
 
 const resources = {
   en: { common: { hello: 'Hello {{name}}' } },
