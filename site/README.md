@@ -28,4 +28,10 @@ Add a `kitr` block and a `docs/index.md` to the package (see `/docs/building-pac
 
 ## Deploying
 
-`.github/workflows/site.yml` builds the site on every push to `main` and publishes `site/dist/client` to GitHub Pages, with `public/CNAME` pointing it at kitr.dev. One-time setup: in the repo's Settings → Pages, set Source to "GitHub Actions", and point kitr.dev's DNS at GitHub Pages (four `A` records to 185.199.108–111.153, or an `ALIAS`/flattened `CNAME` to `kitrjs.github.io`).
+kitr.dev runs on Coolify. `site/Dockerfile` builds the packages and the site from the repo root and serves `site/dist/client` with nginx (`site/nginx.conf`), so the Coolify app needs:
+
+- repository `kitrjs/kitr`, branch `main`
+- build pack Dockerfile, Dockerfile location `/site/Dockerfile`, base directory `/`
+- port 80
+
+Check it locally with `docker build -f site/Dockerfile -t kitr-site . && docker run -p 8080:80 kitr-site`.
