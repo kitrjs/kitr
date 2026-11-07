@@ -16,6 +16,8 @@ Every export of `kitr/flags`, `kitr/flags/react`, `kitr/flags/provider`, `kitr/f
 function createFlags<D extends FlagDefinitions>(definitions: D, config?: FlagsConfig, app?: KitrApp, options?: CreateFlagsOptions): Flags<D>;
 ```
 
+Build a flags service from definitions and a config: what the provider binds, and what tests call directly.
+
 ### defineFlags
 
 ```ts
@@ -30,7 +32,7 @@ Declare every flag once, in `app/flags.ts`, with its default and a sentence on w
 function envFlagsProvider(env?: Record<string, string | undefined>, prefix?: string): FlagsProvider;
 ```
 
-`FLAG_NEW_DASHBOARD=true` answers `newDashboard`.
+Answer from environment variables: `FLAG_NEW_DASHBOARD=true` answers `newDashboard` and `new-dashboard`. Reads `process.env` unless given a map.
 
 ### openFeatureFlagsProvider
 
@@ -59,7 +61,7 @@ Turn a flag on for a share of users, stable per user id. `percentageFlagsProvide
 function readEmbeddedFlags(): FlagMap | undefined;
 ```
 
-Read the snapshot a server page embedded, if any.
+Read the snapshot a server page embedded, if any. `undefined` on the server, without the tag, or when its JSON is broken.
 
 ### staticFlagsProvider
 
@@ -75,17 +77,23 @@ A fixed map, or a function of the context: `{ newDashboard: true }` or `(ctx) =>
 function useFlags<D extends FlagDefinitions = FlagDefinitions>(app: KitrApp): Flags<D>;
 ```
 
+The app's flags service, from the container, outside React.
+
 ### defineConfig
 
 ```ts
 const defineConfig: <const C extends FlagsConfig>(config: C) => C;
 ```
 
+Type the default export of `config/flags.ts`. Returns its argument unchanged.
+
 ### FLAGS_SCRIPT_ID
 
 ```ts
 const FLAGS_SCRIPT_ID = "__kitr_flags__";
 ```
+
+The id of the JSON script tag that carries the server's snapshot to the browser.
 
 ### CreateFlagsOptions
 
@@ -100,10 +108,13 @@ interface CreateFlagsOptions {
 }
 ```
 
+Options for `createFlags()` beyond the config.
+
 ### FlagContext
 
 ```ts
 interface FlagContext {
+  /** Stable id of the user; percentage rollouts and OpenFeature's `targetingKey` use it. */
   userId?: string;
   [key: string]: unknown;
 }
@@ -117,9 +128,12 @@ Who is asking: the user, their plan, the request. Providers target on it.
 interface FlagDefinition<T extends FlagValue = FlagValue> {
   /** The value when no provider answers. */
   default: T;
+  /** A sentence on what the flag gates, for the people who flip it. */
   description?: string;
 }
 ```
+
+One flag in `defineFlags()`: its default, whose type fixes the flag's type, and what it gates.
 
 ### Flags
 
@@ -127,17 +141,24 @@ interface FlagDefinition<T extends FlagValue = FlagValue> {
 interface Flags<D extends FlagDefinitions = FlagDefinitions> {
   /** The current answer. Synchronous: works from a resolved snapshot (and the defaults before one). */
   value<K extends keyof D & string>(key: K): D[K]['default'];
+  /** True only when the flag's current value is exactly `true`. */
   isEnabled(key: keyof D & string): boolean;
   /** Every flag, resolved for `context`. Server: once per request. Client: once per session, then cached. */
   resolve(context?: FlagContext): Promise<FlagValues<D>>;
   /** Load a snapshot the server resolved (what `<FlagsScript>` carries), skipping any resolution. */
   hydrate(values: Partial<FlagValues<D>>): void;
+  /** Every current value, as one frozen object that stays the same until the next change. */
   snapshot(): FlagValues<D>;
+  /** Call `listener` after each resolve or hydrate that updates the snapshot; returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
+  /** The definitions passed in. */
   readonly definitions: D;
+  /** Whether the snapshot came from a resolve or hydrate rather than the defaults. */
   readonly resolved: boolean;
 }
 ```
+
+The flags service bound as `flags`: a typed snapshot of every flag, and the means to resolve it.
 
 ### FlagsConfig
 
@@ -147,16 +168,20 @@ interface FlagsConfig {
   definitions?: FlagDefinitions;
   /** First provider with an answer wins. */
   providers?: FlagsProvider[];
-  /** Seconds a resolved snapshot stays fresh in the browser before `refresh()`. Default 300. */
+  /** Seconds a resolved snapshot stays fresh in the browser. Declared for a coming refresh; not read yet. */
   ttl?: number;
 }
 ```
+
+The options in `config/flags.ts`.
 
 ### FlagsProvider
 
 ```ts
 interface FlagsProvider {
+  /** Shown in warnings when the provider fails. */
   name: string;
+  /** Runs once per `resolve()`, before any key. A throw skips this provider for that resolve. */
   init?(context: FlagContext): Promise<void> | void;
   /** `undefined` means "no opinion": the next provider, then the default, answer. */
   resolve(key: string, context: FlagContext): Promise<FlagValue | undefined> | FlagValue | undefined;
@@ -172,17 +197,23 @@ one-line adapter, but a plain object or `envFlagsProvider()` also work.
 type FlagDefinitions = Record<string, FlagDefinition>;
 ```
 
+Every flag by key, as `defineFlags()` takes and returns them.
+
 ### FlagMap
 
 ```ts
 type FlagMap = Record<string, FlagValue>;
 ```
 
+Flag values by key, untyped: what providers and embedded snapshots carry.
+
 ### FlagValue
 
 ```ts
 type FlagValue = boolean | string | number;
 ```
+
+A flag's value: on/off, a number such as a limit, or a string such as a variant name.
 
 ### FlagValues
 
@@ -191,6 +222,8 @@ type FlagValues<D extends FlagDefinitions> = {
   [K in keyof D]: D[K]['default'];
 };
 ```
+
+The resolved value of every flag in `D`, typed by each default.
 
 ## kitr/flags/react
 
@@ -265,16 +298,23 @@ cached on the event so loaders, controllers and the page share one answer.
 interface Flags<D extends FlagDefinitions = FlagDefinitions> {
   /** The current answer. Synchronous: works from a resolved snapshot (and the defaults before one). */
   value<K extends keyof D & string>(key: K): D[K]['default'];
+  /** True only when the flag's current value is exactly `true`. */
   isEnabled(key: keyof D & string): boolean;
   /** Every flag, resolved for `context`. Server: once per request. Client: once per session, then cached. */
   resolve(context?: FlagContext): Promise<FlagValues<D>>;
   /** Load a snapshot the server resolved (what `<FlagsScript>` carries), skipping any resolution. */
   hydrate(values: Partial<FlagValues<D>>): void;
+  /** Every current value, as one frozen object that stays the same until the next change. */
   snapshot(): FlagValues<D>;
+  /** Call `listener` after each resolve or hydrate that updates the snapshot; returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
+  /** The definitions passed in. */
   readonly definitions: D;
+  /** Whether the snapshot came from a resolve or hydrate rather than the defaults. */
   readonly resolved: boolean;
 }
 ```
+
+The flags service bound as `flags`: a typed snapshot of every flag, and the means to resolve it.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

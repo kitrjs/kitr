@@ -73,6 +73,8 @@ interface DefineMutationOptions<S extends StandardSchemaV1 | undefined, TOutput,
 }
 ```
 
+The second argument of `defineMutation`: the shared options plus cache `effects`.
+
 ### DefineOperationOptions
 
 ```ts
@@ -96,6 +98,8 @@ interface DefineQueryOptions<S extends StandardSchemaV1 | undefined, TOutput, TC
   staleTime?: number;
 }
 ```
+
+The second argument of `defineQuery`: the shared options plus `staleTime`.
 
 ### HandlerContext
 

@@ -33,7 +33,7 @@ What `kitr add` does:
 
 ## Configure
 
-Actions have no `config/actions.ts`. Everything is declared on each definition, so a reader of one file sees everything that affects it:
+This package has no config file. Everything is declared on each definition, so a reader of one file sees everything that affects it:
 
 ```ts
 // app/actions/projects/update.ts

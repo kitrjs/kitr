@@ -40,12 +40,14 @@ export interface DefineOperationOptions<S extends StandardSchemaV1 | undefined, 
   handler: (ctx: HandlerContext<InputOf<S>, TContext>) => TOutput | Promise<TOutput>
 }
 
+/** The second argument of `defineQuery`: the shared options plus `staleTime`. */
 export interface DefineQueryOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext>
   extends DefineOperationOptions<S, TOutput, TContext> {
   /** How long a result counts as fresh, in milliseconds. Carried into the query options. */
   staleTime?: number
 }
 
+/** The second argument of `defineMutation`: the shared options plus cache `effects`. */
 export interface DefineMutationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext>
   extends DefineOperationOptions<S, TOutput, TContext> {
   /** Cache effects applied on the client after success. A function gets the result and the input. */

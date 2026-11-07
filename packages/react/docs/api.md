@@ -127,7 +127,7 @@ interface CreateAppOptions {
   /** The platform name this bundle was built for (`kitr dev site` → `site`). Default: from `import.meta.env.KITR_PLATFORM`. */
   platform?: PlatformName;
   /**
-   * Every named query and mutation, by name: the `actions` map `kitr types` writes to
+   * Every named query and mutation, by name: the `operations` map `kitr types` writes to
    * `.kitr/actions.ts`. Registered process-wide, so `useQuery('projects.list')` and
    * `call('projects.update', input)` resolve anywhere.
    */
