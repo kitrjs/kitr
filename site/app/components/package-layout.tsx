@@ -1,6 +1,8 @@
 import { Link } from '@tanstack/react-router'
+import { CreatorMark } from '#app/components/creator-marks'
 import { type Category, categories, type PackageEntry, packages } from '#app/lib/catalog'
 import type { Page } from '#app/lib/content'
+import { upstream } from '#app/lib/upstream'
 import { Command } from './command'
 import { DocBody, Toc } from './doc-body'
 import { LiveExample } from './live-example'
@@ -30,7 +32,33 @@ export function PackageLayout({
               <CategoryBadge category={pkg.category} />
               <RunsOnBadge value={pkg.runsOn} />
               {pkg.builtOn?.length ? (
-                <span className="muted built-on">Built on {pkg.builtOn.join(', ')}</span>
+                <span className="built-on">
+                  <span className="muted">Built on</span>
+                  {pkg.builtOn.map((key) => {
+                    const u = upstream(key)
+                    const inner = (
+                      <>
+                        {u.mark && <CreatorMark name={u.mark} size={14} />}
+                        {u.name}
+                      </>
+                    )
+                    return u.url ? (
+                      <a
+                        key={key}
+                        className="built-on-link"
+                        href={u.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {inner}
+                      </a>
+                    ) : (
+                      <span key={key} className="built-on-link">
+                        {inner}
+                      </span>
+                    )
+                  })}
+                </span>
               ) : null}
             </div>
           </div>
