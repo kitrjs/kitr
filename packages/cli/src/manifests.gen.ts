@@ -14,6 +14,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "@react-three/fiber",
       "three"
     ],
+    "requires": [
+      "react"
+    ],
     "client": true,
     "docs": "docs",
     "setup": "./kitr"
@@ -62,6 +65,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "client",
     "builtOn": [
       "motion"
+    ],
+    "requires": [
+      "react"
     ],
     "client": true,
     "docs": "docs",
