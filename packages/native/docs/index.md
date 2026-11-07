@@ -41,3 +41,16 @@ On the web, `biometrics` uses WebAuthn with the device's own authenticator (Touc
 ## Drivers
 
 Platform packages register `clipboard`, `share`, `haptics`, `geolocation`, `camera` and `biometrics` separately, and `native.supported()` says what is live. Tests pass `createMemoryNativeDrivers()` through `config.drivers`.
+
+## What each one does
+
+| Capability | Methods | Web driver |
+| --- | --- | --- |
+| `clipboard` | `read()`, `write(text)` | Clipboard API |
+| `share` | `share({ title, text, url, files })` | Web Share, where the browser has it |
+| `haptics` | `impact(style)` | `navigator.vibrate`, on Android browsers |
+| `geolocation` | `current()`, `watch(callback)` | Geolocation API |
+| `camera` | `takePhoto()`, `pickPhoto()` | A file input with `capture` |
+| `biometrics` | `available()`, `authenticate({ reason })` | WebAuthn, with the device's own authenticator |
+
+On iOS, Android and desktop, the platform packages swap in native drivers, so Face ID, the native share sheet and real haptics work with the same code.

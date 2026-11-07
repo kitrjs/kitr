@@ -6,7 +6,7 @@ order: 1
 
 # Uploads
 
-Multipart uploads with the rules enforced on both sides: the browser checks size and type before sending and shows progress; the server checks again, stores the bytes through a driver and answers with a file record.
+Avatars, attachments, imports: sooner or later an app takes files from people. `kitr/uploads` does the whole round trip. The browser checks size and type before sending anything and shows progress. The server checks again (never trust the browser), stores the bytes through a driver and answers with a file record you can save in your database.
 
 ## Install
 
@@ -18,7 +18,8 @@ The recipe writes `config/uploads.ts` and adds `mountUploads(server)` to `server
 
 ```ts
 // config/uploads.ts
-import { createDiskUploadsDriver, defineConfig } from 'kitr/uploads'
+import { defineConfig } from 'kitr/uploads'
+import { createDiskUploadsDriver } from 'kitr/uploads/server'
 
 export default defineConfig({
   driver: createDiskUploadsDriver({ dir: 'storage/uploads' }),
@@ -64,3 +65,21 @@ async store({ event, params, app }: HttpContext) {
 ## Drivers
 
 The disk driver writes under a directory and serves files through the mounted GET route. Object storage is a driver with `put`, `get`, `delete` and an optional `url(key)` for signed or CDN URLs.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `driver` | disk, under `storage/uploads` | Where files go. |
+| `maxSize` | none | Bytes per file. |
+| `accept` | anything | MIME types (`image/*`, `application/pdf`) or extensions (`.pdf`). |
+| `maxFiles` | none | Files per request. |
+| `publicPath` | none | The URL prefix files are served under, such as `/uploads`. |
+
+The same rules apply in both places: `useUpload()` checks them before sending, and the server checks them again on receipt. Pass stricter rules to `receive()` for one route.
+
+## Errors
+
+In the browser, a rule that fails or a server rejection comes back as an `UploadError` in `error`, with a readable message like "photo.heic is not an accepted type". Show it as it is. `checkFile(file, rules)` runs the same checks yourself, and `formatBytes(10485760)` gives "10 MB" for a hint under the input.
+
+## Tests
+
+`createMemoryUploadsDriver()` keeps files in memory. Use it in `config/uploads.ts` for tests, and post files with the [testing](/packages/testing) client.

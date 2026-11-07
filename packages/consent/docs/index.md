@@ -6,7 +6,7 @@ order: 1
 
 # Consent
 
-One record per visitor, by category, kept in a cookie the server can read too. Analytics stays queued until its category is granted; a banner is a few lines over `useConsent()`.
+In much of the world you need a visitor's permission before you load analytics or marketing scripts. `kitr/consent` keeps one record per visitor of what they agreed to, by category, in a cookie the server can read too. [Analytics](/packages/analytics) holds its events until its category is granted, and sends them only then. Your banner is a few lines over `useConsent()`, so it looks like the rest of your app.
 
 ## Install
 
@@ -52,3 +52,28 @@ export function ConsentBanner() {
 ## On the server
 
 The cookie is a `kitr/storage` item (`consent.cookie`), so `cookies(event).get(consent.cookie)` reads the same record in a controller or loader.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `categories` | `['analytics', 'marketing']` | What the banner offers. `necessary` is always granted. |
+| `version` | `1` | Bump it to ask everyone again, for example when you add a vendor. |
+| `cookie` | `consent` | The cookie name. |
+| `maxAge` | `365` | Days the choice is kept. |
+| `analytics` | `'analytics'` | The category analytics waits for. `false` never holds it back. |
+| `monitoring` | `false` | The category error reports wait for. By default they aren't held back. |
+
+## Loading other scripts
+
+For a script that isn't a kitr package, like a chat widget or an ad pixel, check the category first and listen for changes:
+
+```tsx
+const consent = useConsent()
+
+useEffect(() => {
+  if (consent.has('marketing')) loadPixel()
+}, [consent])
+```
+
+## Tests
+
+`createConsent({ categories: ['analytics'] })` builds a consent service without an app, and `grant`, `rejectAll` and `reset` change it the way a visitor would.

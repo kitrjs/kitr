@@ -45,3 +45,17 @@ A cancelled dialog resolves to `[]`, `null` or `null` respectively, never reject
 ## Drivers
 
 Platform packages register their dialogs under the `files` capability. Tests pass `createMemoryFilesDriver(queue)` in config and read `driver.saved`.
+
+## Where it runs
+
+| Where it runs | Driver |
+| --- | --- |
+| iOS, Android | The native document picker and share sheet, through the [mobile](/packages/mobile) package |
+| Desktop | The system's open and save dialogs, through the [desktop](/packages/desktop) package. Picked files have a `path`. |
+| Chrome, Edge | The File System Access API, so saving writes to the file the person picked |
+| Other browsers | A file input to open, and a download to save |
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `filters` | none | File types added to every dialog, such as your app's own document type. |
+| `driver` | the platform's | Replace the dialogs, for tests. |

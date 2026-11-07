@@ -50,3 +50,19 @@ function Reminders() {
 ## Drivers
 
 Platform packages register under the `notifications` capability. Tests pass `createMemoryNotificationsDriver()` and call `driver.tap(id)` to simulate a tap.
+
+## Where it runs
+
+| Where it runs | Driver |
+| --- | --- |
+| iOS, Android | Local notifications through the [mobile](/packages/mobile) package. Scheduled ones fire with the app closed. |
+| Desktop | System notifications through the [desktop](/packages/desktop) package |
+| Browser | The Notification API. Scheduled notifications only fire while the page is open. |
+
+This package covers notifications the app shows itself. Push notifications sent from your server need a push service (APNs, FCM or Web Push) on top.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `icon` | none | Default icon for browser notifications. |
+| `requestOnBoot` | `false` | Ask for permission as soon as the app starts. Browsers block or bury requests that don't follow a click, so it's better to ask from a button. |
+| `driver` | the platform's | Replace the driver, for tests. |

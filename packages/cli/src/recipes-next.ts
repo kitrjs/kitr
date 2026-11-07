@@ -300,7 +300,7 @@ export function ConsentBanner() {
       )
       c.addAgentsSection(
         'cache',
-        `- Expensive reads go through \`cache.remember(key, ttl, fn)\` or \`cached(cache, fn, { key, ttl, tags })\` from \`kitr/cache\`; \`ctx.app.container.use('cache')\` in controllers and actions. Invalidate by tag after a write (\`cache.invalidateTag('projects')\`) instead of guessing keys.`,
+        `- Expensive reads go through \`cache.remember(key, fn, { ttl, tags })\` or \`cached(cache, fn, { key, ttl, tags })\` from \`kitr/cache\`; \`useCache(ctx.app)\` in controllers and actions. Invalidate by tag after a write (\`cache.invalidateTags('projects')\`) instead of guessing keys.`,
       )
     },
     unconfigure(_ctx, c) {
