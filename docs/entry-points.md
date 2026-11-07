@@ -34,6 +34,8 @@ TanStack's route generator rewrites that specific import in every route file and
 | `kitr/http`, `kitr/http/provider` | `@kitr/http` | no (provider is framework-neutral) |
 | `kitr/forms` | `@kitr/forms` | yes |
 | `kitr/table` | `@kitr/table` | yes |
+| `kitr/animation`, `kitr/animation/provider`, `kitr/animation/page-transitions.css` | `@kitr/animation` | yes |
+| `kitr/3d`, `kitr/3d/drei` | `@kitr/3d` | yes |
 | `kitr/state` | `@kitr/state` | yes |
 | `kitr/tailwind`, `kitr/tailwind/vite`, `kitr/tailwind/preset.css` | `@kitr/tailwind` | no |
 | `kitr/theme`, `kitr/theme/provider`, `kitr/theme/styles.css` | `@kitr/theme` | yes |
