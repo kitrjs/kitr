@@ -88,9 +88,13 @@ export function plausible(options: { domain: string; apiHost?: string }): Analyt
 
 /** Minimal shape of the posthog-js client; pass `posthog` from `posthog-js` or any compatible object. */
 export interface PostHogLike {
+  /** Start the client with a project API key and options. */
   init(token: string, config?: Record<string, unknown>): unknown
+  /** Send one event, `$pageview` included. */
   capture(event: string, properties?: Record<string, unknown> | null): unknown
+  /** Attach later events to a user id. */
   identify(id?: string, properties?: Record<string, unknown>): void
+  /** Forget the identified user. */
   reset(): void
 }
 

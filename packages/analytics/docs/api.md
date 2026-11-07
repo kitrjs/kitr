@@ -95,45 +95,62 @@ PostHog through its own client (`posthog-js`), with autocapture of page views tu
 const defineConfig: <const C extends AnalyticsConfig<EventMap>>(config: C) => C;
 ```
 
+Types the default export of `config/analytics.ts`: adapters, consent queueing, page views and global props.
+
 ### Analytics
 
 ```ts
 interface Analytics<E extends EventMap = EventMap> {
+  /** Record a page view. The provider calls it on every route change unless `pageViews` is false. */
   page(path: string, props?: EventProps & {
     url?: string;
     title?: string;
   }): void;
+  /** Record an event from the app's event map, with its props. */
   track<K extends keyof E & string>(event: K, ...props: E[K] extends undefined ? [
   ] : [
     E[K]
   ]): void;
+  /** Record any event by name. Accepts names outside the event map. */
   track(event: string, props?: EventProps): void;
+  /** Attach later events to a user id, after sign-in. `globalProps` are not added. */
   identify(userId: string, traits?: EventProps): void;
+  /** Forget the identified user, on sign-out. */
   reset(): void;
-  /** Flush the queue and start sending. Call after consent. */
+  /** Load each adapter's script, then send the queued calls and start sending. Call after consent. */
   enable(): Promise<void>;
-  /** Stop sending; calls are dropped (not queued) once disabled after being enabled. */
+  /** Stop sending and empty the queue. Later calls queue again (up to 100) until the next `enable()`. */
   disable(): void;
+  /** True once `enable()` has finished and until `disable()`. */
   readonly enabled: boolean;
   /** Add an adapter at runtime (after a consent choice, or lazily). */
   use(adapter: AnalyticsAdapter): void;
+  /** Every adapter in use, in the order calls reach them. */
   readonly adapters: readonly AnalyticsAdapter[];
 }
 ```
+
+The analytics service bound as `analytics` in the container and returned by `useAnalytics()`.
+Every call goes to each adapter, or waits in a queue until `enable()`.
 
 ### AnalyticsAdapter
 
 ```ts
 interface AnalyticsAdapter {
+  /** Shown in devtools and in debug warnings, such as `google-analytics` or `plausible`. */
   name: string;
   /** Load scripts, create clients. Called once on the client when tracking is enabled. */
   init?(): void | Promise<void>;
+  /** Record a page view for `path`; `props.url` and `props.title` carry the full URL and document title. */
   page(path: string, props?: EventProps & {
     url?: string;
     title?: string;
   }): void;
+  /** Record a named event with its props. */
   track(event: string, props?: EventProps): void;
+  /** Attach later events to a user id. Optional; services without user profiles leave it out. */
   identify?(userId: string, traits?: EventProps): void;
+  /** Forget the identified user, on sign-out. Optional. */
   reset?(): void;
 }
 ```
@@ -144,6 +161,7 @@ What every destination implements. Methods are best-effort and must never throw 
 
 ```ts
 interface AnalyticsConfig<E extends EventMap = EventMap> {
+  /** Where calls go. Empty in the provider means the console in development and nothing in production. */
   adapters?: AnalyticsAdapter[];
   /** Start sending immediately (default). Set false to queue until `analytics.enable()` (consent banners). */
   enabled?: boolean;
@@ -158,13 +176,19 @@ interface AnalyticsConfig<E extends EventMap = EventMap> {
 }
 ```
 
+Options for `config/analytics.ts` and `createAnalytics()`. `E` is the app's event map.
+
 ### PostHogLike
 
 ```ts
 interface PostHogLike {
+  /** Start the client with a project API key and options. */
   init(token: string, config?: Record<string, unknown>): unknown;
+  /** Send one event, `$pageview` included. */
   capture(event: string, properties?: Record<string, unknown> | null): unknown;
+  /** Attach later events to a user id. */
   identify(id?: string, properties?: Record<string, unknown>): void;
+  /** Forget the identified user. */
   reset(): void;
 }
 ```
@@ -184,6 +208,8 @@ type EventMap = Record<string, EventProps | undefined>;
 ```ts
 type EventProps = Record<string, unknown>;
 ```
+
+Props sent with an event, a page view or an identify call. Adapters pass them to the vendor as they are.
 
 ## kitr/analytics/provider
 

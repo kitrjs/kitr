@@ -8,6 +8,7 @@ import {
 export type { DevtoolsAction, DevtoolsEntry, DevtoolsHub, DevtoolsPanel } from '@kitr/core'
 export { getDevtools } from '@kitr/core'
 
+/** Options for `config/devtools.ts`: whether the overlay is on, where its button sits, its shortcut and log size. */
 export interface DevtoolsConfig {
   /** Default: development on the client. Set false to disable without removing the package. */
   enabled?: boolean
@@ -27,14 +28,18 @@ declare module '@kitr/core' {
   }
 }
 
+/** Types the default export of `config/devtools.ts`. */
 export const defineConfig = createDefineConfig<DevtoolsConfig>()
 
-/** Identity helper with types, for `devtools()` methods on providers. */
+/** Returns the panel unchanged, typed as a `DevtoolsPanel`. Use it in the module a provider's `devtools()` method imports. */
 export function definePanel(panel: DevtoolsPanel): DevtoolsPanel {
   return panel
 }
 
-/** The event bus and panel registry behind the overlay. One per app, development only. */
+/**
+ * The event bus and panel registry behind the overlay. The provider binds one per app in development;
+ * create your own in tests to assert on what code logs. Keeps `maxEntries` (default 500) per channel.
+ */
 export function createDevtoolsHub(options: { maxEntries?: number } = {}): DevtoolsHub {
   const max = options.maxEntries ?? 500
   const panels: DevtoolsPanel[] = []
