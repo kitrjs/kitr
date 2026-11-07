@@ -46,9 +46,10 @@
     "@kitr/core": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.19.0",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
-    "@types/node": "^22.19.0"
+    "unstorage": "1.17.6"
   },
   "kitr": {
     "name": "cache",

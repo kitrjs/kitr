@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useAnalytics } from 'kitr/analytics/react'
 import { useSchemaForm } from 'kitr/forms'
-import { useKitrMutation, useSuspenseQuery } from 'kitr/query'
+import { useMutation, useSuspenseQuery } from 'kitr/query'
 import {
   type ColumnDef,
   type DataTableFeatures,
@@ -39,7 +39,7 @@ function ProjectsPage() {
     setSearch: (patch) => navigate({ search: (prev: typeof search) => ({ ...prev, ...patch }) }),
   })
   const { data } = useSuspenseQuery(projectsQuery.options({}))
-  const remove = useKitrMutation(deleteProject)
+  const remove = useMutation(deleteProject)
   const [open, setOpen] = useState(false)
 
   const columns: ColumnDef<DataTableFeatures, Project>[] = [
@@ -96,7 +96,7 @@ function NewProjectDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const create = useKitrMutation(createProject)
+  const create = useMutation(createProject)
   const analytics = useAnalytics<AppEvents>()
   const form = useSchemaForm(createProjectSchema, { defaultValues: { name: '', status: 'active' } })
   return (

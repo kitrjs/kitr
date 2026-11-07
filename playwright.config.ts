@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test'
  * tests/e2e/prepare.mjs, so the examples stay untouched kit output).
  *
  *   dashboard       SPA production build served by `kitr start site`
- *   dashboard-dev   the same app on the Vite dev server (`kitr dev site`), where devtools load
+ *   dashboard-dev   the same app on the Vite dev server (`kitr dev site`) with devtools added (a preview package)
  *   fullstack       TanStack Start build served by `kitr start site` (SSR, API, WebSockets)
  *   site            kitr.dev: site/dist/client served the way site/nginx.conf serves it
  *
@@ -66,7 +66,7 @@ export default defineConfig({
           reuseExistingServer: !process.env.CI,
         },
         {
-          command: `node tests/e2e/prepare.mjs dashboard dashboard-dev && cd ${apps}/dashboard-dev && ${kitr} dev site --host 127.0.0.1 --port ${ports.dashboardDev}`,
+          command: `node tests/e2e/prepare.mjs dashboard dashboard-dev --add devtools && cd ${apps}/dashboard-dev && ${kitr} dev site --host 127.0.0.1 --port ${ports.dashboardDev}`,
           url: `http://127.0.0.1:${ports.dashboardDev}`,
           timeout: 120_000,
           reuseExistingServer: !process.env.CI,

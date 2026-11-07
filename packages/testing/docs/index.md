@@ -532,7 +532,7 @@ The query and the component under test read the same key:
 
 ```ts
 // app/features/orders/queries.ts
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 
 export interface Order {
   id: string
@@ -540,7 +540,7 @@ export interface Order {
   total: number
 }
 
-export const ordersQuery = defineQuery<void, Order[]>({
+export const ordersQuery = queryFrom<void, Order[]>({
   key: () => ['orders', 'list'],
   fetch: async (_input, { signal }) => {
     const res = await fetch('/api/orders', { signal })

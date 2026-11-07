@@ -1,6 +1,7 @@
 {
   "name": "@kitr/kit-mobile",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr new --kit mobile: The app kit as an installable PWA and a Capacitor shell: online state, install prompt, native lifecycle hooks.",
   "kitr": {
     "name": "mobile",
@@ -20,9 +21,6 @@
   },
   "homepage": "https://kitr.dev/docs/cli",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     "./kitr": {

@@ -1,4 +1,4 @@
-export { cva, cx as cvaCx, type VariantProps } from 'class-variance-authority'
+export { cva, type VariantProps } from 'class-variance-authority'
 export { type ClassValue, clsx, clsx as cx } from 'clsx'
 export { defineConfig, type ThemeConfig } from './config'
 export * from './css'

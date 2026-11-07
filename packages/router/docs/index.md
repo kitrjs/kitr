@@ -231,7 +231,7 @@ A loader runs before the route renders, on the server during server rendering an
 ```ts
 // app/features/projects/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 
 export interface Project {
   id: string
@@ -241,7 +241,7 @@ export interface Project {
 
 export const projectKeys = createKeys('projects')
 
-export const projectQuery = defineQuery({
+export const projectQuery = queryFrom({
   key: (id: string) => projectKeys.detail(id),
   fetch: async (id, { signal }): Promise<Project> => {
     const res = await fetch(`https://api.acme.com/projects/${id}`, { signal })

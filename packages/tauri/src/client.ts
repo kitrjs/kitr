@@ -42,7 +42,7 @@ export function defineCommands<C extends CommandMap>(): Commands<C> {
   })
 }
 
-/** A query contract over a command, for `defineQuery(commandQuery(commands.greet, 'greet'))`. */
+/** A query contract over a command, for `queryFrom(commandQuery(commands.greet, 'greet'))`. */
 export function commandQuery<TInput, TOutput>(
   command: (args: TInput) => Promise<TOutput>,
   name: string,
@@ -55,7 +55,7 @@ export function commandQuery<TInput, TOutput>(
 }
 
 /**
- * A mutation contract over a command, for `defineMutation(commandMutation(commands.ship_order, { effects }))`.
+ * A mutation contract over a command, for `mutationFrom(commandMutation(commands.ship_order, { effects }))`.
  * `effects` say which cached queries to set, invalidate or remove when the command succeeds.
  */
 export function commandMutation<TInput, TOutput>(

@@ -153,7 +153,7 @@ export function createSocketClient(options: SocketClientOptions): SocketTranspor
 
 /** A channel bound to a transport, as `channel()` returns it. */
 export interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `defineSubscription`. */
+  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(

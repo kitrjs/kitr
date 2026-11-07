@@ -1,4 +1,4 @@
-// Usage: node tests/e2e/prepare.mjs <example> <copy-name> [--build]
+// Usage: node tests/e2e/prepare.mjs <example> <copy-name> [--build] [--add <package>]
 // Copies examples/<example> to $TMPDIR/kitr-e2e-apps/<copy-name> with its installed node_modules
 // symlinked in, adds the e2e fixture files from tests/e2e/fixtures/<example>, and optionally
 // builds it. The examples themselves stay the untouched output of `kitr new`.
@@ -40,6 +40,25 @@ for (const entry of readdirSync(join(source, 'node_modules'))) {
 }
 const bin = join(source, 'node_modules/.bin')
 if (existsSync(bin)) symlinkSync(bin, join(target, 'node_modules/.bin'), 'dir')
+
+// `--add <pkg>`: a preview package no kit installs (devtools), added the way a user would with
+// `kitr add <pkg> --preview`, and linked from the workspace.
+for (let i = 0; i < flags.length; i++) {
+  if (flags[i] !== '--add') continue
+  const pkg = flags[++i]
+  const scope = join(target, 'node_modules/@kitr')
+  const linked = join(source, 'node_modules/@kitr')
+  rmSync(scope, { recursive: true, force: true })
+  mkdirSync(scope)
+  for (const entry of readdirSync(linked))
+    symlinkSync(join(linked, entry), join(scope, entry), 'dir')
+  symlinkSync(join(root, 'packages', pkg), join(scope, pkg), 'dir')
+  execFileSync(
+    process.execPath,
+    [join(root, 'packages/kitr/bin/kitr.mjs'), 'add', pkg, '--preview', '--no-install', '--yes'],
+    { cwd: target, stdio: 'inherit', env: { ...process.env, CI: '1' } },
+  )
+}
 
 const fixtures = join(root, 'tests/e2e/fixtures', example)
 if (existsSync(fixtures)) cpSync(fixtures, join(target, 'app'), { recursive: true })

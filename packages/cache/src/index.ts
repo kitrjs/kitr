@@ -139,6 +139,103 @@ export function createMemoryCacheDriver(): CacheDriver {
   }
 }
 
+/**
+ * The part of an [unstorage](https://unstorage.unjs.io) `Storage` the cache uses. Any unstorage
+ * instance fits, whatever its driver: Redis, Upstash, Cloudflare KV, Vercel KV, the filesystem.
+ */
+export interface UnstorageLike {
+  getItem(key: string): Promise<unknown>
+  setItem(key: string, value: string, options?: { ttl?: number }): Promise<void>
+  removeItem(key: string): Promise<void>
+  getKeys(base?: string): Promise<string[]>
+}
+
+interface Envelope {
+  /** The serialised value. */
+  v: string
+  /** Expiry, ms since the epoch. */
+  e?: number
+  /** Tags this value was stored with. */
+  t?: string[]
+}
+
+/**
+ * A cache driver over any unstorage instance, so several servers share one cache: in
+ * `config/cache.ts`, `driver: createUnstorageCacheDriver(createStorage({ driver: redisDriver(...) }))`
+ * with `createStorage` from unstorage and the driver from `unstorage/drivers/redis` (or any other).
+ *
+ * Expiry is checked on read, so drivers without native TTLs work too; the ttl is also passed to
+ * `setItem` for drivers that expire keys themselves (Redis, KV). Entries live under `base`
+ * (default `kitr-cache`), so `clear()` leaves the rest of the store alone.
+ */
+export function createUnstorageCacheDriver(
+  storage: UnstorageLike,
+  options: { base?: string } = {},
+): CacheDriver {
+  const base = options.base ?? 'kitr-cache'
+  const entry = (key: string) => `${base}:e:${key}`
+  const tagKey = (tag: string) => `${base}:t:${tag}`
+  // unstorage parses JSON strings on read; accept either form.
+  const decode = <T>(raw: unknown): T | undefined => {
+    if (raw === null || raw === undefined) return undefined
+    if (typeof raw !== 'string') return raw as T
+    try {
+      return JSON.parse(raw) as T
+    } catch {
+      return undefined
+    }
+  }
+  const read = async (key: string): Promise<Envelope | undefined> => {
+    const env = decode<Envelope>(await storage.getItem(entry(key)))
+    if (!env || typeof env.v !== 'string') return undefined
+    if (env.e !== undefined && env.e <= Date.now()) {
+      await storage.removeItem(entry(key))
+      return undefined
+    }
+    return env
+  }
+  const write = (key: string, env: Envelope) => {
+    const ttl =
+      env.e === undefined ? undefined : Math.max(1, Math.ceil((env.e - Date.now()) / 1000))
+    return storage.setItem(entry(key), JSON.stringify(env), ttl === undefined ? undefined : { ttl })
+  }
+  return {
+    name: 'unstorage',
+    async get(key) {
+      return (await read(key))?.v
+    },
+    async set(key, value, ttl) {
+      // A new value starts untagged, as with the memory driver.
+      await write(key, { v: value, e: ttl === undefined ? undefined : Date.now() + ttl * 1000 })
+    },
+    async delete(key) {
+      await storage.removeItem(entry(key))
+    },
+    async tag(key, list) {
+      const env = await read(key)
+      if (!env) return
+      await write(key, { ...env, t: [...new Set([...(env.t ?? []), ...list])] })
+      for (const t of list) {
+        const keys = decode<string[]>(await storage.getItem(tagKey(t))) ?? []
+        if (!keys.includes(key)) await storage.setItem(tagKey(t), JSON.stringify([...keys, key]))
+      }
+    },
+    async invalidateTags(list) {
+      for (const t of list) {
+        for (const key of decode<string[]>(await storage.getItem(tagKey(t))) ?? []) {
+          // Only entries still carrying the tag: a key re-set since then keeps its new value.
+          const env = await read(key)
+          if (env?.t?.includes(t)) await storage.removeItem(entry(key))
+        }
+        await storage.removeItem(tagKey(t))
+      }
+    },
+    async clear() {
+      for (const key of await storage.getKeys(base)) await storage.removeItem(key)
+    },
+  }
+}
+
 /** Build a cache without an app: what the provider binds, and what tests and scripts call directly. */
 export function createCache(config: CacheConfig = {}): Cache {
   const driver = config.driver ?? createMemoryCacheDriver()

@@ -25,14 +25,6 @@ function createAsyncStorageDriver(options: {
 Build a driver over an async native store. `load` runs once at boot and fills the cache;
 `write`/`erase` run in the background after each change, so reads stay synchronous.
 
-### createMemoryKvDriver
-
-```ts
-function createMemoryKvDriver(): KvDriver;
-```
-
-The default `kv` driver: a Map with ttl support. Values are lost on restart and not shared between processes.
-
 ### createMemoryStorageDriver
 
 ```ts
@@ -65,21 +57,6 @@ locale.set('de')                  // client
 cookies(event).set(locale, 'de')  // server (kitr/storage/server)
 ```
 
-### defineKv
-
-```ts
-function defineKv<T>(name: string, options: KvItemOptions<T>): KvItem<T>;
-```
-
-A value shared by the whole app on the server (`scope: 'app'`): feature state, counters,
-cached lookups. Backed by memory unless `config/storage.ts` sets a `kv` driver
-(Redis, Cloudflare KV, a file... anything with get/set/remove).
-
-```ts
-const banner = defineKv('banner', { default: { text: '' } })
-await banner.set({ text: 'Maintenance at 22:00' })
-```
-
 ### defineStorage
 
 ```ts
@@ -94,14 +71,6 @@ sidebar.get().open; sidebar.set((s) => ({ ...s, open: false }))
 ```
 Safe everywhere: on the server (or when storage is blocked) `get()` returns the default
 and `set()` is a no-op, so the same module renders on both sides.
-
-### getKvDriver
-
-```ts
-function getKvDriver(): KvDriver;
-```
-
-The active `kv` driver, creating the in-memory one on first use.
 
 ### getStorageDriver
 
@@ -169,14 +138,6 @@ function setCookieDefaults(defaults: Omit<CookieOptions, 'name'>): void;
 ```
 
 Attributes merged into every cookie this app writes. The provider sets them from `cookie` in config.
-
-### setKvDriver
-
-```ts
-function setKvDriver(driver: KvDriver): void;
-```
-
-Set by the storage provider from `config/storage.ts` (`kv`). Any object with async get, set and remove over strings works.
 
 ### setStorageDriver
 
@@ -301,64 +262,6 @@ interface CookieOptions {
 
 Attributes written into `Set-Cookie`. `path: '/'` and `sameSite: 'lax'` apply unless overridden.
 
-### KvDriver
-
-```ts
-interface KvDriver {
-  /** The raw string under `key`, or null when missing or expired. */
-  get(key: string): Promise<string | null>;
-  /** Store a raw string; `ttl` is in milliseconds. */
-  set(key: string, raw: string, options?: {
-    ttl?: number;
-  }): Promise<void>;
-  /** Delete one key. */
-  remove(key: string): Promise<void>;
-  /** Keys starting with `prefix`. Optional; kitr does not call it. */
-  keys?(prefix?: string): Promise<string[]>;
-}
-```
-
-The server-side store behind `defineKv`: anything async with get, set and remove over strings.
-Wrap Redis, Cloudflare KV or a file in this shape and pass it as `kv` in `config/storage.ts`.
-
-### KvItem
-
-```ts
-interface KvItem<T> {
-  /** The name it was defined with, without the config prefix. */
-  readonly key: string;
-  /** Returned when the key is missing, expired or invalid. */
-  readonly default: T;
-  /** The stored value, or the default. */
-  get(): Promise<T>;
-  /** Store a value, or compute it from the current one. `ttl` overrides the item's default. */
-  set(value: T | ((current: T) => T), options?: {
-    ttl?: number;
-  }): Promise<void>;
-  /** Delete the stored value. */
-  remove(): Promise<void>;
-}
-```
-
-A typed server-side value returned by `defineKv`. Every method is async.
-
-### KvItemOptions
-
-```ts
-interface KvItemOptions<T> {
-  /** Returned when the key is missing, expired or invalid. */
-  default: T;
-  /** Validate what comes back from the driver (Standard Schema). Invalid → default. */
-  schema?: StandardSchemaV1<unknown, T>;
-  /** Format of the stored string. Default: JSON. */
-  codec?: Codec<T>;
-  /** Milliseconds to keep a value. */
-  ttl?: number;
-}
-```
-
-Options for `defineKv`: the default, validation, format and a default ttl.
-
 ### StorageConfig
 
 ```ts
@@ -367,12 +270,10 @@ interface StorageConfig {
   prefix?: string;
   /** Defaults merged into every cookie. */
   cookie?: Omit<CookieOptions, 'name'>;
-  /** Server-side key-value store behind `defineKv` (app scope). Default: in-memory. */
-  kv?: KvDriver;
 }
 ```
 
-Options for `config/storage.ts`: a key prefix, cookie defaults and the server-side kv driver.
+Options for `config/storage.ts`: a key prefix and cookie defaults.
 
 ### StorageDriver
 
@@ -558,7 +459,7 @@ Typed cookie access for one request, returned by `cookies()`.
 const storageProvider: import("@kitr/core").KitrProvider;
 ```
 
-Applies `config/storage.ts` (key prefix, cookie defaults, kv driver), switches `defineStorage`
+Applies `config/storage.ts` (key prefix, cookie defaults), switches `defineStorage`
 items to the platform's native driver when one is registered, hydrates it before the first
 render, and contributes the Storage panel to the devtools.
 
