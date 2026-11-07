@@ -1,6 +1,9 @@
 import { existsSync } from 'node:fs'
-import { defineCommand } from 'citty'
+import type { Generator } from '@kitr/core/package'
+import { type CommandDef, defineCommand } from 'citty'
+import { createProjectInfo } from '../add-context'
 import { createContext } from '../context'
+import { installedPackages } from '../packages'
 import { naming, renderStub, type StubFn } from '../stubs'
 
 async function stubOverrides(root: string): Promise<Record<string, StubFn>> {
@@ -132,14 +135,6 @@ export const makeProvider = makeCommand(
     vars: { name },
   }),
 )
-export const makeJob = makeCommand(
-  'job',
-  'Create a background job in server/jobs',
-  (ctx, name) => ({
-    file: `${ctx.readRc().directories.server ?? 'server'}/jobs/${naming.snake(name)}.ts`,
-    vars: { name },
-  }),
-)
 export const makeMail = makeCommand(
   'mail',
   'Create an email template in server/mail',
@@ -189,3 +184,48 @@ export const makeException = makeCommand(
     vars: { name },
   }),
 )
+
+/** `make:<kind>` for a generator a package contributed. The project's `stubs/<kind>.ts` overrides its stub. */
+export function packageGeneratorCommand(
+  kind: string,
+  generator: Generator,
+  owner: string,
+): CommandDef<any> {
+  const extra = Object.fromEntries(
+    Object.entries(generator.args ?? {}).map(([k, a]) => [
+      k,
+      { type: a.type, description: a.description, default: a.default },
+    ]),
+  ) as Record<string, any>
+  return defineCommand({
+    meta: { name: `make:${kind}`, description: `${generator.description} (${owner})` },
+    args: {
+      name: { type: 'positional', required: true },
+      force: { type: 'boolean', default: false },
+      ...extra,
+    },
+    async run({ args }) {
+      const ctx = createContext()
+      const { file, vars } = generator.target(args.name, createProjectInfo(ctx), args)
+      const overrides = await stubOverrides(ctx.root)
+      const override = overrides[kind]
+      const body = override
+        ? override({ name: args.name, path: '', feature: '', resource: '', ...vars })
+        : generator.stub({ name: args.name, ...vars })
+      const written = ctx.write(file, body, { overwrite: args.force })
+      if (!written) ctx.log.warn(`${file} exists (use --force)`)
+      else ctx.log.success(`${kind}: ${file}`)
+    },
+  })
+}
+
+/** Every `make:*` command the installed packages contribute, keyed by command name. */
+export async function packageGenerators(
+  ctx = createContext(),
+): Promise<Record<string, CommandDef<any>>> {
+  const out: Record<string, CommandDef<any>> = {}
+  for (const loaded of await installedPackages(ctx))
+    for (const [kind, generator] of Object.entries(loaded.definition.generators ?? {}))
+      out[`make:${kind}`] = packageGeneratorCommand(kind, generator, loaded.package)
+  return out
+}

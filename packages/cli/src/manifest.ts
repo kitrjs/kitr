@@ -22,6 +22,8 @@ export interface KitrManifest {
   included?: boolean
   /** Folder of markdown docs, relative to the package root. */
   docs?: string
+  /** The setup module's export path (`./kitr`), when the package ships one. */
+  setup?: string
 }
 
 export const categories = {
@@ -61,6 +63,8 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
       !(Array.isArray(k[field]) && k[field].every((x) => typeof x === 'string'))
     )
       errors.push(`"${field}" must be a list of strings`)
+  if (k.setup !== undefined && k.setup !== './kitr')
+    errors.push('"setup" must be "./kitr" (the export the CLI loads)')
   if (known.length && Array.isArray(k.requires))
     for (const dep of k.requires)
       if (!known.includes(dep)) errors.push(`requires unknown package "${dep}"`)

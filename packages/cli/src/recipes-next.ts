@@ -397,34 +397,6 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
       c.removeAgentsSection('mail')
     },
   }),
-  jobs: r({
-    name: 'jobs',
-    package: '@kitr/jobs',
-    description: 'Run work in the background or on a schedule, with retries when it fails.',
-    configure(ctx, c) {
-      c.installPackages(['@kitr/jobs'])
-      c.addProvider('@kitr/jobs/provider')
-      c.addPackage('@kitr/jobs')
-      ctx.write(
-        'config/jobs.ts',
-        `import { defineConfig } from 'kitr/jobs'\nimport { exampleJob } from '#server/jobs/example'\n\nexport default defineConfig({\n  // Every job the worker runs (kitr make:job <name> writes one in server/jobs/).\n  jobs: [exampleJob],\n  // In-memory queue by default: fine for one process. For several, pass a shared driver.\n  concurrency: 5,\n  worker: true, // false when a separate worker process runs the jobs\n})\n`,
-      )
-      ctx.write(
-        'server/jobs/example.ts',
-        `import { defineJob } from 'kitr/jobs'\nimport { z } from 'zod'\n\n/** Dispatch with \`useJobs(app).dispatch(exampleJob, { id })\`; it runs on the worker with retries. */\nexport const exampleJob = defineJob('example', {\n  schema: z.object({ id: z.string() }),\n  retries: 3,\n  // schedule: { every: '1h' },\n  async run({ id }, ctx) {\n    console.info(\`example job \${id} (attempt \${ctx.attempt})\`)\n  },\n})\n`,
-      )
-      c.addAgentsSection(
-        'jobs',
-        `- Background work is a job in \`server/jobs/*.ts\` (\`kitr make:job <name>\`, \`defineJob\` with a schema, retries and an optional schedule), listed in \`config/jobs.ts\`. Dispatch from controllers and actions with \`ctx.app.container.use('jobs').dispatch(job, payload)\`; never \`setTimeout\` work in a request.`,
-      )
-    },
-    unconfigure(_ctx, c) {
-      c.removeProvider('@kitr/jobs/provider')
-      c.removePackage('@kitr/jobs')
-      c.removePackages(['@kitr/jobs'])
-      c.removeAgentsSection('jobs')
-    },
-  }),
   uploads: r({
     name: 'uploads',
     package: '@kitr/uploads',
