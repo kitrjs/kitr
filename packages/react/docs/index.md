@@ -6,20 +6,94 @@ order: 1
 
 # React
 
-`kitr/react` is what makes the kitr app available to components: `<KitrProvider app={app}>` at the root, then `useApp()`, `useService('http')` and `useConfig('query')` anywhere below it. Every package with a React side builds on it, so it is part of every UI app and you never add it by hand: `kitr add router` brings it in.
+A kitr app is one object: `app`, created in `app/app.ts` from the providers in `kitrrc.ts` and the files in `config/`. `kitr/react` is how components reach it. Put `<KitrProvider app={app}>` at the root, and any component below it can read services and config without importing them, prop-drilling them or setting up a context of its own.
 
-## What it gives you
+Every package with a React side builds on this, so it's part of every UI app. You never add it by hand: the [router](/packages/router) brings it in.
 
-- **`<KitrProvider>`**: boots the app once and provides it through context. Providers that implement `wrap()` (query, theme, auth, i18n) wrap your tree here, so you do not nest their providers yourself.
-- **`useApp()`**: the app object, for the container, config, env and mode.
-- **`useService(name)`**: a typed binding from the container, such as `useService('http')`.
-- **`useConfig(name)`**: a package's config from `config/<name>.ts`.
+## Where the provider lives
+
+With the router, `createKitrRouter({ routeTree, app })` renders `<KitrProvider>` around the whole tree for you. There is nothing to add.
+
+Without the router, wrap the root yourself:
 
 ```tsx
-import { useService } from 'kitr/react'
+// app/main.tsx
+import { createRoot } from 'react-dom/client'
+import { KitrBoot } from 'kitr/react'
+import { app } from './app'
+import { App } from './App'
+
+createRoot(document.getElementById('root')!).render(
+  <KitrBoot app={app} fallback={<p>Loading…</p>}>
+    <App />
+  </KitrBoot>,
+)
+```
+
+`KitrBoot` boots the app, which runs every provider's `register` and `boot`, shows `fallback` until that's done, and then renders `KitrProvider`. If you have already called `await app.boot()`, use `<KitrProvider app={app}>` directly.
+
+## Provider wrappers
+
+Packages that need a React provider of their own declare a `wrap()` method, and `KitrProvider` nests them for you in the order of `kitrrc.ts`. That covers the query client, theme, auth session, translations and error boundary. Your root component stays this short however many packages you add:
+
+```tsx
+<KitrProvider app={app}>
+  <App />
+</KitrProvider>
+```
+
+## Reading from the app
+
+```tsx
+import { useApp, useConfig, useService } from 'kitr/react'
 
 function Projects() {
-  const http = useService('http')
+  const http = useService('http') // typed: the HttpClient from kitr/http
+  const theme = useConfig('theme') // config/theme.ts, typed
+  const app = useApp() // everything else: app.env, app.mode, app.container
   // ...
 }
 ```
+
+| Hook | Returns |
+| --- | --- |
+| `useApp()` | The app: `container`, `config`, `env`, `mode`, `environment`, `platform`. |
+| `useService(name)` | A container binding, such as `http`, `queryClient`, `auth`, `monitoring` or `analytics`. |
+| `useConfig(name)` | One package's config from `config/<name>.ts`. |
+
+Names and types come from the packages you've installed. Each one extends kitr's registry by declaration merging, so `useService('http')` is a type error until `kitr/http` is added.
+
+Most packages wrap these in a hook of their own, like `useAnalytics()` or `useTheme()`, so you'll reach for `useService` mostly for your own services.
+
+## Your own services
+
+Register a service in a provider, and every component can use it:
+
+```ts
+// app/providers/billing_provider.ts
+import { defineProvider } from 'kitr/app'
+import { createBillingClient, type BillingClient } from '#app/billing'
+
+declare module 'kitr/app' {
+  interface ContainerBindings {
+    billing: BillingClient
+  }
+}
+
+export default defineProvider({
+  name: 'billing',
+  register(app) {
+    app.container.singleton('billing', () => createBillingClient(app.env.VITE_BILLING_URL))
+  },
+})
+```
+
+```tsx
+const billing = useService('billing')
+```
+
+`kitr make:provider billing` writes `app/providers/billing_provider.ts` for you. List it under `providers` in `kitrrc.ts` to turn it on.
+
+## Tests
+
+`renderWithKitr` from [testing](/packages/testing) renders a component inside a test app's `KitrProvider`, with the query cache filled in.

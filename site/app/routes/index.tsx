@@ -7,7 +7,7 @@ import { categories, findPackage, glyph, kits } from '#app/lib/catalog'
 import { seo, siteUrl } from '#app/lib/seo'
 
 const description =
-  'kitr is a thin layer over TanStack, React Hook Form, Zustand, ky, h3 and Tailwind: one import surface, one data contract and one CLI, for web, server, desktop and mobile.'
+  'kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform.'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -23,7 +23,7 @@ const jsonLd = {
 export const Route = createFileRoute('/')({
   head: () => {
     const head = seo({
-      title: 'kitr: the React framework where everything is an add-on',
+      title: 'kitr: one way to build everything',
       description,
       path: '/',
     })
@@ -130,11 +130,14 @@ function Home() {
       <section className="hero">
         <div className="hero-copy">
           <span className="label">Pre-release · v0.1</span>
-          <h1 className="display hero-title">The React framework where everything is an add-on.</h1>
+          <h1 className="display hero-title">One way to build everything.</h1>
           <p className="lede">
-            kitr is a thin layer over the libraries you would pick anyway: TanStack, React Hook
-            Form, Zustand, ky, h3 and Tailwind. Start small, then add sign-in, forms, an API or live
-            updates with one command each.
+            kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps.
+            One language, one CLI, one set of conventions, on every platform.
+          </p>
+          <p className="hero-sub muted">
+            Everything is an add-on: start small, then add sign-in, forms, an API or live updates
+            with one command each, built on TanStack, React Hook Form, Zustand, ky, h3 and Tailwind.
           </p>
           <Command cmd="kitr new my-app --kit app" />
           <div className="actions">

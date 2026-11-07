@@ -1,0 +1,228 @@
+---
+title: API
+description: Every export of kitr/files, with its signature.
+order: 2
+---
+
+# API
+
+Every export of `kitr/files`, `kitr/files/react`, `kitr/files/provider`, read from the published type definitions. The [guide](/packages/files) shows them in use.
+
+## kitr/files
+
+### acceptFor
+
+```ts
+function acceptFor(filters?: FileFilter[]): string;
+```
+
+The `accept` string an `<input type="file">` needs for a set of filters.
+
+### createFiles
+
+```ts
+function createFiles(config?: FilesConfig, app?: KitrApp): Files;
+```
+
+### createMemoryFilesDriver
+
+```ts
+function createMemoryFilesDriver(queue?: PickedFile[]): FilesDriver & {
+  queue: PickedFile[];
+  saved: Array<{
+    name: string;
+    data: FileData;
+  }>;
+};
+```
+
+A driver for tests and the server: `open` returns what you queue, `save` records what was written.
+
+### createWebFilesDriver
+
+```ts
+function createWebFilesDriver(): FilesDriver;
+```
+
+File System Access API when available, `<input type="file">` and a download link otherwise.
+
+### fromFile
+
+```ts
+function fromFile(file: File, path?: string): PickedFile;
+```
+
+Wrap a browser `File` (or any Blob with a name) as a `PickedFile`.
+
+### mimeFor
+
+```ts
+function mimeFor(name: string, fallback?: string): string;
+```
+
+### toBlob
+
+```ts
+function toBlob(data: FileData, type: string): Blob;
+```
+
+### useFiles
+
+```ts
+function useFiles(app: KitrApp): Files;
+```
+
+### defineConfig
+
+```ts
+const defineConfig: <const C extends FilesConfig>(config: C) => C;
+```
+
+### FileFilter
+
+```ts
+interface FileFilter {
+  /** Shown in the dialog, e.g. `Images`. */
+  name: string;
+  /** Extensions without the dot, e.g. `['png', 'jpg']`. */
+  extensions: string[];
+}
+```
+
+Open, save and pick files with one API. Platform packages register a `FilesDriver` that shows
+native dialogs; the web driver uses the File System Access API where it exists and falls back
+to `<input type="file">` and a download link elsewhere.
+
+### Files
+
+```ts
+interface Files {
+  readonly driver: FilesDriver;
+  open(options?: OpenOptions): Promise<PickedFile[]>;
+  /** Open exactly one file, or null when cancelled. */
+  pick(options?: Omit<OpenOptions, 'multiple'>): Promise<PickedFile | null>;
+  save(data: FileData, options: SaveOptions): Promise<string | null>;
+  reveal(path: string): Promise<void>;
+}
+```
+
+### FilesConfig
+
+```ts
+interface FilesConfig {
+  driver?: FilesDriver;
+  /** Filters added to every dialog, e.g. the app's own document type. */
+  filters?: FileFilter[];
+}
+```
+
+### FilesDriver
+
+```ts
+interface FilesDriver {
+  name: string;
+  /** Show the open dialog. Resolves to [] when cancelled. */
+  open(options: OpenOptions): Promise<PickedFile[]>;
+  /** Write data where the person chooses. Resolves to the chosen path/name, or null when cancelled. */
+  save(data: FileData, options: SaveOptions): Promise<string | null>;
+  /** Open a file with the system's default app, when the platform allows it. */
+  reveal?(path: string): Promise<void>;
+}
+```
+
+### OpenOptions
+
+```ts
+interface OpenOptions {
+  filters?: FileFilter[];
+  multiple?: boolean;
+  /** Dialog title where the platform shows one. */
+  title?: string;
+}
+```
+
+### PickedFile
+
+```ts
+interface PickedFile {
+  name: string;
+  size: number;
+  type: string;
+  /** Absolute path on platforms that expose one (desktop, mobile). */
+  path?: string;
+  text(): Promise<string>;
+  bytes(): Promise<Uint8Array>;
+  blob(): Promise<Blob>;
+}
+```
+
+### SaveOptions
+
+```ts
+interface SaveOptions {
+  /** Suggested file name, with extension. */
+  name: string;
+  filters?: FileFilter[];
+  title?: string;
+  /** MIME type for the download fallback. Default from the extension or `application/octet-stream`. */
+  type?: string;
+}
+```
+
+### FileData
+
+```ts
+type FileData = string | Blob | Uint8Array | ArrayBuffer;
+```
+
+## kitr/files/react
+
+### useDropFiles
+
+```ts
+function useDropFiles(onFiles: (files: PickedFile[]) => void): {
+  over: boolean;
+  onDragOver: (e: {
+    preventDefault(): void;
+  }) => void;
+  onDragLeave: () => void;
+  onDrop: (e: {
+    preventDefault(): void;
+    dataTransfer: DataTransfer | null;
+  }) => Promise<void>;
+};
+```
+
+Drag-and-drop handlers that hand dropped files over as `PickedFile`s.
+
+### useFileDialogs
+
+```ts
+function useFileDialogs(): {
+  busy: boolean;
+  open: (options?: OpenOptions | undefined) => Promise<PickedFile[]>;
+  pick: (options?: Omit<OpenOptions, "multiple"> | undefined) => Promise<PickedFile | null>;
+  save: (data: FileData, options: SaveOptions) => Promise<string | null>;
+};
+```
+
+`const { open, save, busy } = useFileDialogs()`: the service with a busy flag while a dialog is up.
+
+### useFiles
+
+```ts
+function useFiles(): Files;
+```
+
+## kitr/files/provider
+
+### filesProvider
+
+```ts
+const filesProvider: import("@kitr/core").KitrProvider;
+```
+
+Binds `files` to the native dialog driver a platform package registered (`files` capability),
+or the web driver. Nothing runs on the server beyond a no-op binding.
+
+<!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

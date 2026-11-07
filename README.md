@@ -1,8 +1,10 @@
 # kitr
 
-**The React framework where everything is an add-on.**
+**One way to build everything.**
 
-kitr is a thin, opinionated layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
+kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform. Everything is an add-on.
+
+Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
 
 ```sh
 pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API

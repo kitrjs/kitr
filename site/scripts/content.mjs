@@ -366,9 +366,8 @@ const tileFor = (name, category) => ({
 const seoPages = [
   {
     path: '/',
-    title: 'The React framework where everything is an add-on',
-    description:
-      'One import surface, one data contract and one CLI, for web, server, desktop and mobile.',
+    title: 'One way to build everything',
+    description: 'The opinionated TypeScript framework for web, mobile, desktop and backend apps.',
     display: true,
   },
   {
@@ -445,7 +444,7 @@ writeFileSync(
 const index = [
   '# kitr',
   '',
-  '> The React framework where everything is an add-on: a thin layer over TanStack, React Hook Form, Zustand, ky, h3 and Tailwind, with one import surface, one data contract and one CLI.',
+  '> One way to build everything. kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps: a thin layer over TanStack, React Hook Form, Zustand, ky, h3 and Tailwind, with one import surface, one data contract and one CLI.',
   '',
   '## Docs',
   '',

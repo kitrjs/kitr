@@ -1,0 +1,201 @@
+---
+title: API
+description: Every export of kitr/notifications, with its signature.
+order: 2
+---
+
+# API
+
+Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifications/provider`, read from the published type definitions. The [guide](/packages/notifications) shows them in use.
+
+## kitr/notifications
+
+### createMemoryNotificationsDriver
+
+```ts
+function createMemoryNotificationsDriver(permission?: NotificationPermission): NotificationsDriver & {
+  shown: (NotificationOptions & {
+    id: string;
+  })[];
+  scheduled: Map<string, ScheduleOptions & {
+    id: string;
+  }>;
+  tap(id: string): void;
+};
+```
+
+For tests and the server: records what was shown, `tap(id)` simulates a tap.
+
+### createNotifications
+
+```ts
+function createNotifications(config?: NotificationsConfig, app?: KitrApp): Notifications;
+```
+
+### createWebNotificationsDriver
+
+```ts
+function createWebNotificationsDriver(config?: {
+  icon?: string;
+}): NotificationsDriver;
+```
+
+Notification API with timers for scheduling. Scheduled ones are lost when the page closes.
+
+### notificationId
+
+```ts
+function notificationId(): string;
+```
+
+### useNotifications
+
+```ts
+function useNotifications(app: KitrApp): Notifications;
+```
+
+### defineConfig
+
+```ts
+const defineConfig: <const C extends NotificationsConfig>(config: C) => C;
+```
+
+### NotificationOptions
+
+```ts
+interface NotificationOptions {
+  /** Your own id, so the same notification can be replaced or cancelled. Default: generated. */
+  id?: string;
+  title: string;
+  body?: string;
+  /** Where a tap should take the person, e.g. `/inbox/42`. Handed to `onTap` listeners. */
+  url?: string;
+  icon?: string;
+  /** Platform-specific extras passed through to the driver. */
+  data?: Record<string, unknown>;
+  /** Group id (Android channel, web tag). */
+  channel?: string;
+  silent?: boolean;
+}
+```
+
+### Notifications
+
+```ts
+interface Notifications {
+  readonly driver: NotificationsDriver;
+  permission(): Promise<NotificationPermission>;
+  /** Ask once; resolves to the new state. Call it from a click, browsers block unprompted asks. */
+  request(): Promise<NotificationPermission>;
+  /** Show now. Resolves to the notification id. */
+  show(options: NotificationOptions): Promise<string>;
+  /** Show later. Resolves to the id, usable with `cancel()`. */
+  schedule(options: ScheduleOptions): Promise<string>;
+  cancel(id: string): Promise<void>;
+  cancelAll(): Promise<void>;
+  /** Ids of scheduled notifications not yet delivered. */
+  pending(): Promise<string[]>;
+  /** A notification was tapped (the app may have been opened by it). */
+  onTap(listener: (tap: NotificationTap) => void): () => void;
+}
+```
+
+### NotificationsConfig
+
+```ts
+interface NotificationsConfig {
+  driver?: NotificationsDriver;
+  /** Default icon for web notifications. */
+  icon?: string;
+  /** Ask for permission at boot instead of waiting for the first `request()`. Default false. */
+  requestOnBoot?: boolean;
+}
+```
+
+### NotificationsDriver
+
+```ts
+interface NotificationsDriver {
+  name: string;
+  permission(): Promise<NotificationPermission>;
+  request(): Promise<NotificationPermission>;
+  show(options: NotificationOptions & {
+    id: string;
+  }): Promise<void>;
+  schedule(options: ScheduleOptions & {
+    id: string;
+  }): Promise<void>;
+  cancel(id: string): Promise<void>;
+  cancelAll?(): Promise<void>;
+  pending?(): Promise<string[]>;
+  onTap(listener: (tap: NotificationTap) => void): () => void;
+}
+```
+
+### NotificationTap
+
+```ts
+interface NotificationTap {
+  id: string;
+  url?: string;
+  data?: Record<string, unknown>;
+}
+```
+
+### ScheduleOptions
+
+```ts
+interface ScheduleOptions extends NotificationOptions {
+  at: Date | number;
+}
+```
+
+### NotificationPermission
+
+```ts
+type NotificationPermission = 'granted' | 'denied' | 'prompt' | 'unsupported';
+```
+
+Local notifications with one API: ask for permission, show one now or at a time, and learn
+which one was tapped so the app can open the right page. Platform packages register a
+`NotificationsDriver`; the web driver uses the Notification API and a timer for scheduling.
+
+## kitr/notifications/react
+
+### useNotificationPermission
+
+```ts
+function useNotificationPermission(): {
+  permission: NotificationPermission | 'unknown';
+  request: () => Promise<NotificationPermission>;
+};
+```
+
+`{ permission, request }`: the current state and a function to ask (call it from a click).
+
+### useNotifications
+
+```ts
+function useNotifications(): Notifications;
+```
+
+### useNotificationTap
+
+```ts
+function useNotificationTap(handler: (tap: NotificationTap) => void): void;
+```
+
+Run a handler when a notification is tapped, typically `(tap) => tap.url && navigate(tap.url)`.
+
+## kitr/notifications/provider
+
+### notificationsProvider
+
+```ts
+const notificationsProvider: import("@kitr/core").KitrProvider;
+```
+
+Binds `notifications` to the platform driver (`notifications` capability) or the web
+Notification API. With `requestOnBoot` it asks for permission as the app starts.
+
+<!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

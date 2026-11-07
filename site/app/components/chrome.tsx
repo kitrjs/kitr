@@ -84,9 +84,7 @@ export function Footer() {
           <Link to="/" aria-label="kitr home" className="footer-logo">
             <Logo />
           </Link>
-          <p className="muted">
-            The React framework where everything is an add-on. MIT licensed, built with kitr.
-          </p>
+          <p className="muted">One way to build everything. MIT licensed, built with kitr.</p>
         </div>
         {footerLinks.map((group) => (
           <nav key={group.title} className="footer-col" aria-label={group.title}>
