@@ -2,6 +2,21 @@
   "name": "@kitr/socket",
   "version": "0.1.0",
   "description": "kitr/socket: typed channels over native WebSocket. Client on partysocket, server on crossws via h3. Events land in the query cache.",
+  "kitr": {
+    "name": "socket",
+    "title": "Sockets",
+    "summary": "Push live updates, like chat messages or notifications, to open browsers.",
+    "category": "realtime",
+    "runsOn": "both",
+    "builtOn": [
+      "partysocket",
+      "crossws"
+    ],
+    "requires": [
+      "server"
+    ],
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -17,7 +32,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -39,5 +55,9 @@
     "partysocket": "^1.3.0",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

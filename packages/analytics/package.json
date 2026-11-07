@@ -2,6 +2,10 @@
   "name": "@kitr/analytics",
   "version": "0.1.0",
   "description": "kitr/analytics: one page/track/identify API with Google Analytics, Plausible, PostHog and console adapters; page views from the router.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -21,7 +25,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -59,5 +64,19 @@
     "@tanstack/react-router": "^1.170.46",
     "@types/node": "^22.19.0",
     "@kitr/react": "workspace:*"
+  },
+  "kitr": {
+    "name": "analytics",
+    "title": "Analytics",
+    "summary": "Count page views and button clicks, and send them to the analytics service you choose.",
+    "category": "insights",
+    "runsOn": "client",
+    "builtOn": [
+      "Google Analytics",
+      "Plausible",
+      "PostHog"
+    ],
+    "client": true,
+    "docs": "docs"
   }
 }

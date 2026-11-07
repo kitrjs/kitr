@@ -2,6 +2,21 @@
   "name": "@kitr/http",
   "version": "0.1.0",
   "description": "kitr/http: ky re-exported, plus a client with auth, refresh and kitr error normalisation.",
+  "kitr": {
+    "name": "http",
+    "title": "HTTP client",
+    "summary": "Call a REST API with login tokens added for you and errors in one shape.",
+    "category": "data-fetching",
+    "runsOn": "client",
+    "builtOn": [
+      "ky"
+    ],
+    "requires": [
+      "query"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -17,7 +32,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -33,5 +49,9 @@
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
     "ky": "^2.2.0"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

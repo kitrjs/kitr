@@ -2,6 +2,10 @@
   "name": "@kitr/storage",
   "version": "0.1.0",
   "description": "kitr/storage: typed localStorage/sessionStorage items and cookies with one API on the client and the server; SSR-safe React hooks.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -25,7 +29,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -54,5 +59,17 @@
     "h3": "^2.0.8",
     "@types/node": "^22.19.0",
     "react-dom": "^19.3.1"
+  },
+  "kitr": {
+    "name": "storage",
+    "title": "Storage",
+    "summary": "Save small values in the browser or in cookies with types, and read the same cookies on the server.",
+    "category": "device",
+    "runsOn": "both",
+    "builtOn": [
+      "localStorage",
+      "cookies"
+    ],
+    "docs": "docs"
   }
 }

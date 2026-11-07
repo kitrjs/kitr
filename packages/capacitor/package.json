@@ -2,6 +2,10 @@
   "name": "@kitr/capacitor",
   "version": "0.1.0",
   "description": "kitr/capacitor: platform helpers, app-state and back-button hooks, and typed plugin access for Capacitor apps.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +17,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -45,5 +50,17 @@
     "@types/react": "^19.3.0",
     "@capacitor/core": "^8.6.0",
     "@capacitor/app": "^8.1.2"
+  },
+  "kitr": {
+    "name": "capacitor",
+    "title": "Capacitor",
+    "summary": "Ship your app to the iPhone and Android app stores, with hooks for the back button and app state.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Capacitor"
+    ],
+    "client": true,
+    "docs": "docs"
   }
 }

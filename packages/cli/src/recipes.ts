@@ -1,5 +1,6 @@
 import type { Codemods } from './codemods'
 import type { ProjectContext } from './context'
+import { manifests } from './manifests.gen'
 import { addonRecipes } from './recipes-addons'
 
 export interface Recipe {
@@ -15,15 +16,24 @@ export interface Recipe {
   unconfigure?(ctx: ProjectContext, codemods: Codemods): void | Promise<void>
 }
 
-const r = (recipe: Recipe) => recipe
+type RecipeSetup = Pick<Recipe, 'name' | 'package' | 'configure' | 'unconfigure'>
+
+/** A recipe's description, requires and client flag come from its package's `kitr` block. */
+const r = (setup: RecipeSetup): Recipe => {
+  const m = manifests[setup.name]
+  if (!m) throw new Error(`@kitr/${setup.name} has no "kitr" block in its package.json`)
+  return {
+    ...setup,
+    description: m.summary,
+    ...(m.requires?.length ? { requires: m.requires } : {}),
+    ...(m.client ? { client: true } : {}),
+  }
+}
 
 export const recipes: Record<string, Recipe> = {
   query: r({
     name: 'query',
     package: '@kitr/query',
-    client: true,
-    description:
-      "TanStack Query over kitr's data contract: defineQuery, defineMutation, useSubscription.",
     configure(ctx, c) {
       c.installPackages([
         '@kitr/query',
@@ -51,10 +61,6 @@ export const recipes: Record<string, Recipe> = {
   http: r({
     name: 'http',
     package: '@kitr/http',
-    client: true,
-    requires: ['query'],
-    description:
-      'ky client with auth headers, token refresh and kitr error normalisation; httpQuery/httpMutation contracts.',
     configure(ctx, c) {
       c.installPackages(['@kitr/http', 'ky'])
       c.addProvider('@kitr/http/provider')
@@ -84,9 +90,6 @@ export const recipes: Record<string, Recipe> = {
   forms: r({
     name: 'forms',
     package: '@kitr/forms',
-    client: true,
-    description:
-      'React Hook Form with Standard Schema resolvers, <Form> with server-error mapping, <FormField>.',
     configure(ctx, c) {
       c.installPackages(['@kitr/forms', 'react-hook-form', '@hookform/resolvers', 'zod'])
       c.addPackage('@kitr/forms')
@@ -105,8 +108,6 @@ export const recipes: Record<string, Recipe> = {
   table: r({
     name: 'table',
     package: '@kitr/table',
-    client: true,
-    description: 'TanStack Table with sorting, pagination and filters bound to URL search params.',
     configure(_ctx, c) {
       c.installPackages(['@kitr/table', '@tanstack/react-table'])
       c.addPackage('@kitr/table')
@@ -124,8 +125,6 @@ export const recipes: Record<string, Recipe> = {
   state: r({
     name: 'state',
     package: '@kitr/state',
-    client: true,
-    description: 'Zustand with an SSR-safe store factory (per-request stores on the server).',
     configure(ctx, c) {
       c.installPackages(['@kitr/state', 'zustand'])
       c.addPackage('@kitr/state')
@@ -144,9 +143,6 @@ export const recipes: Record<string, Recipe> = {
   styling: r({
     name: 'styling',
     package: '@kitr/styling',
-    client: true,
-    description:
-      'cx, cva, design tokens as CSS variables and typed CSS Modules helpers. Works without Tailwind.',
     configure(ctx, c) {
       c.installPackages(['@kitr/styling'])
       c.addPackage('@kitr/styling')
@@ -168,8 +164,6 @@ export const recipes: Record<string, Recipe> = {
   tailwind: r({
     name: 'tailwind',
     package: '@kitr/tailwind',
-    client: true,
-    description: 'Tailwind v4 via the Vite plugin, the kitr preset (tokens as @theme) and cn().',
     configure(ctx, c) {
       c.installPackages([
         '@kitr/tailwind',
@@ -203,9 +197,6 @@ export const recipes: Record<string, Recipe> = {
   ui: r({
     name: 'ui',
     package: '@kitr/ui',
-    client: true,
-    description:
-      'Theme provider, toasts (sonner) and the component registry config. Components are copied into app/components/ui.',
     configure(ctx, c) {
       c.installPackages(['@kitr/ui', 'sonner'])
       c.addProvider('@kitr/ui/provider')
@@ -229,9 +220,6 @@ export const recipes: Record<string, Recipe> = {
   auth: r({
     name: 'auth',
     package: '@kitr/auth',
-    client: true,
-    description:
-      'Session in router context, requireAuth()/can() guards, token and Better Auth adapters, API middleware.',
     configure(ctx, c) {
       c.installPackages(['@kitr/auth'])
       c.addProvider('@kitr/auth/provider')
@@ -259,7 +247,6 @@ export const recipes: Record<string, Recipe> = {
   logger: r({
     name: 'logger',
     package: '@kitr/logger',
-    description: 'Structured logger with levels, children and request ids. No dependencies.',
     configure(ctx, c) {
       c.installPackages(['@kitr/logger'])
       c.addProvider('@kitr/logger')
@@ -283,9 +270,6 @@ export const recipes: Record<string, Recipe> = {
   server: r({
     name: 'server',
     package: '@kitr/server',
-    requires: ['logger'],
-    description:
-      'The server runtime on h3. React apps switch to TanStack Start; backend-only apps get a standalone server.',
     configure(ctx, c) {
       const serverOnly = !('react' in { ...ctx.pkg.dependencies })
       c.installPackages(['@kitr/server', 'h3', 'srvx'])
@@ -336,9 +320,6 @@ export const recipes: Record<string, Recipe> = {
   api: r({
     name: 'api',
     package: '@kitr/api',
-    requires: ['server'],
-    description:
-      'Adonis-style router, controllers, validators, middleware; typed client with no codegen; OpenAPI via api:sync.',
     configure(ctx, c) {
       const serverOnly = !('react' in { ...ctx.pkg.dependencies })
       c.installPackages(['@kitr/api'])
@@ -381,10 +362,6 @@ export const recipes: Record<string, Recipe> = {
   actions: r({
     name: 'actions',
     package: '@kitr/actions',
-    requires: ['server'],
-    client: true,
-    description:
-      'defineAction over TanStack Start server functions: validation, middleware, one error shape, cache effects.',
     configure(ctx, c) {
       c.installPackages(['@kitr/actions', '@tanstack/react-start'])
       c.addPackage('@kitr/actions')
@@ -403,9 +380,6 @@ export const recipes: Record<string, Recipe> = {
   ssr: r({
     name: 'ssr',
     package: '@kitr/ssr',
-    requires: ['server'],
-    client: true,
-    description: 'Per-route rendering defaults, seo() head helpers, prerender list, cache headers.',
     configure(ctx, c) {
       c.installPackages(['@kitr/ssr'])
       c.addPackage('@kitr/ssr')
@@ -427,9 +401,6 @@ export const recipes: Record<string, Recipe> = {
   socket: r({
     name: 'socket',
     package: '@kitr/socket',
-    requires: ['server'],
-    description:
-      'Typed channels over native WebSocket: partysocket client, crossws server. Events feed the query cache.',
     configure(ctx, c) {
       const serverOnly = !('react' in { ...ctx.pkg.dependencies })
       c.installPackages(['@kitr/socket', 'crossws', ...(serverOnly ? [] : ['partysocket'])])
@@ -460,8 +431,6 @@ export const recipes: Record<string, Recipe> = {
   'socket.io': r({
     name: 'socket.io',
     package: '@kitr/socket.io',
-    requires: ['server', 'socket'],
-    description: 'The same channels over Socket.IO, for rooms, fallbacks and the Redis adapter.',
     configure(ctx, c) {
       const serverOnly = !('react' in { ...ctx.pkg.dependencies })
       c.installPackages([
@@ -484,8 +453,6 @@ export const recipes: Record<string, Recipe> = {
   db: r({
     name: 'db',
     package: '@kitr/db',
-    requires: ['server'],
-    description: 'Bind any ORM as `db` with connect/disconnect in the lifecycle. No ORM shipped.',
     configure(ctx, c) {
       c.installPackages(['@kitr/db'])
       c.addProvider('@kitr/db')
@@ -510,7 +477,6 @@ export const recipes: Record<string, Recipe> = {
   testing: r({
     name: 'testing',
     package: '@kitr/testing',
-    description: 'Vitest, Testing Library, renderWithKitr and a request client for API tests.',
     configure(ctx, c) {
       const serverOnly = !('react' in { ...ctx.pkg.dependencies })
       c.installPackages([
@@ -549,9 +515,6 @@ export const recipes: Record<string, Recipe> = {
   mocks: r({
     name: 'mocks',
     package: '@kitr/mocks',
-    client: true,
-    description:
-      'MSW handlers from route tables and contracts, for dev without a backend and for tests.',
     configure(ctx, c) {
       c.installPackages(['@kitr/mocks', { name: 'msw', dev: true }])
       c.addPackage('@kitr/mocks')
@@ -578,8 +541,6 @@ export const recipes: Record<string, Recipe> = {
   i18n: r({
     name: 'i18n',
     package: '@kitr/i18n',
-    client: true,
-    description: 'react-i18next with typed keys, locale detection and a provider.',
     configure(ctx, c) {
       c.installPackages(['@kitr/i18n', 'i18next', 'react-i18next'])
       c.addProvider('@kitr/i18n')
@@ -604,7 +565,12 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('i18n')
     },
   }),
-  ...addonRecipes,
+  ...Object.fromEntries(
+    Object.entries(addonRecipes).map(([name, recipe]) => {
+      const m = manifests[name]
+      return [name, m ? { ...recipe, description: m.summary } : recipe]
+    }),
+  ),
 }
 
 export const recipeNames = Object.keys(recipes)

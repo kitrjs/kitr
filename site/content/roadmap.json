@@ -1,0 +1,214 @@
+{
+  "$comment": "Packages from the kitr package map that are not built yet. When a package with this name ships a kitr block, the site shows the real one and ignores this entry. status: building (in progress now), next, later (roadmap only).",
+  "packages": [
+    {
+      "name": "theme",
+      "status": "building",
+      "category": "interface",
+      "runsOn": "client",
+      "replaces": ["styling"],
+      "builtOn": ["CSS variables"],
+      "summary": "Light, dark and system themes with no flash on load, and native title bars and status bars that match."
+    },
+    {
+      "name": "platform",
+      "status": "building",
+      "category": "device",
+      "runsOn": "both",
+      "summary": "Know where your app is running, whether it is online or in the background, and handle the back button and deep links."
+    },
+    {
+      "name": "web",
+      "status": "building",
+      "category": "platforms",
+      "runsOn": "client",
+      "replaces": ["pwa"],
+      "builtOn": ["Vite", "TanStack Start", "vite-plugin-pwa"],
+      "summary": "Ship to the browser as a static site, a single-page app or a server-rendered app, installable if you want."
+    },
+    {
+      "name": "mobile",
+      "status": "building",
+      "category": "platforms",
+      "runsOn": "client",
+      "replaces": ["capacitor"],
+      "builtOn": ["Capacitor"],
+      "summary": "Ship the same app to iPhone and Android, with every kitr package switched to its native version."
+    },
+    {
+      "name": "desktop",
+      "status": "building",
+      "category": "platforms",
+      "runsOn": "client",
+      "replaces": ["tauri", "electron"],
+      "builtOn": ["Tauri 2", "electron-vite"],
+      "summary": "Ship the same app to Windows, macOS and Linux, choosing a small Tauri or a familiar Electron shell."
+    },
+    {
+      "name": "seo",
+      "status": "building",
+      "category": "pages",
+      "runsOn": "both",
+      "replaces": ["ssr"],
+      "summary": "Give every page a title, a share preview and a sitemap entry so search engines and chat apps show it well."
+    },
+    {
+      "name": "realtime",
+      "status": "building",
+      "category": "realtime",
+      "runsOn": "both",
+      "replaces": ["socket", "socket.io"],
+      "builtOn": ["crossws", "partysocket", "socket.io"],
+      "summary": "Define a live channel once and push updates to every open screen, over WebSockets, Socket.IO or server events."
+    },
+    {
+      "name": "offline",
+      "status": "next",
+      "category": "data-fetching",
+      "runsOn": "client",
+      "builtOn": ["TanStack Query"],
+      "summary": "Keep showing loaded data with no connection, and send queued changes when the network comes back."
+    },
+    {
+      "name": "flags",
+      "status": "next",
+      "category": "app-state",
+      "runsOn": "both",
+      "builtOn": ["OpenFeature"],
+      "summary": "Turn features on for some users and off for others, with the same answer on the server and in the browser."
+    },
+    {
+      "name": "secure-storage",
+      "status": "next",
+      "category": "device",
+      "runsOn": "both",
+      "summary": "Keep login tokens and secrets in the phone or computer's secure vault instead of plain storage."
+    },
+    {
+      "name": "files",
+      "status": "next",
+      "category": "device",
+      "runsOn": "client",
+      "summary": "Let people open, save and pick files on any platform, with a download fallback in older browsers."
+    },
+    {
+      "name": "notifications",
+      "status": "next",
+      "category": "device",
+      "runsOn": "client",
+      "summary": "Ask for permission and show local or scheduled notifications that open the right page when tapped."
+    },
+    {
+      "name": "native",
+      "status": "next",
+      "category": "device",
+      "runsOn": "client",
+      "summary": "Clipboard, share sheet, haptics, location, camera and fingerprint unlock, each with a web fallback."
+    },
+    {
+      "name": "updater",
+      "status": "next",
+      "category": "platforms",
+      "runsOn": "client",
+      "summary": "Tell people a new version is ready and update the app in place, on the web, desktop and mobile."
+    },
+    {
+      "name": "cache",
+      "status": "next",
+      "category": "backend",
+      "runsOn": "server",
+      "summary": "Remember slow results on the server and clear them by tag when the data changes."
+    },
+    {
+      "name": "shield",
+      "status": "next",
+      "category": "backend",
+      "runsOn": "server",
+      "summary": "Turn on the security basics every API needs: CORS, CSRF protection, safe headers and rate limits."
+    },
+    {
+      "name": "mail",
+      "status": "next",
+      "category": "backend",
+      "runsOn": "server",
+      "builtOn": ["React Email"],
+      "summary": "Write emails as React components, send them through your provider, and preview them in development."
+    },
+    {
+      "name": "jobs",
+      "status": "next",
+      "category": "backend",
+      "runsOn": "server",
+      "summary": "Run work in the background or on a schedule, with retries when it fails."
+    },
+    {
+      "name": "uploads",
+      "status": "next",
+      "category": "backend",
+      "runsOn": "both",
+      "summary": "Accept file uploads with size limits, store them on disk or in the cloud, and show progress in the browser."
+    },
+    {
+      "name": "consent",
+      "status": "next",
+      "category": "insights",
+      "runsOn": "client",
+      "summary": "Ask for cookie and tracking consent once, and hold analytics and error reports until people agree."
+    },
+    {
+      "name": "local-db",
+      "status": "later",
+      "category": "device",
+      "runsOn": "both",
+      "builtOn": ["SQLite", "Drizzle"],
+      "summary": "A real database inside the app, on every platform, with one schema shared with the server."
+    },
+    {
+      "name": "payments",
+      "status": "later",
+      "category": "backend",
+      "runsOn": "both",
+      "builtOn": ["Stripe", "Paddle", "RevenueCat"],
+      "summary": "Take payments and subscriptions, and check what each user has paid for, including in-app purchases."
+    },
+    {
+      "name": "better-auth",
+      "status": "later",
+      "category": "auth",
+      "runsOn": "both",
+      "builtOn": ["Better Auth"],
+      "summary": "Run kitr sign-in, sessions and permissions on Better Auth instead of writing your own."
+    },
+    {
+      "name": "ai",
+      "status": "later",
+      "category": "backend",
+      "runsOn": "both",
+      "builtOn": ["Vercel AI SDK"],
+      "summary": "Stream answers from AI models into your pages, with chat state kept alongside the rest of your data."
+    },
+    {
+      "name": "push",
+      "status": "later",
+      "category": "realtime",
+      "runsOn": "both",
+      "summary": "Send push notifications from your server to phones and browsers, even when the app is closed."
+    },
+    {
+      "name": "sync",
+      "status": "later",
+      "category": "data-fetching",
+      "runsOn": "both",
+      "builtOn": ["TanStack DB", "PowerSync", "Electric"],
+      "summary": "Keep local data in step with the server automatically, so the app works the same online and offline."
+    },
+    {
+      "name": "search",
+      "status": "later",
+      "category": "backend",
+      "runsOn": "server",
+      "builtOn": ["Meilisearch", "Typesense", "Algolia"],
+      "summary": "Add fast, typo-tolerant search over your data, with the index defined next to your models."
+    }
+  ]
+}

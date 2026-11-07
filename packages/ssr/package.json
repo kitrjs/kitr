@@ -2,6 +2,21 @@
   "name": "@kitr/ssr",
   "version": "0.1.0",
   "description": "kitr/ssr: per-route rendering defaults, SEO head helpers and prerender config for TanStack Start apps.",
+  "kitr": {
+    "name": "ssr",
+    "title": "SSR and SEO",
+    "summary": "Render pages on the server for fast first loads and good search ranking.",
+    "category": "pages",
+    "runsOn": "both",
+    "builtOn": [
+      "@tanstack/react-start"
+    ],
+    "requires": [
+      "server"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +28,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -32,5 +48,9 @@
     "react-dom": "^19.3.1",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

@@ -1,0 +1,7 @@
+app/generated
+public/llms.txt
+public/llms-full.txt
+public/docs
+public/packages
+.output
+dist

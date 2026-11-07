@@ -2,6 +2,10 @@
   "name": "@kitr/pwa",
   "version": "0.1.0",
   "description": "kitr/pwa: vite-plugin-pwa wiring with a manifest from config, plus install-prompt, online and service-worker-update hooks.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -17,7 +21,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -46,5 +51,17 @@
     "vite-plugin-pwa": "^2.0.0",
     "vite": "^8.3.6",
     "@types/node": "^22.19.0"
+  },
+  "kitr": {
+    "name": "pwa",
+    "title": "PWA",
+    "summary": "Let people install your web app and keep using it offline, with a prompt when a new version ships.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "vite-plugin-pwa"
+    ],
+    "client": true,
+    "docs": "docs"
   }
 }

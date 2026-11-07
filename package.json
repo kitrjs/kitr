@@ -13,7 +13,11 @@
     "lint:fix": "biome check --write .",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "manifests": "node scripts/sync-manifests.mjs",
+    "manifests:check": "node scripts/sync-manifests.mjs --check",
+    "docs:check": "node scripts/docs-check.mjs",
+    "site": "pnpm -C site dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
