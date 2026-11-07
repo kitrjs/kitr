@@ -2,6 +2,18 @@
   "name": "@kitr/query",
   "version": "0.1.0",
   "description": "kitr/query: TanStack Query re-exported, plus the data contract, subscriptions and cache effects.",
+  "kitr": {
+    "name": "query",
+    "title": "Query",
+    "summary": "Load data from your API, keep it cached, and refresh it when something changes.",
+    "category": "data-fetching",
+    "runsOn": "client",
+    "builtOn": [
+      "@tanstack/react-query"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -17,7 +29,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -37,5 +50,9 @@
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "@tanstack/react-query": "^5.107.1"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

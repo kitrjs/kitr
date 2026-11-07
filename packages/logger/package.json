@@ -2,6 +2,14 @@
   "name": "@kitr/logger",
   "version": "0.1.0",
   "description": "kitr/logger: a tiny structured logger with levels, children and pretty/JSON output. No dependencies.",
+  "kitr": {
+    "name": "logger",
+    "title": "Logger",
+    "summary": "Write readable logs in development and structured logs in production.",
+    "category": "dev-tools",
+    "runsOn": "both",
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +21,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -26,5 +35,9 @@
   "devDependencies": {
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

@@ -2,6 +2,18 @@
   "name": "@kitr/state",
   "version": "0.1.0",
   "description": "kitr/state: Zustand re-exported, plus an SSR-safe store factory.",
+  "kitr": {
+    "name": "state",
+    "title": "State",
+    "summary": "Keep app-wide values like a cart or settings, and optionally save them in the browser.",
+    "category": "app-state",
+    "runsOn": "client",
+    "builtOn": [
+      "zustand"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +25,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -32,5 +45,9 @@
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "zustand": "^5.1.0"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

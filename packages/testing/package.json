@@ -2,6 +2,18 @@
   "name": "@kitr/testing",
   "version": "0.1.0",
   "description": "kitr/testing: createTestApp and a request client for API tests (no React); kitr/testing/react adds renderWithKitr.",
+  "kitr": {
+    "name": "testing",
+    "title": "Testing",
+    "summary": "Test components and API routes with everything already wired up.",
+    "category": "dev-tools",
+    "runsOn": "both",
+    "builtOn": [
+      "vitest",
+      "@testing-library/react"
+    ],
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -17,7 +29,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -56,5 +69,9 @@
     "@types/node": "^22.19.0",
     "@kitr/react": "workspace:*",
     "@testing-library/dom": "^10.4.1"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

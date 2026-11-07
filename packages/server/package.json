@@ -2,6 +2,20 @@
   "name": "@kitr/server",
   "version": "0.1.0",
   "description": "kitr/server: the kitr app on h3. Standalone (srvx) or as a fetch handler inside TanStack Start, Nitro or any runtime. No React.",
+  "kitr": {
+    "name": "server",
+    "title": "Server",
+    "summary": "Run a Node server that starts, logs and shuts down cleanly.",
+    "category": "backend",
+    "runsOn": "server",
+    "builtOn": [
+      "h3"
+    ],
+    "requires": [
+      "logger"
+    ],
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +27,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -40,5 +55,9 @@
     "srvx": "^1.0.8",
     "crossws": "^0.4.17",
     "@types/node": "^22.19.0"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }
