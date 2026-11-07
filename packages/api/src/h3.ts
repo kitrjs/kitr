@@ -3,7 +3,7 @@ import type { KitrServer } from '@kitr/server'
 import { H3, type H3Event } from 'h3'
 import { createHttpContext } from './context'
 import { controllerInstance, isControllerRef, resolveControllerClass } from './controller'
-import { compose } from './middleware'
+import { compose, handlesPreflight } from './middleware'
 import type { Router } from './router'
 import type { RouteEntry, Validators } from './types'
 
@@ -13,8 +13,21 @@ import type { RouteEntry, Validators } from './types'
  */
 export function toH3(router: Router<any>, app: KitrApp, options: { h3?: H3 } = {}): H3 {
   const h3 = options.h3 ?? new H3()
+  const preflight = new Map<string, RouteEntry>()
+  const explicitOptions = new Set<string>()
   for (const route of router.routes) {
     h3.on(route.method, toRou3Path(route.path), (event) => dispatch(route, event, app))
+    if (route.method === 'OPTIONS') explicitOptions.add(route.path)
+    else if (!preflight.has(route.path) && route.middleware.some((m) => handlesPreflight in m))
+      preflight.set(route.path, route)
+  }
+  // Browsers send OPTIONS before cross-origin writes; answer it with the route's middleware
+  // (cors() replies 204) instead of a 404 that blocks the real request.
+  for (const [path, route] of preflight) {
+    if (explicitOptions.has(path)) continue
+    h3.on('OPTIONS', toRou3Path(path), (event) =>
+      dispatch({ ...route, method: 'OPTIONS', handler: () => null }, event, app),
+    )
   }
   return h3
 }

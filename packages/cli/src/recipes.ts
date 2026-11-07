@@ -238,7 +238,7 @@ export const recipes: Record<string, Recipe> = {
       c.addPackage('@kitr/auth')
       ctx.write(
         'app/abilities.ts',
-        `import { defineAbilities } from 'kitr/auth'\n\nexport interface User {\n  id: string\n  email: string\n  role: 'admin' | 'member'\n}\n\nexport const abilities = defineAbilities<User>({\n  'projects.update': (user, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,\n})\n`,
+        `import { defineAbilities } from 'kitr/auth'\n\nexport interface User {\n  id: string\n  email: string\n  role: 'admin' | 'member'\n}\n\nexport const abilities = defineAbilities({\n  'projects.update': (user: User, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,\n})\n`,
       )
       ctx.write(
         'config/auth.ts',
@@ -436,7 +436,7 @@ export const recipes: Record<string, Recipe> = {
       c.addPackage('@kitr/socket')
       ctx.write(
         'config/socket.ts',
-        `import { defineConfig } from 'kitr/socket'\n\nexport default defineConfig({\n  path: '/ws',\n  transport: 'websocket',\n})\n`,
+        `import { defineConfig } from 'kitr/socket'\n\nexport default defineConfig({\n  path: '${serverOnly ? '/ws' : '/api/ws'}',\n  transport: 'websocket',\n})\n`,
       )
       ctx.write(
         'app/channels/example.ts',
@@ -444,14 +444,16 @@ export const recipes: Record<string, Recipe> = {
       )
       ctx.write(
         serverOnly ? 'start/socket.ts' : 'app/api/socket.ts',
-        `import { createSocketServer } from 'kitr/socket/server'\nimport { exampleChannel } from '${serverOnly ? '#app' : '#app'}/channels/example'\n\nexport const sockets = createSocketServer({\n  channels: [exampleChannel],\n  // authorize: (request) => verify(request.headers.get('authorization')),\n})\n// In server.ts: sockets.attach(server, '/ws'); from a controller: sockets.use(exampleChannel, { room }).emit('message', data)\n`,
+        `import { createSocketServer } from 'kitr/socket/server'\nimport { exampleChannel } from '#app/channels/example'\n\n/** Attached to the server in ${serverOnly ? 'server.ts' : 'app/api/server.ts'}. Emit from a controller: sockets.use(exampleChannel, { room }).emit('message', data) */\nexport const sockets = createSocketServer({\n  channels: [exampleChannel],\n  // authorize: (request) => verify(request.headers.get('authorization')),\n})\n`,
       )
+      wireSockets(ctx, serverOnly)
       c.addAgentsSection(
         'socket',
         `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\`. Server emits with \`sockets.use(channel, params).emit(event, data)\`; the client subscribes with \`useSubscription(channel(socket, def).subscription(), params)\` and events update the query cache via \`effects\`.`,
       )
     },
-    unconfigure(_ctx, c) {
+    unconfigure(ctx, c) {
+      unwireSockets(ctx)
       c.removePackage('@kitr/socket')
       c.removePackages(['@kitr/socket', 'crossws', 'partysocket'])
       c.removeAgentsSection('socket')
@@ -608,6 +610,45 @@ export const recipes: Record<string, Recipe> = {
 }
 
 export const recipeNames = Object.keys(recipes)
+
+const socketWiring = {
+  server: {
+    file: 'server.ts',
+    importLine: "import { sockets } from './start/socket'\n",
+    attachLine: 'sockets.attach(server, config.socket.path)\n',
+  },
+  start: {
+    file: 'app/api/server.ts',
+    importLine: "import { sockets } from '#app/api/socket'\n",
+    // Start forwards /api/* to the kitr server, upgrade requests included.
+    attachLine: "sockets.attach(server, '/api/ws')\n",
+  },
+}
+
+/** Attach the socket server where the HTTP server is created, so `/ws` answers out of the box. */
+function wireSockets(ctx: ProjectContext, serverOnly: boolean) {
+  const w = serverOnly ? socketWiring.server : socketWiring.start
+  if (!ctx.exists(w.file)) return
+  let src = ctx.read(w.file)
+  if (src.includes('sockets.attach(')) return
+  const anchor = 'mountRoutes(server, routes)\n'
+  if (!src.includes(anchor)) return
+  src = src.replace(anchor, `${anchor}${w.attachLine}`)
+  const imports = [...src.matchAll(/^import .*\n/gm)]
+  const last = imports[imports.length - 1]
+  const at = last ? last.index! + last[0].length : 0
+  src = src.slice(0, at) + w.importLine + src.slice(at)
+  ctx.write(w.file, src, { overwrite: true })
+}
+
+function unwireSockets(ctx: ProjectContext) {
+  for (const w of Object.values(socketWiring)) {
+    if (!ctx.exists(w.file)) continue
+    const src = ctx.read(w.file)
+    const next = src.replace(w.importLine, '').replace(w.attachLine, '')
+    if (next !== src) ctx.write(w.file, next, { overwrite: true })
+  }
+}
 
 /** Resolve a recipe list with its `requires` closure, in dependency order. */
 export function resolveRecipes(names: string[], installed: string[]): Recipe[] {

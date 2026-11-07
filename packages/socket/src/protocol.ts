@@ -58,12 +58,17 @@ export type ChannelParams<C> = C extends ChannelDefinition<infer P, any> ? P : n
  */
 export function defineChannel<
   TParams = void,
-  const TEvents extends Record<string, ChannelEvent<any, TParams>> = Record<
-    string,
-    ChannelEvent<any, TParams>
-  >,
->(definition: ChannelDefinition<TParams, TEvents>): ChannelDefinition<TParams, TEvents> {
-  return definition
+  const TData extends Record<string, unknown> = Record<string, unknown>,
+>(
+  definition: Omit<ChannelDefinition<TParams, any>, 'events'> & {
+    // Mapped per event, so each `effects` gets the payload type of its own `schema`.
+    events: { [K in keyof TData]: ChannelEvent<TData[K], TParams> }
+  },
+): ChannelDefinition<TParams, { [K in keyof TData]: ChannelEvent<TData[K], TParams> }> {
+  return definition as ChannelDefinition<
+    TParams,
+    { [K in keyof TData]: ChannelEvent<TData[K], TParams> }
+  >
 }
 
 /** Stable topic string for a channel + params. */

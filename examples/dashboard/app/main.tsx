@@ -7,7 +7,7 @@ import { getRouter } from './router'
 async function main() {
   await app.boot()
   const router = getRouter()
-  createRoot(document.getElementById('root')!).render(
+  createRoot(document.getElementById('root') as HTMLElement).render(
     <StrictMode>
       <RouterProvider router={router} />
     </StrictMode>,

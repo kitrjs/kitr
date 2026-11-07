@@ -408,3 +408,48 @@ describe('toOpenApi', () => {
     expect((doc.paths['/c'] as any).post.tags).toEqual(['c'])
   })
 })
+
+describe('group runtime matches the types', () => {
+  it('prefixes names and paths through nested groups', async () => {
+    const { defineRoutes } = await import('../src')
+    const r = defineRoutes((r) =>
+      r.group('/api/', (api) =>
+        api.group({ prefix: '/v1', as: 'v1' }, (v1) => v1.get('/me', () => 1, { name: 'me' })),
+      ),
+    )
+    expect(r.routes.map((x) => [x.name, x.path])).toEqual([['v1.me', '/api/v1/me']])
+  })
+})
+
+describe('cors preflight', () => {
+  it('answers OPTIONS for routes behind cors() without an explicit OPTIONS route', async () => {
+    const { defineRoutes, cors, mountRoutes } = await import('../src')
+    const routes = defineRoutes((r) =>
+      r
+        .group({ prefix: '/api', middleware: [cors({ origin: 'https://app.dev' })] }, (api) =>
+          api.post('/items', () => ({ ok: true }), { name: 'items.store' }),
+        )
+        .get('/open', () => 'x', { name: 'open' }),
+    )
+    const server = createServer({ logger: silentLogger })
+    mountRoutes(server, routes)
+    const pre = await server.fetch(
+      new Request('http://x/api/items', {
+        method: 'OPTIONS',
+        headers: { origin: 'https://app.dev', 'access-control-request-method': 'POST' },
+      }),
+    )
+    expect(pre.status).toBe(204)
+    expect(pre.headers.get('access-control-allow-origin')).toBe('https://app.dev')
+    expect(pre.headers.get('access-control-allow-methods')).toContain('POST')
+    const real = await server.fetch(
+      new Request('http://x/api/items', { method: 'POST', headers: { origin: 'https://app.dev' } }),
+    )
+    expect(real.status).toBe(200)
+    expect(real.headers.get('access-control-allow-origin')).toBe('https://app.dev')
+    // Routes without cors() still 404 on OPTIONS.
+    expect((await server.fetch(new Request('http://x/open', { method: 'OPTIONS' }))).status).toBe(
+      404,
+    )
+  })
+})

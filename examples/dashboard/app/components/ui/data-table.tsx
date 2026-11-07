@@ -12,6 +12,7 @@ import { Button } from '#components/ui/button'
 
 export interface DataTableProps<TData extends RowData>
   extends Partial<Omit<TableOptions<DataTableFeatures, TData>, 'data' | 'columns' | 'features'>> {
+  // biome-ignore lint/suspicious/noExplicitAny: each column has its own value type
   columns: ColumnDef<DataTableFeatures, TData, any>[]
   data: TData[]
   /** Total rows for server-side pagination. */

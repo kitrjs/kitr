@@ -1,3 +1,4 @@
+import type { FieldValues } from 'kitr/forms'
 import {
   type FormFieldProps,
   FormField as KitrFormField,
@@ -7,7 +8,6 @@ import {
 } from 'kitr/forms'
 import { cn } from 'kitr/tailwind'
 import type { ComponentProps, ReactNode } from 'react'
-import type { FieldValues } from 'kitr/forms'
 import { Button, type ButtonProps } from '#components/ui/button'
 import { Input } from '#components/ui/input'
 

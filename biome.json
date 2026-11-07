@@ -73,6 +73,19 @@
           }
         }
       }
+    },
+    {
+      "includes": ["registry/src/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "error"
+          },
+          "style": {
+            "noNonNullAssertion": "warn"
+          }
+        }
+      }
     }
   ]
 }

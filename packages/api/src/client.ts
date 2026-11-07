@@ -61,18 +61,18 @@ export interface Endpoint<R extends RouteType> {
 }
 
 type Head<K> = K extends `${infer H}.${string}` ? H : K
-type Rest<K, H extends string> = K extends `${H}.${infer R}` ? R : never
+type Children<R, H extends string> = {
+  [K in keyof R as K extends `${H}.${infer N}` ? N : never]: R[K]
+}
 
-export type ApiClient<R extends RouteMap> = {
-  [H in Head<keyof R & string>]: IsNever<Rest<keyof R & string, H>> extends true
-    ? R[H & keyof R] extends RouteType
-      ? Endpoint<R[H & keyof R]>
-      : never
-    : {
-        [K in keyof R as K extends `${H}.${infer N}` ? N : never]: R[K] extends RouteType
-          ? Endpoint<R[K]>
-          : never
-      }
+/** Dotted route names as nested properties, any depth: `admin.users.index` → `api.admin.users.index()`. */
+export type ApiClient<R> = {
+  [H in Head<keyof R & string>]: (H extends keyof R
+    ? R[H] extends RouteType
+      ? Endpoint<R[H]>
+      : unknown
+    : unknown) &
+    ApiClient<Children<R, H>>
 }
 
 export function createApiClient<R extends RouteMap>(

@@ -166,6 +166,23 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
   }
 
   // Request context, id, logging and body limit for every request.
+  // Reject a declared oversized body before reading it, and close the connection: the client is
+  // still uploading, and a kept-alive socket with an unread body never goes idle (it would hold
+  // up graceful shutdown). Chunked bodies are still counted by h3's bodyLimit as they stream.
+  h3.use((event, next) => {
+    const length = Number(event.req.headers.get('content-length'))
+    if (length > config.bodyLimit) {
+      return new Response(
+        JSON.stringify({
+          code: 'PAYLOAD_TOO_LARGE',
+          message: `Request body is larger than ${config.bodyLimit} bytes`,
+          status: 413,
+        }),
+        { status: 413, headers: { 'content-type': 'application/json', connection: 'close' } },
+      )
+    }
+    return next()
+  })
   h3.use(bodyLimit(config.bodyLimit))
   h3.use(async (event, next) => {
     const requestId = event.req.headers.get(config.requestIdHeader) ?? crypto.randomUUID()

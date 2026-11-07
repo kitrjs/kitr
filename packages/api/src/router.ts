@@ -27,6 +27,17 @@ type Handler<P, Q, B, Output> =
   | HandlerFn<P, Q, B, Output>
   | readonly [ControllerClass | LazyController, string]
 
+/** Validators given in options, or none (`V` is `never` when `validate` is omitted). */
+type GivenValidators<V> = [V] extends [never] ? undefined : V extends Validators ? V : undefined
+
+/** The handler for a route at `Path`: `ctx.params`, `ctx.query` and `ctx.body` typed from the path and validators. */
+type RouteHandler<Path extends string, V> = Handler<
+  ValidatedParams<Path, GivenValidators<V>>,
+  ValidatedQuery<GivenValidators<V>>,
+  ValidatedBody<GivenValidators<V>>,
+  any
+>
+
 type OutputOf<H> =
   H extends HandlerFn<any, any, any, infer O>
     ? O
@@ -34,11 +45,17 @@ type OutputOf<H> =
       ? ControllerOutput<C, M>
       : unknown
 
-type ValidatorsOf<H, V> = V extends Validators
-  ? V
-  : H extends readonly [infer C, infer M extends string]
+// Tuple-wrapped: `V` defaults to `never` when no `validate` is passed, and a bare
+// `V extends Validators` would distribute over never and make every route input never.
+type ValidatorsOf<H, V> = [V] extends [never]
+  ? H extends readonly [infer C, infer M extends string]
     ? ControllerValidators<C, M>
     : undefined
+  : V extends Validators
+    ? V
+    : H extends readonly [infer C, infer M extends string]
+      ? ControllerValidators<C, M>
+      : undefined
 
 type RouteFor<Method extends HttpMethod, Path extends string, H, V> = RouteType<
   Method,
@@ -88,6 +105,30 @@ type ResourceRoutes<N extends string, C, Prefix extends string> = ResourceRoute<
   ResourceRoute<N, C, 'show', 'GET', `${Prefix}/${N}/:id`> &
   ResourceRoute<N, C, 'update', 'PATCH', `${Prefix}/${N}/:id`> &
   ResourceRoute<N, C, 'destroy', 'DELETE', `${Prefix}/${N}/:id`>
+
+type JoinPaths<A extends string, B extends string> = A extends '' | '/'
+  ? B
+  : A extends `${infer H}/`
+    ? JoinPaths<H, B>
+    : B extends '/'
+      ? A
+      : `${A}${B}`
+type GroupPrefix<O> = O extends string ? O : O extends { prefix: infer P extends string } ? P : ''
+type GroupAs<O> = O extends { as: infer A extends string } ? `${A}.` : ''
+
+/** A group's routes as the runtime registers them: names get `as.`, paths get the prefix. */
+type Grouped<G extends RouteMap, O> = {
+  [K in keyof G & string as `${GroupAs<O>}${K}`]: G[K] extends RouteType<
+    infer M,
+    infer P,
+    infer Params,
+    infer Q,
+    infer B,
+    infer Out
+  >
+    ? RouteType<M, JoinPaths<GroupPrefix<O>, P>, Params, Q, B, Out>
+    : never
+}
 
 export interface GroupOptions {
   prefix?: string
@@ -147,7 +188,7 @@ export class Router<R extends RouteMap = {}> {
 
   get<
     Path extends string,
-    H extends Handler<any, any, any, any>,
+    H extends RouteHandler<Path, V>,
     Name extends string = never,
     V extends Validators = never,
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
@@ -155,7 +196,7 @@ export class Router<R extends RouteMap = {}> {
   }
   post<
     Path extends string,
-    H extends Handler<any, any, any, any>,
+    H extends RouteHandler<Path, V>,
     Name extends string = never,
     V extends Validators = never,
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
@@ -163,7 +204,7 @@ export class Router<R extends RouteMap = {}> {
   }
   put<
     Path extends string,
-    H extends Handler<any, any, any, any>,
+    H extends RouteHandler<Path, V>,
     Name extends string = never,
     V extends Validators = never,
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
@@ -171,7 +212,7 @@ export class Router<R extends RouteMap = {}> {
   }
   patch<
     Path extends string,
-    H extends Handler<any, any, any, any>,
+    H extends RouteHandler<Path, V>,
     Name extends string = never,
     V extends Validators = never,
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
@@ -179,7 +220,7 @@ export class Router<R extends RouteMap = {}> {
   }
   delete<
     Path extends string,
-    H extends Handler<any, any, any, any>,
+    H extends RouteHandler<Path, V>,
     Name extends string = never,
     V extends Validators = never,
   >(path: Path, handler: H, options?: RouteOptions<Name, V>) {
@@ -234,10 +275,10 @@ export class Router<R extends RouteMap = {}> {
   }
 
   /** Routes under a prefix and/or middleware. Names inside get `as` as a prefix when given. */
-  group<G extends RouteMap>(
-    options: GroupOptions | string,
+  group<G extends RouteMap, const O extends GroupOptions | string>(
+    options: O,
     define: (router: Router<{}>) => Router<G>,
-  ): Router<Prettify<R & G>> {
+  ): Router<Prettify<R & Grouped<G, O>>> {
     const opts: GroupOptions = typeof options === 'string' ? { prefix: options } : options
     const child = new Router<{}>(
       joinPath(this.prefix, opts.prefix ?? ''),

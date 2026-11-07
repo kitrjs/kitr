@@ -16,6 +16,9 @@ export interface CorsOptions {
   maxAge?: number
 }
 
+/** Marks middleware that answers preflight, so the router registers OPTIONS for its routes. */
+export const handlesPreflight = Symbol.for('kitr.api.handlesPreflight')
+
 /** CORS with sensible defaults; handles preflight. */
 export function cors(options: CorsOptions = {}): Middleware {
   const {
@@ -32,7 +35,7 @@ export function cors(options: CorsOptions = {}): Middleware {
     const list = Array.isArray(origin) ? origin : [origin]
     return list.includes(reqOrigin) ? reqOrigin : null
   }
-  return async (ctx, next) => {
+  const middleware: Middleware = async (ctx, next) => {
     const allowed = allow(ctx.request.header('origin'))
     if (allowed) {
       ctx.response.header('access-control-allow-origin', allowed)
@@ -47,6 +50,7 @@ export function cors(options: CorsOptions = {}): Middleware {
     }
     return next()
   }
+  return Object.assign(middleware, { [handlesPreflight]: true })
 }
 
 export interface RateLimitOptions {

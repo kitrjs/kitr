@@ -200,3 +200,22 @@ describe('error normalisation', () => {
     expect(await res.json()).toMatchObject({ fieldErrors: { a: ['bad'] } })
   })
 })
+
+describe('body limit', () => {
+  it('rejects a declared oversized body with 413 and closes the connection', async () => {
+    const server = createServer({ logger: silentLogger, config: { server: { bodyLimit: 10 } } })
+    server.h3.post('/echo', async (event) => event.req.text())
+    const res = await server.fetch(
+      new Request('http://x/echo', {
+        method: 'POST',
+        body: 'x'.repeat(100),
+        headers: { 'content-length': '100' },
+      }),
+    )
+    expect(res.status).toBe(413)
+    expect(res.headers.get('connection')).toBe('close')
+    expect(await res.json()).toMatchObject({ code: 'PAYLOAD_TOO_LARGE' })
+    const ok = await server.fetch(new Request('http://x/echo', { method: 'POST', body: 'small' }))
+    expect(await ok.text()).toBe('small')
+  })
+})

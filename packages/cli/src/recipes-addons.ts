@@ -340,6 +340,12 @@ linux:
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/electron')
       c.removePackages(['@kitr/electron', 'electron', 'electron-vite', 'electron-builder'])
+      c.removePackageField('main', 'out/main/index.js')
+      c.removeScripts({
+        'electron:dev': 'electron-vite dev',
+        'electron:build': 'electron-vite build && electron-builder',
+        'electron:preview': 'electron-vite preview',
+      })
       c.removeAgentsSection('electron')
     },
   }),
@@ -493,6 +499,7 @@ pub fn run() {
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/tauri')
       c.removePackages(['@kitr/tauri', '@tauri-apps/api', '@tauri-apps/cli'])
+      c.removeScripts({ tauri: 'tauri', 'tauri:dev': 'tauri dev', 'tauri:build': 'tauri build' })
       c.removeAgentsSection('tauri')
     },
   }),
@@ -571,6 +578,12 @@ export const native = {
     unconfigure(_ctx, c) {
       c.removePackage('@kitr/capacitor')
       c.removePackages(['@kitr/capacitor', '@capacitor/core', '@capacitor/app', '@capacitor/cli'])
+      c.removeScripts({
+        cap: 'cap',
+        'cap:sync': undefined,
+        'cap:ios': 'cap open ios',
+        'cap:android': 'cap open android',
+      })
       c.removeAgentsSection('capacitor')
     },
   }),

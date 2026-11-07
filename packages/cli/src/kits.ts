@@ -99,7 +99,7 @@ const baseReact = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'biome.json',
-    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/dist", "!**/.output"] },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
+    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/dist", "!**/.output"] },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
   )
   ctx.write('.gitignore', 'node_modules\ndist\n.output\n.nitro\n.tanstack\n*.local\n.env\n')
   ctx.write(
@@ -124,7 +124,7 @@ const baseReact = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'app/main.tsx',
-    `import { RouterProvider } from 'kitr/router'\nimport { StrictMode } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport { app } from './app'\nimport { getRouter } from './router'\n\nasync function main() {\n  await app.boot()\n  const router = getRouter()\n  createRoot(document.getElementById('root')!).render(\n    <StrictMode>\n      <RouterProvider router={router} />\n    </StrictMode>,\n  )\n}\n\nmain()\n`,
+    `import { RouterProvider } from 'kitr/router'\nimport { StrictMode } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport { app } from './app'\nimport { getRouter } from './router'\n\nasync function main() {\n  await app.boot()\n  const router = getRouter()\n  createRoot(document.getElementById('root') as HTMLElement).render(\n    <StrictMode>\n      <RouterProvider router={router} />\n    </StrictMode>,\n  )\n}\n\nmain()\n`,
   )
   ctx.write(
     'app/routes/__root.tsx',
@@ -213,7 +213,7 @@ const baseServer = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'biome.json',
-    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
+    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
   )
   ctx.write('.gitignore', 'node_modules\ndist\n*.local\n.env\n')
   ctx.write('.env.example', '# Copy to .env\n')

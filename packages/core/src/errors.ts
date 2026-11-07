@@ -29,6 +29,7 @@ export type KitrErrorCode =
   | 'UNAVAILABLE'
   | 'NETWORK'
   | 'TIMEOUT'
+  | 'PAYLOAD_TOO_LARGE'
   | (string & {})
 
 const defaultStatus: Record<string, number> = {
@@ -43,6 +44,7 @@ const defaultStatus: Record<string, number> = {
   UNAVAILABLE: 503,
   NETWORK: 0,
   TIMEOUT: 408,
+  PAYLOAD_TOO_LARGE: 413,
 }
 
 const statusToCode: Record<number, string> = {
@@ -52,6 +54,7 @@ const statusToCode: Record<number, string> = {
   404: 'NOT_FOUND',
   408: 'TIMEOUT',
   409: 'CONFLICT',
+  413: 'PAYLOAD_TOO_LARGE',
   422: 'VALIDATION',
   429: 'RATE_LIMITED',
   500: 'INTERNAL',

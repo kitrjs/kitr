@@ -1,6 +1,6 @@
 import { defineConfig } from 'kitr/socket'
 
 export default defineConfig({
-  path: '/ws',
+  path: '/api/ws',
   transport: 'websocket',
 })
