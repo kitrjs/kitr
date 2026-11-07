@@ -61,7 +61,7 @@ export function Toc({ page }: { page: Page }) {
         ))}
       </ul>
       <a className="toc-edit" href={page.editUrl} target="_blank" rel="noreferrer">
-        <Icon d={icons.edit} size={14} /> Edit this page
+        <Icon icon={icons.edit} size={14} /> Edit this page
       </a>
       <a className="toc-edit" href={`${page.url}.md`}>
         View as markdown

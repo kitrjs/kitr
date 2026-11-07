@@ -22,7 +22,12 @@ export function Tile({
       className="tile"
       style={{ width: size, height: size, background: categories[pkg.category].color }}
     >
-      <Icon d={glyph(pkg.name)} size={Math.round(size * 0.55)} stroke="#0B121C" strokeWidth={1.6} />
+      <Icon
+        icon={glyph(pkg.name)}
+        size={Math.round(size * 0.55)}
+        stroke="#0B121C"
+        strokeWidth={1.6}
+      />
     </span>
   )
 }
@@ -44,7 +49,7 @@ export function RunsOnBadge({ value }: { value: RunsOn }) {
       style={{ background: r.background }}
       title={`Runs on: ${r.label.replace(' ', ' and ')}`}
     >
-      <Icon d={r.icon} size={13} stroke="#0B121C" strokeWidth={2} />
+      <Icon icon={r.icon} size={13} stroke="#0B121C" strokeWidth={2} />
       {r.label}
     </span>
   )

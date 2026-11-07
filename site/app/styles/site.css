@@ -303,7 +303,7 @@ kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 22%;
+  border-radius: 34%;
 }
 
 /* ------------------------------------------------------------- command */
