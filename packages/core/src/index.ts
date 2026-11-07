@@ -1,4 +1,4 @@
-export { type AppEnvironment, type CreateAppOptions, createApp, KitrApp } from './app'
+export { type AppEnvironment, type CreateAppOptions, createApp, inProduction, KitrApp } from './app'
 export {
   type ConfigKey,
   type ConfigOf,

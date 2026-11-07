@@ -746,7 +746,7 @@ Options for `createSseServer`: the channels to serve, stream auth and the keep-a
 
 ```ts
 function useChannel<C extends ChannelDefinition<any, any>>(transport: SocketTransport, definition: C, params: ChannelParams<C>, options?: UseSubscriptionOptions<ChannelEventUnion<C>>): {
-  status: "error" | "idle" | "open";
+  status: "idle" | "open" | "error";
   lastEvent: ChannelEventUnion<C> | undefined;
   error: import("@kitr/core").KitrErrorShape | undefined;
 };
