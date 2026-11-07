@@ -1,0 +1,30 @@
+name: kitr.dev live checks
+
+# The same browser checks CI runs on the site build, against the deployed kitr.dev:
+# every page reachable, no broken links, SEO basics, llms.txt, phone layout, no errors.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test --project=site
+        env:
+          SITE_URL: https://kitr.dev
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitr-dev-live-results
+          path: test-results/
+          retention-days: 7

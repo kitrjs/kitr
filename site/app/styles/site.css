@@ -1153,8 +1153,11 @@ kbd {
   text-decoration: none;
   color: var(--ink);
   font-weight: 600;
-  flex: 0 1 260px;
+  /* Share the row on phones instead of overflowing it: two 200px links plus the gap
+     are wider than a 375px screen. */
+  flex: 0 1 280px;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .pager-link.next {
   text-align: right;
