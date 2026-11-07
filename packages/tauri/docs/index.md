@@ -352,17 +352,17 @@ import { commands } from '#app/commands'
 export const ordersByStatus = defineQuery(commandQuery(commands.list_orders, 'list_orders'))
 ```
 
+```ts
+// app/routes.ts
+r.page('/orders', { lazy: () => import('./pages/orders') })
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { useQuery } from 'kitr/query'
 import { ordersByStatus } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders')({
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const { data: orders, isPending, error } = useQuery(ordersByStatus.options({ status: 'paid' }))
   if (isPending) return <p>Loading orders…</p>
   if (error) return <p role="alert">{error.message}</p>

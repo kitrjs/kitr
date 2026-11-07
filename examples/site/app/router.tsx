@@ -1,9 +1,9 @@
 import { createKitrRouter } from 'kitr/router'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
-  return createKitrRouter({ routeTree, app })
+  return createKitrRouter({ routes, app })
 }
 
 declare module '@tanstack/react-router' {

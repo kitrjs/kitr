@@ -42,19 +42,26 @@ That writes `app/components/ui/data-table.tsx`, plus the `button` and `icon` com
 
 `kitr/table` has no config file. Each table is configured where you call `useUrlTableState`:
 
-```tsx
-// app/routes/orders/index.tsx
-import { createFileRoute } from 'kitr/router'
-import { parseTableSearch, useUrlTableState } from 'kitr/table'
+```ts
+// app/routes.ts
+import { parseTableSearch } from 'kitr/table'
 
-export const Route = createFileRoute('/orders/')({
+r.page('/orders/', {
   validateSearch: parseTableSearch,
-  component: OrdersPage,
+  lazy: () => import('./pages/orders/index'),
 })
+```
 
-function OrdersPage() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+```tsx
+// app/pages/orders/index.tsx
+import { useUrlTableState } from 'kitr/table'
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/')
+
+export default function OrdersPage() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
   const urlState = useUrlTableState({
     search,
     setSearch: (patch) => navigate({ search: (prev) => ({ ...prev, ...patch }) }),
@@ -123,25 +130,33 @@ export const columns: ColumnDef<DataTableFeatures, Order>[] = [
 
 Then the page. `validateSearch: parseTableSearch` makes `page`, `size`, `sort` and `filter` typed search params; the loader fetches the matching page; `useUrlTableState` turns the params into table state:
 
-```tsx
-// app/routes/orders/index.tsx
-import { useSuspenseQuery } from 'kitr/query'
-import { createFileRoute } from 'kitr/router'
-import { parseTableSearch, useUrlTableState } from 'kitr/table'
-import { DataTable } from '#components/ui/data-table'
-import { columns } from '#app/features/orders/columns'
+```ts
+// app/routes.ts
+import { parseTableSearch } from 'kitr/table'
 import { ordersPageQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders/')({
+r.page('/orders/', {
   validateSearch: parseTableSearch,
   loaderDeps: ({ search }) => search,
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(ordersPageQuery.options(deps)),
-  component: OrdersPage,
+  lazy: () => import('./pages/orders/index'),
 })
+```
 
-function OrdersPage() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+```tsx
+// app/pages/orders/index.tsx
+import { useSuspenseQuery } from 'kitr/query'
+import { useUrlTableState } from 'kitr/table'
+import { DataTable } from '#components/ui/data-table'
+import { columns } from '#app/features/orders/columns'
+import { ordersPageQuery } from '#app/features/orders/queries'
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/')
+
+export default function OrdersPage() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
   const { data } = useSuspenseQuery(ordersPageQuery.options(search))
 
   const urlState = useUrlTableState({
@@ -267,21 +282,25 @@ parseTableSearch({ page: '1.5', filter: { status: 'open', total: 100 } })
 
 To add params of your own, such as a search box, call it inside your own `validateSearch` and add your fields beside it:
 
-```tsx
-// app/routes/orders/index.tsx
-import { createFileRoute } from 'kitr/router'
-import { parseTableSearch } from 'kitr/table'
-
-export const Route = createFileRoute('/orders/')({
+```ts
+// app/routes.ts
+r.page('/orders/', {
   validateSearch: (raw: Record<string, unknown>) => ({
     ...parseTableSearch(raw),
     q: typeof raw.q === 'string' && raw.q.length <= 100 ? raw.q : undefined,
   }),
-  component: OrdersPage,
+  lazy: () => import('./pages/orders/index'),
 })
+```
 
-function OrdersPage() {
-  const { q } = Route.useSearch()
+```tsx
+// app/pages/orders/index.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/')
+
+export default function OrdersPage() {
+  const { q } = route.useSearch()
   return <p>Searching for {q}</p>
 }
 ```
@@ -382,19 +401,25 @@ export function StatusFilter({ table }: { table: ReactTable<DataTableFeatures, O
 
 `<DataTable>` builds its table inside, so a filter outside it writes the URL instead. That is the same thing, because the URL is the state:
 
-```tsx
-// app/routes/orders/index.tsx
-import { createFileRoute } from 'kitr/router'
+```ts
+// app/routes.ts
 import { parseTableSearch } from 'kitr/table'
 
-export const Route = createFileRoute('/orders/')({
+r.page('/orders/', {
   validateSearch: parseTableSearch,
-  component: OrdersToolbar,
+  lazy: () => import('./pages/orders/index'),
 })
+```
 
-function OrdersToolbar() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+```tsx
+// app/pages/orders/index.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/')
+
+export default function OrdersToolbar() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
   return (
     <select
       aria-label="Status"

@@ -1,31 +1,13 @@
-import type { Session } from 'kitr/auth'
 import { createKitrRouter } from 'kitr/router'
-import type { User } from '#app/abilities'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
-  return createKitrRouter({
-    routeTree,
-    app,
-    context: {
-      // A live getter, so requireAuth() sees the session the auth provider restores during boot.
-      get session() {
-        const auth = app.container.has('auth') ? app.container.use('auth') : null
-        return (auth?.session ?? null) as Session<User> | null
-      },
-    },
-  })
+  return createKitrRouter({ routes, app })
 }
 
 declare module '@tanstack/react-router' {
   interface Register {
     router: ReturnType<typeof getRouter>
-  }
-}
-
-declare module '@kitr/router' {
-  interface KitrRouterContext {
-    session: Session<User> | null
   }
 }

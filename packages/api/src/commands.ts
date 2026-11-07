@@ -9,7 +9,10 @@ import { dirname, resolve } from 'node:path'
 const root = () => process.cwd()
 
 async function loadRoutes(file?: string) {
-  const candidates = file ? [file] : ['server/routes.ts', 'app/api/routes.ts', 'start/routes.ts']
+  // The route table (`directories.routeTable`), then the older per-kit locations.
+  const candidates = file
+    ? [file]
+    : ['server/routes.ts', 'app/routes.ts', 'app/api/routes.ts', 'start/routes.ts']
   const path = candidates.map((c) => resolve(root(), c)).find(existsSync)
   if (!path) throw new Error(`No routes file found (${candidates.join(', ')}). Pass --file.`)
   const { createJiti } = await import('jiti')
@@ -72,7 +75,9 @@ export const apiSync = {
     const version = apiConfig.match(/version\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? pkg.version ?? '0.0.0'
     const doc = await api.toOpenApi(router, { title, version })
     write(out, `${JSON.stringify(doc, null, 2)}\n`)
-    const table = router.toJSON()
+    const table = (router.toJSON() as Array<{ kind?: string }>).filter(
+      (r) => !r.kind || r.kind === 'http',
+    )
     const tablePath = existsSync(resolve(root(), 'app/api'))
       ? 'app/api/routes.gen.ts'
       : 'server/routes.gen.ts'
@@ -90,12 +95,20 @@ export const apiSync = {
 
 /** `kitr routes:list`: prints every route with its method, path and name. */
 export const routesList = {
-  meta: { name: 'routes:list', description: 'Print the API route table.' },
+  meta: { name: 'routes:list', description: 'Print the route table: pages, endpoints and sockets.' },
   args: { file: { type: 'string' } },
   async run({ args }: { args: { file?: string } }) {
     const { router } = await loadRoutes(args.file)
-    for (const r of router.toJSON() as Array<{ method: string; path: string; name: string }>)
-      console.log(`  ${r.method.padEnd(7)} ${r.path.padEnd(40)} ${r.name}`)
+    for (const r of router.toJSON() as Array<{
+      kind?: string
+      method?: string
+      transport?: string
+      path: string
+      name: string
+    }>) {
+      const verb = r.method ?? (r.transport === 'sse' ? 'SSE' : (r.kind ?? '').toUpperCase())
+      console.log(`  ${verb.padEnd(7)} ${r.path.padEnd(40)} ${r.name}`)
+    }
   },
 }
 

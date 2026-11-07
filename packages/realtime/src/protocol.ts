@@ -45,8 +45,22 @@ export interface ChannelDefinition<
   events: TEvents
   /** Server side: may this connection subscribe? `ctx` is what `authorize` on the server returned. */
   authorize?: (params: TParams, ctx: unknown) => boolean | Promise<boolean>
-  /** Server side: handle a client-sent message on this channel. */
-  onMessage?: (event: string, data: unknown, params: TParams, ctx: unknown) => void | Promise<void>
+  /**
+   * Server side: handle a client-sent message on this channel. `realtime` is the server that
+   * received it, to emit back: `realtime.use(channel, params).emit('typing', data)`.
+   */
+  onMessage?: (
+    event: string,
+    data: unknown,
+    params: TParams,
+    ctx: unknown,
+    realtime: RealtimeEmitter,
+  ) => void | Promise<void>
+}
+
+/** The least every realtime server (WebSocket, SSE, Socket.IO) offers a channel's `onMessage`. */
+export interface RealtimeEmitter {
+  use(channel: ChannelDefinition<any, any>, params: any): { emit(event: any, data?: any): void }
 }
 
 /** The payload type of one channel event, inferred from its `schema` or `effects` annotation. */

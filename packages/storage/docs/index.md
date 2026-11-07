@@ -286,17 +286,17 @@ export function Sidebar({ children }: { children: ReactNode }) {
 
 On the server there is no `localStorage`. `get()` returns the default and `set()` does nothing, so the same module imports safely on both sides. `useStorage` renders the default on the server **and** on the first browser render, then switches to the stored value right after hydration:
 
+```ts
+// app/routes.ts
+r.page('/orders', { lazy: () => import('./pages/orders') })
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { useStorage } from 'kitr/storage/react'
 import { ordersPageSize } from '#app/storage'
 
-export const Route = createFileRoute('/orders')({
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const [pageSize, setPageSize] = useStorage(ordersPageSize)
   return (
     <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
@@ -410,28 +410,40 @@ window.addEventListener('vendor:consent-saved', () => notifyCookiesChanged())
 
 During server rendering there is no `document.cookie`, so `useCookie` needs the request's `Cookie` header. Wrap the tree once in `<CookieHeader>` in the root route. In a [TanStack Start](https://tanstack.com/start/latest) app, read the header in a server function and pass it down from the loader:
 
+```ts
+// app/routes.ts
+import { head, readCookieHeader, RootDocument } from './document'
+
+r.root({ head, loader: () => readCookieHeader(), component: RootDocument })
+```
+
 ```tsx
-// app/routes/__root.tsx
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+// app/document.tsx
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
+import { getRouteApi, HeadContent, Outlet, Scripts } from 'kitr/router'
 import { CookieHeader } from 'kitr/storage/react'
 
-const readCookieHeader = createServerFn({ method: 'GET' }).handler(() =>
+export const readCookieHeader = createServerFn({ method: 'GET' }).handler(() =>
   getRequest().headers.get('cookie'),
 )
 
-export const Route = createRootRoute({
-  loader: () => readCookieHeader(),
-  component: RootComponent,
-})
+const root = getRouteApi('__root__')
 
-function RootComponent() {
-  const cookieHeader = Route.useLoaderData()
+export function RootDocument() {
+  const cookieHeader = root.useLoaderData()
   return (
-    <CookieHeader value={cookieHeader}>
-      <Outlet />
-    </CookieHeader>
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <CookieHeader value={cookieHeader}>
+          <Outlet />
+        </CookieHeader>
+        <Scripts />
+      </body>
+    </html>
   )
 }
 ```
@@ -441,7 +453,7 @@ With the wrapper, `<LocaleSwitch />` renders `Deutsch` in the first HTML for Ada
 When you only need one cookie's value in a loader, skip the wrapper and read it from the headers directly. `get()` accepts a `Headers` object, a raw `Cookie` header string, or anything with a `cookie` field:
 
 ```ts
-// app/routes/orders.tsx
+// app/pages/orders.tsx
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { localeCookie } from '#app/storage'

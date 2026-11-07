@@ -126,23 +126,27 @@ Render `<AccountMenu />` in your layout. Before sign-in it shows "Sign in"; afte
 
 Call `auth.signIn(credentials)` with whatever your adapter expects. It resolves with the new session and throws when the credentials are wrong:
 
-```tsx
-// app/routes/sign-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { useAuth } from 'kitr/auth'
-import { useNavigate } from 'kitr/router'
-import { type FormEvent, useState } from 'react'
-import type { User } from '#app/abilities'
-
-export const Route = createFileRoute('/sign-in')({
+```ts
+// app/routes.ts
+r.page('/sign-in', {
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
-  component: SignInPage,
+  lazy: () => import('./pages/sign-in'),
 })
+```
 
-function SignInPage() {
-  const { redirect } = Route.useSearch()
+```tsx
+// app/pages/sign-in.tsx
+import { useAuth } from 'kitr/auth'
+import { getRouteApi, useNavigate } from 'kitr/router'
+import { type FormEvent, useState } from 'react'
+import type { User } from '#app/abilities'
+
+const route = getRouteApi('/sign-in')
+
+export default function SignInPage() {
+  const { redirect } = route.useSearch()
   const navigate = useNavigate()
   const auth = useAuth<User, { email: string; password: string }>()
   const [error, setError] = useState<string | null>(null)
@@ -443,11 +447,11 @@ import type { Session } from 'kitr/auth'
 import { createKitrRouter } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
   return createKitrRouter({
-    routeTree,
+    routes,
     app,
     context: {
       // A live getter, so requireAuth() sees the session the auth provider restores during boot.
@@ -474,36 +478,32 @@ declare module '@kitr/router' {
 
 Then guard a layout route. Every page under `_app` needs a signed-in user:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { requireAuth } from 'kitr/router'
 
-export const Route = createFileRoute('/_app')({
+r.layout('_app', {
   beforeLoad: requireAuth(),
-  component: () => <Outlet />,
-})
+}, (app) => app.page('/projects', { lazy: () => import('./pages/projects') }))
 ```
 
 An anonymous visitor to `/projects` goes to `/sign-in`, with the `redirect` search parameter set to `/projects`. The sign-in page above sends them back after they sign in. `requireAuth({ to: '/login', redirectParam: 'next' })` changes the path and the parameter name; `redirectParam: false` leaves the parameter off.
 
 The router may copy its context object when it is created, which reads the getter once. When the session changes after the router exists, read it from the container in the guard so it is always current:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import type { Session } from 'kitr/auth'
 import { requireAuth } from 'kitr/router'
 import type { User } from '#app/abilities'
 
-export const Route = createFileRoute('/_app')({
+r.layout('_app', {
   beforeLoad: async ({ context, location }) => {
     await context.app.boot()
     const session = context.app.container.use('auth').session as Session<User>
     return requireAuth()({ context: { session }, location })
   },
-  component: () => <Outlet />,
-})
+}, (app) => app.page('/projects', { lazy: () => import('./pages/projects') }))
 ```
 
 The `saas` kit uses this form. With tokens in `localStorage` the server can't see the session, so run guarded routes on the client only, for example with `ssrRoute(false)` from [SEO](/packages/seo).
@@ -590,15 +590,19 @@ Grace sees "Edit project" on her own projects only; Ada sees both buttons everyw
 
 `can()` from [Router](/packages/router) blocks a page for users without an ability. It reads `context.session` like `requireAuth()`:
 
-```tsx
-// app/routes/_app/invoices.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { can } from 'kitr/router'
 
-export const Route = createFileRoute('/_app/invoices')({
+app.page('/invoices', {
   beforeLoad: can('invoices.view'),
-  component: () => <h1>Invoices</h1>,
+  lazy: () => import('./pages/invoices'),
 })
+```
+
+```tsx
+// app/pages/invoices.tsx
+export default () => <h1>Invoices</h1>
 ```
 
 Grace gets the route's error screen with a `FORBIDDEN` error, `Missing permission "invoices.view"`. Pass `{ to: '/' }` to redirect instead, or `{ subject }` to check against one record. Don't confuse it with `can` from `kitr/auth/server`, which is API middleware.

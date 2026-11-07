@@ -39,6 +39,10 @@
       "types": "./dist/router.d.ts",
       "default": "./dist/router.js"
     },
+    "./router/routes": {
+      "types": "./dist/router-routes.d.ts",
+      "default": "./dist/router-routes.js"
+    },
     "./query": {
       "types": "./dist/query.d.ts",
       "default": "./dist/query.js"
@@ -87,6 +91,10 @@
     "./api": {
       "types": "./dist/api.d.ts",
       "default": "./dist/api.js"
+    },
+    "./api/routes": {
+      "types": "./dist/api-routes.d.ts",
+      "default": "./dist/api-routes.js"
     },
     "./api/client": {
       "types": "./dist/api-client.d.ts",
@@ -287,6 +295,10 @@
     "./realtime": {
       "types": "./dist/realtime.d.ts",
       "default": "./dist/realtime.js"
+    },
+    "./realtime/routes": {
+      "types": "./dist/realtime-routes.d.ts",
+      "default": "./dist/realtime-routes.js"
     },
     "./realtime/client": {
       "types": "./dist/realtime-client.d.ts",

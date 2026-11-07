@@ -22,9 +22,9 @@ The plan folded the HTTP client into the data layer. Keeping ky separate means a
 
 The one place a re-export is shadowed. `kitr/forms` exports kitr's `<Form>` (submits through `handleSubmit`, maps server `fieldErrors` with `applyServerErrors`, exposes `useFormStatus`), and React Hook Form's own `Form` is available as `RhfForm`. Every other name from React Hook Form is unchanged.
 
-## Route files import `createFileRoute` from `@tanstack/react-router`
+## Pages are links on a table, not files
 
-TanStack's route generator rewrites the `createFileRoute` import in every route file and only recognises `@tanstack/react-router` as its source. Routing it through `kitr/router` produced duplicate imports on build. Route files import route creators from `@tanstack/react-router` and everything else from `kitr/router`; `kitr doctor` allows exactly that set of names.
+TanStack Router's own convention is a file per route under `app/routes`, with a generated `routeTree.gen.ts`. kitr puts pages on the core route table instead: `.root`, `.page` and `.layout` from `kitr/router/routes`, in `app/routes.ts`, compiled to a TanStack tree by `createKitrRouter({ routes })`. One table shape then serves pages, endpoints and sockets, a server-only app never sees React, and `kitr add` can maintain the list of extensions with a codemod. Everything after the table is TanStack's: `Link`, loaders, `getRouteApi`, search params. File routes still work for a project that has `app/routes/__root.tsx`; in that case route files import `createFileRoute` from `@tanstack/react-router`, because the generator only recognises that source, and `kitr doctor` allows exactly that set of names.
 
 ## TanStack Table v9
 

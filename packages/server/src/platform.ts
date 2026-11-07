@@ -23,8 +23,8 @@ const RUNTIMES: ServerRuntime[] = ['node', 'bun', 'deno', 'workers']
  *   platforms: { api: server({ runtime: 'node', port: 3001 }) }
  *
  * `kitr dev api` watches `server/main.ts`, `kitr build api` typechecks (or bundles for workers),
- * `kitr start api` runs it. With a web platform in `ssr` mode the same server also answers
- * `/api/*` inside the Start process through `app/routes/api.$.ts`.
+ * `kitr start api` runs it. With a web platform the same server also answers its own paths
+ * inside the Start process through `app/server.ts`.
  */
 export const server = definePlatform<ServerPlatformOptions>(
   {
@@ -79,46 +79,34 @@ export const server = definePlatform<ServerPlatformOptions>(
       ...(options.runtime === 'workers' ? [{ name: 'wrangler', dev: true }] : []),
     ],
     scaffold(ctx) {
-      const packages = rcPackages(ctx)
       const pkg = readPackage(ctx)
-      const api = packages.includes('@kitr/api')
-      const react = 'react' in { ...pkg.dependencies } || packages.includes('@kitr/react')
+      const react = 'react' in { ...pkg.dependencies } || rcPackages(ctx).includes('@kitr/react')
       const entryName = options.entry.split('/').pop()
-      const realtime = packages.includes('@kitr/realtime') && ctx.exists('server/realtime.ts')
-      const realtimePath = realtime
-        ? (ctx.read('config/realtime.ts').match(/path\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? '/ws')
-        : '/ws'
-      const attach = realtime
-        ? `// WebSocket upgrades on ${realtimePath}, next to the routes.\nrealtime.attach(server, '${realtimePath}')\n`
-        : ''
+      const table = 'server/routes.ts'
+      // The server table always exists, so every package that adds endpoints or sockets extends
+      // the same file and the entry never changes shape.
+      if (!ctx.exists(table))
+        ctx.write(
+          table,
+          `import { defineRoutes } from 'kitr/app'
+
+/** Endpoints and sockets of this app. \`kitr add api\` / \`kitr add realtime\` add their methods here. */
+export const routes = defineRoutes([], (r) => r)
+
+export type ServerRoutes = typeof routes.$types
+`,
+        )
+      const routesSpec = react ? '#server/routes' : relativeImport(options.entry, table)
       ctx.write(
         options.entry,
-        react
-          ? `${api ? "import { mountRoutes } from 'kitr/api'\n" : ''}import { createServer } from 'kitr/server'
+        `import { createServer } from 'kitr/server'
+import { routes } from '${routesSpec}'
 import { config } from '../config'
 import rc from '../kitrrc'
-${realtime ? "import { realtime } from '#server/realtime'\n" : ''}${api ? "import { routes } from '#server/routes'\n" : ''}
-/** The kitr server: providers from kitrrc.ts, config from config/. What \`kitr dev ${ctx.name}\` runs, what the web platform's /api route delegates to, what tests call. */
-export const server = createServer({ providers: rc.providers, config })
-${api ? 'mountRoutes(server, routes)\n' : ''}${attach}
-/** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
-export default server
 
-const isMain = (import.meta as { main?: boolean }).main ?? process.argv[1]?.endsWith(${JSON.stringify(entryName)})
-if (isMain) {
-  server.listen({
-    port: Number(process.env.PORT) || ${options.port},
-    host: process.env.HOST${options.host ? ` ?? ${JSON.stringify(options.host)}` : ''},
-  })
-}
-`
-          : `import { createServer } from 'kitr/server'
-${api ? "import { mountRoutes } from 'kitr/api'\n" : ''}import { config } from '../config'
-import rc from '../kitrrc'
-${realtime ? "import { realtime } from './realtime'\n" : ''}${api ? "import { routes } from './routes'\n" : ''}
-/** The kitr server: providers from kitrrc.ts, config from config/. Tests import \`server\` and call \`server.fetch()\`. */
-export const server = createServer({ providers: rc.providers, config })
-${api ? 'mountRoutes(server, routes)\n' : ''}${attach}
+/** The kitr server: providers from kitrrc.ts, config from config/, routes from ${table}. What \`kitr dev ${ctx.name}\` runs${react ? ", what app/server.ts hands the app's own requests to" : ''}, what tests call with \`server.fetch(new Request(...))\`. */
+export const server = createServer({ providers: rc.providers, config, routes })
+
 /** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
 export default server
 
@@ -131,37 +119,19 @@ if (isMain) {
 }
 `,
       )
-      if (api && !ctx.exists('server/routes.ts'))
+      // A web platform in the same app answers the server's paths in the Start process, in dev
+      // and in ssr builds: Start's server entry asks the kitr server first.
+      if (react && ctx.platforms.some((p) => p.type === 'web'))
         ctx.write(
-          'server/routes.ts',
-          `import { defineRoutes } from 'kitr/api'
-
-// Same-origin by default. To let another site call this API, add cors({ origin: ['https://app.example'] })
-// from kitr/api to the group's middleware, or set cors in config/shield.ts.
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) => {
-    api.get('/health', () => ({ ok: true }), { name: 'health' })
-    // api.resource('projects', () => import('./controllers/projects_controller'))
-  }),
-)
-
-/** Pass to createApiClient<AppRoutes>() on the client. */
-export type AppRoutes = typeof routes.$types
-`,
-        )
-      // A web platform in the same app answers /api/* through this server, in dev and in ssr builds.
-      if (react && ctx.platforms.some((p) => p.type === 'web') && ctx.exists('app/routes'))
-        ctx.write(
-          'app/routes/api.$.ts',
-          `import { createFileRoute } from '@tanstack/react-router'
+          'app/server.ts',
+          `import handler, { createServerEntry } from '@tanstack/react-start/server-entry'
 import { server } from '#server/main'
 
-/** Every /api/* request goes to the kitr server (server/main.ts), in the Start process. */
-export const Route = createFileRoute('/api/$')({
-  server: {
-    handlers: {
-      ANY: ({ request }) => server.fetch(request),
-    },
+/** Requests for paths the kitr server has routes for (endpoints, sockets, /healthz) go to it; pages go to Start. */
+export default createServerEntry({
+  fetch(request, options) {
+    if (server.handles(request)) return server.fetch(request)
+    return handler.fetch(request, options)
   },
 })
 `,
@@ -255,10 +225,21 @@ compatibility_flags = ["nodejs_compat"]
       return out
     },
     agents: `- \`kitr dev <name>\` runs ${options.entry} with ${options.runtime === 'node' ? 'tsx watch' : options.runtime}; \`kitr start <name>\` runs the production server; tests import \`server\` from it and call \`server.fetch(new Request(...))\`, no port needed.
-- Routes live in \`server/routes.ts\` (\`defineRoutes\`), controllers in \`server/controllers/\`. Config comes from \`config/server.ts\`; the port comes from the platform options in kitrrc.ts, \`PORT\` or \`kitr dev <name> --port\`.
+- Endpoints and sockets live in \`server/routes.ts\` (\`defineRoutes([api, realtime], ...)\`), passed to \`createServer({ routes })\`; controllers in \`server/controllers/\`. Config comes from \`config/server.ts\`; the port comes from the platform options in kitrrc.ts, \`PORT\` or \`kitr dev <name> --port\`.
 - Never import React or browser APIs under \`server/\`; this entry must stay runnable without a DOM.`,
   }),
 )
+
+/** `server/main.ts` importing `server/routes.ts` → `./routes`; across directories → `../x/routes`. */
+function relativeImport(from: string, to: string): string {
+  const fromParts = from.split('/').slice(0, -1)
+  const toParts = to.replace(/\.tsx?$/, '').split('/')
+  let i = 0
+  while (i < fromParts.length && i < toParts.length - 1 && fromParts[i] === toParts[i]) i++
+  const up = fromParts.length - i
+  const rest = toParts.slice(i).join('/')
+  return up === 0 ? `./${rest}` : `${'../'.repeat(up)}${rest}`
+}
 
 function readPackage(ctx: PlatformContext): Record<string, any> {
   try {

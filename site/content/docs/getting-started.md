@@ -43,21 +43,25 @@ cd my-app
 npm run dev
 ```
 
-Open the URL it prints. Edit `app/routes/index.tsx` and the page updates as you save.
+Open the URL it prints. Edit `app/pages/home.tsx` and the page updates as you save.
 
 ## 4. Add a page
 
-Every file in `app/routes` is a page. Create `app/routes/projects.tsx`:
+Pages are links on the route table in `app/routes.ts`. Add one, pointing at a component file:
 
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/projects')({
-  component: () => <h1>Projects</h1>,
-})
+```ts
+// app/routes.ts
+r.page('/projects', { lazy: () => import('./pages/projects') })
 ```
 
-It's live at `/projects`. Or let the CLI write it: `kitr make:route projects`.
+```tsx
+// app/pages/projects.tsx
+export default function ProjectsPage() {
+  return <h1>Projects</h1>
+}
+```
+
+It's live at `/projects`, and `<Link to="/projects">` is type-checked everywhere. Or let the CLI write both: `kitr make:page projects`.
 
 ## 5. Add a package
 

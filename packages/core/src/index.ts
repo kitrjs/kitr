@@ -86,6 +86,28 @@ export type { KitrPlatforms, PlatformName, PlatformTypeOf } from './platforms'
 export { defineProvider, type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 export { defaultDirectories, defineKitrConfig, type KitrRc } from './rc'
 export {
+  type AnyRouteTable,
+  createRouteTable,
+  defineRouteExtension,
+  defineRoutes,
+  type ExtensionKey,
+  type GroupChildMap,
+  type GroupOptions,
+  type Grouped,
+  isRouteTable,
+  type JoinPaths,
+  joinPath,
+  type KitrRouter,
+  type RouteEntry,
+  type RouteExtension,
+  type RouteGroupChild,
+  type RouteMap,
+  RouteTable,
+  type RouteTableBase,
+  type RouterExtensions,
+  type RouteType,
+} from './routes'
+export {
   type AnySchema,
   anySchema,
   type InferInput,

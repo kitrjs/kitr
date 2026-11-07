@@ -144,7 +144,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
           set.add(peer)
           send(peer, { t: 'ok', id: msg.id, p: params ?? null })
         } else if (msg.t === 'msg') {
-          await channel.onMessage?.(msg.ev, msg.d, params, state.ctx)
+          await channel.onMessage?.(msg.ev, msg.d, params, state.ctx, socketServer)
         }
       } catch (error) {
         fail(peer, error, 'id' in msg ? msg.id : undefined)

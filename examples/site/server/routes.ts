@@ -1,14 +1,16 @@
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import HealthController from '#server/controllers/health_controller'
 import NewsletterController from '#server/controllers/newsletter_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+/** Endpoints of this app, served by `createServer({ routes })` in server/main.ts. */
+export const routes = defineRoutes([api], (root) =>
+  root.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .post('/newsletter', [NewsletterController, 'subscribe'], { name: 'newsletter.subscribe' }),
   ),
 )
 
-/** Pass to createApiClient<AppRoutes>() on the client. */
-export type AppRoutes = typeof routes.$types
+/** Pass to createApiClient<ServerRoutes>() on the client. */
+export type ServerRoutes = typeof routes.$types

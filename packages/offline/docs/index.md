@@ -101,9 +101,13 @@ export default defineConfig({
 
 Nothing changes in your queries. A query that loaded once is saved, and the next time the app starts it is in the cache before the page renders:
 
+```ts
+// app/routes.ts
+r.page('/orders', { lazy: () => import('./pages/orders') })
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { defineQuery, useQuery } from 'kitr/query'
 
 interface Order {
@@ -120,11 +124,7 @@ export const ordersQuery = defineQuery({
   },
 })
 
-export const Route = createFileRoute('/orders')({
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const { data: orders, isPending, fetchStatus } = useQuery(ordersQuery.options())
   if (isPending) return <p>Loading orders…</p>
   return (

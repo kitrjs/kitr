@@ -66,8 +66,11 @@ export const tasksChannel = defineChannel<{ board: string }>({
 [SEO](/packages/seo) controls which pages render on the server and what goes in their `<head>`:
 
 ```ts
-export const Route = createFileRoute('/tasks/$id')({
-  head: ({ loaderData }) => seo({ title: loaderData.title, description: loaderData.summary }),
+// app/routes.ts
+r.page('/tasks/$id', {
+  loader: ({ params }) => loadTask(params.id),
+  head: ({ loaderData }) => seo({ title: loaderData?.title, description: loaderData?.summary }),
+  lazy: () => import('./pages/task'),
 })
 ```
 

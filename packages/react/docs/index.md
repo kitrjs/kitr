@@ -118,19 +118,23 @@ export function InvoiceCount() {
 
 Use it in any route:
 
-```tsx
-// app/routes/invoices.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { InvoiceCount } from '#app/features/invoices/invoice-count'
 
-export const Route = createFileRoute('/invoices')({
-  component: () => (
+r.page('/invoices', {
     <main>
       <h1>Invoices</h1>
       <InvoiceCount />
     </main>
   ),
+  lazy: () => import('./pages/invoices'),
 })
+```
+
+```tsx
+// app/pages/invoices.tsx
+export default () => (
 ```
 
 Open `/invoices` and the page shows `3 open invoices (theme: system)`. Both hooks are typed: `useService('http')` returns ky's `KyInstance` because [http](/packages/http) declares that binding, and `useConfig('theme')` returns `ThemeConfig` because [theme](/packages/theme) declares that config. A name no installed package declares returns `unknown`.
@@ -476,17 +480,22 @@ Don't add a second `<QueryClientProvider>` or `<ThemeProvider>` in your root com
 
 Loaders, `beforeLoad` guards and plain modules are not React components, so they cannot call hooks. In a route, read the app from the router context:
 
-```tsx
-// app/routes/teams/$team/invoices.tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/teams/$team/invoices')({
+```ts
+// app/routes.ts
+r.page('/teams/$team/invoices', {
   loader: ({ context, params }) => context.app.container.use('billing').openInvoices(params.team),
-  component: TeamInvoices,
+  lazy: () => import('./pages/teams/team/invoices'),
 })
+```
 
-function TeamInvoices() {
-  const invoices = Route.useLoaderData()
+```tsx
+// app/pages/teams/team/invoices.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/teams/$team/invoices')
+
+export default function TeamInvoices() {
+  const invoices = route.useLoaderData()
   return <p>{invoices.length} open invoices for this team</p>
 }
 ```

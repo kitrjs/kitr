@@ -10,16 +10,17 @@ A new app from the `app` kit looks like this. Folders appear as you add packages
 ```
 my-app/
 ├── app/
-│   ├── routes/            # one file per page
-│   │   ├── __root.tsx     # the layout around every page
-│   │   └── index.tsx      # the home page, at /
+│   ├── routes.ts          # the route table: every page, as .page('/path', { lazy })
+│   ├── document.tsx       # the HTML document around every page
+│   ├── pages/             # one component file per page
+│   │   ├── home.tsx       # the home page, at /
+│   │   └── about.tsx
 │   ├── features/          # code grouped by feature: queries, forms, components
 │   ├── components/ui/     # components copied in by `kitr ui add`; yours to edit
 │   ├── stores/            # app-wide state (kitr add state)
 │   ├── app.ts             # creates the app from kitrrc.ts and config/
 │   ├── env.ts             # environment variables, validated at startup
-│   ├── router.tsx         # creates the router
-│   └── routeTree.gen.ts   # generated from app/routes; never edit
+│   └── router.tsx         # creates the router from app/routes.ts
 ├── config/                # one file per package that has options
 ├── kitrrc.ts              # which packages are installed and wired
 ├── AGENTS.md              # conventions for coding assistants, kept up to date by kitr add
@@ -59,4 +60,4 @@ app/
 └── channels/           # realtime channels (kitr add realtime)
 ```
 
-A `server` app has no `app/routes` or React at all. See [A backend without React](/docs/pure-backend).
+A `server` app has no `app/routes.ts` or React at all; its endpoints live in `server/routes.ts`. See [A backend without React](/docs/pure-backend).

@@ -145,16 +145,16 @@ kitr build phone
 
 Show where the app runs on the home page:
 
+```ts
+// app/routes.ts
+r.page('/', { lazy: () => import('./pages/index') })
+```
+
 ```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/index.tsx
 import { usePlatform } from 'kitr/platform/react'
 
-export const Route = createFileRoute('/')({
-  component: OrdersHome,
-})
-
-function OrdersHome() {
+export default function OrdersHome() {
   const platform = usePlatform()
   return (
     <main>

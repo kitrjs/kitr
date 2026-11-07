@@ -53,8 +53,8 @@ export default defineConfig({
 | `start` | what the packages ask (`router` asks for it) | `false` keeps the plain TanStack Router plugin without Start; an object passes options to `tanstackStart()`. |
 | `plugins` | every declared plugin | `{ tailwind: false }` leaves out the plugin a package declares, by its short name. |
 | `router` | `{}` | Extra options for `@tanstack/router-plugin`. |
-| `routesDirectory` | `directories.routes` | Where the route files are. |
-| `generatedRouteTree` | `<app>/routeTree.gen.ts` | Where the route tree is written. |
+| `routesDirectory` | `directories.routes` | Where the route files are, for a project that still uses them. With the route table in `app/routes.ts` nothing is here and the plugin points Start at a stub in `.kitr/`. |
+| `generatedRouteTree` | `<app>/routeTree.gen.ts`, or `.kitr/routeTree.gen.ts` with the table | Where TanStack's generator writes its tree. Unused by a table project; `createKitrRouter({ routes })` builds the tree. |
 | `devtools` | on, except in production builds | `false` leaves every development-only provider out of this build too. |
 | `types` | `true` | Run `kitr types` on build start and on changes in dev. |
 
@@ -90,7 +90,7 @@ export const app = createApp({ providers, config, env })
 kitr dev site
 ```
 
-The browser opens `http://localhost:3000` with the routes under `app/routes`. `virtual:kitr/providers` is the `providers` list from `kitrrc.ts` as static imports, so every provider is in the bundle and tree-shakable, and `virtual:kitr/config` is every file under `config/` keyed by name: `config/query.ts` becomes `config.query`. Change `kitrrc.ts` and both modules reload without a restart.
+The browser opens `http://localhost:3000` with the pages from `app/routes.ts`. `virtual:kitr/providers` is the `providers` list from `kitrrc.ts` as static imports, so every provider is in the bundle and tree-shakable, and `virtual:kitr/config` is every file under `config/` keyed by name: `config/query.ts` becomes `config.query`. Change `kitrrc.ts` and both modules reload without a restart.
 
 ## Ask the build for something from a package
 
@@ -142,11 +142,11 @@ Running `vite` directly picks the first web platform. To build for another one w
 The `directories` block in `kitrrc.ts` names where the app lives, and the plugin turns each entry into an alias, so a move of `app/` to `src/` is one edit in `kitrrc.ts` rather than a search and replace. `tsconfig.json` carries the same paths for the editor:
 
 ```ts
-// app/routes/orders.tsx
+// app/pages/orders.tsx
 import { OrderList } from '#components/order-list'
 import { ordersQuery } from '#app/features/orders/queries'
 import { Orders } from '#kitr/actions'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 ```
 
 | Alias | Directory |
@@ -208,7 +208,7 @@ export default defineConfig({
 })
 ```
 
-`router` goes to `@tanstack/router-plugin`, which generates `app/routeTree.gen.ts`; `start` to `tanstackStart()`. See the [TanStack Start configuration](https://tanstack.com/start/latest/docs/framework/react/guide/configuration) for the full list.
+`router` goes to `@tanstack/router-plugin`; `start` to `tanstackStart()`. With the route table, the generator only sees a stub root in `.kitr/routes/` (written by the plugin, safe to delete) and the real tree comes from `app/routes.ts`; a project with `app/routes/__root.tsx` keeps file routes and `app/routeTree.gen.ts`. See the [TanStack Start configuration](https://tanstack.com/start/latest/docs/framework/react/guide/configuration) for the full list.
 
 ## Keep generated types current
 

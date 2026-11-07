@@ -169,7 +169,7 @@ export function createSseServer(options: SseServerOptions): SseServer {
         set.add(conn)
         send(conn, { t: 'ok', id: msg.id })
       } else if (msg.t === 'msg') {
-        await channel.onMessage?.(msg.ev, msg.d, params, conn.ctx)
+        await channel.onMessage?.(msg.ev, msg.d, params, conn.ctx, sse)
       }
     } catch (error) {
       fail(conn, error, msgId)

@@ -30,4 +30,4 @@ Run it with `kitr dev` (tsx watch, or `bun --watch`, `deno run --watch`, `wrangl
 
 ## Mixing
 
-A kitr React app that later needs its own backend keeps the same packages: `kitr add server api` adds the `api` platform, `server/main.ts` and `app/routes/api.$.ts`, which mounts the same router inside TanStack Start, so `kitr dev` runs both and `kitr dev site` runs just the UI. A standalone backend plus a `--kit app` frontend is the other valid shape; `kitr doctor` keeps React out of the backend either way.
+A kitr React app that later needs its own backend keeps the same packages: `kitr add server api` adds the `api` platform, `server/main.ts`, `server/routes.ts` and `app/server.ts`, Start's server entry, which hands the table's paths to the same server inside TanStack Start, so `kitr dev` runs both and `kitr dev site` runs just the UI. A standalone backend plus a `--kit app` frontend is the other valid shape; `kitr doctor` keeps React out of the backend either way.

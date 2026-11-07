@@ -285,18 +285,24 @@ export function NotificationRouter() {
 ```
 
 ```tsx
-// app/routes/__root.tsx
-import { createRootRoute, Outlet } from 'kitr/router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { NotificationRouter } from '#app/components/notification-router'
 
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <NotificationRouter />
-      <Outlet />
-    </>
-  ),
-})
+export function RootDocument() {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <NotificationRouter />
+        <Outlet />
+        <Scripts />
+      </body>
+    </html>
+  )
+}
 ```
 
 Ada clicks "Approve invoice inv_1042", the browser focuses the Acme tab, closes the notification and the app moves to `/invoices/inv_1042`. Wrapping the handler in `useCallback` keeps the hook from re-subscribing on every render.

@@ -4,6 +4,9 @@ import { builders, generateCode, parseModule } from 'magicast'
 import type { ProjectContext } from './context'
 import { versionOf } from './versions'
 
+/** Which route table a package extends: pages (`app`) or endpoints and sockets (`server`). */
+export type RouteTableSide = 'app' | 'server'
+
 /**
  * The codemod API every package recipe uses. Only files whose shape kitr owns
  * are edited: kitrrc.ts, config/*, vite.config.ts, package.json, .env.example, AGENTS.md.
@@ -145,11 +148,14 @@ export class Codemods {
     const full = this.ctx.path(file)
     if (!existsSync(full) || this.ctx.dryRun) return
     const src = readFileSync(full, 'utf8')
-    if (src.includes(`'${to}'`)) return
+    if (src.includes(`'${to}'`) || src.includes(`'${to}?url'`)) return
+    // `import css from 'x?url'` (the document's stylesheet link) is swapped in place too.
     const next =
       from && src.includes(`import '${from}'`)
         ? src.replace(`import '${from}'`, `import '${to}'`)
-        : src.replace(/^(import[^\n]*\n)(?!import)/m, `$1import '${to}'\n`)
+        : from && src.includes(`'${from}?url'`)
+          ? src.replace(`'${from}?url'`, `'${to}?url'`)
+          : src.replace(/^(import[^\n]*\n)(?!import)/m, `$1import '${to}'\n`)
     writeFileSync(full, next)
     this.ctx.touched.add(file)
   }
@@ -484,25 +490,36 @@ export class Codemods {
   }
 
   /** The route table file: `directories.routeTable`, default `app/routes.ts`. */
-  routeTablePath(): string {
+  /**
+   * The route table a package extends. Pages live in the app table (`directories.routeTable`,
+   * default `app/routes.ts`); endpoints and sockets in the server table (`directories.serverRouteTable`,
+   * default `server/routes.ts`) so the server bundle never imports React. A server-only project
+   * has one table, the server's.
+   */
+  routeTablePath(table: RouteTableSide = 'app'): string {
     const dirs = this.ctx.readRc().directories
+    if (table === 'server' || this.ctx.isServerOnly())
+      return dirs.serverRouteTable ?? `${dirs.server ?? 'server'}/routes.ts`
     return dirs.routeTable ?? `${dirs.app ?? 'app'}/routes.ts`
   }
 
   /**
-   * Add a route-table extension: `import ext from '<spec>'` and `ext` in the first argument of
+   * Add a route-table extension: `import <name> from '<spec>'` and `<name>` in the first argument of
    * `defineRoutes([...], ...)`. Creates the file with an empty table when missing. Idempotent.
    */
-  extendRoutes(spec: string) {
-    const file = this.routeTablePath()
+  extendRoutes(spec: string, options: { table?: RouteTableSide } = {}) {
+    const file = this.routeTablePath(options.table)
     const full = this.ctx.path(file)
     if (!existsSync(full)) {
+      const what = options.table === 'server' ? 'endpoints and sockets' : 'routes'
       this.ctx.write(
         file,
-        `import { defineRoutes } from 'kitr/app'\n\n/** The route table. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type AppRoutes = typeof routes.$types\n`,
+        `import { defineRoutes } from 'kitr/app'\n\n/** The ${what} of this app. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type ${options.table === 'server' ? 'ServerRoutes' : 'AppRoutes'} = typeof routes.$types\n`,
       )
     }
     if (this.ctx.dryRun) return
+    // Whatever extends the server table needs the server to serve it.
+    if (options.table === 'server' || this.ctx.isServerOnly()) this.mountServerRoutes()
     const src = readFileSync(full, 'utf8')
     if (src.includes(`'${spec}'`) || src.includes(`"${spec}"`)) return
     const local = extensionLocalName(spec)
@@ -512,12 +529,12 @@ export class Codemods {
     mod.imports.$prepend({ from: spec, imported: 'default', local })
     if (!call.$args.length || !Array.isArray(call.$args[0])) call.$args.unshift([])
     call.$args[0].push(builders.raw(local))
-    writeFileSync(full, generateCode(mod, { quote: 'single' }).code)
+    writeFileSync(full, emit(mod))
     this.ctx.touched.add(file)
   }
 
-  removeRoutesExtension(spec: string) {
-    const file = this.routeTablePath()
+  removeRoutesExtension(spec: string, options: { table?: RouteTableSide } = {}) {
+    const file = this.routeTablePath(options.table)
     const full = this.ctx.path(file)
     if (!existsSync(full) || this.ctx.dryRun) return
     const src = readFileSync(full, 'utf8')
@@ -534,8 +551,86 @@ export class Codemods {
         if (generateCode(list[i]).code.trim() === local) list.splice(i, 1)
     }
     delete (mod.imports as Record<string, unknown>)[local]
-    writeFileSync(full, generateCode(mod, { quote: 'single' }).code)
+    writeFileSync(full, emit(mod))
     this.ctx.touched.add(file)
+  }
+
+  /**
+   * Append a link to the method chain of a route table: `.page(...)`, `.ws(...)`, anything the
+   * table's extensions provide. `imports` are added when missing. Returns false when the table is
+   * not a chain (`(r) => { ... }`), in which case the caller tells the user to add the line by hand.
+   * Idempotent on `options.skipIf` (a pattern already present means the link is there).
+   */
+  appendRoute(
+    link: string,
+    options: {
+      table?: RouteTableSide
+      imports?: Array<{ from: string; local: string; imported?: string }>
+      skipIf?: RegExp
+    } = {},
+  ): boolean {
+    const file = this.routeTablePath(options.table)
+    const full = this.ctx.path(file)
+    if (!existsSync(full)) this.extendRoutes(options.table === 'server' ? 'kitr/api/routes' : 'kitr/router/routes', options)
+    if (this.ctx.dryRun) return true
+    let src = readFileSync(full, 'utf8')
+    if (options.skipIf?.test(src)) return true
+    const mod = parseModule(src)
+    const call = findDefineRoutes(mod)
+    const define = call?.$ast?.arguments?.[1]
+    const body = define?.body
+    if (!body || body.type === 'BlockStatement' || typeof body.end !== 'number') return false
+    let added = false
+    for (const spec of options.imports ?? []) {
+      if (src.includes(`'${spec.from}'`) || src.includes(`"${spec.from}"`)) continue
+      mod.imports.$append({ from: spec.from, imported: spec.imported ?? spec.local, local: spec.local })
+      added = true
+    }
+    if (added) src = emit(mod)
+    // Imports changed the offsets: find the chain again in the new source.
+    const again = findDefineRoutes(parseModule(src))?.$ast?.arguments?.[1]
+    const chainEnd: number = again?.body?.end ?? body.end
+    const chainStart: number = again?.start ?? define.start ?? 0
+    // `(r) => r` (the empty table) becomes `(r) => r.page(...)`; a chain gets one more link.
+    const indent = /\n( *)\./.exec(src.slice(chainStart, chainEnd))?.[1] ?? '    '
+    const next = `${src.slice(0, chainEnd)}\n${indent}${link}${src.slice(chainEnd)}`
+    writeFileSync(full, next)
+    this.ctx.touched.add(file)
+    return true
+  }
+
+  /** Append `.page('<path>', { lazy: () => import('<module>') })` to the app table. */
+  addPage(path: string, module: string): boolean {
+    return this.appendRoute(`.page('${path}', { lazy: () => import('${module}') })`, {
+      table: 'app',
+      skipIf: new RegExp(`\\.page\\(\\s*['"]${escapeRegExp(path)}['"]`),
+    })
+  }
+
+  /**
+   * Pass the server table to `createServer({ ... })` in the server entry, importing it. Called
+   * whenever a package extends the server table, so a server/main.ts written before the table
+   * existed serves it too. Idempotent; skipped when there is no server entry.
+   */
+  mountServerRoutes() {
+    const file = this.serverEntry()
+    const full = this.ctx.path(file)
+    if (!existsSync(full)) return
+    const main = readFileSync(full, 'utf8')
+    const call = /createServer\(\{([^}]*)\}\)/.exec(main)
+    if (!call || /\broutes\b/.test(call[1]!)) return
+    const table = this.routeTablePath('server')
+    const spec = relativeImport(file, table)
+    let next = main.replace(call[0], `createServer({${call[1]!.replace(/\s*$/, '')}, routes })`)
+    if (!next.includes(`'${spec}'`) && !next.includes('#server/routes'))
+      next = next.replace(
+        /(import \{ createServer \} from 'kitr\/server'\n)/,
+        `$1import { routes } from '${spec}'\n`,
+      )
+    if (next === main) return
+    if (!this.ctx.dryRun) writeFileSync(full, next)
+    this.ctx.touched.add(file)
+    this.ctx.log.step(`edit ${file}`)
   }
 
   /** Write queued deps to package.json and run the package manager. */
@@ -589,7 +684,13 @@ export class Codemods {
 /** `@kitr/api/routes` → `apiRoutes`; `@acme/thing/routes` → `thingRoutes`. */
 export function extensionLocalName(spec: string): string {
   const parts = spec.split('/').filter((p) => p && !p.startsWith('@'))
-  const base = parts.length > 1 ? parts.slice(-2).join('-') : (parts[0] ?? 'ext')
+  // `kitr/api/routes` is the api package's extension: `api` in `defineRoutes([api], ...)`.
+  const base =
+    parts.length > 1 && parts.at(-1) === 'routes'
+      ? parts.at(-2)!
+      : parts.length > 1
+        ? parts.slice(-2).join('-')
+        : (parts[0] ?? 'ext')
   const camel = base.replace(/[^a-zA-Z0-9]+(.)?/g, (_, c: string | undefined) =>
     c ? c.toUpperCase() : '',
   )
@@ -602,6 +703,24 @@ function findDefineRoutes(mod: any): any | undefined {
     v && v.$type === 'function-call' && generateCode(v).code.startsWith('defineRoutes(')
   for (const value of Object.values(mod.exports ?? {})) if (isCall(value)) return value
   return undefined
+}
+
+/** magicast output in the project's style: single quotes, no semicolons on imports, no blank line before the one it added. */
+function emit(mod: any): string {
+  return generateCode(mod, { quote: 'single' })
+    .code.replace(/^(import [^\n]*);$/gm, '$1')
+    .replace(/\n\n(import [^\n]*\n)(?=\n)/g, '\n$1')
+}
+
+/** `server/main.ts` importing `server/routes.ts` → `./routes`; across directories → `../x/routes`. */
+export function relativeImport(from: string, to: string): string {
+  const fromParts = from.split('/').slice(0, -1)
+  const toParts = to.replace(/\.tsx?$/, '').split('/')
+  let i = 0
+  while (i < fromParts.length && i < toParts.length - 1 && fromParts[i] === toParts[i]) i++
+  const up = fromParts.length - i
+  const rest = toParts.slice(i).join('/')
+  return up === 0 ? `./${rest}` : `${'../'.repeat(up)}${rest}`
 }
 
 function hasImportOf(src: string, spec: string) {

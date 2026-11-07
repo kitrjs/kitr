@@ -653,21 +653,21 @@ The router renders after a tick, so use `findBy...` queries, which wait, not `ge
 
 ## Render a whole page
 
-To test a page with its loader, its search params and its layout, build the real router from your route tree with `createKitrRouter` and render it. The router wraps the tree in the app's providers itself, so use Testing Library's plain `render`:
+To test a page with its loader, its search params and its layout, build the real router from your route table with `createKitrRouter` and render it. The router wraps the tree in the app's providers itself, so use Testing Library's plain `render`:
 
 ```tsx
-// app/routes/orders.test.tsx
+// app/pages/orders.test.tsx
 import { act, render, screen } from '@testing-library/react'
 import queryProvider from 'kitr/query/provider'
 import { createKitrRouter, createMemoryHistory, RouterProvider } from 'kitr/router'
 import { createTestApp } from 'kitr/testing'
 import { expect, it } from 'vitest'
-import { routeTree } from '#app/routeTree.gen'
+import { routes } from '#app/routes'
 
 it('renders the orders page from its URL', async () => {
   const app = await createTestApp({ providers: [queryProvider] })
   const router = createKitrRouter({
-    routeTree,
+    routes,
     app,
     history: createMemoryHistory({ initialEntries: ['/orders?status=open'] }),
   })

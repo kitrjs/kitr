@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { naming } from '@kitr/core/package'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Codemods } from '../src/codemods'
+import { Codemods, extensionLocalName, relativeImport } from '../src/codemods'
 import { runChecks } from '../src/commands/doctor'
 import { coreGenerators, renderStub } from '../src/commands/make'
 import { createContext, detectPackageManager, findProjectRoot, readRcInfo } from '../src/context'
@@ -273,5 +273,141 @@ describe('doctor', () => {
         example,
       ).toEqual([])
     }
+  })
+})
+
+describe('route table codemods', () => {
+  const plainRc = `import { defineKitrConfig } from 'kitr/app'
+
+export default defineKitrConfig({
+  packages: ['@kitr/react', '@kitr/server'],
+  providers: [],
+})
+`
+  const reactProject = (files: Record<string, string> = {}) =>
+    project({
+      'package.json': JSON.stringify({ name: 'x', dependencies: { react: '19' } }),
+      'kitrrc.ts': plainRc,
+      ...files,
+    })
+
+  it('names an extension after its package', () => {
+    expect(extensionLocalName('kitr/api/routes')).toBe('api')
+    expect(extensionLocalName('@kitr/router/routes')).toBe('router')
+    expect(extensionLocalName('kitr/realtime/routes')).toBe('realtime')
+    expect(extensionLocalName('@acme/widgets')).toBe('widgets')
+  })
+
+  it('creates the app table and adds extensions once', () => {
+    quiet()
+    const dir = reactProject()
+    const mods = new Codemods(createContext({ root: dir }))
+    mods.extendRoutes('kitr/router/routes')
+    mods.extendRoutes('kitr/router/routes')
+    const src = readFileSync(join(dir, 'app/routes.ts'), 'utf8')
+    expect(src).toContain("import router from 'kitr/router/routes'")
+    expect(src.match(/defineRoutes\(\[router\]/g)).toHaveLength(1)
+    expect(src).toContain('export type AppRoutes')
+    mods.removeRoutesExtension('kitr/router/routes')
+    const after = readFileSync(join(dir, 'app/routes.ts'), 'utf8')
+    expect(after).not.toContain('kitr/router/routes')
+    expect(after).toContain('defineRoutes([]')
+  })
+
+  it('keeps endpoints in the server table of a React project, and in the only table of a backend', () => {
+    quiet()
+    const fullstack = reactProject()
+    const mods = new Codemods(createContext({ root: fullstack }))
+    mods.extendRoutes('kitr/api/routes', { table: 'server' })
+    mods.extendRoutes('kitr/realtime/routes', { table: 'server' })
+    const src = readFileSync(join(fullstack, 'server/routes.ts'), 'utf8')
+    expect(src).toContain('defineRoutes([api, realtime]')
+    expect(src).toContain('export type ServerRoutes')
+    expect(existsSync(join(fullstack, 'app/routes.ts'))).toBe(false)
+
+    const backend = project({
+      'package.json': JSON.stringify({ name: 'x', dependencies: { '@kitr/server': '1' } }),
+      'kitrrc.ts': plainRc.replace("'@kitr/react', ", ''),
+    })
+    const backendMods = new Codemods(createContext({ root: backend }))
+    backendMods.extendRoutes('kitr/api/routes', { table: 'server' })
+    backendMods.extendRoutes('kitr/realtime/routes')
+    expect(readFileSync(join(backend, 'server/routes.ts'), 'utf8')).toContain(
+      'defineRoutes([api, realtime]',
+    )
+    expect(existsSync(join(backend, 'app/routes.ts'))).toBe(false)
+  })
+
+  it('appends pages to the chain of the app table', () => {
+    quiet()
+    const dir = reactProject({
+      'app/routes.ts': `import { defineRoutes } from 'kitr/app'
+import router from 'kitr/router/routes'
+
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ component: () => null })
+    .page('/', { lazy: () => import('./pages/home') }),
+)
+`,
+    })
+    const mods = new Codemods(createContext({ root: dir }))
+    expect(mods.addPage('/about', './pages/about')).toBe(true)
+    expect(mods.addPage('/about', './pages/about')).toBe(true)
+    const src = readFileSync(join(dir, 'app/routes.ts'), 'utf8')
+    expect(src).toContain(
+      "    .page('/', { lazy: () => import('./pages/home') })\n    .page('/about', { lazy: () => import('./pages/about') }),\n)",
+    )
+    expect(src.match(/\.page\('\/about'/g)).toHaveLength(1)
+  })
+
+  it('starts the chain on an empty table and refuses a block body', () => {
+    quiet()
+    const dir = reactProject()
+    const mods = new Codemods(createContext({ root: dir }))
+    mods.extendRoutes('kitr/router/routes')
+    expect(mods.addPage('/', './pages/home')).toBe(true)
+    expect(readFileSync(join(dir, 'app/routes.ts'), 'utf8')).toContain(
+      "(r) => r\n    .page('/', { lazy: () => import('./pages/home') }))",
+    )
+    writeFileSync(
+      join(dir, 'app/routes.ts'),
+      "import { defineRoutes } from 'kitr/app'\nexport const routes = defineRoutes([], (r) => {\n  return r\n})\n",
+    )
+    expect(mods.addPage('/x', './pages/x')).toBe(false)
+  })
+  it('appends sockets with their imports and hands the server table to the server entry', () => {
+    quiet()
+    const dir = reactProject({
+      'server/main.ts': `import { createServer } from 'kitr/server'
+import { config } from '../config'
+import rc from '../kitrrc'
+
+export const server = createServer({ providers: rc.providers, config })
+export default server
+`,
+    })
+    const mods = new Codemods(createContext({ root: dir }))
+    mods.extendRoutes('kitr/realtime/routes', { table: 'server' })
+    const link = ".ws('/api/ws', { channels: [exampleChannel] })"
+    const imports = [{ from: '#app/channels/example', local: 'exampleChannel' }]
+    expect(mods.appendRoute(link, { table: 'server', imports, skipIf: /\.ws\(/ })).toBe(true)
+    expect(mods.appendRoute(link, { table: 'server', imports, skipIf: /\.ws\(/ })).toBe(true)
+    const table = readFileSync(join(dir, 'server/routes.ts'), 'utf8')
+    expect(table).toContain("import { exampleChannel } from '#app/channels/example'")
+    expect(table.match(/\.ws\(/g)).toHaveLength(1)
+    expect(table).toContain("(r) => r\n    .ws('/api/ws', { channels: [exampleChannel] }))")
+    const main = readFileSync(join(dir, 'server/main.ts'), 'utf8')
+    expect(main).toContain("import { routes } from './routes'")
+    expect(main).toContain('createServer({ providers: rc.providers, config, routes })')
+    // Running it again changes nothing.
+    mods.mountServerRoutes()
+    expect(readFileSync(join(dir, 'server/main.ts'), 'utf8')).toBe(main)
+  })
+
+  it('computes relative imports between the server entry and the table', () => {
+    expect(relativeImport('server/main.ts', 'server/routes.ts')).toBe('./routes')
+    expect(relativeImport('src/server/main.ts', 'server/routes.ts')).toBe('../../server/routes')
+    expect(relativeImport('main.ts', 'server/routes.ts')).toBe('./server/routes')
   })
 })

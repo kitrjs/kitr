@@ -97,21 +97,27 @@ export function ConsentBanner() {
 }
 ```
 
-Mount it once, in the root layout. Keep the rest of your root route as it is and render the banner after the `<Outlet />`:
+Mount it once, in the document. Keep the rest of `app/document.tsx` as it is and render the banner after the `<Outlet />`:
 
 ```tsx
-// app/routes/__root.tsx
-import { Outlet } from 'kitr/router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { ConsentBanner } from '#app/components/consent-banner'
 
 // ...
 
-function RootLayout() {
+export function RootDocument() {
   return (
-    <>
-      <Outlet />
-      <ConsentBanner />
-    </>
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <Outlet />
+        <ConsentBanner />
+        <Scripts />
+      </body>
+    </html>
   )
 }
 ```
@@ -341,16 +347,16 @@ Don't put the vendor's `<script>` tag straight into the root layout's `head`. It
 
 Visitors must be able to withdraw consent as readily as they gave it. Give your settings page a button that calls `reset()`, which deletes the cookie so the banner shows again:
 
+```ts
+// app/routes.ts
+app.page('/settings/privacy', { lazy: () => import('./pages/settings/privacy') })
+```
+
 ```tsx
-// app/routes/_app/settings/privacy.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/settings/privacy.tsx
 import { useConsent } from 'kitr/consent/react'
 
-export const Route = createFileRoute('/_app/settings/privacy')({
-  component: PrivacySettings,
-})
-
-function PrivacySettings() {
+export default function PrivacySettings() {
   const { record, decided, has, grant, reset } = useConsent()
   return (
     <main>

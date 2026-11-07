@@ -104,18 +104,24 @@ export function UpdateBanner() {
 Mount it once, in the root route:
 
 ```tsx
-// app/routes/__root.tsx
-import { createRootRoute, Outlet } from 'kitr/router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { UpdateBanner } from '#app/components/update-banner'
 
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <UpdateBanner />
-    </>
-  ),
-})
+export function RootDocument() {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <Outlet />
+        <UpdateBanner />
+        <Scripts />
+      </body>
+    </html>
+  )
+}
 ```
 
 Deploy a new build while Ada has the app open. Within the hour (or at her next visit) a bar appears at the bottom: "Version new is ready. **Restart to update** · Later". She clicks **Restart to update**, the page reloads on the new build, and the bar is gone. The service-worker driver does not know version numbers, so it reports `new` until you give it one; see [Show version numbers on the web](#show-version-numbers-on-the-web).

@@ -122,17 +122,17 @@ export const ordersQuery = defineQuery({
 
 Then read it in a page:
 
+```ts
+// app/routes.ts
+r.page('/orders', { lazy: () => import('./pages/orders') })
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { useQuery } from 'kitr/query'
 import { ordersQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders')({
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const { data: orders, isPending } = useQuery(ordersQuery.options())
   if (isPending) return <p>Loading orders…</p>
   return (
@@ -288,20 +288,27 @@ export function OpenOrderCount() {
 
 Start the request in the route's loader so the data arrives with the page instead of after it. The router gives every loader `context.queryClient`, the same client the components read from:
 
-```tsx
-// app/routes/orders/$orderId.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { useSuspenseQuery } from 'kitr/query'
+```ts
+// app/routes.ts
 import { orderQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders/$orderId')({
+r.page('/orders/$orderId', {
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(orderQuery.options(params.orderId)),
-  component: OrderPage,
+  lazy: () => import('./pages/orders/orderId'),
 })
+```
 
-function OrderPage() {
-  const { orderId } = Route.useParams()
+```tsx
+// app/pages/orders/orderId.tsx
+import { useSuspenseQuery } from 'kitr/query'
+import { orderQuery } from '#app/features/orders/queries'
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/$orderId')
+
+export default function OrderPage() {
+  const { orderId } = route.useParams()
   const { data: order } = useSuspenseQuery(orderQuery.options(orderId))
   return <h1>Order {order.id} for {order.customer}</h1>
 }
@@ -311,27 +318,31 @@ function OrderPage() {
 
 Don't `await` data the page can live without. Start it with `prefetchQuery` and let the component suspend on it, so the page renders without waiting:
 
-```tsx
-// app/routes/orders/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { ordersQuery } from '#app/features/orders/queries'
 import { OrderList } from '#app/features/orders/order-list'
 import { OpenOrderCount } from '#app/features/orders/open-count'
 
-export const Route = createFileRoute('/orders/')({
+r.page('/orders/', {
   loader: async ({ context }) => {
     // Needed for the first paint: wait for it.
     await context.queryClient.ensureQueryData(ordersQuery.options({ page: 1 }))
     // Nice to have: start it, don't wait.
     void context.queryClient.prefetchQuery(ordersQuery.options({ status: 'open', page: 1 }))
   },
-  component: () => (
     <>
       <OpenOrderCount />
       <OrderList page={1} />
     </>
   ),
+  lazy: () => import('./pages/orders/index'),
 })
+```
+
+```tsx
+// app/pages/orders/index.tsx
+export default () => (
 ```
 
 The kitr router preloads a route's loader when the pointer rests on a link to it, so most pages open with their data already in the cache.

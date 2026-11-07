@@ -4,18 +4,24 @@ import { H3, type H3Event } from 'h3'
 import { createHttpContext } from './context'
 import { controllerInstance, isControllerRef, resolveControllerClass } from './controller'
 import { compose, handlesPreflight } from './middleware'
-import type { Router } from './router'
+import type { RouteEntry as TableEntry } from '@kitr/core'
+import { httpEntries } from './routes'
 import type { RouteEntry, Validators } from './types'
 
 /**
  * Turn a kitr router into an h3 app. Mount it on a kitr server
  * (`server.mount('/', toH3(routes, server.app))`) or on any h3 instance.
  */
-export function toH3(router: Router<any>, app: KitrApp, options: { h3?: H3 } = {}): H3 {
+export function toH3(
+  router: { entries: Array<{ kind: string }> } | RouteEntry[],
+  app: KitrApp,
+  options: { h3?: H3 } = {},
+): H3 {
   const h3 = options.h3 ?? new H3()
+  const routes = httpEntries(router as unknown as { entries: TableEntry[] })
   const preflight = new Map<string, RouteEntry>()
   const explicitOptions = new Set<string>()
-  for (const route of router.routes) {
+  for (const route of routes) {
     h3.on(route.method, toRou3Path(route.path), (event) => dispatch(route, event, app))
     if (route.method === 'OPTIONS') explicitOptions.add(route.path)
     else if (!preflight.has(route.path) && route.middleware.some((m) => handlesPreflight in m))
@@ -33,7 +39,11 @@ export function toH3(router: Router<any>, app: KitrApp, options: { h3?: H3 } = {
 }
 
 /** Mount a router on a kitr server. Returns the server for chaining. */
-export function mountRoutes(server: KitrServer, router: Router<any>, base = '/'): KitrServer {
+export function mountRoutes(
+  server: KitrServer,
+  router: { entries: Array<{ kind: string }> },
+  base = '/',
+): KitrServer {
   return server.mount(base, toH3(router, server.app))
 }
 

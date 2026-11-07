@@ -26,14 +26,12 @@ No backend yet? The kit includes [Mocks](/packages/mocks), which fakes API respo
 `config/auth.ts` already uses a token adapter that posts to `/sign-in` and reads `/me`. Adjust the paths to match your API, then protect every page under a layout route:
 
 ```ts
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+// app/routes.ts
 import { requireAuth } from 'kitr/router'
 
-export const Route = createFileRoute('/_app')({
-  beforeLoad: requireAuth(),
-  component: () => <Outlet />,
-})
+r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+  app.page('/', { lazy: () => import('./pages/overview') }),
+)
 ```
 
 Wire the token into the HTTP client so every request is signed. See [Auth with the HTTP client](/packages/auth#with-the-http-client).

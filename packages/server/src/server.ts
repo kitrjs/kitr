@@ -5,10 +5,25 @@ import type { ServerConfig } from './config'
 import { type RequestContext, runWithRequest } from './context'
 import { errorToResponse } from './errors'
 
+/**
+ * The route table `createServer({ routes })` compiles: `defineRoutes([api, realtime], ...)` from
+ * `@kitr/core`. Each extension with an `h3` target mounts its own entries (endpoints, sockets).
+ */
+export interface ServerRoutes {
+  readonly entries: ReadonlyArray<{ kind: string; path: string; [field: string]: unknown }>
+  readonly extensions: ReadonlyArray<{
+    kinds: readonly string[]
+    targets?: Record<string, unknown>
+  }>
+  compile(target: 'h3', server: KitrServer): Record<string, unknown>
+}
+
 /** Options for `createServer()`: the app options (providers, config, mode) plus server overrides. */
 export interface CreateServerOptions extends CreateAppOptions {
   /** Reuse an existing app (e.g. shared with an SSR entry). */
   app?: KitrApp
+  /** The route table: its endpoints and sockets are mounted on this server. */
+  routes?: ServerRoutes
   /** Server options; override the `server` key of `config`. */
   server?: ServerConfig
   /** Logger to use instead of the container's `logger` binding (`silentLogger` in tests). */
@@ -29,6 +44,8 @@ export interface KitrServer {
   app: KitrApp
   /** The underlying h3 app, for registering routes directly. */
   h3: H3
+  /** The route table given to `createServer({ routes })`, if any. */
+  routes?: ServerRoutes
   /** The server logger: the container's `logger` after boot, or a built-in one. */
   logger: Logger
   /** The resolved server options, defaults filled in. */
@@ -43,6 +60,12 @@ export interface KitrServer {
   boot(): Promise<KitrServer>
   /** Web-standard fetch handler: use inside TanStack Start, Nitro, Cloudflare, Bun, Deno. */
   fetch(request: Request): Promise<Response>
+  /**
+   * Whether this server answers the request's path: an endpoint or socket from the route table,
+   * or the health check. A TanStack Start server entry asks before handing a request to the
+   * page renderer, so one process serves pages and `/api/*`.
+   */
+  handles(request: Request | URL | string): boolean
   /** Mount an h3 app or any fetch handler under a base path. */
   mount(
     base: string,
@@ -64,7 +87,13 @@ export interface KitrServer {
  * so a pure backend built on kitr ships none.
  */
 export function createServer(options: CreateServerOptions = {}): KitrServer {
-  const { app: givenApp, server: serverConfig, logger: givenLogger, ...appOptions } = options
+  const {
+    app: givenApp,
+    server: serverConfig,
+    logger: givenLogger,
+    routes,
+    ...appOptions
+  } = options
   const app = givenApp ?? createApp({ environment: 'server', ...appOptions })
   if (serverConfig) app.config.set('server', serverConfig)
   const config = {
@@ -110,6 +139,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     h3,
     logger: logger ?? (null as unknown as Logger),
     config,
+    routes,
     boot() {
       booted ??= (async () => {
         await app.boot()
@@ -126,6 +156,16 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       // (job workers, schedulers) runs once here as it does on listen(). Tests stay quiet.
       if (app.environment !== 'test') await app.ready()
       return h3.fetch(request)
+    },
+    handles(request) {
+      const pathname =
+        typeof request === 'string'
+          ? new URL(request, 'http://localhost').pathname
+          : request instanceof URL
+            ? request.pathname
+            : new URL(request.url).pathname
+      if (config.healthPath && pathname === config.healthPath) return true
+      return served().some((match) => match(pathname))
     },
     mount(base, handler) {
       h3.mount(base, handler as any)
@@ -252,8 +292,34 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     })
   })
   if (config.healthPath) h3.get(config.healthPath, () => ({ ok: true }))
+  // Endpoints and sockets from the route table: each extension mounts its own kind.
+  if (routes) routes.compile('h3', server)
+  // The paths this server answers, for `handles()`: every entry of an extension with an h3 target.
+  let matchers: Array<(pathname: string) => boolean> | undefined
+  const served = () =>
+    (matchers ??= (routes?.entries ?? [])
+      .filter((entry) =>
+        routes!.extensions.some((ext) => ext.kinds.includes(entry.kind) && ext.targets?.h3),
+      )
+      .map((entry) => pathMatcher(entry.path)))
 
   return server
+}
+
+/** `/api/projects/:id` and `/files/*` (or `$id`, `$`) as a test on a request pathname. */
+function pathMatcher(path: string): (pathname: string) => boolean {
+  const pattern = path
+    .split('/')
+    .map((segment) =>
+      segment === '*' || segment === '**' || segment === '$'
+        ? '.*'
+        : segment.startsWith(':') || segment.startsWith('$')
+          ? '[^/]+'
+          : segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    )
+    .join('/')
+  const regex = new RegExp(`^${pattern}/?$`)
+  return (pathname) => regex.test(pathname)
 }
 
 function safeIp(event: H3Event): string | undefined {
