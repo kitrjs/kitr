@@ -4,6 +4,16 @@
   "description": "The kitr React framework: one import surface over TanStack, React Hook Form and friends, plus the kitr CLI.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/kitr"
+  },
+  "homepage": "https://kitr.dev",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "bin": {
     "kitr": "./bin/kitr.mjs"
@@ -174,7 +184,6 @@
       "types": "./dist/devtools-ui.d.ts",
       "default": "./dist/devtools-ui.js"
     },
-    "./package.json": "./package.json",
     "./web": {
       "types": "./dist/web.d.ts",
       "default": "./dist/web.js"
@@ -299,7 +308,156 @@
       "types": "./dist/realtime-react.d.ts",
       "default": "./dist/realtime-react.js"
     },
-    "./theme/styles.css": "./styles/theme.css"
+    "./theme/styles.css": "./styles/theme.css",
+    "./cache": {
+      "types": "./dist/cache.d.ts",
+      "default": "./dist/cache.js"
+    },
+    "./cache/provider": {
+      "types": "./dist/cache-provider.d.ts",
+      "default": "./dist/cache-provider.js"
+    },
+    "./shield": {
+      "types": "./dist/shield.d.ts",
+      "default": "./dist/shield.js"
+    },
+    "./shield/provider": {
+      "types": "./dist/shield-provider.d.ts",
+      "default": "./dist/shield-provider.js"
+    },
+    "./jobs": {
+      "types": "./dist/jobs.d.ts",
+      "default": "./dist/jobs.js"
+    },
+    "./jobs/provider": {
+      "types": "./dist/jobs-provider.d.ts",
+      "default": "./dist/jobs-provider.js"
+    },
+    "./mail": {
+      "types": "./dist/mail.d.ts",
+      "default": "./dist/mail.js"
+    },
+    "./mail/provider": {
+      "types": "./dist/mail-provider.d.ts",
+      "default": "./dist/mail-provider.js"
+    },
+    "./uploads": {
+      "types": "./dist/uploads.d.ts",
+      "default": "./dist/uploads.js"
+    },
+    "./uploads/react": {
+      "types": "./dist/uploads-react.d.ts",
+      "default": "./dist/uploads-react.js"
+    },
+    "./uploads/server": {
+      "types": "./dist/uploads-server.d.ts",
+      "default": "./dist/uploads-server.js"
+    },
+    "./uploads/provider": {
+      "types": "./dist/uploads-provider.d.ts",
+      "default": "./dist/uploads-provider.js"
+    },
+    "./flags": {
+      "types": "./dist/flags.d.ts",
+      "default": "./dist/flags.js"
+    },
+    "./flags/react": {
+      "types": "./dist/flags-react.d.ts",
+      "default": "./dist/flags-react.js"
+    },
+    "./flags/provider": {
+      "types": "./dist/flags-provider.d.ts",
+      "default": "./dist/flags-provider.js"
+    },
+    "./flags/server": {
+      "types": "./dist/flags-server.d.ts",
+      "default": "./dist/flags-server.js"
+    },
+    "./consent": {
+      "types": "./dist/consent.d.ts",
+      "default": "./dist/consent.js"
+    },
+    "./consent/react": {
+      "types": "./dist/consent-react.d.ts",
+      "default": "./dist/consent-react.js"
+    },
+    "./consent/provider": {
+      "types": "./dist/consent-provider.d.ts",
+      "default": "./dist/consent-provider.js"
+    },
+    "./offline": {
+      "types": "./dist/offline.d.ts",
+      "default": "./dist/offline.js"
+    },
+    "./offline/react": {
+      "types": "./dist/offline-react.d.ts",
+      "default": "./dist/offline-react.js"
+    },
+    "./offline/provider": {
+      "types": "./dist/offline-provider.d.ts",
+      "default": "./dist/offline-provider.js"
+    },
+    "./secure-storage": {
+      "types": "./dist/secure-storage.d.ts",
+      "default": "./dist/secure-storage.js"
+    },
+    "./secure-storage/react": {
+      "types": "./dist/secure-storage-react.d.ts",
+      "default": "./dist/secure-storage-react.js"
+    },
+    "./secure-storage/provider": {
+      "types": "./dist/secure-storage-provider.d.ts",
+      "default": "./dist/secure-storage-provider.js"
+    },
+    "./files": {
+      "types": "./dist/files.d.ts",
+      "default": "./dist/files.js"
+    },
+    "./files/react": {
+      "types": "./dist/files-react.d.ts",
+      "default": "./dist/files-react.js"
+    },
+    "./files/provider": {
+      "types": "./dist/files-provider.d.ts",
+      "default": "./dist/files-provider.js"
+    },
+    "./notifications": {
+      "types": "./dist/notifications.d.ts",
+      "default": "./dist/notifications.js"
+    },
+    "./notifications/react": {
+      "types": "./dist/notifications-react.d.ts",
+      "default": "./dist/notifications-react.js"
+    },
+    "./notifications/provider": {
+      "types": "./dist/notifications-provider.d.ts",
+      "default": "./dist/notifications-provider.js"
+    },
+    "./native": {
+      "types": "./dist/native.d.ts",
+      "default": "./dist/native.js"
+    },
+    "./native/react": {
+      "types": "./dist/native-react.d.ts",
+      "default": "./dist/native-react.js"
+    },
+    "./native/provider": {
+      "types": "./dist/native-provider.d.ts",
+      "default": "./dist/native-provider.js"
+    },
+    "./updater": {
+      "types": "./dist/updater.d.ts",
+      "default": "./dist/updater.js"
+    },
+    "./updater/react": {
+      "types": "./dist/updater-react.d.ts",
+      "default": "./dist/updater-react.js"
+    },
+    "./updater/provider": {
+      "types": "./dist/updater-provider.d.ts",
+      "default": "./dist/updater-provider.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -312,7 +470,20 @@
   },
   "dependencies": {
     "@kitr/core": "workspace:*",
-    "@kitr/cli": "workspace:*"
+    "@kitr/cli": "workspace:*",
+    "@kitr/cache": "workspace:*",
+    "@kitr/shield": "workspace:*",
+    "@kitr/jobs": "workspace:*",
+    "@kitr/mail": "workspace:*",
+    "@kitr/uploads": "workspace:*",
+    "@kitr/flags": "workspace:*",
+    "@kitr/consent": "workspace:*",
+    "@kitr/offline": "workspace:*",
+    "@kitr/secure-storage": "workspace:*",
+    "@kitr/files": "workspace:*",
+    "@kitr/notifications": "workspace:*",
+    "@kitr/native": "workspace:*",
+    "@kitr/updater": "workspace:*"
   },
   "peerDependencies": {
     "@kitr/actions": "workspace:*",

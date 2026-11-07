@@ -63,7 +63,7 @@
     },
     {
       "name": "offline",
-      "status": "next",
+      "status": "building",
       "category": "data-fetching",
       "runsOn": "client",
       "builtOn": ["TanStack Query"],
@@ -71,7 +71,7 @@
     },
     {
       "name": "flags",
-      "status": "next",
+      "status": "building",
       "category": "app-state",
       "runsOn": "both",
       "builtOn": ["OpenFeature"],
@@ -79,56 +79,56 @@
     },
     {
       "name": "secure-storage",
-      "status": "next",
+      "status": "building",
       "category": "device",
       "runsOn": "both",
       "summary": "Keep login tokens and secrets in the phone or computer's secure vault instead of plain storage."
     },
     {
       "name": "files",
-      "status": "next",
+      "status": "building",
       "category": "device",
       "runsOn": "client",
       "summary": "Let people open, save and pick files on any platform, with a download fallback in older browsers."
     },
     {
       "name": "notifications",
-      "status": "next",
+      "status": "building",
       "category": "device",
       "runsOn": "client",
       "summary": "Ask for permission and show local or scheduled notifications that open the right page when tapped."
     },
     {
       "name": "native",
-      "status": "next",
+      "status": "building",
       "category": "device",
       "runsOn": "client",
       "summary": "Clipboard, share sheet, haptics, location, camera and fingerprint unlock, each with a web fallback."
     },
     {
       "name": "updater",
-      "status": "next",
+      "status": "building",
       "category": "platforms",
       "runsOn": "client",
       "summary": "Tell people a new version is ready and update the app in place, on the web, desktop and mobile."
     },
     {
       "name": "cache",
-      "status": "next",
+      "status": "building",
       "category": "backend",
       "runsOn": "server",
       "summary": "Remember slow results on the server and clear them by tag when the data changes."
     },
     {
       "name": "shield",
-      "status": "next",
+      "status": "building",
       "category": "backend",
       "runsOn": "server",
       "summary": "Turn on the security basics every API needs: CORS, CSRF protection, safe headers and rate limits."
     },
     {
       "name": "mail",
-      "status": "next",
+      "status": "building",
       "category": "backend",
       "runsOn": "server",
       "builtOn": ["React Email"],
@@ -136,21 +136,21 @@
     },
     {
       "name": "jobs",
-      "status": "next",
+      "status": "building",
       "category": "backend",
       "runsOn": "server",
       "summary": "Run work in the background or on a schedule, with retries when it fails."
     },
     {
       "name": "uploads",
-      "status": "next",
+      "status": "building",
       "category": "backend",
       "runsOn": "both",
       "summary": "Accept file uploads with size limits, store them on disk or in the cloud, and show progress in the browser."
     },
     {
       "name": "consent",
-      "status": "next",
+      "status": "building",
       "category": "insights",
       "runsOn": "client",
       "summary": "Ask for cookie and tracking consent once, and hold analytics and error reports until people agree."

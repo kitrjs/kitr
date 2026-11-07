@@ -21,6 +21,16 @@
   },
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/theme"
+  },
+  "homepage": "https://kitr.dev/packages/theme",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "exports": {
     ".": {

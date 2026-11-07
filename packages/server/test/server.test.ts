@@ -93,6 +93,30 @@ describe('createServer', () => {
     expect((await crash.json()).code).toBe('INTERNAL')
   })
 
+  it('logs unhandled 5xx with the request id and leaves 4xx quiet', async () => {
+    const { createLogger } = await import('@kitr/logger')
+    const lines: string[] = []
+    const logger = createLogger({
+      level: 'error',
+      format: 'json',
+      write: (line) => lines.push(line),
+    })
+    const server = createServer({ logger, server: { healthPath: false } })
+    server.h3.get('/crash', () => {
+      throw new Error('boom')
+    })
+    server.h3.get('/missing', () => {
+      throw KitrError.notFound()
+    })
+    await server.fetch(req('/missing'))
+    expect(lines).toHaveLength(0)
+    const res = await server.fetch(req('/crash'))
+    expect(lines).toHaveLength(1)
+    const record = JSON.parse(lines[0]!)
+    expect(record).toMatchObject({ level: 'error', path: '/crash', status: 500 })
+    expect(record.requestId).toBe(res.headers.get('x-request-id'))
+  })
+
   it('hides 5xx details in production', async () => {
     vi.stubEnv('NODE_ENV', 'production')
     const server = createServer({ logger: silentLogger })

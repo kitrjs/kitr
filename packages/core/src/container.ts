@@ -92,20 +92,30 @@ export class Container {
     if (!found) throw missing(key)
     if (found.owner !== this && found.build) return found.owner.make(key)
     const factory = (this.factories.get(key) ?? found.owner.factories.get(key))!
-    const promise = Promise.resolve()
-      .then(() => factory(this))
-      .then(
-        (instance) => {
-          this.instances.set(key, instance)
-          this.pending.delete(key)
-          return instance as Binding<K>
-        },
-        (error) => {
-          // Don't cache a failure: the next make() runs the factory again.
-          this.pending.delete(key)
-          throw error
-        },
-      )
+    // Run the factory now: a synchronous instance is cached before any other factory that
+    // `use()`s this key can build a second one (resolveAll makes every binding in parallel).
+    let result: unknown
+    try {
+      result = factory(this)
+    } catch (error) {
+      return Promise.reject(error)
+    }
+    if (!(result instanceof Promise)) {
+      this.instances.set(key, result)
+      return Promise.resolve(result as Binding<K>)
+    }
+    const promise = result.then(
+      (instance) => {
+        this.instances.set(key, instance)
+        this.pending.delete(key)
+        return instance as Binding<K>
+      },
+      (error) => {
+        // Don't cache a failure: the next make() runs the factory again.
+        this.pending.delete(key)
+        throw error
+      },
+    )
     this.pending.set(key, promise)
     return promise
   }
@@ -119,13 +129,10 @@ export class Container {
     const found = this.locate(key)
     if (!found) throw missing(key)
     if (found.owner !== this && found.build) return found.owner.use(key)
+    if (this.pending.has(key)) throw asyncFactory(key)
     const factory = (this.factories.get(key) ?? found.owner.factories.get(key))!
     const instance = factory(this)
-    if (instance instanceof Promise) {
-      throw new Error(
-        `[kitr] Binding "${key}" has an async factory; await container.make('${key}') before use('${key}').`,
-      )
-    }
+    if (instance instanceof Promise) throw asyncFactory(key)
     this.instances.set(key, instance)
     return instance as Binding<K>
   }
@@ -155,4 +162,10 @@ export class Container {
 
 function missing(key: string) {
   return new Error(`[kitr] No binding named "${key}". Did you add the package that provides it?`)
+}
+
+function asyncFactory(key: string) {
+  return new Error(
+    `[kitr] Binding "${key}" has an async factory; await container.make('${key}') before use('${key}').`,
+  )
 }

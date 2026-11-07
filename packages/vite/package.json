@@ -4,6 +4,16 @@
   "description": "kitr/vite: the kitr() Vite plugin. Reads kitrrc.ts, wires the TanStack router plugin, optimizeDeps and Tailwind.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/vite"
+  },
+  "homepage": "https://kitr.dev/packages/vite",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "exports": {
     ".": {

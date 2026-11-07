@@ -1,0 +1,79 @@
+{
+  "name": "@kitr/consent",
+  "version": "0.1.0",
+  "description": "kitr/consent: one consent record per visitor, by category, kept in a cookie and read on both sides; analytics and monitoring wait for it.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/consent"
+  },
+  "homepage": "https://kitr.dev/packages/consent",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/storage": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@kitr/react": "workspace:*",
+    "@kitr/analytics": "workspace:*",
+    "@kitr/monitoring": "workspace:*"
+  },
+  "kitr": {
+    "name": "consent",
+    "title": "Consent",
+    "summary": "Ask for cookie and tracking consent once, and hold analytics and error reports until people agree.",
+    "category": "insights",
+    "runsOn": "client",
+    "requires": [
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs"
+  }
+}

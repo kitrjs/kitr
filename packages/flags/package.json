@@ -1,0 +1,85 @@
+{
+  "name": "@kitr/flags",
+  "version": "0.1.0",
+  "description": "kitr/flags: typed feature flags resolved once per request on the server and handed to the browser, with static, env, OpenFeature and custom providers.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/flags"
+  },
+  "homepage": "https://kitr.dev/packages/flags",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "h3": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "h3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@kitr/react": "workspace:*",
+    "h3": "^2.0.8",
+    "@types/node": "^22.19.0"
+  },
+  "kitr": {
+    "name": "flags",
+    "title": "Feature flags",
+    "summary": "Turn features on for some users and off for others, with the same answer on the server and in the browser.",
+    "category": "app-state",
+    "runsOn": "both",
+    "builtOn": [
+      "OpenFeature"
+    ],
+    "docs": "docs"
+  }
+}

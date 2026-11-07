@@ -28,6 +28,19 @@ Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the rout
 | `i18n` | `@kitr/i18n` | client | | react-i18next, typed keys from your resource files, locale detection. |
 | `analytics` | `@kitr/analytics` | client | | `page`/`track`/`identify` behind one API with Google Analytics, Plausible, PostHog and console adapters; page views from the router; queue-until-consent; typed event map. |
 | `monitoring` | `@kitr/monitoring` | any | | `captureException`, breadcrumbs, user context behind one API; Sentry and console reporters; window handlers, an error boundary, `reportErrors` h3 middleware. Drops expected 4xx by default. |
+| `offline` | `@kitr/offline` | client | query, storage | Persists successful queries and paused mutations to the app's storage driver, restores them before the first render and replays mutations on reconnect; `useOffline()` for `{ online, pending, restored }`. |
+| `flags` | `@kitr/flags` | any | | `defineFlags` with typed defaults, ordered providers (env, percentage rollout, OpenFeature for any vendor), per-request `resolveFlags` on the server embedded with `<FlagsScript />`, `useFlag()` in components. |
+| `consent` | `@kitr/consent` | client | storage | One consent record by category in a cookie the server can read; analytics and (optionally) monitoring wait for their category; `useConsent()` drives the banner. |
+| `secure-storage` | `@kitr/secure-storage` | any | storage | Secrets in the OS vault (Keychain, Keystore, safeStorage) with an AES-GCM web fallback; `defineSecureItem` for typed, validated items; `useSecureItem()`. |
+| `files` | `@kitr/files` | client | platform | `open`/`pick`/`save` with native dialogs on desktop and mobile, the File System Access API in the browser and a download fallback; `useFileDialogs()`, `useDropFiles()`. |
+| `notifications` | `@kitr/notifications` | client | platform | Permission, `show`, `schedule`, `cancel` and a tap listener that carries the page to open; web Notification API or the platform's driver. |
+| `native` | `@kitr/native` | client | platform | Clipboard, share sheet, haptics, geolocation, camera and biometrics, each a separate capability with a web driver and a `supported` flag; `useClipboard()`, `useShare()`, `useGeolocation()`. |
+| `updater` | `@kitr/updater` | client | platform | One `check`/`apply` state machine over the service worker on the web and the platform updaters on desktop and mobile; `useUpdate()` for the banner. |
+| `cache` | `@kitr/cache` | any | server | `remember`, tags and `cached()` over a `CacheDriver` (in-memory shipped, Redis-shaped interface), with in-flight de-duplication. |
+| `shield` | `@kitr/shield` | any | server | Security headers, CORS, per-IP rate limiting with RateLimit-* headers and double-submit CSRF as h3 middlewares; `shield(server)` reads `config/shield.ts`. |
+| `mail` | `@kitr/mail` | any | server | React email templates (`defineMail`), log, Resend and SMTP transports, text alternatives, and `/_kitr/mail` previews in development. |
+| `jobs` | `@kitr/jobs` | any | server | `defineJob` with a payload schema, retries with backoff, timeouts and cron or interval schedules; an in-process worker over a `JobsDriver` (in-memory shipped). |
+| `uploads` | `@kitr/uploads` | any | | Client `upload()` with progress and typed errors plus `useUpload()`; server `receive()`/`mount()` that parses multipart per size and type rules into a disk or custom driver. |
 | `platform` | `@kitr/platform` | client | | One API for where the app runs: `platform()`, `isNative()`, `perPlatform()`, and the hooks `usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`. A driver registry the desktop and mobile packages fill; the browser is the default driver. |
 | `storage` | `@kitr/storage` | any | | `defineStorage` (typed local/session items with schema, version+migrate, ttl, cross-tab sync) and `defineCookie` readable on both sides; `useStorage`/`useCookie` hydration-safe hooks; `cookies(event)` on the server. Native drivers (Tauri store, Electron IPC, Capacitor Preferences) come from the platform packages. |
 | `devtools` | `@kitr/devtools` | client | | The development overlay: App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log panels, a command palette, and a hub any package logs to. Providers add panels with a `devtools()` method. Dropped from production builds by the Vite plugin. |
@@ -67,4 +80,4 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 ## Roadmap
 
-Next: `secure-storage`, `files`, `notifications`, `native` (camera, haptics, share), `updater`, `offline`, `flags`, `consent`, `cache`, `shield`, `mail`, `jobs`, `uploads`, and AdonisJS-style `make:*` commands for each. Later: payments, search, media, ai, admin, workflow, audit, tenancy, cms, graphql, commerce.
+Later: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce. Each lands as a package with a recipe, docs and a `make:*` command where one fits.

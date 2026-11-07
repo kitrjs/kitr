@@ -31,7 +31,7 @@ jobs:
           done
           pnpm -C examples/backend exec kitr build api
       - run: pnpm manifests:check
-      - run: pnpm docs:check
+      - run: pnpm docs:check --strict
       - run: pnpm -C site build
       - run: pnpm typecheck
       - run: pnpm lint
