@@ -19,8 +19,8 @@ export function Rich({ text }: { text: string }) {
   )
 }
 
-export function SoonBadge() {
-  return <span className="soon-badge">Coming soon</span>
+export function SoonBadge({ short = false }: { short?: boolean }) {
+  return <span className="soon-badge">{short ? 'Soon' : 'Coming soon'}</span>
 }
 
 /** One platform as a coloured tile: icon, name, the shell it ships in and where it runs. */
@@ -51,7 +51,7 @@ export function PlatformTile({
             ))}
           </span>
         ) : (
-          <SoonBadge />
+          <SoonBadge short />
         )}
       </span>
       <span className="platform-tile-text">
@@ -94,7 +94,9 @@ export function PlatformBoard() {
  * and Tauri share the `shell` group, because a project keeps one desktop shell.
  */
 export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' | 'h2' }) {
-  const [on, setOn] = useState(() => new Set(builder.choices.filter((c) => c.on).map((c) => c.id)))
+  const [on, setOn] = useState(
+    () => new Set(builder.choices.filter((c) => c.on && c.available).map((c) => c.id)),
+  )
   const pm = usePm((s) => s.pm)
   const chosen = builder.choices.filter((c) => on.has(c.id))
   const types = new Set(chosen.map((c) => c.type))
