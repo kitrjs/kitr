@@ -29,7 +29,7 @@ export default defineKitrConfig({
    () => import('@kitr/logger'),
    () => import('@kitr/query/provider'),
    () => import('@kitr/theme/provider'),
-   () => import('@kitr/i18n'),
+   () => import('@kitr/i18n/provider'),
    () => import('@kitr/storage/provider'),
    () => import('@kitr/analytics/provider'),
    () => import('@kitr/devtools/provider'),

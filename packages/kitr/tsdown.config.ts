@@ -65,6 +65,7 @@ export default defineConfig({
     'src/http-provider.ts',
     'src/http.ts',
     'src/i18n.ts',
+    'src/i18n-provider.ts',
     'src/index.ts',
     'src/logger.ts',
     'src/mobile-client.ts',

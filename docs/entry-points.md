@@ -52,7 +52,7 @@ TanStack's route generator rewrites that specific import in every route file and
 | `kitr/testing` | `@kitr/testing` | no |
 | `kitr/testing/react` | `@kitr/testing` | yes |
 | `kitr/mocks` | `@kitr/mocks` | no |
-| `kitr/i18n` | `@kitr/i18n` | yes |
+| `kitr/i18n`, `kitr/i18n/provider` | `@kitr/i18n` | yes |
 | `kitr/analytics`, `kitr/analytics/provider` | `@kitr/analytics` | no |
 | `kitr/analytics/react` | `@kitr/analytics` | yes |
 | `kitr/monitoring`, `kitr/monitoring/provider`, `kitr/monitoring/server` | `@kitr/monitoring` | no |
