@@ -13,16 +13,33 @@
     "lint:fix": "biome check --write .",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "check:bundles": "node scripts/check-bundles.mjs",
+    "test:all": "pnpm test:coverage && pnpm test:integration && pnpm check:bundles && pnpm test:e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
     "@changesets/cli": "^3.0.3",
+    "@playwright/test": "1.63.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitest/coverage-v8": "5.1.0",
     "happy-dom": "^21.0.4",
+    "publint": "^0.3.25",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
-  }
+  },
+  "type": "module"
 }

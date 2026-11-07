@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["../packages/*/test/**/*.test-d.ts", "../packages/*/test/**/*.test-d.tsx"]
+}

@@ -46,7 +46,11 @@ async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Prom
  */
 export function defineCommands<C extends CommandMap>(): Commands<C> {
   return new Proxy({} as Commands<C>, {
-    get: (_, cmd: string) => (args?: Record<string, unknown>) => tauriInvoke(cmd, args),
+    get: (_, cmd) =>
+      // `then`/`toJSON` are probed by await and JSON.stringify; they are never commands.
+      typeof cmd !== 'string' || cmd === 'then' || cmd === 'toJSON'
+        ? undefined
+        : (args?: Record<string, unknown>) => tauriInvoke(cmd, args),
   })
 }
 

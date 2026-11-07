@@ -182,7 +182,7 @@ export function createApiClient<R extends RouteMap>(
   const group = (prefix: string): any =>
     new Proxy(() => {}, {
       get: (_t, prop) => {
-        if (typeof prop !== 'string') return undefined
+        if (typeof prop !== 'string' || nonRouteProps.has(prop)) return undefined
         const name = prefix ? `${prefix}.${prop}` : prop
         if (name === '$routes') return undefined
         if (name === '$register')
@@ -206,6 +206,12 @@ export function registerRoutes(
 ) {
   ;(client as any).$register(table)
 }
+
+/**
+ * Properties the runtime probes on any object: `then` (await, async return), `toJSON`
+ * (JSON.stringify), `$$typeof` (React), `asymmetricMatch` (test matchers). They are never routes.
+ */
+const nonRouteProps = new Set(['then', 'toJSON', '$$typeof', 'asymmetricMatch', 'nodeType'])
 
 function safeJson(text: string): unknown {
   try {

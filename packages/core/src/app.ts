@@ -108,6 +108,7 @@ export class KitrApp {
       container: this.container.child(),
       config: this.config,
       environment: this.environment,
+      mode: this.mode,
       env: this.env,
       providers: this.providers,
       inputs: [],

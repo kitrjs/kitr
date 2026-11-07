@@ -9,7 +9,8 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { t: 'ev'; ch: string; p: unknown; ev: string; d: unknown }
-  | { t: 'ok'; id: string }
+  /** `p` is the params after the channel's schema ran; events are routed by them. */
+  | { t: 'ok'; id: string; p?: unknown }
   | { t: 'err'; id?: string; e: KitrErrorShape }
   | { t: 'pong' }
 

@@ -60,11 +60,20 @@ export class Container {
       if (this.parent) return this.parent.make(key)
       throw new Error(`[kitr] No binding named "${key}". Did you add the package that provides it?`)
     }
-    const promise = Promise.resolve(factory(this)).then((instance) => {
-      this.instances.set(key, instance)
-      this.pending.delete(key)
-      return instance as Binding<K>
-    })
+    const promise = Promise.resolve()
+      .then(() => factory(this))
+      .then(
+        (instance) => {
+          this.instances.set(key, instance)
+          this.pending.delete(key)
+          return instance as Binding<K>
+        },
+        (error) => {
+          // Don't cache a failure: the next make() runs the factory again.
+          this.pending.delete(key)
+          throw error
+        },
+      )
     this.pending.set(key, promise)
     return promise
   }

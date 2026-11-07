@@ -29,8 +29,9 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
   } = options
   let refreshing: Promise<boolean> | null = null
 
-  return ky.create({
-    ...(baseUrl ? { prefixUrl: baseUrl } : {}),
+  // ky v2 renamed `prefixUrl` to `prefix` (same joining rules: `http.get('users')` → `${baseUrl}/users`).
+  const client: KyInstance = ky.create({
+    ...(baseUrl ? { prefix: baseUrl } : {}),
     retry: { limit: 2, methods: ['get', 'put', 'head', 'delete', 'options', 'trace'] },
     ...rest,
     hooks: {
@@ -64,7 +65,8 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
               authHeader,
               authHeader === 'Authorization' ? `Bearer ${token}` : token,
             )
-          return ky(retried)
+          // Retry through this same client so custom fetch, hooks and error normalisation still apply.
+          return client(retried)
         },
         ...(rest.hooks?.afterResponse ?? []),
       ],
@@ -78,16 +80,20 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
       ],
     },
   })
+  return client
 }
 
 /** Turns a ky HTTPError into a KitrError, reading kitr's wire shape when the body has it. */
 export async function normaliseHttpError(error: unknown): Promise<KitrError> {
   if (error instanceof HTTPError) {
     const { response } = error
-    let body: unknown
-    try {
-      body = await response.clone().json()
-    } catch {}
+    // ky v2 has already read the body into `error.data`; v1 left it on the response.
+    let body: unknown = (error as HTTPError & { data?: unknown }).data
+    if (body === undefined) {
+      try {
+        body = await response.clone().json()
+      } catch {}
+    }
     if (isKitrErrorShape(body)) {
       return new KitrError(body.code, body.message, {
         status: body.status || response.status,

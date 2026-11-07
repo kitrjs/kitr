@@ -123,6 +123,9 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
           throw KitrError.forbidden(`Not allowed on channel "${msg.ch}"`)
         if (msg.t === 'sub') {
           const topic = topicFor(channel.name, params)
+          // Re-using an id replaces that subscription; leave its old topic first.
+          const previous = state.subs.get(msg.id)
+          if (previous && previous.topic !== topic) leave(peer, previous.topic)
           state.subs.set(msg.id, { topic, channel, params })
           let set = topics.get(topic)
           if (!set) {
@@ -130,7 +133,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
             topics.set(topic, set)
           }
           set.add(peer)
-          send(peer, { t: 'ok', id: msg.id })
+          send(peer, { t: 'ok', id: msg.id, p: params ?? null })
         } else if (msg.t === 'msg') {
           await channel.onMessage?.(msg.ev, msg.d, params, state.ctx)
         }

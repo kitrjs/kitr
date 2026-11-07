@@ -75,8 +75,13 @@ export function tokenAdapter<TUser, TCredentials = { email: string; password: st
       const result = await options.signIn(credentials)
       await storage.set(result.token)
       if (result.refreshToken) await refreshStorage.set(result.refreshToken)
-      const user = result.user ?? (await options.fetchUser(result.token))
-      if (!user) throw KitrError.unauthorized('Sign-in succeeded but no user was returned')
+      const user = result.user ?? (await options.fetchUser(result.token).catch(() => null))
+      if (!user) {
+        // Don't leave a token behind that getSession() would keep trying.
+        await storage.set(null)
+        await refreshStorage.set(null)
+        throw KitrError.unauthorized('Sign-in succeeded but no user was returned')
+      }
       const session = createSession(user, options.abilities)
       notify(session)
       return session

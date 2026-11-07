@@ -57,6 +57,8 @@
     "@kitr/http": "workspace:*",
     "ky": "^2.2.0",
     "h3": "^2.0.8",
-    "@types/node": "^22.19.0"
+    "@types/node": "^22.19.0",
+    "@kitr/react": "workspace:*",
+    "react-dom": "^19.3.1"
   }
 }

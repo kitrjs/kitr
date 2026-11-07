@@ -15,17 +15,40 @@ export interface ErrorBoundaryProps {
   children: ReactNode
 }
 
+/**
+ * Errors already reported. React retries a failed render once (and StrictMode renders twice), which
+ * throws a fresh error object each time, so errors are also keyed by name and message until the current task yields.
+ */
+const reportedByBoundary = new WeakSet<object>()
+const recentKeys = new Set<string>()
+function seen(error: unknown): boolean {
+  if (error && typeof error === 'object') {
+    if (reportedByBoundary.has(error)) return true
+    reportedByBoundary.add(error)
+  }
+  const key =
+    error instanceof Error ? `${error.name}:${error.message}` : `${typeof error}:${String(error)}`
+  if (recentKeys.has(key)) return true
+  recentKeys.add(key)
+  queueMicrotask(() => recentKeys.delete(key))
+  return false
+}
+
 /** Reports render errors, then shows `fallback` (or nothing, so the router's error component takes over). */
 export class MonitoringErrorBoundary extends Component<ErrorBoundaryProps, { error: unknown }> {
   state = { error: null as unknown }
   static getDerivedStateFromError(error: unknown) {
     return { error }
   }
-  componentDidCatch(error: unknown, info: ErrorInfo) {
+  private report(error: unknown, componentStack?: string | null) {
+    if (seen(error)) return
     this.props.monitoring.captureException(error, {
       source: 'error-boundary',
-      extra: { componentStack: info.componentStack },
+      extra: componentStack ? { componentStack } : undefined,
     })
+  }
+  componentDidCatch(error: unknown, info: ErrorInfo) {
+    this.report(error, info.componentStack)
   }
   reset = () => this.setState({ error: null })
   render() {
@@ -33,6 +56,8 @@ export class MonitoringErrorBoundary extends Component<ErrorBoundaryProps, { err
     const { fallback } = this.props
     if (typeof fallback === 'function') return fallback(this.state.error, this.reset)
     if (fallback !== undefined) return fallback
+    // Rethrowing means this boundary never commits, so componentDidCatch won't run: report here.
+    this.report(this.state.error)
     throw this.state.error
   }
 }

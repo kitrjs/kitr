@@ -36,8 +36,16 @@ export function authMiddleware<TUser>(options: AuthMiddlewareOptions<TUser>) {
       token = header?.match(/^Bearer\s+(.+)$/i)?.[1]
     } else {
       const cookies = ctx.request.header('cookie') ?? ''
-      token = cookies.match(new RegExp(`(?:^|;\\s*)${from.cookie}=([^;]+)`))?.[1]
-      if (token) token = decodeURIComponent(token)
+      const name = from.cookie.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      token = cookies.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`))?.[1]
+      if (token) {
+        try {
+          token = decodeURIComponent(token)
+        } catch {
+          // A malformed cookie is an anonymous request, not a server error.
+          token = undefined
+        }
+      }
     }
     const user = token ? await options.verify(token, ctx) : null
     if (!user && !options.optional) throw KitrError.unauthorized()

@@ -27,7 +27,7 @@
     "@kitr/core": "workspace:*"
   },
   "peerDependencies": {
-    "ky": ">=1.7.0"
+    "ky": ">=2.0.0"
   },
   "devDependencies": {
     "tsdown": "^0.23.7",

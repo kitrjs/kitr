@@ -16,9 +16,13 @@ export function errorToResponse(error: unknown, event?: H3Event): Response {
 
 export function normaliseServerError(error: unknown): KitrError {
   if (isKitrError(error)) return toKitrError(error)
-  // h3 wraps unknown errors in HTTPError; unwrap a KitrError cause so the shape survives.
-  const cause = (error as { cause?: unknown } | null)?.cause
-  if (cause && isKitrError(cause)) return toKitrError(cause)
+  // h3 wraps unknown errors in HTTPError (sometimes with the details object as `cause`);
+  // walk the cause chain so a KitrError thrown deep inside keeps its shape.
+  let cause = (error as { cause?: unknown } | null)?.cause
+  for (let depth = 0; cause && depth < 5; depth++) {
+    if (isKitrError(cause)) return toKitrError(cause)
+    cause = (cause as { cause?: unknown }).cause
+  }
   if (error instanceof HTTPError) {
     const data = (error as any).data
     return KitrError.fromStatus(error.status, error.message, data)

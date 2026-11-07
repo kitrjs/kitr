@@ -68,7 +68,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     givenLogger ??
     (app.container.has('logger')
       ? undefined
-      : createLogger({ name: 'kitr', level: process.env.LOG_LEVEL as any }))
+      : createLogger({ name: 'kitr', level: (process.env.LOG_LEVEL as any) || undefined }))
 
   const h3 = new H3({
     onError: (error, event) => errorToResponse(error, event),
@@ -83,10 +83,9 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     boot() {
       booted ??= (async () => {
         await app.boot()
-        if (!server.logger)
-          server.logger = app.container.has('logger')
-            ? app.container.use('logger')
-            : createLogger({ name: 'kitr' })
+        // The logger provider registers during boot, so it can only be picked up now.
+        if (!givenLogger && app.container.has('logger')) server.logger = app.container.use('logger')
+        else if (!server.logger) server.logger = createLogger({ name: 'kitr' })
         return server
       })()
       return booted
@@ -130,10 +129,25 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       ).replace(/\/$/, '')
       server.logger.info(`listening on ${url}`)
       await app.ready()
-      const close = async () => {
-        await srv.close()
-        await server.close()
-      }
+      // Upgraded (WebSocket) connections never go idle, so a plain close() would wait on them
+      // forever and shutdown would only end at the timeout. Track and end them on close.
+      const nodeServer = (srv as any).node?.server as
+        | (import('node:http').Server & { closeIdleConnections?: () => void })
+        | undefined
+      const upgraded = new Set<import('node:stream').Duplex>()
+      nodeServer?.on('upgrade', (_req, socket) => {
+        upgraded.add(socket)
+        socket.once('close', () => upgraded.delete(socket))
+      })
+      let closing: Promise<void> | undefined
+      const close = () =>
+        (closing ??= (async () => {
+          const stopped = srv.close()
+          for (const socket of upgraded) socket.destroy()
+          nodeServer?.closeIdleConnections?.()
+          await stopped
+          await server.close()
+        })())
       for (const signal of ['SIGINT', 'SIGTERM'] as const) {
         process.once(signal, () => {
           server.logger.info(`${signal} received, shutting down`)

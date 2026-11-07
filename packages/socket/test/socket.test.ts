@@ -49,7 +49,7 @@ describe('socket server', () => {
     await new Promise((resolve) => ws.addEventListener('open', resolve, { once: true }))
     ws.send(JSON.stringify({ t: 'sub', id: 's1', ch: 'projects', p: { id: '1' } }))
     messages.push(await next())
-    expect(messages[0]).toEqual({ t: 'ok', id: 's1' })
+    expect(messages[0]).toEqual({ t: 'ok', id: 's1', p: { id: '1' } })
     expect(sockets.use(projectChannel, { id: '1' }).size).toBe(1)
 
     const pending = next()

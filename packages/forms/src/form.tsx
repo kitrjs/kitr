@@ -169,11 +169,13 @@ export function FieldInput(props: Omit<ComponentProps<'input'>, 'name' | 'id'>) 
 export function SubmitButton({
   children,
   pendingText,
+  disabled,
   ...props
 }: ComponentProps<'button'> & { pendingText?: ReactNode }) {
   const { pending } = useFormStatus()
+  // `disabled` is merged, never overridden: a pending form must not submit twice.
   return (
-    <button type="submit" disabled={pending || props.disabled} aria-busy={pending} {...props}>
+    <button type="submit" {...props} disabled={pending || disabled} aria-busy={pending}>
       {pending && pendingText ? pendingText : children}
     </button>
   )

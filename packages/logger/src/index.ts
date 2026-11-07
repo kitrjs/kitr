@@ -74,8 +74,8 @@ export function createLogger(options: LoggerOptions = {}): Logger {
         level: lvl,
         time: new Date().toISOString(),
         ...(name ? { name } : {}),
-        ...bindings,
-        ...fields,
+        ...withoutReserved(bindings),
+        ...withoutReserved(fields),
         msg: '',
       }
       if (msg instanceof Error) {
@@ -111,6 +111,20 @@ export function createLogger(options: LoggerOptions = {}): Logger {
     return logger
   }
   return build(options.bindings ?? {}, options.name)
+}
+
+const reserved = new Set(['level', 'time', 'msg'])
+
+/** Fields may not overwrite `level`, `time` or `msg`: filtering and formatting rely on them. */
+function withoutReserved(fields?: Record<string, unknown>): Record<string, unknown> {
+  if (!fields) return {}
+  let out: Record<string, unknown> | undefined
+  for (const key of Object.keys(fields)) {
+    if (!reserved.has(key)) continue
+    out ??= { ...fields }
+    delete out[key]
+  }
+  return out ?? fields
 }
 
 function pretty(r: LogRecord): string {

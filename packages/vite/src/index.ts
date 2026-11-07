@@ -179,12 +179,12 @@ export function readRc(root: string): RcInfo {
     },
   }
   if (!path) return info
-  const src = readFileSync(path, 'utf8')
-  const providersBlock = src.match(/providers\s*:\s*\[([\s\S]*?)\n\s*\]/)?.[1] ?? ''
+  const src = stripComments(readFileSync(path, 'utf8'))
+  const providersBlock = arrayBlock(src, 'providers')
   info.providers = [...providersBlock.matchAll(/import\(\s*['"]([^'"]+)['"]\s*\)/g)].map(
     (m) => m[1]!,
   )
-  const packagesBlock = src.match(/packages\s*:\s*\[([\s\S]*?)\]/)?.[1] ?? ''
+  const packagesBlock = arrayBlock(src, 'packages')
   info.packages = [...packagesBlock.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]!)
   const dirs = src.match(/directories\s*:\s*\{([\s\S]*?)\}/)?.[1] ?? ''
   for (const m of dirs.matchAll(/(\w+)\s*:\s*['"]([^'"]+)['"]/g)) info.directories[m[1]!] = m[2]!
@@ -224,4 +224,25 @@ function blessedDeps(root: string): string[] {
   } catch {
     return []
   }
+}
+
+/** Source without comments, so a commented-out provider is not loaded. Strings are kept intact. */
+function stripComments(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\/|(['"`])(?:\\.|(?!\1)[^\\\n])*\1|\/\/[^\n]*/g, (m, quote) =>
+    quote ? m : '',
+  )
+}
+
+/** The text inside `key: [ ... ]`, with nested brackets balanced (one line or many). */
+function arrayBlock(src: string, key: string): string {
+  const start = new RegExp(`\\b${key}\\s*:\\s*\\[`).exec(src)
+  if (!start) return ''
+  let depth = 1
+  let i = start.index + start[0].length
+  const from = i
+  for (; i < src.length && depth > 0; i++) {
+    if (src[i] === '[') depth++
+    else if (src[i] === ']') depth--
+  }
+  return src.slice(from, i - 1)
 }

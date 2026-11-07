@@ -61,6 +61,7 @@ export function runChecks(ctx: ProjectContext): Finding[] {
       out.push({
         level: 'error',
         message: `provider "${spec}" points at ${pkgName}, which is not installed`,
+        fix: `${ctx.pm} add ${pkgName}`,
       })
     if (spec.startsWith('.') || spec.startsWith('#')) {
       const rel = spec.replace(/^#app\//, `${rc.directories.app ?? 'app'}/`).replace(/^\.\//, '')

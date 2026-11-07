@@ -29,6 +29,28 @@ export function createSocketIoClient(
     }
   >()
   const byTopic = new Map<string, Set<string>>()
+  const topicOf = new Map<string, string>()
+  const index = (id: string, topic: string) => {
+    const old = topicOf.get(id)
+    if (old !== undefined) {
+      byTopic.get(old)?.delete(id)
+      if (byTopic.get(old)?.size === 0) byTopic.delete(old)
+    }
+    topicOf.set(id, topic)
+    let set = byTopic.get(topic)
+    if (!set) {
+      set = new Set()
+      byTopic.set(topic, set)
+    }
+    set.add(id)
+  }
+  const unindex = (id: string) => {
+    const old = topicOf.get(id)
+    topicOf.delete(id)
+    if (old === undefined) return
+    byTopic.get(old)?.delete(id)
+    if (byTopic.get(old)?.size === 0) byTopic.delete(old)
+  }
   const listeners = new Set<(s: SocketStatus) => void>()
   let counter = 0
   const emitStatus = (s: SocketStatus) => {
@@ -44,6 +66,10 @@ export function createSocketIoClient(
     if (msg.t === 'ev') {
       for (const id of byTopic.get(topicFor(msg.ch, msg.p)) ?? [])
         subs.get(id)?.onEvent(msg.ev, msg.d)
+    } else if (msg.t === 'ok' && 'p' in msg) {
+      // Listen under the params the server normalised (the channel schema may transform them).
+      const sub = subs.get(msg.id)
+      if (sub) index(msg.id, topicFor(sub.channel, msg.p))
     } else if (msg.t === 'err') {
       const sub = msg.id ? subs.get(msg.id) : undefined
       if (sub?.onError) sub.onError(msg.e)
@@ -61,19 +87,12 @@ export function createSocketIoClient(
     },
     subscribe(channel, params, onEvent, onErrorSub) {
       const id = `s${++counter}`
-      const topic = topicFor(channel, params)
       subs.set(id, { channel, params, onEvent, onError: onErrorSub })
-      let set = byTopic.get(topic)
-      if (!set) {
-        set = new Set()
-        byTopic.set(topic, set)
-      }
-      set.add(id)
+      index(id, topicFor(channel, params))
       if (socket.connected) socket.emit('kitr', { t: 'sub', id, ch: channel, p: params })
       return () => {
         subs.delete(id)
-        set.delete(id)
-        if (set.size === 0) byTopic.delete(topic)
+        unindex(id)
         if (socket.connected) socket.emit('kitr', { t: 'unsub', id })
       }
     },
