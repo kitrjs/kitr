@@ -641,7 +641,7 @@ interface SseServerOptions {
 
 ```ts
 function useChannel<C extends ChannelDefinition<any, any>>(transport: SocketTransport, definition: C, params: ChannelParams<C>, options?: UseSubscriptionOptions<ChannelEventUnion<C>>): {
-  status: "error" | "idle" | "open";
+  status: "idle" | "open" | "error";
   lastEvent: ChannelEventUnion<C> | undefined;
   error: import("@kitr/core").KitrErrorShape | undefined;
 };
