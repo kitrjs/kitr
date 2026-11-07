@@ -71,8 +71,11 @@ for (const { dir, pkg } of pkgs) {
   // Configure: full config file plus the options table.
   const configure = section(src, 'Configure')
   if (configure !== null) {
-    if (!/```ts\n\/\/ config\//.test(configure))
+    // A package with no config file says so and documents the options of its entry point instead.
+    const noConfigFile = /has no config file/.test(configure)
+    if (!noConfigFile && !/```tsx?\n\/\/ config\//.test(configure))
       problems.push('Configure has no `// config/<name>.ts` code block')
+    if (noConfigFile && !/```/.test(configure)) problems.push('Configure has no code')
     if (!/^\| Option \| Default \|/m.test(configure))
       problems.push('Configure has no "| Option | Default | Description |" table')
   }
