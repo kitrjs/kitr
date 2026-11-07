@@ -1,12 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Command } from '#app/components/command'
-import { CreatorMark } from '#app/components/creator-marks'
-import { Icon } from '#app/components/icons'
+import { PlatformBoard, PlatformBuilder } from '#app/components/platform-bits'
 import homeCode from '#app/generated/home-code.json'
-import { categories, findPackage, glyph, kits } from '#app/lib/catalog'
+import { categories, findPackage, kits } from '#app/lib/catalog'
 import { seo, siteUrl } from '#app/lib/seo'
-import { creditsFor } from '#app/lib/upstream'
 
 const description =
   'kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform.'
@@ -36,19 +34,6 @@ export const Route = createFileRoute('/')({
   },
   component: Home,
 })
-
-// One tile per kind of work, across every platform: data, UI, backend and the native shells.
-const mosaic = [
-  'router',
-  'query',
-  'forms',
-  'api',
-  'server',
-  'realtime',
-  'auth',
-  'desktop',
-  'mobile',
-]
 
 const terminal = [
   {
@@ -92,29 +77,6 @@ const terminal = [
     ],
   },
 ] as const
-
-const platforms = [
-  {
-    name: 'web',
-    cmd: 'kitr add web site --mode ssr',
-    text: 'Static, single-page or server-rendered, from the same app. Add a manifest and offline support with one option.',
-  },
-  {
-    name: 'server',
-    cmd: 'kitr add server api --runtime node',
-    text: 'An API on Node, Bun, Deno or Cloudflare Workers, with the typed client your pages call.',
-  },
-  {
-    name: 'desktop',
-    cmd: 'kitr add desktop app',
-    text: 'Windows, macOS and Linux in an Electron shell, or add tauri instead for a small binary on the OS webview.',
-  },
-  {
-    name: 'mobile',
-    cmd: 'kitr add mobile phone',
-    text: 'iPhone and Android through Capacitor, with storage and device APIs switched to native.',
-  },
-]
 
 const ideas = [
   {
@@ -162,41 +124,16 @@ function Home() {
             </Link>
           </div>
         </div>
-        <nav className="mosaic" aria-label="Some kitr packages">
-          {mosaic.map((name) => {
-            const pkg = findPackage(name)
-            if (!pkg) return null
-            const credits = creditsFor(pkg.builtOn)
-            const by = credits.map((c) => c.name).join(' and ')
-            return (
-              <Link
-                key={name}
-                to="/packages/$name"
-                params={{ name }}
-                className="mosaic-tile"
-                style={{ background: categories[pkg.category].color }}
-                aria-label={`${name}, built on ${by}`}
-              >
-                <span className="mosaic-credit" title={`Built on ${by}`}>
-                  {credits.map((c) =>
-                    c.mark ? (
-                      <CreatorMark key={c.name} name={c.mark} size={22} />
-                    ) : (
-                      <span key={c.name} className="mosaic-credit-name">
-                        {c.name}
-                      </span>
-                    ),
-                  )}
-                </span>
-                <span className="mosaic-icon">
-                  <Icon icon={glyph(name)} size={44} stroke="#0B121C" />
-                </span>
-                <span className="mosaic-name mono">{name}</span>
-              </Link>
-            )
-          })}
-        </nav>
+        <div className="hero-platforms">
+          <span className="label">Ships to</span>
+          <PlatformBoard />
+          <a href="#mix" className="hero-platforms-note">
+            Use one, or all of them in one project →
+          </a>
+        </div>
       </section>
+
+      <PlatformBuilder />
 
       <section className="terminal" aria-label="The kitr CLI">
         <div className="terminal-bar">
@@ -250,58 +187,6 @@ function Home() {
           // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted at build time
           dangerouslySetInnerHTML={{ __html: homeCode.contract }}
         />
-      </section>
-
-      <section className="platforms-home" aria-labelledby="platforms-title">
-        <div className="section-head">
-          <div>
-            <span className="label">Platforms</span>
-            <h2 id="platforms-title">Write it once. Ship it everywhere.</h2>
-            <p className="muted">
-              One <code>app/</code> folder, named platforms in <code>kitrrc.ts</code>, and{' '}
-              <code>kitr dev</code> runs them all.
-            </p>
-          </div>
-          <Link to="/docs/$slug" params={{ slug: 'platforms' }}>
-            Platforms guide →
-          </Link>
-        </div>
-        <div className="platforms-layout">
-          <div className="platform-cards">
-            {platforms.map((p) => {
-              const pkg = findPackage(p.name)
-              return (
-                <Link
-                  key={p.name}
-                  to="/packages/$name"
-                  params={{ name: p.name }}
-                  className="platform-card"
-                >
-                  <span
-                    className="tile"
-                    style={{
-                      width: 48,
-                      height: 48,
-                      background: pkg ? categories[pkg.category].color : 'var(--line)',
-                    }}
-                  >
-                    <Icon icon={glyph(p.name)} size={26} stroke="#0B121C" strokeWidth={1.6} />
-                  </span>
-                  <span className="platform-card-text">
-                    <strong className="mono">{p.name}</strong>
-                    <span className="muted">{p.text}</span>
-                    <code className="platform-cmd">{p.cmd}</code>
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
-          <div
-            className="feature-code"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted at build time
-            dangerouslySetInnerHTML={{ __html: homeCode.platforms }}
-          />
-        </div>
       </section>
 
       <section className="kits">

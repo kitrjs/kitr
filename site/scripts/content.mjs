@@ -16,6 +16,7 @@ import { createHighlighter } from 'shiki'
 import { unified } from 'unified'
 import { visit } from 'unist-util-visit'
 import { ogImage, readCatalog, touchIcon } from './og.mjs'
+import { buildPlatforms } from './platforms.mjs'
 
 const site = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repo = resolve(site, '..')
@@ -318,24 +319,6 @@ const highlight = (code, lang) =>
 writeFileSync(
   join(out, 'home-code.json'),
   JSON.stringify({
-    platforms: highlight(
-      `// kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
-import { desktop } from 'kitr/desktop'
-import { mobile } from 'kitr/mobile'
-import { server } from 'kitr/server'
-import { web } from 'kitr/web'
-
-export default defineKitrConfig({
-  platforms: {
-    site: web({ mode: 'ssr', pwa: true }),
-    api: server({ runtime: 'node', port: 3001 }),
-    app: desktop({ title: 'Acme' }),
-    phone: mobile({ appId: 'com.acme.app', appName: 'Acme' }),
-  },
-})`,
-      'ts',
-    ),
     contract: highlight(
       `// app/features/projects/queries.ts
 export const projectsQuery = defineQuery({
@@ -357,6 +340,18 @@ export const renameProject = defineMutation({
   }),
 )
 
+// ---------------------------------------------------------------- platforms
+
+const platformPages = buildPlatforms({
+  repo,
+  site,
+  out,
+  highlight,
+  packages,
+  docs: llms,
+  parseFrontmatter,
+})
+
 // ---------------------------------------------------------------- SEO: OG images, sitemap, robots
 
 const base = 'https://kitr.dev'
@@ -377,6 +372,19 @@ const seoPages = [
     title: 'Packages',
     description: `${packages.length} packages and platforms, each a single kitr add away.`,
   },
+  {
+    path: '/platforms',
+    title: 'Platforms',
+    description: 'Web, server, desktop and mobile from one app. Mix them in one project.',
+    kind: 'Platforms',
+  },
+  ...platformPages.map((p) => ({
+    path: `/platforms/${p.type}`,
+    title: p.type === 'desktop' ? 'Desktop with Electron' : p.name,
+    description: p.tagline,
+    kind: `Platform · ${p.targets.join(', ')}`,
+    tile: { icon: catalog.glyphs[p.type] ?? 'Package01Icon', color: p.color },
+  })),
   {
     path: '/about',
     title: 'A box of parts that fit together',
