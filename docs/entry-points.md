@@ -29,7 +29,7 @@ TanStack's route generator rewrites that specific import in every route file and
 | `kitr`, `kitr/app` | `@kitr/core` | no |
 | `kitr/env` | `@kitr/core` | no |
 | `kitr/react` | `@kitr/react` | yes |
-| `kitr/router` | `@kitr/router` | yes |
+| `kitr/router`, `kitr/router/stack` | `@kitr/router` | yes |
 | `kitr/query`, `kitr/query/provider` | `@kitr/query` | yes |
 | `kitr/http`, `kitr/http/provider` | `@kitr/http` | no (provider is framework-neutral) |
 | `kitr/forms` | `@kitr/forms` | yes |

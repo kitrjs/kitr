@@ -48,7 +48,13 @@ describe('platforms generator', () => {
     expect(out).toContain("declare module '@kitr/core'")
     expect(out).toContain("api: { type: 'server'; options: {} }")
     expect(out).toContain("site: { type: 'web'; options: { mode: 'ssr', port: 3000 } }")
+    expect(out).toContain("readonly KITR_PLATFORM: 'api' | 'site'")
+    expect(out).toContain("readonly KITR_PLATFORM_TYPE: 'server' | 'web'")
     expect(platformsGenerator.watch).toContain('kitrrc.ts')
+  })
+
+  it('types import.meta.env only when there are platforms', () => {
+    expect(renderPlatforms({})).not.toContain('ImportMetaEnv')
   })
 
   it('is always loaded, even with no packages', async () => {

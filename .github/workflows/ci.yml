@@ -35,6 +35,7 @@ jobs:
       - run: pnpm docs:check --strict
       # Every guide follows docs/STYLE.md; a new or changed guide must too.
       - run: pnpm docs:rules --strict
+      - run: pnpm docs:guides --strict
       - name: Generated API pages match the built types
         run: pnpm docs:api --check
       - run: pnpm -C site build

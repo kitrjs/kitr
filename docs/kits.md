@@ -28,15 +28,15 @@ Seven files: `package.json` (`typecheck`, `lint` and `kitr` scripts; `kitr` and 
 
 ### app
 
-A single-page app against an API you already have. `app/routes/__root.tsx` renders the theme and the app shell, `app/routes/index.tsx` is the home page, `config/http.ts` points at `VITE_API_URL`, `config/auth.ts` uses the token adapter, and `mocks` answers requests in development when `VITE_MOCKS=true`. The components come from kitr's registry and live in `app/components/ui`, yours to edit. The [dashboard guide](https://kitr.dev/docs/dashboard) builds on this kit.
+A single-page app against an API you already have. `app/routes/__root.tsx` renders the theme and the app shell, `app/routes/index.tsx` is the home page, `config/http.ts` points at `VITE_API_URL`, `config/auth.ts` uses the token adapter, and `mocks` answers requests in development when `VITE_MOCKS=true`. The components come from kitr's registry and live in `app/components/ui`, yours to edit. The [dashboard guide](https://kitr.dev/guides/dashboard) builds on this kit.
 
 ### fullstack
 
-The app kit rendered through TanStack Start, with an API server beside it: `server/main.ts`, `server/routes.ts` and a health controller from `api`, `app/actions/` from `actions`, `app/channels/` from `realtime`, and `config/seo.ts` for heads and the prerender list. `kitr dev` runs both platforms; `kitr dev site` runs the UI alone. The [full-stack guide](https://kitr.dev/docs/fullstack) walks through it.
+The app kit rendered through TanStack Start, with an API server beside it: `server/main.ts`, `server/routes.ts` and a health controller from `api`, `app/actions/` from `actions`, `app/channels/` from `realtime`, and `config/seo.ts` for heads and the prerender list. `kitr dev` runs both platforms; `kitr dev site` runs the UI alone. The [full-stack guide](https://kitr.dev/guides/fullstack-app) walks through it.
 
 ### server
 
-A backend with no React anywhere in the dependency graph: an h3 server with the kitr lifecycle, Adonis-style routes and controllers, `config/db.ts` for whichever ORM you connect, typed channels and a Vitest setup with `createTestClient`. See [pure-backend.md](pure-backend.md).
+A backend with no React anywhere in the dependency graph: an h3 server with the kitr lifecycle, Adonis-style routes and controllers, `config/db.ts` for whichever ORM you connect, typed channels and a Vitest setup with `createTestClient`. The [API server guide](https://kitr.dev/guides/api-server) walks through it.
 
 ## Preset kits
 

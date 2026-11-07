@@ -39,6 +39,10 @@
       "types": "./dist/router.d.ts",
       "default": "./dist/router.js"
     },
+    "./router/stack": {
+      "types": "./dist/router-stack.d.ts",
+      "default": "./dist/router-stack.js"
+    },
     "./query": {
       "types": "./dist/query.d.ts",
       "default": "./dist/query.js"

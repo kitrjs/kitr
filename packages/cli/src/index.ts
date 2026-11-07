@@ -12,6 +12,14 @@ import { types } from './commands/types'
 import { upgrade } from './commands/upgrade'
 import { createContext, findProjectRoot, findRcPath, log } from './context'
 import { installedPackages } from './packages'
+import {
+  fanOut,
+  findWorkspace,
+  resolveApp,
+  shouldFanOut,
+  takeAppFlag,
+  workspaceCommand,
+} from './workspace'
 
 export { createAddContext, createProjectInfo } from './add-context'
 export { Codemods } from './codemods'
@@ -49,6 +57,13 @@ export {
   watchGlobsOf,
 } from './types'
 export { versionOf, versions } from './versions'
+export {
+  findWorkspace,
+  findWorkspacePath,
+  readWorkspace,
+  takeAppFlag,
+  type WorkspaceInfo,
+} from './workspace'
 
 const info = defineCommand({
   meta: {
@@ -100,6 +115,7 @@ export const main = defineCommand({
     eject,
     upgrade,
     info,
+    workspace: workspaceCommand,
   },
 })
 
@@ -152,7 +168,23 @@ export async function packageCommands(): Promise<Record<string, CommandDef<any>>
   return out
 }
 
-export async function runMain(argv = process.argv.slice(2)) {
+export async function runMain(rawArgv = process.argv.slice(2)) {
+  // Monorepo mode: `--app <name>` runs the command inside that app of kitr.workspace.ts; a
+  // fan-out command typed at the workspace root runs in every app.
+  let argv = rawArgv
+  try {
+    const taken = takeAppFlag(rawArgv)
+    argv = taken.argv
+    if (taken.app) process.chdir(resolveApp(findWorkspace(), taken.app))
+    else {
+      const workspace = shouldFanOut(argv)
+      if (workspace) return await fanOut(workspace, argv)
+    }
+  } catch (error) {
+    console.error(`\n${pc.red('✖')} ${(error as Error).message}`)
+    process.exitCode = 1
+    return
+  }
   const first = argv[0]
   const wantsHelp = argv.includes('--help') || argv.includes('-h')
   // `kitr add jobs --help`: the package's questions as flags.
