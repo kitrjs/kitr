@@ -145,11 +145,8 @@ export class Codemods {
     const full = this.ctx.path(file)
     if (!existsSync(full) || this.ctx.dryRun) return
     const src = readFileSync(full, 'utf8')
-    if (src.includes(`'${to}'`)) return
-    const next =
-      from && src.includes(`import '${from}'`)
-        ? src.replace(`import '${from}'`, `import '${to}'`)
-        : src.replace(/^(import[^\n]*\n)(?!import)/m, `$1import '${to}'\n`)
+    const next = cssImportEdit(src, from, to)
+    if (next === src) return
     writeFileSync(full, next)
     this.ctx.touched.add(file)
   }
@@ -620,4 +617,31 @@ function sortKeys<T extends Record<string, unknown>>(obj: T): T {
 }
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Swap or add a stylesheet in a route file. Start's root route links its CSS as
+ * `import css0 from 'x.css?url'` plus `{ rel: 'stylesheet', href: css0 }`; other files import it
+ * for its side effect. Either way the old sheet is replaced, never loaded next to the new one.
+ */
+export function cssImportEdit(src: string, from: string | undefined, to: string): string {
+  if (src.includes(`'${to}'`) || src.includes(`'${to}?url'`)) return src
+  if (from && src.includes(`'${from}?url'`)) return src.replace(`'${from}?url'`, `'${to}?url'`)
+  if (from && src.includes(`import '${from}'`))
+    return src.replace(`import '${from}'`, `import '${to}'`)
+  const linked = [...src.matchAll(/^import (\w+) from '[^']+\?url'\n/gm)]
+  const links = src.match(/links: \[/)
+  if (linked.length && links) {
+    let n = linked.length
+    while (new RegExp(`\\bcss${n}\\b`).test(src)) n++
+    const last = linked[linked.length - 1]!
+    const at = last.index! + last[0].length
+    const withImport = `${src.slice(0, at)}import css${n} from '${to}?url'\n${src.slice(at)}`
+    return withImport.replace(
+      /links: \[([^\]]*)\]/,
+      (_m, inner: string) =>
+        `links: [${inner.trim() ? `${inner.trim()}, ` : ''}{ rel: 'stylesheet', href: css${n} }]`,
+    )
+  }
+  return src.replace(/^(import[^\n]*\n)(?!import)/m, `$1import '${to}'\n`)
 }

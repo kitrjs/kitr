@@ -79,7 +79,14 @@ export const platforms = defineCommand({
       if (!args.name) throw new Error('kitr platforms remove <name>')
       const rc = ctx.readRc()
       if (!rc.platforms[args.name]) throw new Error(`No platform named "${args.name}"`)
-      removeRcPlatform(ctx, args.name)
+      const type = removeRcPlatform(ctx, args.name)
+      // The last platform of its type: drop the provider that type registered.
+      if (type) {
+        const provider = await resolvePlatformType(ctx, type)
+          .then((info) => info.factoryFn({}).definition.provider)
+          .catch(() => undefined)
+        if (provider) new Codemods(ctx).removeProvider(provider)
+      }
       ctx.log.success(
         `removed platforms.${args.name} from kitrrc.ts (files under platforms/${args.name} are yours to delete)`,
       )

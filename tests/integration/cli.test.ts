@@ -324,6 +324,27 @@ describe('kitr add / remove', () => {
     expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).not.toContain('admin')
   })
 
+  // Regression: `kitr remove desktop` left the provider, the platforms entry and the import.
+  it.each([
+    ['desktop', 'desktop'],
+    ['tauri', 'tauri'],
+  ])(
+    'remove %s takes the platform, its import and its provider out of kitrrc.ts',
+    (example, pkg) => {
+      const project = copyExample(example)
+      try {
+        expect(readFileSync(join(project, 'kitrrc.ts'), 'utf8')).toContain(`@kitr/${pkg}/provider`)
+        kitr(project, 'remove', pkg, '--no-install')
+        const rc = readFileSync(join(project, 'kitrrc.ts'), 'utf8')
+        expect(rc).not.toContain(`@kitr/${pkg}/provider`)
+        expect(rc).not.toContain(`kitr/${pkg}'`)
+        expect(rc).not.toMatch(new RegExp(`\\b${pkg}\\(`))
+      } finally {
+        remove(project)
+      }
+    },
+  )
+
   // Regression: the platform name was required, so `kitr add server` alone threw.
   it('add <type> without a name uses the usual name for that type', () => {
     const blank = copyExample('blank')

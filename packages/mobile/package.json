@@ -12,6 +12,7 @@
       "Capacitor"
     ],
     "requires": [
+      "vite",
       "router",
       "platform",
       "storage"

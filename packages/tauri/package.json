@@ -13,6 +13,7 @@
       "Tauri 2"
     ],
     "requires": [
+      "vite",
       "router",
       "platform",
       "storage"

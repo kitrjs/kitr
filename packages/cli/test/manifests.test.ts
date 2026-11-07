@@ -41,6 +41,17 @@ describe('package manifests', () => {
     expect([...platformTypeNames].sort()).toEqual(['desktop', 'mobile', 'server', 'tauri', 'web'])
   })
 
+  // The CLI plans from the setup module, so it must say what the manifest says.
+  it.each(
+    packages
+      .filter(({ dir, pkg }) => !pkg.kitr.included && existsSync(join(root, dir, 'src/kitr.ts')))
+      .map(({ dir, pkg }) => [dir, pkg]),
+  )('%s setup module declares the manifest requires and client', async (dir, pkg) => {
+    const definition = (await import(join(root, dir, 'src/kitr.ts'))).default
+    expect([...(definition.requires ?? [])].sort()).toEqual([...(pkg.kitr.requires ?? [])].sort())
+    expect(Boolean(definition.client)).toBe(Boolean(pkg.kitr.client))
+  })
+
   it('rejects a bad manifest', () => {
     expect(
       validateManifest(

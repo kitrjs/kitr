@@ -448,7 +448,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it needs `server/main.ts` to export `app`, as shown in [Commands](#commands). `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
+Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it boots the app behind the `server` that `server/main.ts` exports. `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
 
 `jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
 
@@ -527,12 +527,7 @@ kitr jobs:list
 # prune_sessions    3        60000    0 3 * * *
 ```
 
-`kitr jobs:work` needs the entry file to export `app`. The generated `server/main.ts` exports `server`, so add one line to it before you use the command:
-
-```ts
-// server/main.ts
-export const app = server.app
-```
+`kitr jobs:work` boots `server.app` from the entry's exported `server`, as the generated `server/main.ts` has it. An entry that exports `app` instead works too. One that exports neither fails with `server/main.ts exports neither \`server\` nor \`app\``.
 
 `kitr doctor` adds one finding from this package: an info line when `config/jobs.ts` lists no jobs (`jobs: []`), with the fix `kitr make:job <name>`, then add it to `jobs: [...]`.
 

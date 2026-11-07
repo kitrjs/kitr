@@ -75,6 +75,9 @@ export const tauri = definePlatform<TauriOptions>(
     dependencies: [
       { name: '@tauri-apps/api' },
       { name: '@tauri-apps/plugin-store' },
+      // The provider opens links and quits through these two.
+      { name: '@tauri-apps/plugin-opener' },
+      { name: '@tauri-apps/plugin-process' },
       { name: '@tauri-apps/cli', dev: true },
     ],
     scaffold(ctx) {
@@ -85,13 +88,20 @@ export const tauri = definePlatform<TauriOptions>(
       const url = `http://localhost:${port}`
       ctx.log.info(`${ctx.name}: dev server on ${url}, the Tauri window loads it live`)
       const vite = ctx.exec('vite', ['dev', '--port', String(port), '--strictPort'])
+      await ensureIcons(ctx)
       await waitForUrl(url, ctx.signal)
+      // tauri.conf.json holds the port from scaffold time; --port and KITR_<NAME>_PORT win over it.
+      const config = JSON.stringify({ build: { devUrl: url } })
       await ctx
-        .exec('tauri', ['dev', '--no-watch'], { cwd: ctx.dir(), env: { KITR_DEV_URL: url } })
+        .exec('tauri', ['dev', '--no-watch', '--config', config], {
+          cwd: ctx.dir(),
+          env: { KITR_DEV_URL: url, KITR_DEVTOOLS: options.devtools ? '1' : '0' },
+        })
         .catch((e) => ctx.log.error(String(e)))
       await vite
     },
     async build(ctx) {
+      await ensureIcons(ctx)
       await ctx.exec('vite', ['build'])
       await ctx.exec('tauri', ['build', ...(ctx.flags.debug ? ['--debug'] : [])], {
         cwd: ctx.dir(),
@@ -105,11 +115,17 @@ export const tauri = definePlatform<TauriOptions>(
         `${ctx.name}: run the installed app or the binary in platforms/${ctx.name}/src-tauri/target/release`,
       )
     },
-    doctor(ctx) {
+    async doctor(ctx) {
       const out: PlatformFinding[] = []
       const pkg = readPackage(ctx)
       const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-      for (const dep of ['@tauri-apps/api', '@tauri-apps/cli', '@tauri-apps/plugin-store'])
+      for (const dep of [
+        '@tauri-apps/api',
+        '@tauri-apps/cli',
+        '@tauri-apps/plugin-store',
+        '@tauri-apps/plugin-opener',
+        '@tauri-apps/plugin-process',
+      ])
         if (!(dep in deps))
           out.push({
             level: 'error',
@@ -121,6 +137,13 @@ export const tauri = definePlatform<TauriOptions>(
           level: 'error',
           message: `${ctx.name}: platforms/${ctx.name}/src-tauri is missing`,
           fix: `kitr platforms scaffold ${ctx.name}`,
+        })
+      // The shell is a Rust binary: no cargo, no build.
+      if (!(await hasCommand('cargo')))
+        out.push({
+          level: 'error',
+          message: `${ctx.name}: the Rust toolchain (cargo) is not on PATH, and Tauri builds with it`,
+          fix: 'Install Rust from https://rustup.rs, then open a new terminal',
         })
       return out
     },
@@ -180,7 +203,8 @@ function scaffoldTauri(ctx: PlatformContext, options: TauriOptions) {
               ...(options.minHeight ? { minHeight: options.minHeight } : {}),
             },
           ],
-          security: { csp: null },
+          // Tauri hashes the inline scripts in the built client and adds them to this policy.
+          security: { csp: CSP },
         },
         bundle: {
           active: true,
@@ -216,6 +240,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-store = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 `,
@@ -244,6 +269,18 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .setup(|_app| {
+            // \`kitr dev\` sets KITR_DEVTOOLS from the platform's \`devtools\` option.
+            #[cfg(debug_assertions)]
+            if std::env::var("KITR_DEVTOOLS").as_deref() == Ok("1") {
+                use tauri::Manager;
+                if let Some(window) = _app.get_webview_window("main") {
+                    window.open_devtools();
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -258,7 +295,7 @@ pub fn run() {
         identifier: 'default',
         description: 'Capabilities for the main window',
         windows: ['main'],
-        permissions: ['core:default', 'store:default', 'opener:default'],
+        permissions: ['core:default', 'store:default', 'opener:default', 'process:default'],
       },
       null,
       2,
@@ -267,7 +304,7 @@ pub fn run() {
   ctx.write(`${base}/.gitignore`, '/target\n/gen/schemas\n')
   ctx.write(
     `${base}/icons/README.md`,
-    `Run \`${ctx.pm} exec tauri icon path/to/icon.png\` (1024x1024) from platforms/${ctx.name} to generate every size listed in tauri.conf.json.\n`,
+    `\`kitr dev ${ctx.name}\` and \`kitr build ${ctx.name}\` generate a placeholder set here when it is missing. For your own, run \`${ctx.pm} exec tauri icon path/to/icon.png\` (1024x1024) from platforms/${ctx.name}.\n`,
   )
   ctx.write(
     'app/commands.ts',
@@ -282,6 +319,90 @@ export type Commands = {
 export const commands = defineCommands<Commands>()
 `,
   )
+}
+
+/** The default policy: the app's own files, Tauri's IPC, and https/wss APIs. */
+export const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' asset: http://asset.localhost data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' ipc: http://ipc.localhost https: wss:",
+].join('; ')
+
+const ICONS = ['32x32.png', '128x128.png', '128x128@2x.png', 'icon.icns', 'icon.ico']
+
+/** Tauri will not compile without the icons tauri.conf.json lists: make a placeholder set once. */
+export async function ensureIcons(ctx: PlatformContext) {
+  const dir = `platforms/${ctx.name}/src-tauri/icons`
+  if (ICONS.every((icon) => ctx.exists(`${dir}/${icon}`))) return
+  const { writeFileSync } = await import('node:fs')
+  const { join } = await import('node:path')
+  const source = join(ctx.dir(), 'app-icon.png')
+  if (!ctx.exists(`platforms/${ctx.name}/app-icon.png`))
+    writeFileSync(source, await placeholderPng())
+  ctx.log.info(`${ctx.name}: generating icons from platforms/${ctx.name}/app-icon.png`)
+  await ctx.exec('tauri', ['icon', 'app-icon.png'], { cwd: ctx.dir() })
+}
+
+/** A 1024x1024 rounded square in one colour: enough for Tauri, and obviously a placeholder. */
+export async function placeholderPng(size = 1024): Promise<Buffer> {
+  const { deflateSync } = await import('node:zlib')
+  const radius = size * 0.2
+  const row = size * 4 + 1
+  const raw = Buffer.alloc(row * size)
+  for (let y = 0; y < size; y++) {
+    raw[y * row] = 0
+    for (let x = 0; x < size; x++) {
+      const dx = Math.max(radius - x, x - (size - 1 - radius), 0)
+      const dy = Math.max(radius - y, y - (size - 1 - radius), 0)
+      const inside = dx * dx + dy * dy <= radius * radius
+      const at = y * row + 1 + x * 4
+      raw[at] = 0x63
+      raw[at + 1] = 0x66
+      raw[at + 2] = 0xf1
+      raw[at + 3] = inside ? 255 : 0
+    }
+  }
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    return c >>> 0
+  })
+  const crc = (buf: Buffer) => {
+    let c = 0xffffffff
+    for (const b of buf) c = crcTable[(c ^ b) & 0xff]! ^ (c >>> 8)
+    return (c ^ 0xffffffff) >>> 0
+  }
+  const chunk = (type: string, data: Buffer) => {
+    const len = Buffer.alloc(4)
+    len.writeUInt32BE(data.length)
+    const body = Buffer.concat([Buffer.from(type, 'ascii'), data])
+    const sum = Buffer.alloc(4)
+    sum.writeUInt32BE(crc(body))
+    return Buffer.concat([len, body, sum])
+  }
+  const header = Buffer.alloc(13)
+  header.writeUInt32BE(size, 0)
+  header.writeUInt32BE(size, 4)
+  header[8] = 8 // bit depth
+  header[9] = 6 // RGBA
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ])
+}
+
+async function hasCommand(command: string): Promise<boolean> {
+  const { spawnSync } = await import('node:child_process')
+  const result = spawnSync(command, ['--version'], {
+    stdio: 'ignore',
+    shell: process.platform === 'win32',
+  })
+  return !result.error && result.status === 0
 }
 
 async function waitForUrl(url: string, signal?: AbortSignal) {

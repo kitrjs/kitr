@@ -9,7 +9,7 @@ export default definePackage({
     ctx.env.add({ RESEND_API_KEY: '', MAIL_FROM: 'App <hello@example.com>' }, 'Mail')
     ctx.config(
       'mail',
-      `import { createResendTransport, defineConfig } from 'kitr/mail'\n\n/**\n * Without a transport, development logs every message and production refuses to boot, so a\n * missing RESEND_API_KEY can never print password reset links to production logs.\n * For SMTP: createSmtpTransport({ host, auth }).\n */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : undefined,\n})\n`,
+      `import { createResendTransport, defineConfig } from 'kitr/mail'\n\n/**\n * Without a transport, development logs every message and production refuses to boot, so a\n * missing RESEND_API_KEY can never print password reset links to production logs.\n * For SMTP, \`pnpm add nodemailer\`, then: createSmtpTransport(nodemailer, { host, port, auth })\n * with \`import nodemailer from 'nodemailer'\`.\n */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : undefined,\n})\n`,
     )
     ctx.write(
       'server/mail/welcome.tsx',

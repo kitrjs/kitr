@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add offline`: keep showing loaded data with no connection, and replay queued changes on reconnect. */
 export default definePackage({
   name: 'offline',
+  requires: ['query', 'storage'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/offline/provider')
     ctx.config(

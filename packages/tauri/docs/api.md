@@ -10,6 +10,30 @@ Every export of `kitr/tauri`, `kitr/tauri/client`, `kitr/tauri/provider`, read f
 
 ## kitr/tauri
 
+### ensureIcons
+
+```ts
+function ensureIcons(ctx: PlatformContext): Promise<void>;
+```
+
+Tauri will not compile without the icons tauri.conf.json lists: make a placeholder set once.
+
+### placeholderPng
+
+```ts
+function placeholderPng(size?: number): Promise<Buffer>;
+```
+
+A 1024x1024 rounded square in one colour: enough for Tauri, and obviously a placeholder.
+
+### CSP
+
+```ts
+const CSP: string;
+```
+
+The default policy: the app's own files, Tauri's IPC, and https/wss APIs.
+
 ### tauri
 
 ```ts

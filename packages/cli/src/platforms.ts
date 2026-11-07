@@ -363,10 +363,19 @@ export function writeRcPlatform(
   })
 }
 
-export function removeRcPlatform(ctx: ProjectContext, name: string) {
-  editRcSource(ctx, (_mod, target) => {
+/**
+ * Remove `platforms.<name>` from kitrrc.ts, and the factory's import once no other platform calls it.
+ * Returns the factory the entry called, so the caller can drop that type's provider too.
+ */
+export function removeRcPlatform(ctx: ProjectContext, name: string): string | undefined {
+  const platforms = ctx.readRc().platforms
+  const factory = platforms[name]?.factory
+  const stillUsed = Object.entries(platforms).some(([n, p]) => n !== name && p.factory === factory)
+  editRcSource(ctx, (mod, target) => {
     if (target.platforms) delete target.platforms[name]
+    if (factory && !stillUsed && mod.imports[factory]) delete mod.imports[factory]
   })
+  return factory && !stillUsed ? factory : undefined
 }
 
 /** Change one option of a platform in kitrrc.ts (`kitr config site port 4000`). `undefined` removes it. */

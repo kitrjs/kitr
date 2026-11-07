@@ -66,7 +66,7 @@ The `desktop` kit already has an `app` desktop platform next to a `site` web pla
 kitr new acme-orders --kit desktop
 ```
 
-`kitr platforms remove app` takes the platform out of `kitrrc.ts` and leaves `platforms/app/` for you to delete. `kitr remove desktop` then takes `@kitr/desktop` out of `packages` and the dependencies; it leaves the provider line, the `desktop` import, the Electron dev dependencies and the `"main"` field, so remove those yourself.
+`kitr platforms remove app` takes the platform out of `kitrrc.ts`, and with the last desktop platform also the `desktop` import and the provider line. It leaves `platforms/app/` for you to delete. `kitr remove desktop` does all of that for every desktop platform, and takes `@kitr/desktop` out of `packages` and the dependencies; the Electron dev dependencies and the `"main"` field stay, so remove those yourself.
 
 ## Configure
 
@@ -204,8 +204,8 @@ Every call from the window to the main process is declared once, as a TypeScript
 ```ts
 // platforms/app/ipc.ts
 /**
- * The IPC contract shared by main, preload and the renderer. Add a command here, implement it
- * in main.ts, call it from the app with `ipc.invoke('...')`.
+ * The IPC contract shared by main, preload and the renderer. Add a command here and to
+ * `channels`, implement it in main.ts, call it from the app with `ipc.invoke('...')`.
  */
 export type Ipc = {
   'app.version': () => string
@@ -218,9 +218,18 @@ export type IpcPush = {
   'app.focus': (focused: boolean) => void
   'orders.syncProgress': (percent: number) => void
 }
+
+/** Every channel above, at run time: preload lets only these (and kitr:*) through. */
+export const channels = {
+  'app.version': true,
+  'dialog.openFile': true,
+  'invoices.save': true,
+  'app.focus': true,
+  'orders.syncProgress': true,
+} satisfies Record<keyof Ipc | keyof IpcPush, true>
 ```
 
-Name channels `<area>.<verb>`, as above. Arguments and return values cross the process boundary through the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm): plain objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work, while functions, class instances and DOM nodes do not. A command may return a value or a promise; the window always gets a promise. Channels starting with `kitr:` are reserved for the ones `handleKitrIpc()` serves.
+`channels` is the same list at run time, for the preload script's allow list ([Limit which channels reach the window](#limit-which-channels-reach-the-window)). The `satisfies` makes a channel missing from it, or left over after you delete a command, a type error. Name channels `<area>.<verb>`, as above. Arguments and return values cross the process boundary through the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm): plain objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work, while functions, class instances and DOM nodes do not. A command may return a value or a promise; the window always gets a promise. Channels starting with `kitr:` are reserved for the ones `handleKitrIpc()` serves.
 
 ## Implement a command in the main process
 
@@ -401,21 +410,19 @@ Don't sniff the user agent for `Electron` yourself, and don't import `electron` 
 
 ## Limit which channels reach the window
 
-`exposeIpc(contextBridge, ipcRenderer)` in the preload script puts a small bridge at `window.kitrIpc` with `invoke`, `on` and `send`. Nothing else from Node or Electron crosses into the page. By default the bridge forwards any channel name. Pass `allow` to forward only the ones you declared:
+`exposeIpc(contextBridge, ipcRenderer)` in the preload script puts a small bridge at `window.kitrIpc` with `invoke`, `on` and `send`. Nothing else from Node or Electron crosses into the page. On its own the bridge forwards any channel name, so the scaffolded preload passes `allow` to forward only the channels `ipc.ts` declares:
 
 ```ts
 // platforms/app/preload.ts
 import { contextBridge, ipcRenderer } from 'electron'
-import { exposeIpc } from 'kitr/desktop/preload'
+import { allowChannels, exposeIpc } from 'kitr/desktop/preload'
+import { channels } from './ipc'
 
-const channels = new Set(['app.version', 'dialog.openFile', 'invoices.save', 'app.focus', 'orders.syncProgress'])
-
-exposeIpc(contextBridge, ipcRenderer, {
-  allow: (channel) => channel.startsWith('kitr:') || channels.has(channel),
-})
+// Only the channels declared in ipc.ts (and kitr's own kitr:* channels) reach the renderer.
+exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
 ```
 
-A call to any other channel rejects with `IPC channel "fs.readAnything" is not allowed`; `on()` and `send()` for it do nothing. Keep the `kitr:` channels allowed, because the provider's storage and platform drivers use them.
+`allowChannels()` takes the `channels` record or a plain array, and always lets the `kitr:` channels through. `allow` also takes any `(channel) => boolean`. A call to any other channel rejects with `IPC channel "fs.readAnything" is not allowed`; `on()` and `send()` for it do nothing. A hand-written `allow` must keep the `kitr:` channels, because the provider's storage and platform drivers use them.
 
 > **Warning**
 > The allow list is your boundary if the window ever loads content you did not write, such as a remote page or user HTML. Keep it to the channels the app uses, and keep the scaffold's `contextIsolation: true`, `sandbox: true` and `nodeIntegration: false`. Turning any of them off gives page scripts direct access to Node.js and the file system.
@@ -690,7 +697,7 @@ Port each handler in `main.ts` to a `#[tauri::command]` in `platforms/app/src-ta
 | `kitr config <name> [option] [value]` | Reads or sets an option in `kitrrc.ts`. `--unset` removes one. |
 | `kitr platforms` | Lists every platform with its options. |
 | `kitr platforms scaffold <name>` | Writes the scaffolded files that are missing. Existing files are kept. |
-| `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`. |
+| `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`, with its import and provider when it was the last desktop platform. |
 
 Any option is also a flag on `dev`, `build` and `start` for one run: `kitr dev app --port 3300`.
 

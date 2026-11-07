@@ -32,7 +32,7 @@ What `kitr add` does:
 kitr add consent --no-install
 ```
 
-No kit includes consent. It does not add the [storage](/packages/storage) provider; add it with `kitr add storage` when you want `config/storage.ts` to set the cookie's prefix, `path` and `secure`.
+No kit includes consent. `kitr add consent` adds [storage](/packages/storage) first when the project lacks it, so `config/storage.ts` sets the cookie's prefix, `path` and `secure`.
 
 `kitr remove consent` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/consent.ts`. It leaves `app/components/consent-banner.tsx` and the place you mounted it, which you delete by hand. Visitors keep their `consent` cookie until it expires.
 

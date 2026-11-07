@@ -25,7 +25,7 @@ What `kitr add` does:
 - Adds `@kitr/tailwind` to `packages` in `kitrrc.ts`. The `kitr()` Vite plugin sees it there and loads `@tailwindcss/vite`.
 - Writes `config/tailwind.ts` (shown under [Configure](#configure)).
 - Writes `app/styles/app.css`, the stylesheet Tailwind starts from. When `app/styles/tokens.css` exists (the [theme](/packages/theme) package writes it), the stylesheet imports it last, so your token values win over kitr's.
-- In `app/routes/__root.tsx`, replaces `import 'kitr/theme/styles.css'` with `import '#app/styles/app.css'`, or adds that import after the block of imports at the top of the file when it has neither.
+- In `app/routes/__root.tsx`, swaps the linked `kitr/theme/styles.css?url` for `#app/styles/app.css?url` (or an `import 'kitr/theme/styles.css'` for `import '#app/styles/app.css'`), so the theme stylesheet loads once, through `app.css`. A root route with neither gets the new sheet added.
 - Adds a `## kitr: tailwind` section to `AGENTS.md`: utilities map to kitr tokens, merge classes with `cn()`, dark mode is `data-theme="dark"` on `<html>`.
 
 It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits include tailwind, and so do the preset kits built on them.
