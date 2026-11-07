@@ -184,8 +184,17 @@ pre,
 .nav-links {
   display: flex;
   gap: 24px;
+  /* On a phone the links scroll sideways inside the header instead of widening the page. */
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-links::-webkit-scrollbar {
+  display: none;
 }
 .nav-links a {
+  flex: none;
+  white-space: nowrap;
   color: var(--ink);
   text-decoration: none;
   font-weight: 500;
@@ -2523,8 +2532,18 @@ a.built-on-link:hover {
     display: none;
   }
 }
+@media (max-width: 480px) {
+  /* Platforms is linked from the home page and the footer; a phone header keeps docs, packages and guides. */
+  .nav-links a[href="/platforms"] {
+    display: none;
+  }
+}
 @media (max-width: 400px) {
+  .nav {
+    gap: 8px;
+  }
   .nav-links {
-    gap: 12px;
+    gap: 10px;
+    font-size: 14px;
   }
 }
