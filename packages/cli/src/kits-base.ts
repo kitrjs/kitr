@@ -13,7 +13,7 @@ export const baseReact = (ctx: ProjectContext, name: string) => {
           dev: 'kitr dev',
           build: 'kitr build',
           start: 'kitr start',
-          typecheck: 'tsc --noEmit',
+          typecheck: 'kitr types && tsc --noEmit',
           test: 'vitest run',
           lint: 'biome check .',
           kitr: 'kitr',
@@ -58,9 +58,19 @@ export const baseReact = (ctx: ProjectContext, name: string) => {
             '#config/*': ['./config/*'],
             '#components/*': ['./app/components/*'],
             '#server/*': ['./server/*'],
+            '#kitr/*': ['./.kitr/*'],
           },
         },
-        include: ['app', 'config', 'server', 'platforms', 'kitrrc.ts', 'vite.config.ts', 'test'],
+        include: [
+          'app',
+          'config',
+          'server',
+          'platforms',
+          '.kitr/**/*',
+          'kitrrc.ts',
+          'vite.config.ts',
+          'test',
+        ],
         exclude: ['platforms/**/src-tauri', 'platforms/**/ios', 'platforms/**/android'],
       },
       null,
@@ -77,16 +87,16 @@ export const baseReact = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'biome.json',
-    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/dist", "!**/.output"] },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
+    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/.kitr", "!**/dist", "!**/.output"] },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
   )
-  ctx.write('.gitignore', 'node_modules\ndist\n.output\n.nitro\n.tanstack\n*.local\n.env\n')
+  ctx.write('.gitignore', 'node_modules\ndist\n.output\n.nitro\n.tanstack\n.kitr\n*.local\n.env\n')
   ctx.write(
     '.env.example',
     '# Copy to .env. Public variables start with VITE_ and ship to the browser.\n',
   )
   ctx.write(
     'AGENTS.md',
-    `# Agent guide\n\nThis app is built with kitr. Each section below is maintained by \`kitr add\`.\n\n## kitr: conventions\n\n- Import framework code from \`kitr/*\` entry points (\`kitr/router\`, \`kitr/query\`, ...). They re-export the upstream library unchanged plus kitr helpers.\n- Where the app runs is a platform in \`kitrrc.ts\` (\`platforms: { site: web({...}), api: server({...}) }\`). \`kitr dev <name>\` / \`kitr build <name>\` / \`kitr start <name>\` run one or all; \`kitr config <name> <option> <value>\` edits options; native projects live in \`platforms/<name>/\`.\n- Wiring lives in \`kitrrc.ts\` and \`config/*.ts\`; server code in \`server/\`. Generators: \`kitr make:route|action|controller|channel|store|form|queries\`. Run \`kitr doctor\` after changes.\n`,
+    `# Agent guide\n\nThis app is built with kitr. Each section below is maintained by \`kitr add\`.\n\n## kitr: conventions\n\n- Import framework code from \`kitr/*\` entry points (\`kitr/router\`, \`kitr/query\`, ...). They re-export the upstream library unchanged plus kitr helpers.\n- Where the app runs is a platform in \`kitrrc.ts\` (\`platforms: { site: web({...}), api: server({...}) }\`). \`kitr dev <name>\` / \`kitr build <name>\` / \`kitr start <name>\` run one or all; \`kitr config <name> <option> <value>\` edits options; native projects live in \`platforms/<name>/\`.\n- Wiring lives in \`kitrrc.ts\` and \`config/*.ts\`; server code in \`server/\`. Generators: \`kitr make:route|query|mutation|controller|channel|store|form|queries\`. Generated types live in \`.kitr/\` (\`kitr types\`, also run by \`kitr dev\` and \`kitr build\`); import them from \`#kitr/*\`. Run \`kitr doctor\` after changes.\n`,
   )
 }
 
@@ -102,7 +112,7 @@ export const baseServer = (ctx: ProjectContext, name: string) => {
           dev: 'kitr dev',
           build: 'kitr build',
           start: 'kitr start',
-          typecheck: 'tsc --noEmit',
+          typecheck: 'kitr types && tsc --noEmit',
           test: 'vitest run',
           'api:sync': 'kitr api:sync',
           kitr: 'kitr',
@@ -144,9 +154,10 @@ export const baseServer = (ctx: ProjectContext, name: string) => {
             '#app/*': ['./app/*'],
             '#config/*': ['./config/*'],
             '#server/*': ['./server/*'],
+            '#kitr/*': ['./.kitr/*'],
           },
         },
-        include: ['app', 'config', 'server', 'platforms', 'kitrrc.ts', 'test'],
+        include: ['app', 'config', 'server', 'platforms', '.kitr/**/*', 'kitrrc.ts', 'test'],
       },
       null,
       2,
@@ -158,9 +169,9 @@ export const baseServer = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'biome.json',
-    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
+    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/.kitr", "!**/dist"] },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
   )
-  ctx.write('.gitignore', 'node_modules\ndist\n*.local\n.env\n')
+  ctx.write('.gitignore', 'node_modules\ndist\n.kitr\n*.local\n.env\n')
   ctx.write('.env.example', '# Copy to .env\n')
   ctx.write(
     'app/env.ts',
@@ -176,6 +187,7 @@ export const baseServer = (ctx: ProjectContext, name: string) => {
     '#app/*': './app/*',
     '#config/*': './config/*',
     '#server/*': './server/*',
+    '#kitr/*': './.kitr/*',
   }
   ctx.write('package.json', `${JSON.stringify(pkg, null, 2)}\n`, { overwrite: true })
 }

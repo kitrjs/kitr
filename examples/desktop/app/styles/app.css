@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'kitr/tailwind/preset.css';
 @import 'kitr/theme/styles.css';
+@import './tokens.css';
 
 @source '../';

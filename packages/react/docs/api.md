@@ -79,7 +79,9 @@ class KitrApp {
   /** Native drivers registered by platform providers, resolved by capability packages. */
   readonly drivers: DriverRegistry;
   /** The platform name from kitrrc.ts this bundle runs as, when known. */
-  readonly platform: string | undefined;
+  readonly platform: PlatformName | undefined;
+  /** The process-wide operation registry (see `operations` in `@kitr/core`). */
+  readonly operations: OperationRegistry;
   private inputs;
   private phase;
   private readying;
@@ -123,7 +125,13 @@ interface CreateAppOptions {
   /** Validated env object (from `createEnv`). Exposed as `app.env`. */
   env?: Record<string, unknown>;
   /** The platform name this bundle was built for (`kitr dev site` → `site`). Default: from `import.meta.env.KITR_PLATFORM`. */
-  platform?: string;
+  platform?: PlatformName;
+  /**
+   * Every named query and mutation, by name: the `operations` map `kitr types` writes to
+   * `.kitr/actions.ts`. Registered process-wide, so `useQuery('projects.list')` and
+   * `call('projects.update', input)` resolve anywhere.
+   */
+  operations?: Record<string, OperationLike>;
 }
 ```
 

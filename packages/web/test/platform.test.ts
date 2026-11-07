@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fakePlatformContext } from '../../../tests/setup/platform-context'
-import { pwaManifest, startWeb, web } from '../src'
+import { pwaManifest, startWeb, staticFiles, web } from '../src'
 
 const pkg = (deps: Record<string, string> = {}, dev: Record<string, string> = {}) =>
   JSON.stringify({ name: 'shop', dependencies: deps, devDependencies: dev })
@@ -154,5 +154,41 @@ describe('pwaManifest', () => {
       theme_color: '#000',
       display: 'fullscreen',
     })
+  })
+})
+
+describe('staticFiles', () => {
+  // Regression: every file was served with a one-year max-age, index.html and sw.js included,
+  // so a deploy never reached returning users.
+  const setup = async (base?: string) => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const dir = mkdtempSync(join(tmpdir(), 'kitr-web-static-'))
+    mkdirSync(join(dir, 'assets'))
+    writeFileSync(join(dir, 'index.html'), '<!doctype html>')
+    writeFileSync(join(dir, 'sw.js'), 'self')
+    writeFileSync(join(dir, 'assets', 'app-abc123.js'), 'x')
+    const { staticMiddleware } = await import('srvx/static')
+    const handler = staticFiles(staticMiddleware as never, dir, base)
+    const next = () => new Response('fallback', { status: 404 })
+    return (path: string) => handler(new Request(`http://x${path}`), next)
+  }
+
+  it('caches hashed assets for a year and revalidates everything else', async () => {
+    const get = await setup()
+    const asset = await get('/assets/app-abc123.js')
+    expect(asset.status).toBe(200)
+    expect(asset.headers.get('cache-control')).toBe('max-age=31536000, immutable')
+    for (const path of ['/index.html', '/sw.js'])
+      expect((await get(path)).headers.get('cache-control'), path).toBe('no-cache')
+    expect((await get('/missing')).status).toBe(404)
+  })
+
+  it('serves under the platform base', async () => {
+    const get = await setup('/admin')
+    expect((await get('/admin/assets/app-abc123.js')).status).toBe(200)
+    expect((await get('/admin/sw.js')).headers.get('cache-control')).toBe('no-cache')
+    expect((await get('/assets/app-abc123.js')).status).toBe(404)
   })
 })

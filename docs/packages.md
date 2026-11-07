@@ -19,7 +19,7 @@ Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the rout
 | `logger` | `@kitr/logger` | any | | Structured logger, levels, children, request ids, pretty in dev and JSON in production. |
 | `server` | `@kitr/server` | any | logger | h3 server with the kitr app lifecycle, request-scoped container, health route, graceful shutdown. Standalone via srvx, or a `fetch` handler inside Start. `kitr/server/platform` is the `server()` platform factory. |
 | `api` | `@kitr/api` | any | server | Adonis-style router (groups, resources, middleware) in `server/routes.ts`, controllers in `server/controllers/` with `static validation`, typed client with no codegen, OpenAPI. |
-| `actions` | `@kitr/actions` | client | server | `defineAction` over Start server functions: input schema, middleware, one error shape, cache effects, `.query()`/`.mutation()` for TanStack Query. |
+| `actions` | `@kitr/actions` | client | server, query | `defineQuery` and `defineMutation` over Start server functions: input schema, middleware, one error shape, cache effects. `kitr types` registers every name, so `useQuery('projects.list')` is typed. |
 | `seo` | `@kitr/seo` | client | | `seo()` head tags, `jsonLd()`, `ssrRoute()`, `cacheHeaders()`, `robotsTxt()`; `config/seo.ts` drives the web platform's prerender list and sitemap. |
 | `realtime` | `@kitr/realtime` | any | server | Typed channels over one of three transports chosen in `config/realtime.ts`: `ws` (partysocket client, crossws server), `socket.io` (rooms), `sse` (EventSource plus a POST control channel). Events apply cache effects; `kitr/realtime/react` has `useChannel`. |
 | `db` | `@kitr/db` | any | server | `defineDb({ connect, disconnect })` so any ORM joins the lifecycle and is available as `ctx.db`. |

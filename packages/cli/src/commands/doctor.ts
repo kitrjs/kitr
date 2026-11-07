@@ -6,6 +6,7 @@ import { createContext, type ProjectContext } from '../context'
 import { installedPackages } from '../packages'
 import { createPlatformContext, loadPlatforms, platformTypes } from '../platforms'
 import { recipes } from '../recipes'
+import { runTypes } from '../types'
 import { versions } from '../versions'
 
 export interface Finding {
@@ -302,6 +303,20 @@ export async function platformChecks(ctx: ProjectContext): Promise<Finding[]> {
   return out
 }
 
+/** Generated types under `.kitr/` must match what the generators produce now. */
+export async function typesChecks(ctx: ProjectContext): Promise<Finding[]> {
+  try {
+    const result = await runTypes(ctx, { check: true, quiet: true })
+    return result.stale.map((file) => ({
+      level: 'warn' as const,
+      message: `${file} is stale`,
+      fix: 'kitr types',
+    }))
+  } catch (error) {
+    return [{ level: 'error', message: `kitr types failed: ${(error as Error).message}` }]
+  }
+}
+
 const ROUTE_CREATORS = new Set([
   'createFileRoute',
   'createLazyFileRoute',
@@ -355,6 +370,7 @@ export const doctor = defineCommand({
     const findings = runChecks(ctx)
     findings.push(...(await packageChecks(ctx)))
     findings.push(...(await platformChecks(ctx)))
+    findings.push(...(await typesChecks(ctx)))
     if (args.json) {
       console.log(JSON.stringify(findings, null, 2))
     } else {

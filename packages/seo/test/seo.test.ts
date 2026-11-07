@@ -68,3 +68,17 @@ describe('route helpers', () => {
     })
   })
 })
+
+describe('jsonLd escaping', () => {
+  it('cannot be broken out of with user-supplied values, and stays valid JSON', async () => {
+    const { jsonLd } = await import('../src')
+    const evil = '</script><script>alert(1)</script> & <!--  '
+    const script = jsonLd({ '@type': 'Article', headline: evil })
+    expect(script.children).not.toMatch(/<|>|&/)
+    expect(script.children).not.toContain(' ')
+    expect(JSON.parse(script.children).headline).toBe(evil)
+    // As it lands in the page: still exactly one closing tag.
+    const html = `<script type="${script.type}">${script.children}</script>`
+    expect(html.match(/<\/script>/gi)).toHaveLength(1)
+  })
+})

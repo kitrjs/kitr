@@ -140,7 +140,7 @@ export const web = definePlatform<WebOptions>(
     async start(ctx) {
       const port = Number(ctx.flags.port ?? ctx.env.PORT ?? options.port)
       const host = String(ctx.flags.host ?? ctx.env.HOST ?? options.host ?? '0.0.0.0')
-      await startWeb(ctx, { mode: options.mode, port, host })
+      await startWeb(ctx, { mode: options.mode, port, host, base: options.base })
     },
     doctor(ctx) {
       const out: PlatformFinding[] = []
@@ -196,10 +196,47 @@ function readPackage(ctx: PlatformContext): Record<string, any> {
   }
 }
 
+type StaticHandler = (
+  request: Request,
+  next: () => Response | Promise<Response>,
+) => Response | Promise<Response>
+
+/**
+ * Static files for a built web platform, under the platform's `base`. Vite's hashed files in
+ * `assets/` never change, so they are cached for a year; everything else (`index.html`, `sw.js`,
+ * the manifest, `public/` files) keeps its name across deploys and is revalidated on every load,
+ * or users would be stuck on an old release.
+ */
+export function staticFiles(
+  serveStatic: (options: { dir: string; maxAge?: number; immutable?: boolean }) => unknown,
+  dir: string,
+  base = '/',
+): StaticHandler {
+  const prefix = base.endsWith('/') ? base : `${base}/`
+  const assets = serveStatic({ dir, maxAge: 60 * 60 * 24 * 365, immutable: true }) as StaticHandler
+  const files = serveStatic({ dir }) as StaticHandler
+  return async (request, next) => {
+    const url = new URL(request.url)
+    if (prefix !== '/') {
+      if (!url.pathname.startsWith(prefix)) return next()
+      url.pathname = url.pathname.slice(prefix.length - 1)
+      request = new Request(url, request)
+    }
+    if (url.pathname.startsWith('/assets/')) return assets(request, next)
+    let served = true
+    const response = await files(request, () => {
+      served = false
+      return next()
+    })
+    if (served) response.headers.set('cache-control', 'no-cache')
+    return response
+  }
+}
+
 /** Serve a built web platform: the Start server bundle for `ssr`, static files otherwise. */
 export async function startWeb(
   ctx: PlatformContext,
-  options: { mode: WebMode; port: number; host: string },
+  options: { mode: WebMode; port: number; host: string; base?: string },
 ) {
   const { createRequire } = await import('node:module')
   const { existsSync } = await import('node:fs')
@@ -216,7 +253,7 @@ export async function startWeb(
   const { staticMiddleware } = (await import(
     pathToFileURL(require.resolve('srvx/static')).href
   )) as typeof import('srvx/static')
-  const middleware: unknown[] = [staticMiddleware({ dir: clientDir, maxAge: 60 * 60 * 24 * 365 })]
+  const middleware: unknown[] = [staticFiles(staticMiddleware, clientDir, options.base)]
   const plugins: unknown[] = []
   let fetch: (request: Request) => Response | Promise<Response>
   if (options.mode === 'ssr') {
@@ -248,7 +285,7 @@ export async function startWeb(
     fetch = async () =>
       shell
         ? new Response(await readFile(shell), {
-            headers: { 'content-type': 'text/html; charset=utf-8' },
+            headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' },
           })
         : new Response('Not found', { status: 404 })
   }

@@ -6,7 +6,7 @@
     "dev": "kitr dev",
     "build": "kitr build",
     "start": "kitr start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "kitr types && tsc --noEmit",
     "test": "vitest run",
     "api:sync": "kitr api:sync",
     "kitr": "kitr"
@@ -34,6 +34,7 @@
   "imports": {
     "#app/*": "./app/*",
     "#config/*": "./config/*",
-    "#server/*": "./server/*"
+    "#server/*": "./server/*",
+    "#kitr/*": "./.kitr/*"
   }
 }

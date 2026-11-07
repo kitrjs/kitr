@@ -6,10 +6,11 @@
     "dev": "kitr dev",
     "build": "kitr build",
     "start": "kitr start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "kitr types && tsc --noEmit",
     "test": "vitest run",
     "lint": "biome check .",
-    "kitr": "kitr"
+    "kitr": "kitr",
+    "api:sync": "kitr api:sync"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.3",

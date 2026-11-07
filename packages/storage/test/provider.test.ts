@@ -1,6 +1,13 @@
-import { createApp } from '@kitr/core'
+import { createApp, defineProvider } from '@kitr/core'
 import { afterEach, describe, expect, it } from 'vitest'
-import { defineCookie, defineStorage, setCookieDefaults, setStoragePrefix } from '../src'
+import {
+  createMemoryStorageDriver,
+  defineCookie,
+  defineStorage,
+  getStorageDriver,
+  setCookieDefaults,
+  setStoragePrefix,
+} from '../src'
 import storageProvider from '../src/provider'
 import { cookies } from '../src/server'
 
@@ -37,4 +44,33 @@ describe('storage provider', () => {
     item.set(2)
     expect(item.get()).toBe(1)
   })
+
+  // Regression: desktop and mobile apps list their platform provider after storage, so the native
+  // driver was registered too late and items silently kept using a throwaway driver.
+  it.each(['platform first', 'storage first'])(
+    'uses the platform storage driver whatever the provider order (%s)',
+    async (order) => {
+      const native = createMemoryStorageDriver('native')
+      let hydrated = false
+      native.hydrate = async () => {
+        hydrated = true
+      }
+      const platform = defineProvider({
+        name: 'fake-mobile',
+        register(app) {
+          app.drivers.register('storage', native, { platform: 'mobile' })
+        },
+      })
+      const app = createApp({
+        providers:
+          order === 'platform first' ? [platform, storageProvider] : [storageProvider, platform],
+      })
+      await app.boot()
+      expect(getStorageDriver('local')).toBe(native)
+      expect(hydrated).toBe(true)
+      const item = defineStorage('order-test', { default: 'a' })
+      item.set('b')
+      expect(item.get()).toBe('b')
+    },
+  )
 })

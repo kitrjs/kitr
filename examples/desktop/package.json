@@ -6,10 +6,11 @@
     "dev": "kitr dev",
     "build": "kitr build",
     "start": "kitr start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "kitr types && tsc --noEmit",
     "test": "vitest run",
     "lint": "biome check .",
-    "kitr": "kitr"
+    "kitr": "kitr",
+    "mocks:init": "msw init public"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.3",
@@ -70,6 +71,11 @@
     "typescript": "^5.9.3",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   },
   "main": "dist/app/electron/main/index.js"
 }

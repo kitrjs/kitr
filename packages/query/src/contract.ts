@@ -92,7 +92,10 @@ export function defineMutation<TInput = void, TOutput = unknown>(
   }
 }
 
-/** `useMutation` for a kitr mutation definition, with cache effects wired to the active QueryClient. */
+/**
+ * `useMutation` for a kitr mutation definition, with cache effects wired to the active QueryClient.
+ * `useMutation(definition)` from `kitr/query` does the same; this name stays for existing code.
+ */
 export function useKitrMutation<TInput, TOutput>(
   definition: MutationDefinition<TInput, TOutput>,
   overrides: Omit<UseMutationOptions<TOutput, Error, TInput>, 'mutationFn'> = {},

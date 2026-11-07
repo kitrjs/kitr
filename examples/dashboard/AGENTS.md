@@ -6,7 +6,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Import framework code from `kitr/*` entry points (`kitr/router`, `kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generators: `kitr make:route|action|controller|channel|store|form|queries`. Run `kitr doctor` after changes.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generators: `kitr make:route|query|mutation|controller|channel|store|form|queries`. Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
 
 ## kitr: router
 
@@ -64,7 +64,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: mocks
 
-- Mocks live in `app/mocks/handlers.ts` (MSW). `VITE_MOCKS=true` enables them in dev; tests use `setupNodeMocks(handlers)`. Mock a kitr route table with `mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })`.
+- Mocks live in `app/mocks/handlers.ts` (MSW). `VITE_MOCKS=true` enables them in dev (run `npm run mocks:init` once if public/mockServiceWorker.js is missing); tests use `setupNodeMocks(handlers)`. Mock a kitr route table with `mockRoutes(routes.toJSON(), baseUrl, { 'projects.index': () => [...] })`.
 
 ## kitr: testing
 

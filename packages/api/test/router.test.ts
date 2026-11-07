@@ -300,7 +300,8 @@ describe('middleware', () => {
   it('cors handles wildcard, allow-lists, credentials and preflight', async () => {
     const server = serve(
       createRouter()
-        .group({ middleware: [cors()] }, (g) => g.any('/open', () => 'ok'))
+        .group({ middleware: [cors({ origin: '*' })] }, (g) => g.any('/open', () => 'ok'))
+        .group({ middleware: [cors()] }, (g) => g.any('/closed', () => 'ok'))
         .group(
           { middleware: [cors({ origin: ['https://a.dev'], credentials: true, maxAge: 5 })] },
           (g) => g.any('/list', () => 'ok'),
@@ -311,6 +312,12 @@ describe('middleware', () => {
     )
     const open = await server.fetch(req('/open', { headers: { origin: 'https://x.dev' } }))
     expect(open.headers.get('access-control-allow-origin')).toBe('*')
+    expect(open.headers.get('access-control-allow-credentials')).toBeNull()
+
+    // Regression: the default used to be '*', and with credentials it reflected any origin.
+    const closed = await server.fetch(req('/closed', { headers: { origin: 'https://evil.dev' } }))
+    expect(closed.headers.get('access-control-allow-origin')).toBeNull()
+    expect(() => cors({ origin: '*', credentials: true })).toThrow(/list the origins instead/)
 
     const allowed = await server.fetch(req('/list', { headers: { origin: 'https://a.dev' } }))
     expect(allowed.headers.get('access-control-allow-origin')).toBe('https://a.dev')

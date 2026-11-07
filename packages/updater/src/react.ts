@@ -15,12 +15,23 @@ const serverState: UpdaterState = {
   currentVersion: null,
 }
 
+const serverUpdater = {
+  state: serverState,
+  subscribe: () => () => {},
+  check: async () => null,
+  apply: async () => {},
+  dismiss: () => {},
+} as unknown as Updater
+
 /**
  * `{ status, update, progress, check, apply, dismiss }` for an "update ready" banner.
  * Hydration-safe: the server and first render see `idle`.
  */
 export function useUpdate() {
-  const updater = useUpdater()
+  // The provider binds the updater in the browser only: during server rendering there is none,
+  // and the hook answers `idle` instead of throwing.
+  const container = useApp().container
+  const updater = container.has('updater') ? container.use('updater') : serverUpdater
   const subscribe = useCallback((notify: () => void) => updater.subscribe(notify), [updater])
   const state = useSyncExternalStore(
     subscribe,

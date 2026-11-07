@@ -66,7 +66,7 @@ The CLI used to hold every package's setup as a recipe, so adding a package mean
 
 ## Extra commands
 
-`kitr dev|build|start`, `kitr platforms`, `kitr config`, `kitr info`, `kitr css:types` (typed CSS Modules for the no-Tailwind path), and `kitr eject all` printing the import rewrites that remove kitr. `make:*` generators can be overridden per project via `kitr eject stub <kind>`.
+`kitr dev|build|start`, `kitr platforms`, `kitr config`, `kitr info`, `kitr types` (generated types under `.kitr/`, see below), `kitr css:types` (typed CSS Modules for the no-Tailwind path), and `kitr eject all` printing the import rewrites that remove kitr. `make:*` generators can be overridden per project via `kitr eject stub <kind>`.
 
 ## What is not in this version
 
@@ -75,3 +75,11 @@ The CLI used to hold every package's setup as a recipe, so adding a package mean
 - The Next-tier packages from the package map (`secure-storage`, `files`, `notifications`, `native`, `updater`, `offline`, `flags`, `consent`, `cache`, `shield`, `mail`, `jobs`, `uploads`) are not here yet.
 - Better Auth is supported through `betterAuthAdapter(client)`; no auth server is shipped.
 - npm publishing is prepared (changesets, lockstep versions) but nothing is published yet.
+
+## Queries and mutations by name
+
+The plan had `defineAction('projects.update', { method: 'GET' })` for reads and `.query()` / `.mutation()` adapters for TanStack Query. That is gone. `kitr/actions` has `defineQuery(name, { input, handler, staleTime })` and `defineMutation(name, { input, handler, effects })`, the same two words as `kitr/query`'s contract-based pair; the import path says which one you are holding, and a server definition is also a `kitr/query` definition, so `.options(input)` and `useMutation(definition)` work on it unchanged.
+
+The name is not decoration. `kitr types` scans `app/actions`, writes `.kitr/actions.ts` and augments `Operations` in `@kitr/core`, and `app/app.ts` passes the generated `operations` to `createApp`. `useQuery`, `useSuspenseQuery`, `useMutation` and `queryOptions` in `kitr/query` take that name as their first argument, which is a departure from TanStack's signature: `useQuery('projects.list', input, overrides)`. Plain TanStack options still pass straight through, so nothing written against upstream breaks. `call(name, input)` runs one outside React, and the generated `actions` tree gives `actions.projects.list(input)` for scripts.
+
+Type generation is general. A package exports `defineTypes({ name, watch, generate })` from a `./types` subpath and names it in its manifest (`"kitr": { "types": "./types" }`); the CLI runs every generator the project's packages declare and writes under `.kitr/`, before `kitr dev` and `kitr build`, on change in the dev server, and on `kitr types`. The `platforms` generator is built in and types `app.platform` with the names from `kitrrc.ts`. `make:action` is replaced by `make:query` and `make:mutation`.

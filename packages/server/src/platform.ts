@@ -134,10 +134,12 @@ if (isMain) {
       if (api && !ctx.exists('server/routes.ts'))
         ctx.write(
           'server/routes.ts',
-          `import { cors, defineRoutes } from 'kitr/api'
+          `import { defineRoutes } from 'kitr/api'
 
+// Same-origin by default. To let another site call this API, add cors({ origin: ['https://app.example'] })
+// from kitr/api to the group's middleware, or set cors in config/shield.ts.
 export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [cors()] }, (api) => {
+  router.group({ prefix: '/api' }, (api) => {
     api.get('/health', () => ({ ok: true }), { name: 'health' })
     // api.resource('projects', () => import('./controllers/projects_controller'))
   }),
