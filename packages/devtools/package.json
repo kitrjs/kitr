@@ -2,6 +2,10 @@
   "name": "@kitr/devtools",
   "version": "0.1.0",
   "description": "kitr/devtools: the development overlay. Every provider can contribute panels, actions and event logs; stripped from production builds.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -21,7 +25,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -42,5 +47,14 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@kitr/react": "workspace:*"
+  },
+  "kitr": {
+    "name": "devtools",
+    "title": "Devtools",
+    "summary": "Open a panel in development that shows what every package is doing. It is removed from production builds.",
+    "category": "dev-tools",
+    "runsOn": "client",
+    "client": true,
+    "docs": "docs"
   }
 }

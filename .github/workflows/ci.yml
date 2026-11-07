@@ -29,6 +29,9 @@ jobs:
           for app in dashboard fullstack saas site realtime desktop mobile; do
             pnpm -C examples/$app build
           done
+      - run: pnpm manifests:check
+      - run: pnpm docs:check
+      - run: pnpm -C site build
       - run: pnpm typecheck
       - run: pnpm lint
       - name: Examples are unmodified kit output

@@ -2,6 +2,18 @@
   "name": "@kitr/mocks",
   "version": "0.1.0",
   "description": "kitr/mocks: MSW handlers from kitr contracts, for dev and tests.",
+  "kitr": {
+    "name": "mocks",
+    "title": "Mocks",
+    "summary": "Fake your API while you build the frontend or run tests.",
+    "category": "dev-tools",
+    "runsOn": "client",
+    "builtOn": [
+      "msw"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +25,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -30,5 +43,9 @@
     "typescript": "^5.9.3",
     "msw": "^3.0.4",
     "@types/node": "^22.19.0"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

@@ -1,0 +1,333 @@
+// Builds kitr.dev's content from the monorepo:
+// - every package.json "kitr" block becomes a package card,
+// - every packages/*/docs/*.md becomes a package page,
+// - site/content/docs (plus the files nav.json points at) becomes /docs,
+// - packages/*/examples/*.tsx become live examples at /play/<pkg>/<example>.
+// Output goes to app/generated (gitignored) and public/llms*.txt.
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import rehypeSlug from 'rehype-slug'
+import rehypeStringify from 'rehype-stringify'
+import remarkGfm from 'remark-gfm'
+import remarkParse from 'remark-parse'
+import remarkRehype from 'remark-rehype'
+import { createHighlighter } from 'shiki'
+import { unified } from 'unified'
+import { visit } from 'unist-util-visit'
+
+const site = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const repo = resolve(site, '..')
+const out = join(site, 'app/generated')
+const repoUrl = 'https://github.com/kitrjs/kit'
+
+const highlighter = await createHighlighter({
+  themes: ['github-light', 'github-dark'],
+  langs: ['ts', 'tsx', 'js', 'json', 'sh', 'css', 'html', 'md'],
+})
+const langs = new Set(highlighter.getLoadedLanguages())
+
+// ---------------------------------------------------------------- markdown
+
+export function parseFrontmatter(source) {
+  const match = source.match(/^---\n([\s\S]*?)\n---\n/)
+  if (!match) return { data: {}, body: source }
+  const data = {}
+  for (const line of match[1].split('\n')) {
+    const m = line.match(/^(\w+):\s*(.*)$/)
+    if (m) data[m[1]] = m[2].replace(/^['"]|['"]$/g, '')
+  }
+  if (data.order) data.order = Number(data.order)
+  return { data, body: source.slice(match[0].length) }
+}
+
+const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+
+/** Code blocks: shiki with both themes; `kitr ...` shell blocks become package-manager pickers. */
+function remarkCode() {
+  return (tree) => {
+    visit(tree, 'code', (node, index, parent) => {
+      const lines = node.value.split('\n').filter((l) => l.trim())
+      const isShell = ['sh', 'bash', 'shell'].includes(node.lang ?? '')
+      if (isShell && lines.length && lines.every((l) => /^kitr\s/.test(l.trim()))) {
+        parent.children[index] = {
+          type: 'html',
+          value: `<kitr-cmd data-cmd="${escapeAttr(lines.join('\n'))}"></kitr-cmd>`,
+        }
+        return
+      }
+      const lang = langs.has(node.lang) ? node.lang : 'text'
+      const html = highlighter.codeToHtml(node.value, {
+        lang,
+        themes: { light: 'github-light', dark: 'github-dark' },
+        defaultColor: false,
+      })
+      parent.children[index] = {
+        type: 'html',
+        value: html.replace('<pre ', `<pre data-lang="${lang}" `),
+      }
+    })
+  }
+}
+
+/** Collect h2/h3 for the table of contents, and the plain text for search. */
+function rehypeCollect(state) {
+  return () => (tree) => {
+    const text = (node) =>
+      node.type === 'text' ? node.value : (node.children ?? []).map(text).join('')
+    visit(tree, 'element', (node) => {
+      if ((node.tagName === 'h2' || node.tagName === 'h3') && node.properties?.id) {
+        state.toc.push({ depth: Number(node.tagName[1]), id: node.properties.id, text: text(node) })
+        state.sections.push({ id: node.properties.id, heading: text(node), text: '' })
+      } else if (node.tagName === 'p' || node.tagName === 'li' || node.tagName === 'td') {
+        const current = state.sections.at(-1) ?? state.intro
+        current.text += ` ${text(node)}`
+      }
+    })
+    // Open external links in a new tab; keep internal ones in the router.
+    visit(tree, 'element', (node) => {
+      if (node.tagName === 'a' && /^https?:/.test(node.properties?.href ?? '')) {
+        node.properties.target = '_blank'
+        node.properties.rel = 'noreferrer'
+      }
+    })
+  }
+}
+
+async function render(markdown) {
+  const state = { toc: [], sections: [], intro: { id: '', heading: '', text: '' } }
+  // Drop the leading H1: pages render their title from frontmatter.
+  const body = markdown.replace(/^\s*# .*\n/, '')
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkCode)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeSlug)
+    .use(rehypeCollect(state))
+    .use(rehypeStringify, { allowDangerousHtml: true })
+    .process(body)
+  const html = String(file)
+  // Split into HTML and command blocks so React can render the picker.
+  const blocks = []
+  let last = 0
+  for (const m of html.matchAll(/<kitr-cmd data-cmd="([^"]*)"><\/kitr-cmd>/g)) {
+    if (m.index > last) blocks.push({ type: 'html', html: html.slice(last, m.index) })
+    blocks.push({
+      type: 'cmd',
+      cmd: m[1]
+        .replace(/&quot;/g, '"')
+        .replace(/&lt;/g, '<')
+        .replace(/&amp;/g, '&'),
+    })
+    last = m.index + m[0].length
+  }
+  if (last < html.length) blocks.push({ type: 'html', html: html.slice(last) })
+  return { blocks, toc: state.toc, intro: state.intro.text.trim(), sections: state.sections }
+}
+
+// ---------------------------------------------------------------- packages
+
+const packages = []
+for (const dir of readdirSync(join(repo, 'packages')).sort()) {
+  const file = join(repo, 'packages', dir, 'package.json')
+  if (!existsSync(file)) continue
+  const pkg = JSON.parse(readFileSync(file, 'utf8'))
+  if (!pkg.kitr) continue
+  const docsDir = join(repo, 'packages', dir, pkg.kitr.docs ?? 'docs')
+  const examplesDir = join(repo, 'packages', dir, 'examples')
+  packages.push({
+    dir,
+    docsDir,
+    entry: {
+      ...pkg.kitr,
+      package: pkg.name,
+      version: pkg.version,
+      description: pkg.description,
+      repo: `${repoUrl}/tree/main/packages/${dir}`,
+      pages: [],
+      examples: existsSync(examplesDir)
+        ? readdirSync(examplesDir)
+            .filter((f) => f.endsWith('.tsx'))
+            .map((f) => {
+              const src = readFileSync(join(examplesDir, f), 'utf8')
+              const meta = src.match(/export const meta = (\{[\s\S]*?\n\})/)
+              const data = meta ? Function(`return ${meta[1]}`)() : {}
+              return { slug: f.replace(/\.tsx$/, ''), ...data }
+            })
+        : [],
+    },
+  })
+}
+
+rmSync(out, { recursive: true, force: true })
+for (const dir of ['docs', 'packages'])
+  rmSync(join(site, 'public', dir), { recursive: true, force: true })
+mkdirSync(join(out, 'pages'), { recursive: true })
+
+const search = []
+const llms = []
+const writePage = (id, page) =>
+  writeFileSync(join(out, 'pages', `${id}.json`), JSON.stringify(page))
+const addSearch = (url, title, section, rendered, summary) => {
+  search.push({
+    url,
+    title,
+    section,
+    heading: '',
+    text: `${summary ?? ''} ${rendered.intro}`.trim(),
+  })
+  for (const s of rendered.sections)
+    search.push({ url: `${url}#${s.id}`, title, section, heading: s.heading, text: s.text.trim() })
+}
+
+for (const { dir, docsDir, entry } of packages) {
+  if (!existsSync(docsDir)) continue
+  const files = readdirSync(docsDir).filter((f) => f.endsWith('.md'))
+  for (const f of files) {
+    const source = readFileSync(join(docsDir, f), 'utf8')
+    const { data, body } = parseFrontmatter(source)
+    const slug = f === 'index.md' ? '' : f.replace(/\.md$/, '')
+    const url = slug ? `/packages/${entry.name}/${slug}` : `/packages/${entry.name}`
+    const rendered = await render(body)
+    entry.pages.push({ slug, title: data.title, order: data.order ?? 99 })
+    writePage(`pkg__${entry.name}__${slug || 'index'}`, {
+      url,
+      title: data.title,
+      description: data.description,
+      blocks: rendered.blocks,
+      toc: rendered.toc,
+      editUrl: `${repoUrl}/edit/main/${relative(repo, join(docsDir, f))}`,
+    })
+    addSearch(
+      url,
+      slug ? `${entry.title}: ${data.title}` : entry.title,
+      'Packages',
+      rendered,
+      entry.summary,
+    )
+    llms.push({
+      url,
+      title: slug ? `${entry.title} ${data.title}` : entry.title,
+      description: data.description,
+      body,
+    })
+  }
+  entry.pages.sort((a, b) => a.order - b.order)
+  if (!files.length)
+    search.push({
+      url: `/packages/${entry.name}`,
+      title: entry.title,
+      section: 'Packages',
+      heading: '',
+      text: entry.summary,
+    })
+  void dir
+}
+
+writeFileSync(
+  join(out, 'packages.json'),
+  JSON.stringify(
+    packages.map((p) => p.entry),
+    null,
+    2,
+  ),
+)
+
+// Planned packages from the package map; a built package with the same name wins.
+const built = new Set(packages.map((p) => p.entry.name))
+const roadmap = JSON.parse(readFileSync(join(site, 'content/roadmap.json'), 'utf8'))
+const planned = roadmap.packages.filter((p) => !built.has(p.name))
+writeFileSync(join(out, 'planned.json'), JSON.stringify(planned, null, 2))
+for (const p of planned)
+  search.push({
+    url: `/packages#${p.name}`,
+    title: p.name,
+    section: p.status === 'later' ? 'Roadmap' : 'Coming soon',
+    heading: '',
+    text: p.summary,
+  })
+
+// ---------------------------------------------------------------- docs
+
+const nav = JSON.parse(readFileSync(join(site, 'content/docs/nav.json'), 'utf8'))
+const docsNav = []
+for (const group of nav) {
+  const items = []
+  for (const item of group.pages) {
+    const path = item.source
+      ? join(site, 'content/docs', item.source)
+      : join(site, 'content/docs', `${item.slug}.md`)
+    const source = readFileSync(path, 'utf8')
+    const parsed = parseFrontmatter(source)
+    const data = parsed.data
+    // Repo docs link to each other as `cli.md`; on the site they live at /docs/cli.
+    const body = item.source
+      ? parsed.body.replace(/\]\(([\w-]+)\.md(#[\w-]+)?\)/g, '](/docs/$1$2)')
+      : parsed.body
+    const title = item.title ?? data.title
+    const description = item.description ?? data.description
+    const url = `/docs/${item.slug}`
+    const rendered = await render(body)
+    writePage(`docs__${item.slug}`, {
+      url,
+      title,
+      description,
+      section: group.title,
+      blocks: rendered.blocks,
+      toc: rendered.toc,
+      editUrl: `${repoUrl}/edit/main/${relative(repo, path)}`,
+    })
+    items.push({ slug: item.slug, title })
+    addSearch(url, title, group.title, rendered, description)
+    llms.push({ url, title, description, body })
+  }
+  docsNav.push({ title: group.title, items })
+}
+writeFileSync(join(out, 'docs-nav.json'), JSON.stringify(docsNav, null, 2))
+writeFileSync(join(out, 'search.json'), JSON.stringify(search))
+
+// ---------------------------------------------------------------- llms.txt
+
+const base = 'https://kitr.dev'
+const index = [
+  '# kitr',
+  '',
+  '> The React framework where everything is an add-on: a thin layer over TanStack, React Hook Form, Zustand, ky, h3 and Tailwind, with one import surface, one data contract and one CLI.',
+  '',
+  '## Docs',
+  '',
+  ...llms
+    .filter((p) => p.url.startsWith('/docs'))
+    .map((p) => `- [${p.title}](${base}${p.url}.md): ${p.description ?? ''}`),
+  '',
+  '## Packages',
+  '',
+  ...llms
+    .filter((p) => p.url.startsWith('/packages'))
+    .map((p) => `- [${p.title}](${base}${p.url}.md): ${p.description ?? ''}`),
+  '',
+].join('\n')
+writeFileSync(join(site, 'public/llms.txt'), index)
+// Every page as markdown at <url>.md, for agents and "copy as markdown".
+for (const p of llms) {
+  const file = join(site, 'public', `${p.url}.md`)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(
+    file,
+    `# ${p.title}\n\n${p.description ?? ''}\n\n${p.body.replace(/^\s*# .*\n/, '').trim()}\n`,
+  )
+}
+writeFileSync(
+  join(site, 'public/llms-full.txt'),
+  llms
+    .map(
+      (p) =>
+        `# ${p.title}\n\nSource: ${base}${p.url}\n\n${p.body.replace(/^\s*# .*\n/, '').trim()}\n`,
+    )
+    .join('\n\n'),
+)
+
+console.log(
+  `kitr.dev content: ${packages.length} packages, ${llms.filter((p) => p.url.startsWith('/packages')).length} package pages, ${docsNav.reduce((n, g) => n + g.items.length, 0)} docs pages, ${search.length} search entries`,
+)

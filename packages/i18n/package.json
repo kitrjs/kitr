@@ -2,6 +2,18 @@
   "name": "@kitr/i18n",
   "version": "0.1.0",
   "description": "kitr/i18n: react-i18next re-exported, plus typed keys and locale helpers.",
+  "kitr": {
+    "name": "i18n",
+    "title": "Translations",
+    "summary": "Translate your app into several languages with typed keys.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "react-i18next"
+    ],
+    "client": true,
+    "docs": "docs"
+  },
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -13,7 +25,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "scripts": {
     "build": "tsdown",
@@ -35,5 +48,9 @@
     "i18next": "^27.0.0",
     "react-i18next": "^18.0.0",
     "@kitr/react": "workspace:*"
-  }
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
 }

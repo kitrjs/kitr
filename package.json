@@ -21,7 +21,11 @@
     "check:bundles": "node scripts/check-bundles.mjs",
     "test:all": "pnpm test:coverage && pnpm test:integration && pnpm check:bundles && pnpm check:examples && pnpm test:e2e",
     "check:examples": "node scripts/sync-examples.mjs --check",
-    "sync:examples": "node scripts/sync-examples.mjs"
+    "sync:examples": "node scripts/sync-examples.mjs",
+    "manifests": "node scripts/sync-manifests.mjs",
+    "manifests:check": "node scripts/sync-manifests.mjs --check",
+    "docs:check": "node scripts/docs-check.mjs",
+    "site": "pnpm -C site dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
