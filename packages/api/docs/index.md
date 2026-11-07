@@ -28,14 +28,15 @@ kitr add api
 
 What `kitr add api` does:
 
-- Runs the [Server](/packages/server) recipe first if it is missing, which also adds [Logger](/packages/logger).
-- Installs `@kitr/api` and adds it to `packages` in `kitrrc.ts`.
+- Adds the [Server](/packages/server) package first if it is missing, which also adds [Logger](/packages/logger).
+- Installs `@kitr/api` and adds it to `packages` in `kitrrc.ts`. API routes register no provider.
 - Writes `config/api.ts` (shown under Configure) and adds it to `config/index.ts`.
 - Writes `server/routes.ts`, with one `GET /api/health` route.
 - Writes `server/controllers/health_controller.ts`, the controller that route calls.
-- When `server/main.ts` exists without routes, adds `import { mountRoutes } from 'kitr/api'`, `import { routes } from './routes'` and `mountRoutes(server, routes)` to it.
-- In a React project, writes `app/api/client.ts`, the typed client, and `app/api/routes.gen.ts`, the route table it registers, plus an `api:sync` script that regenerates the table.
-- Adds a `kitr: api` section to `AGENTS.md`.
+- When `server/main.ts` exists and does not mount routes yet, adds `import { mountRoutes } from 'kitr/api'`, `import { routes } from './routes'` and `mountRoutes(server, routes)` right after `createServer()`.
+- In a React project, writes `app/api/routes.gen.ts`, the route table with the `health` route, and `app/api/client.ts`, the typed client that registers it. Without the table every named call throws `Unknown route`.
+- Adds an `api:sync` script (`kitr api:sync`) to `package.json`, which regenerates the route table and `openapi.json` from `server/routes.ts`.
+- Adds a `kitr: api` section to `AGENTS.md`: where routes, controllers and validators go, when to use API routes instead of [actions](/packages/actions), and how the client gets its route table.
 
 The generated routes file:
 
@@ -70,7 +71,7 @@ export default class HealthController {
 
 API routes need a server platform to run on. If the project has none, add one with `kitr add server api`. The `fullstack`, `server`, `saas`, `site` and `realtime` kits include API routes already.
 
-`kitr remove api` removes `@kitr/api` from `package.json` and `kitrrc.ts`, deletes `config/api.ts` and drops the `AGENTS.md` section. It keeps `server/routes.ts`, your controllers and `app/api/client.ts`, and lists the files that still import `kitr/api`.
+`kitr add api` asks no questions. `kitr remove api` removes `@kitr/api` from `package.json` and `kitrrc.ts`, the `api:sync` script, `config/api.ts` and the `AGENTS.md` section. It keeps `server/routes.ts`, your controllers and `app/api/client.ts`, and lists the files that still import `kitr/api`.
 
 ## Configure
 
@@ -954,6 +955,7 @@ Operations without `meta.tags` are tagged with the first part of the route name 
 | `kitr make:controller <name>` | Writes `server/controllers/<name>_controller.ts` with one `handle` method. |
 | `kitr make:controller <name> --resource` | Writes the controller with `index`, `show`, `store`, `update`, `destroy` and zod validators. |
 | `kitr make:middleware <name>` | Writes `app/middleware/<name>.ts` with `defineMiddleware`. |
+| `kitr make:validator <name>` | Writes `app/validators/<name>.ts`: a zod schema with `create` and `update` variants and its input type, to share between a form, an action and a controller. |
 | `kitr api:sync` | Writes the OpenAPI document and the client route table. `--file` picks the routes file, `--out` the document path. |
 | `kitr routes:list` | Prints every route: method, path and name. `--file` picks the routes file. |
 
@@ -1011,6 +1013,23 @@ export const audit = defineMiddleware(async (ctx, next) => {
 })
 ```
 
+`kitr make:validator order` writes:
+
+```ts
+// app/validators/order.ts
+import { z } from 'zod'
+
+/** Shared between the form, the action and the controller, so one schema decides what is valid. */
+export const orderSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+})
+
+export const createOrderSchema = orderSchema
+export const updateOrderSchema = orderSchema.partial()
+
+export type OrderInput = z.infer<typeof orderSchema>
+```
+
 `kitr routes:list` prints:
 
 ```text
@@ -1020,7 +1039,7 @@ export const audit = defineMiddleware(async (ctx, next) => {
   GET     /api/orders/:id                          orders.show
 ```
 
-All three loaders look for `server/routes.ts`, then `app/api/routes.ts`, then `start/routes.ts`. Put a `stubs/controller.ts` in your project to change what `make:controller` writes.
+All three loaders look for `server/routes.ts`, then `app/api/routes.ts`, then `start/routes.ts`. Put a `stubs/controller.ts` in your project (or run `kitr eject stub controller`) to change what `make:controller` writes; `stubs/middleware.ts` and `stubs/validator.ts` work the same way. Every generator takes `--force` to overwrite an existing file.
 
 ## Errors
 

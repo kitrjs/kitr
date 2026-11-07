@@ -1,13 +1,21 @@
 import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
 
+/**
+ * Options of `desktop()` in `kitrrc.ts`. Every option but `port` is written into the scaffolded
+ * `main.ts` and `electron-builder.yml` by `kitr add`; edit those files to change them later.
+ */
 export interface DesktopOptions {
   /** Dev server port the window loads from with `kitr dev <name>`. Default 3200. */
   port: number
   /** Window title. Default the package name. */
   title?: string
+  /** Initial window width in pixels. Default 1200. */
   width: number
+  /** Initial window height in pixels. Default 800. */
   height: number
+  /** Smallest width the user can resize the window to. */
   minWidth?: number
+  /** Smallest height the user can resize the window to. */
   minHeight?: number
   /** Reverse-DNS bundle id. Default `com.example.<app>`. */
   appId?: string

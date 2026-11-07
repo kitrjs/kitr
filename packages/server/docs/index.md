@@ -22,13 +22,13 @@ Add the server as a platform named `api`:
 kitr add server api
 ```
 
-`server` is the platform type and `api` is the name you address it by (`kitr dev api`). `kitr add server` with no name stops and asks for one, because `server` is a platform type.
+`server` is the platform type and `api` is the name you address it by (`kitr dev api`). `kitr add server` with no name uses `api`, the usual name for a server platform, and says so.
 
 What `kitr add server api` does:
 
+- Adds [Logger](/packages/logger) first if it is missing, because the server requires it: installs `@kitr/logger`, registers its provider and writes `config/logger.ts`.
 - Installs `@kitr/server`, `h3` and `srvx`, plus `tsx` as a dev dependency on the `node` runtime or `wrangler` on `workers`.
 - Adds `@kitr/server` to `packages` in `kitrrc.ts` and writes `api: server()` into `platforms`, with the `server` import.
-- Runs the [Logger](/packages/logger) recipe first if it is missing: installs `@kitr/logger`, registers its provider and writes `config/logger.ts`.
 - Writes `config/server.ts` (shown under Configure) and adds it to `config/index.ts`.
 - Adds `LOG_LEVEL=info` under a `# Server` comment to `.env.example`, and to `.env` when that file exists.
 - Adds `dev`, `build` and `start` scripts to `package.json` (`kitr dev`, `kitr build`, `kitr start`) when they are missing.
@@ -76,6 +76,7 @@ export default defineConfig({
 | `host` | `'0.0.0.0'` | Interface `listen()` binds when you call it without one. |
 | `healthPath` | `'/healthz'` | Path of a route that answers `{ ok: true }` for load balancers. `false` removes the route. |
 | `bodyLimit` | `1048576` (1 MiB) | Largest request body in bytes. Larger requests get a `413`. |
+| `bodyLimits` | `{}` | A different limit under a path prefix, such as `{ '/api/uploads': 10 * 1024 * 1024 }`. The longest matching prefix wins; other paths keep `bodyLimit`. |
 | `trustProxy` | `false` | Declared for proxies that set `X-Forwarded-*`. This release does not read it yet. |
 | `requestIdHeader` | `'x-request-id'` | Header the request id is read from and echoed in. |
 | `shutdownTimeout` | `10` | Seconds to wait for in-flight requests after `SIGINT` or `SIGTERM` before the process exits with code `1`. |
@@ -531,6 +532,24 @@ export default defineConfig({
 { "code": "PAYLOAD_TOO_LARGE", "message": "Request body is larger than 10485760 bytes", "status": 413 }
 ```
 
+To raise the limit for one part of the API only, set `bodyLimits` by path prefix. The longest prefix that matches the request path wins, and every other path keeps `bodyLimit`:
+
+```ts
+// config/server.ts
+import { defineConfig } from 'kitr/server'
+
+export default defineConfig({
+  healthPath: '/healthz',
+  bodyLimit: 1024 * 1024,
+  bodyLimits: {
+    '/api/invoices/import': 20 * 1024 * 1024, // Grace's monthly CSV import
+    '/api/invoices': 5 * 1024 * 1024,
+  },
+})
+```
+
+A `POST /api/invoices/import` may send 20 MiB, `POST /api/invoices/inv_1042/attachments` 5 MiB, and `POST /api/orders` 1 MiB. [Uploads](/packages/uploads) adds its own entry for its upload path from `config/uploads.ts`, so you do not raise the global limit for it.
+
 Chunked uploads without a `content-length` are counted as they stream and get a `413` with the message `Request body size exceeds the limit of 10485760 bytes`. For large files, use [Uploads](/packages/uploads), which streams to storage with its own limits.
 
 ## Check health from a load balancer
@@ -645,7 +664,7 @@ Without the `crossws` package installed, `listen()` throws `[kitr/server] websoc
 
 | Command | What it does |
 | --- | --- |
-| `kitr add server <name>` | Adds a server platform: installs the packages, writes `platforms.<name>` in `kitrrc.ts`, runs the server and logger recipes, adds scripts and scaffolds `server/main.ts`. |
+| `kitr add server <name>` | Adds a server platform: installs the packages, writes `platforms.<name>` in `kitrrc.ts`, runs the server and logger setup, adds scripts and scaffolds `server/main.ts`. |
 | `kitr dev <name>` | Runs the entry in watch mode for the runtime (see the table under "Run the server in development and production"). |
 | `kitr build <name>` | Typechecks on Node, Bun and Deno; bundles into `dist/<name>` on Workers. |
 | `kitr start <name>` | Runs the production server. `kitr serve` does the same. |

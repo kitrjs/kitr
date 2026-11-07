@@ -448,7 +448,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
+Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it needs `server/main.ts` to export `app`, as shown in [Commands](#commands). `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
 
 `jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
 
@@ -513,8 +513,28 @@ The worker never throws: it logs these messages through the app's [logger](/pack
 
 | Command | What it does |
 | --- | --- |
+| `kitr jobs:list` | Loads `config/jobs.ts` and prints each job's name, retries, timeout and schedule. `--json` prints the rows as JSON. |
+| `kitr jobs:work` | Boots the app from `server/main.ts` and runs the worker in this process until `SIGINT` or `SIGTERM`, then waits for running jobs. `--entry <file>` boots another file. |
 | `kitr make:job <name>` | Writes a job to `server/jobs/<snake_name>.ts`. `--force` overwrites an existing file. |
 | `kitr eject stub job` | Copies the generator's template to `stubs/job.ts`, so `make:job` writes your own starting point. |
+
+`kitr jobs:list` reads the defaults when a job sets none (3 retries, a 60,000 ms timeout):
+
+```sh
+kitr jobs:list
+# name              retries  timeout  schedule
+# generate_invoice  3        60000
+# prune_sessions    3        60000    0 3 * * *
+```
+
+`kitr jobs:work` needs the entry file to export `app`. The generated `server/main.ts` exports `server`, so add one line to it before you use the command:
+
+```ts
+// server/main.ts
+export const app = server.app
+```
+
+`kitr doctor` adds one finding from this package: an info line when `config/jobs.ts` lists no jobs (`jobs: []`), with the fix `kitr make:job <name>`, then add it to `jobs: [...]`.
 
 `kitr make:job generate-invoice` writes `server/jobs/generate_invoice.ts`:
 

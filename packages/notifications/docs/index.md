@@ -22,14 +22,12 @@ kitr add notifications
 
 What `kitr add` does:
 
-- Adds [Platform](/packages/platform) first when the project does not have it yet, because `notifications` requires `platform`. The `desktop` and `mobile` kits already include it.
-- Installs `@kitr/notifications`.
+- Installs `@kitr/notifications` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/notifications/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/notifications` to `packages` in `kitrrc.ts`.
 - Writes `config/notifications.ts` (shown under [Configure](#configure)).
 - Adds a `## kitr: notifications` section to `AGENTS.md`: `useNotificationPermission()` gives `{ permission, request }` and `request` is called from a click, `show({ title, url })` and `schedule({ ..., at })` resolve to an id for `cancel`, and taps are routed once near the router with `useNotificationTap`.
 
-It adds no environment variables or scripts. `kitr add notifications` asks no questions, and no kit includes it. It is a client package, so a server-only project skips it with a warning. To preview the changes:
+It adds no environment variables or scripts. `kitr add notifications` asks no questions, and no kit includes it. To preview the changes:
 
 ```sh
 kitr add notifications --dry-run
@@ -364,7 +362,7 @@ To build a service with no app, call `createNotifications(config)`. In a browser
 | Desktop and mobile shells | The web driver inside the webview, unless a provider registers one | The same, until a native driver is registered. |
 | Server | Memory driver, permission `'unsupported'` | Nothing is shown. |
 
-Today [Desktop](/packages/desktop) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
 
 ## Errors
 

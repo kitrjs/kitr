@@ -780,7 +780,7 @@ describe('orders', () => {
 })
 ```
 
-The name is turned into snake case, so `kitr make:test invoice-totals` writes `test/invoice_totals.test.ts`. A `stubs/test.ts` file in your project replaces the template. The command comes with the CLI, so it works before `kitr add testing` too.
+The name is turned into snake case, so `kitr make:test invoice-totals` writes `test/invoice_totals.test.ts`. A `stubs/test.ts` file in your project (`kitr eject stub test` copies the default) replaces the template. The generator ships with `@kitr/testing`, so `make:test` is there once the package is added. Testing adds no `kitr doctor` checks.
 
 ## Testing
 

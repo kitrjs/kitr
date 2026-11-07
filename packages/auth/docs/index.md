@@ -26,7 +26,9 @@ What `kitr add auth` does:
 - Registers `() => import('@kitr/auth/provider')` in `providers` in `kitrrc.ts`.
 - Writes `app/abilities.ts`, with a `User` type and one permission rule.
 - Writes `config/auth.ts` (shown under Configure) and adds it to `config/index.ts`.
-- Adds a `kitr: auth` section to `AGENTS.md`.
+- Declares `VITE_API_URL: e.url({ default: 'http://localhost:3333' })` in the `public` block of `app/env.ts`, and adds `VITE_API_URL=http://localhost:3333` to `.env.example` (and `.env` when it exists). The generated config calls that URL.
+- Edits `app/router.tsx` to put the live session in the router context and type it on `KitrRouterContext`, so `requireAuth()` works without more wiring ([Protect pages](#protect-pages)). A router file you have already changed from the generated one is left alone.
+- Adds a `kitr: auth` section to `AGENTS.md`: guard routes with `requireAuth()` and `can()`, read the session with `useSession()` and `useUser()`, and keep abilities in `app/abilities.ts`.
 
 The generated permissions file:
 
@@ -45,9 +47,9 @@ export const abilities = defineAbilities({
 })
 ```
 
-`kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. Use `kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
+`kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. It asks no questions. Use `kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
 
-`kitr remove auth` unregisters the provider, removes `@kitr/auth` from `package.json` and `kitrrc.ts`, deletes `config/auth.ts` and drops the `AGENTS.md` section. It keeps `app/abilities.ts` and lists the files that still import `kitr/auth`.
+`kitr remove auth` takes the session back out of `app/router.tsx`, unregisters the provider, removes `@kitr/auth` from `package.json` and `kitrrc.ts`, deletes `config/auth.ts` and drops the `AGENTS.md` section. It keeps `app/abilities.ts` and `VITE_API_URL`, and lists the files that still import `kitr/auth`.
 
 ## Configure
 
@@ -433,7 +435,7 @@ Every request sends `Authorization: Bearer <token>`. On a `401`, the client call
 
 Pages are guarded in `beforeLoad` with `requireAuth()` from [Router](/packages/router). It reads `session` from the router context and redirects anonymous visitors.
 
-First, put the live session in the router context:
+`kitr add auth` puts the live session in the router context for you. This is `app/router.tsx` after it runs:
 
 ```tsx
 // app/router.tsx
@@ -448,9 +450,10 @@ export function getRouter() {
     routeTree,
     app,
     context: {
-      // A live getter, so `requireAuth()` sees the session the auth provider restores during boot.
+      // A live getter, so requireAuth() sees the session the auth provider restores during boot.
       get session() {
-        return app.container.has('auth') ? (app.container.use('auth').session as Session<User>) : null
+        const auth = app.container.has('auth') ? app.container.use('auth') : null
+        return (auth?.session ?? null) as Session<User> | null
       },
     },
   })
