@@ -42,6 +42,15 @@ export const versions: Record<string, string> = {
   '@biomejs/biome': '2.6.6',
   tsx: '^4.23.15',
   '@types/node': '^22.19.0',
+  'vite-plugin-pwa': '^2.0.0',
+  electron: '^45.2.3',
+  'electron-builder': '^26.18.0',
+  'electron-vite': '^6.0.0',
+  '@tauri-apps/api': '^2.12.4',
+  '@tauri-apps/cli': '^2.12.4',
+  '@capacitor/core': '^8.6.0',
+  '@capacitor/app': '^8.1.2',
+  '@capacitor/cli': '^8.6.0',
 }
 
 export function versionOf(name: string): string {

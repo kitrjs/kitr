@@ -1,5 +1,6 @@
 import type { Codemods } from './codemods'
 import type { ProjectContext } from './context'
+import { addonRecipes } from './recipes-addons'
 
 export interface Recipe {
   name: string
@@ -603,6 +604,7 @@ export const recipes: Record<string, Recipe> = {
       c.removeAgentsSection('i18n')
     },
   }),
+  ...addonRecipes,
 }
 
 export const recipeNames = Object.keys(recipes)

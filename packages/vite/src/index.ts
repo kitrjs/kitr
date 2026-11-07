@@ -42,7 +42,16 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       root = options.root ?? config.root ?? process.cwd()
       rc = readRc(root)
       const include = blessedDeps(root)
+      // Tauri's webview needs a fixed port and sees TAURI_ENV_* at build time.
+      const tauri = rc.packages.includes('@kitr/tauri')
+        ? {
+            clearScreen: false,
+            server: { port: 1420, strictPort: true },
+            envPrefix: ['VITE_', 'TAURI_ENV_*'],
+          }
+        : {}
       return {
+        ...tauri,
         resolve: {
           alias: {
             '#app': resolve(root, rc.directories.app ?? 'app'),

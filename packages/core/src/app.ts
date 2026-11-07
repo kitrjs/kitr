@@ -4,12 +4,15 @@ import { type KitrProvider, type ProviderInput, resolveProvider } from './provid
 import type { KitrNode } from './types'
 
 export type AppEnvironment = 'client' | 'server' | 'test'
+export type AppMode = 'development' | 'production' | 'test'
 
 export interface CreateAppOptions {
   providers?: ProviderInput[]
   /** Per-package config, keyed the way `config/<name>.ts` files are. */
   config?: Record<string, unknown>
   environment?: AppEnvironment
+  /** development | production | test. Default: from Vite's `import.meta.env.MODE` or `NODE_ENV`. */
+  mode?: AppMode
   /** Validated env object (from `createEnv`). Exposed as `app.env`. */
   env?: Record<string, unknown>
 }
@@ -24,6 +27,7 @@ export class KitrApp {
   readonly container: Container
   readonly config = new ConfigStore()
   readonly environment: AppEnvironment
+  readonly mode: AppMode
   readonly env: Record<string, unknown>
   readonly providers: KitrProvider[] = []
   private inputs: ProviderInput[]
@@ -33,6 +37,7 @@ export class KitrApp {
   constructor(options: CreateAppOptions = {}) {
     this.container = new Container()
     this.environment = options.environment ?? detectEnvironment()
+    this.mode = options.mode ?? detectMode()
     this.env = options.env ?? {}
     this.inputs = [...(options.providers ?? [])]
     for (const [key, value] of Object.entries(options.config ?? {}))
@@ -44,6 +49,12 @@ export class KitrApp {
   }
   get isServer(): boolean {
     return this.environment === 'server'
+  }
+  get isDevelopment(): boolean {
+    return this.mode === 'development'
+  }
+  get isProduction(): boolean {
+    return this.mode === 'production'
   }
 
   /** Add a provider before boot. */
@@ -123,4 +134,13 @@ function detectEnvironment(): AppEnvironment {
 
 function globalProcess(): { env?: Record<string, string | undefined> } | undefined {
   return (globalThis as any).process
+}
+
+function detectMode(): AppMode {
+  const meta = (import.meta as unknown as { env?: { MODE?: string; DEV?: boolean } }).env
+  if (meta?.MODE === 'test') return 'test'
+  if (typeof meta?.DEV === 'boolean') return meta.DEV ? 'development' : 'production'
+  const nodeEnv = (globalThis as any).process?.env?.NODE_ENV as string | undefined
+  if (nodeEnv === 'test') return 'test'
+  return nodeEnv === 'production' ? 'production' : 'development'
 }
