@@ -28,16 +28,14 @@ kitr add files
 
 What `kitr add` does:
 
-- Adds [Platform](/packages/platform) first, when the project doesn't have it, because `files` requires it.
-- Installs `@kitr/files`.
+- Installs `@kitr/files` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/files/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/files` to `packages` in `kitrrc.ts`.
 - Writes `config/files.ts` (shown under [Configure](#configure)).
 - Adds a `## kitr: files` section to `AGENTS.md`: open, pick and save with `useFileDialogs()` from `kitr/files/react` or `app.container.use('files')`, never build `<input type="file">` or download links by hand, and expect a cancelled dialog to resolve to `[]` or `null`.
 
-`kitr add files` asks no questions and adds no environment variables or scripts. It is a client package, so in a server-only project it prints `files is a client package; this project is server-only. Skipping.` and changes nothing. No kit includes it.
+`kitr add files` asks no questions and adds no environment variables or scripts. No kit includes it.
 
-`kitr remove files` reverses every step above and deletes `config/files.ts`, then lists the files that still import `kitr/files`. It leaves Platform installed.
+`kitr remove files` reverses every step above and deletes `config/files.ts`, then lists the files that still import `kitr/files`.
 
 ## Configure
 
@@ -487,7 +485,7 @@ The web driver adds a hidden `<input type="file">` to the page, sets its `accept
 
 ### Desktop
 
-[Desktop](/packages/desktop) doesn't register a `files` driver today, so the web driver runs inside the shell's webview. Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver today, so the web driver runs inside the shell's webview. Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
 
 ### Mobile
 
@@ -723,5 +721,5 @@ The same shape works for any shell: [Tauri's dialog plugin](https://v2.tauri.app
 - [API reference](/packages/files/api)
 - [Uploads](/packages/uploads): send picked files to your server or object storage.
 - [Platform](/packages/platform): where the app runs, and the drivers platforms register.
-- [Desktop](/packages/desktop): the Electron shell and its typed IPC.
+- [Desktop](/packages/desktop): the Electron shell and its typed IPC. [Tauri](/packages/tauri) is the alternative shell.
 - [MDN: File System API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)

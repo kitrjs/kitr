@@ -7,6 +7,7 @@ import { useEffect } from 'react'
  */
 export type CommandMap = Record<string, (args: any) => unknown>
 
+/** The typed functions `defineCommands<C>()` returns: one per command, taking its argument object and resolving with its result. */
 export type Commands<C extends CommandMap> = {
   [K in keyof C]: Parameters<C[K]>[0] extends undefined | void
     ? () => Promise<Awaited<ReturnType<C[K]>>>
@@ -53,6 +54,10 @@ export function commandQuery<TInput, TOutput>(
   }
 }
 
+/**
+ * A mutation contract over a command, for `mutationFrom(commandMutation(commands.ship_order, { effects }))`.
+ * `effects` say which cached queries to set, invalidate or remove when the command succeeds.
+ */
 export function commandMutation<TInput, TOutput>(
   command: (args: TInput) => Promise<TOutput>,
   options: { effects?: MutationContract<TInput, TOutput>['effects'] } = {},

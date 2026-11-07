@@ -24,7 +24,7 @@ What `kitr add` does:
 
 - Adds `@kitr/table` and `@tanstack/react-table` to `dependencies` and installs them. Pass `--no-install` to skip the install.
 - Adds `'@kitr/table'` to `packages` in `kitrrc.ts`. It registers no provider.
-- Adds a `## kitr: table` section to `AGENTS.md`: put `validateSearch: parseTableSearch` on the route, spread `useUrlTableState({ search, setSearch })` into `useTable` or the registry `<DataTable>`, and keep sorting and paging in the URL so views are shareable.
+- Adds a `## kitr: table` section to `AGENTS.md`: put `validateSearch: parseTableSearch` on the route, spread `useUrlTableState({ search, setSearch })` into `useReactTable` or the registry `<DataTable>`, and keep sorting and paging in the URL so views are shareable.
 
 It writes no config file and no other files, adds no env variables or scripts, and asks no questions. Tables are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it, along with the `data-table` component.
 

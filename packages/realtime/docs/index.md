@@ -242,12 +242,12 @@ On the server, `realtime.use(channel, params)` returns an emitter for one topic.
 
 ```ts
 // app/actions/projects/rename.ts
-import { defineAction } from 'kitr/actions'
+import { defineMutation } from 'kitr/actions'
 import { z } from 'zod'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#server/realtime'
 
-export const renameProject = defineAction('projects.rename', {
+export const renameProject = defineMutation('projects.rename', {
   input: z.object({ id: z.string(), name: z.string().min(2) }),
   handler: async ({ input }) => {
     const project = { id: input.id, name: input.name, teamId: 'team_acme' }

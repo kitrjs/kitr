@@ -22,13 +22,11 @@ kitr add native
 
 What `kitr add` does:
 
-- Adds [Platform](/packages/platform) first when the project does not have it yet, because `native` requires `platform`. The `desktop` and `mobile` kits already include it.
-- Installs `@kitr/native`.
+- Installs `@kitr/native` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/native/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/native` to `packages` in `kitrrc.ts`.
 - Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
 
-It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It is a client package, so a server-only project skips it with a warning. To preview the changes:
+It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It needs no other kitr package: the web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
 
 ```sh
 kitr add native --dry-run
@@ -533,7 +531,7 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, so the web drivers apply there too. Today [Desktop](/packages/desktop) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six. To use the native clipboard, Face ID or real haptics in a shell, register a driver as shown under [Extend](#extend).
+Desktop and mobile shells run the app in a webview, so the web drivers apply there too. Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six. To use the native clipboard, Face ID or real haptics in a shell, register a driver as shown under [Extend](#extend).
 
 ## Errors
 

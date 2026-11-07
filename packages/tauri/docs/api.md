@@ -31,20 +31,27 @@ kitr build app      # client build into dist/<name>/client, then installers
 
 ```ts
 interface TauriOptions {
-  /** Dev server port the window loads from with `kitr dev <name>`. Default 3200. */
+  /** Dev server port the window loads from with `kitr dev <name>`, also written as `build.devUrl`. Default 3200. */
   port: number;
   /** Window title. Default the package name. */
   title?: string;
+  /** Initial window width in pixels. Default 1200. */
   width: number;
+  /** Initial window height in pixels. Default 800. */
   height: number;
+  /** Smallest width the user can resize the window to. */
   minWidth?: number;
+  /** Smallest height the user can resize the window to. */
   minHeight?: number;
   /** Reverse-DNS bundle id. Default `com.example.<app>`. */
   appId?: string;
-  /** Open devtools in dev. Default true. */
+  /** Accepted for parity with `desktop()`; the Tauri scaffold does not use it. Default true. */
   devtools: boolean;
 }
 ```
+
+Options of `tauri()` in `kitrrc.ts`. They are written into the scaffolded `tauri.conf.json` by
+`kitr add`, which the Tauri CLI reads; edit that file to change them later.
 
 ## kitr/tauri/client
 
@@ -55,6 +62,9 @@ function commandMutation<TInput, TOutput>(command: (args: TInput) => Promise<TOu
   effects?: MutationContract<TInput, TOutput>['effects'];
 }): Omit<MutationContract<TInput, TOutput>, 'kind'>;
 ```
+
+A mutation contract over a command, for `mutationFrom(commandMutation(commands.ship_order, { effects }))`.
+`effects` say which cached queries to set, invalidate or remove when the command succeeds.
 
 ### commandQuery
 
@@ -119,6 +129,8 @@ type Commands<C extends CommandMap> = {
   [K in keyof C]: Parameters<C[K]>[0] extends undefined | void ? () => Promise<Awaited<ReturnType<C[K]>>> : (args: Parameters<C[K]>[0]) => Promise<Awaited<ReturnType<C[K]>>>;
 };
 ```
+
+The typed functions `defineCommands<C>()` returns: one per command, taking its argument object and resolving with its result.
 
 ## kitr/tauri/provider
 

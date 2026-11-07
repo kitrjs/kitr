@@ -33,8 +33,8 @@ jobs:
       - run: pnpm manifests:check
       - run: pnpm readmes:check
       - run: pnpm docs:check --strict
-      # Warns until every guide follows docs/STYLE.md; the rollout flips it to --strict.
-      - run: pnpm docs:rules
+      # Every guide follows docs/STYLE.md; a new or changed guide must too.
+      - run: pnpm docs:rules --strict
       - run: pnpm -C site build
       - run: pnpm typecheck
       - run: pnpm lint

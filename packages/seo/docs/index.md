@@ -345,8 +345,14 @@ export const Route = createFileRoute('/')({
 
 Test the page with Google's [Rich Results Test](https://search.google.com/test/rich-results) to see which result types it qualifies for.
 
-> **Warning**
-> `jsonLd()` puts `JSON.stringify` output inside a `<script>` tag without escaping it. If a value comes from users, such as a post title or a review, a `</script>` in it ends the tag early and the rest runs as HTML. For user content, use TanStack Router's own form, `meta: [{ 'script:ld+json': { '@context': 'https://schema.org', '@type': 'Article', headline: post.title } }]`, which escapes the JSON.
+`jsonLd()` escapes the JSON for a `<script>` tag: `<`, `>` and `&` become `\u003c`, `\u003e` and `\u0026`, and the line separators U+2028 and U+2029 are escaped too. A review titled `</script><script>alert(1)</script>` stays inside the tag, and search engines read the escapes back as the same characters, so values from users are safe to pass. The same escaping is exported as `safeJson(value)` for your own inline scripts:
+
+```ts
+import { safeJson } from 'kitr/seo'
+
+safeJson({ headline: 'Q3 </script> report' })
+// => {"headline":"Q3 \u003c/script\u003e report"} (the string's characters)
+```
 
 ## Prerender pages at build time
 

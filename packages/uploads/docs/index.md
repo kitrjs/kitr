@@ -25,7 +25,7 @@ What `kitr add` does:
 - Adds `() => import('@kitr/uploads/provider')` to `providers` in `kitrrc.ts`.
 - Adds `'@kitr/uploads'` to `packages` in `kitrrc.ts`.
 - Writes `config/uploads.ts` (shown under Configure). An existing file is left alone.
-- Adds `import { mountUploads } from 'kitr/uploads/server'` and `mountUploads(server)` to `server/main.ts` when that file exists. This registers `POST /api/uploads` to receive files and `GET /api/uploads/**` to serve them.
+- Adds `import { mountUploads } from 'kitr/uploads/server'` and `mountUploads(server)` to `server/main.ts` when that file exists. This registers `POST /api/uploads` to receive files and `GET /api/uploads/**` to serve them, and raises the server's body limit on that path to match `maxSize`.
 - Regenerates `config/index.ts`, the config list the standalone server imports.
 - Adds a `## kitr: uploads` section to `AGENTS.md`. In a React app it says to upload with `useUpload()` and check files with `checkFile(file, rules)`; in a server-only app it says to call `ctx.app.container.use('uploads').receive(event)` in a controller.
 
@@ -44,8 +44,8 @@ import { defineConfig } from 'kitr/uploads'
 export default defineConfig({
   maxSize: 10 * 1024 * 1024,
   accept: ['image/*', 'application/pdf'],
-  // Files go to storage/uploads and are served under publicPath. Pass a driver for S3/R2.
-  publicPath: '/uploads',
+  // Files go to storage/uploads and are served by mountUploads() under publicPath. Pass a driver for S3/R2.
+  publicPath: '/api/uploads',
 })
 ```
 
@@ -59,24 +59,11 @@ export default defineConfig({
 
 Uploads adds no environment variables. The disk driver's directory is relative to the process's working directory.
 
-### Match publicPath to the route
-
-`mountUploads(server)` serves files under `/api/uploads`, but the generated config sets `publicPath: '/uploads'`. With that value, the `url` of a stored file points to `/uploads/<key>`, which nothing serves. Set `publicPath` to the mounted path so `url` works:
-
-```ts
-// config/uploads.ts
-import { defineConfig } from 'kitr/uploads'
-
-export default defineConfig({
-  maxSize: 10 * 1024 * 1024,
-  accept: ['image/png', 'image/jpeg', 'application/pdf'],
-  publicPath: '/api/uploads',
-})
-```
-
 ### Raise the server's body limit
 
-The [server](/packages/server) refuses any request body over `bodyLimit`, which defaults to 1 MiB, before uploads sees it. A 3 MB invoice gets `413 PAYLOAD_TOO_LARGE`, not the uploads size message. Set `bodyLimit` a little above `maxSize × maxFiles`, to leave room for the multipart framing:
+The [server](/packages/server) refuses any request body over its limit, 1 MiB by default, before uploads sees it. `mountUploads(server)` raises the limit for its own path: it adds `maxSize × maxFiles`, plus 64 KiB per file for the multipart framing, to the server's `bodyLimits` under `/api/uploads`. With the generated config, a 3 MB invoice posted to `/api/uploads` reaches the upload rules, and an 11 MB one gets the uploads size message.
+
+Your own upload routes, such as a controller at `/api/orders/:orderId/invoice`, keep the server's 1 MiB limit, and a larger file gets `413 PAYLOAD_TOO_LARGE`. Raise the limit for that path prefix in `config/server.ts`. The longest matching prefix wins:
 
 ```ts
 // config/server.ts
@@ -84,7 +71,7 @@ import { defineConfig } from 'kitr/server'
 
 export default defineConfig({
   healthPath: '/healthz',
-  bodyLimit: 11 * 1024 * 1024,
+  bodyLimits: { '/api/orders': 11 * 1024 * 1024 },
 })
 ```
 
@@ -375,35 +362,9 @@ export async function archiveInvoice(app: KitrApp, pdf: Uint8Array) {
 
 ## Serve files safely
 
-`mountUploads(server)` answers `GET /api/uploads/<key>` with the stored bytes, the stored type as `content-type`, and a one-year immutable cache header. The type is whatever the uploader's browser declared.
+`mountUploads(server)` answers `GET /api/uploads/<key>` with the stored bytes and the headers from `servedFileHeaders`. The stored type is whatever the uploader's browser declared, so the route never trusts it: images, audio, video, PDF and plain text are served inline, and everything else, SVG and HTML included, is served as a download with `application/octet-stream`. Every response carries `nosniff` and a sandboxing content security policy, so an uploaded file cannot run script as your site.
 
-> **Warning**
-> A file served with its declared type runs in your site's origin. An `image/svg+xml` or `text/html` upload can carry a script, and `image/*` accepts SVG. With `mountUploads`, accept only exact safe types (`image/png`, `image/jpeg`, `application/pdf`), or serve files through your own route with `servedFileHeaders`, as below.
-
-`servedFileHeaders(type, name)` from `kitr/uploads/server` returns headers that serve images, audio, video, PDF and plain text inline, and everything else as a download, with `nosniff` and a sandboxing content security policy:
-
-```ts
-// server/main.ts
-import { createServer } from 'kitr/server'
-import { mountRoutes } from 'kitr/api'
-import { servedFileHeaders, useUploads } from 'kitr/uploads/server'
-import { config } from '../config'
-import rc from '../kitrrc'
-import { routes } from './routes'
-
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-
-server.h3.post('/api/uploads', async (event) => ({ files: await useUploads(server.app).receive(event) }))
-server.h3.get('/api/uploads/**', async (event) => {
-  const key = decodeURIComponent(new URL(event.req.url).pathname.slice('/api/uploads/'.length))
-  const file = await useUploads(server.app).read(key)
-  if (!file) return new Response('Not found', { status: 404 })
-  return new Response(file.data as BodyInit, { headers: servedFileHeaders(file.type, key.split('/').pop()) })
-})
-```
-
-Use this in place of the `mountUploads(server)` line. For an HTML upload, the headers are:
+`servedFileHeaders(type, name)` from `kitr/uploads/server` returns those headers, for routes you write yourself. For an HTML upload, they are:
 
 ```ts
 // server/check_headers.ts
@@ -419,7 +380,7 @@ servedFileHeaders('text/html', 'page.html')
 // }
 ```
 
-`uploads.mount(server, path)` on a service from `createUploads` registers the same two routes with these headers already applied. See Use the service without the provider.
+`uploads.mount(server, path)` on a service from `createUploads` registers the same two routes, with the same headers and body limit. See Use the service without the provider.
 
 Every file under the route is public to anyone with its key. Keys contain a random UUID, so they cannot be guessed, but anyone you share a link with can pass it on. For private files, such as invoices, don't mount a public `GET`. Serve them from a controller that checks the user first, as below.
 
@@ -561,7 +522,7 @@ The server throws kitr errors, so they reach the browser in the usual JSON shape
 | `VALIDATION`, `At most 1 file(s)` | More files than `maxFiles`. | Raise `maxFiles`, or send fewer. |
 | `VALIDATION`, `invoice.pdf is larger than 10485760 bytes` | A file is over `maxSize`. | Show the limit with `formatBytes`. |
 | `VALIDATION`, `notes.txt is not an accepted type` | A file fails `accept`. | Pick another file, or widen `accept`. |
-| `PAYLOAD_TOO_LARGE` (413) | The whole body is over the server's `bodyLimit`. | Raise `bodyLimit` in `config/server.ts`. |
+| `PAYLOAD_TOO_LARGE` (413) | The whole body is over the server's limit for that path. `mountUploads` sets its own path's limit from `maxSize`. | For your own routes, add the path to `bodyLimits` in `config/server.ts`. |
 | `NOT_FOUND`, `File not found` | `GET` for a key that does not exist. | Check the stored key. |
 | `FORBIDDEN`, `Bad upload key` | Disk driver: the key leaves `dir` or names a sidecar. | Use keys from `store` or `receive` only. |
 | `UploadError`, status `0`, `Network error during upload` | The request never completed. | Retry when online. |
@@ -726,7 +687,7 @@ Then call `uploads.mount(server)` in `server/main.ts` in place of `mountUploads(
 ## Next steps
 
 - [API reference](/packages/uploads/api): every export of `kitr/uploads`, `kitr/uploads/react`, `kitr/uploads/server` and `kitr/uploads/provider`.
-- [server](/packages/server): `createServer`, `bodyLimit` and the error shape.
+- [server](/packages/server): `createServer`, `bodyLimit`, `bodyLimits` and the error shape.
 - [api](/packages/api): controllers and routes for files that belong to a record.
 - [forms](/packages/forms): show `fieldErrors` under the file input.
 - [MDN on FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData): what `upload()` sends.

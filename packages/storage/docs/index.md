@@ -37,7 +37,7 @@ What `kitr add` does:
 
 `kitr add storage` asks no questions and adds no environment variables or scripts. It does not overwrite `config/storage.ts` or `app/storage.ts` when they exist.
 
-The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include it. The [Desktop](/packages/desktop) and [Mobile](/packages/mobile) platforms require it, so adding either platform adds storage too.
+The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include it. The [Desktop](/packages/desktop), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) platforms require it, so adding any of them adds storage too.
 
 The generated `app/storage.ts` in a project with React:
 
@@ -92,7 +92,7 @@ export default defineConfig({
 
 `kitr/storage` adds no environment variables. `import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
 
-The provider applies this file in `register()`: it sets the prefix and the cookie defaults, then switches storage items to the platform's native store when a platform registered one. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
+The provider applies this file in `register()`: it sets the prefix and the cookie defaults. It switches storage items to the platform's native store when a platform registered one, and checks again in `boot()` for a platform provider listed after it. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
 
 Changing `prefix` in a live app makes every saved value look missing, because the keys change. Users see the defaults again; nothing is migrated.
 
@@ -597,12 +597,12 @@ Storage items use the platform's own store when a platform registers a driver, a
 | Where the app runs | Driver | Where `local` items are saved |
 | --- | --- | --- |
 | Browser | `web:local` | `localStorage` |
-| Desktop, Electron | `electron:ipc` | `kitr-storage.json` in Electron's `userData` folder |
-| Desktop, Tauri | `tauri:store` | `kitr.json` in the app data folder |
+| Desktop (Electron) | `electron:ipc` | `kitr-storage.json` in Electron's `userData` folder |
+| Tauri | `tauri:store` | `kitr.json` in the app data folder |
 | Mobile, Capacitor | `capacitor:preferences` | Capacitor Preferences |
 | Server, or storage blocked | none | nothing; items read their defaults |
 
-The storage provider looks for a registered driver in its own `register()` step, so the platform's provider (`@kitr/desktop/provider` or `@kitr/mobile/provider`) must be listed before `@kitr/storage/provider` in `kitrrc.ts`. When it is listed after, items keep using Web Storage inside the native shell.
+The storage provider looks for a registered driver in its own `register()` step and again in `boot()`, after every provider has registered. So the platform's provider (`@kitr/desktop/provider`, `@kitr/tauri/provider` or `@kitr/mobile/provider`) can be listed before or after `@kitr/storage/provider` in `kitrrc.ts`.
 
 On native platforms `session` items use an in-memory driver. Writes to a native store happen in the background after the in-memory copy updates; a failed write is logged as `[kitr/storage] <driver>: <error>` and the in-memory value stays.
 
@@ -629,7 +629,7 @@ Values land in `kitr-storage.json` in [`app.getPath('userData')`](https://www.el
 
 ### Desktop with Tauri
 
-Inside a [Tauri](https://v2.tauri.app) webview, the desktop provider registers `tauriStoreDriver()` on the [store plugin](https://v2.tauri.app/plugin/store/), which writes `kitr.json` in the app data folder. Install and enable the plugin in your Tauri project as its docs describe; nothing changes in your items.
+Inside a [Tauri](https://v2.tauri.app) webview, the [Tauri](/packages/tauri) provider registers `tauriStoreDriver()` on the [store plugin](https://v2.tauri.app/plugin/store/), which writes `kitr.json` in the app data folder. `kitr add tauri` installs `@tauri-apps/plugin-store`, and its scaffold adds the Rust plugin and the `store:default` permission; nothing changes in your items. Tauri is the alternative to Electron: it uses the operating system's webview, so the app is smaller but renders differently per OS.
 
 ### Mobile with Capacitor
 
@@ -763,7 +763,7 @@ export default defineProvider({
 })
 ```
 
-Register it in `kitrrc.ts` **before** the storage provider, because the storage provider picks the driver up in its own `register()`:
+Register it in `kitrrc.ts`. The storage provider resolves the driver again in `boot()`, so its place in the list does not matter:
 
 ```ts
 // kitrrc.ts
