@@ -9,6 +9,7 @@ import {
 } from '@kitr/core'
 import { log, type ProjectContext, type RcInfo } from './context'
 import { manifests } from './manifests.gen'
+import { type LoadedPackage, loadPackage } from './packages'
 import { literal } from './platforms'
 
 /**
@@ -67,17 +68,35 @@ export {}
 `
 }
 
-/** The generators for a project: the built-in `platforms` and one per package declaring `types`. */
+/**
+ * The generators for a project: the built-in `platforms` and one per package. A package on the
+ * package contract declares it as `types: () => import('./types')` in its setup module; one
+ * without a setup module still works through `kitr.types` in its manifest.
+ */
 export async function loadGenerators(ctx: ProjectContext): Promise<TypesGenerator[]> {
   const rc = ctx.readRc()
   const out: TypesGenerator[] = [platformsGenerator]
   const deps: Record<string, string> = { ...ctx.pkg.dependencies, ...ctx.pkg.devDependencies }
   const candidates = new Set<string>([...rc.packages, ...Object.keys(deps)])
   for (const name of candidates) {
-    const subpath = typesExportOf(ctx, name)
-    if (!subpath) continue
-    const specifier = `${name}/${subpath.replace(/^\.\//, '')}`
-    const mod = await importFromProject(ctx, specifier)
+    if (!name.startsWith('@kitr/') && !typesExportOf(ctx, name)) continue
+    let loaded: LoadedPackage | undefined
+    try {
+      loaded = await loadPackage(ctx, name)
+    } catch {
+      loaded = undefined
+    }
+    let mod: unknown
+    let specifier: string
+    if (loaded?.definition.types) {
+      specifier = `${name}/kitr (types)`
+      mod = await loaded.definition.types()
+    } else {
+      const subpath = typesExportOf(ctx, name)
+      if (!subpath) continue
+      specifier = `${name}/${subpath.replace(/^\.\//, '')}`
+      mod = await importFromProject(ctx, specifier)
+    }
     const generator = pickTypesGenerator(mod)
     if (!generator)
       throw new Error(
