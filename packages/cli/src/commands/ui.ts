@@ -5,7 +5,7 @@ import { Codemods } from '../codemods'
 import { createContext, type ProjectContext } from '../context'
 
 export const DEFAULT_REGISTRY =
-  'https://raw.githubusercontent.com/PodkopovP/kitr/main/registry/dist'
+  'https://raw.githubusercontent.com/kitrjs/kitr/main/registry/dist'
 
 interface RegistryItem {
   name: string

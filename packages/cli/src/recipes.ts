@@ -212,7 +212,7 @@ export const recipes: Record<string, Recipe> = {
       c.addPackage('@kitr/ui')
       ctx.write(
         'config/ui.ts',
-        `import { defineConfig } from 'kitr/ui'\n\nexport default defineConfig({\n  theme: { default: 'system' },\n  toaster: { position: 'bottom-right' },\n  // Any shadcn-compatible registry. Default: kitr's.\n  // registry: 'https://raw.githubusercontent.com/PodkopovP/kitr/main/registry/dist',\n  componentsDir: 'app/components/ui',\n})\n`,
+        `import { defineConfig } from 'kitr/ui'\n\nexport default defineConfig({\n  theme: { default: 'system' },\n  toaster: { position: 'bottom-right' },\n  // Any shadcn-compatible registry. Default: kitr's.\n  // registry: 'https://raw.githubusercontent.com/kitrjs/kitr/main/registry/dist',\n  componentsDir: 'app/components/ui',\n})\n`,
       )
       c.addAgentsSection(
         'ui',
@@ -318,6 +318,11 @@ export const recipes: Record<string, Recipe> = {
             { overwrite: true },
           )
         }
+        // Boot providers before hydrating, so the first client render matches the server's HTML.
+        ctx.write(
+          'app/client.tsx',
+          `import { StartClient } from '@tanstack/react-start/client'\nimport { StrictMode, startTransition } from 'react'\nimport { hydrateRoot } from 'react-dom/client'\nimport { app } from './app'\n\n/** Start's client entry, with the kitr app booted first so providers are ready when the tree hydrates. */\napp.boot().then(() => {\n  startTransition(() => {\n    hydrateRoot(\n      document,\n      <StrictMode>\n        <StartClient />\n      </StrictMode>,\n    )\n  })\n})\n`,
+        )
         c.remove('index.html')
         c.remove('app/main.tsx')
         c.addScript('start', 'kitr serve')

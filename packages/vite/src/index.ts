@@ -20,6 +20,9 @@ export interface KitrPluginOptions {
   devtools?: boolean
 }
 
+/** Config files whose packages import Node built-ins; kept out of client builds. */
+const SERVER_ONLY_CONFIG = ['server', 'api', 'db']
+
 interface RcInfo {
   packages: string[]
   providers: string[]
@@ -72,7 +75,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       if (id === 'virtual:kitr/providers' || id === 'virtual:kitr/config') return `\0${id}`
       return null
     },
-    load(id) {
+    load(id, loadOptions) {
       if (id === '\0virtual:kitr/providers') {
         // Production builds never import the devtools provider, so the overlay is not in the bundle.
         const specs = stripDevtools
@@ -85,8 +88,12 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       }
       if (id === '\0virtual:kitr/config') {
         const dir = resolve(root, rc.directories.config ?? 'config')
+        // Server-only config (config/server.ts imports Node APIs) never reaches the browser bundle.
+        const serverOnly = loadOptions?.ssr ? [] : SERVER_ONLY_CONFIG
         const files = existsSync(dir)
-          ? readdirSync(dir).filter((f) => /\.(ts|js|mts|mjs)$/.test(f))
+          ? readdirSync(dir).filter(
+              (f) => /\.(ts|js|mts|mjs)$/.test(f) && !serverOnly.includes(f.replace(/\.\w+$/, '')),
+            )
           : []
         const imports = files
           .map((f, i) => `import c${i} from ${JSON.stringify(join(dir, f))}`)
@@ -132,6 +139,10 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
             generatedRouteTree: rel(generatedRouteTree),
             ...options.router,
           },
+          ...readPrerender(root, rc.directories.config ?? 'config'),
+          // Vite 8's SSR environment has `dispatchFetch`, which Start reads as "someone else serves dev";
+          // nobody does, so ask Start to mount its own dev middleware.
+          vite: { installDevServerMiddleware: true, ...(startOptions.vite as object | undefined) },
           ...startOptions,
         } as any)
       }
@@ -245,4 +256,35 @@ function arrayBlock(src: string, key: string): string {
     else if (src[i] === ']') depth--
   }
   return src.slice(from, i - 1)
+}
+
+/**
+ * Static read of `config/ssr.ts`: `prerender: ['/a']` or `{ routes: [...], crawlLinks }` becomes
+ * Start's `pages` + `prerender`, and `site.url` turns on the sitemap. No execution needed.
+ */
+export function readPrerender(
+  root: string,
+  configDir: string,
+): {
+  pages?: Array<{ path: string }>
+  prerender?: Record<string, unknown>
+  sitemap?: Record<string, unknown>
+} {
+  const path = resolve(root, configDir, 'ssr.ts')
+  if (!existsSync(path)) return {}
+  const src = readFileSync(path, 'utf8')
+  const block = src.match(/prerender\s*:\s*(\{[\s\S]*?\}|\[[\s\S]*?\])/)?.[1]
+  if (!block) return {}
+  const list = block.startsWith('[')
+    ? block
+    : (block.match(/routes\s*:\s*(\[[\s\S]*?\])/)?.[1] ?? '[]')
+  const routes = [...list.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]!)
+  if (!routes.length) return {}
+  const crawlLinks = /crawlLinks\s*:\s*true/.test(block)
+  const host = src.match(/site\s*:\s*\{[\s\S]*?url\s*:\s*['"]([^'"]+)['"]/)?.[1]
+  return {
+    pages: routes.map((p) => ({ path: p })),
+    prerender: { enabled: true, crawlLinks, autoSubfolderIndex: true },
+    ...(host ? { sitemap: { enabled: true, host } } : {}),
+  }
 }

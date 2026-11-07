@@ -1,0 +1,12 @@
+appId: com.example.desktop
+productName: Desktop
+directories:
+  output: release
+files:
+  - out/**
+mac:
+  category: public.app-category.productivity
+win:
+  target: nsis
+linux:
+  target: AppImage
