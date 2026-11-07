@@ -57,7 +57,7 @@ kitr add tauri app --title "Acme Orders" --width 1280 --height 860 --appId com.a
 | `--width`, `--height` | `1200`, `800` | Initial window size. |
 | `--minWidth`, `--minHeight` | | Smallest window size. |
 | `--appId` | `com.example.<app>` | Reverse-DNS bundle identifier. |
-| `--no-devtools` | | Recorded in `kitrrc.ts`; see the options table. |
+| `--no-devtools` | | Don't open the webview inspector when `kitr dev` starts the window. |
 | `--no-scaffold` | | Register the platform without writing `platforms/app/` or `app/commands.ts`. |
 | `--no-install` | | Edit `package.json` without running the package manager. |
 | `--dry-run` | | Print what would change. |
@@ -68,7 +68,7 @@ The `tauri` kit already has an `app` Tauri platform next to a `site` web platfor
 kitr new acme-orders --kit tauri
 ```
 
-`kitr platforms remove app` takes the platform out of `kitrrc.ts` and leaves `platforms/app/` for you to delete. `kitr remove tauri` then takes `@kitr/tauri` out of `packages` and the dependencies; it leaves the provider line, the `tauri` import and the `@tauri-apps/*` packages, so remove those yourself.
+`kitr platforms remove app` takes the platform out of `kitrrc.ts`, and with the last Tauri platform also the `tauri` import and the provider line. It leaves `platforms/app/` for you to delete. `kitr remove tauri` does all of that for every Tauri platform, and takes `@kitr/tauri` out of `packages` and the dependencies; the `@tauri-apps/*` packages stay, so remove those yourself.
 
 ## Configure
 
@@ -104,7 +104,7 @@ export default defineKitrConfig({
 | `minWidth` | | Smallest width the user can resize to. |
 | `minHeight` | | Smallest height the user can resize to. |
 | `appId` | `com.example.<app>` | `identifier` in `tauri.conf.json`. The default lower-cases the title and keeps letters and digits: `Acme Orders` gives `com.example.acmeorders`. |
-| `devtools` | `true` | Accepted for parity with [Desktop](/packages/desktop); the Tauri scaffold does not use it. Debug builds of Tauri always allow the webview inspector. |
+| `devtools` | `true` | Opens the webview inspector when `kitr dev` starts the window. `kitr dev` passes it as `KITR_DEVTOOLS`, which the scaffolded `src/lib.rs` reads in debug builds. Release builds never open it. |
 
 Every option is written into the scaffolded files when you run `kitr add`, and the Tauri CLI reads those files, not `kitrrc.ts`. Changing an option later does not rewrite them: edit `tauri.conf.json`, which is yours, or delete it and run `kitr platforms scaffold app` to write it again. This includes `port`: if you change it, change `build.devUrl` too, or the window waits on the old port.
 
@@ -130,7 +130,7 @@ With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` in a project whose `p
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data: blob: https:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https: wss:"
     }
   },
   "bundle": {
@@ -147,7 +147,7 @@ With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` in a project whose `p
 }
 ```
 
-`frontendDist` points at this platform's client build, so `kitr build app` and `tauri build` agree on where the bundle is. Every other key is [Tauri's configuration](https://v2.tauri.app/reference/config/). The scaffolded Rust crate depends on `tauri`, `tauri-plugin-store`, `tauri-plugin-opener`, `serde` and `serde_json`, and the main window gets the `core:default`, `store:default` and `opener:default` permissions.
+`frontendDist` points at this platform's client build, so `kitr build app` and `tauri build` agree on where the bundle is. Every other key is [Tauri's configuration](https://v2.tauri.app/reference/config/). The content security policy lets the window load the app's own files, talk to Rust over Tauri's IPC, and call `https:` and `wss:` APIs; Tauri adds hashes for the inline scripts in the client build. Widen `connect-src` or `img-src` there if the app loads from elsewhere. The scaffolded Rust crate depends on `tauri`, `tauri-plugin-store`, `tauri-plugin-opener`, `tauri-plugin-process`, `serde` and `serde_json`, and the main window gets the `core:default`, `store:default`, `opener:default` and `process:default` permissions. The provider opens links through the opener plugin and quits through the process plugin, so `kitr add tauri` installs both JavaScript packages.
 
 | Variable | Used for |
 | --- | --- |
@@ -159,7 +159,7 @@ Read or change one option from the command line with `kitr config app` (lists ev
 
 ## Open your first window
 
-Tauri needs the app icons listed in `tauri.conf.json` before it compiles. Generate every size from one 1024×1024 PNG:
+Tauri needs the app icons listed in `tauri.conf.json` before it compiles. When they are missing, `kitr dev app` and `kitr build app` write a placeholder `platforms/app/app-icon.png` (a rounded square) and run `tauri icon` on it. Replace it with your own 1024×1024 PNG whenever you like:
 
 ```sh
 cd platforms/app
@@ -167,13 +167,13 @@ pnpm exec tauri icon ../../design/acme-orders-icon.png
 cd ../..
 ```
 
-The icons land in `platforms/app/src-tauri/icons/`. Then run the platform:
+The icons land in `platforms/app/src-tauri/icons/`. Run the platform:
 
 ```sh
 kitr dev app
 ```
 
-kitr starts Vite on port 3200, waits until it answers, then runs `tauri dev --no-watch` in `platforms/app`. The first run compiles the Rust crate and its dependencies, which takes a few minutes; later runs take seconds. The window opens on your app and updates in place when you edit a component. With `--no-watch`, Tauri does not rebuild when Rust files change: stop and run `kitr dev app` again after editing `src-tauri`.
+kitr starts Vite on port 3200, waits until it answers, then runs `tauri dev --no-watch` in `platforms/app`, pointing the window at that port. `kitr dev app --port 3300` and `KITR_APP_PORT=3300` move both Vite and the window; `devUrl` in `tauri.conf.json` is only the default. The first run compiles the Rust crate and its dependencies, which takes a few minutes; later runs take seconds. The window opens on your app and updates in place when you edit a component. With `--no-watch`, Tauri does not rebuild when Rust files change: stop and run `kitr dev app` again after editing `src-tauri`.
 
 The scaffold wrote one Rust command and its typed mirror:
 
@@ -737,16 +737,17 @@ Port each command to a handler as the [Desktop](/packages/desktop) guide shows, 
 | `kitr config <name> [option] [value]` | Reads or sets an option in `kitrrc.ts`. `--unset` removes one. |
 | `kitr platforms` | Lists every platform with its options. |
 | `kitr platforms scaffold <name>` | Writes the scaffolded files that are missing. Existing files are kept. |
-| `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`. |
+| `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`, with its import and provider when it was the last Tauri platform. |
 
 The Tauri CLI works from `platforms/app` for everything else: `pnpm exec tauri icon`, `pnpm exec tauri add <plugin>`, `pnpm exec tauri info` (prints the toolchain and webview versions).
 
 `kitr doctor` checks each Tauri platform and reports:
 
-- an error for each missing package: `@tauri-apps/api`, `@tauri-apps/cli`, `@tauri-apps/plugin-store`. Fix: `pnpm add <package>` (`-D` for the CLI).
+- an error for each missing package: `@tauri-apps/api`, `@tauri-apps/cli`, `@tauri-apps/plugin-store`, `@tauri-apps/plugin-opener`, `@tauri-apps/plugin-process`. Fix: `pnpm add <package>` (`-D` for the CLI).
 - an error when `platforms/app/src-tauri/tauri.conf.json` is missing. Fix: `kitr platforms scaffold app`.
+- an error when `cargo` is not on `PATH`: `app: the Rust toolchain (cargo) is not on PATH, and Tauri builds with it`. Fix: install Rust from [rustup.rs](https://rustup.rs) and open a new terminal.
 
-It does not check the Rust toolchain; `pnpm exec tauri info` does.
+For the system libraries and webview versions, run `pnpm exec tauri info`.
 
 ## Errors
 

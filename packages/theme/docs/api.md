@@ -68,13 +68,17 @@ Sets `data-theme="light|dark"` on <html>, which the Tailwind preset and styles.c
 ### ThemeScript
 
 ```ts
-function ThemeScript({ storageKey, attribute }: {
+function ThemeScript(props: {
   storageKey?: string;
   attribute?: string;
+  tokens?: ThemeConfig['tokens'];
 }): import("react").JSX.Element;
 ```
 
-Inline script for the document head; applies the stored theme before first paint.
+Inline script for the document head; applies the stored theme before first paint. Its
+`storageKey`, `attribute` and `tokens` default to `config/theme.ts` (through the theme
+provider), so the head and the provider always agree. `tokens` are emitted as a `<style>` of
+`--kitr-*` overrides: `light` on `:root`, `dark` under the dark attribute.
 
 ### toastError
 
@@ -83,6 +87,18 @@ function toastError(error: unknown, fallbackMessage?: string): void;
 ```
 
 Show a KitrError (or anything) as an error toast with its message.
+
+### tokenCss
+
+```ts
+function tokenCss(tokens: {
+  light?: TokenGroup;
+  dark?: TokenGroup;
+}, attribute?: string): string;
+```
+
+The CSS for `config/theme.ts` tokens. `:root:root` outranks `kitr/theme/styles.css` (`:root`,
+`[data-theme="dark"]`) wherever the stylesheet loads. `<` is escaped so a value cannot close the tag.
 
 ### useTheme
 
@@ -164,6 +180,14 @@ const defineConfig: <const C extends ThemeConfig>(config: C) => C;
 
 Type-check `config/theme.ts`: returns the object unchanged, with autocomplete for every `ThemeConfig` option.
 
+### ThemeConfigContext
+
+```ts
+const ThemeConfigContext: import("react").Context<ThemeConfig | null>;
+```
+
+`config/theme.ts`, provided by the theme provider so `<ThemeScript />` uses the same settings.
+
 ### toast
 
 ```ts
@@ -202,7 +226,10 @@ interface ThemeConfig {
   storageKey?: string;
   /** Attribute set on <html>. Default 'data-theme'. */
   attribute?: string;
-  /** Typed slot for token overrides. Not read by kitr yet; override `--kitr-*` variables in `app/styles/tokens.css`. */
+  /**
+   * Token overrides, emitted by `<ThemeScript />` as `--kitr-*` variables: `light` on `:root`,
+   * `dark` under the dark attribute. `{ light: { color: { primary: 'oklch(60% 0.2 150)' } } }`.
+   */
   tokens?: {
     light?: TokenGroup;
     dark?: TokenGroup;

@@ -477,7 +477,7 @@ export function confirmationSubject(locale: string, count: number) {
 // confirmationSubject('de', 2) => 2 Bestellungen
 ```
 
-Don't call `changeLanguage()` on an instance shared by every request. On a server, the language would switch under requests that are still rendering. Use `getFixedT`, or `i18n.cloneInstance({ lng })` for a per-request instance to hand to `I18nextProvider`, as the `site` kit's `LocaleProvider` does.
+The provider binds one i18next instance per request on the server, so `changeLanguage()` in a request's render changes only that request. An instance you create yourself, at module level, is shared by every request: don't call `changeLanguage()` on it there, because the language would switch under requests that are still rendering. Use `getFixedT`, or `i18n.cloneInstance({ lng })` for a per-request copy.
 
 ## Load a language on demand
 

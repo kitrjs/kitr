@@ -75,13 +75,21 @@ const colors: Record<LogLevel, string> = {
 /** Create a logger without the provider, for scripts, packages and tests. */
 export function createLogger(options: LoggerOptions = {}): Logger {
   const isDev = (globalThis as any).process?.env?.NODE_ENV !== 'production'
+  // A browser console shows neither ANSI colours nor wants JSON strings: it gets the message and
+  // the fields as an object, at the matching console level, unless a format or writer is chosen.
+  const inBrowser =
+    typeof (globalThis as any).window !== 'undefined' &&
+    typeof (globalThis as any).document !== 'undefined'
+  const browserConsole = inBrowser && !options.format && !options.write
   const format = options.format ?? (isDev ? 'pretty' : 'json')
   const write =
     options.write ??
-    ((line: string, record: LogRecord) => {
-      if (levels[record.level] >= levels.error) console.error(line)
-      else console.log(line)
-    })
+    (browserConsole
+      ? (_line: string, record: LogRecord) => browserWrite(record)
+      : (line: string, record: LogRecord) => {
+          if (levels[record.level] >= levels.error) console.error(line)
+          else console.log(line)
+        })
 
   const build = (
     bindings: Record<string, unknown>,
@@ -145,6 +153,21 @@ function withoutReserved(fields?: Record<string, unknown>): Record<string, unkno
     delete out[key]
   }
   return out ?? fields
+}
+
+function browserWrite(r: LogRecord) {
+  const { level, time: _time, name, msg, ...rest } = r
+  const method =
+    level === 'error' || level === 'fatal'
+      ? 'error'
+      : level === 'warn'
+        ? 'warn'
+        : level === 'info'
+          ? 'info'
+          : 'debug'
+  const text = `${name ? `[${name}] ` : ''}${msg}`
+  if (Object.keys(rest).length) console[method](text, rest)
+  else console[method](text)
 }
 
 function pretty(r: LogRecord): string {

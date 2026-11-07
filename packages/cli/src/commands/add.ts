@@ -7,7 +7,7 @@ import { createContext, type ProjectContext } from '../context'
 import { manifests } from '../manifests.gen'
 import { loadPackage } from '../packages'
 import { knownPackageNames } from '../plan'
-import { parseFlags, platformTypeNames } from '../platforms'
+import { parseFlags, platformTypeNames, removeRcPlatform } from '../platforms'
 import { enablePreviews, isPreview } from '../preview'
 import { describeQuestions } from '../questions'
 import { generateTypesQuietly } from '../types'
@@ -125,6 +125,15 @@ export const remove = defineCommand({
       }
       const short = loaded.name
       await loaded.definition.remove?.(createAddContext(ctx, codemods, {}))
+      // A platform package: its kitrrc.ts entries, their import and the provider it registered.
+      const platform =
+        loaded.definition.kind === 'platform' ? loaded.definition.platform : undefined
+      if (platform) {
+        for (const [name, p] of Object.entries(ctx.readRc().platforms))
+          if (p.factory === platform.export) removeRcPlatform(ctx, name)
+        const provider = platform.factory({}).definition.provider
+        if (provider) codemods.removeProvider(provider)
+      }
       codemods.removePackage(loaded.package)
       codemods.removePackages([loaded.package])
       // kitr owns config/<name>.ts; the package's other files (stubs, routes) stay because the app may have edited them.

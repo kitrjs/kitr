@@ -18,7 +18,7 @@ export default definePackage({
     )
     ctx.write(
       'server/realtime.ts',
-      `import { createRealtimeServer } from 'kitr/realtime/server'\nimport { exampleChannel } from '#app/channels/example'\n\n/** Attached in server/main.ts; from a controller: realtime.use(exampleChannel, { room }).emit('message', data) */\nexport const realtime = createRealtimeServer({\n  channels: [exampleChannel],\n  // authorize: (request) => verify(request.headers.get('authorization')),\n})\n`,
+      `import { createRealtimeServer } from 'kitr/realtime/server'\nimport { exampleChannel } from '#app/channels/example'\nimport realtimeConfig from '../config/realtime'\n\n/** Transport and path come from config/realtime.ts. Attached in server/main.ts; from a controller: realtime.use(exampleChannel, { room }).emit('message', data) */\nexport const realtime = createRealtimeServer({\n  ...realtimeConfig,\n  channels: [exampleChannel],\n  // authorize: (request) => verify(request.headers.get('authorization')),\n})\n`,
     )
     // The server platform wrote server/main.ts first: attach the socket server next to the routes.
     const configuredPath = ctx.exists('config/realtime.ts')
@@ -29,7 +29,7 @@ export default definePackage({
       import: serverOnly
         ? "import { realtime } from './realtime'"
         : "import { realtime } from '#server/realtime'",
-      line: `// WebSocket upgrades on ${configuredPath}, next to the routes.\nrealtime.attach(server, '${configuredPath}')`,
+      line: `// Realtime on ${configuredPath} (config/realtime.ts), next to the routes.\nrealtime.attach(server)`,
     })
     if (!serverOnly)
       ctx.write(
@@ -38,7 +38,7 @@ export default definePackage({
       )
     ctx.agents.add(
       'realtime',
-      `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\`. The server emits with \`realtime.use(channel, params).emit(event, data)\` (server/realtime.ts); components subscribe with \`useChannel(realtime(), channel, params)\` from \`kitr/realtime/react\` and events update the query cache via \`effects\`.\n- Switch transports in \`config/realtime.ts\`: \`socket.io\` (rooms, adapters; client from \`kitr/realtime/socket.io\`) or \`sse\` (plain HTTP, no upgrade; server from \`kitr/realtime/sse/server\`).`,
+      `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\`. The server emits with \`realtime.use(channel, params).emit(event, data)\` (server/realtime.ts); components subscribe with \`useChannel(realtime(), channel, params)\` from \`kitr/realtime/react\` and events update the query cache via \`effects\`.\n- Switch transports in \`config/realtime.ts\`: \`sse\` (plain HTTP, no upgrade) changes both the client and server/realtime.ts. \`socket.io\` (rooms, adapters) needs its own client from \`kitr/realtime/socket.io\` and \`attachSocketIo\` from \`kitr/realtime/socket.io/server\`.`,
     )
   },
   remove(ctx) {

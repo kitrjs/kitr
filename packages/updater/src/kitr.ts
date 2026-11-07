@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add updater`: tell people a new version is ready and update the app in place, on every platform. */
 export default definePackage({
   name: 'updater',
+  requires: ['platform'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/updater/provider')
     ctx.config(

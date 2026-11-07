@@ -102,6 +102,7 @@ export const Route = createFileRoute('/pricing')({ beforeLoad: onlyPlatform('www
 function requireAuth(options?: RequireAuthOptions): ({ context, location }: {
   context: {
     session?: GuardSession | null;
+    app?: AppWithConfig;
   };
   location: {
     href: string;
@@ -205,7 +206,7 @@ Options of `onlyPlatform()`: where other platforms go instead of a 404.
 
 ```ts
 interface RequireAuthOptions {
-  /** Where to send anonymous users. Default `/sign-in`. */
+  /** Where to send anonymous users. Default: `signInPath` from `config/auth.ts`, else `/sign-in`. */
   to?: string;
   /** Name of the search param carrying the original URL. Default `redirect`. */
   redirectParam?: string | false;

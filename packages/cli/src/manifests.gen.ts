@@ -14,6 +14,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "@react-three/fiber",
       "three"
     ],
+    "requires": [
+      "react"
+    ],
     "client": true,
     "docs": "docs",
     "setup": "./kitr"
@@ -62,6 +65,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "client",
     "builtOn": [
       "motion"
+    ],
+    "requires": [
+      "react"
     ],
     "client": true,
     "docs": "docs",
@@ -146,6 +152,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "electron-builder"
     ],
     "requires": [
+      "vite",
       "router",
       "platform",
       "storage"
@@ -292,6 +299,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "Capacitor"
     ],
     "requires": [
+      "vite",
       "router",
       "platform",
       "storage"
@@ -449,6 +457,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "builtOn": [
       "@tanstack/react-router"
     ],
+    "requires": [
+      "react"
+    ],
     "client": true,
     "docs": "docs",
     "setup": "./kitr"
@@ -561,6 +572,9 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "builtOn": [
       "tailwindcss"
     ],
+    "requires": [
+      "react"
+    ],
     "client": true,
     "docs": "docs",
     "setup": "./kitr"
@@ -577,6 +591,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "Tauri 2"
     ],
     "requires": [
+      "vite",
       "router",
       "platform",
       "storage"
@@ -674,6 +689,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "vite-plugin-pwa"
     ],
     "requires": [
+      "vite",
       "router"
     ],
     "client": true,

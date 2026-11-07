@@ -331,3 +331,65 @@ describe('worker', () => {
     await jobs.stop()
   })
 })
+
+describe('docs-rewrite regressions', () => {
+  it('fails the boot on a bad cron in config/jobs.ts', async () => {
+    const { default: jobsProvider } = await import('../src/provider')
+    const nightly = defineJob('nightly', { schedule: '0 25 * * *', run: () => {} })
+    const app = createApp({
+      environment: 'server',
+      providers: [jobsProvider],
+      config: { jobs: { jobs: [nightly], worker: false } },
+    })
+    await expect(app.boot()).rejects.toThrow(/Bad cron "0 25 \* \* \*"/)
+  })
+
+  it('logs the error message and stack when a job fails', async () => {
+    const lines: Array<{ msg: string; fields: any }> = []
+    const app = createApp({ environment: 'server' })
+    app.container.value(
+      'logger' as never,
+      {
+        warn: (msg: string, fields: unknown) => lines.push({ msg, fields }),
+        error: (msg: string, fields: unknown) => lines.push({ msg, fields }),
+      } as never,
+    )
+    const jobs = createJobs(app, { pollInterval: 5 })
+    const boom = defineJob('boom', {
+      retries: 0,
+      run: () => {
+        throw new Error('card declined')
+      },
+    })
+    jobs.start()
+    await jobs.dispatch(boom, undefined)
+    await vi.waitFor(() => expect(lines.length).toBeGreaterThan(0))
+    await jobs.stop()
+    const fields = JSON.parse(JSON.stringify(lines[0]!.fields))
+    expect(fields.error.message).toBe('card declined')
+    expect(fields.error.stack).toContain('card declined')
+  })
+
+  it('acknowledges a job only after it has run, so a durable driver can redeliver it', async () => {
+    const events: string[] = []
+    const memory = createMemoryJobsDriver()
+    const driver: JobsDriver = {
+      ...memory,
+      ack: async (job) => {
+        events.push(`ack ${job.name}`)
+        await memory.ack?.(job)
+      },
+    }
+    const jobs = createJobs(createApp({ environment: 'server' }), { driver, pollInterval: 5 })
+    const work = defineJob('work', {
+      run: async () => {
+        await new Promise((r) => setTimeout(r, 10))
+        events.push('ran')
+      },
+    })
+    jobs.start()
+    await jobs.dispatch(work, undefined)
+    await vi.waitFor(() => expect(events).toEqual(['ran', 'ack work']))
+    await jobs.stop()
+  })
+})

@@ -65,7 +65,7 @@ export default defineConfig({
 | --- | --- | --- |
 | `definitions` | `{}` | The flags from `app/flags.ts`. A flag not listed here has no value. |
 | `providers` | `[]` | Asked in order for each flag; the first with an answer wins. With none, every flag is its default. |
-| `ttl` | `300` | Declared for a future browser refresh. This version does not read it. |
+| `ttl` | none | Seconds a snapshot stays fresh in the browser. After that the client resolves every flag again, with the context of its last `resolve()`, so a flag you turn off reaches tabs that are already open. Without it the browser resolves once per page load. |
 
 For each flag, the providers are asked in order. The first that answers with a value of the right type wins. If none does, the flag's `default` from `app/flags.ts` answers. A provider that throws is skipped with a `console.warn`, so a flag service outage falls back to defaults instead of breaking pages.
 

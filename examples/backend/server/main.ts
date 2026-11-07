@@ -8,8 +8,8 @@ import { routes } from './routes'
 /** The kitr server: providers from kitrrc.ts, config from config/. Tests import `server` and call `server.fetch()`. */
 export const server = createServer({ providers: rc.providers, config })
 mountRoutes(server, routes)
-// WebSocket upgrades on /ws, next to the routes.
-realtime.attach(server, '/ws')
+// Realtime on /ws (config/realtime.ts), next to the routes.
+realtime.attach(server)
 
 /** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
 export default server

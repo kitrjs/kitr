@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_app')({
     // so a value captured at creation time would be stale after sign-in.
     await context.app.boot()
     const session = context.app.container.use('auth').session as Session<User>
-    return requireAuth()({ context: { session }, location })
+    return requireAuth()({ context: { session, app: context.app }, location })
   },
   component: AppLayout,
 })

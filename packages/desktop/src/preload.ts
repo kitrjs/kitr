@@ -2,11 +2,23 @@ import type { ContextBridge, IpcRenderer, IpcRendererEvent } from 'electron'
 import { IPC_BRIDGE_KEY, type IpcBridge } from './client'
 
 /**
- * Expose a minimal, channel-agnostic bridge. The renderer's `createIpcClient<Schema>()`
- * adds the types; nothing else from Node or Electron crosses the context boundary.
+ * An `allow` for `exposeIpc`: the channels the app declared (a list, or a record keyed by
+ * channel so the compiler checks it against the IPC types) plus kitr's own `kitr:*` channels.
+ */
+export function allowChannels(
+  channels: readonly string[] | Record<string, unknown>,
+): (channel: string) => boolean {
+  const allowed = new Set(Array.isArray(channels) ? channels : Object.keys(channels))
+  return (channel) => channel.startsWith('kitr:') || allowed.has(channel)
+}
+
+/**
+ * Expose a minimal bridge. The renderer's `createIpcClient<Schema>()` adds the types; nothing
+ * else from Node or Electron crosses the context boundary. Without `allow` every channel
+ * crosses, so pass the declared ones:
  *
  *   import { contextBridge, ipcRenderer } from 'electron'
- *   exposeIpc(contextBridge, ipcRenderer)
+ *   exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
  */
 export function exposeIpc(
   contextBridge: ContextBridge,

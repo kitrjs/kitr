@@ -277,7 +277,7 @@ Intervals take a number and a unit: `250ms`, `30s`, `5m`, `1.5h`, `1d`. An inter
 
 A scheduled job is dispatched with an `undefined` payload, so it cannot have a schema that rejects `undefined`. If it does, the worker logs `[jobs] could not queue scheduled <name>` every time and the job never runs.
 
-A bad expression in `register()` throws at once: `[kitr/jobs] Bad cron "61 * * * *" (field "61")`. A bad interval in `config/jobs.ts` throws when the app boots. A bad cron expression in `config/jobs.ts` is not checked at boot; the worker logs `[jobs] worker poll failed` once a minute instead. Check new expressions with `cronMatches()`:
+A bad expression throws at once, in `register()` or when the app boots with it in `config/jobs.ts`: `[kitr/jobs] Bad cron "61 * * * *" (field "61")`. Every field is checked, including ones after a field that would not match. A bad interval throws the same way. Check new expressions with `cronMatches()`:
 
 ```ts
 // scripts/check_cron.ts
@@ -448,7 +448,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it needs `server/main.ts` to export `app`, as shown in [Commands](#commands). `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
+Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it boots the app behind the `server` that `server/main.ts` exports. `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
 
 `jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
 
@@ -527,12 +527,7 @@ kitr jobs:list
 # prune_sessions    3        60000    0 3 * * *
 ```
 
-`kitr jobs:work` needs the entry file to export `app`. The generated `server/main.ts` exports `server`, so add one line to it before you use the command:
-
-```ts
-// server/main.ts
-export const app = server.app
-```
+`kitr jobs:work` boots `server.app` from the entry's exported `server`, as the generated `server/main.ts` has it. An entry that exports `app` instead works too. One that exports neither fails with `server/main.ts exports neither \`server\` nor \`app\``.
 
 `kitr doctor` adds one finding from this package: an info line when `config/jobs.ts` lists no jobs (`jobs: []`), with the fix `kitr make:job <name>`, then add it to `jobs: [...]`.
 
@@ -663,7 +658,7 @@ it('runs dispatched jobs on the worker', async () => {
 
 ## Extend
 
-A driver is where queued jobs wait. It has four methods; the worker calls `pull(now, limit)` every `pollInterval` and runs what comes back. See [`JobsDriver`](/packages/jobs/api#jobsdriver) and [`QueuedJob`](/packages/jobs/api#queuedjob).
+A driver is where queued jobs wait. It has four methods and an optional fifth; the worker calls `pull(now, limit)` every `pollInterval`, runs what comes back, and calls `ack(job)` when each run has finished, whether it succeeded, failed or was retried. See [`JobsDriver`](/packages/jobs/api#jobsdriver) and [`QueuedJob`](/packages/jobs/api#queuedjob).
 
 | Method | Must |
 | --- | --- |
@@ -671,6 +666,7 @@ A driver is where queued jobs wait. It has four methods; the worker calls `pull(
 | `pull(now, limit)` | Return up to `limit` jobs whose `runAt` is at or before `now`, earliest first, and remove them so no other worker gets them. |
 | `size()` | Count the jobs waiting. |
 | `clear()` | Remove every job. |
+| `ack(job)` (optional) | Forget a job that has finished. With `ack`, `pull` can reserve jobs instead of deleting them, so a job whose worker died mid-run is pulled again. |
 
 This driver keeps the queue in a [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`, with [ioredis](https://github.com/redis/ioredis) (`pnpm add ioredis`). Each job is claimed with `ZREM`, so two workers never run the same one:
 
@@ -719,7 +715,7 @@ export default defineConfig({
 })
 ```
 
-Payloads pass through `JSON.stringify`, so keep them to plain JSON: a `Date` comes back as a string, and the schema check on pull catches the mismatch. A job is removed from the queue when it is pulled, before it runs. If the process dies mid-run, the job is gone, so a driver that must never lose work moves pulled jobs to a processing list and pushes them back when they are not acknowledged in time. The same four methods fit a database table: `pull` selects due rows and deletes them in one transaction.
+Payloads pass through `JSON.stringify`, so keep them to plain JSON: a `Date` comes back as a string, and the schema check on pull catches the mismatch. Without `ack`, a job is removed from the queue when it is pulled, before it runs, so if the process dies mid-run the job is gone. A driver that must never lose work moves pulled jobs to a processing list in `pull`, deletes them in `ack`, and pushes back any that are not acknowledged in time. A retry is a new `push`, so `ack` always means that run is over. The same four methods fit a database table: `pull` selects due rows and deletes them in one transaction.
 
 ## Next steps
 

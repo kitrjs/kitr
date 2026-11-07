@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add consent`: ask for cookie and tracking consent once, and hold analytics until people agree. */
 export default definePackage({
   name: 'consent',
+  requires: ['storage'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/consent/provider')
     ctx.config(

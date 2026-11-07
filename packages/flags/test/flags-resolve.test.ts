@@ -263,3 +263,57 @@ describe('server', () => {
     expect(JSON.parse(json).theme).toBe('</script><script>alert(1)</script>')
   })
 })
+
+// Regression: `ttl` in config/flags.ts was read by nothing, so an open tab kept the flags it
+// resolved at boot until it was reloaded.
+describe('ttl', () => {
+  afterEach(() => vi.useRealTimers())
+
+  const counting = () => {
+    let calls = 0
+    const provider: FlagsProvider = {
+      name: 'counting',
+      resolve: (key, ctx) => {
+        if (key === 'beta') calls++
+        return key === 'theme' ? String(ctx.userId ?? 'anon') : undefined
+      },
+    }
+    return { provider, calls: () => calls }
+  }
+
+  it('resolves again in the browser once the snapshot is ttl seconds old, same context', async () => {
+    vi.useFakeTimers()
+    const { provider, calls } = counting()
+    const app = createApp({ environment: 'client' })
+    const flags = createFlags(definitions, { providers: [provider], ttl: 60 }, app)
+    await flags.resolve({ userId: 'u1' })
+    expect(calls()).toBe(1)
+    await vi.advanceTimersByTimeAsync(59_000)
+    expect(calls()).toBe(1)
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(calls()).toBe(2)
+    expect(flags.value('theme')).toBe('u1')
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(calls()).toBe(3)
+  })
+
+  it('never refreshes without a ttl, or on the server', async () => {
+    vi.useFakeTimers()
+    const a = counting()
+    await createFlags(
+      definitions,
+      { providers: [a.provider] },
+      createApp({ environment: 'client' }),
+    ).resolve()
+    const b = counting()
+    await createFlags(
+      definitions,
+      { providers: [b.provider], ttl: 1 },
+      createApp({ environment: 'server' }),
+      { keepSnapshot: true },
+    ).resolve()
+    await vi.advanceTimersByTimeAsync(600_000)
+    expect(a.calls()).toBe(1)
+    expect(b.calls()).toBe(1)
+  })
+})

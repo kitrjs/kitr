@@ -9,7 +9,10 @@ export interface ThemeConfig {
   storageKey?: string
   /** Attribute set on <html>. Default 'data-theme'. */
   attribute?: string
-  /** Typed slot for token overrides. Not read by kitr yet; override `--kitr-*` variables in `app/styles/tokens.css`. */
+  /**
+   * Token overrides, emitted by `<ThemeScript />` as `--kitr-*` variables: `light` on `:root`,
+   * `dark` under the dark attribute. `{ light: { color: { primary: 'oklch(60% 0.2 150)' } } }`.
+   */
   tokens?: { light?: TokenGroup; dark?: TokenGroup }
   /** `<meta name="theme-color">` and native window chrome per resolved theme. */
   colors?: { light?: string; dark?: string }

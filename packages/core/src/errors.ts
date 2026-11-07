@@ -158,8 +158,11 @@ export function toKitrError(value: unknown, fallback: KitrErrorCode = 'INTERNAL'
     if (typeof anyErr.status === 'number' || typeof anyErr.statusCode === 'number') {
       return KitrError.fromStatus(anyErr.status ?? anyErr.statusCode, value.message, anyErr.data)
     }
-    if (value.name === 'AbortError')
+    // AbortError from fetch; TimeoutError and NetworkError are what ky v2 throws.
+    if (value.name === 'AbortError' || value.name === 'TimeoutError')
       return new KitrError('TIMEOUT', value.message, { cause: value })
+    if (value.name === 'NetworkError')
+      return new KitrError('NETWORK', 'Network request failed', { cause: value })
     if (value.name === 'TypeError' && /fetch/i.test(value.message)) {
       return new KitrError('NETWORK', 'Network request failed', { cause: value })
     }

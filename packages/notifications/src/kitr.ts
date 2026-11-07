@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add notifications`: permission, local and scheduled notifications that open the right page when tapped. */
 export default definePackage({
   name: 'notifications',
+  requires: ['platform'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/notifications/provider')
     ctx.config(

@@ -89,7 +89,7 @@ export default defineConfig({
 | `shouldReport(error, context)` | `defaultShouldReport` | Return `false` to drop an error. The default drops kitr errors with a status below 500 and `AbortError`s. Applies to `captureException` only. |
 | `globalHandlers` | `true` | In the browser, report uncaught errors and unhandled promise rejections. |
 | `tags` | none | Tags added to every exception and message. The provider adds `environment` (the app's mode: `development`, `production` or `test`) under yours. |
-| `debug` | `true` in development | Also print each exception and message to the console with a `[monitoring]` prefix. |
+| `debug` | in development, when `reporters` is set | Also print each exception and message to the console with a `[monitoring]` prefix. Off when the provider falls back to the console reporter, which already prints them. |
 
 | Variable | Used for |
 | --- | --- |
@@ -127,10 +127,9 @@ export function ImportProjectsButton({ file }: { file: File }) {
 }
 ```
 
-Make the import fail in development and the browser console shows the report twice, once from `debug` and once from the console reporter:
+Make the import fail in development and the console reporter prints the report:
 
 ```
-[monitoring]  Error: Import failed with 500
 [monitoring] error Error: Import failed with 500 { fileName: 'projects.csv', size: 18234 }
 ```
 
@@ -221,7 +220,7 @@ import { consoleReporter, defineConfig } from 'kitr/monitoring'
 export default defineConfig({ reporters: [consoleReporter()], debug: false })
 ```
 
-Prints exceptions with `console.error('[monitoring]', source, error, extra)` and messages with `console.info`. Breadcrumbs and users are ignored. No env variables. The provider adds it in development when `reporters` is empty. Setting `debug: false` next to it avoids printing each report twice.
+Prints exceptions with `console.error('[monitoring]', source, error, extra)` and messages with `console.info`. Breadcrumbs and users are ignored. No env variables. The provider adds it in development when `reporters` is empty, and leaves `debug` off then. When you list it yourself in development, set `debug: false` next to it, or each report prints twice.
 
 ### Devtools
 
