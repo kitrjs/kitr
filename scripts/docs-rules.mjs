@@ -23,10 +23,9 @@ const pkgs = readdirSync('packages')
   .map((dir) => ({ dir, file: join('packages', dir, 'package.json') }))
   .filter(({ file }) => existsSync(file))
   .map(({ dir, file }) => ({ dir, pkg: JSON.parse(readFileSync(file, 'utf8')) }))
-  // Kits (@kitr/kit-*) are documented together in docs/cli.md and docs/packages.md, not one guide each.
-  .filter(
-    ({ pkg }) => pkg.kitr && pkg.kitr.kind !== 'kit' && (!only.size || only.has(pkg.kitr.name)),
-  )
+  .filter(({ pkg }) => pkg.kitr && (!only.size || only.has(pkg.kitr.name)))
+  // Kits are documented together in docs/kits.md, not one guide each.
+  .filter(({ pkg }) => pkg.kitr.kind !== 'kit')
 
 const headings = (src) =>
   [...src.matchAll(/^(#{2,3}) (.+)$/gm)].map((m) => ({ depth: m[1].length, text: m[2].trim() }))

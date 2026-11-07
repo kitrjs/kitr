@@ -65,6 +65,8 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 ## Kits
 
+The full walkthrough of every kit is in [kits.md](kits.md).
+
 | Kit | Platforms | Packages |
 | --- | --- | --- |
 | `blank` | none | none: `package.json`, `tsconfig.json`, `kitrrc.ts`, `biome.json`, `.gitignore`, `.env.example`, `AGENTS.md`. `kitr add web site` (or any platform) brings Vite, React and the router. |
@@ -84,4 +86,4 @@ Every kit but `blank` is a package of its own (`@kitr/kit-saas`, `@kitr/kit-serv
 
 ## Roadmap
 
-Later: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce. Each lands as a package with a recipe, docs and a `make:*` command where one fits.
+Later: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce. Each lands as a package with its own setup module, docs and a `make:*` command where one fits.
