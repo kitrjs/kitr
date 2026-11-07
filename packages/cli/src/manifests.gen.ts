@@ -3,6 +3,21 @@ import type { KitrManifest } from './manifest'
 
 /** Packages and platforms, by short name. */
 export const manifests: Record<string, KitrManifest & { package: string }> = {
+  "3d": {
+    "package": "@kitr/3d",
+    "name": "3d",
+    "title": "3D",
+    "summary": "Render 3D scenes and models that stay smooth on phones and fall back when WebGL is missing.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "@react-three/fiber",
+      "three"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
   "actions": {
     "package": "@kitr/actions",
     "name": "actions",
@@ -33,6 +48,20 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "Google Analytics",
       "Plausible",
       "PostHog"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "animation": {
+    "package": "@kitr/animation",
+    "name": "animation",
+    "title": "Animation",
+    "summary": "Animate components and page changes, and respect the visitor's reduced-motion setting.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "motion"
     ],
     "client": true,
     "docs": "docs",
