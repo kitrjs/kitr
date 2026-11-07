@@ -57,6 +57,7 @@ export const newCommand = defineCommand({
     if (kit.components?.length && kit.recipes.includes('ui')) {
       await addComponents(ctx, kit.components, { registry: args.registry, overwrite: true })
     }
+    await kit.extra?.(ctx, projectName)
     if (args.git && !existsSync(ctx.path('.git'))) {
       try {
         execSync('git init -q', { cwd: dir })

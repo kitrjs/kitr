@@ -34,10 +34,14 @@ type OutputOf<H> =
       ? ControllerOutput<C, M>
       : unknown
 
-type ValidatorsOf<H, V> = V extends Validators
-  ? V
-  : H extends readonly [infer C, infer M extends string]
+// `[V] extends [never]` keeps `never` (no `validate` option) from distributing to nothing: controller
+// validators (`static validation`) then type the route, same as at runtime.
+type ValidatorsOf<H, V> = [V] extends [never]
+  ? H extends readonly [infer C, infer M extends string]
     ? ControllerValidators<C, M>
+    : undefined
+  : V extends Validators
+    ? V
     : undefined
 
 type RouteFor<Method extends HttpMethod, Path extends string, H, V> = RouteType<

@@ -1,8 +1,22 @@
 import { type DevtoolsPanel, defineProvider } from '@kitr/core'
-import { lazy, type ReactNode, Suspense } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { createDevtoolsHub, type DevtoolsConfig } from './index'
 
 const Overlay = lazy(() => import('./overlay').then((m) => ({ default: m.DevtoolsOverlay })))
+
+/**
+ * Mounts the overlay into `document.body` after hydration. Providers wrap the whole tree, `<html>`
+ * included in a Start app, so the overlay cannot be a sibling of it, and rendering nothing during
+ * hydration keeps the client tree identical to the server's (which never renders devtools).
+ */
+function BodyPortal({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  return mounted
+    ? createPortal(<Suspense fallback={null}>{children}</Suspense>, document.body)
+    : null
+}
 
 function active(app: { isDevelopment: boolean; isClient: boolean; config: { get: any } }) {
   const config = app.config.get('devtools', {} as DevtoolsConfig)
@@ -39,13 +53,15 @@ export const devtoolsProvider = defineProvider({
     for (const panel of contributions.flat()) hub.register(panel)
   },
   wrap(children, app) {
-    if (!active(app)) return children
+    // Same tree shape on the server and the client (useId depends on it); the portal mounts client-side only.
+    const config = app.config.get('devtools', {} as DevtoolsConfig)
+    if (!(config.enabled ?? app.isDevelopment)) return children
     return (
       <>
         {children as ReactNode}
-        <Suspense fallback={null}>
+        <BodyPortal>
           <Overlay app={app} />
-        </Suspense>
+        </BodyPortal>
       </>
     )
   },

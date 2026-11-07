@@ -1,12 +1,12 @@
 # CLI
 
-`kitr` is installed with the `kitr` package (`pnpm add kitr`) and run as `pnpm kitr <command>` or `pnpm dlx kitr <command>`. Every command runs from flags alone; nothing prompts.
+`kitr` is installed with the `kitr` package (`pnpm add kitr`) and run as `pnpm kitr <command>` or `pnpm dlx kitr <command>`. Install it globally (`pnpm add -g kitr`) to type `kitr add ...` directly: inside a project that has its own `kitr`, the global binary hands over to that copy, so the version in `package.json` is always the one that edits your files (`KITR_GLOBAL=1` skips the handover). Every command runs from flags alone; nothing prompts.
 
 ## Project commands
 
 | Command | What it does |
 | --- | --- |
-| `kitr new <dir> --kit blank\|app\|fullstack\|server` | Create a project. `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
+| `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank`, `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed WebSocket channels), `desktop` (the app kit in Electron with typed IPC), `mobile` (the app kit as a PWA and Capacitor shell). `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. |
 | `kitr add <pkg...>` | Install the package(s), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`). Platform add-ons (`pwa`, `electron`, `tauri`, `capacitor`) also add scripts and scaffold folders (`electron/`, `src-tauri/`). `storage` and `devtools` are part of the `app` and `fullstack` kits. `--dry-run`, `--no-install`. |
 | `kitr remove <pkg...>` | Reverse of `add`: unregisters the provider and package, deletes `config/<pkg>.ts`, removes dependencies, then lists files that still import it. |
 | `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where a `kitr/*` entry exists, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
