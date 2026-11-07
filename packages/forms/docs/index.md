@@ -206,21 +206,21 @@ Submitting always validates every field, whatever the mode.
 
 ```ts
 // app/features/invoices/queries.ts
-import { defineMutation, defineQuery } from 'kitr/query'
+import { mutationFrom, queryFrom } from 'kitr/query'
 import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 import type { NewInvoice } from './schema'
 
 const http = app.container.use('http')
 
-export const invoiceQuery = defineQuery(
+export const invoiceQuery = queryFrom(
   httpQuery<string, NewInvoice & { id: string }>(http, {
     key: (id) => ['invoices', 'detail', id],
     path: (id) => `invoices/${id}`,
   }),
 )
 
-export const createInvoice = defineMutation(
+export const createInvoice = mutationFrom(
   httpMutation<NewInvoice, { id: string; number: string }>(http, {
     path: 'invoices',
     effects: { invalidate: [['invoices', 'list']] },
@@ -231,7 +231,7 @@ export const createInvoice = defineMutation(
 ```tsx
 // app/routes/invoices/new.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { useKitrMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
 import { useNavigate } from 'kitr/router'
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
 import { createInvoice } from '#app/features/invoices/queries'
@@ -239,7 +239,7 @@ import { createInvoice } from '#app/features/invoices/queries'
 export const Route = createFileRoute('/invoices/new')({ component: NewInvoicePage })
 
 function NewInvoicePage() {
-  const create = useKitrMutation(createInvoice)
+  const create = useMutation(createInvoice)
   const navigate = useNavigate()
   return (
     <NewInvoiceForm
@@ -819,7 +819,7 @@ describe('NewInvoiceForm', () => {
 })
 ```
 
-`onCreate` receives the schema's output, so the test checks for the number `120`. Run the file with `pnpm test`. A form that calls `useKitrMutation` needs the query client: render it with `renderWithKitr` from [testing](/packages/testing) instead of `render`.
+`onCreate` receives the schema's output, so the test checks for the number `120`. Run the file with `pnpm test`. A form that calls `useMutation` needs the query client: render it with `renderWithKitr` from [testing](/packages/testing) instead of `render`.
 
 ## Next steps
 

@@ -1,6 +1,7 @@
 {
   "name": "@kitr/platform",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr/platform: one API for where the app runs. platform(), isNative(), app state, online status, back button, deep links, safe areas, and the driver registry devtools panel.",
   "kitr": {
     "name": "platform",
@@ -24,9 +25,6 @@
   },
   "homepage": "https://kitr.dev/packages/platform",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     ".": {

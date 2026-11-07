@@ -8,7 +8,7 @@ order: 1
 
 Most screens show data that lives on a server: Acme's list of orders, one invoice, the projects a team owns. `kitr/query` loads that data, keeps a cached copy so going back to a page is instant, and refreshes it when it changes, whether because you saved something, another tab did, or a live update arrived.
 
-It is [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), re-exported unchanged, plus a small **data contract**: you describe each piece of data once with `defineQuery`, `defineMutation` and `defineSubscription`, and every source (a REST API, your own API routes, server actions, realtime channels) plugs into it the same way. Every failure from every source arrives as one error type, `KitrError`.
+It is [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), re-exported unchanged, plus a small **data contract**: you describe each piece of data once with `queryFrom`, `mutationFrom` and `subscriptionFrom`, and every source (a REST API, your own API routes, server actions, realtime channels) plugs into it the same way. Every failure from every source arrives as one error type, `KitrError`.
 
 It runs in the browser, and on the server while a page renders. For values only the browser owns, such as a cart or a sidebar toggle, use [State](/packages/state) instead.
 
@@ -100,7 +100,7 @@ A query needs two things: a **key**, its name in the cache, and a **fetch** func
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 
 export interface Order {
   id: string
@@ -111,7 +111,7 @@ export interface Order {
 
 export const orderKeys = createKeys('orders')
 
-export const ordersQuery = defineQuery({
+export const ordersQuery = queryFrom({
   key: () => orderKeys.list(),
   fetch: async (): Promise<Order[]> => [
     { id: 'ord_1', customer: 'Ada', total: 120, status: 'paid' },
@@ -188,12 +188,12 @@ The first argument of `key` and `fetch` is the query's input. Type it once on `k
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 import type { Order } from './types'
 
 export const orderKeys = createKeys('orders')
 
-export const orderQuery = defineQuery({
+export const orderQuery = queryFrom({
   key: (id: string) => orderKeys.detail(id),
   fetch: async (id, { signal }) => {
     const res = await fetch(`/api/orders/${id}`, { signal })
@@ -201,7 +201,7 @@ export const orderQuery = defineQuery({
   },
 })
 
-export const ordersQuery = defineQuery({
+export const ordersQuery = queryFrom({
   key: (filters: { status?: Order['status']; page: number }) => orderKeys.list(filters),
   fetch: async (filters, { signal }) => {
     const params = new URLSearchParams({ page: String(filters.page) })
@@ -214,13 +214,13 @@ export const ordersQuery = defineQuery({
 
 `fetch` receives a `signal`. Pass it on: when a component unmounts or the key changes mid-flight, TanStack aborts the request.
 
-You rarely write `fetch` by hand. Each data source package produces the contract for you, and you pass it straight to `defineQuery`:
+You rarely write `fetch` by hand. Each data source package produces the contract for you, and you pass it straight to `queryFrom`:
 
 | Source | Package | Contract |
 | --- | --- | --- |
-| An existing REST API | [HTTP](/packages/http) | `defineQuery(httpQuery(http, { path: 'orders', key: () => orderKeys.list() }))` |
-| Your own API routes | [API](/packages/api) | `defineQuery(api.orders.index.query())` |
-| A server action | [Actions](/packages/actions) | `defineQuery(listOrders.query())` |
+| An existing REST API | [HTTP](/packages/http) | `queryFrom(httpQuery(http, { path: 'orders', key: () => orderKeys.list() }))` |
+| Your own API routes | [API](/packages/api) | `queryFrom(api.orders.index.query())` |
+| A server action | [Actions](/packages/actions) | Nothing to wrap: `defineQuery('orders.list', …)` registers a named query, used as `useQuery('orders.list')` |
 | A realtime channel | [Realtime](/packages/realtime) | `useChannel(realtime(), orderChannel, params)` |
 
 Components never learn which source they read from. Swap a REST endpoint for a server action and no component changes.
@@ -338,14 +338,14 @@ The kitr router preloads a route's loader when the pointer rests on a link to it
 
 ## Change data with a mutation
 
-A mutation changes something on the server: pay an invoice, rename a project, ship an order. Define it next to the queries, then run it in a component with `useKitrMutation`:
+A mutation changes something on the server: pay an invoice, rename a project, ship an order. Define it next to the queries, then run it in a component with `useMutation`:
 
 ```ts
 // app/features/orders/queries.ts
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import type { Order } from './types'
 
-export const shipOrder = defineMutation({
+export const shipOrder = mutationFrom({
   mutate: async (input: { id: string; carrier: string }) => {
     const res = await fetch(`/api/orders/${input.id}/ship`, {
       method: 'POST',
@@ -359,11 +359,11 @@ export const shipOrder = defineMutation({
 
 ```tsx
 // app/features/orders/ship-button.tsx
-import { useKitrMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
 import { shipOrder } from './queries'
 
 export function ShipButton({ id }: { id: string }) {
-  const ship = useKitrMutation(shipOrder)
+  const ship = useMutation(shipOrder)
   return (
     <>
       <button
@@ -379,17 +379,17 @@ export function ShipButton({ id }: { id: string }) {
 }
 ```
 
-`useKitrMutation` returns TanStack's [`useMutation`](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation) result: `mutate`, `mutateAsync`, `isPending`, `error`, `data` and `reset`. Pass any `useMutation` option except `mutationFn` as the second argument. Your `onSuccess` runs after the mutation's own cache effects, so the cache is already updated when it runs:
+`useMutation` returns TanStack's [`useMutation`](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation) result: `mutate`, `mutateAsync`, `isPending`, `error`, `data` and `reset`. Pass any `useMutation` option except `mutationFn` as the second argument. Your `onSuccess` runs after the mutation's own cache effects, so the cache is already updated when it runs:
 
 ```tsx
 // app/features/orders/use-ship-and-return.ts
 import { useNavigate } from '@tanstack/react-router'
-import { useKitrMutation } from 'kitr/query'
+import { useMutation } from 'kitr/query'
 import { shipOrder } from './queries'
 
 export function useShipAndReturn() {
   const navigate = useNavigate()
-  return useKitrMutation(shipOrder, {
+  return useMutation(shipOrder, {
     onSuccess: (order) => navigate({ to: '/orders/$orderId', params: { orderId: order.id } }),
     onError: (error) => console.warn('Ship failed', error.message),
   })
@@ -398,15 +398,15 @@ export function useShipAndReturn() {
 
 ## Refresh what a mutation changed
 
-After a save, every screen showing the changed data must update. Instead of telling each component to refetch, the mutation declares its **effects** on the cache, and `useKitrMutation` applies them when the mutation succeeds:
+After a save, every screen showing the changed data must update. Instead of telling each component to refetch, the mutation declares its **effects** on the cache, and `useMutation` applies them when the mutation succeeds:
 
 ```ts
 // app/features/orders/queries.ts
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
-export const shipOrder = defineMutation({
+export const shipOrder = mutationFrom({
   mutate: async (input: { id: string; carrier: string }) => {
     const res = await fetch(`/api/orders/${input.id}/ship`, {
       method: 'POST',
@@ -435,11 +435,11 @@ They run in that order: `set`, then `remove`, then `invalidate`. The mutation's 
 ```ts
 // app/features/invoices/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 
 export const invoiceKeys = createKeys('invoices')
 
-export const deleteInvoice = defineMutation({
+export const deleteInvoice = mutationFrom({
   mutate: async (id: string) => {
     await fetch(`/api/invoices/${id}`, { method: 'DELETE' })
   },
@@ -471,12 +471,12 @@ Shipping an order also changes the customer's open invoice. `mergeEffects` from 
 ```ts
 // app/features/orders/queries.ts
 import { mergeEffects } from 'kitr/app'
-import { defineMutation } from 'kitr/query'
+import { mutationFrom } from 'kitr/query'
 import { invoiceKeys } from '#app/features/invoices/queries'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
-export const shipOrder = defineMutation({
+export const shipOrder = mutationFrom({
   mutate: async (input: { id: string; carrier: string }) => {
     const res = await fetch(`/api/orders/${input.id}/ship`, { method: 'POST' })
     return (await res.json()) as Order
@@ -522,15 +522,15 @@ In a component, read the client with TanStack's `useQueryClient()` instead of th
 
 ## Update the screen before the server answers
 
-For an optimistic update, write the expected value before the request, and roll back if it fails. Pass TanStack's `onMutate` and `onError` through `useKitrMutation`; the mutation's own effects still run on success:
+For an optimistic update, write the expected value before the request, and roll back if it fails. Pass TanStack's `onMutate` and `onError` through `useMutation`; the mutation's own effects still run on success:
 
 ```tsx
 // app/features/orders/use-mark-paid.ts
-import { defineMutation, useKitrMutation, useQueryClient } from 'kitr/query'
+import { mutationFrom, useMutation, useQueryClient } from 'kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
-export const markPaid = defineMutation({
+export const markPaid = mutationFrom({
   mutate: async (id: string) => {
     const res = await fetch(`/api/orders/${id}/pay`, { method: 'POST' })
     return (await res.json()) as Order
@@ -544,7 +544,7 @@ export const markPaid = defineMutation({
 export function useMarkPaid(id: string) {
   const queryClient = useQueryClient()
   const key = orderKeys.detail(id)
-  return useKitrMutation(markPaid, {
+  return useMutation(markPaid, {
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: key })
       const previous = queryClient.getQueryData<Order>(key)
@@ -581,7 +581,7 @@ const options = queryOptions('orders.list', { status: 'open' })
 
 The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[kitr/query] "orders.lsit" is not registered` with the names that are.
 
-`useMutation(definition)` works the same way as `useKitrMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
+`useMutation(name)` works the same way as `useMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
 
 ```ts
 import { call } from 'kitr/query'
@@ -618,13 +618,13 @@ Define it with the input and event types, a `key`, a `subscribe` function that r
 
 ```ts
 // app/features/orders/subscriptions.ts
-import { defineSubscription } from 'kitr/query'
+import { subscriptionFrom } from 'kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
 type OrderEvent = { type: 'updated'; order: Order } | { type: 'deleted'; id: string }
 
-export const orderEvents = defineSubscription<string, OrderEvent>({
+export const orderEvents = subscriptionFrom<string, OrderEvent>({
   key: (teamId) => ['order-events', teamId],
   subscribe: (teamId, { next, error }) => {
     const source = new EventSource(`/api/teams/${teamId}/order-events`)
@@ -671,7 +671,7 @@ The hook returns `{ status, lastEvent, error }`. `status` is `'idle'` before sub
 
 ## Handle errors
 
-Every failure from `options()` and `useKitrMutation`, whatever its source, reaches you as a `KitrError` from `kitr/app` with a `code`, `status`, `message` and, for validation failures, `fieldErrors`:
+Every failure from `options()` and `useMutation`, whatever its source, reaches you as a `KitrError` from `kitr/app` with a `code`, `status`, `message` and, for validation failures, `fieldErrors`:
 
 ```tsx
 // app/features/orders/order-error.tsx
@@ -709,11 +709,11 @@ Queries retry only failures that might pass on a second try. A 4xx means the req
 ```ts
 // app/features/teams/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 
 export const teamKeys = createKeys('teams')
 
-export const teamsQuery = defineQuery({
+export const teamsQuery = queryFrom({
   key: () => teamKeys.list(),
   fetch: async (_input, { signal }) => {
     const res = await fetch('/api/teams', { signal })
@@ -761,10 +761,10 @@ In a test, boot an app with the query provider, seed the cache with the data the
 import { act, renderHook, screen } from '@testing-library/react'
 import { createKeys } from 'kitr/app'
 import {
-  defineMutation,
-  defineQuery,
+  mutationFrom,
+  queryFrom,
   queryProvider,
-  useKitrMutation,
+  useMutation,
   useSuspenseQuery,
 } from 'kitr/query'
 import { KitrProvider } from 'kitr/react'
@@ -781,8 +781,8 @@ interface Order {
 
 const orderKeys = createKeys('orders')
 const fetchOrders = vi.fn(async (): Promise<Order[]> => [])
-const ordersQuery = defineQuery({ key: () => orderKeys.list(), fetch: fetchOrders })
-const shipOrder = defineMutation({
+const ordersQuery = queryFrom({ key: () => orderKeys.list(), fetch: fetchOrders })
+const shipOrder = mutationFrom({
   mutate: async (id: string): Promise<Order> => ({ id, customer: 'Grace', status: 'shipped' }),
   effects: (order) => ({
     set: [{ key: orderKeys.detail(order.id), data: order }],
@@ -821,7 +821,7 @@ describe('orders', () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <KitrProvider app={app}>{children}</KitrProvider>
     )
-    const { result } = renderHook(() => useKitrMutation(shipOrder), { wrapper })
+    const { result } = renderHook(() => useMutation(shipOrder), { wrapper })
 
     await act(() => result.current.mutateAsync('ord_2'))
 
@@ -870,7 +870,7 @@ To fake the network itself rather than the query, use [Mocks](/packages/mocks): 
 
 ## Extend
 
-Every data source is a function that returns a contract. To add a source kitr does not ship, such as a GraphQL endpoint or a vendor SDK, write one function per kind and pass its result to `defineQuery`, `defineMutation` or `defineSubscription`. The types are `QueryContract`, `MutationContract` and `SubscriptionContract` from `kitr/app` (see the [API reference](/packages/query/api)):
+Every data source is a function that returns a contract. To add a source kitr does not ship, such as a GraphQL endpoint or a vendor SDK, write one function per kind and pass its result to `queryFrom`, `mutationFrom` or `subscriptionFrom`. The types are `QueryContract`, `MutationContract` and `SubscriptionContract` from `kitr/app` (see the [API reference](/packages/query/api)):
 
 | Member | Kind | Description |
 | --- | --- | --- |
@@ -921,12 +921,12 @@ export function graphqlQuery<TInput = void, TOutput = unknown>(
 ```ts
 // app/features/projects/queries.ts
 import { createKeys } from 'kitr/app'
-import { defineQuery } from 'kitr/query'
+import { queryFrom } from 'kitr/query'
 import { graphqlQuery } from '#app/lib/graphql'
 
 export const projectKeys = createKeys('projects')
 
-export const projectsQuery = defineQuery(
+export const projectsQuery = queryFrom(
   graphqlQuery<{ teamId: string }, { projects: { id: string; name: string }[] }>({
     document: 'query ($teamId: ID!) { projects(teamId: $teamId) { id name } }',
     key: ({ teamId }) => projectKeys.list({ teamId }),

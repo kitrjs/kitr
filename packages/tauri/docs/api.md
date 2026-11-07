@@ -87,7 +87,7 @@ function commandMutation<TInput, TOutput>(command: (args: TInput) => Promise<TOu
 }): Omit<MutationContract<TInput, TOutput>, 'kind'>;
 ```
 
-A mutation contract over a command, for `defineMutation(commandMutation(commands.ship_order, { effects }))`.
+A mutation contract over a command, for `mutationFrom(commandMutation(commands.ship_order, { effects }))`.
 `effects` say which cached queries to set, invalidate or remove when the command succeeds.
 
 ### commandQuery
@@ -96,7 +96,7 @@ A mutation contract over a command, for `defineMutation(commandMutation(commands
 function commandQuery<TInput, TOutput>(command: (args: TInput) => Promise<TOutput>, name: string): Omit<QueryContract<TInput, TOutput>, 'kind'>;
 ```
 
-A query contract over a command, for `defineQuery(commandQuery(commands.greet, 'greet'))`.
+A query contract over a command, for `queryFrom(commandQuery(commands.greet, 'greet'))`.
 
 ### defineCommands
 

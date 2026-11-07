@@ -357,17 +357,17 @@ declare module '@kitr/router' {
   write(
     ctx,
     'app/features/projects/queries.ts',
-    `import { defineMutation, defineQuery } from 'kitr/query'
+    `import { mutationFrom, queryFrom } from 'kitr/query'
 import { api } from '#app/api/client'
 
 /** One place for every query and mutation of the feature; routes and components import from here. */
-export const projectsQuery = defineQuery(api.projects.index.query())
+export const projectsQuery = queryFrom(api.projects.index.query())
 
-export const createProject = defineMutation(
+export const createProject = mutationFrom(
   api.projects.store.mutation({ effects: { invalidate: [api.projects.index.key()] } }),
 )
 
-export const deleteProject = defineMutation(
+export const deleteProject = mutationFrom(
   api.projects.destroy.mutation({ effects: { invalidate: [api.projects.index.key()] } }),
 )
 `,
@@ -596,7 +596,7 @@ function OverviewPage() {
     `import { createFileRoute } from '@tanstack/react-router'
 import { useAnalytics } from 'kitr/analytics/react'
 import { useSchemaForm } from 'kitr/forms'
-import { useKitrMutation, useSuspenseQuery } from 'kitr/query'
+import { useMutation, useSuspenseQuery } from 'kitr/query'
 import {
   type ColumnDef,
   type DataTableFeatures,
@@ -634,7 +634,7 @@ function ProjectsPage() {
     setSearch: (patch) => navigate({ search: (prev: typeof search) => ({ ...prev, ...patch }) }),
   })
   const { data } = useSuspenseQuery(projectsQuery.options({}))
-  const remove = useKitrMutation(deleteProject)
+  const remove = useMutation(deleteProject)
   const [open, setOpen] = useState(false)
 
   const columns: ColumnDef<DataTableFeatures, Project>[] = [
@@ -691,7 +691,7 @@ function NewProjectDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const create = useKitrMutation(createProject)
+  const create = useMutation(createProject)
   const analytics = useAnalytics<AppEvents>()
   const form = useSchemaForm(createProjectSchema, { defaultValues: { name: '', status: 'active' } })
   return (
@@ -797,7 +797,6 @@ export default definePackage({
       'auth',
       'storage',
       'testing',
-      'devtools',
       'seo',
       'api',
       'analytics',

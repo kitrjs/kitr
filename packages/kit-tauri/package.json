@@ -1,6 +1,7 @@
 {
   "name": "@kitr/kit-tauri",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr new --kit tauri: The app kit in a Tauri shell: typed Rust commands and events from the same React app. See the desktop kit for Electron.",
   "kitr": {
     "name": "tauri",
@@ -20,9 +21,6 @@
   },
   "homepage": "https://kitr.dev/docs/cli",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     "./kitr": {

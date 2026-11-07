@@ -1,6 +1,7 @@
 {
   "name": "@kitr/jobs",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr/jobs: typed background jobs with retries and backoff, cron and interval schedules, a memory queue and a driver interface for Redis or a database.",
   "keywords": [
     "kitr",
@@ -15,9 +16,6 @@
   },
   "homepage": "https://kitr.dev/packages/jobs",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     ".": {

@@ -1,6 +1,7 @@
 {
   "name": "@kitr/tauri",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr/tauri: the desktop platform with a Tauri shell. Rust project in platforms/<name>/src-tauri, typed commands and events, storage drivers, installers.",
   "kitr": {
     "name": "tauri",
@@ -31,9 +32,6 @@
   },
   "homepage": "https://kitr.dev/packages/tauri",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     ".": {

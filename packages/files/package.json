@@ -1,6 +1,7 @@
 {
   "name": "@kitr/files",
   "version": "0.1.0",
+  "private": true,
   "description": "kitr/files: open, save and pick files through one API with native dialogs on desktop and mobile and a download fallback on the web.",
   "keywords": [
     "kitr",
@@ -15,9 +16,6 @@
   },
   "homepage": "https://kitr.dev/packages/files",
   "bugs": "https://github.com/kitrjs/kitr/issues",
-  "publishConfig": {
-    "access": "public"
-  },
   "sideEffects": false,
   "exports": {
     ".": {

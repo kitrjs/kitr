@@ -159,7 +159,7 @@ One event a channel carries: an optional payload schema and the cache effects it
 
 ```ts
 interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `defineSubscription`. */
+  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
@@ -392,7 +392,7 @@ The native WebSocket transport (same as `createSocketClient`).
 
 ```ts
 interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `defineSubscription`. */
+  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;

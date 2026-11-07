@@ -26,6 +26,7 @@ describe('package manifests', () => {
       expect((pkg.kitr.kind === 'kit' ? kitManifests : manifests)[pkg.kitr.name]).toEqual({
         package: pkg.name,
         ...pkg.kitr,
+        ...(pkg.private ? { preview: true } : {}),
       })
     expect([...Object.keys(manifests), ...Object.keys(kitManifests)].sort()).toEqual(
       [...names].sort(),

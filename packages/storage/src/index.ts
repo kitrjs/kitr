@@ -6,14 +6,12 @@ import {
   validateSync,
 } from '@kitr/core'
 
-/** Options for `config/storage.ts`: a key prefix, cookie defaults and the server-side kv driver. */
+/** Options for `config/storage.ts`: a key prefix and cookie defaults. */
 export interface StorageConfig {
   /** Prefix for every storage key and cookie name, e.g. `myapp:`. Default none. */
   prefix?: string
   /** Defaults merged into every cookie. */
   cookie?: Omit<CookieOptions, 'name'>
-  /** Server-side key-value store behind `defineKv` (app scope). Default: in-memory. */
-  kv?: KvDriver
 }
 
 /**
@@ -36,21 +34,6 @@ export interface StorageDriver {
   keys(): string[]
   /** Changes made elsewhere (another tab, the native side). */
   subscribe?(listener: (key: string | null) => void): () => void
-}
-
-/**
- * The server-side store behind `defineKv`: anything async with get, set and remove over strings.
- * Wrap Redis, Cloudflare KV or a file in this shape and pass it as `kv` in `config/storage.ts`.
- */
-export interface KvDriver {
-  /** The raw string under `key`, or null when missing or expired. */
-  get(key: string): Promise<string | null>
-  /** Store a raw string; `ttl` is in milliseconds. */
-  set(key: string, raw: string, options?: { ttl?: number }): Promise<void>
-  /** Delete one key. */
-  remove(key: string): Promise<void>
-  /** Keys starting with `prefix`. Optional; kitr does not call it. */
-  keys?(prefix?: string): Promise<string[]>
 }
 
 declare module '@kitr/core' {
@@ -578,109 +561,4 @@ export function removeStorageKey(name: StorageArea, key: string) {
 /** Write a line to the devtools `storage` channel. Does nothing when devtools are off. */
 export function logStorage(app: KitrApp, label: string, data?: unknown) {
   getDevtools(app)?.log('storage', label, data)
-}
-
-/* ----------------------------------------------------------------------------
- * App scope: a server-side key-value store
- * ------------------------------------------------------------------------- */
-
-/** The default `kv` driver: a Map with ttl support. Values are lost on restart and not shared between processes. */
-export function createMemoryKvDriver(): KvDriver {
-  const map = new Map<string, { raw: string; expires?: number }>()
-  return {
-    async get(key) {
-      const hit = map.get(key)
-      if (!hit) return null
-      if (hit.expires !== undefined && hit.expires < Date.now()) {
-        map.delete(key)
-        return null
-      }
-      return hit.raw
-    },
-    async set(key, raw, options) {
-      map.set(key, { raw, expires: options?.ttl ? Date.now() + options.ttl : undefined })
-    },
-    async remove(key) {
-      map.delete(key)
-    },
-    async keys(prefix = '') {
-      return [...map.keys()].filter((k) => k.startsWith(prefix))
-    },
-  }
-}
-
-let kvDriver: KvDriver | undefined
-/** Set by the storage provider from `config/storage.ts` (`kv`). Any object with async get, set and remove over strings works. */
-export function setKvDriver(driver: KvDriver) {
-  kvDriver = driver
-}
-/** The active `kv` driver, creating the in-memory one on first use. */
-export function getKvDriver(): KvDriver {
-  kvDriver ??= createMemoryKvDriver()
-  return kvDriver
-}
-
-/** Options for `defineKv`: the default, validation, format and a default ttl. */
-export interface KvItemOptions<T> {
-  /** Returned when the key is missing, expired or invalid. */
-  default: T
-  /** Validate what comes back from the driver (Standard Schema). Invalid → default. */
-  schema?: StandardSchemaV1<unknown, T>
-  /** Format of the stored string. Default: JSON. */
-  codec?: Codec<T>
-  /** Milliseconds to keep a value. */
-  ttl?: number
-}
-
-/** A typed server-side value returned by `defineKv`. Every method is async. */
-export interface KvItem<T> {
-  /** The name it was defined with, without the config prefix. */
-  readonly key: string
-  /** Returned when the key is missing, expired or invalid. */
-  readonly default: T
-  /** The stored value, or the default. */
-  get(): Promise<T>
-  /** Store a value, or compute it from the current one. `ttl` overrides the item's default. */
-  set(value: T | ((current: T) => T), options?: { ttl?: number }): Promise<void>
-  /** Delete the stored value. */
-  remove(): Promise<void>
-}
-
-/**
- * A value shared by the whole app on the server (`scope: 'app'`): feature state, counters,
- * cached lookups. Backed by memory unless `config/storage.ts` sets a `kv` driver
- * (Redis, Cloudflare KV, a file... anything with get/set/remove).
- *
- *   const banner = defineKv('banner', { default: { text: '' } })
- *   await banner.set({ text: 'Maintenance at 22:00' })
- */
-export function defineKv<T>(name: string, options: KvItemOptions<T>): KvItem<T> {
-  const codec = options.codec ?? jsonCodec<T>()
-  const fullKey = () => `${keyPrefix}${name}`
-  const decode = (raw: string | null): T => {
-    if (raw === null) return options.default
-    try {
-      const data = codec.decode(raw)
-      if (options.schema) {
-        const result = validateSync(options.schema, data)
-        return result.success ? result.data : options.default
-      }
-      return data
-    } catch {
-      return options.default
-    }
-  }
-  const item: KvItem<T> = {
-    key: name,
-    default: options.default,
-    get: async () => decode(await getKvDriver().get(fullKey())),
-    async set(next, setOptions) {
-      const value = typeof next === 'function' ? (next as (c: T) => T)(await item.get()) : next
-      await getKvDriver().set(fullKey(), codec.encode(value), {
-        ttl: setOptions?.ttl ?? options.ttl,
-      })
-    },
-    remove: () => getKvDriver().remove(fullKey()),
-  }
-  return item
 }

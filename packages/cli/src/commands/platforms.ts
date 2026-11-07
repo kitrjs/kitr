@@ -191,7 +191,7 @@ export async function addPlatformCommand(
   const platformOptions: Record<string, unknown> = {}
   const describe = info.factoryFn({}).definition.describe ?? {}
   for (const [key, raw] of Object.entries(flags)) {
-    if (key === 'install' || key === 'dry-run' || key === 'scaffold') continue
+    if (key === 'install' || key === 'dry-run' || key === 'scaffold' || key === 'preview') continue
     const spec = describe[key]
     if (!spec)
       throw new Error(

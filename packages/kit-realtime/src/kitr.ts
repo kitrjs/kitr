@@ -300,22 +300,22 @@ export function getSocket(): SocketTransport {
   write(
     ctx,
     'app/features/chat/queries.ts',
-    `import { defineMutation, defineQuery, defineSubscription } from 'kitr/query'
+    `import { mutationFrom, queryFrom, subscriptionFrom } from 'kitr/query'
 import { channel } from 'kitr/realtime'
 import { api } from '#app/api/client'
 import { chatChannel } from '#app/channels/chat'
 import { getSocket } from '#app/realtime'
 
-export const messagesQuery = defineQuery(api.messages.index.query())
+export const messagesQuery = queryFrom(api.messages.index.query())
 
-export const sendMessage = defineMutation(
+export const sendMessage = mutationFrom(
   api.messages.store.mutation({
     // The socket event refreshes the list for everyone, including the sender; nothing to do here.
   }),
 )
 
 /** Live events for a room; \`useSubscription(chatSubscription(), { room })\` in a client-only component. */
-export const chatSubscription = () => defineSubscription(channel(getSocket(), chatChannel).subscription())
+export const chatSubscription = () => subscriptionFrom(channel(getSocket(), chatChannel).subscription())
 `,
   )
 
@@ -347,7 +347,7 @@ export const displayName = defineStorage('chat:name', { default: '' })
     ctx,
     'app/routes/index.tsx',
     `import { createFileRoute } from '@tanstack/react-router'
-import { useKitrMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
+import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
 import { ssrRoute } from 'kitr/seo'
 import { useStorage } from 'kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -396,7 +396,7 @@ function Room({ room }: { room: string }) {
   const { data: messages } = useSuspenseQuery(messagesQuery.options({ query: { room } }))
   const subscription = useMemo(() => chatSubscription(), [])
   const live = useSubscription(subscription, { room })
-  const send = useKitrMutation(sendMessage)
+  const send = useMutation(sendMessage)
   const [author, setAuthor] = useStorage(displayName)
   const [text, setText] = useState('')
   const bottom = useRef<HTMLDivElement>(null)
@@ -523,7 +523,6 @@ export default definePackage({
       'theme',
       'storage',
       'testing',
-      'devtools',
       'seo',
       'api',
       'realtime',

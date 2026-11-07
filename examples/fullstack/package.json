@@ -20,7 +20,6 @@
     "@kitr/api": "workspace:*",
     "@kitr/auth": "workspace:*",
     "@kitr/core": "workspace:*",
-    "@kitr/devtools": "workspace:*",
     "@kitr/forms": "workspace:*",
     "@kitr/http": "workspace:*",
     "@kitr/logger": "workspace:*",

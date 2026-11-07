@@ -22,7 +22,6 @@ export default defineKitrConfig({
    '@kitr/auth',
    '@kitr/storage',
    '@kitr/testing',
-   '@kitr/devtools',
    '@kitr/seo',
    '@kitr/actions',
    '@kitr/api',
@@ -37,7 +36,6 @@ export default defineKitrConfig({
    () => import('@kitr/theme/provider'),
    () => import('@kitr/auth/provider'),
    () => import('@kitr/storage/provider'),
-   () => import('@kitr/devtools/provider'),
    () => import('@kitr/web/provider'),
   ],
   platforms: {

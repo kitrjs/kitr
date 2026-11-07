@@ -53,7 +53,7 @@ Group code by what it does for the user rather than what kind of file it is:
 
 ```
 app/features/projects/
-├── queries.ts        # defineQuery / defineMutation for projects
+├── queries.ts        # queryFrom / mutationFrom for projects
 ├── project-form.tsx
 └── project-list.tsx
 ```
