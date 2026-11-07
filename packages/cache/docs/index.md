@@ -523,7 +523,7 @@ Redis expires keys itself with `EX`, so a Redis cache needs no sweeping. See the
 > **Warning**
 > `clear()` on this driver runs `FLUSHDB`, which deletes every key in the Redis database, including other apps' entries and anything that is not a cache entry. Give the cache its own Redis database (`redis://localhost:6379/1`) or replace `clear` with a scan-and-delete over your prefix.
 
-Tags are stored under `tag:<name>` without the prefix, so two apps that share one Redis and use the same tag name clear each other's entries. Give each app its own database, or put your app name in tag names (`acme-app:project:42`).
+The cache passes tag names to the driver with the prefix in front, as it does keys, so two apps that share one Redis and use the same tag name keep their entries apart.
 
 ## Use the cache in production
 

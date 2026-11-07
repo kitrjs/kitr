@@ -1,17 +1,7 @@
-import { type AddContext, definePackage } from '@kitr/core/package'
+import { type AddContext, definePackage, displayName } from '@kitr/core/package'
 
 const write = (ctx: AddContext, path: string, content: string) =>
   ctx.write(path, content, { overwrite: true })
-
-function displayName(name: string) {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/^example-/, '')
-    .split(/[-_.\s]+/)
-    .filter(Boolean)
-    .map((w) => w[0]!.toUpperCase() + w.slice(1))
-    .join(' ')
-}
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)

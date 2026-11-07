@@ -62,7 +62,7 @@ The client reads this file through `createRealtimeClient(config)`. The server do
 | `transport` | `'websocket'` | `'websocket'` (crossws and partysocket), `'socket.io'` (rooms, adapters) or `'sse'` (one-way stream over HTTP, control messages over POST). |
 | `path` | `'/ws'`, or `'/events'` for `sse` | Where the server listens. The client connects to the same origin at this path. |
 | `url` | same origin at `path` | A full URL for the client, such as `wss://realtime.acme.com/ws`, when the realtime server is on another host. |
-| `heartbeat` | `25000` | Declared for a client ping interval in milliseconds. The built-in clients do not read it yet. |
+| `heartbeat` | `25000` | WebSocket only: milliseconds between client pings. A ping still unanswered when the next one is due means the connection is dead, and the client reconnects. `0` turns pings off. |
 
 Realtime adds no environment variables.
 
@@ -557,9 +557,9 @@ All three transports implement one client interface and share the wire protocol,
 
 | `transport` | Client | Server | Use it when |
 | --- | --- | --- | --- |
-| `websocket` | `createSocketClient` (partysocket) | `createRealtimeServer` (crossws via h3) | The default. Two-way, low latency, runs on Node, Bun, Deno and Cloudflare. |
+| `websocket` | `createSocketClient` (partysocket) | `createRealtimeServer`, which uses `createSocketServer` (crossws via h3) | The default. Two-way, low latency, runs on Node, Bun, Deno and Cloudflare. |
 | `socket.io` | `createSocketIoClient` | `attachSocketIo` | You need several server instances (Redis adapter) or already run Socket.IO. |
-| `sse` | `createSseTransport` (EventSource plus POST) | `createSseServer` | Your host or proxy does not allow WebSocket upgrades. |
+| `sse` | `createSseTransport` (EventSource plus POST) | `createRealtimeServer`, which uses `createSseServer` | Your host or proxy does not allow WebSocket upgrades. |
 
 ### WebSocket
 
@@ -570,6 +570,7 @@ The default. `kitr add realtime` sets it up: `crossws` on the server, `partysock
 import { defineRoutes } from 'kitr/app'
 import realtime from 'kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
+import realtimeConfig from '../config/realtime'
 
 export const routes = defineRoutes([realtime], (r) =>
   // WebSocket upgrades on /api/ws, next to the routes.
@@ -670,7 +671,7 @@ export function realtime(): SocketTransport {
 
 ### Server-Sent Events
 
-SSE needs no extra packages. The server streams events over one long `GET`; the client subscribes and sends with `POST`s to the same path.
+SSE needs no extra packages. The server streams events over one long `GET`; the client subscribes and sends with `POST`s to the same path. Set the transport in config, and the `server/realtime.ts` and `app/realtime.ts` that `kitr add` wrote switch with it:
 
 ```ts
 // config/realtime.ts
@@ -714,7 +715,7 @@ export function realtime(): SocketTransport {
 | `headers` (client) | none | Headers for the control `POST`s, or a function returning them. |
 | `onError` (client) | none | Errors without a subscription, and failed `POST`s as `NETWORK`. |
 
-`EventSource` cannot set headers, so the stream authenticates by cookie (it is opened with credentials) or by a `?token=` in the URL. With SSE, subscribe with params already in the form the `params` schema outputs: the SSE server does not send normalised params back, so a subscription with `' prj_1 '` receives nothing. See [MDN on Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
+`EventSource` cannot set headers, so the stream authenticates by cookie (it is opened with credentials) or by a `?token=` in the URL. As with WebSocket, the server sends back the params the `params` schema output, so a subscription with `' prj_1 '` receives events emitted for `'prj_1'`. See [MDN on Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
 
 ## Run more than one server instance
 

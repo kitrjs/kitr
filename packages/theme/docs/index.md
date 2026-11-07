@@ -25,7 +25,7 @@ What `kitr add` does:
 - Adds `'@kitr/theme'` to `packages` and `() => import('@kitr/theme/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/theme.ts` (shown under Configure).
 - Writes `app/styles/tokens.css`, an empty `:root` block for your token overrides.
-- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import 'kitr/theme/styles.css';`. Without it, it adds `import '#app/styles/tokens.css'` to `app/document.tsx`.
+- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import 'kitr/theme/styles.css';`. Without it, it links `#app/styles/tokens.css?url` from `head()` in `app/document.tsx`, after `kitr/theme/styles.css`.
 - Edits `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes) to apply the saved theme before first paint: imports `ThemeScript` from `kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A document that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
 - Adds a `theme` section to `AGENTS.md`: use `useTheme()`, put `<ThemeScript />` in the document head, take colours and radii from the `--kitr-*` variables, keep components in `app/components/ui/` and add them with `kitr ui add`, and use Hugeicons through `<Icon />`.
 - Adds no environment variables and no scripts. When it finishes it prints `Pull components with kitr ui add button input form`.

@@ -490,20 +490,7 @@ Without a provider, a server render fails with:
 
 In a client-only app (`spa` mode, desktop, mobile) you can skip the provider entirely.
 
-A saved store renders its initial state on the server, because the server cannot read the browser's storage, and its saved state in the browser. React reports a hydration mismatch for the elements that differ. Render saved values only after the component mounts:
-
-```tsx
-// app/features/orders/draft-badge.tsx
-import { useEffect, useState } from 'react'
-import { useOrderDraft } from '#app/stores/order-draft'
-
-export function DraftBadge() {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  const count = useOrderDraft((s) => s.lines.length)
-  return <span>{mounted && count > 0 ? `${count} in draft` : null}</span>
-}
-```
+A saved store renders its initial state on the server, because the server cannot read the browser's storage. The browser's first render, the one React hydrates, uses that same state (plus any `<StoreProvider initialState>`), so React sees no mismatch. The saved state follows straight after, in a second render, with no extra code from you.
 
 ## Use plain Zustand
 

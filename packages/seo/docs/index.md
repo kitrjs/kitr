@@ -79,13 +79,13 @@ export default defineConfig({
 | `prerender` | `[]` | Routes the build renders to HTML files. An array of paths, or `{ routes, crawlLinks }`. |
 | `prerender.routes` | `[]` | The paths to prerender, such as `['/', '/pricing']`. |
 | `prerender.crawlLinks` | `false` | Also prerender every page linked from those routes. |
-| `robots` | `{}` | Rules for `robotsTxt()`. `false` makes it return `null`. |
+| `robots` | `{}` | Rules for the `robots.txt` the build writes (see [Write robots.txt](#write-robotstxt)). `false` writes none. |
 | `robots.allow` | `['/']` | `Allow:` lines. |
 | `robots.disallow` | `[]` | `Disallow:` lines. |
 | `robots.sitemap` | `true` | Add `Sitemap: <site.url>/sitemap.xml` when `site.url` is set. |
-| `ssr` | none | Declared in `SeoConfig`, but nothing reads it today. Set rendering per route with [`ssrRoute()`](#choose-how-a-route-renders). |
+| `ssr` | `true` | How routes without their own `ssr` render: `true`, `'data-only'` or `false`. [`ssrRoute()`](#choose-how-a-route-renders) on a route overrides it. |
 
-`seo()` does not read this file by itself. Pass `site` to it, as [Use your site defaults on every page](#use-your-site-defaults-on-every-page) shows. The build reads `prerender` and `site.url` from the file's source text, without running it, so both must be written out as literals.
+`seo()` uses `site` from this file as its defaults: `defineConfig` records it when the app's config is imported, before any route renders. The build reads `prerender` and `site.url` from the file's source text, without running it, so both must be written out as literals.
 
 ## Give a page its title
 
@@ -125,28 +125,15 @@ Open `/pricing` and view the page source. The root route's `<HeadContent />` ren
 
 ## Use your site defaults on every page
 
-To get the site name in every title and a default share image, pass `site`. Import it from `config/seo.ts` once, in a small helper:
-
-```ts
-// app/seo.ts
-import { type SeoInput, seo } from 'kitr/seo'
-import seoConfig from '#config/seo'
-
-/** seo() with the site defaults from config/seo.ts. */
-export function pageSeo(input: SeoInput) {
-  return seo({ site: seoConfig.site, ...input })
-}
-```
-
-Use it in routes, with the page's own URL:
+`seo()` takes the site name, default share image, handle and locale from `site` in `config/seo.ts`, so every title gets the site name with nothing to pass. Give each page its own URL:
 
 ```ts
 // app/routes.ts
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
 r.page('/pricing', {
   head: () =>
-    pageSeo({
+    seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
@@ -184,7 +171,7 @@ With the config from [Configure](#configure), the call returns:
 // { rel: 'canonical', href: 'https://acme.com/pricing' }
 ```
 
-How the values combine:
+A `site` passed to `seo()` replaces the one from the config, for a page that belongs to another brand. How the values combine:
 
 | Tag | Comes from |
 | --- | --- |
@@ -205,7 +192,7 @@ Tags from the root route apply to every page. A child route's `<title>` and its 
 ```tsx
 // app/document.tsx
 import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
 /** `app/routes.ts` passes this to `.root({ head, component: RootDocument })`. */
 export function head() {
@@ -213,7 +200,7 @@ export function head() {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      ...pageSeo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }).meta,
+      ...seo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }).meta,
     ],
   }
 }
@@ -241,11 +228,11 @@ Chat apps and social networks show `og:image` as a large card. Pass an absolute 
 
 ```ts
 // app/routes.ts
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
 r.page('/pricing', {
   head: () =>
-    pageSeo({
+    seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
@@ -270,7 +257,7 @@ For a blog post, read the post in the loader and build the tags from `loaderData
 // app/routes.ts
 import { notFound } from 'kitr/router'
 import { getPost } from '#app/content/posts'
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
 r.page('/blog/$slug', {
   loader: ({ params }) => {
@@ -279,7 +266,7 @@ r.page('/blog/$slug', {
     return post
   },
   head: ({ loaderData, params }) =>
-    pageSeo({
+    seo({
       title: loaderData?.title,
       description: loaderData?.excerpt,
       url: `https://acme.com/blog/${params.slug}`,
@@ -310,10 +297,10 @@ Sign-in pages, drafts and anything behind a login should not show up in search. 
 
 ```ts
 // app/routes.ts
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
 r.page('/sign-in', {
-  head: () => pageSeo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }),
+  head: () => seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }),
   lazy: () => import('./pages/sign-in'),
 })
 ```
@@ -331,12 +318,11 @@ Structured data tells search engines what a page is about: an organization, an a
 
 ```ts
 // app/routes.ts
-import { pageSeo } from '#app/seo'
-import { jsonLd } from 'kitr/seo'
+import { jsonLd, seo } from 'kitr/seo'
 
 r.page('/', {
   head: () => ({
-    ...pageSeo({ title: 'Acme', url: 'https://acme.com' }),
+    ...seo({ title: 'Acme', url: 'https://acme.com' }),
     scripts: [
       jsonLd({
         '@type': 'Organization',
@@ -436,35 +422,11 @@ robotsTxt({ site: { url: 'https://acme.com' }, robots: { disallow: ['/app', '/ap
 // => 'User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /api\n\nSitemap: https://acme.com/sitemap.xml\n'
 ```
 
-kitr does not write the file for you today. Add a small Vite plugin that writes it to `public/` when the build starts, so Vite copies it into the output with your other static files:
-
-```ts
-// vite.config.ts
-import { writeFileSync } from 'node:fs'
-import { kitr } from 'kitr/vite'
-import { robotsTxt } from 'kitr/seo'
-import { defineConfig } from 'vite'
-import seoConfig from './config/seo'
-
-export default defineConfig({
-  plugins: [
-    kitr(),
-    {
-      name: 'acme-robots',
-      buildStart() {
-        const text = robotsTxt(seoConfig)
-        if (text) writeFileSync('public/robots.txt', text)
-      },
-    },
-  ],
-})
-```
-
-With `robots: false`, `robotsTxt()` returns `null` and the plugin writes nothing. Add `public/robots.txt` to `.gitignore` if you only want the generated copy.
+The build of a web platform writes this text to `robots.txt` in the client output, from `config/seo.ts`. It writes nothing when `robots` is `false`, and leaves the file alone when you keep your own `public/robots.txt`, which Vite copies as it is.
 
 ## Choose how a route renders
 
-In a web platform in `ssr` mode, every route renders on the server by default. `ssrRoute()` returns the route option that changes that. Spread it into the route:
+In a web platform in `ssr` mode, every route renders on the server by default, or as `ssr` in `config/seo.ts` says. `ssrRoute()` returns the route option that changes it for one route. Spread it into the route:
 
 ```ts
 // app/routes.ts
@@ -494,7 +456,7 @@ export default function ReportsPage() {
 
 | Call | Returns | The route |
 | --- | --- | --- |
-| `ssrRoute(true)` | `{ ssr: true }` | Renders on the server. The default. |
+| `ssrRoute(true)` | `{ ssr: true }` | Renders on the server. The default unless `config/seo.ts` sets `ssr`. |
 | `ssrRoute('data-only')` | `{ ssr: 'data-only' }` | Runs the loader on the server, renders in the browser. For heavy charts that crawlers don't need. |
 | `ssrRoute(false)` | `{ ssr: false }` | Loads and renders in the browser only. For pages that need `window`. |
 
@@ -523,11 +485,11 @@ The `www` build gets `{ ssr: true }`, every other web build `{ ssr: 'data-only' 
 ```ts
 // app/routes.ts
 import { cacheHeaders } from 'kitr/seo'
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
 r.page('/blog/', {
   headers: () => cacheHeaders({ sMaxAge: 60, staleWhileRevalidate: 300 }),
-  head: () => pageSeo({ title: 'Blog', url: 'https://acme.com/blog' }),
+  head: () => seo({ title: 'Blog', url: 'https://acme.com/blog' }),
   lazy: () => import('./pages/blog/index'),
 })
 ```
@@ -552,18 +514,17 @@ With no options it returns `{ 'cache-control': 'public' }`. For a page that show
 
 ## Testing
 
-`seo()` is a plain function, so test what your pages put in `head` without rendering anything. Test the `pageSeo()` helper once, and assert on the tags your pages depend on:
+`seo()` is a plain function, so test what your pages put in `head` without rendering anything. Import `config/seo.ts` first, so `seo()` has the site defaults, and assert on the tags your pages depend on:
 
 ```ts
 // app/seo.test.ts
-import { robotsTxt } from 'kitr/seo'
+import { robotsTxt, seo } from 'kitr/seo'
 import { describe, expect, it } from 'vitest'
 import seoConfig from '#config/seo'
-import { pageSeo } from './seo'
 
-describe('pageSeo', () => {
+describe('seo', () => {
   it('adds the site name and the canonical URL', () => {
-    const { meta, links } = pageSeo({
+    const { meta, links } = seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
@@ -575,7 +536,7 @@ describe('pageSeo', () => {
   })
 
   it('keeps the sign-in page out of search results', () => {
-    const { meta } = pageSeo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true })
+    const { meta } = seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true })
     expect(meta).toContainEqual({ name: 'robots', content: 'noindex, nofollow' })
   })
 
@@ -585,7 +546,7 @@ describe('pageSeo', () => {
 })
 ```
 
-The test runs in Node; there is no app to boot and nothing to fake. The `#config` and `#app` aliases come from the `kitr()` Vite plugin, which your `vitest.config.ts` uses. To check the final HTML of a prerendered page, run `kitr build site` and read `/pricing/index.html` from the build output in an end-to-end test.
+The test runs in Node; there is no app to boot and nothing to fake. The `#config` alias comes from the `kitr()` Vite plugin, which your `vitest.config.ts` uses. To check the final HTML of a prerendered page, run `kitr build site` and read `/pricing/index.html` from the build output in an end-to-end test.
 
 ## Next steps
 

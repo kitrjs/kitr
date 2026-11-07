@@ -78,3 +78,22 @@ describe('i18nProvider', () => {
     expect(screen.getByText('Olá Ana')).toBeTruthy()
   })
 })
+
+// Regression: one i18next instance for the whole server, so changeLanguage() while rendering one
+// request switched the language of every request rendering at the same time.
+describe('i18n per request', () => {
+  it('gives each forked app (one per server request) its own instance', async () => {
+    const app = createApp({
+      environment: 'server',
+      providers: [i18nProvider],
+      config: { i18n: { resources, defaultLocale: 'en', detect: false } },
+    })
+    await app.boot()
+    const a = app.fork().container.use('i18n')
+    const b = app.fork().container.use('i18n')
+    expect(a).not.toBe(b)
+    await a.changeLanguage('de')
+    expect(a.language).toBe('de')
+    expect(b.language).toBe('en')
+  })
+})

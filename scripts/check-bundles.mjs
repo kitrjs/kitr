@@ -103,7 +103,13 @@ const browserEntries = new Set([
 const skipNodeImport = new Set(['@kitr/desktop/main', '@kitr/desktop/preload', '@kitr/kitr'])
 /** Gzip budget per entry file, bytes. Generous; the point is catching a dependency bundled in. */
 /** Does this entry hold code templates (import lines inside strings), so import scans would misread it? */
-const isCodegen = (name, spec) => codegen.has(name) || spec === `${name}/kitr`
+const isCodegen = (name, spec) =>
+  codegen.has(name) || codegenEntries.has(spec) || spec === `${name}/kitr`
+/** Subpath entries that hold templates while the rest of their package is plain code. */
+const codegenEntries = new Set([
+  // startRoot(): the generated app/routes/__root.tsx the kits share.
+  '@kitr/core/package',
+])
 /** Packages whose dist contains code templates: skip import scans. A package's `./kitr` setup module always is. */
 const codegen = new Set([
   '@kitr/cli',

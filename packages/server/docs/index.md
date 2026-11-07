@@ -78,7 +78,7 @@ export default defineConfig({
 | `healthPath` | `'/healthz'` | Path of a route that answers `{ ok: true }` for load balancers. `false` removes the route. |
 | `bodyLimit` | `1048576` (1 MiB) | Largest request body in bytes. Larger requests get a `413`. |
 | `bodyLimits` | `{}` | A different limit under a path prefix, such as `{ '/api/uploads': 10 * 1024 * 1024 }`. The longest matching prefix wins; other paths keep `bodyLimit`. |
-| `trustProxy` | `false` | Declared for proxies that set `X-Forwarded-*`. This release does not read it yet. |
+| `trustProxy` | `false` | How many proxies in front of the server append to `X-Forwarded-For`: `true` for one (a load balancer), or a number. The client IP in `ctx.request.ip()`, rate limits and request logs is then the address the outermost trusted proxy saw; addresses a client puts in the header itself are ignored. With `false`, the socket's address. |
 | `requestIdHeader` | `'x-request-id'` | Header the request id is read from and echoed in. |
 | `shutdownTimeout` | `10` | Seconds to wait for in-flight requests after `SIGINT` or `SIGTERM` before the process exits with code `1`. |
 | `websocket` | `false` | Accept WebSocket upgrades through `crossws`. [Realtime](/packages/realtime) sets it for you. |

@@ -196,8 +196,8 @@ describe('createCache', () => {
     await cache.clear()
     expect(calls).toEqual([
       ['set', 'p:k', '1', 60],
-      ['tag', 'p:k', ['t1', 't2']],
-      ['invalidate', ['t1', 't2']],
+      ['tag', 'p:k', ['p:t1', 'p:t2']],
+      ['invalidate', ['p:t1', 'p:t2']],
       ['clear'],
     ])
   })
@@ -209,6 +209,21 @@ describe('createCache', () => {
       cache.remember('b', async () => 'B'),
     ])
     expect([a, b]).toEqual(['A', 'B'])
+  })
+})
+
+// Regression: keys were prefixed but tags were not, so two apps sharing one driver (one Redis)
+// cleared each other's tagged entries.
+describe('prefix and tags', () => {
+  it('keeps tags apart between apps sharing a driver', async () => {
+    const driver = createMemoryCacheDriver()
+    const shop = createCache({ driver, prefix: 'shop:' })
+    const blog = createCache({ driver, prefix: 'blog:' })
+    await shop.set('a', 1, { tags: ['users'] })
+    await blog.set('a', 2, { tags: ['users'] })
+    await blog.invalidateTags('users')
+    expect(await blog.get('a')).toBeUndefined()
+    expect(await shop.get('a')).toBe(1)
   })
 })
 

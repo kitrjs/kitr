@@ -1,4 +1,4 @@
-import { type AddContext, definePackage } from '@kitr/core/package'
+import { type AddContext, definePackage, displayName, startDocument } from '@kitr/core/package'
 
 const write = (ctx: AddContext, path: string, content: string) =>
   ctx.write(path, content, { overwrite: true })
@@ -9,61 +9,12 @@ const remove = (ctx: AddContext, ...paths: string[]) => {
 
 const addScript = (ctx: AddContext, name: string, command: string) => ctx.scripts.add(name, command)
 
-const documentModule = (options: {
-  imports: string
-  head: string
-  body: string
-  extra?: string
-  /** Statements at the top of RootDocument. */
-  prelude?: string
-  /** Opening and closing JSX around the body. */
-  wrap?: [open: string, close: string]
-}) =>
-  `import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
-import css from '#app/styles/app.css?url'
-${options.imports}
-/** Head tags for every page. Pages add their own with \`head\` on their route in app/routes.ts. */
-export function head() {
-  return {
-${options.head}
-    links: [{ rel: 'stylesheet', href: css }],
-  }
-}
-
-/** The HTML shell. Start streams it on the server and hydrates it on the client. */
-export function RootDocument() {
-${options.prelude ?? ''}  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-        <HeadContent />
-      </head>
-      <body className="min-h-screen bg-background text-foreground antialiased">
-${options.wrap ? `  ${options.wrap[0]}\n` : ''}${options.body.replace(/^/gm, '  ')}
-${options.wrap ? `  ${options.wrap[1]}\n` : ''}        <Scripts />
-      </body>
-    </html>
-  )
-}
-${options.extra ?? ''}`
-
 const routeTable = (routes: Array<[name: string, method: string, path: string]>) =>
   `// Route table for the typed client. Regenerate with \`kitr api:sync\`.\nexport const routeTable = ${JSON.stringify(
     routes.map(([name, method, path]) => ({ name, method, path })),
     null,
     2,
   )} as const\n`
-
-function displayName(name: string) {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/^example-/, '')
-    .split(/[-_.\s]+/)
-    .filter(Boolean)
-    .map((w) => w[0]!.toUpperCase() + w.slice(1))
-    .join(' ')
-}
 
 const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
 import type { ServerRoutes } from '#server/routes'
@@ -382,7 +333,7 @@ export default defineConfig({
   write(
     ctx,
     'app/document.tsx',
-    documentModule({
+    startDocument({
       imports: `import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { useTranslation } from 'kitr/i18n'

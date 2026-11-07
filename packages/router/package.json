@@ -11,6 +11,9 @@
     "builtOn": [
       "@tanstack/react-router"
     ],
+    "requires": [
+      "react"
+    ],
     "client": true,
     "docs": "docs",
     "setup": "./kitr"

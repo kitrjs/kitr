@@ -1,11 +1,11 @@
 import { useApp } from '@kitr/react'
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import type { Consent, ConsentCategory, ConsentRecord } from './index'
 
 /**
  * The consent record and the actions a banner needs; re-renders when the choice changes. The
- * server always sees "undecided" while the browser reads the cookie on its first render, so in
- * server-rendered apps render the banner only after mount.
+ * server cannot read the choice, so the server render and the hydrating render both see
+ * "undecided", and the stored choice arrives right after: no hydration mismatch.
  */
 export function useConsent(): {
   record: ConsentRecord
@@ -18,10 +18,12 @@ export function useConsent(): {
   reset: () => void
 } {
   const consent = useApp().container.use('consent')
+  const version = consent.get().version
+  const undecided = useMemo<ConsentRecord>(() => ({ granted: ['necessary'], version }), [version])
   const record = useSyncExternalStore(
     useCallback((notify) => consent.subscribe(() => notify()), [consent]),
     () => consent.get(),
-    () => consent.get(),
+    () => undecided,
   )
   return {
     record,

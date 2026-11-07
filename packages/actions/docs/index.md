@@ -265,6 +265,8 @@ export const archiveProject = defineMutation('projects.archive', {
 })
 ```
 
+The handler's `context` type is built from the middleware list: each middleware adds what it passes to `next({ context })`. An error thrown in middleware, like `requireSession`'s `UNAUTHORIZED`, reaches the caller as a `KitrError` exactly as a handler's would, and a server error's message is masked in production the same way. `redirect()` and `notFound()` pass through to the router.
+
 `createMiddleware` is re-exported from `kitr/actions` so every middleware uses the same import. Any middleware can wrap the call:
 
 ```ts

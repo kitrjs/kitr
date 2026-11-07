@@ -241,6 +241,15 @@ One main-process handler per channel of the schema: Electron's invoke event, the
 
 ## kitr/desktop/preload
 
+### allowChannels
+
+```ts
+function allowChannels(channels: readonly string[] | Record<string, unknown>): (channel: string) => boolean;
+```
+
+An `allow` for `exposeIpc`: the channels the app declared (a list, or a record keyed by
+channel so the compiler checks it against the IPC types) plus kitr's own `kitr:*` channels.
+
 ### exposeIpc
 
 ```ts
@@ -250,12 +259,13 @@ function exposeIpc(contextBridge: ContextBridge, ipcRenderer: IpcRenderer, optio
 }): void;
 ```
 
-Expose a minimal, channel-agnostic bridge. The renderer's `createIpcClient<Schema>()`
-adds the types; nothing else from Node or Electron crosses the context boundary.
+Expose a minimal bridge. The renderer's `createIpcClient<Schema>()` adds the types; nothing
+else from Node or Electron crosses the context boundary. Without `allow` every channel
+crosses, so pass the declared ones:
 
 ```ts
 import { contextBridge, ipcRenderer } from 'electron'
-exposeIpc(contextBridge, ipcRenderer)
+exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
 ```
 
 ## kitr/desktop/provider

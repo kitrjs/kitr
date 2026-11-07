@@ -11,7 +11,10 @@ export interface MobileOptions {
   appId?: string
   /** Name shown on the home screen. Default the package name. */
   appName?: string
-  /** Custom URL scheme for deep links (`acme://`). Recorded in kitrrc.ts; register it in the native projects yourself. */
+  /**
+   * Custom URL scheme for deep links (`acme` opens `acme://...`). `kitr build` and `kitr dev`
+   * register it in the iOS Info.plist and the Android manifest; `kitr doctor` checks it is there.
+   */
   scheme?: string
   /** Dev server port the device loads from with `kitr dev <name>`. Default 3100. */
   port: number
@@ -114,7 +117,7 @@ export default config
     },
     async dev(ctx) {
       const target = pickTarget(ctx, options)
-      await ensureNativeProject(ctx, target)
+      await ensureNativeProject(ctx, target, options)
       const port = Number(ctx.flags.port ?? options.port)
       const host = String(ctx.flags.host ?? (await lanAddress()))
       ctx.log.info(
@@ -141,7 +144,7 @@ export default config
     },
     async build(ctx) {
       await ctx.exec('vite', ['build'])
-      for (const target of targetsFor(ctx, options)) await ensureNativeProject(ctx, target)
+      for (const target of targetsFor(ctx, options)) await ensureNativeProject(ctx, target, options)
       await ctx.exec('cap', ['sync'], { cwd: ctx.dir() })
       if (ctx.flags.open)
         for (const target of targetsFor(ctx, options))
@@ -172,13 +175,27 @@ export default config
           message: `${ctx.name}: platforms/${ctx.name}/capacitor.config.ts is missing`,
           fix: `kitr platforms scaffold ${ctx.name}`,
         })
-      for (const target of options.targets)
-        if (!ctx.exists(`platforms/${ctx.name}/${target}`))
+      for (const target of options.targets) {
+        if (!ctx.exists(`platforms/${ctx.name}/${target}`)) {
           out.push({
             level: 'info',
             message: `${ctx.name}: the ${target} project is not created yet`,
             fix: `kitr build ${ctx.name} (runs cap add ${target})`,
           })
+          continue
+        }
+        const file = `platforms/${ctx.name}/${schemeFiles[target]}`
+        if (
+          options.scheme &&
+          ctx.exists(file) &&
+          !declaresScheme(target, ctx.read(file), options.scheme)
+        )
+          out.push({
+            level: 'warn',
+            message: `${ctx.name}: ${file} does not declare the ${options.scheme}:// scheme, so deep links will not open the app`,
+            fix: `kitr build ${ctx.name} (registers it)`,
+          })
+      }
       return out
     },
     agents: `- \`kitr dev ${'<name>'} --target ios|android\` runs the app on a simulator or device with live reload; \`kitr build <name>\` builds the bundle and runs \`cap sync\`. Native projects are in \`platforms/<name>/ios|android\` and are yours to edit in Xcode or Android Studio.
@@ -222,10 +239,73 @@ function pickTarget(ctx: PlatformContext, options: MobileOptions): MobileTarget 
   return list[0]!
 }
 
-async function ensureNativeProject(ctx: PlatformContext, target: MobileTarget) {
-  if (ctx.exists(`platforms/${ctx.name}/${target}`)) return
-  ctx.log.step(`${ctx.name}: creating the ${target} project (cap add ${target})`)
-  await ctx.exec('cap', ['add', target], { cwd: ctx.dir() })
+async function ensureNativeProject(
+  ctx: PlatformContext,
+  target: MobileTarget,
+  options: MobileOptions,
+) {
+  if (!ctx.exists(`platforms/${ctx.name}/${target}`)) {
+    ctx.log.step(`${ctx.name}: creating the ${target} project (cap add ${target})`)
+    await ctx.exec('cap', ['add', target], { cwd: ctx.dir() })
+  }
+  if (options.scheme) registerScheme(ctx, target, options.scheme)
+}
+
+/** Where each native project declares its URL schemes. */
+export const schemeFiles: Record<MobileTarget, string> = {
+  ios: 'ios/App/App/Info.plist',
+  android: 'android/app/src/main/AndroidManifest.xml',
+}
+
+/** Whether a native project's Info.plist or manifest already declares `scheme`. */
+export function declaresScheme(target: MobileTarget, source: string, scheme: string): boolean {
+  if (target === 'android')
+    return new RegExp(`android:scheme="${escapeRegExp(scheme)}"`).test(source)
+  const at = source.indexOf('CFBundleURLSchemes')
+  return at >= 0 && new RegExp(`<string>${escapeRegExp(scheme)}</string>`).test(source.slice(at))
+}
+
+/**
+ * Add `scheme` to a native project's Info.plist (CFBundleURLTypes) or Android manifest (an
+ * intent filter on the launcher activity). Returns the source unchanged when it is already there
+ * or the file has no place for it.
+ */
+export function addScheme(target: MobileTarget, source: string, scheme: string): string {
+  if (declaresScheme(target, source, scheme)) return source
+  if (target === 'ios') {
+    const entry = `<dict>\n\t\t\t<key>CFBundleURLSchemes</key>\n\t\t\t<array>\n\t\t\t\t<string>${scheme}</string>\n\t\t\t</array>\n\t\t</dict>`
+    if (source.includes('<key>CFBundleURLTypes</key>'))
+      return source.replace(/(<key>CFBundleURLTypes<\/key>\s*<array>)/, `$1\n\t\t${entry}`)
+    const last = source.lastIndexOf('</dict>')
+    if (last < 0) return source
+    return `${source.slice(0, last)}\t<key>CFBundleURLTypes</key>\n\t<array>\n\t\t${entry}\n\t</array>\n${source.slice(last)}`
+  }
+  const filter = `
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${scheme}" />
+            </intent-filter>`
+  const launcher = source.search(/<action android:name="android\.intent\.action\.MAIN"\s*\/>/)
+  if (launcher < 0) return source
+  const end = source.indexOf('</activity>', launcher)
+  if (end < 0) return source
+  return `${source.slice(0, end).replace(/\s*$/, '')}${filter}\n        ${source.slice(end)}`
+}
+
+function registerScheme(ctx: PlatformContext, target: MobileTarget, scheme: string) {
+  const file = `platforms/${ctx.name}/${schemeFiles[target]}`
+  if (!ctx.exists(file)) return
+  const source = ctx.read(file)
+  const next = addScheme(target, source, scheme)
+  if (next === source) return
+  ctx.write(file, next, { overwrite: true })
+  ctx.log.step(`${ctx.name}: registered the ${scheme}:// scheme in ${file}`)
+}
+
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 async function lanAddress(): Promise<string> {

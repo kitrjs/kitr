@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createIpcClient, IPC_BRIDGE_KEY, isElectron } from '../src/client'
 import { handleIpc } from '../src/main'
-import { exposeIpc } from '../src/preload'
+import { allowChannels, exposeIpc } from '../src/preload'
 
 type Ipc = {
   'app.version': () => string
@@ -54,6 +54,16 @@ describe('electron ipc', () => {
     expect(isElectron()).toBe(false)
     await expect(ipc.invoke('app.version')).rejects.toThrow(/not available/)
     expect(ipc.on('app.focus' as never, () => {})).toBeTypeOf('function')
+  })
+
+  // Regression: the generated preload promised an allowlist but exposed every channel.
+  it('allowChannels lets through the declared channels and kitr:*, nothing else', () => {
+    const allow = allowChannels({ 'app.version': true, 'app.focus': true })
+    expect(allow('app.version')).toBe(true)
+    expect(allow('app.focus')).toBe(true)
+    expect(allow('kitr:storage:load')).toBe(true)
+    expect(allow('fs.readFile')).toBe(false)
+    expect(allowChannels(['a'])('b')).toBe(false)
   })
 
   it('round-trips typed commands and events through preload', async () => {

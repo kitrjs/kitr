@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add native`: clipboard, share sheet, haptics, location, camera and fingerprint unlock, each with a web fallback. */
 export default definePackage({
   name: 'native',
+  requires: ['platform'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/native/provider')
     ctx.agents.add(

@@ -15,7 +15,7 @@ import {
   type ServerMessage,
   topicFor,
 } from './protocol'
-import type { ChannelEmitter } from './server'
+import { type ChannelEmitter, createRealtimeServer } from './server'
 
 /** Options for `createSseServer`: the channels to serve, stream auth and the keep-alive interval. */
 export interface SseServerOptions {
@@ -167,7 +167,8 @@ export function createSseServer(options: SseServerOptions): SseServer {
           topics.set(topic, set)
         }
         set.add(conn)
-        send(conn, { t: 'ok', id: msg.id })
+        // Send the params back as the schema output them: the server publishes under those.
+        send(conn, { t: 'ok', id: msg.id, p: params ?? null })
       } else if (msg.t === 'msg') {
         await channel.onMessage?.(msg.ev, msg.d, params, conn.ctx, sse)
       }
@@ -215,12 +216,14 @@ export function createSseServer(options: SseServerOptions): SseServer {
   return sse
 }
 
-/** A provider that binds an SSE server as `realtime` in the container. It does not attach the route. */
+/** A provider that binds an SSE realtime server as `realtime` in the container. It does not attach the route. */
 export function sseProvider(options: SseServerOptions): KitrProvider {
   return defineProvider({
     name: 'realtime',
     register(app) {
-      app.container.singleton('realtime', () => createSseServer(options) as any)
+      app.container.singleton('realtime', () =>
+        createRealtimeServer({ ...options, transport: 'sse' }),
+      )
     },
   })
 }

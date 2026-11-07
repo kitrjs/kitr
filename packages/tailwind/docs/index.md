@@ -25,7 +25,7 @@ What `kitr add` does:
 - Adds `@kitr/tailwind` to `packages` in `kitrrc.ts`. The `kitr()` Vite plugin sees it there and loads `@tailwindcss/vite`.
 - Writes `config/tailwind.ts` (shown under [Configure](#configure)).
 - Writes `app/styles/app.css`, the stylesheet Tailwind starts from. When `app/styles/tokens.css` exists (the [theme](/packages/theme) package writes it), the stylesheet imports it last, so your token values win over kitr's.
-- In `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes), replaces `import 'kitr/theme/styles.css'` with `import '#app/styles/app.css'`, or adds that import after the block of imports at the top of the file when it has neither.
+- In `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes), swaps the linked `kitr/theme/styles.css?url` for `#app/styles/app.css?url` (or an `import 'kitr/theme/styles.css'` for `import '#app/styles/app.css'`), so the theme stylesheet loads once, through `app.css`. A document with neither gets the new sheet added.
 - Adds a `## kitr: tailwind` section to `AGENTS.md`: utilities map to kitr tokens, merge classes with `cn()`, dark mode is `data-theme="dark"` on `<html>`.
 
 It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits include tailwind, and so do the preset kits built on them.
@@ -51,7 +51,7 @@ export default defineConfig({
 | `entry` | `'app/styles/app.css'` | The stylesheet Tailwind starts from, relative to the project root. |
 | `preset` | `true` | Whether the app uses kitr's preset (`kitr/tailwind/preset.css`). |
 
-These two options record how the project is set up; the build does not read them today. Tailwind v4 is configured in CSS, so what actually happens is decided by the stylesheet. To change the entry, import a different file from `app/document.tsx`. To drop the preset, remove its `@import` line ([Use plain Tailwind colours](#use-plain-tailwind-colours)).
+Tailwind v4 is configured in CSS, so the stylesheet decides what the build does, and these two options describe it. `kitr doctor` checks they agree: it reports an error when `entry` does not exist, and a warning when the entry does not import Tailwind, or imports kitr's preset while `preset` is false (or leaves it out while `preset` is true). To change the entry, link a different file from `head()` in `app/document.tsx` and set `entry`. To drop the preset, remove its `@import` line and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` also warns when `config/tailwind.ts` is missing, so keep the file.
 
 The stylesheet `kitr add` writes is the real configuration:
 

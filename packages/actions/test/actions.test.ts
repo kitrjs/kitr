@@ -227,7 +227,57 @@ describe('defineQuery and defineMutation', () => {
     defineQuery('a', { handler: () => 1 })
     defineMutation('b', { middleware: mw, handler: () => 1 })
     expect(built[0]!.middleware).toBeUndefined()
-    expect(built[1]!.middleware).toBe(mw)
+    // kitr's error guard goes first, then the app's middleware in order.
+    expect(built[1]!.middleware).toHaveLength(2)
+    expect(built[1]!.middleware![1]).toBe(mw[0])
+  })
+})
+
+// Regression: an error thrown by middleware skipped the envelope, so Start sent it raw: the
+// client got no KitrError and a production server error leaked its message.
+describe('middleware errors', () => {
+  const guardOf = () => {
+    defineMutation('guarded', { middleware: [{ fn: () => {} }], handler: () => 1 })
+    const guard = built.at(-1)!.middleware![0] as { fn: (ctx: unknown) => Promise<any> }
+    return (next: () => unknown) => guard.fn({ data: undefined, context: {}, next })
+  }
+
+  it('turns a KitrError from middleware into the error envelope', async () => {
+    const run = guardOf()
+    const out = await run(() => {
+      throw KitrError.unauthorized()
+    })
+    expect(out.result).toMatchObject({ ok: false, error: { code: 'UNAUTHORIZED', status: 401 } })
+    expect('error' in out).toBe(false)
+  })
+
+  it('masks a server error from middleware in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const run = guardOf()
+    const out = await run(async () => {
+      throw new Error('db password is hunter2')
+    })
+    expect(out.result.ok).toBe(false)
+    expect(out.result.error.message).toBe('Internal server error')
+    expect(JSON.stringify(out)).not.toContain('hunter2')
+  })
+
+  it('passes results, redirects and notFound through untouched', async () => {
+    const run = guardOf()
+    await expect(run(async () => ({ result: 'fine' }))).resolves.toEqual({ result: 'fine' })
+    const redirect = new Response(null, { status: 307 })
+    await expect(
+      run(() => {
+        throw redirect
+      }),
+    ).rejects.toBe(redirect)
+    const missing = { isNotFound: true }
+    await expect(
+      run(() => {
+        throw missing
+      }),
+    ).rejects.toBe(missing)
   })
 })
 
