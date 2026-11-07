@@ -175,7 +175,7 @@ export function ConnectionStatus() {
 
 The hook re-renders after a restore, after each save, and when the network goes up or down. Put `<ConnectionStatus />` in the layout so it shows on every page.
 
-On the server the provider binds nothing, so `useOffline()` throws `[kitr] No binding named "offline". Did you add the package that provides it?` during server rendering. In a server-rendered app, render the component that calls it only on the client.
+On the server the provider binds nothing, so during server rendering `useOffline()` reports online, nothing pending and nothing restored, which matches the browser's first render.
 
 ## Choose what to save
 

@@ -53,11 +53,16 @@ export const handlers = [
 import { setupBrowserMocks } from 'kitr/mocks'
 import { handlers } from './handlers'
 
-/** Call from main.tsx in dev: `if (import.meta.env.DEV && import.meta.env.VITE_MOCKS) await enableMocks()` */
-export const enableMocks = () => setupBrowserMocks(handlers)
+/**
+ * `await enableMocks()` in the client entry. Env values are strings, so only `VITE_MOCKS=true`
+ * turns mocks on (`false` would be truthy), and only in dev.
+ */
+export async function enableMocks() {
+  if (import.meta.env.DEV && import.meta.env.VITE_MOCKS === 'true') await setupBrowserMocks(handlers)
+}
 ```
 
-The comment in `browser.ts` is out of date: the entry file is `app/client.tsx`, and `VITE_MOCKS` is the string `'false'`, which is truthy. Compare with `=== 'true'` as shown in [Turn mocks on in the browser](#turn-mocks-on-in-the-browser).
+It also adds `"msw": { "workerDirectory": ["public"] }` to `package.json`, so MSW's install step keeps `public/mockServiceWorker.js` up to date, and a `mocks:init` script that writes the worker on demand.
 
 | Variable | Used for |
 | --- | --- |

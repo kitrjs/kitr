@@ -37,6 +37,7 @@ const startRoot = (options: {
 }) =>
   `import type { KitrRouterContext } from 'kitr/router'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+import { ThemeScript } from 'kitr/theme'
 import type { ReactNode } from 'react'
 import css from '#app/styles/app.css?url'
 ${options.imports}
@@ -61,6 +62,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
@@ -684,7 +686,7 @@ function ProjectsPage() {
         description="Sorting and paging live in the URL, so links are shareable."
         actions={<Button onClick={() => setOpen(true)}>New project</Button>}
       />
-      <DataTable columns={columns} data={data} rowCount={data.length} {...tableState} />
+      <DataTable columns={columns} data={data} clientSide {...tableState} />
       <NewProjectDialog open={open} onOpenChange={setOpen} />
     </>
   )
@@ -1925,6 +1927,7 @@ const mobileExtra = (ctx: ProjectContext, name: string) => {
     'app/routes/__root.tsx',
     `import type { KitrRouterContext } from 'kitr/router'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+import { ThemeScript } from 'kitr/theme'
 import type { ReactNode } from 'react'
 import css from '#app/styles/app.css?url'
 import { PwaUpdate } from '#app/components/pwa-update'
@@ -1955,6 +1958,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">

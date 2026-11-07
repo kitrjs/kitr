@@ -26,6 +26,11 @@ export interface UrlTableStateOptions {
   setSearch: (patch: Partial<TableSearch>) => void
   /** Rows per page when the URL has no `size`, and the size left out of the URL. Default 20. */
   defaultPageSize?: number
+  /**
+   * `true` (default): the server sorts, filters and pages, the table shows what came back.
+   * `false`: the table does it in the browser; use it with `clientTableFeatures`.
+   */
+  manual?: boolean
 }
 
 /**
@@ -37,6 +42,7 @@ export function useUrlTableState({
   search,
   setSearch,
   defaultPageSize = 20,
+  manual = true,
 }: UrlTableStateOptions) {
   const sorting = useMemo<SortingState>(() => parseSort(search.sort), [search.sort])
   const pagination = useMemo<PaginationState>(
@@ -84,9 +90,9 @@ export function useUrlTableState({
     onSortingChange,
     onPaginationChange,
     onColumnFiltersChange,
-    manualSorting: true,
-    manualPagination: true,
-    manualFiltering: true,
+    manualSorting: manual,
+    manualPagination: manual,
+    manualFiltering: manual,
   }
 }
 

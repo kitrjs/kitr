@@ -87,20 +87,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 | --- | --- |
 | `VITE_API_URL` | The API that answers `/me` and `/sign-in` in the generated config. |
 
-`kitr add auth` does not declare `VITE_API_URL`. The [HTTP](/packages/http) recipe does, and the `app` kit includes it. Without HTTP, add it to `app/env.ts` yourself:
-
-```ts
-// app/env.ts
-import { createEnv, env as e } from 'kitr/env'
-
-export const env = createEnv({
-  public: {
-    VITE_APP_NAME: e.string({ default: 'acme' }),
-    VITE_API_URL: e.url({ default: 'https://app.acme.com/api' }),
-  },
-  server: {},
-})
-```
+`kitr add auth` declares `VITE_API_URL` in `app/env.ts` (default `http://localhost:3333`) and adds the session to the router context in `app/router.tsx`, so `requireAuth()` works without more wiring.
 
 ## Show who is signed in
 

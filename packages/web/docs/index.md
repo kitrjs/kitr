@@ -324,18 +324,7 @@ export default defineKitrConfig({
 })
 ```
 
-This release records `base` but the `kitr()` Vite plugin does not pass it to Vite yet. Set Vite's own `base` to the same value:
-
-```ts
-// vite.config.ts
-import { kitr } from 'kitr/vite'
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  base: '/orders/',
-  plugins: [kitr()],
-})
-```
+The `kitr()` Vite plugin passes it to Vite, so asset URLs start with `/orders/`, and `kitr start` serves the build under that path. A `base` set in `vite.config.ts` wins over the platform's.
 
 ## Make the app installable
 
@@ -638,7 +627,7 @@ kitr start site --port 8080
 
 - In `static` and `spa` mode it serves `dist/site/client` and answers unknown paths with the shell (`index.html`, `_shell.html` or `200.html`), so client routes survive a reload.
 - In `ssr` mode it serves static files first and hands every other request to the `fetch` export of `dist/site/server/server.js`. When `crossws` is installed, WebSocket upgrades work too.
-- Every file under `dist/site/client` is sent with `Cache-Control: max-age=31536000` (one year). That suits hashed assets, but this release applies it to HTML files and `sw.js` too, so a browser may keep an old page after you deploy. Put a proxy or CDN rule in front that sends `no-cache` for `*.html` and `/sw.js`.
+- Hashed files under `assets/` are sent with `Cache-Control: max-age=31536000, immutable`. Everything else (HTML, `sw.js`, the manifest, files from `public/`) gets `no-cache`, so a deploy reaches returning visitors on their next load.
 - `SIGINT` and `SIGTERM` close the server cleanly.
 
 On a host that sets `PORT` (Render, Fly.io, Railway), run `kitr start site` and the env variable picks the port.

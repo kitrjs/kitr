@@ -129,6 +129,27 @@ export default defineKitrConfig({
     expect(config.build.outDir).toBe('dist/app')
   })
 
+  // Regression: web({ base }) was accepted and documented, but never reached Vite.
+  it("passes a web platform's base to Vite, unless vite.config.ts sets one", async () => {
+    const root = project({
+      'kitrrc.ts': `import { web } from 'kitr/web'
+export default defineKitrConfig({
+  platforms: { admin: web({ base: '/admin' }), site: web() },
+  packages: ['@kitr/router'],
+  providers: [],
+})`,
+    })
+    expect((await corePlugin(root, undefined, { platform: 'admin' })).config.base).toBe('/admin/')
+    expect((await corePlugin(root, undefined, { platform: 'site' })).config.base).toBeUndefined()
+    const plugins = kitr({ root, react: false, tailwind: false, platform: 'admin' })
+    const own = await ((plugins[0] as Plugin).config as any).call(
+      {},
+      { root, base: '/x/' },
+      { command: 'serve', mode: 'development' },
+    )
+    expect(own.base).toBeUndefined()
+  })
+
   it('works without kitrrc.ts, config dir or package.json', async () => {
     const { load, config } = await corePlugin(project({}))
     expect(load('virtual:kitr/providers')).toContain('export const providers = []')
