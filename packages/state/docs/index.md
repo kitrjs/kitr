@@ -6,16 +6,12 @@ order: 1
 
 # State
 
-Some values belong to the whole app rather than one component: the order Ada is putting together before she submits it, whether the sidebar is open, which currency Linus prefers. `@kitr/state` gives you a small store for those values that any component can read and update, and that can remember them across page reloads.
+Some values belong to the whole app, not one component: the order Ada is putting together, whether the sidebar is open, Linus's currency. `@kitr/state` is a small store any component can read and update, optionally saved across reloads.
 
 > [!SUMMARY]
 > A small store for app-wide values that live in the browser. Add it with `kitr add state`; the overview is at [/packages/state](/packages/state).
 
-It is [Zustand](https://zustand.docs.pmnd.rs), re-exported, plus one helper, `createKitrStore`, that makes a store safe for server rendering, saves it in the browser when you ask, and connects it to the Redux DevTools in development.
-
-It runs in the browser, and on the server while a page renders. For data a server owns, such as the list of orders or the signed-in user, use [Query](/packages/query) instead.
-
-This guide builds Acme's order draft: the lines Ada adds before she places an order at `app.acme.com`.
+It is [Zustand](https://zustand.docs.pmnd.rs), re-exported, plus `createKitrStore`, which makes a store safe for server rendering, saves it in the browser when asked, and connects it to the Redux DevTools in development. The examples build Acme's order draft at `app.acme.com`.
 
 ## When to use it
 
@@ -27,7 +23,7 @@ Use a store for **client state**: values that live in the browser and that no se
 - A selection shared by distant components, such as the invoices ticked in a table and the bulk-action bar above it.
 
 > [!WARNING]
-> Don't use a store for **server data** such as Acme's orders, invoices or projects. That belongs in a query (see [Query](/packages/query)), which caches it, refetches it and updates it after a save. A copy in a store goes stale the moment someone else changes the record.
+> Don't use a store for **server data** such as orders or invoices. Use [Query](/packages/query), which caches and refetches it; a copy in a store goes stale as soon as someone else changes the record.
 
 ## Install
 
@@ -89,18 +85,16 @@ export const [usePreferences, PreferencesProvider, preferencesStore] =
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `name` | required | The store's name. It labels the store in the Redux DevTools and builds the storage key `kitr:<name>`. |
-| `persist` | `false` | `true` saves the whole state to `localStorage`. An object saves it with any of Zustand's [persist options](https://zustand.docs.pmnd.rs/middlewares/persist). Only the browser reads or writes storage. |
+| `name` | required | Labels the store in the Redux DevTools and builds the storage key `kitr:<name>`. |
+| `persist` | `false` | `true` saves the whole state to `localStorage`; an object takes Zustand's [persist options](https://zustand.docs.pmnd.rs/middlewares/persist). Only the browser touches storage. |
 | `persist.name` | `'kitr:<name>'` | The storage key. |
 | `persist.storage` | `localStorage`, as JSON | Where to save. Use `createJSONStorage(() => sessionStorage)` from `zustand/middleware` for one tab only. |
 | `persist.partialize` | the whole state | A function that picks what to save. |
 | `persist.version` | `0` | The saved shape's version. Saved data with another version goes through `migrate`, or is dropped without one. |
 | `persist.migrate` | none | A function `(saved, version) => state` that upgrades old saved data. |
-| `devtools` | `true` | Connects the store to the [Redux DevTools](https://github.com/reduxjs/redux-devtools) extension in development. Set `false` to leave it out. Production builds never connect. |
+| `devtools` | `true` | Connects to the Redux DevTools in development; `false` leaves it out. |
 
-The second argument is a Zustand state creator: a function that gets `set`, `get` and the store, and returns the initial state with its actions.
-
-`createKitrStore` returns three things, in this order:
+The second argument is a Zustand state creator: it gets `set`, `get` and the store, and returns the initial state with its actions. `createKitrStore` returns three things, in this order:
 
 | Value | Description |
 | --- | --- |
@@ -108,7 +102,7 @@ The second argument is a Zustand state creator: a function that gets `set`, `get
 | `StoreProvider` | A component that gives its subtree a store. Needed on the server; optional in the browser. Takes `initialState`. |
 | `store` | The browser's store instance, for code outside components. `null` on the server. |
 
-Name them after the store, as in `[useOrderDraft, OrderDraftProvider, orderDraftStore]`.
+
 
 ## Create your first store
 
@@ -187,13 +181,11 @@ export default function NewOrderPage() {
 }
 ```
 
-Open `/orders/new` and press **Add a seat** three times: the count reads `3 items in this order`. Reload the page and it still reads 3, because `persist: true` saved the draft to `localStorage` under `kitr:order-draft`.
-
-`kitr make:store` writes a starter store for you; see [Commands](#commands).
+Open `/orders/new` and press **Add a seat** three times: the count reads `3 items in this order`, and still does after a reload, because `persist: true` saved the draft under `kitr:order-draft`. `kitr make:store` writes a starter store; see [Commands](#commands).
 
 ## Read a value in a component
 
-Pass a selector to the hook. The component re-renders only when the selected value changes, so `DraftCount` ignores a change to `customer`:
+Pass a selector to the hook; the component re-renders only when the selected value changes:
 
 ```tsx
 // app/components/orders/draft-customer.tsx
@@ -213,21 +205,11 @@ export function DraftCustomer() {
 
 Actions are part of the state, and they never change, so selecting one never causes a re-render.
 
-Calling the hook with no selector returns the whole state. The component then re-renders on every change to any field, so keep that for small stores or for debugging:
-
-```tsx
-// app/components/orders/draft-debug.tsx
-import { useOrderDraft } from '#app/stores/order-draft'
-
-export function DraftDebug() {
-  const draft = useOrderDraft()
-  return <pre>{JSON.stringify({ customer: draft.customer, lines: draft.lines }, null, 2)}</pre>
-}
-```
+Calling the hook with no selector (`useOrderDraft()`) returns the whole state and re-renders on every change, so keep that for small stores or debugging.
 
 ## Select several values at once
 
-A selector that builds a new object or array on every call, such as `(s) => ({ customer: s.customer, count: s.lines.length })`, returns a different value each time, and React keeps re-rendering. Either call the hook once per value, or wrap the selector in Zustand's `useShallow`, which compares the result field by field:
+A selector that builds a new object on every call, such as `(s) => ({ customer: s.customer })`, returns a different value each time and React keeps re-rendering. Call the hook once per value, or wrap the selector in Zustand's `useShallow`:
 
 ```tsx
 // app/components/orders/draft-header.tsx
@@ -246,11 +228,11 @@ export function DraftHeader() {
 }
 ```
 
-Derived numbers and strings are safe without it: `(s) => s.lines.length` returns the same number until the length changes.
+Derived numbers and strings need no `useShallow`.
 
 ## Change state with actions
 
-Inside the creator, `set` merges a partial state into the current one. Pass an object when the new value does not depend on the old one, and a function when it does:
+`set` merges a partial state into the current one: pass an object, or a function when the new value depends on the old one:
 
 ```ts
 // app/stores/invoice-selection.ts
@@ -277,14 +259,14 @@ export const [useInvoiceSelection, InvoiceSelectionProvider, invoiceSelectionSto
   }))
 ```
 
-`get()` reads the current state inside an action. Keep the logic in actions rather than in components, so every caller changes the state the same way.
+`get()` reads the current state inside an action. Keep logic in actions, not components.
 
 > [!WARNING]
 > Don't mutate the state in place (`s.selected.push(id)`). `set` compares by reference, so a mutated array looks unchanged and nothing re-renders. Return a new array or object.
 
 ## Read and change state outside React
 
-The third value is the browser's store instance. Use it in code that is not a component: an event handler set up at startup, a route loader, a mutation's `onSuccess`:
+The third value is the browser's store instance, for code that is not a component, such as a route loader or a mutation's `onSuccess`:
 
 ```ts
 // app/lib/orders/place-order.ts
@@ -310,7 +292,7 @@ export async function placeDraftOrder() {
 | `subscribe(listener)` | Calls `listener(state, previous)` after every change. Returns a function that stops it. |
 | `getInitialState()` | Returns the state the creator first produced. |
 
-`subscribe` lets code outside React react to changes. This keeps the page title in step with the draft:
+`subscribe` reacts to changes outside React; this keeps the page title in step with the draft:
 
 ```ts
 // app/lib/orders/draft-title.ts
@@ -322,11 +304,11 @@ export const stopDraftTitle = orderDraftStore?.subscribe((state, previous) => {
 })
 ```
 
-The store is `null` on the server, which is why every call above uses `?.`. Code that only ever runs in the browser, such as a click handler, can assert it with `orderDraftStore!`.
+The store is `null` on the server, hence the `?.`. In browser-only code such as a click handler, write `orderDraftStore!`.
 
 ## Save state in the browser
 
-With `persist: true`, the whole state is saved to `localStorage` under `kitr:<name>` after every change, and restored when the page loads. The saved value is JSON with the state and a version:
+With `persist: true`, the whole state is saved to `localStorage` under `kitr:<name>` after every change and restored on load:
 
 ```ts
 // In the browser console after adding one seat
@@ -334,9 +316,7 @@ JSON.parse(localStorage.getItem('kitr:order-draft')!)
 // => { state: { customer: '', lines: [{ sku: 'acme-seat', name: 'Acme seat', price: 12, quantity: 1 }] }, version: 0 }
 ```
 
-Functions are not saved, because JSON cannot hold them; the actions come from the creator each time.
-
-Pass an object to control what is saved. `partialize` picks the fields; here the draft's lines survive a reload but the customer does not:
+Actions are not saved; they come from the creator each time. Pass an object to control what is saved. Here `partialize` keeps the lines across a reload but not the customer:
 
 ```ts
 // app/stores/order-draft.ts
@@ -366,11 +346,11 @@ export const [useOrderDraft, OrderDraftProvider, orderDraftStore] =
 ```
 
 > [!WARNING]
-> `localStorage` is readable by any script on the page and stays on the device after sign-out. Never persist tokens, passwords or personal data in a store. Use [Secure storage](/packages/secure-storage) for secrets.
+> `localStorage` is readable by any script on the page and survives sign-out. Never persist tokens, passwords or personal data; use [Secure storage](/packages/secure-storage) for secrets.
 
 ## Change the saved shape
 
-When the state's shape changes, data saved by the old version no longer fits. Bump `version`, and give `migrate` a function that upgrades old data. Without `migrate`, data from another version is ignored and the store starts from its initial state:
+When the state's shape changes, bump `version` and give `migrate` a function that upgrades old data. Without `migrate`, data from another version is dropped:
 
 ```ts
 // app/stores/preferences.ts
@@ -406,7 +386,7 @@ export const [usePreferences, PreferencesProvider, preferencesStore] =
 
 ## Save for one tab only
 
-`sessionStorage` keeps state for one tab and clears it when the tab closes. It suits a wizard Grace should be able to run in two tabs at once without them mixing:
+`sessionStorage` keeps state per tab and clears it when the tab closes, so Grace can run a wizard in two tabs without them mixing:
 
 ```ts
 // app/stores/import-wizard.ts
@@ -434,7 +414,7 @@ export const [useImportWizard, ImportWizardProvider, importWizardStore] =
 
 ## Seed a store for a page
 
-`StoreProvider` takes `initialState`, which is merged over the creator's state when the provider first mounts. Use it to start a store from data a loader fetched, such as the customer of the order Linus is editing:
+`StoreProvider` takes `initialState`, merged over the creator's state when the provider mounts. Use it to start a store from loader data, such as the customer of the order Linus is editing:
 
 ```ts
 // app/routes.ts
@@ -464,16 +444,21 @@ export default function EditOrderPage() {
 }
 ```
 
-In the browser the store is shared by the whole app, so `initialState` writes into that one store with `setState` when the provider mounts. It overrides values restored from storage, and every component using the store sees it, inside the provider or not. On the server each provider builds its own store with `initialState` already applied, so the page renders with it.
+<details>
+<summary>How initialState behaves in the browser and on the server</summary>
+
+In the browser the store is shared by the whole app, so `initialState` is written into that one store when the provider mounts. It overrides values restored from storage, and components outside the provider see it too. On the server each provider builds its own store with `initialState` applied.
+
+</details>
 
 ## Render on the server
 
-On the server, one process renders pages for many users at once. A store created at module level would be shared by all of them, and Ada's draft could render in Grace's page. `createKitrStore` prevents that:
+One server process renders pages for many users, so a module-level store would leak Ada's draft into Grace's page. `createKitrStore` avoids that:
 
-- **In the browser**, the store is one module-level instance. The hook reads it without any provider.
-- **On the server**, there is no module-level instance. Each `<StoreProvider>` creates a fresh store for its render, and storage is never touched.
+- **In the browser**, the store is one module-level instance, read without a provider.
+- **On the server**, each `<StoreProvider>` creates a fresh store for its render, and storage is never touched.
 
-If a page renders on the server (a `web` platform in `ssr` or `static` mode), wrap the part of the tree that reads the store:
+If a page renders on the server (`ssr` or `static` mode), wrap the part of the tree that reads the store:
 
 ```tsx
 // app/document.tsx
@@ -497,19 +482,24 @@ export function RootDocument() {
 }
 ```
 
-Without a provider, a server render fails with:
+Without a provider, the server render fails with:
 
 ```txt
 [@kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
 ```
 
-In a client-only app (`spa` mode, desktop, mobile) you can skip the provider entirely.
+In a client-only app (`spa` mode, desktop, mobile) skip the provider.
 
-A saved store renders its initial state on the server, because the server cannot read the browser's storage. The browser's first render, the one React hydrates, uses that same state (plus any `<StoreProvider initialState>`), so React sees no mismatch. The saved state follows straight after, in a second render, with no extra code from you.
+<details>
+<summary>Persisted stores and hydration</summary>
+
+The server cannot read browser storage, so a saved store renders its initial state there. The browser's first render uses the same state, so React sees no mismatch, and the saved state follows in a second render.
+
+</details>
 
 ## Use plain Zustand
 
-`@kitr/state` re-exports `zustand` unchanged, so `create`, `createStore`, `useStore` and the types work as in the [Zustand docs](https://zustand.docs.pmnd.rs). Middleware comes from `zustand/middleware`. A store made with `create` is a module-level singleton on the server too, so use it only in client-only apps or for state that is the same for every user:
+`@kitr/state` re-exports `zustand` unchanged, so `create`, `createStore` and `useStore` work as in the [Zustand docs](https://zustand.docs.pmnd.rs). A store made with `create` is a singleton on the server too, so use it only in client-only apps or for state that is the same for every user:
 
 ```ts
 // app/stores/toasts.ts
@@ -558,11 +548,11 @@ export const [useOrderDraftStore, OrderDraftStoreProvider, orderDraftStore] = cr
 )
 ```
 
-Replace the state with your own. Pass `--force` to overwrite an existing file. To change the template for your project, run `kitr eject stub store` and edit `stubs/store.ts`.
+Replace the state with your own. `--force` overwrites an existing file; `kitr eject stub store` lets you edit the template in `stubs/store.ts`.
 
 ## Testing
 
-In a DOM test (Vitest with `happy-dom` or `jsdom`), the store is the browser singleton, so it keeps its state from one test to the next. Reset it in `beforeEach` with `setState`, and clear `localStorage` if the store persists:
+In a DOM test (Vitest with `happy-dom` or `jsdom`) the store is the browser singleton and keeps its state between tests. Reset it in `beforeEach`, and clear `localStorage` if it persists:
 
 ```tsx
 // app/stores/order-draft.test.tsx
@@ -604,9 +594,7 @@ describe('order draft', () => {
 })
 ```
 
-Wrap changes made outside React in `act()` when a component is rendered, so React applies the update before you assert.
-
-To test what the server renders, run the test in the `node` environment, where there is no singleton, and render through the provider:
+Wrap changes made outside React in `act()` when a component is rendered. To test the server render, use the `node` environment, where there is no singleton, and render through the provider:
 
 ```tsx
 // app/stores/order-draft.server.test.tsx
@@ -638,13 +626,10 @@ it('gives every server render its own store', () => {
 
 ## Devtools
 
-In development, every store connects to the [Redux DevTools](https://github.com/reduxjs/redux-devtools) browser extension under its `name`. Each `set` shows up as an action with the state before and after, and you can step back through them. The connection is skipped in production builds, on the server, and for stores created with `devtools: false`.
+In development, each `set` shows up in the [Redux DevTools](https://github.com/reduxjs/redux-devtools) extension as an action with the state before and after, under the store's `name`. Production builds and `devtools: false` skip the connection.
 
 ## Next steps
 
-- [API reference](/packages/state/api)
-- [Zustand docs](https://zustand.docs.pmnd.rs): everything there works as written, imported from `@kitr/state`.
-- [Zustand persist options](https://zustand.docs.pmnd.rs/middlewares/persist): every option `persist` accepts.
+- [API reference](/packages/state/api): every export and option.
 - [Query](/packages/query): where server data belongs.
-- [Forms](/packages/forms): form state, validation and server errors, without a store.
-- [Extending kitr](/docs/extending): bind a store as a service with your own provider.
+- [Forms](/packages/forms): form state and validation without a store.

@@ -13,15 +13,15 @@ If your app talks to a backend that already exists, such as a Laravel, Rails, Ad
 
 It is [ky](https://github.com/sindresorhus/ky#readme), re-exported, plus `createHttpClient`, which adds the token, refresh, CSRF and error handling, and two helpers, `httpQuery` and `httpMutation`, that turn endpoints into [Query](/packages/query) contracts. The app gets one client, bound in the container as `http`.
 
-It runs in the browser, and on the server when a page renders. When the API is part of this app, use [API](/packages/api) instead: its client is typed straight from your routes.
+It runs in the browser, and on the server when a page renders.
 
 This guide follows Acme's order screen at `app.acme.com` talking to an API at `api.acme.com`.
 
 ## When to use it
 
-Use `@kitr/http` when the API lives outside this app: a separate backend, a vendor's REST API, a service another team owns. You describe each endpoint once with `httpQuery` or `httpMutation`, and components read it through queries like any other source.
+Use `@kitr/http` when the API lives outside this app: a separate backend, a vendor's REST API, another team's service. Describe each endpoint once with `httpQuery` or `httpMutation`, and components read it through queries.
 
-Use [API](/packages/api) when you write the endpoints in this app's `server/` folder, because its client gets the routes, inputs and outputs from your code with no hand-written types. Use [Actions](/packages/actions) for a server function you call from a form or button without designing a URL.
+Use [API](/packages/api) for endpoints you write in this app's `server/` folder (its client is typed from your routes), and [Actions](/packages/actions) for a server function called from a form or button.
 
 ## Install
 
@@ -44,7 +44,7 @@ What `kitr add` does:
 
 </details>
 
-`kitr add http` asks no questions. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it. To see the changes without writing them:
+`kitr add http` asks no questions. To see the changes without writing them:
 
 ```sh
 kitr add http --dry-run
@@ -78,13 +78,14 @@ export default defineConfig({
 | `getToken` | none | Called before every request with the container. Return a token (or a promise of one) to send it; return `null` or `undefined` to send none. |
 | `refresh` | none | Called once when a response is `401`, with the container. Return `true` when a new token is ready; the request then retries once with it. |
 
-In `config/http.ts`, `getToken` and `refresh` receive the container the client belongs to. On a server that is the request's own container, because the provider builds one `http` client per request, so `getToken: (container) => container.use('auth').getToken()` sends the token of the user being served and never another's. In the browser it is the app's container. `createHttpClient()` called directly takes the same options without the container.
 | `onUnauthorized` | none | Called with the `KitrError` whenever a request finally fails with `401`, for example to send the user to sign in. |
 | `authHeader` | `'Authorization'` | Header that carries the token. With the default the value is `Bearer <token>`; any other header gets the raw token. |
 | `retry` | `{ limit: 2, methods: ['get', 'put', 'head', 'delete', 'options', 'trace'] }` | ky's retry rule. `POST` and `PATCH` are never retried, so a write is never sent twice. |
 | `timeout` | `10_000` | ky's per-request timeout in milliseconds, or `false` for none. |
 | `hooks` | `{}` | ky hooks. Yours run after kitr's own `beforeRequest`, `afterResponse` and `beforeError` hooks. |
 | `headers`, `credentials`, `fetch`, ... | ky's defaults | Every other [ky option](https://github.com/sindresorhus/ky#options) except `prefixUrl` passes through unchanged. |
+
+`getToken` and `refresh` receive the container the client belongs to. On a server that is the request's own container, so `getToken: (container) => container.use('auth').getToken()` sends the token of the user being served and never another's.
 
 | Variable | Used for |
 | --- | --- |
@@ -96,7 +97,7 @@ To point production at the real API, set the variable where the app is built:
 VITE_API_URL=https://api.acme.com/v1 pnpm build
 ```
 
-Because `config/http.ts` is a module, you can compute options in it. This config sends cookies to the API on another origin and adds a header that names the client:
+`config/http.ts` is a module, so you can compute options in it. This one sends cookies to an API on another origin and names the client in a header:
 
 ```ts
 // config/http.ts
@@ -113,7 +114,7 @@ export default defineConfig({
 
 ## Load your first endpoint
 
-Describe the endpoint once in the feature's `queries.ts`. `httpQuery` turns it into a query contract, and `queryFrom` turns that into something components and loaders use:
+Describe the endpoint once in the feature's `queries.ts`: `httpQuery` makes a query contract and `queryFrom` makes it usable by components and loaders:
 
 ```ts
 // app/queries/orders.ts
@@ -140,7 +141,7 @@ export const ordersQuery = queryFrom(
 )
 ```
 
-`http` is a function that returns the client, not the client itself. `app/routes.ts` imports this file for its loader, and the route table loads before the app boots, when the container has no `http` binding yet. `httpQuery` and `httpMutation` take either form and call the function on each request. Pass the client directly only from code that runs after boot, such as an event handler.
+`http` is a function that returns the client, because the route table loads before the app boots, when the container has no `http` binding yet. Pass the client directly only from code that runs after boot.
 
 Then show it on a page:
 
@@ -173,13 +174,11 @@ export default function OrdersPage() {
 }
 ```
 
-Open `/orders`. The loader calls `GET http://localhost:3333/orders`, and the page lists what the API returns, for example `Ada: $120` and `Grace: $80`. If the API is not running, the route's error component shows the `KitrError` instead.
+Open `/orders`. The loader calls `GET http://localhost:3333/orders` and the page lists what the API returns, such as `Ada: $120`. If the API is down, the route's error component shows the `KitrError`.
 
 ## Read the client
 
-The provider binds one client as `http` in the container. It is a normal ky instance, so every ky method works on it.
-
-Outside components, such as in `queries.ts` or a loader, read it from the app:
+The provider binds one client as `http` in the container. It is a normal ky instance. Outside components, read it from the app:
 
 ```ts
 // app/lib/invoices/download.ts
@@ -212,7 +211,7 @@ export function DownloadButton({ id }: { id: string }) {
 }
 ```
 
-Prefer `httpQuery` for anything a screen shows: the cache, loading states and refreshes come for free. Use the client directly for one-off calls such as a download.
+Prefer `httpQuery` for anything a screen shows; use the client directly for one-off calls such as a download.
 
 ## Call an endpoint directly
 
@@ -234,9 +233,7 @@ const created = await http.post('orders', { json: { customer: 'Linus', total: 45
 await http.delete(`orders/${created.id}`)
 ```
 
-A leading slash makes no difference: `http.get('/orders')` and `http.get('orders')` both request `<baseUrl>/orders`. An absolute URL such as `https://billing.acme.com/rates` ignores `baseUrl`.
-
-For a client with extra defaults, call ky's `extend`. It keeps the token, refresh and error handling:
+A leading slash makes no difference, and an absolute URL ignores `baseUrl`. For a client with extra defaults, call ky's `extend`; it keeps the token, refresh and error handling:
 
 ```ts
 // app/lib/billing/client.ts
@@ -289,11 +286,11 @@ export const ordersQuery = queryFrom(
 | `options` | `{}` | ky options for this request only, such as `headers` or `timeout`. |
 | `staleTime` | the config's | How long this query's data stays fresh, in milliseconds. |
 
-The query passes TanStack's abort signal to ky, so leaving the page cancels the request. The contract's `source` is `'http'`, which devtools shows.
+
 
 ## Validate the response
 
-An API you don't control can change shape. Give `httpQuery` or `httpMutation` a `schema` from zod, valibot or any other Standard Schema library, and a response that fails it becomes a `VALIDATION` error instead of a crash three components later. The schema also types the result, so you can drop the generic:
+An API you don't control can change shape. Give `httpQuery` or `httpMutation` a `schema` from zod, valibot or any Standard Schema library: a response that fails it becomes a `VALIDATION` error instead of a crash later, and the schema types the result:
 
 ```ts
 // app/queries/invoices.ts
@@ -328,11 +325,11 @@ When the API sends `{ "total": "80.00" }` where a number is expected, the query 
 // => KitrError { code: 'VALIDATION', status: 422, message: 'Validation failed', fieldErrors: { '0.total': ['Invalid input: expected number, received string'] } }
 ```
 
-The key is the path to the bad value (`0.total`: the first invoice's `total`). The message comes from your schema library; this one is zod 4's.
+The key is the path to the bad value (`0.total`: the first invoice's `total`); the message comes from your schema library.
 
 ## Turn an endpoint into a mutation
 
-`httpMutation(client, options)` returns a mutation contract. Pass it to `mutationFrom` and run it with `useMutation`. Declare `effects` so every screen showing the changed data updates:
+`httpMutation(client, options)` returns a mutation contract for `mutationFrom` and `useMutation`. Declare `effects` so every screen showing the changed data updates:
 
 ```ts
 // app/queries/orders.ts
@@ -427,7 +424,7 @@ export const renameProject = mutationFrom(
 
 ## Upload a file
 
-`httpMutation` always sends JSON. For a file, call the client with a `FormData` body and let the browser set the multipart headers:
+`httpMutation` always sends JSON. For a file, call the client with a `FormData` body (for uploads with progress and size limits, see [Uploads](/packages/uploads)):
 
 ```ts
 // app/lib/invoices/import.ts
@@ -449,13 +446,11 @@ export const importInvoices = mutationFrom({
 ```
 
 > [!WARNING]
-> Don't set `content-type` yourself for `FormData`. The browser adds the boundary the server needs to parse the body.
-
-For uploads to your own server with progress and size limits, see [Uploads](/packages/uploads).
+> Don't set `content-type` yourself for `FormData`; the browser adds the boundary the server needs.
 
 ## Send the login token
 
-`getToken` runs before every request. When it returns a token, the client sends `Authorization: Bearer <token>`. With [Auth](/packages/auth)'s token adapter, keep the adapter in its own module and point the client at it:
+`getToken` runs before every request; a returned token is sent as `Authorization: Bearer <token>`. With [Auth](/packages/auth)'s token adapter, keep the adapter in its own module and point the client at it:
 
 ```ts
 // app/auth/adapter.ts
@@ -494,9 +489,7 @@ export default defineConfig({
 })
 ```
 
-Components never touch the token. When Ada signs in, the adapter stores her token, and the next request carries it.
-
-An API that expects a key in its own header gets the raw token. This config sends `x-api-key: <token>` and no `Authorization` header:
+Components never touch the token: when Ada signs in, the next request carries it. An API that expects its own header gets the raw token; this config sends `x-api-key: <token>`:
 
 ```ts
 // config/http.ts
@@ -511,15 +504,13 @@ export default defineConfig({
 ```
 
 > [!WARNING]
-> `VITE_` variables are compiled into the browser bundle, where anyone can read them. Never put a secret API key in one. Fetch per-user tokens at sign-in instead.
+> `VITE_` variables are compiled into the browser bundle. Never put a secret API key in one; fetch per-user tokens at sign-in instead.
 
 ## Refresh an expired token
 
-When a response is `401` and `refresh` is set, the client calls `refresh()` once. If it returns `true`, the client reads the token again with `getToken()` and retries the request once, marked with an `x-kitr-retried: 1` header. If it returns `false`, or the retry is also `401`, the request fails with an `UNAUTHORIZED` error and `onUnauthorized` runs.
+On a `401` with `refresh` set, the client calls `refresh()` once. If it returns `true`, it reads the token again with `getToken()` and retries the request once. If it returns `false`, or the retry is also `401`, the request fails with `UNAUTHORIZED` and `onUnauthorized` runs.
 
-Several requests that fail at the same moment share one `refresh()` call. When Grace's dashboard loads orders, invoices and projects together after her token expired, the client refreshes once and retries all three with the new token.
-
-`onUnauthorized` runs for every request that ends in `401`, with or without `refresh`. Use it to sign the user out or send them to the sign-in page, not to show a message per request:
+Requests that fail together share one `refresh()` call: Grace's dashboard loading three lists after her token expired refreshes once. `onUnauthorized` runs for every request that ends in `401`; use it to sign the user out or go to sign-in:
 
 ```ts
 // config/http.ts
@@ -537,13 +528,11 @@ export default defineConfig({
 
 ## Send the CSRF token
 
-On every request except `GET`, `HEAD` and `OPTIONS`, the client reads the `kitr-csrf` cookie and sends its value as the `x-csrf-token` header. That is the double-submit check of [Shield](/packages/shield), so writes to a same-site kitr server pass its CSRF check with no code. A request that already has an `x-csrf-token` header keeps it. On the server there is no `document`, so no header is added.
+On every request except `GET`, `HEAD` and `OPTIONS`, the client sends the `kitr-csrf` cookie as the `x-csrf-token` header. That satisfies [Shield](/packages/shield)'s double-submit check, so writes to a same-site kitr server need no code.
 
 ## Retry and time out
 
-Idempotent requests (`GET`, `PUT`, `HEAD`, `DELETE`, `OPTIONS`, `TRACE`) retry up to twice on ky's retryable statuses, such as `408`, `429`, `500`, `502`, `503` and `504`, and on network errors, with ky's backoff between attempts. `POST` and `PATCH` are never retried, because sending a payment or an order twice is worse than showing an error.
-
-Queries add their own retries on top: [Query](/packages/query) retries failed queries twice unless the status is 4xx. For a screen that must fail fast, turn off one layer:
+Idempotent requests (`GET`, `PUT`, `HEAD`, `DELETE`, `OPTIONS`, `TRACE`) retry up to twice on retryable statuses (`408`, `429`, `5xx`) and network errors. `POST` and `PATCH` are never retried, so a payment is never sent twice. [Query](/packages/query) adds its own retries on top; for a screen that must fail fast, turn off one layer:
 
 ```ts
 // config/http.ts
@@ -578,7 +567,7 @@ export const yearlyReportQuery = queryFrom(
 
 ## Add hooks
 
-ky [hooks](https://github.com/sindresorhus/ky#hooks) run around every request. Pass them in `config/http.ts`; yours run after kitr's, so `beforeRequest` sees the token already set and `beforeError` receives the normalised `KitrError`:
+ky [hooks](https://github.com/sindresorhus/ky#hooks) run around every request. Pass them in `config/http.ts`; yours run after kitr's, so `beforeRequest` sees the token and `beforeError` the `KitrError`:
 
 ```ts
 // config/http.ts
@@ -632,13 +621,13 @@ The client reads the error body in this order:
 | `{ error: { message: '...' } }` or `{ error: '...' }` | That message. |
 | No JSON body, such as an HTML error page | The status's code and a message from it, such as `'Not found'`. |
 
-The full parsed body is kept in `error.data`. For example, a `409` with `{ "message": "Invoice already paid" }` becomes:
+The parsed body is kept in `error.data`. A `409` with `{ "message": "Invoice already paid" }` becomes:
 
 ```ts
 // => KitrError { code: 'CONFLICT', status: 409, message: 'Invoice already paid', data: { message: 'Invoice already paid' } }
 ```
 
-A `422` whose `fieldErrors` reach a [Forms](/packages/forms) `<Form>` shows each message under its input, with no code in the component.
+
 
 ## Commands
 
@@ -684,7 +673,7 @@ export const updateOrders = mutationFrom(
 )
 ```
 
-Names come from the argument as given, so pass the singular (`kitr make:queries order`) if you want `Order` and `orderQuery`. Pass `--force` to overwrite an existing file. To change the template for your project, run `kitr eject stub queries` and edit `stubs/queries.ts`.
+Pass the singular (`kitr make:queries order`) for `Order` and `orderQuery`. `--force` overwrites an existing file; `kitr eject stub queries` lets you edit the template.
 
 ## Errors
 
@@ -702,7 +691,7 @@ Names come from the argument as given, so pass the singular (`kitr make:queries 
 | `INTERNAL` | `500` or any other 5xx; also a network failure or a client-side timeout. | Show a retry button. The message names the cause, such as `Request timed out: GET https://api.acme.com/v1/orders`. |
 | `UNAVAILABLE` | `503`. | Show a maintenance notice and retry later. |
 
-`normaliseHttpError(error)` performs this mapping on any error, if you call ky outside the client:
+`normaliseHttpError(error)` applies this mapping to errors from ky calls made outside the client:
 
 ```ts
 // app/lib/errors.ts
@@ -717,7 +706,7 @@ export async function describeError(error: unknown) {
 
 ## Testing
 
-`createHttpClient` takes ky's `fetch` option, so a test passes a fake `fetch` and never touches the network. The fake sees the real `Request`, with the URL, headers and body the client built:
+`createHttpClient` takes ky's `fetch` option, so a test passes a fake `fetch` that sees the real `Request` and never touches the network:
 
 ```ts
 // app/queries/orders.test.ts
@@ -775,7 +764,7 @@ describe('orders endpoints', () => {
 })
 ```
 
-To test with the app's own provider and config, boot a test app and pass the fake `fetch` in the `http` config:
+To use the app's own provider, boot a test app and pass the fake `fetch` in the `http` config:
 
 ```ts
 // app/lib/orders/provider.test.ts
@@ -797,18 +786,14 @@ it('binds a client with the base URL', async () => {
 })
 ```
 
-To fake the API for a whole app, in tests and in the browser during development, use [Mocks](/packages/mocks): its handlers answer every request the client makes, with no change to `config/http.ts`.
+To fake the API for a whole app, use [Mocks](/packages/mocks).
 
 ## Devtools
 
-With [Devtools](/packages/devtools) installed, every request in development is logged to the Log panel under `http`, for example `GET /orders → 200 (84ms)`. The entry carries the full URL, the status and the time in milliseconds. Responses from `400` to `499` log as warnings and `500` and above as errors, so a failing endpoint stands out.
+With [Devtools](/packages/devtools) installed, each development request is logged under `http`, such as `GET /orders → 200 (84ms)`; 4xx log as warnings and 5xx as errors.
 
 ## Next steps
 
-- [API reference](/packages/http/api)
-- [ky docs](https://github.com/sindresorhus/ky#readme): every option and method works on the `http` client.
-- [Query](/packages/query): caching, mutations and effects for the contracts this package builds.
-- [Auth](/packages/auth): sign-in and the token adapter that feeds `getToken` and `refresh`.
-- [Mocks](/packages/mocks): fake the API in tests and development.
-- [Loading and saving data](/docs/data): how HTTP fits beside API routes, actions and realtime.
-- [Choosing a data source](/docs/data-sources): when to use HTTP and when to use actions, API routes, HTTP or realtime.
+- [API reference](/packages/http/api): every export and option.
+- [Query](/packages/query): caching, mutations and effects for these contracts.
+- [Choosing a data source](/docs/data-sources): HTTP, actions, API routes or realtime.

@@ -6,17 +6,23 @@ order: 1
 
 # Logger
 
-When Ada reports that her order never shipped, the logs are where you find out why. In development you want lines you can read at a glance: a coloured level, the time, the message. In production you want one JSON object per line, so your log service can search and filter by `orderId` or `requestId`. `@kitr/logger` writes both from the same calls, with levels, child loggers that carry fields, timing, and a request id on every line the server writes.
+When Ada reports that her order never shipped, the logs are where you find out why. In development you want lines you can read at a glance; in production you want one JSON object per line, so your log service can filter by `orderId` or `requestId`. `@kitr/logger` writes both from the same calls.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` ships orders, generates invoices and syncs projects, and the team (Ada, Grace and Linus) reads the logs when something goes wrong.
+> [!SUMMARY]
+> Readable logs in development and JSON logs in production, with levels, child loggers and a request id on every server line. Every kitr app with a server includes it; the overview is at [/packages/logger](/packages/logger).
 
-`@kitr/logger` runs on the server and in the browser. It is for lines a developer reads. To be alerted about errors with the user and the steps that led to them, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
+It runs on the server and in the browser and is for lines a developer reads. For alerts with the user and the steps that led to an error, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
+
+The examples follow Acme's app at `app.acme.com`, where Ada, Grace and Linus read the logs when something goes wrong.
 
 ## Install
 
 ```sh
 kitr add logger
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -25,15 +31,11 @@ What `kitr add` does:
 - Writes `config/logger.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Adds a `## kitr: logger` section to `AGENTS.md` telling coding agents to log through `ctx.logger` or `app.container.use('logger')`, never `console.log` in server code.
 
-To edit `package.json` without running the package manager, pass the global flag:
+The [server](/packages/server) package requires the logger, so `kitr add server` adds it first and adds `LOG_LEVEL=info` to `.env.example`. Every kit with a server platform already has it.
 
-```sh
-kitr add logger --no-install
-```
+`kitr remove logger` reverses these steps and deletes `config/logger.ts`.
 
-The [server](/packages/server) package requires the logger, so `kitr add server` adds it first, and its setup adds `LOG_LEVEL=info` to `.env.example`. Every kit with a server platform (`server`, `fullstack`, `saas`, `site`, `realtime`) already has it.
-
-`kitr remove logger` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/logger.ts`.
+</details>
 
 ## Configure
 
@@ -62,7 +64,7 @@ export default defineConfig({
 | --- | --- |
 | `LOG_LEVEL` | The lowest level to print, such as `info`. |
 
-The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the browser, with neither `format` nor `write` set, the logger skips formatting and calls the console directly: see [Log in the browser](#log-in-the-browser).
+The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the browser the logger calls the console directly; see [Log in the browser](#log-in-the-browser).
 
 ## Write your first log line
 
@@ -92,11 +94,11 @@ In production, where `NODE_ENV=production`, the same call writes one JSON object
 {"level":"info","time":"2026-11-07T14:03:22.418Z","name":"app","requestId":"9b2f6c1e-4f3a-4c1d-8e7a-2b5d0c9e1f44","orderId":"1042","msg":"order shipped"}
 ```
 
-The message comes first and the fields second. Keep the message fixed and put the variable parts in fields: `'order shipped'` with `{ orderId }`, not `` `order ${id} shipped` ``. Your log service can then count every `order shipped` line and filter them by `orderId`.
+Keep the message fixed and put the variable parts in fields: `'order shipped'` with `{ orderId }`, not `` `order ${id} shipped` ``. Your log service can then count and filter the lines.
 
 ## Write at a level
 
-Each level has a method. Lines below the configured `level` are dropped before they are formatted, so a `debug` call in a hot path costs almost nothing in production.
+Each level has a method. Lines below the configured `level` are dropped before formatting, so a `debug` call in a hot path is nearly free in production.
 
 | Level | Method | Use it for |
 | --- | --- | --- |
@@ -146,13 +148,14 @@ In JSON that becomes:
 {"level":"error","time":"2026-11-07T14:05:10.002Z","name":"app","invoiceNumber":"INV-2026-007","msg":"connect ECONNREFUSED 10.0.0.5:5432","err":{"name":"Error","message":"connect ECONNREFUSED 10.0.0.5:5432","stack":"Error: connect ECONNREFUSED ...","code":"ECONNREFUSED"}}
 ```
 
-Pretty output prints the stack on the lines after the message. Don't pass the error as a field (`logger.error('failed', { error })`): an `Error`'s message and stack are not enumerable, so `JSON.stringify` writes `{}`. Pass it as the first argument, or copy what you need: `{ reason: (error as Error).message }`.
+> [!WARNING] Pass the error as the first argument
+> `logger.error('failed', { error })` writes `{}`, because an `Error`'s message and stack are not enumerable.
 
-The server already logs every 5xx response at `error` level with the method, path and status, so you only log errors you catch and handle yourself.
+The server already logs every 5xx response at `error` level, so log only errors you catch and handle yourself.
 
 ## Add fields to every line
 
-`child(bindings, name?)` returns a logger that adds `bindings` to every record. Use it to carry an id through a piece of work instead of repeating it in every call:
+`child(bindings, name?)` returns a logger that adds `bindings` to every record, so an id travels with a piece of work:
 
 ```ts
 // server/services/order-service.ts
@@ -173,7 +176,7 @@ INFO  14:03:22.419 [orders] label printed {"orderId":"1042","carrier":"DHL"}
 INFO  14:03:22.420 [orders] order shipped {"orderId":"1042"}
 ```
 
-A child keeps its parent's bindings and adds its own; fields passed in a call win over bindings with the same key. The `name` replaces the parent's name, and without one the child keeps the parent's. For fields every line in the process should carry, such as the region or the release, set `bindings` in `config/logger.ts`:
+A child keeps its parent's bindings; fields passed in a call win over bindings with the same key. For fields every line should carry, such as the region, set `bindings` in `config/logger.ts`:
 
 ```ts
 // config/logger.ts
@@ -186,11 +189,12 @@ export default defineConfig({
 })
 ```
 
-`level`, `time` and `msg` are reserved. A field or binding with one of those names is dropped, so a stray `{ level: 'urgent' }` cannot break filtering.
+> [!WARNING] Reserved names
+> `level`, `time` and `msg` are reserved. A field or binding with one of those names is dropped.
 
 ## Log during a request
 
-On the server, every request gets its own child logger with `requestId`. The id comes from the `x-request-id` header when the caller sends one (a load balancer usually does), or is a new UUID, and it is echoed back in the response header. Grep for it to see every line one request wrote.
+Every request gets its own child logger with `requestId`, taken from the `x-request-id` header or a new UUID and echoed in the response header. Grep for it to see every line one request wrote.
 
 | Where | How |
 | --- | --- |
@@ -208,15 +212,15 @@ export function inviteToTeam(teamId: string, email: string) {
 }
 ```
 
-`useRequest()` throws `[@kitr/server] useRequest() called outside a request.` when nothing is in flight, such as in a job or at startup.
+`useRequest()` throws outside a request, such as in a job or at startup.
 
-When a request finishes, the server writes one line at `debug` level with the method, path, status, client IP and duration:
+When a request finishes, the server writes one `debug` line with the method, path, status, client IP and duration:
 
 ```
 DEBUG 14:03:22.431 [app] POST /api/orders/1042/ship {"requestId":"9b2f6c1e-...","status":200,"ip":"127.0.0.1","durationMs":13}
 ```
 
-Set `LOG_LEVEL=debug` to see these lines; at the default `info` they are dropped.
+Set `LOG_LEVEL=debug` to see them.
 
 ## Log outside a request
 
@@ -235,11 +239,11 @@ export const pruneSessions = defineJob('prune_sessions', {
 })
 ```
 
-The server keeps the same logger as `server.logger`, after `server.boot()`. Before boot it is not set yet, because the provider registers during boot.
+The server keeps the same logger as `server.logger`, set once `server.boot()` has run.
 
 ## Log in the browser
 
-The provider also runs in the browser. In a component, read the logger with `useService` from [`@kitr/react`](/packages/react):
+In a component, read the logger with `useService` from [`@kitr/react`](/packages/react):
 
 ```tsx
 // app/components/projects/project-actions.tsx
@@ -255,7 +259,7 @@ export function ArchiveProjectButton({ projectId }: { projectId: string }) {
 }
 ```
 
-Browser lines go to the browser console as `console.info('[app] project archived', { projectId })`: the matching console method for the level (`debug`, `info`, `warn`, `error`), the message, and the fields as an object you can expand, with no colour codes or JSON strings. Set `format` or `write` to get formatted lines instead. Nothing is sent to your server; to collect client-side failures, use [monitoring](/packages/monitoring).
+Browser lines go to the matching console method with the fields as an expandable object, for example `console.info('[app] project archived', { projectId })`. Set `format` or `write` for formatted lines instead. Nothing is sent to your server; to collect client-side failures, use [monitoring](/packages/monitoring).
 
 ## Time an operation
 
@@ -279,11 +283,11 @@ export async function renderInvoicePdf(app: KitrApp, invoiceNumber: string) {
 INFO  14:07:41.006 [billing] rendered invoice PDF {"invoiceNumber":"INV-2026-007","pages":2,"durationMs":212}
 ```
 
-The line is written even when the function throws, and then the error is rethrown. The line itself does not say it failed, so log the error separately when you catch it.
+The line is written even when the function throws, and the error is rethrown. The line doesn't say it failed, so log the error separately.
 
 ## Change the level at run time
 
-`level` is a property you can set. Turn on debug output in a running process without a restart:
+Set `level` to turn on debug output in a running process:
 
 ```ts
 // server/controllers/admin-controller.ts
@@ -298,11 +302,11 @@ export default class AdminController {
 }
 ```
 
-A child copies its parent's level when it is created. Changing the root logger affects children created afterwards, such as the next request's logger, but not children that already exist. Protect a route like this one with [auth](/packages/auth).
+A child copies its parent's level when created, so a change affects only children created afterwards, such as the next request's logger. Protect a route like this with [auth](/packages/auth).
 
 ## Choose the output format
 
-`pretty` is for terminals: a coloured, padded level, the time in UTC to the millisecond, `[name]`, the message, the remaining fields as dim JSON, and the stack of an error on the following lines. `json` is for log services: one `JSON.stringify(record)` per line, with keys in this order: `level`, `time` (ISO 8601), `name`, the bindings, the fields, `msg`, `err`.
+`pretty` is for terminals: a coloured level, the UTC time, `[name]`, the message, fields as dim JSON and any stack. `json` is one record per line, with keys in this order: `level`, `time`, `name`, bindings, fields, `msg`, `err`.
 
 Force one format everywhere, for example JSON in a staging environment that runs with `NODE_ENV=development`:
 
@@ -317,11 +321,11 @@ export default defineConfig({
 })
 ```
 
-Most hosting platforms (Fly, Render, Railway, Kubernetes) collect stdout and stderr, and parse JSON lines into searchable fields. With `json` in production you need nothing else.
+Most hosting platforms collect stdout and stderr and parse JSON lines into searchable fields, so `json` in production needs nothing else.
 
 ## Send logs to a file or a service
 
-`write(line, record)` replaces the console. It receives the formatted line and the record object, and runs for every line at or above the level:
+`write(line, record)` replaces the console. It receives the formatted line and the record for every line at or above the level:
 
 ```ts
 // config/logger.ts
@@ -338,7 +342,7 @@ export default defineConfig({
 })
 ```
 
-`write` is called synchronously from every log call, so keep it fast. To ship to an HTTP endpoint, buffer records and send them in batches:
+To ship to an HTTP endpoint, buffer records and send them in batches:
 
 ```ts
 // server/log_shipper.ts
@@ -374,11 +378,12 @@ import { shipLog } from '#server/log_shipper'
 export default defineConfig({ name: 'app', format: 'json', write: shipLog })
 ```
 
-A `write` that throws throws out of the `logger.info()` call that triggered it, so catch inside it.
+> [!WARNING] Keep write fast and safe
+> `write` runs synchronously on every log call, and a throw escapes the `logger.info()` that triggered it. Catch inside it.
 
 ## Create a logger without the provider
 
-`createLogger(options)` returns a logger with the same options as `config/logger.ts`. Use it in scripts, in a package of your own, or anywhere no app exists:
+`createLogger(options)` takes the same options as `config/logger.ts`. Use it in scripts or anywhere no app exists:
 
 ```ts
 // scripts/import_projects.ts
@@ -388,17 +393,15 @@ const logger = createLogger({ name: 'import', level: 'debug' })
 logger.info('importing projects', { file: 'projects.csv' })
 ```
 
-`silentLogger` is a ready-made logger at level `silent` that writes nothing. Pass it where an API wants a logger and you want no output.
+`silentLogger` writes nothing; pass it where an API wants a logger and you want no output.
 
 ## See logs in devtools
 
-With [devtools](/packages/devtools) installed, the provider sends a copy of every record to the devtools Log panel under the `logger` channel, so server and client lines sit in one place during development. `trace` and `debug` appear as debug entries, `fatal` as errors. The fields show as the entry's data.
-
-While devtools is active and you have not set `write`, every line goes to `console.log`, errors included, rather than splitting errors to stderr.
+With [devtools](/packages/devtools) installed, every record is copied to the Log panel under the `logger` channel, so server and client lines sit in one place.
 
 ## Testing
 
-`createLogger({ write })` lets a test collect records and assert on them. To test code that reads the logger from the container, boot an app with the provider and a `write` that collects:
+`createLogger({ write })` lets a test collect records. For code that reads the logger from the container, boot an app with the provider and a collecting `write`:
 
 ```ts
 // test/ship-order.test.ts
@@ -430,18 +433,7 @@ describe('shipOrder', () => {
 })
 ```
 
-Each record is a plain object, so assertions are on fields:
-
-| Field | Example assertion |
-| --- | --- |
-| `level` | `expect(records[0]?.level).toBe('warn')` |
-| `msg` | `expect(records.map((r) => r.msg)).toContain('order shipped')` |
-| `name` | `expect(records[0]?.name).toBe('orders')` |
-| your fields and bindings | `expect(records[0]).toMatchObject({ orderId: '1042' })` |
-| `err` | `expect(records[0]?.err).toMatchObject({ code: 'ECONNREFUSED' })` |
-| `durationMs` | `expect(typeof records[0]?.durationMs).toBe('number')` |
-
-To check the exact text a line produces, assert on the first argument of `write` instead of the record. To keep a noisy test quiet, configure `level: 'silent'` or pass `silentLogger`:
+Each record is a plain object with `level`, `msg`, `name`, your fields and bindings, `err` and `durationMs`, so assert with `toMatchObject`. To check a line's exact text, assert on the first argument of `write`. To keep a noisy test quiet, use `level: 'silent'` or `silentLogger`:
 
 ```ts
 // test/quiet-server.test.ts
@@ -461,6 +453,3 @@ it('answers the health check without printing', async () => {
 - [Logger API reference](/packages/logger/api): every export with its signature.
 - [Server](/packages/server): request ids, the request logger and error logging.
 - [Monitoring](/packages/monitoring): alerts with user and breadcrumbs when something breaks.
-- [Devtools](/packages/devtools): the Log panel that mirrors every line in development.
-- [Jobs](/packages/jobs): what the worker logs when a job retries or fails.
-- [Configuration](/docs/configuration): how `config/logger.ts` and env variables are loaded.

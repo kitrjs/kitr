@@ -2,13 +2,13 @@
 
 The rulebook for every `packages/<name>/docs/` folder. The site builds those folders into kitr.dev, `llms.txt` and the search index, so the shape of each guide is the shape of the product. `node scripts/docs-rules.mjs` checks the mechanical rules; reviewers check the rest.
 
-The bar is the [AdonisJS mail guide](https://docs.adonisjs.com/guides/digging-deeper/mail). It is about 5,000 words and 70 code blocks for one package. What makes it the bar is coverage: every task a reader will have, shown in code, in one place, in a predictable order.
+The bar is the [AdonisJS mail guide](https://docs.adonisjs.com/guides/digging-deeper/mail) for coverage, and the [Coolify docs](https://coolify.io/docs) for readability: every task a reader will have, shown in code, in one place, in a predictable order, and each thing said once, in a paragraph of one or two sentences. A guide is as long as its tasks need and no longer.
 
 ## What the research found
 
 Four documentation sets were studied: AdonisJS (mail, i18n), Laravel (mail), Stripe (accept a payment) and Tailwind (responsive design). They agree on more than they differ.
 
-**One page per package, long, in a fixed order.** AdonisJS and Laravel put everything about mail on one page, 5,000 to 6,000 words, under 15 to 25 H2s. The order is the same on every page: what it is, install, configure, first use, then one H2 per task, then testing, then extending. Readers learn the order once and then jump by the table of contents.
+**One page per package, in a fixed order.** AdonisJS and Laravel put everything about mail on one page, under 15 to 25 H2s. The order is the same on every page: what it is, install, configure, first use, then one H2 per task, then testing, then extending. Readers learn the order once and then jump by the table of contents.
 
 **Install says what it changed.** AdonisJS follows every `node ace add` with "See steps performed by the add command": installs the package, registers the provider, creates `config/mail.ts`, defines these env variables. Nothing happens to the project that the reader was not told about.
 
@@ -88,7 +88,8 @@ These apply to every sentence and every code block.
 9. **Where it runs is always stated.** Every section that only works on one side says so in its first sentence: "On the server, ...", "In a component, ...". Packages that run on both sides have their server half under its own H2s, tagged in the heading when it helps ("Cookies on the server").
 10. **Link out where kitr stops.** The first mention of the upstream library links to its docs. Anything kitr re-exports without changing is a link, not a copy. Another kitr package is `/packages/<name>`; a site doc is `/docs/<slug>` and a guide is `/guides/<slug>`.
 11. **Short sentences, plain words, present tense, second person.** "You call `send()`" not "The developer may invoke the `send` method". No "simply", "just", "easy", "powerful". No marketing in the guide; that is the package card's job.
-12. **Depth over polish.** A guide is done when a reader can do every task the package supports without opening the source. The checker asks for 1,200 prose words and 15 code blocks as a floor. Most packages land at 2,000 to 4,000 words and 25 to 40 blocks when every task is covered. Platform and transport-heavy packages (realtime, storage, desktop, auth) land higher.
+12. **Coverage, then brevity.** A guide is done when a reader can do every task the package supports without opening the source, and nothing in it is said twice. The checker asks for 600 prose words and 8 code blocks as a floor; there is no ceiling, but a paragraph over two sentences, a list over four items that is not a table, or detail a reader can skip on first read (everything `kitr add` changed, every edge case) are signs to restructure: a callout, a table or a `<details>` block.
+13. **Scannable devices.** A `> [!SUMMARY]` callout right after the lead gives what the package is, the `kitr add` command and a link to the overview. The list of what `kitr add` changed and the `kitr remove` paragraph sit in `<details><summary>Everything kitr add changes</summary>`. A sentence that stops a real mistake is a `> [!WARNING]`. The last section, `## Next steps`, is two or three link items and renders as cards.
 
 ## Writing guides
 
@@ -110,7 +111,7 @@ Rules on top of the writing rules above:
 2. **Link packages, don't re-document them.** A guide shows the code the goal needs and links `/packages/<name>` for every option. When a guide needs more than a package's docs explain, fix the package docs first.
 3. **Only document what ships.** A guide uses packages, commands and options that exist on `main`. Never document an API that is not on `main`.
 4. **Say where it stops.** When kitr has no answer (incremental static regeneration, `next/image`), say so in a table with what to do instead.
-5. **Floors:** 1,000 prose words and 10 code blocks. Most guides land at 1,800 to 3,000 words.
+5. **Floors:** 600 prose words and 6 code blocks. Length follows the task; say each thing once.
 
 ## Checklist before a docs PR
 
@@ -151,7 +152,7 @@ Each package's setup lives in the package: `packages/<name>/src/kitr.ts` exports
 
 ## Gap list
 
-Generated by `node scripts/docs-rules.mjs --gaps`; refresh it when a guide changes. Word counts are prose only, code excluded. A package below the 1,200 word floor needs a rewrite to the section order above, not an edit. `cli`, `core` and `kitr` have no docs folder; `kitr` keeps its content in `docs/entry-points.md`.
+Generated by `node scripts/docs-rules.mjs --gaps`; refresh it when a guide changes. Word counts are prose only, code excluded. A package below the 600 word floor needs a rewrite to the section order above, not an edit. `cli`, `core` and `kitr` have no docs folder; `kitr` keeps its content in `docs/entry-points.md`.
 
 <!-- GAPS -->
 | Package | Words | Code blocks | Gaps |

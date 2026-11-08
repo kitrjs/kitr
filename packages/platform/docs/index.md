@@ -6,19 +6,21 @@ order: 1
 
 # Platform
 
-An app that ships to the browser, a phone and a desktop window keeps asking the same questions: where am I running, am I online, did the user press back, which link opened me, how big is the notch. `@kitr/platform` answers them once, with one `platform` service and a set of React hooks, so components never sniff user agents or check for `window.Capacitor`.
+An app that ships to the browser, a phone and a desktop window keeps asking the same questions: where am I running, am I online, did the user press back, which link opened me, how big is the notch. `@kitr/platform` answers them once, with one `platform` service and a set of React hooks, so components never sniff user agents.
 
-It is built on the kitr driver registry: each platform package registers a `PlatformDriver` for the place it runs, and `@kitr/platform` wraps whichever one is active, filling every gap with a browser default. [Web](/packages/web) registers the browser driver, [Mobile](/packages/mobile) the Capacitor driver, [Desktop](/packages/desktop) the Electron driver and [Tauri](/packages/tauri) the Tauri driver.
+> [!SUMMARY]
+> Tells your app where it is running, whether it is online or in the background, and handles the back button and deep links. Add it with `kitr add platform`; the overview is at [/packages/platform](/packages/platform).
 
-It runs on both sides. In the browser and in native shells it reports the real device; during server rendering it returns safe defaults (online, in the foreground, no insets), so the first render matches the HTML. For device features such as the camera, biometrics or haptics, use [Native](/packages/native) instead.
-
-The examples on this page follow the Acme orders app at `app.acme.com`, which runs in the browser, as an installed PWA and in the Capacitor shell Ada's field team uses on their phones.
+Each platform package ([Web](/packages/web), [Mobile](/packages/mobile), [Desktop](/packages/desktop), [Tauri](/packages/tauri)) registers a `PlatformDriver`, and `@kitr/platform` wraps the active one, filling every gap with a browser default. During server rendering it returns safe defaults (online, foreground, no insets), so the first render matches the HTML. For the camera, biometrics or haptics, use [Native](/packages/native). The examples follow the Acme orders app at `app.acme.com`.
 
 ## Install
 
 ```sh
 kitr add platform
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add platform` does, in order:
 
@@ -27,9 +29,11 @@ What `kitr add platform` does, in order:
 - Writes `config/platform.ts` (shown under Configure) and regenerates `config/index.ts`.
 - Adds a `## kitr: platform` section to `AGENTS.md`: use the hooks from `@kitr/platform/react` instead of user agents or `window.__TAURI__`, `platform.is()` to match a type or an OS, and the web, desktop, tauri and mobile providers register the drivers.
 
-You rarely run it by hand. `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it for you, because those platforms need it, and the `mobile` and `desktop` kits include it.
+You rarely run it by hand: `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it, and the `mobile` and `desktop` kits include it.
 
-`kitr remove platform` reverses every step above: it removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/platform.ts`, then lists the files that still import `@kitr/platform`.
+`kitr remove platform` reverses every step above and lists the files that still import `@kitr/platform`.
+
+</details>
 
 ## Configure
 
@@ -48,8 +52,6 @@ export default defineConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links: `'/open'` turns `acme://open/orders/1042` into `/orders/1042`. |
-
-`useDeepLink()` and `platform.linkPath(url)` apply `deepLinkPrefixes` for you. `deepLinkPath(url, prefixes)` is the same function without the config, for tests and code outside the app.
 
 Which driver it wraps depends on the platform providers listed in `kitrrc.ts`:
 
@@ -74,7 +76,7 @@ export default defineKitrConfig({
 })
 ```
 
-The `platform` service is created the first time something reads it, after every provider has registered, so the place of `@kitr/platform/provider` in the list does not matter. The highest-priority driver wins (see "How the driver is chosen").
+The order of providers does not matter; the highest-priority driver wins (see [How the driver is chosen](#how-the-driver-is-chosen)).
 
 ## Show where the app runs
 
@@ -95,11 +97,11 @@ export function PlatformBadge() {
 }
 ```
 
-Put `<PlatformBadge />` in a page and run `kitr dev site`. On a Mac in Chrome it shows `web · macos`. In the iOS simulator through `kitr dev phone` it shows `mobile · ios · native`.
+On a Mac in Chrome it shows `web · macos`; in the iOS simulator through `kitr dev phone`, `mobile · ios · native`.
 
 ## Read the platform outside React
 
-The service lives in the app container, so loaders, stores and plain modules read the same object:
+Loaders, stores and plain modules read the same service from the app container:
 
 ```ts
 // app/lib/orders/receipt.ts
@@ -112,7 +114,8 @@ export function receiptFileName(orderId: string) {
 // receiptFileName('ord_1042') on macOS => 'acme-ord_1042.pdf'
 ```
 
-Read it after `app.boot()`. Before boot, or in an app without `@kitr/platform/provider`, `use('platform')` throws `[kitr] No binding named "platform". Did you add the package that provides it?`.
+> [!WARNING] Read it after boot
+> Before `app.boot()`, or without `@kitr/platform/provider`, `use('platform')` throws `No binding named "platform"`.
 
 ## What the platform service knows
 
@@ -171,11 +174,11 @@ const stop = startOrderSync(async () => {
 stop()
 ```
 
-The listeners fire with the new value only; read the current one with `platform.isOnline()` when you start.
+Listeners fire with the new value only; read the current one with `platform.isOnline()` at start.
 
 ## Check whether the app is installed
 
-`platform.standalone` is `true` when the app runs installed: a PWA opened from the home screen, or any native shell. Use it to hide install prompts and "open in app" banners:
+`platform.standalone` is `true` when installed: a PWA opened from the home screen, or any native shell. Use it to hide install prompts:
 
 ```tsx
 // app/components/open-in-app.tsx
@@ -188,8 +191,6 @@ export function OpenInApp() {
   return <a href="acme://orders">Open in the Acme app</a>
 }
 ```
-
-In the browser, the web driver reads the `(display-mode: standalone)` media query and Safari's `navigator.standalone`.
 
 ## Match a platform or an OS
 
@@ -206,11 +207,11 @@ platform.is('ios') // => true on an iPhone, in the shell or in Safari
 platform.is('desktop') // => false in the browser
 ```
 
-Don't read `navigator.userAgent` or `window.Capacitor` in components. The driver already knows, and tests can replace it (see Testing).
+Don't read `navigator.userAgent` in components; the driver already knows, and tests can replace it.
 
 ## Pick an implementation per platform
 
-When the same action works differently in each place, `perPlatform()` picks the implementation without an `if` chain. Keys are OS names, platform types or `native`; `default` is required:
+`perPlatform()` picks an implementation without an `if` chain. Keys are OS names, platform types or `native`; `default` is required. The most specific key wins:
 
 ```ts
 // app/lib/invoices/save-invoice.ts
@@ -228,8 +229,6 @@ export function saveInvoice(invoiceId: string) {
 }
 ```
 
-The most specific key wins: the OS first, then the type, then `native`, then `default`.
-
 | Running on | Result |
 | --- | --- |
 | iPhone, Capacitor shell | `'share inv_7'` (the `ios` key) |
@@ -237,11 +236,9 @@ The most specific key wins: the OS first, then the type, then `native`, then `de
 | Windows, Electron | `'save dialog for inv_7'` (`desktop`) |
 | Chrome on macOS | `'download inv_7'` (`default`) |
 
-`perPlatform()` takes anything with `type`, `os` and `native`, so you can pass a plain object in tests.
-
 ## Adapt to the form factor
 
-Phones, tablets and desktop windows differ in more than the OS: how wide the viewport is, whether the user touches or points, and which way the device is held. `useFormFactor()` reads those three axes and re-renders when they change, so a layout can switch between a list and a grid or between a bottom bar and a sidebar without media queries scattered through the code:
+`useFormFactor()` reads viewport width, input type and orientation, and re-renders when they change, so a layout can switch between a list and a grid without scattered media queries:
 
 ```tsx
 // app/components/inbox.tsx
@@ -266,7 +263,7 @@ export function Inbox() {
 | `orientation` | `portrait`, `landscape` | `window.innerHeight` against `innerWidth` |
 | `ready` | `false` until the window has been measured | |
 
-Before the first measurement (the server, the first client render) the hook returns a guess from the platform: desktop and Tauri shells are `expanded`, `pointer`, `landscape`; everything else is `compact`, `touch`, `portrait`. The guess keeps the server output and the first client paint identical. Change the breakpoints or the guess in `config/platform.ts`:
+Before the first measurement the hook returns a guess from the platform (desktop shells are `expanded`, `pointer`, `landscape`; everything else `compact`, `touch`, `portrait`), so server and first paint match. Change the breakpoints or the guess in `config/platform.ts`:
 
 ```ts
 // config/platform.ts
@@ -284,7 +281,7 @@ export default defineConfig({
 
 ## Show a piece on some platforms only
 
-`<Only>` renders its children where its props match, and `fallback` elsewhere. Props are the same axes `platform.is()` and `useFormFactor()` know, and several props must all match:
+`<Only>` renders its children where all its props match, and `fallback` elsewhere:
 
 ```tsx
 // app/components/install-hint.tsx
@@ -322,7 +319,7 @@ export function InstallHint() {
 
 ## Type the platform names
 
-`kitr types` writes `.kitr/platforms.d.ts` from `kitrrc.ts`, and from then on the platform names are a union type everywhere they appear: `platform.name` is `'www' | 'app' | 'phone'`, `platform.is('tablet')` is a compile error in a project without a `tablet` platform, and so is a misspelt key in `perPlatform()` or `<Only platform>`. `import.meta.env.KITR_PLATFORM` is typed the same way, so a branch on it is checked by the compiler and dropped by the bundler in the builds where it is false:
+`kitr types` writes `.kitr/platforms.d.ts` from `kitrrc.ts`, so platform names become a union type: `platform.is('tablet')` is a compile error without a `tablet` platform, and so is a misspelt key in `perPlatform()` or `<Only platform>`. `import.meta.env.KITR_PLATFORM` is typed too, and the bundler drops branches that are false in a build:
 
 ```ts
 // app/lib/share.ts
@@ -339,7 +336,7 @@ export function isPhoneBuild() {
 }
 ```
 
-`forPlatform()` reads the build's platform name, then its type, then `default`, and needs no app instance, so it also works at module scope and in route definitions. `perPlatform(platform, table)` is its run-time twin and knows the OS as well.
+`forPlatform()` needs no app instance, so it works at module scope and in route definitions. `perPlatform(platform, table)` is its run-time twin and knows the OS as well.
 
 ## Show an offline banner
 
@@ -356,11 +353,11 @@ export function OfflineBanner() {
 }
 ```
 
-The hook is hydration-safe: the server and the first client render say online, and the real value follows. In the browser it follows the `online` and `offline` events. For queued writes and a query cache that pauses offline, add [Offline](/packages/offline).
+The server and the first client render say online, and the real value follows. For queued writes, add [Offline](/packages/offline).
 
 ## Pause work in the background
 
-`useAppState()` is `true` in the foreground. In the browser it follows page visibility; inside Capacitor it follows the app state; the desktop drivers follow window focus:
+`useAppState()` is `true` in the foreground. It follows page visibility in the browser, app state in Capacitor and window focus on desktop:
 
 ```tsx
 // app/components/orders/live-orders.tsx
@@ -378,11 +375,9 @@ export function LiveOrders({ poll }: { poll: () => void }) {
 }
 ```
 
-It starts as `true`, so the server render and the first client render agree.
-
 ## Handle the back button
 
-`useBackButton()` receives the Android hardware back button, and on desktop whatever the desktop driver reports (the window closing). The handler gets `{ canGoBack }`:
+`useBackButton()` receives the Android hardware back button, and on desktop the window closing. The handler gets `{ canGoBack }`:
 
 ```tsx
 // app/components/order-sheet.tsx
@@ -405,11 +400,14 @@ export function OrderSheet({ open, onClose }: { open: boolean; onClose: () => vo
 }
 ```
 
-Wrap the handler in `useCallback`: the hook subscribes again whenever the function changes. On Android, Capacitor stops its default back behaviour while any listener is registered, so the handler must go back or exit itself. The browser driver has no back button, so the handler never runs on the web.
+Wrap the handler in `useCallback`, or the hook subscribes again on every change. The handler never runs on the web.
+
+> [!WARNING] Go back yourself
+> On Android, Capacitor stops its default back behaviour while any listener is registered, so the handler must go back or exit itself.
 
 ## Route deep links
 
-`useDeepLink()` receives URLs the OS hands the app while it runs: custom schemes (`acme://orders/1042`) and app links (`https://app.acme.com/orders/1042`). The handler gets the URL and its router path:
+`useDeepLink()` receives URLs the OS hands the running app, such as `acme://orders/1042` or `https://app.acme.com/orders/1042`. The handler gets the URL and its router path:
 
 ```tsx
 // app/components/deep-links.tsx
@@ -425,7 +423,7 @@ export function DeepLinks() {
 }
 ```
 
-Render `<DeepLinks />` once in the root route. Outside React, `app.container.use('platform').linkPath(url)` gives the same path. Both call `deepLinkPath(url, deepLinkPrefixes)`, which drops the scheme and host, keeps the query and hash, then strips the first prefix that matches:
+Render `<DeepLinks />` once in the root route. Outside React, `platform.linkPath(url)` gives the same path. Both call `deepLinkPath(url, deepLinkPrefixes)`, which drops the scheme and host, keeps the query and hash, then strips the first matching prefix:
 
 ```ts
 // app/lib/links.ts
@@ -438,7 +436,7 @@ deepLinkPath('https://acme.com/app/projects/3', ['/app']) // => '/projects/3'
 deepLinkPath('orders/3') // => '/orders/3'
 ```
 
-For a custom scheme, the part after `://` up to the next `/` is the URL's host, so `acme://orders/1042` becomes `/orders/1042`, not `/1042`. Prefixes are paths: `'https://app.acme.com'` as a prefix never matches, and it is not needed because the host is always dropped. Registering the scheme in the native projects is the platform's job; see [Mobile](/packages/mobile).
+Prefixes are paths; the host is always dropped, so `'https://app.acme.com'` as a prefix never matches. Registering the scheme in the native projects is covered in [Mobile](/packages/mobile).
 
 ## Respect the notch and home indicator
 
@@ -454,11 +452,14 @@ export function TabBar() {
 }
 ```
 
-The insets are `{ top: 0, right: 0, bottom: 0, left: 0 }` on the server and the first render, then update on mount and on every window resize. iOS reports non-zero values only when the viewport meta has `viewport-fit=cover`. For layout alone, CSS can use `env(safe-area-inset-bottom)` directly; the hook is for values you compute in JavaScript.
+The insets are zero on the server and first render, then update on mount and resize.
+
+> [!WARNING] Needs viewport-fit
+> iOS reports non-zero values only when the viewport meta has `viewport-fit=cover`.
 
 ## Open links outside the app
 
-Inside a native shell a plain link replaces the app's own page. `platform.openExternal()` opens the system browser there, and a new tab (`noopener`) on the web:
+Inside a native shell a plain link replaces the app's own page. `platform.openExternal()` opens the system browser there, and a new tab on the web:
 
 ```tsx
 // app/components/status-link.tsx
@@ -476,7 +477,7 @@ export function StatusLink() {
 
 ## Read the app version
 
-`platform.appVersion()` resolves to the version of the native app, from the driver. Where there is none, such as the browser, it resolves to `'0.0.0'`:
+`platform.appVersion()` resolves to the native app's version, or `'0.0.0'` in the browser:
 
 ```ts
 // app/lib/support/report.ts
@@ -491,7 +492,11 @@ export async function supportReport() {
 
 ## Exit the app
 
-`platform.exit()` closes the app where the driver supports it: Android at the root of the back stack, and the desktop shells. In the browser it resolves and does nothing. Apple discourages apps that quit themselves, so don't offer it on iOS:
+`platform.exit()` closes the app on Android and the desktop shells; in the browser it does nothing.
+
+> [!WARNING] Not on iOS
+> Apple discourages apps that quit themselves, so don't offer it there.
+
 
 ```ts
 // app/lib/session/sign-out.ts
@@ -505,7 +510,7 @@ export async function signOutAndExit() {
 
 ## Know which build is running
 
-`platform.name` is the platform name from `kitrrc.ts` the bundle was built for. One codebase with `site` and `phone` platforms can tell them apart at run time:
+`platform.name` is the platform name from `kitrrc.ts` the bundle was built for, so one codebase with `site` and `phone` platforms can tell them apart:
 
 ```tsx
 // app/components/store-badge.tsx
@@ -518,7 +523,7 @@ export function StoreBadge() {
 }
 ```
 
-`kitr dev` and `kitr build` set it from `KITR_PLATFORM`, through `import.meta.env.KITR_PLATFORM`. To drop code from a bundle entirely, compare `import.meta.env.KITR_PLATFORM` itself so the bundler can remove the dead branch; see [Web](/packages/web).
+To drop code from a bundle entirely, compare `import.meta.env.KITR_PLATFORM` itself; see [Web](/packages/web).
 
 ## Know which shell is running
 
@@ -535,13 +540,13 @@ export function UpdateHint() {
 }
 ```
 
-Outside React, `platform.runtime` is the same value, and `detectRuntime()` answers without an app: it reads `window.__TAURI_INTERNALS__`, `Capacitor.isNativePlatform()`, the Electron preload bridge or user agent, and says `web` for anything else, including the server. The matrix of every environment's answers is in [Platforms](/docs/platforms#where-the-code-runs-runtime-platform-and-form-factor).
+Outside React, `platform.runtime` is the same value, and `detectRuntime()` answers without an app. The matrix of every environment's answers is in [Platforms](/docs/platforms#where-the-code-runs-runtime-platform-and-form-factor).
 
-The device packages ([Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater)) choose their driver by this runtime. In a native shell with no driver of its own they throw `E_DRIVER_UNAVAILABLE` rather than run browser code in the webview, unless the package's config sets `fallbackToWeb: true`.
+The device packages ([Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage), [Updater](/packages/updater)) choose their driver by this runtime. In a native shell with no driver of their own they throw `E_DRIVER_UNAVAILABLE` unless the package's config sets `fallbackToWeb: true`.
 
 ## Render on the server
 
-During server rendering there is no `window`, so the default driver reports type `server`, OS `server`, online, and zero insets. With `@kitr/web/provider` registered, the type is `web` and the OS is still `server`. Every hook starts from a value the server can produce:
+During server rendering the default driver reports type `server`, OS `server`, online, and zero insets (with `@kitr/web/provider`, type `web`). Every hook starts from a value the server can produce:
 
 | Hook | Server and first render |
 | --- | --- |
@@ -550,9 +555,13 @@ During server rendering there is no `window`, so the default driver reports type
 | `useSafeArea()` | `{ top: 0, right: 0, bottom: 0, left: 0 }` |
 | `usePlatform()` | The service; `os` is `'server'` on the server. |
 
-Branch on `platform.os` only after mount (in an effect or event handler) when the server and the client could disagree, or the first render will not match the HTML.
+> [!WARNING] Hydration
+> Branch on `platform.os` only after mount (in an effect or event handler), or the first render won't match the HTML.
 
 ## How the driver is chosen
+
+<details>
+<summary>Driver priorities and fallbacks</summary>
 
 Platform providers register a driver for the `platform` capability. The registry keeps the one with the highest priority:
 
@@ -564,9 +573,7 @@ Platform providers register a driver for the `platform` capability. The registry
 | `@kitr/tauri/provider` | inside Tauri | `desktop` | 10 |
 | none | no driver registered | `web` in a browser, `server` without `window` | |
 
-Each shell driver also says which `runtime` it is (`electron`, `tauri` or `capacitor`), which is how `platform.runtime` is answered. The three shell providers are configurations of `createShellProvider()` from `@kitr/platform/shell`, which holds the shared behaviour: detect the shell, register the driver, fall back to page visibility for app state, log to devtools.
-
-So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A driver may leave methods out; the service fills them in:
+Each shell driver also says which `runtime` it is, which is how `platform.runtime` is answered. So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A driver may leave methods out; the service fills them in:
 
 | Method | When the driver leaves it out |
 | --- | --- |
@@ -578,6 +585,8 @@ So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A d
 | `appVersion()` | `'0.0.0'`. |
 | `exit()` | Does nothing. |
 | `standalone` | The driver's `native` value. |
+
+</details>
 
 ## Errors
 
@@ -652,7 +661,7 @@ describe('OrderSheet on Android', () => {
 })
 ```
 
-The driver above leaves out everything the test does not need; the service fills the rest with browser defaults. Pure helpers need no app at all:
+Pure helpers need no app at all:
 
 ```ts
 // test/save-invoice.test.ts
@@ -678,14 +687,14 @@ describe('saving an invoice', () => {
 
 ## Extend
 
-A new place to run (a kiosk browser, a TV, a browser extension) gets its own driver. Implement `PlatformDriver` and register it from a provider. Only `type`, `native` and `os` are required:
+A new place to run (a kiosk browser, a TV) gets its own driver. Implement `PlatformDriver` and register it from a provider; only `type`, `native` and `os` are required:
 
 ```ts
 // app/providers/kiosk-platform.ts
 import { defineProvider } from 'kitr/app'
 import type { PlatformDriver } from '@kitr/platform'
 
-/** The order-pickup kiosks in Acme warehouses run the web build in a locked-down browser. */
+/** Order-pickup kiosks run the web build in a locked-down browser. */
 function kioskDriver(): PlatformDriver {
   return {
     type: 'kiosk',
@@ -734,23 +743,19 @@ export default defineKitrConfig({
 })
 ```
 
-On a kiosk, `platform.is('kiosk')` is `true`, `perPlatform(platform, { kiosk: () => ..., default: () => ... })` picks the kiosk branch, and the devtools panel lists the driver as `kiosk (priority 20)`. Priority 20 beats the web driver (0) and the native drivers (10). Register only when you are sure you run there, as above, because the highest priority wins everywhere. See [`PlatformDriver`](/packages/platform/api) for every member.
+On a kiosk, `platform.is('kiosk')` is `true` and `perPlatform` picks the kiosk branch. Priority 20 beats the web driver (0) and the native drivers (10).
 
-To make the kiosk a platform that `kitr dev` and `kitr build` can run, write a platform package with `definePlatform()`; [Platforms](/docs/platforms) shows one.
+> [!WARNING] Register conditionally
+> The highest priority wins everywhere, so register only when you are sure you run there, as above.
+
+To make the kiosk a platform that `kitr dev` and `kitr build` can run, write a platform package with `definePlatform()`; [Platforms](/docs/platforms) shows one. See [`PlatformDriver`](/packages/platform/api) for every member.
 
 ## Devtools
 
-With [Devtools](/packages/devtools) installed, the provider adds a Platform panel and logs one line at boot, such as `running as mobile (ios), native`. The panel shows:
-
-- the platform `name`, `type`, `os`, `native`, `standalone` and `online` values;
-- every capability with a registered driver (`platform`, `storage` and others) and who supplied it, such as `mobile (priority 10)`. In a plain browser it reads "No platform drivers registered (browser defaults)" until a provider registers one.
+With [Devtools](/packages/devtools) installed, a Platform panel shows the platform values and every capability with a registered driver and who supplied it, such as `mobile (priority 10)`.
 
 ## Next steps
 
-- [API reference](/packages/platform/api)
-- [Web](/packages/web): the browser driver and installable apps
-- [Mobile](/packages/mobile): the Capacitor driver, deep link registration and native storage
-- [Desktop](/packages/desktop): the Electron desktop shell, and [Tauri](/packages/tauri), its lighter alternative
-- [Offline](/packages/offline): queued writes and a cache that pauses without a connection
-- [Extending kitr](/docs/extending): your own services, and your own driver for a shell.
-- [Platforms](/docs/platforms): every platform type and the commands they share
+- [API reference](/packages/platform/api): every export with its signature.
+- [Mobile](/packages/mobile): the Capacitor driver, deep link registration and native storage.
+- [Platforms](/docs/platforms): every platform type and the commands they share.

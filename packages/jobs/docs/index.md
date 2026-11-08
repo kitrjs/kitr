@@ -6,17 +6,23 @@ order: 1
 
 # Jobs
 
-Some work should not keep a request waiting: emailing an invoice, generating a PDF, syncing orders with a payment provider, pruning expired sessions at 3am. `@kitr/jobs` hands that work to a background worker. You define a job with a typed payload, dispatch it from a controller, and the worker runs it with retries, exponential backoff, a timeout and an optional cron or interval schedule.
+Some work should not keep a request waiting: emailing an invoice, generating a PDF, syncing orders, pruning expired sessions at 3am. `@kitr/jobs` hands that work to a background worker. You define a job with a typed payload, dispatch it from a controller, and the worker runs it with retries, backoff, a timeout and an optional schedule.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` generates a monthly invoice for each team, emails it to the team owner, and cleans up old data every night.
+> [!SUMMARY]
+> Background and scheduled jobs with typed payloads, retries and timeouts. Add it with `kitr add jobs`; the overview is at [/packages/jobs](/packages/jobs).
 
-`@kitr/jobs` runs on the server only. The built-in queue lives in the server's memory, which suits one process. For several servers, or for jobs that must survive a restart, give it a shared driver ([Extend](#extend)). For work that must finish before the response (charging a card), call the code directly instead of dispatching a job.
+It runs on the server only. The built-in queue lives in memory, which suits one process; for several servers, or jobs that must survive a restart, use a shared driver ([Share the queue between processes](#share-the-queue-between-processes)). Work that must finish before the response, such as charging a card, should be called directly.
+
+The examples follow Acme's app at `app.acme.com`, which generates a monthly invoice for each team, emails it, and cleans up old data every night.
 
 ## Install
 
 ```sh
 kitr add jobs
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does, in order:
 
@@ -26,6 +32,12 @@ What `kitr add` does, in order:
 - Writes an example job, `server/jobs/example.ts`, exporting `exampleJob`.
 - When you answer no to the worker question, adds a `worker` script (`kitr jobs:work`) to `package.json`.
 - Adds a `## kitr: jobs` section to `AGENTS.md` telling coding agents to put background work in `server/jobs/` and never `setTimeout` work in a request, plus a line about the separate worker when there is one.
+
+No kit includes jobs; add it to any kit with a server platform.
+
+`kitr remove jobs` reverses every step above. Your jobs in `server/jobs/` stay, because you may have edited them.
+
+</details>
 
 `kitr add jobs` asks one question. Agents and CI answer it with a flag:
 
@@ -37,11 +49,7 @@ What `kitr add` does, in order:
 kitr add jobs --no-worker
 ```
 
-With `--no-worker`, `config/jobs.ts` gets `worker: false` and the worker runs in its own process, as in [Run the worker in its own process](#run-the-worker-in-its-own-process). To edit `package.json` without running the package manager, pass `--no-install`.
-
-No kit includes jobs; add it to any kit with a server platform.
-
-`kitr remove jobs` reverses every step above: the provider, the `packages` entry, the `worker` script, the `AGENTS.md` section, the dependency and `config/jobs.ts`. Your jobs in `server/jobs/` stay, because you may have edited them.
+With `--no-worker`, `config/jobs.ts` gets `worker: false` and the worker runs in its own process, as in [Run the worker in its own process](#run-the-worker-in-its-own-process).
 
 ## Configure
 
@@ -71,8 +79,6 @@ export default defineConfig({
 | `onFailed(job, error)` | none | Called when a job has used up its retries, or its payload fails the schema. Receives the `QueuedJob` and the last error. |
 
 Per-job options (`retries`, `backoff`, `timeout`, `schedule`) live on the job itself; see [Define a job](#define-a-job).
-
-`@kitr/jobs` reads no env variables. Use your own in `config/jobs.ts` when a setting changes per deploy, as in [Run the worker in its own process](#run-the-worker-in-its-own-process).
 
 ## Dispatch your first job
 
@@ -139,13 +145,16 @@ export default class InvoicesController {
 }
 ```
 
-Register the route with `api.post('/teams/:teamId/invoices', [InvoicesController, 'store'])` in `server/routes.ts`. The request answers at once with the job id. Within half a second (`pollInterval`) the worker in the same process picks the job up and runs it.
+Register the route with `api.post('/teams/:teamId/invoices', [InvoicesController, 'store'])` in `server/routes.ts`. The request answers at once; within half a second (`pollInterval`) the worker picks the job up.
 
-The payload is typed from the schema, so a missing `month` is a type error. A wrong value at run time, such as `month: 'October'`, makes `dispatch()` throw a `KitrError` with code `VALIDATION` before anything is queued; in a controller that becomes a 422 response.
+The payload is typed from the schema. A wrong value at run time, such as `month: 'October'`, makes `dispatch()` throw a `VALIDATION` error before anything is queued; in a controller that becomes a 422.
 
 ## Define a job
 
-`defineJob(name, options)` returns a job object. The name is how the queue refers to it, so keep it stable across deploys: a queued job whose name no longer exists is dropped.
+`defineJob(name, options)` returns a job object.
+
+> [!WARNING] Keep job names stable
+> The name is how the queue refers to the job. A queued job whose name no longer exists is dropped.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -165,7 +174,7 @@ The second argument of `run` is the `JobContext`:
 | `jobId` | The id `dispatch()` returned. Stays the same across retries. |
 | `signal` | An `AbortSignal` that aborts at the timeout. Pass it to `fetch` and database calls. |
 
-Without a schema, the type parameter types the payload: `defineJob<{ teamId: string }>('notify_team', { run: ... })`. With one, the payload type comes from the schema. A job with no payload is dispatched with `undefined`: `dispatch(pruneSessions, undefined)`.
+Without a schema, a type parameter types the payload: `defineJob<{ teamId: string }>('notify_team', { run: ... })`. A job with no payload is dispatched with `undefined`.
 
 ## Dispatch a job
 
@@ -193,11 +202,10 @@ export const closeMonth = defineJob<{ month: string; teamIds: string[] }>('close
 | An action or service during a request | `useJobs(useRequestApp())`, with `useRequestApp` from `@kitr/server` |
 | A script | `useJobs(server.app)` after `await server.boot()` |
 
-`useJobs(app)` is `app.container.use('jobs')`. The provider binds nothing in the browser.
+`useJobs(app)` is `app.container.use('jobs')`. Pass ids and small plain values in the payload, not whole records; the job loads fresh records when it runs.
 
-Pass ids and small plain values in the payload, not whole records. With a shared driver the payload is stored as data, and the job should load fresh records when it runs.
-
-Don't `setTimeout(() => sendEmail(), 0)` in a request handler. The work has no retries, nothing waits for it at shutdown, and an error in it is lost. Dispatch a job.
+> [!WARNING] No setTimeout in handlers
+> Work started with `setTimeout` has no retries, nothing waits for it at shutdown, and its errors are lost. Dispatch a job.
 
 ## Delay a job
 
@@ -227,11 +235,11 @@ export async function scheduleFirstInvoice(app: KitrApp, teamId: string) {
 | `delay` | Milliseconds from now. |
 | `at` | A `Date`. Takes precedence over `delay`. A time in the past runs at the next poll. |
 
-The job is queued at once with that `runAt` time, and the worker leaves it until then. With the memory driver a delayed job is lost if the process restarts before it runs.
+With the memory driver a delayed job is lost if the process restarts before it runs.
 
 ## Run a job on a schedule
 
-Give a job a `schedule` and list it in `config/jobs.ts`. The worker dispatches it itself; you never call `dispatch()`:
+Give a job a `schedule` and list it in `config/jobs.ts`. The worker dispatches it; you never call `dispatch()`:
 
 ```ts
 // server/jobs/prune-sessions.ts
@@ -271,13 +279,14 @@ Cron expressions have five fields, read in the server's local time zone:
 | month | `1`–`12` | `1,4,7,10`: each quarter |
 | weekday | `0`–`7`, `0` and `7` are Sunday | `1-5`: weekdays |
 
-Each field takes `*`, a number, a list (`1,15`), a range (`1-5`) and a step (`*/10`, `5/15`, `0-30/10`). Names like `MON` or `JAN` are not supported. When both day of month and weekday are set, either may match, as in standard cron: `0 0 1 * 1` runs on the 1st and on every Monday.
+Each field takes `*`, a number, a list (`1,15`), a range (`1-5`) or a step (`*/10`, `0-30/10`). Names like `MON` are not supported. When both day of month and weekday are set, either may match, as in standard cron.
 
-Intervals take a number and a unit: `250ms`, `30s`, `5m`, `1.5h`, `1d`. An interval job runs once as soon as the worker starts, then every interval after its last dispatch.
+Intervals take a number and a unit: `250ms`, `30s`, `5m`, `1.5h`, `1d`. An interval job runs once when the worker starts, then every interval after.
 
-A scheduled job is dispatched with an `undefined` payload, so it cannot have a schema that rejects `undefined`. If it does, the worker logs `[jobs] could not queue scheduled <name>` every time and the job never runs.
+> [!WARNING] No schema that rejects undefined
+> A scheduled job is dispatched with an `undefined` payload. If its schema rejects that, the worker logs `[jobs] could not queue scheduled <name>` and the job never runs.
 
-A bad expression throws at once, in `register()` or when the app boots with it in `config/jobs.ts`: `[@kitr/jobs] Bad cron "61 * * * *" (field "61")`. Every field is checked, including ones after a field that would not match. A bad interval throws the same way. Check new expressions with `cronMatches()`:
+A bad expression or interval throws at once, when the app boots. Check new expressions with `cronMatches()`:
 
 ```ts
 // scripts/check_cron.ts
@@ -288,7 +297,7 @@ cronMatches('*/15 9-17 * * 1-5', new Date(2026, 10, 7, 9, 30)) // => false, a Sa
 parseInterval('5m') // => 300000
 ```
 
-Every running worker checks the schedules. With the memory driver, each worker queues its own copy, so two servers run `prune_sessions` twice. With the [Redis driver](#share-the-queue-between-processes), each run is queued once. Cron reads each server's local time, so give every server the same `TZ`.
+With the memory driver, each worker queues its own copy, so two servers run `prune_sessions` twice; the [Redis driver](#share-the-queue-between-processes) queues each run once. Cron reads each server's local time, so give every server the same `TZ`.
 
 ## Retry a failing job
 
@@ -311,7 +320,7 @@ export const sendInvoiceEmail = defineJob('send_invoice_email', {
 })
 ```
 
-With `retries: 5` and `backoff: 10_000`, a mail outage is retried after 10s, 20s, 40s, 80s and 160s, then given up. The logger shows each step:
+A mail outage is retried after 10s, 20s, 40s, 80s and 160s, then given up. The logger shows each step:
 
 ```
 WARN  09:00:10.112 [app] [jobs] send_invoice_email failed (attempt 1), retry in 10000ms
@@ -320,11 +329,14 @@ WARN  09:00:20.140 [app] [jobs] send_invoice_email failed (attempt 2), retry in 
 ERROR 09:05:10.301 [app] [jobs] send_invoice_email failed after 6 attempts
 ```
 
-A payload that fails the schema when the worker picks it up is dropped without a retry, since it would fail every time, and logged as `[jobs] <name> dropped: bad payload`. Make `run` safe to repeat: a job that fails after charging a card is retried, and charges again unless you check first.
+A payload that fails the schema when the worker picks it up is dropped without a retry and logged as `[jobs] <name> dropped: bad payload`.
+
+> [!WARNING] Make run safe to repeat
+> A job that fails after charging a card is retried, and charges again unless you check first.
 
 ## Handle a job that keeps failing
 
-`onFailed` in `config/jobs.ts` runs when a job has used its retries or its payload was rejected. It is the place to alert someone:
+`onFailed` in `config/jobs.ts` runs when a job has used its retries or its payload was rejected. Use it to alert someone:
 
 ```ts
 // config/jobs.ts
@@ -350,7 +362,7 @@ export default defineConfig({
 | `attempt` | The attempt that failed last. |
 | `runAt` | When that attempt was due, in milliseconds since the epoch. |
 
-`onFailed` has no `app`. To report through [monitoring](/packages/monitoring), catch and report inside `run` with `ctx.app`, and rethrow so the job still retries:
+`onFailed` has no `app`. To report through [monitoring](/packages/monitoring), catch inside `run` with `ctx.app` and rethrow so the job still retries:
 
 ```ts
 // server/jobs/generate-invoice.ts
@@ -371,7 +383,7 @@ export const generateInvoice = defineJob<{ teamId: string; month: string }>('gen
 
 ## Time out a stuck job
 
-Each attempt gets `timeout` milliseconds, 60 seconds by default. At the limit, `ctx.signal` aborts and the attempt fails with `[jobs] <name> timed out after <ms>ms`, which counts as a failure and is retried. Pass the signal to anything that accepts one, so the work really stops:
+Each attempt gets `timeout` milliseconds (60 seconds by default). At the limit `ctx.signal` aborts and the attempt fails and is retried. Pass the signal to anything that accepts one, so the work really stops:
 
 ```ts
 // server/jobs/export-projects.ts
@@ -388,11 +400,12 @@ export const exportProjects = defineJob<{ teamId: string }>('export_projects', {
 })
 ```
 
-A job that ignores its signal still fails at the timeout and frees its worker slot, but its code keeps running in the background until it finishes on its own.
+> [!WARNING] Pass the signal
+> A job that ignores its signal still fails at the timeout, but its code keeps running until it finishes on its own.
 
 ## Run a job inline
 
-`useJobs(app).run(job, payload)` runs a job now, in this process, with its retries and timeout, and resolves with what `run` returned. Nothing is queued:
+`useJobs(app).run(job, payload)` runs a job now, in this process, with its retries and timeout. Nothing is queued:
 
 ```ts
 // scripts/backfill_invoices.ts
@@ -406,13 +419,11 @@ const result = await useJobs(server.app).run(generateInvoice, { teamId: 'team_en
 await server.close()
 ```
 
-When every attempt fails, `run()` throws the last error. It waits the real backoff between attempts, and it does not call `onFailed`. A payload that fails the schema throws a `VALIDATION` error at once, without retrying.
+When every attempt fails, `run()` throws the last error after the real backoff, and does not call `onFailed`.
 
 ## Share the queue between processes
 
-With the memory driver, the queue lives in one process: other servers never see its jobs, and a restart loses them. A job that is not finished within `visibilityTimeout` (30 seconds) goes back to the queue, so keep it above your longest job `timeout`.
-
-To share one queue between servers, use `createRedisJobsDriver` with an [ioredis](https://github.com/redis/ioredis) client:
+With the memory driver, other servers never see the queue's jobs, and a restart loses them. To share one queue, use `createRedisJobsDriver` with an [ioredis](https://github.com/redis/ioredis) client:
 
 ```sh
 pnpm add ioredis
@@ -445,20 +456,29 @@ REDIS_URL=redis://localhost:6379
 | `prefix` | `'kitr:jobs:'` | Prepended to the driver's keys, so apps sharing a Redis keep separate queues. |
 | `visibilityTimeout` | `300000` | Milliseconds a pulled job stays hidden from other workers. Keep it above your longest job `timeout`. |
 
+> [!WARNING] Keep visibilityTimeout above your longest job
+> A job not acknowledged within `visibilityTimeout` returns to the queue, so a longer job can run twice.
+
 What the driver guarantees:
 
-- **Each due job runs on one worker.** `pull` moves a job from the queue to a reserved set, and only the worker whose `ZREM` succeeds runs it. Twenty invoices dispatched while three workers poll are generated twenty times, not sixty.
-- **A crashed worker's jobs come back.** A reserved job that is not acknowledged within `visibilityTimeout` returns to the queue and runs again. A job that runs longer than `visibilityTimeout` can therefore run twice; raise the timeout or make the job safe to repeat.
-- **Scheduled jobs queue once per run.** Before queuing a cron or interval job, each worker takes a Redis lock named after the job and the minute (or interval slot). One worker gets it.
-- **Retries keep their id.** A retry is queued under the same `jobId` with the next `attempt`, so `onFailed` and your logs see one job.
+- **Each due job runs on one worker.** Twenty invoices dispatched while three workers poll are generated twenty times, not sixty.
+- **A crashed worker's jobs come back** after `visibilityTimeout`.
+- **Scheduled jobs queue once per run**, through a Redis lock named after the job and the minute.
+- **Retries keep their id**, so `onFailed` and your logs see one job.
 
-The queue lives under three keys: `<prefix>queue` (a sorted set by `runAt`), `<prefix>reserved` and `<prefix>data`. `jobs.driver.size()` counts the jobs waiting and the jobs reserved by a worker, across every process, so a worker that died mid-job does not read as an empty queue.
+<details>
+<summary>Redis keys</summary>
+
+The queue lives under `<prefix>queue` (a sorted set by `runAt`), `<prefix>reserved` and `<prefix>data`. `jobs.driver.size()` counts waiting and reserved jobs across every process.
+
+</details>
 
 ## Run the worker in its own process
 
-By default the worker runs inside the web server: it starts when `server.listen()` runs, or on the first request served through `server.fetch()` outside tests, and drains on shutdown. That suits one server, and with the [Redis driver](#share-the-queue-between-processes) it also suits several: every web server works the shared queue.
+By default the worker runs inside the web server, starts with it and drains on shutdown. When long jobs should not compete with requests, run a worker process and turn the worker off in the web servers.
 
-When long jobs should not compete with requests, run a worker process and turn the worker off in the web servers. The queue must then be shared, so this needs the Redis driver or another shared one; with the memory driver, a job dispatched in the web server never reaches the worker.
+> [!WARNING] Needs a shared queue
+> With the memory driver, a job dispatched in a web server never reaches a separate worker.
 
 ```ts
 // config/jobs.ts
@@ -494,13 +514,11 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and run one or more workers beside them with `tsx server/worker.ts` or `kitr jobs:work`. In development, with the variable unset, the web server runs the worker itself.
-
-`jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
+Deploy the web servers with `JOBS_WORKER=off`, and run workers beside them with `tsx server/worker.ts` or `kitr jobs:work`. `jobs.stop()` waits for running jobs, each for at most its timeout, so set your platform's shutdown grace period above your longest job timeout.
 
 ## Read the queue
 
-The `Jobs` service exposes its state for health checks and admin pages:
+The `Jobs` service exposes its state for health checks:
 
 ```ts
 // server/controllers/admin-jobs-controller.ts
@@ -532,7 +550,8 @@ export default class AdminJobsController {
 | `driver` | The queue driver. |
 | `jobs` | A map of known jobs by name. |
 
-`dispatch()` registers a job it does not know yet, in this process only. Always list jobs in `config/jobs.ts`, so a separate worker knows them too.
+> [!WARNING] List every job in config/jobs.ts
+> `dispatch()` registers an unknown job in this process only, so a separate worker would not know it.
 
 ## Commands
 
@@ -552,9 +571,7 @@ kitr jobs:list
 # prune_sessions    3        60000    0 3 * * *
 ```
 
-`kitr jobs:work` boots `server.app` from the entry's exported `server`, as the generated `server/main.ts` has it. An entry that exports `app` instead works too. One that exports neither fails with `server/main.ts exports neither \`server\` nor \`app\``.
-
-`kitr doctor` adds one finding from this package: an info line when `config/jobs.ts` lists no jobs (`jobs: []`), with the fix `kitr make:job <name>`, then add it to `jobs: [...]`.
+`kitr jobs:work` boots `server.app` from the entry's exported `server` (or `app`). `kitr doctor` flags a `config/jobs.ts` that lists no jobs.
 
 `kitr make:job generate-invoice` writes `server/jobs/generate-invoice.ts`:
 
@@ -578,7 +595,7 @@ export const generateInvoice = defineJob('generate_invoice', {
 })
 ```
 
-The generator does not add the job to `config/jobs.ts`; add it to `jobs` yourself.
+The generator does not add the job to `config/jobs.ts`; do that yourself.
 
 ## Errors
 
@@ -590,7 +607,7 @@ The generator does not add the job to `config/jobs.ts`; add it to `jobs` yoursel
 | `[@kitr/jobs] Bad interval "<text>" (use 30s, 5m, 1h, 1d)` | `{ every }` without a number and a unit. | Write `5m`, not `5 minutes`. |
 | `[jobs] <name> timed out after <ms>ms` | An attempt ran past `timeout`. Counts as a failure. | Raise `timeout`, or pass `signal` to the slow call. |
 
-The worker never throws: it logs these messages through the app's [logger](/packages/logger) instead.
+The worker never throws; it logs through the app's [logger](/packages/logger):
 
 | Log line | Level | Meaning |
 | --- | --- | --- |
@@ -603,7 +620,7 @@ The worker never throws: it logs these messages through the app's [logger](/pack
 
 ## Testing
 
-In a test the worker does not start: `createTestApp()` boots the app but does not run the providers' `ready` step. Dispatched jobs wait in the memory queue, where you can read them, and `jobs.run()` runs one inline:
+In a test the worker does not start. Dispatched jobs wait in the memory queue, where you can read them, and `jobs.run()` runs one inline:
 
 ```ts
 // test/generate-invoice.test.ts
@@ -654,9 +671,10 @@ describe('generate_invoice', () => {
 })
 ```
 
-`driver.pull()` removes what it returns, which is what you want at the end of a test. To check a delay, pull at a later time: `jobs.driver.pull(Date.now() + 10 * 60_000, 10)`.
+To check a delay, pull at a later time: `jobs.driver.pull(Date.now() + 10 * 60_000, 10)`.
 
-`jobs.run()` waits the real backoff between attempts, so a failing job with the defaults takes 7 seconds to give up. To test failure handling, pass `retries: 0` on a test job, or keep `backoff` small:
+> [!WARNING] run() waits the real backoff
+> A failing job with the defaults takes 7 seconds to give up. Use `retries: 0` or a small `backoff` in tests:
 
 ```ts
 // test/flaky-job.test.ts
@@ -681,7 +699,7 @@ it('retries until the third attempt succeeds', async () => {
 })
 ```
 
-To test the worker loop itself, start it with a short poll and wait for the effect, then stop it:
+To test the worker loop, start it with a short poll, wait for the effect, then stop it:
 
 ```ts
 // test/worker.test.ts
@@ -704,7 +722,7 @@ it('runs dispatched jobs on the worker', async () => {
 
 ## Extend
 
-A driver is where queued jobs wait. It has four methods and an optional fifth; the worker calls `pull(now, limit)` every `pollInterval`, runs what comes back, and calls `ack(job)` when each run has finished, whether it succeeded, failed or was retried. See [`JobsDriver`](/packages/jobs/api#jobsdriver) and [`QueuedJob`](/packages/jobs/api#queuedjob).
+A driver is where queued jobs wait. The worker calls `pull(now, limit)` every `pollInterval` and `ack(job)` after each run. See [`JobsDriver`](/packages/jobs/api#jobsdriver) and [`QueuedJob`](/packages/jobs/api#queuedjob).
 
 | Method | Must |
 | --- | --- |
@@ -715,7 +733,7 @@ A driver is where queued jobs wait. It has four methods and an optional fifth; t
 | `ack(job)` (optional) | Forget a finished job. With it, a job whose worker crashed runs again. |
 | `claim(key, ttlMs)` (optional) | Take a lock for `ttlMs`; `true` for one caller only. Stops several workers queuing the same scheduled run. |
 
-kitr ships a complete Redis driver (see [Share the queue between processes](#share-the-queue-between-processes)). To see the shape, here is the smallest driver that shares a queue: one [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`, with [ioredis](https://github.com/redis/ioredis). Each job is claimed with `ZREM`, so two workers never run the same one:
+The smallest driver that shares a queue is one [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`. Each job is claimed with `ZREM`, so two workers never run the same one:
 
 ```ts
 // server/jobs/sorted-set-driver.ts
@@ -762,14 +780,10 @@ export default defineConfig({
 })
 ```
 
-Keep payloads to plain JSON: a `Date` comes back as a string. Without `ack`, a job is removed when it is pulled, so it is lost if the process dies mid-run; `createRedisJobsDriver` shows how to keep it. Without `claim`, each worker queues its own copy of a scheduled job. The same methods also fit a database table.
+Keep payloads to plain JSON: a `Date` comes back as a string. Without `ack`, a job is lost if the process dies mid-run; without `claim`, each worker queues its own copy of a scheduled job.
 
 ## Next steps
 
 - [Jobs API reference](/packages/jobs/api): every export with its signature.
 - [Mail](/packages/mail): send email from a job.
-- [Logger](/packages/logger): where the worker's warnings and errors go.
-- [Monitoring](/packages/monitoring): report jobs that keep failing.
-- [Server](/packages/server): the lifecycle that starts and stops the worker.
-- [Run on more than one instance](/guides/scale-out): the queue, cache, limits and sockets on shared Redis.
-- [Standard Schema](https://standardschema.dev): the schema libraries a job accepts.
+- [Run on more than one instance](/guides/scale-out): the queue, cache and sockets on shared Redis.

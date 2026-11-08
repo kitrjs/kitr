@@ -6,11 +6,14 @@ order: 1
 
 # Database
 
-Orders, invoices, projects, teams: almost every app keeps its data in a database. `@kitr/db` opens the connection when your app starts, hands the same client to every controller, action and job, and closes it cleanly when the server stops. It ships no ORM. You bring [Drizzle](https://orm.drizzle.team), [Prisma](https://www.prisma.io/docs), [Kysely](https://kysely.dev) or a plain [`pg`](https://node-postgres.com) pool, and kitr runs it inside the [app lifecycle](/docs/configuration).
+Almost every app keeps its data in a database. `@kitr/db` opens the connection when your app starts, hands the same client to every controller, action and job, and closes it cleanly when the server stops.
 
-It runs on the server only. If you only need to keep data in the browser or on a device, use [storage](/packages/storage) instead.
+> [!SUMMARY]
+> Connect your database so every request can use it. Add it with `kitr add db`; the overview is at [/packages/db](/packages/db).
 
-This guide follows Acme's app at `app.acme.com`: a Postgres database with `orders` and `projects` tables, read through Drizzle.
+It ships no ORM. Bring [Drizzle](https://orm.drizzle.team), [Prisma](https://www.prisma.io/docs), [Kysely](https://kysely.dev) or a plain [`pg`](https://node-postgres.com) pool, and kitr runs it inside the [app lifecycle](/docs/configuration). It runs on the server only; for browser or device data, use [storage](/packages/storage).
+
+The examples use Acme's Postgres database with `orders` and `projects` tables, read through Drizzle.
 
 ## Install
 
@@ -18,23 +21,28 @@ This guide follows Acme's app at `app.acme.com`: a Postgres database with `order
 kitr add db
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
-- Adds the [server](/packages/server) package first if the project does not have it yet.
-- Installs `@kitr/db` (you use it through `@kitr/db`).
+- Adds the [server](/packages/server) package first when missing.
+- Installs `@kitr/db`.
 - Adds `'@kitr/db'` to `packages` and `() => import('@kitr/db')` to `providers` in `kitrrc.ts`.
 - Appends `DATABASE_URL=postgres://localhost:5432/app` under a `# Database` comment to `.env.example`, and to `.env` when it exists.
 - Writes `config/db.ts` (shown under Configure). An existing file is left alone.
 - Regenerates `config/index.ts`, the config list the standalone server imports.
 - Adds a `## kitr: db` section to `AGENTS.md`: "`config/db.ts` connects the ORM; controllers and actions read it with `useDb<AppDb>(ctx.app)` or `ctx.app.container.use('db')`. Migrations are the ORM's own tooling."
 
-`kitr add db` asks no questions. Pass `--dry-run` to print the changes without writing them, or `--no-install` to skip the package manager run.
+`kitr add db` asks no questions. Pass `--dry-run` to preview or `--no-install` to skip the package manager. The `server` kit includes db.
 
-The `server` kit (`kitr new acme-api --kit server`) already includes db. `kitr remove db` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/db.ts`. It leaves `DATABASE_URL` in `.env.example`, and your ORM packages and schema files in place.
+`kitr remove db` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/db.ts`. It leaves `DATABASE_URL`, your ORM packages and schema files.
+
+</details>
 
 ## Configure
 
-`kitr add db` writes this file. It connects nothing yet: `connect` returns an empty object until you fill in your ORM.
+`kitr add db` writes this file. `connect` returns an empty object until you fill in your ORM.
 
 ```ts
 // config/db.ts
@@ -54,7 +62,7 @@ export default defineDb({
 })
 ```
 
-`defineDb` takes three functions. Each receives the app, so you can read `app.environment`, `app.isProduction` or another service from `app.container`.
+`defineDb` takes three functions, each receiving the app.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -66,7 +74,7 @@ export default defineDb({
 | --- | --- |
 | `DATABASE_URL` | The connection string your `connect` reads. `kitr add` writes `postgres://localhost:5432/app` as the example value. |
 
-`@kitr/db` also exports `defineConfig`, the same identity helper every package has. Prefer `defineDb`: it infers the client type from `connect`, so `disconnect` and `onReady` receive a typed `db`.
+Prefer `defineDb` to `defineConfig`: it infers the client type from `connect`, so `disconnect` and `onReady` receive a typed `db`.
 
 ## Connect with Drizzle
 
@@ -77,7 +85,7 @@ pnpm add drizzle-orm postgres
 pnpm add -D drizzle-kit
 ```
 
-Describe the tables. The schema is plain Drizzle.
+Describe the tables in plain Drizzle.
 
 ```ts
 // server/db/schema.ts
@@ -98,7 +106,7 @@ export const orders = pgTable('orders', {
 })
 ```
 
-Then fill in `config/db.ts`. Export the client type as `AppDb` so the rest of the app can ask for it by name.
+Fill in `config/db.ts` and export the client type as `AppDb`.
 
 ```ts
 // config/db.ts
@@ -124,11 +132,11 @@ Point `DATABASE_URL` in `.env` at a running database:
 DATABASE_URL=postgres://ada@localhost:5432/acme
 ```
 
-Start the server with `kitr dev`. The provider calls `connect` during boot, before the first request. If Postgres is not running, the server does not start, and the log shows the driver's own error, such as `ECONNREFUSED`.
+Start the server with `kitr dev`. `connect` runs during boot, before the first request. If Postgres is not running, the server does not start and the log shows the driver's error, such as `ECONNREFUSED`.
 
 ## Query from a controller
 
-In a controller, `ctx.app` is the app for the current request. Pass it to `useDb` with your client type:
+In a controller, pass `ctx.app` to `useDb` with your client type:
 
 ```ts
 // server/controllers/orders-controller.ts
@@ -172,11 +180,11 @@ curl http://localhost:3001/api/teams/team_acme/orders
 [{ "id": "ord_1", "teamId": "team_acme", "customerEmail": "grace@acme.com", "totalCents": 4900, "createdAt": "2026-11-02T09:14:00.000Z" }]
 ```
 
-The request app is a fork of the root app. It shares the root's singletons, so every request gets the same pooled client, not a new connection.
+Every request shares the same pooled client, not a new connection.
 
 ## Query from an action
 
-On the server, an [action](/packages/actions) handler has no `ctx`. Get the request's app with `useRequestApp` from `@kitr/server`, falling back to the root app:
+An [action](/packages/actions) handler has no `ctx`; get the request's app with `useRequestApp` from `@kitr/server`:
 
 ```ts
 // app/actions/projects/rename.ts
@@ -204,11 +212,12 @@ export const renameProject = defineMutation('projects.rename', {
 })
 ```
 
-The handler only runs on the server, so the database driver never reaches the browser bundle. Don't import `config/db.ts` into a component; import it from server code and actions only.
+> [!WARNING]
+> Don't import `config/db.ts` into a component; import it from server code and actions only.
 
 ## Query from a service or job
 
-Code that runs outside a request, such as a scheduled [job](/packages/jobs) or a script, has the root app. Pass it to `useDb` directly:
+Outside a request, such as a scheduled [job](/packages/jobs), pass the root app to `useDb`:
 
 ```ts
 // server/services/revenue.ts
@@ -229,11 +238,11 @@ export async function teamRevenue(app: KitrApp, teamId: string): Promise<number>
 }
 ```
 
-Taking `app` as a parameter keeps the function testable: a test passes an app with a fake client (see Testing).
+Taking `app` as a parameter keeps the function testable (see Testing).
 
 ## Read the client without a type
 
-`useDb<T>(app)` is a typed shortcut for `app.container.use('db')`. Both return the same object:
+`useDb<T>(app)` is a typed shortcut for `app.container.use('db')`:
 
 ```ts
 // server/controllers/health-controller.ts
@@ -247,13 +256,14 @@ export default class HealthController {
 }
 ```
 
-`useDb` only casts; it does not check the shape. If `AppDb` and `connect` drift apart, TypeScript catches it only when `AppDb` is derived from `connect`, as in the Drizzle example above. Don't write the type by hand.
+> [!WARNING]
+> `useDb` only casts. Derive `AppDb` from `connect`, as in the Drizzle example, rather than writing the type by hand.
 
-When the container has no `db` binding, both throw `[kitr] No binding named "db". Did you add the package that provides it?`. That means the provider is missing from `providers` in `kitrrc.ts`, or the code runs on an app that was created without it.
+Without the provider in `providers`, both throw `No binding named "db"`.
 
 ## Await the client before boot finishes
 
-`connect` usually returns a promise. The provider resolves it during `app.boot()`, so `useDb` is synchronous everywhere after boot: in controllers, actions and jobs. Code that runs before boot completes, such as another provider's `register`, must await the binding instead:
+The provider resolves `connect` during `app.boot()`, so `useDb` is synchronous after boot. Code that runs earlier, such as another provider's `register`, must await the binding:
 
 ```ts
 // app/providers/project_stats.ts
@@ -272,11 +282,10 @@ export default defineProvider({
 })
 ```
 
-Calling `useDb` while `connect` is still pending throws `[kitr] Binding "db" has an async factory; await container.make('db') before use('db').`
 
 ## Connect other ORMs
 
-The provider calls whatever `connect` returns "the client". Any library works. Each one below follows the same steps: install, `config/db.ts`, `.env`, the library's own docs.
+Any library works: whatever `connect` returns is the client.
 
 ### Prisma
 
@@ -303,7 +312,7 @@ export default defineDb({
 })
 ```
 
-Prisma reads `DATABASE_URL` from `.env` through `schema.prisma`. Calling `$connect()` in `connect` makes a bad URL fail boot instead of the first query. See the [Prisma Client docs](https://www.prisma.io/docs/orm/prisma-client).
+Calling `$connect()` makes a bad URL fail boot instead of the first query. See the [Prisma Client docs](https://www.prisma.io/docs/orm/prisma-client).
 
 ### Kysely
 
@@ -330,7 +339,7 @@ export default defineDb({
 })
 ```
 
-`Database` is your table interface, written by hand or generated with `kysely-codegen`. See the [Kysely docs](https://kysely.dev/docs/getting-started).
+`Database` is your table interface, by hand or from `kysely-codegen`. See the [Kysely docs](https://kysely.dev/docs/getting-started).
 
 ### A plain pg pool
 
@@ -356,7 +365,7 @@ export default defineDb({
 })
 ```
 
-The `select 1` checks the URL during boot; a `Pool` opens no connection until its first query. See the [node-postgres pooling docs](https://node-postgres.com/features/pooling).
+The `select 1` checks the URL during boot, because a `Pool` opens no connection until its first query. See the [pooling docs](https://node-postgres.com/features/pooling).
 
 ### SQLite with Drizzle
 
@@ -381,11 +390,11 @@ export default defineDb({
 })
 ```
 
-Here `DATABASE_URL` is a file path such as `acme.db`. The schema uses `drizzle-orm/sqlite-core` tables instead of `pg-core`. See [Drizzle with SQLite](https://orm.drizzle.team/docs/get-started-sqlite).
+Here `DATABASE_URL` is a file path such as `acme.db`, and tables come from `drizzle-orm/sqlite-core`. See [Drizzle with SQLite](https://orm.drizzle.team/docs/get-started-sqlite).
 
 ## Validate DATABASE_URL at startup
 
-`process.env.DATABASE_URL!` crashes deep inside the driver when the variable is missing. Declare it in the typed env instead, so the app refuses to start with a clear message:
+A missing `process.env.DATABASE_URL!` crashes deep inside the driver. Declare it in the typed env so the app refuses to start with a clear message:
 
 ```ts
 // app/env.ts
@@ -416,11 +425,10 @@ export default defineDb({
 })
 ```
 
-See [configuration](/docs/configuration) for how `createEnv` reads `.env` files.
 
 ## Change settings per environment
 
-`connect` receives the app. Read `app.isProduction` or `app.environment` to size the pool or turn on TLS only where it matters:
+Read `app.isProduction` or `app.environment` in `connect` to size the pool or turn on TLS only where it matters:
 
 ```ts
 // config/db.ts
@@ -445,11 +453,10 @@ export default defineDb({
 })
 ```
 
-`app.environment` is `'server'` for the running server and `'test'` in an app built by `createTestApp`.
 
 ## Check migrations when the server starts
 
-`onReady` runs once, after boot, when the server starts serving: on `server.listen()`, or on the first `server.fetch()` outside tests. Use it to warn about, or refuse to run with, an outdated schema:
+`onReady` runs once after boot, when the server starts serving. Use it to warn about, or refuse to run with, an outdated schema:
 
 ```ts
 // config/db.ts
@@ -478,11 +485,11 @@ export default defineDb({
 })
 ```
 
-`onReady` does not run in tests built with `createTestApp`, which only boots. The logger binding comes from [logger](/packages/logger).
+`onReady` does not run under `createTestApp`. The logger comes from [logger](/packages/logger).
 
 ## Run migrations
 
-kitr has no migration runner. Your ORM's tools work unchanged, so their docs apply as written. Add scripts to `package.json`:
+Your ORM's migration tools work unchanged. Add scripts to `package.json`:
 
 ```json
 {
@@ -506,14 +513,14 @@ export default defineConfig({
 })
 ```
 
-Run `pnpm db:migrate` in your deploy step, before the new server starts. With Prisma the commands are `prisma migrate dev` and `prisma migrate deploy`. See [Drizzle migrations](https://orm.drizzle.team/docs/migrations).
+Run `pnpm db:migrate` in your deploy step, before the new server starts. See [Drizzle migrations](https://orm.drizzle.team/docs/migrations).
 
-> **Warning**
-> Don't run migrations from `connect` or `onReady` when more than one server instance starts at once. Two instances migrating the same database at the same time can leave it half-migrated. Run them once, from the deploy pipeline.
+> [!WARNING]
+> Don't run migrations from `connect` or `onReady`: two instances migrating at once can leave the database half-migrated. Run them once, from the deploy pipeline.
 
 ## Use a transaction
 
-Transactions belong to your ORM. Get the client with `useDb` and call its own API:
+Transactions belong to your ORM; call its API on the client from `useDb`:
 
 ```ts
 // server/services/checkout.ts
@@ -537,11 +544,10 @@ export async function placeOrder(app: KitrApp, input: { id: string; teamId: stri
 }
 ```
 
-If the callback throws, Drizzle rolls back both statements.
 
 ## Close the connection on shutdown
 
-When the server receives `SIGINT` or `SIGTERM`, it stops accepting requests, then runs every provider's `shutdown` in reverse order. The db provider calls your `disconnect` there, so open queries finish before the pool closes:
+On `SIGINT` or `SIGTERM` the server stops accepting requests, then calls your `disconnect`, so open queries finish before the pool closes:
 
 ```ts
 // server/main.ts
@@ -558,11 +564,11 @@ await server.listen({ port: 3001 })
 // Ctrl-C logs "SIGINT received, shutting down", then calls disconnect(db, app).
 ```
 
-If you leave `disconnect` out, the process still exits, but the database sees the connections drop instead of closing.
+Without `disconnect`, the database sees connections drop instead of closing.
 
 ## Errors
 
-These errors come from the app container and config when the database binding is wrong. Driver errors (`ECONNREFUSED`, authentication failures) pass through unchanged.
+Driver errors (`ECONNREFUSED`, authentication failures) pass through unchanged. These come from a wrong database binding:
 
 | Error | When | What to do |
 | --- | --- | --- |
@@ -573,9 +579,7 @@ These errors come from the app container and config when the database binding is
 
 ## Testing
 
-In a test, build the app with `createTestApp` from [testing](/packages/testing) and give `config` a `db` whose `connect` returns a fake. The provider binds it exactly as it binds the real client, so code under test calls `useDb` unchanged.
-
-This tests `teamRevenue` from "Query from a service or job" against a fake client that answers one query:
+Build the app with `createTestApp` from [testing](/packages/testing) and give `config` a `db` whose `connect` returns a fake. Code under test calls `useDb` unchanged. This tests `teamRevenue` from "Query from a service or job":
 
 ```ts
 // server/services/revenue.test.ts
@@ -605,9 +609,7 @@ describe('teamRevenue', () => {
 })
 ```
 
-`createTestApp` boots the app, so `connect` has run and `useDb` works. It does not call `onReady`; call `await app.ready()` in the test when you want it.
-
-To replace the client in an app that has already booted, bind a value over it. Every later `useDb`, including in request forks, returns the new value:
+`createTestApp` runs `connect` but not `onReady`; call `await app.ready()` for that. To replace the client in an app that has booted, bind a value over it:
 
 ```ts
 // test/orders.test.ts
@@ -625,16 +627,12 @@ it('uses the stub bound after boot', async () => {
 })
 ```
 
-Bind the value after boot, not before: the provider's `register` replaces anything bound under `db` before it runs.
+Bind after boot, not before: the provider's `register` replaces anything bound under `db`.
 
-For queries you want to run for real, point `DATABASE_URL` at a throwaway test database in `.env.test` and run your migrations before the suite. For Postgres without a server, [PGlite](https://pglite.dev) runs in-process and Drizzle supports it through `drizzle-orm/pglite`.
-
-To test a controller end to end, mount the routes on a server built with the fake db config and call it with `createTestClient(server)`. See [testing](/packages/testing).
+For real queries, point `DATABASE_URL` at a throwaway database in `.env.test`, or use [PGlite](https://pglite.dev), which runs Postgres in-process through `drizzle-orm/pglite`. To test a controller end to end, call it with `createTestClient(server)` from [testing](/packages/testing).
 
 ## Next steps
 
-- [API reference](/packages/db/api): `defineDb`, `DbDefinition`, `dbProvider`, `useDb`.
-- [Drizzle ORM docs](https://orm.drizzle.team/docs/overview): schema, queries and migrations.
-- [api](/packages/api): routes and controllers that read the database.
-- [actions](/packages/actions): server functions your components call.
-- [Getting started](/docs/getting-started): the server kit, which includes db.
+- [API reference](/packages/db/api): `defineDb`, `dbProvider`, `useDb`.
+- [API routes](/packages/api): routes and controllers that read the database.
+- [Actions](/packages/actions): server functions your components call.

@@ -6,25 +6,25 @@ order: 1
 
 # Offline
 
-A train goes into a tunnel, the warehouse wifi drops, the app is reopened on a plane. Without help, every screen turns into a spinner or an error. `@kitr/offline` keeps a copy of the data your app already loaded on the device and puts it back before the first render, so the app opens with the last known data. Changes made with no connection wait in a queue and are sent when the network returns.
+A train goes into a tunnel, the warehouse wifi drops, the app is reopened on a plane. Without help, every screen turns into a spinner or an error. `@kitr/offline` keeps a copy of the data your app already loaded and puts it back before the first render. Changes made with no connection wait in a queue and are sent when the network returns.
 
-It is built on [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode)'s own network mode and its [dehydrate and hydrate](https://tanstack.com/query/latest/docs/framework/react/reference/hydration) functions, and stores the snapshot through [Storage](/packages/storage), so desktop and mobile apps keep it in the native store. kitr adds the throttled save, the restore at boot, version-based invalidation and a `useOffline()` hook for a status line.
+> [!SUMMARY]
+> Keeps showing loaded data with no connection and sends queued changes when the network comes back. Add it with `kitr add offline`; the overview is at [/packages/offline](/packages/offline).
 
-It runs in the browser and in desktop and mobile shells, never on the server. It keeps **data** available offline, not the app itself: to open a web app with no connection, also make it installable with the [Web](/packages/web) platform's PWA option.
-
-This guide follows Linus, who visits Acme's customers with a tablet: he opens the orders list, loses the connection in a basement, takes a new order for Grace, and the order reaches the server when he is back upstairs.
+It is built on [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode)'s network mode and [hydration](https://tanstack.com/query/latest/docs/framework/react/reference/hydration), and stores the snapshot through [Storage](/packages/storage). It runs in the browser and in desktop and mobile shells, never on the server. The examples follow Linus, who takes an order on a tablet in a basement with no signal.
 
 ## When to use it
 
-Use `@kitr/offline` to keep **server data** you loaded with [Query](/packages/query) usable with no connection: lists, details, the signed-in user. It saves the query cache as a whole and needs no change to your queries.
-
-Use [Storage](/packages/storage) for values the device itself owns, such as preferences and drafts. Storage items are always there; the offline snapshot is a cache that can expire, be busted by a new version and be cleared on sign-out.
+Use it to keep **server data** loaded with [Query](/packages/query) usable with no connection, with no change to your queries. It keeps data, not the app itself: to open a web app offline, also turn on the [Web](/packages/web) platform's PWA option. For values the device owns, such as preferences and drafts, use [Storage](/packages/storage); the snapshot here is a cache that can expire and be cleared.
 
 ## Install
 
 ```sh
 kitr add offline
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -34,11 +34,11 @@ What `kitr add` does:
 - Adds `VITE_APP_VERSION` to the public variables in `app/env.ts` as `e.string({ default: '0.0.0' })`, and `VITE_APP_VERSION=0.0.0` to `.env.example` (and to `.env` when it exists).
 - Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, named mutations replay even after a restart, give any other mutation a `mutationKey` and `setMutationDefaults` and an optimistic `onMutate`, and use `useOffline()` from `@kitr/offline/react` for a status line.
 
-No kit includes it.
+No kit includes it. `kitr add offline` adds [Query](/packages/query) and [Storage](/packages/storage) first when the project lacks them, and is refused in a server-only project.
 
-The provider reads the `queryClient` that [Query](/packages/query) binds, and the snapshot goes through [Storage](/packages/storage). `kitr add offline` adds both first when the project lacks them. Like every package that runs in the browser, it is refused in a server-only project.
+`kitr remove offline` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, deletes `config/offline.ts`, and lists the files that still import `@kitr/offline`. It leaves `VITE_APP_VERSION`, Query and Storage in place.
 
-`kitr remove offline` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, deletes `config/offline.ts`, and lists the files that still import `@kitr/offline`. It leaves `VITE_APP_VERSION` in `app/env.ts` and `.env.example`, and leaves Query and Storage installed.
+</details>
 
 ## Configure
 
@@ -69,17 +69,18 @@ export default defineConfig({
 | --- | --- |
 | `VITE_APP_VERSION` | The `buster`. A public variable, so it ships to the browser. Defaults to `0.0.0`. |
 
-`VITE_APP_VERSION` doesn't change on its own. Set it when you build, so every release drops the snapshots of the last one:
+Set `VITE_APP_VERSION` when you build, so every release drops the last one's snapshots:
 
 ```sh
 VITE_APP_VERSION=$(git rev-parse --short HEAD) kitr build
 ```
 
-The provider runs only when the app's environment is `client`. In `register()` it binds the `offline` service in the container. In `boot()` it binds TanStack's online state to [Platform](/packages/platform) when that is installed, then restores the snapshot. Because providers boot in order, the cache is filled before your first render.
+The provider runs only in the `client` environment. At boot it restores the snapshot, so the cache is filled before your first render.
 
 ### Keep queries in memory as long as the snapshot
 
-TanStack Query removes a query from memory five minutes after the last component using it unmounts (its `gcTime`). A removed query isn't in the next snapshot, so with the defaults a list Linus hasn't opened in five minutes is gone from the device even though `maxAge` is 24 hours. Raise `gcTime` in `config/query.ts` to match `maxAge`:
+> [!WARNING] Raise gcTime
+> TanStack Query drops a query from memory five minutes after its last component unmounts, and a dropped query is not in the next snapshot. Raise `gcTime` in `config/query.ts` to match `maxAge`:
 
 ```ts
 // config/query.ts
@@ -138,15 +139,7 @@ export default function OrdersPage() {
 }
 ```
 
-Open `/orders` with the network on and wait a second for the snapshot to be written. Close the tab, set the browser's devtools to **Offline**, and open the app again (as an installed PWA, or in the desktop or mobile shell). The list shows Ada's and Grace's orders at once, with "Offline. Showing the last orders loaded." above it, instead of "Loading orders…".
-
-Two things happened. At boot the provider restored the snapshot into the query cache, so `isPending` was already `false`. Then TanStack tried to refetch the stale data, saw it was offline, and paused the fetch instead of failing it: `fetchStatus` is `'paused'` and the cached data stays. When the network returns, the paused fetch runs and the list updates.
-
-The snapshot in storage is one JSON string:
-
-```text
-kitr:query-cache  {"at":1731000000000,"buster":"1.4.0","state":{"mutations":[],"queries":[{"queryKey":["orders","list"],...}]}}
-```
+Open `/orders` online, wait a second for the snapshot to be written, then reopen the app offline (as an installed PWA, or in a desktop or mobile shell). The list shows at once with the offline notice. The provider restored the snapshot, so `isPending` is `false`; TanStack then paused the refetch instead of failing it (`fetchStatus` is `'paused'`) and runs it when the network returns.
 
 ## Show the connection status
 
@@ -173,9 +166,7 @@ export function ConnectionStatus() {
 | `clear` | `() => void` | Delete the saved snapshot. |
 | `persist` | `() => void` | Save the cache now instead of after the throttle. |
 
-The hook re-renders after a restore, after each save, and when the network goes up or down. Put `<ConnectionStatus />` in the layout so it shows on every page.
-
-On the server the provider binds nothing, so during server rendering `useOffline()` reports online, nothing pending and nothing restored, which matches the browser's first render.
+Put `<ConnectionStatus />` in the layout so it shows on every page.
 
 ## Choose what to save
 
@@ -195,13 +186,11 @@ export default defineConfig({
 })
 ```
 
-With this config, `['orders', 'list']` and `['projects', 'detail', 'prj_7']` are saved; `['search', 'Grace']` and `['billing', 'invoices']` are not. Keys from `createKeys('orders')` in `kitr/app` always start with the resource name, so the first element is a reliable switch.
-
-Smaller snapshots also save faster. Every save writes the whole snapshot as one string, and `localStorage` has a limit of about 5 MB per origin. When a write fails, the error is logged as `persist failed` and the app keeps running with no saved copy.
+Here `['orders', 'list']` is saved and `['search', 'Grace']` is not. Keep snapshots small: every save writes the whole snapshot as one string, and `localStorage` holds about 5 MB per origin. A failed write is logged as `persist failed` and the app keeps running.
 
 ## Keep private data off the shared device
 
-The snapshot is plain JSON in local storage or the native store. Anyone with the device can read it. Clear it when someone signs out, along with the in-memory cache:
+The snapshot is plain JSON that anyone with the device can read. Clear it, and the in-memory cache, when someone signs out:
 
 ```tsx
 // app/components/sign-out-button.tsx
@@ -227,14 +216,15 @@ export function SignOutButton({ onSignedOut }: { onSignedOut: () => void }) {
 }
 ```
 
-Clear the query cache first. `clear()` deletes the stored snapshot, but the next cache change saves a new one, so an uncleared cache would be written straight back.
+> [!WARNING] Clear the cache first
+> `clear()` deletes the snapshot, but the next cache change saves a new one, so an uncleared cache is written straight back.
 
-> **Warning**
-> Never let tokens, card numbers or other secrets into the snapshot. Leave such queries out with `include`, and keep tokens in [Secure storage](/packages/secure-storage). On a shared computer, anything in the snapshot survives until it expires or someone signs out.
+> [!WARNING] No secrets in the snapshot
+> Leave tokens and card numbers out with `include`, and keep tokens in [Secure storage](/packages/secure-storage).
 
 ## Drop old snapshots when you deploy
 
-When a release changes the shape of your data, last week's snapshot would hand new code old data. `buster` prevents that: a snapshot saved with another `buster` is deleted at boot instead of restored. The generated config uses `VITE_APP_VERSION`:
+When a release changes the shape of your data, `buster` stops old snapshots reaching new code: a snapshot saved with another `buster` is deleted at boot. The generated config uses `VITE_APP_VERSION`:
 
 ```ts
 // app/env.ts
@@ -252,11 +242,12 @@ export const env = createEnv({
 VITE_APP_VERSION=1.5.0
 ```
 
-Linus's tablet holds a snapshot saved by `1.4.0`. After the `1.5.0` update the provider finds it, sees `"buster":"1.4.0"`, deletes it, and the app loads fresh data. Paused mutations in that snapshot are deleted with it, so ship releases that change mutation inputs only when you can afford to lose queued changes, or keep the old `buster`.
+> [!WARNING] Queued changes are dropped too
+> Paused mutations in a busted snapshot are deleted with it. Change mutation inputs only when you can afford to lose queued changes, or keep the old `buster`.
 
 ## Expire snapshots after a time
 
-`maxAge` is measured from when the snapshot was last saved. A snapshot older than `maxAge` is deleted at boot instead of restored. One saved exactly `maxAge` milliseconds ago still restores:
+`maxAge` is measured from the last save. A snapshot older than `maxAge` is deleted at boot instead of restored:
 
 ```ts
 // config/offline.ts
@@ -270,15 +261,11 @@ export default defineConfig({
 })
 ```
 
-Since every cache change saves the snapshot again, an app that is used every day never hits `maxAge`. It matters for an app left closed: after a week with this config, Linus's tablet opens with an empty cache and loads everything fresh. Match `gcTime` in `config/query.ts` to the new `maxAge`, as [Configure](#keep-queries-in-memory-as-long-as-the-snapshot) shows.
-
-Restored data keeps the time it was fetched, so it counts as stale by your `staleTime` and is refetched as soon as a component uses it and the network is up.
+An app used every day never hits `maxAge`; it matters for an app left closed. Match `gcTime` to the new `maxAge`, as [Configure](#keep-queries-in-memory-as-long-as-the-snapshot) shows. Restored data keeps its fetch time, so it is refetched as soon as it is stale and the network is up.
 
 ## Queue changes while offline
 
-Mutations need no change either. TanStack Query's default `networkMode: 'online'` pauses a mutation that starts with no connection, instead of running it and failing. The provider saves paused mutations in the snapshot, and TanStack sends them when the network returns.
-
-Give each mutation a `mutationKey`, so it can be replayed after a reload (next section), and an optimistic `onMutate`, so the screen shows the change while it waits:
+TanStack Query pauses a mutation that starts with no connection, and the provider saves paused mutations in the snapshot. Give each mutation a `mutationKey`, so it can be replayed after a reload, and an optimistic `onMutate`, so the screen shows the change while it waits:
 
 ```ts
 // app/hooks/orders/use-create-order.ts
@@ -335,15 +322,16 @@ export function NewOrderButton() {
 }
 ```
 
-In the basement, Linus taps the button. Grace's order appears in the list at once, `createOrder.isPaused` is `true`, and `<ConnectionStatus />` reads "Offline. 1 change(s) will be sent later." Back upstairs, TanStack sends the request, the `effects` refetch the list, and the status line disappears.
+Offline, the order appears in the list at once, `createOrder.isPaused` is `true` and the status line shows one change waiting. When the network returns, TanStack sends the request and the `effects` refetch the list.
 
-Don't catch the offline case yourself and retry with `setTimeout`: the mutation is already queued, and a second attempt sends the order twice.
+> [!WARNING] Don't retry by hand
+> The mutation is already queued; a retry with `setTimeout` sends the order twice.
 
 ## Replay queued changes after a reload
 
-A paused mutation that is restored from a snapshot is data only: its function didn't survive the reload. Named mutations need nothing from you: `useMutation('orders.create')` keys the mutation by its name, and before restoring, the offline provider gives every mutation in the operation registry (each `defineMutation('orders.create', …)` from [actions](/packages/actions)) its function and cache effects again. Once restored, it resumes them straight away when the device is online.
+A mutation restored from a snapshot is data only: its function didn't survive the reload. Named mutations need nothing from you: `useMutation('orders.create')` is keyed by its name, and the provider gives every mutation in the operation registry (each `defineMutation` from [actions](/packages/actions)) its function and effects again.
 
-For a mutation without a name, register the function for its `mutationKey` with TanStack's [`setMutationDefaults`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetmutationdefaults). TanStack copies the defaults into a mutation when it is restored, so they must be set **before** the offline provider restores the snapshot. Do it in the `register()` of a provider, which runs before any provider boots:
+For an unnamed mutation, register its function for the `mutationKey` with TanStack's [`setMutationDefaults`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetmutationdefaults), in the `register()` of a provider:
 
 ```ts
 // app/providers/offline-mutations.ts
@@ -382,13 +370,14 @@ export default defineKitrConfig({
 })
 ```
 
-`createOrder.options({ queryClient })` returns the mutation function and the cache effects, so a replayed order behaves like one sent from the button. `resumePausedMutations()` sends restored mutations as soon as the app starts online; while offline it leaves them paused. Without that call, TanStack sends them on the next focus or reconnect event.
+`createOrder.options({ queryClient })` returns the mutation function and the cache effects. `resumePausedMutations()` sends restored mutations as soon as the app starts online.
 
-Don't set the defaults in `boot()` or in a component. By then the mutation was restored without a function, and it fails when it resumes with TanStack's `No mutationFn found` error.
+> [!WARNING] Set defaults in register()
+> Not in `boot()` or a component: by then the mutation was restored without a function and fails with `No mutationFn found`.
 
 ## Save and restore by hand
 
-The provider saves on its own: one second after the last cache change, and right away when the page is hidden or closed, so a change made just before Linus locks the tablet is not lost. Outside React, the `offline` service gives you the same controls:
+The provider saves one second after the last cache change, and right away when the page is hidden or closed. Outside React, the `offline` service gives you the same controls:
 
 ```ts
 // app/lib/sync/sync-now.ts
@@ -408,9 +397,7 @@ export async function resetDeviceCache() {
 }
 ```
 
-`restore()` resolves to `true` when it loaded a snapshot. A snapshot that isn't valid JSON, has the wrong shape, another `buster`, or is older than `maxAge` is deleted, and `restore()` resolves to `false` without throwing, so a corrupt snapshot never stops the app from booting. `subscribe(listener)` calls `listener` after a restore, after each throttled save and on every online change, and returns an unsubscribe function.
-
-To use the service with a `QueryClient` you build yourself, outside the provider, call `createOffline(client, config)`:
+`restore()` resolves to `true` when it loaded a snapshot. A corrupt, mismatched or expired snapshot is deleted and `restore()` resolves to `false` without throwing. To use the service with a `QueryClient` you build yourself, call `createOffline(client, config)`:
 
 ```ts
 // scripts/warm-cache.ts
@@ -428,9 +415,7 @@ JSON.parse(storage.get('kitr:query-cache') ?? '{}').state.queries.length // => 1
 
 ## Follow the platform's online state
 
-By default TanStack Query listens to the browser's `online` and `offline` events. Native shells know the network better than `navigator.onLine`, so when [Platform](/packages/platform) is installed, the provider calls `bindOnlineManager` with the `platform` service and TanStack follows the platform driver instead. You don't call it yourself in a kitr app.
-
-Outside the provider, for example in a test, pass anything with `isOnline()` and `onOnline(listener)`:
+When [Platform](/packages/platform) is installed, the provider makes TanStack follow the platform's network state, which native shells know better than the browser's events. In a test, pass anything with `isOnline()` and `onOnline(listener)` to `bindOnlineManager`:
 
 ```ts
 // test/support/network.ts
@@ -450,11 +435,9 @@ export const goOffline = () => setNetwork(false)
 export const goOnline = () => setNetwork(true)
 ```
 
-TanStack's `onlineManager` is global, so the binding applies to every `QueryClient` in the page.
-
 ## Testing
 
-The provider only runs when the app's environment is `client`, so pass `environment: 'client'` to `createTestApp`. Give it an in-memory storage driver in config, seed a snapshot with `createOffline`, and boot: the cache holds the seeded data before any test code runs. TanStack's `onlineManager` lets you take the app offline:
+Pass `environment: 'client'` to `createTestApp`, an in-memory storage driver in config, and a snapshot seeded with `createOffline`. TanStack's `onlineManager` takes the app offline:
 
 ```ts
 // app/lib/orders/offline.test.ts
@@ -518,13 +501,11 @@ describe('offline orders', () => {
 })
 ```
 
-To test that a mutation queues, build it on the client with `client.getMutationCache().build(client, { mutationKey, mutationFn })`, call `execute()` while `onlineManager.setOnline(false)`, and wait for `offline.pendingMutations()` to be `1`. Paused mutations only resume on a mounted client: call `client.mount()` in the test, which `QueryClientProvider` does in the app.
+To test that a mutation queues, build it with `client.getMutationCache().build(...)`, call `execute()` while `onlineManager.setOnline(false)`, and wait for `offline.pendingMutations()` to be `1`. Call `client.mount()` so paused mutations can resume.
 
 ## Extend
 
-The snapshot goes through a `StorageDriver`, the same interface [Storage](/packages/storage) uses for its native stores (see [Write a storage driver](/packages/storage#write-a-storage-driver)). Pass your own as `storage` to keep the snapshot somewhere else. The usual reason is size: [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) holds far more than the 5 MB of `localStorage`.
-
-The offline service reads the snapshot synchronously with `get()`, so an async store must be loaded into memory first. `createAsyncStorageDriver` from `@kitr/storage` does that in its `hydrate()`. This driver uses [idb-keyval](https://github.com/jakearchibald/idb-keyval):
+Pass your own `StorageDriver` as `storage` (see [Write a storage driver](/packages/storage#write-a-storage-driver)) to keep the snapshot elsewhere, usually because [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) holds far more than `localStorage`. The service reads synchronously, so `createAsyncStorageDriver` loads the store into memory in `hydrate()`. This driver uses [idb-keyval](https://github.com/jakearchibald/idb-keyval):
 
 ```ts
 // app/lib/idb-snapshot.ts
@@ -557,7 +538,7 @@ export default defineConfig({
 })
 ```
 
-Nothing calls `hydrate()` on a driver passed in config, so do it in a provider listed **before** `@kitr/offline/provider` in `kitrrc.ts`. Its `boot()` finishes before the offline provider restores:
+Nothing calls `hydrate()` on a config driver, so do it in a provider listed **before** `@kitr/offline/provider` in `kitrrc.ts`:
 
 ```ts
 // app/providers/idb-snapshot.ts
@@ -572,16 +553,14 @@ export default defineProvider({
 })
 ```
 
-Writes go to IndexedDB in the background after each save. A failed write is logged as `[@kitr/storage] idb:offline: <error>`; pass `onError` to `createAsyncStorageDriver` to handle it yourself.
+A failed write is logged; pass `onError` to `createAsyncStorageDriver` to handle it yourself.
 
 ## Devtools
 
-`@kitr/offline` has no panel. With [Devtools](/packages/devtools) installed it writes to the Log panel under `offline`: `restored` with the number of queries and mutations it loaded at boot, and `persist failed` with the error when a save is refused, usually because storage is full. The restored queries show in the [Query](/packages/query) panel like any others.
+With [Devtools](/packages/devtools) installed, the Log panel shows `restored` at boot and `persist failed` when a save is refused, usually because storage is full.
 
 ## Next steps
 
-- [API reference](/packages/offline/api)
-- [TanStack Query: network mode](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode): how paused queries and mutations behave.
+- [API reference](/packages/offline/api): every export with its signature.
 - [Query](/packages/query): the queries and mutations this package saves.
-- [Storage](/packages/storage): where the snapshot lives, and native drivers on desktop and mobile.
 - [Web](/packages/web): make the app installable so it opens with no connection.

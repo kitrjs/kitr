@@ -6,19 +6,25 @@ order: 1
 
 # Feature flags
 
-Feature flags let you merge unfinished work behind a switch, turn a redesign on for 10% of users, or switch a feature off in production without a deploy. `@kitr/flags` declares every flag once, with a typed default, so a misspelt flag is a type error. Providers decide each flag's value per user: an env variable, a stable percentage rollout, your own rules, or any [OpenFeature](https://openfeature.dev/docs/reference/intro) vendor such as LaunchDarkly, Flagsmith or Unleash.
+Feature flags let you merge unfinished work behind a switch, turn a redesign on for 10% of users, or switch a feature off in production without a deploy. `@kitr/flags` declares every flag once, with a typed default, so a misspelt flag is a type error.
 
-On top of that provider chain kitr adds type coercion, so `FLAG_MAX_UPLOAD_MB=25` arrives as a number, a per-request answer on the server that never leaks from one user to another, and a snapshot the server embeds so the browser starts with the same values.
+> [!SUMMARY]
+> Typed feature flags with per-user values, the same on the server and in the browser. Add it with `kitr add flags`; the overview is at [/packages/flags](/packages/flags).
 
-It runs on both sides: React hooks in the browser, `resolveFlags()` on the server. Flags are not permissions. To decide whether Grace may delete an invoice, use [auth](/packages/auth) abilities. For a value that is the same for everyone in an environment, a [config file](/docs/configuration) is simpler.
+Providers decide each value: an env variable, a stable percentage rollout, your own rules, or any [OpenFeature](https://openfeature.dev/docs/reference/intro) vendor such as LaunchDarkly or Unleash. The server resolves per request and embeds a snapshot so the browser starts with the same values.
 
-The examples on this page follow Acme's dashboard at `app.acme.com`, which is rolling out a redesigned dashboard (`new-dashboard`) and raising the upload limit for invoices (`max-upload-mb`).
+Flags are not permissions: use [auth](/packages/auth) abilities for those. For a value that is the same for everyone in an environment, a [config file](/docs/configuration) is simpler.
+
+The examples follow Acme's dashboard at `app.acme.com`, which is rolling out a redesign (`new-dashboard`) and raising the invoice upload limit (`max-upload-mb`).
 
 ## Install
 
 ```sh
 kitr add flags
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -27,9 +33,11 @@ What `kitr add` does:
 - Writes `app/flags.ts`, which declares two example flags, and `config/flags.ts`, which lists the providers (see [Configure](#configure)).
 - Adds a `## kitr: flags` section to `AGENTS.md`. In a project with React it says: flags live in `app/flags.ts`, components read `useFlag('new-dashboard')` from `@kitr/flags/react`, the server resolves them per request with `resolveFlags` and embeds them with `<FlagsScript />`, and feature switches never read `import.meta.env`. In a server-only project it says: resolve per request with `resolveFlags(app, event, { userId })` from `@kitr/flags/server`, providers ordered in `config/flags.ts`.
 
-It adds no env variables, no scripts and asks no questions. No kit includes flags, so every project adds it with this command.
+It adds no env variables or scripts and asks no questions. No kit includes flags.
 
-`kitr remove flags` takes the provider and the package out of `kitrrc.ts`, deletes `config/flags.ts`, removes the dependency and the `AGENTS.md` section. It keeps `app/flags.ts`, because your code imports from it; delete it once nothing does.
+`kitr remove flags` takes the provider and the package out of `kitrrc.ts`, deletes `config/flags.ts`, and removes the dependency and the `AGENTS.md` section. It keeps `app/flags.ts`, because your code imports from it.
+
+</details>
 
 ## Configure
 
@@ -67,16 +75,16 @@ export default defineConfig({
 | `providers` | `[]` | Asked in order for each flag; the first with an answer wins. With none, every flag is its default. |
 | `ttl` | none | Seconds before the browser checks flags again, so changes reach open tabs. Unset checks once per page load. |
 
-For each flag, the providers are asked in order. The first that answers with a value of the right type wins. If none does, the flag's `default` from `app/flags.ts` answers. A provider that throws is skipped with a `console.warn`, so a flag service outage falls back to defaults instead of breaking pages.
+The first provider that answers with a value of the right type wins; otherwise the flag's `default` answers. A provider that throws is skipped with a `console.warn`, so an outage falls back to defaults.
 
-`envFlagsProvider()` reads one variable per flag. The name is `FLAG_` plus the flag key in upper case, with dashes, dots and camelCase humps turned into underscores:
+`envFlagsProvider()` reads `FLAG_` plus the flag key in upper case, with dashes, dots and camelCase humps turned into underscores:
 
 | Variable | Used for |
 | --- | --- |
 | `FLAG_NEW_DASHBOARD` | `new-dashboard`: `true`, `1`, `on` or `yes` turn it on; `false`, `0`, `off`, `no` or empty turn it off. |
 | `FLAG_MAX_UPLOAD_MB` | `max-upload-mb`: any finite number, such as `25`. |
 
-The env provider reads `process.env`, so it answers on the server. In the browser there is no `process.env` and it stays silent, which is why the server's snapshot matters (see [Send the server's answer to the browser](#send-the-servers-answer-to-the-browser)).
+The env provider answers on the server only; the browser relies on the server's snapshot (see [Send the server's answer to the browser](#send-the-servers-answer-to-the-browser)).
 
 ## Show a feature to some users
 
@@ -95,7 +103,7 @@ export function DashboardPage() {
 }
 ```
 
-Put `FLAG_NEW_DASHBOARD=true` in `.env`, restart the server, and the dashboard switches for everyone. Remove the line and 10% of signed-in users, chosen by user id, still see the redesign through the percentage provider. Everyone else, and every signed-out visitor, sees the classic one.
+With `FLAG_NEW_DASHBOARD=true` in `.env` and a server restart, everyone sees the redesign. Without it, 10% of signed-in users, chosen by user id, still do; everyone else sees the classic one.
 
 ## Declare flags
 
@@ -118,13 +126,14 @@ export const flags = defineFlags({
 | `10` | `number` | A limit or a size. |
 | `'classic'` | `string` | A variant name for an experiment. |
 
-`defineFlags` returns its argument with its exact types, so `useFlag<typeof flags, 'max-upload-mb'>` is a `number` and a key that isn't declared is a type error. Write `description` for the person who flips the flag in six months; it is the only documentation a flag gets.
+`defineFlags` keeps exact types, so `useFlag<typeof flags, 'max-upload-mb'>` is a `number` and an undeclared key is a type error. Write `description` for whoever flips the flag in six months.
 
-Choose defaults that are safe to fall back to. If the flag service is down, every user gets the default, so a half-finished feature should default to `false`.
+> [!WARNING] Choose safe defaults
+> If the flag service is down, every user gets the default, so a half-finished feature should default to `false`.
 
 ## Type the hooks once
 
-`useFlag` needs the flags type to check keys. Instead of repeating `typeof flags` in every component, wrap it once next to the declarations:
+Wrap `useFlag` once instead of repeating `typeof flags` in every component:
 
 ```ts
 // app/use_flag.ts
@@ -150,11 +159,15 @@ export function UploadHint() {
 // => <p>PDFs up to 10 MB.</p>   (no provider answered, so the default)
 ```
 
-Calling `useFlag('max-upload-mb')` with no type arguments also works, but the value is typed as `boolean | string | number` and a typo is not caught.
 
 ## Pick flags per platform
 
-One project that builds a phone app and a desktop app keeps one flags service and splits the definitions into groups: `app/flags/mobile.ts` exports `mobileFlags`, `app/flags/desktop.ts` exports `desktopFlags`, and `app/flags.ts` exports their union, `{ ...mobileFlags, ...desktopFlags }`, for shared components to import. `config/flags.ts` lists the union, so the web and server builds see every flag. A file in a platform's config folder replaces it for that build, so `config/phone/flags.ts` lists `definitions: mobileFlags` and can use its own providers; see [Platforms](/docs/platforms).
+A project with a phone app and a desktop app keeps one flags service and splits definitions into groups: `mobileFlags` in `app/flags/mobile.ts`, `desktopFlags` in `app/flags/desktop.ts`, and their union in `app/flags.ts`. `config/flags.ts` lists the union. A platform's config folder replaces it for that build; see [Platforms](/docs/platforms).
+
+<details>
+<summary>Phone build config</summary>
+
+`config/phone/flags.ts` lists only `mobileFlags` and can use its own providers:
 
 ```ts
 // config/phone/flags.ts
@@ -163,6 +176,8 @@ import { mobileFlags } from '#app/flags/mobile'
 
 export default defineConfig({ definitions: mobileFlags, providers: [envFlagsProvider()] })
 ```
+
+</details>
 
 ## Read every flag at once
 
@@ -180,11 +195,11 @@ export function FlagsPanel() {
 // => { "new-dashboard": false, "max-upload-mb": 10, "invoice-layout": "classic" }
 ```
 
-The object is frozen and stays the same object until the flags change, so it is safe to pass to memoised children.
+The object is frozen and stable until the flags change, so memoised children can take it.
 
 ## Read a flag outside React
 
-Outside components, get the service from the container with `useFlags(app)` from `@kitr/flags`. Its reads are synchronous and answer from the current snapshot:
+Outside components, `useFlags(app)` from `@kitr/flags` returns the service. Reads are synchronous and answer from the current snapshot:
 
 ```ts
 // app/lib/invoices/validate-upload.ts
@@ -210,11 +225,12 @@ export function checkUploadSize(app: KitrApp, file: File) {
 | `resolved` | `boolean` | Whether the snapshot came from a resolve or hydrate rather than defaults. |
 | `definitions` | the definitions | What `app/flags.ts` declared. |
 
-`isEnabled` is for boolean flags. On a number flag it is always `false`, even for a value of `1`; use `value()` there.
+> [!WARNING] isEnabled is for booleans
+> On a number flag it is always `false`, even for `1`. Use `value()` there.
 
 ## Read flags on the server
 
-On the server, one process answers many users at once, so flags are resolved per request. `resolveFlags(app, event, context)` from `@kitr/flags/server` asks the providers for this request's user and caches the answer on the request:
+The server answers many users at once, so flags resolve per request. `resolveFlags(app, event, context)` from `@kitr/flags/server` asks the providers for this request's user and caches the answer on the request:
 
 ```ts
 // server/controllers/dashboard-controller.ts
@@ -231,7 +247,7 @@ export default class DashboardController {
 }
 ```
 
-The user comes from `locals.user.id` when [auth](/packages/auth) middleware has set it, so a percentage rollout gives Ada the same answer on every request. Pass more context as the third argument; it is merged over the user id and every provider receives it:
+The user comes from `locals.user.id` when [auth](/packages/auth) middleware set it. Pass more context as the third argument; every provider receives it:
 
 ```ts
 // server/controllers/invoices-controller.ts
@@ -249,15 +265,14 @@ export default class InvoicesController {
 }
 ```
 
-The first call on a request runs the providers; later calls on the same request return the same object without asking again, even with different context. Resolve once, early, with the full context.
+> [!WARNING] Resolve once, with full context
+> The first call on a request runs the providers; later calls return the same object, even with different context.
 
-Inside a request, the request's own app (a fork of the server app) keeps the resolved values, so `useFlags(app).value('new-dashboard')` in a service called from that request answers for that user. The shared root app never keeps a resolved snapshot: `resolve()` on it returns the values but leaves `value()` at the defaults, so one user's answer can never leak to the next.
+Inside a request, `useFlags(app).value(...)` answers for that request's user. The shared root app never keeps a resolved snapshot, so one user's answer can't leak to the next.
 
 ## Send the server's answer to the browser
 
-The browser can't read `process.env`, and it may not know the user id when it boots. So the server resolves the flags and embeds the result in the page as a JSON script tag. When the client app boots, the flags provider reads that tag and loads it before the first render, without asking any provider.
-
-`<FlagsScript values={...} />` from `@kitr/flags/react` renders the tag. In a server-rendered app, resolve in the root route's loader and put the tag in the document head:
+The browser can't read `process.env` and may not know the user id at boot. The server resolves the flags and embeds them as a JSON script tag, which the client provider loads before the first render. `<FlagsScript values={...} />` from `@kitr/flags/react` renders it. Resolve in the root route's loader and put the tag in the document head:
 
 ```ts
 // app/server/load_flags.ts
@@ -311,9 +326,12 @@ The page now carries:
 <script type="application/json" id="__kitr_flags__">{"new-dashboard":true,"max-upload-mb":10}</script>
 ```
 
-Values are escaped (`<` becomes `<`), so a string flag can't close the tag. The client treats the embedded JSON as input: it keeps only declared keys, coerces each to its declared type, and falls back to the default for anything it can't read. A broken tag is ignored, and the provider resolves at boot instead.
+Values are escaped, so a string flag can't close the tag. The client keeps only declared keys, coerces each to its type, and ignores a broken tag.
 
-Outside React, `flagsScript(values)` from `@kitr/flags/server` returns the same tag as a string, for a server that writes HTML by hand:
+<details>
+<summary>Without React, and first-paint mismatches</summary>
+
+`flagsScript(values)` from `@kitr/flags/server` returns the same tag as a string, for a server that writes HTML by hand:
 
 ```ts
 // server/pages/invoice_print.ts
@@ -323,13 +341,15 @@ const head = `<head><title>Invoice</title>${flagsScript({ 'invoice-layout': 'com
 // => <head><title>Invoice</title><script type="application/json" id="__kitr_flags__">{"invoice-layout":"compact"}</script></head>
 ```
 
-During server rendering, `useFlag` answers from the app that renders the page. When that app has not resolved flags for this request, it renders defaults, and the browser's first render from the embedded snapshot can differ. For UI that must match on the first paint, read the value from the root loader's data on both sides.
+During server rendering, `useFlag` renders defaults if the app has not resolved flags for the request, so the browser's first render can differ. For UI that must match on first paint, read the value from the root loader's data on both sides.
 
-In a single-page app with no server rendering, there is nothing to embed. The provider calls `resolve()` at boot in the browser with no context, so env variables and percentage rollouts don't apply until you resolve again with a user (next section).
+In a single-page app there is nothing to embed. The provider calls `resolve()` at boot with no context, so env variables and percentage rollouts don't apply until you resolve again with a user (next section).
+
+</details>
 
 ## Resolve again after sign-in
 
-In the browser, `resolve(context)` updates the snapshot, and every `useFlag` re-renders with the new answer. Call it once you know who the user is:
+In the browser, `resolve(context)` updates the snapshot and every `useFlag` re-renders. Call it once you know who the user is:
 
 ```tsx
 // app/components/auth/after-sign-in.tsx
@@ -345,11 +365,11 @@ export function ResolveFlagsFor({ userId }: { userId: string }) {
 }
 ```
 
-Render `<ResolveFlagsFor userId={user.id} />` inside the signed-in layout. When Linus signs in, the percentage provider places him in or out of the 10%, and the dashboard switches without a reload. Call `resolve({})` on sign-out to drop back to the anonymous answer.
+Render `<ResolveFlagsFor userId={user.id} />` in the signed-in layout; the dashboard switches without a reload. Call `resolve({})` on sign-out to drop back to the anonymous answer.
 
 ## Providers
 
-A provider answers flags from one source. List them in `config/flags.ts` in priority order: the first one with an answer wins.
+List providers in `config/flags.ts` in priority order; the first with an answer wins.
 
 | Provider | Answers from | Silent when |
 | --- | --- | --- |
@@ -360,7 +380,7 @@ A provider answers flags from one source. List them in `config/flags.ts` in prio
 
 ### Env variables
 
-Built in; nothing to install. Good for turning a flag on per environment, or forcing it in staging:
+Built in. Good for turning a flag on per environment:
 
 ```ts
 // config/flags.ts
@@ -378,7 +398,7 @@ FLAG_NEW_DASHBOARD=true
 FLAG_MAX_UPLOAD_MB=25
 ```
 
-Pass a map as the first argument to read from somewhere other than `process.env`, and a prefix as the second: `envFlagsProvider(process.env, 'ACME_FLAG_')` reads `ACME_FLAG_NEW_DASHBOARD`. Changing an env variable needs a server restart.
+Pass a map to read from somewhere other than `process.env`, and a prefix second: `envFlagsProvider(process.env, 'ACME_FLAG_')`. Changing an env variable needs a server restart.
 
 ### Percentage rollout
 
@@ -395,9 +415,10 @@ export default defineConfig({
 })
 ```
 
-The answer is a hash of the salt, the flag key and the user id, so Ada gets the same answer on every request and every server. Raising 25 to 50 keeps everyone who already had the feature and adds more. Two flags at 50% reach different, independent halves of your users. Change the salt to draw a new sample.
+The answer is a hash of the salt, flag key and user id, so a user gets the same answer on every request and server. Raising 25 to 50 keeps everyone who had the feature. Change the salt to draw a new sample.
 
-With no `userId` in the context, the provider answers `false`, and since that is an answer, providers after it are not asked. Put overrides such as `envFlagsProvider()` before it.
+> [!WARNING] Put overrides first
+> With no `userId` the provider answers `false`, and providers after it are not asked. Put `envFlagsProvider()` before it.
 
 ### Static rules
 
@@ -420,11 +441,11 @@ export default defineConfig({
 })
 ```
 
-The design team sees the new dashboard. Pro teams get 100 MB; for everyone else `undefined` means "no opinion", so the default of 10 answers. The context holds `userId` plus whatever you passed to `resolveFlags` or `resolve`.
+The design team sees the new dashboard. Pro teams get 100 MB; `undefined` means "no opinion", so everyone else gets the default. The context holds `userId` plus whatever you passed to `resolveFlags` or `resolve`.
 
 ### OpenFeature
 
-Connect any vendor that has an [OpenFeature provider](https://openfeature.dev/ecosystem): LaunchDarkly, Flagsmith, Unleash, GrowthBook, ConfigCat and others. Install the SDK for the side you resolve on, plus your vendor's provider:
+Connect any vendor with an [OpenFeature provider](https://openfeature.dev/ecosystem). Install the SDK for the side you resolve on, plus your vendor's provider:
 
 ```sh
 pnpm add @openfeature/server-sdk
@@ -449,11 +470,14 @@ export default defineConfig({
 })
 ```
 
-The adapter calls `getBooleanValue`, `getNumberValue` or `getStringValue` depending on each flag's declared default, passing the default and the context with `targetingKey` set to `userId`. Your vendor's key goes in `.env` as the vendor's docs say, for example `LAUNCHDARKLY_SDK_KEY=sdk-...`. Because an OpenFeature client always answers (with the default when it has no rule), put it last.
+The adapter calls the getter that matches each flag's type, with `targetingKey` set to `userId`. Keep the vendor's key in `.env` as its docs say.
+
+> [!WARNING] Put OpenFeature last
+> The client always answers, with the default when it has no rule, so providers after it are never asked.
 
 ## Values a provider can return
 
-Providers often answer with strings, from env files or remote JSON. Each answer is coerced to the flag's declared type; an answer that can't be read as that type counts as no answer, and the next provider is asked:
+Each answer is coerced to the flag's declared type. One that can't be read counts as no answer, and the next provider is asked:
 
 | Declared type | Accepted answers | Ignored answers |
 | --- | --- | --- |
@@ -476,11 +500,11 @@ await demo.resolve()
 // => { 'new-dashboard': true, 'max-upload-mb': 50, 'invoice-layout': 'classic' }
 ```
 
-`'lots'` is not a number, so the env provider's answer is ignored and the static provider's `50` wins.
+`'lots'` is not a number, so the static provider's `50` wins.
 
 ## Retire a flag
 
-A flag is finished when the feature has shipped to everyone. Delete it from `app/flags.ts`:
+Once a feature has shipped to everyone, delete its flag from `app/flags.ts`:
 
 ```ts
 // app/flags.ts
@@ -492,7 +516,7 @@ export const flags = defineFlags({
 })
 ```
 
-Every typed `useFlag<typeof flags, 'new-dashboard'>` and `resolveFlags<typeof flags>` read of it is now a type error, which lists the code to clean up. Remove the old branch, then the `FLAG_NEW_DASHBOARD` line and the `'new-dashboard'` share in `config/flags.ts`.
+Every typed read of it is now a type error, which lists the code to clean up. Then remove `FLAG_NEW_DASHBOARD` and the `'new-dashboard'` share in `config/flags.ts`.
 
 ## Testing
 
@@ -528,7 +552,7 @@ describe('upload limit flag', () => {
 })
 ```
 
-To render a component with a flag set, boot a client app with the flags provider and render it with `renderWithKitr` from [testing](/packages/testing). The provider resolves at boot on the client, so the first render already has the value:
+To render a component with a flag set, boot a client app with the flags provider and use `renderWithKitr` from [testing](/packages/testing):
 
 ```tsx
 // app/components/dashboard/dashboard-page.test.tsx
@@ -555,9 +579,10 @@ it('shows the new dashboard when the flag is on', async () => {
 })
 ```
 
-Pass `environment: 'client'`. In the default `test` environment the provider does not resolve at boot, and the root app does not keep a resolved snapshot, as on the server.
+> [!WARNING] Pass environment: 'client'
+> In the default `test` environment the provider does not resolve at boot.
 
-To flip a flag mid-test, call `app.container.use('flags').hydrate({ 'new-dashboard': false })` inside `act()`; subscribed components re-render.
+To flip a flag mid-test, call `app.container.use('flags').hydrate({ 'new-dashboard': false })` inside `act()`.
 
 ## Extend
 
@@ -569,7 +594,7 @@ A provider is an object with a `name`, an optional `init(context)` and `resolve(
 | `init(context)` | Once per `resolve()`, before any key | Nothing. A throw skips the provider for this resolve. |
 | `resolve(key, context)` | Once per declared flag | A value, or `undefined` for "no opinion". May be async. |
 
-`init` is the place to load everything a provider needs for one context in a single request, so `resolve` can answer from memory. This provider reads per-team overrides that Acme's support staff publish as JSON at `https://flags.acme.com/teams/<teamId>.json`:
+Use `init` to load everything a provider needs for one context, so `resolve` can answer from memory. This provider reads per-team overrides published as JSON at `https://flags.acme.com/teams/<teamId>.json`:
 
 ```ts
 // app/flag_providers/team_overrides.ts
@@ -595,7 +620,7 @@ export function teamOverridesProvider(baseUrl = 'https://flags.acme.com/teams'):
 }
 ```
 
-When the file can't be fetched, `init` throws, the provider is skipped for that resolve with a warning, and the next provider answers. This sketch keeps loaded teams for the life of the process; clear `byTeam` on a timer when overrides must change without a restart. Register the provider in priority order:
+If the fetch fails, `init` throws and the next provider answers. This sketch caches teams for the life of the process; clear `byTeam` on a timer if overrides must change sooner. Register it in priority order:
 
 ```ts
 // config/flags.ts
@@ -609,16 +634,17 @@ export default defineConfig({
 })
 ```
 
-The same config runs in the browser, which is why this provider uses `fetch` and an absolute URL rather than a database client. Keep server-only imports out of `config/flags.ts`. See [`FlagsProvider`](/packages/flags/api#flagsprovider) in the API reference.
+> [!WARNING] Config also runs in the browser
+> Keep server-only imports out of `config/flags.ts`; this provider uses `fetch` and an absolute URL for that reason.
+
+See [`FlagsProvider`](/packages/flags/api#flagsprovider) in the API reference.
 
 ## Devtools
 
-When the [devtools](/packages/devtools) package is installed, every resolve or hydrate that updates the snapshot logs `resolved` with all values to the `flags` channel. It shows which values the browser booted with, and whether they came from the server's tag.
+With [devtools](/packages/devtools) installed, every resolve or hydrate logs `resolved` with all values to the `flags` channel.
 
 ## Next steps
 
 - [API reference](/packages/flags/api): every export with its signature.
-- [OpenFeature](https://openfeature.dev/docs/reference/intro): the vendor-neutral flag standard the adapter speaks.
 - [Auth](/packages/auth): the signed-in user whose id targets rollouts.
-- [Cache](/packages/cache): remember slow server reads between requests.
 - [Configuration](/docs/configuration): how `config/flags.ts` is loaded.

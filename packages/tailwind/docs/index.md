@@ -6,11 +6,14 @@ order: 1
 
 # Tailwind
 
-Most React apps style with utility classes now, and most of them spend their first afternoon wiring Tailwind to the design system: which blue is "primary", what dark mode keys off, how a component lets callers override its padding. `kitr add tailwind` does that wiring. `bg-background`, `text-primary` and `rounded-md` use the same colours and radii as the rest of the app, dark mode follows the [theme](/packages/theme) toggle, and `cn()` merges class names so the last one wins.
+Most React apps style with utility classes, and most spend their first afternoon wiring Tailwind to the design system: which blue is "primary", what dark mode keys off, how a component lets callers override its padding. `kitr add tailwind` does that wiring. `bg-background`, `text-primary` and `rounded-md` use the app's colours and radii, dark mode follows the [theme](/packages/theme) toggle, and `cn()` merges class names so the last one wins.
 
-It is [Tailwind CSS v4](https://tailwindcss.com/docs) and its Vite plugin, unchanged, plus a preset stylesheet that maps kitr's design tokens onto Tailwind's theme, and `cn()` built on [clsx](https://github.com/lukeed/clsx) and [tailwind-merge](https://github.com/dcastil/tailwind-merge). It runs at build time and in the browser. If you prefer plain CSS or CSS Modules, skip this package and use the helpers in [theme](/packages/theme) instead.
+> [!SUMMARY]
+> Tailwind CSS v4 with kitr's colours, dark mode and a class-merging `cn()` already wired. Add it with `kitr add tailwind`; the overview is at [/packages/tailwind](/packages/tailwind).
 
-The examples style one screen through the page: the orders list in Acme's dashboard at `app.acme.com`, with a status badge, an order card and a dark mode.
+It is [Tailwind CSS v4](https://tailwindcss.com/docs) and its Vite plugin, plus a preset stylesheet that maps kitr's design tokens onto Tailwind's theme, and `cn()` built on [clsx](https://github.com/lukeed/clsx) and [tailwind-merge](https://github.com/dcastil/tailwind-merge). For plain CSS or CSS Modules, skip this package and use the helpers in [theme](/packages/theme).
+
+The examples style the orders list in Acme's dashboard at `app.acme.com`: a status badge, an order card and a dark mode.
 
 ## Install
 
@@ -18,19 +21,22 @@ The examples style one screen through the page: the orders list in Acme's dashbo
 kitr add tailwind
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
 - Adds [react](/packages/react) first if the project does not have it, because tailwind requires it.
 - Installs `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite`, `clsx`, `tailwind-merge` and `class-variance-authority`.
 - Adds `@kitr/tailwind` to `packages` in `kitrrc.ts`. The `kitr()` Vite plugin sees it there and loads `@tailwindcss/vite`.
-- Writes `config/tailwind.ts` (shown under [Configure](#configure)).
-- Writes `app/styles/app.css`, the stylesheet Tailwind starts from. When `app/styles/tokens.css` exists (the [theme](/packages/theme) package writes it), the stylesheet imports it last, so your token values win over kitr's.
-- In `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes), swaps the linked `@kitr/theme/styles.css?url` for `#app/styles/app.css?url` (or an `import '@kitr/theme/styles.css'` for `import '#app/styles/app.css'`), so the theme stylesheet loads once, through `app.css`. A document with neither gets the new sheet added.
-- Adds a `## kitr: tailwind` section to `AGENTS.md`: utilities map to kitr tokens, merge classes with `cn()`, dark mode is `data-theme="dark"` on `<html>`.
+- Writes `config/tailwind.ts` (see [Configure](#configure)).
+- Writes `app/styles/app.css`, the stylesheet Tailwind starts from. When `app/styles/tokens.css` exists (the [theme](/packages/theme) package writes it), it is imported last, so your token values win.
+- In `app/document.tsx` (or `app/routes/__root.tsx`), swaps the linked `@kitr/theme/styles.css` for `app/styles/app.css`, so the theme stylesheet loads once, through `app.css`. A document with neither gets the new sheet added.
+- Adds a `## kitr: tailwind` section to `AGENTS.md`.
 
-It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits include tailwind, and so do the preset kits built on them.
+It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits, and presets built on them, include tailwind.
 
-`kitr remove tailwind` takes `@kitr/tailwind` out of `kitrrc.ts`, uninstalls `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite` and `tailwind-merge`, deletes `config/tailwind.ts` and removes the `AGENTS.md` section. It leaves `app/styles/app.css`, the import in `app/document.tsx`, `clsx` and `class-variance-authority`, because your components may still use them.
+`kitr remove tailwind` takes `@kitr/tailwind` out of `kitrrc.ts`, uninstalls `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite` and `tailwind-merge`, deletes `config/tailwind.ts` and the `AGENTS.md` section. It leaves `app/styles/app.css`, the import in `app/document.tsx`, `clsx` and `class-variance-authority`, because your components may still use them.
+
+</details>
 
 ## Configure
 
@@ -51,7 +57,7 @@ export default defineConfig({
 | `entry` | `'app/styles/app.css'` | The stylesheet Tailwind starts from, relative to the project root. |
 | `preset` | `true` | Whether the app uses kitr's preset (`@kitr/tailwind/preset.css`). |
 
-Tailwind v4 is configured in CSS; these two options describe that file so `kitr doctor` can check it. To change the entry, link another file from `app/document.tsx` and set `entry`. To drop the preset, remove its `@import` and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colors)).
+Tailwind v4 is configured in CSS; these two options describe that file so `kitr doctor` can check it. To change the entry, link another file from `app/document.tsx` and set `entry`. To drop the preset, see [Use plain Tailwind colors](#use-plain-tailwind-colors).
 
 The stylesheet `kitr add` writes is the real configuration:
 
@@ -66,10 +72,10 @@ The stylesheet `kitr add` writes is the real configuration:
 
 With `app/styles/tokens.css` present, `@import './tokens.css';` follows the theme import.
 
-- `@import 'tailwindcss'` loads Tailwind's base styles and utilities.
-- `@import '@kitr/tailwind/preset.css'` maps kitr's tokens onto Tailwind's theme, makes `dark:` follow `data-theme="dark"` and sets the page's base colours and font.
-- `@import '@kitr/theme/styles.css'` defines the token values as `--kitr-*` CSS variables, for light and dark.
-- `@source '../'` tells Tailwind to scan `app/` (one folder up from `app/styles/`) for class names.
+- `tailwindcss` loads Tailwind's base styles and utilities.
+- `preset.css` maps kitr's tokens onto Tailwind's theme, makes `dark:` follow `data-theme="dark"` and sets the page's base colours and font.
+- `@kitr/theme/styles.css` defines the token values as `--kitr-*` CSS variables, for light and dark.
+- `@source '../'` tells Tailwind to scan `app/` for class names.
 
 The Vite side is one option on the `kitr()` plugin in `vite.config.ts`:
 
@@ -77,11 +83,11 @@ The Vite side is one option on the `kitr()` plugin in `vite.config.ts`:
 | --- | --- | --- |
 | `tailwind` | `true` when `@kitr/tailwind` is in `kitrrc.ts` | Load `@tailwindcss/vite`. Set `false` to leave it out, as the generated `vitest.config.ts` does. |
 
-There are no env variables. There is no `tailwind.config.js` either: Tailwind v4 reads its theme from CSS.
+There are no env variables and no `tailwind.config.js`: Tailwind v4 reads its theme from CSS.
 
 ## Style your first component
 
-On the server and in the browser, class names are plain strings, so a styled component is a component with `className`. Here is the badge for an order's status:
+Class names are plain strings, so a styled component is a component with `className`. Here is the badge for an order's status:
 
 ```tsx
 // app/components/orders/order-status-badge.tsx
@@ -96,32 +102,27 @@ export function OrderStatusBadge({ status }: { status: 'paid' | 'pending' | 'ref
 
 Use it anywhere:
 
-```ts
-// app/routes.ts
+```tsx
+// app/pages/orders/index.tsx
 import { OrderStatusBadge } from '#app/components/orders/order-status-badge'
 
-r.page('/orders/', {
+export default function OrdersPage() {
+  return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-semibold text-foreground">Orders</h1>
       <p className="mt-2 text-muted-foreground">
         Order ACME-1042 from Grace <OrderStatusBadge status="paid" />
       </p>
     </main>
-  ),
-  lazy: () => import('./pages/orders/index'),
-})
+  )
+}
 ```
 
-```tsx
-// app/pages/orders/index.tsx
-export default () => (
-```
-
-Run `npm run dev` and open `/orders`. The heading uses the theme's foreground colour, the badge sits on the muted surface with the theme's border and radius. Switch the theme to dark and both follow without a `dark:` class, because the tokens change under them.
+Run `npm run dev` and open `/orders`. The heading uses the theme's foreground colour and the badge the muted surface, border and radius. Switch to dark and both follow without a `dark:` class.
 
 ## Use the theme's colors
 
-The preset maps every kitr token to a Tailwind theme variable. Each colour works with every colour utility (`bg-`, `text-`, `border-`, `ring-`, `fill-`, `outline-`...) and with opacity modifiers like `bg-primary/90`.
+The preset maps every kitr token to a Tailwind theme variable. Each colour works with every colour utility (`bg-`, `text-`, `border-`, `ring-`...) and with opacity modifiers like `bg-primary/90`.
 
 | Class | Token | Use it for |
 | --- | --- | --- |
@@ -135,7 +136,7 @@ The preset maps every kitr token to a Tailwind theme variable. Each colour works
 | `font-sans`, `font-mono` | `--kitr-font-sans`, `--kitr-font-mono` | The system font stacks. |
 | `shadow-sm`, `shadow-md` | `--kitr-shadow-sm`, `--kitr-shadow-md` | Soft elevation. |
 
-The preset also sets every element's default border colour to `border-border`, and gives `<body>` the background, text colour and sans font. A plain `border` class therefore draws a themed line.
+The preset also defaults every border to `border-border` and gives `<body>` the background, text colour and sans font, so a plain `border` class draws a themed line.
 
 ```tsx
 // app/components/orders/order-card.tsx
@@ -153,11 +154,11 @@ export function OrderCard({ number, customer, total }: { number: string; custome
 }
 ```
 
-Tailwind's own palette (`bg-sky-500`, `text-zinc-600`) is still there. Use it for one-off colours such as chart series, and the theme classes for anything that should change with the theme.
+Tailwind's own palette (`bg-sky-500`) is still there for one-off colours such as chart series; use theme classes for anything that should change with the theme.
 
 ## Change a color
 
-The token values live in CSS variables, so change one by setting the variable after the imports. Acme's primary colour is orange:
+Token values live in CSS variables, so set one after the imports. Acme's primary colour is orange:
 
 ```css
 /* app/styles/app.css */
@@ -181,7 +182,8 @@ The token values live in CSS variables, so change one by setting the variable af
 
 Every `bg-primary`, `text-primary` and `ring-ring` in the app, and every component from `kitr ui add`, turns orange. Set the dark values under `[data-theme="dark"]`, or the light ones are used in both themes.
 
-Don't edit the values in `@theme` (`--color-primary`) to change a colour. The preset defines those as references to the `--kitr-*` variables, and replacing them breaks dark mode.
+> [!WARNING] Change the variable, not the theme
+> Don't edit the values in `@theme` (`--color-primary`) to change a colour. They reference the `--kitr-*` variables, and replacing them breaks dark mode.
 
 ## Add your own colors and sizes
 
@@ -225,11 +227,11 @@ A colour that should differ in dark mode goes through a variable of your own, th
 }
 ```
 
-`@theme inline` makes the utility use the variable itself, so it changes when `data-theme` changes. The [Tailwind theme docs](https://tailwindcss.com/docs/theme) list every namespace.
+`@theme inline` makes the utility use the variable itself, so it changes with `data-theme`. The [Tailwind theme docs](https://tailwindcss.com/docs/theme) list every namespace.
 
 ## Support dark mode
 
-The preset redefines the `dark:` variant to match `data-theme="dark"` on any ancestor, which is what `useTheme()` from [theme](/packages/theme) sets on `<html>`:
+The preset redefines the `dark:` variant to match `data-theme="dark"` on any ancestor, which `useTheme()` from [theme](/packages/theme) sets on `<html>`:
 
 ```css
 /* from @kitr/tailwind/preset.css */
@@ -266,7 +268,7 @@ export function ThemeButton() {
 }
 ```
 
-Tailwind's default `dark:` follows the operating system's `prefers-color-scheme`. With the preset it follows the attribute instead, so the user's choice in the app wins. The theme's `'system'` setting still follows the operating system, by setting the attribute for you.
+Tailwind's default `dark:` follows the operating system. With the preset it follows the attribute, so the user's choice in the app wins; the theme's `'system'` setting still follows the OS by setting the attribute for you.
 
 ## Merge classes with cn()
 
@@ -288,11 +290,11 @@ cn('text-sm text-muted-foreground', 'text-destructive')
 // => 'text-sm text-destructive'
 ```
 
-Without merging, `'p-4 p-8'` leaves both classes on the element and the one that wins depends on the order in Tailwind's stylesheet, not the order you wrote. tailwind-merge knows which classes conflict: `text-sm` (a size) and `text-destructive` (a colour) both stay, `px-2` followed by `p-4` leaves only `p-4`.
+Without merging, `'p-4 p-8'` leaves both classes on the element and stylesheet order, not your order, decides. tailwind-merge knows which conflict: `text-sm` (size) and `text-destructive` (colour) both stay; `px-2` then `p-4` leaves only `p-4`.
 
 ## Accept a className prop
 
-Components take `className` and put it last in `cn()`, so callers can adjust them without a new prop for every change:
+Components take `className` and put it last in `cn()`, so callers can adjust them without a new prop per change:
 
 ```tsx
 // app/components/orders/order-card.tsx
@@ -309,11 +311,12 @@ export function OrderCard({ className, ...props }: ComponentProps<'article'>) {
 // renders class="rounded-lg border bg-background p-8 shadow-md"
 ```
 
-Don't join with a template string (`` `p-4 ${className}` ``). Both padding classes reach the browser and the result depends on stylesheet order.
+> [!WARNING] No template strings
+> Don't join with a template string (`` `p-4 ${className}` ``): both padding classes reach the browser and stylesheet order decides.
 
 ## Build variants with cva
 
-A component with variants (a status, a size) maps each one to classes. [class-variance-authority](https://cva.style/docs) is installed by `kitr add tailwind`, and the components from `kitr ui add` use it:
+For a component with variants (a status, a size), [class-variance-authority](https://cva.style/docs) maps each to classes. `kitr add tailwind` installs it and the `kitr ui add` components use it:
 
 ```tsx
 // app/components/orders/order-status-badge.tsx
@@ -348,11 +351,11 @@ export function OrderStatusBadge({ status, size, className, children }: Props) {
 // class="inline-flex items-center rounded-md font-medium bg-destructive text-destructive-foreground px-3 py-1 text-sm"
 ```
 
-`cn()` around the `cva` call is what lets `size: 'md'` replace the base `px-2 py-0.5 text-xs` instead of adding to it. `cva` is also re-exported from `@kitr/theme`, if you would rather import it from there.
+`cn()` around the `cva` call lets `size: 'md'` replace the base `px-2 py-0.5 text-xs` instead of adding to it. `cva` is also re-exported from `@kitr/theme`.
 
 ## Teach cn() about your own tokens
 
-tailwind-merge only knows Tailwind's built-in scales. A custom font size such as `text-display` looks like a colour to it, so `cn('text-display', 'text-primary')` drops `text-display`. Build your own `cn` with `extendTailwindMerge` and list the new values:
+tailwind-merge only knows Tailwind's built-in scales, so it takes a custom size such as `text-display` for a colour and `cn('text-display', 'text-primary')` drops it. Build your own `cn` with `extendTailwindMerge`:
 
 ```ts
 // app/lib/cn.ts
@@ -371,11 +374,11 @@ cn('text-display', 'text-primary')
 // => 'text-display text-primary'
 ```
 
-Custom colours need nothing: `cn('bg-success', 'bg-primary')` already returns `'bg-primary'`. `clsx` and `twMerge` are also exported from `@kitr/tailwind`, for the cases where you want only one half of `cn()`.
+Custom colours need nothing: `cn('bg-success', 'bg-primary')` already returns `'bg-primary'`. `clsx` and `twMerge` are also exported from `@kitr/tailwind`.
 
 ## Tell Tailwind where your classes are
 
-Tailwind generates only the classes it finds in your source files. `@source '../'` in `app/styles/app.css` points it at `app/`. Classes written anywhere else need their own line:
+Tailwind generates only the classes it finds in your source files. `@source '../'` points it at `app/`; classes written elsewhere need their own line:
 
 ```css
 /* app/styles/app.css */
@@ -398,11 +401,11 @@ Tailwind finds classes by reading the files as text, so a class has to appear wh
 <span className={order.paid ? 'bg-primary' : 'bg-destructive'} />
 ```
 
-A class that is missing from the build shows up in the HTML but has no style. That is almost always a class built from pieces or a folder no `@source` covers.
+A class that appears in the HTML but has no style is almost always built from pieces or in a folder no `@source` covers.
 
 ## Style kitr's own components
 
-Headless kitr components mark their parts with `data-kitr` attributes, so you can reach them with Tailwind's arbitrary variants. The field wrapper from [forms](/packages/forms) is one:
+Headless kitr components mark their parts with `data-kitr` attributes, so Tailwind's arbitrary variants can reach them. The field wrapper from [forms](/packages/forms) is one:
 
 ```tsx
 // app/components/orders/refund-reason-field.tsx
@@ -421,7 +424,7 @@ export function RefundReasonField() {
 }
 ```
 
-For a finished look, `kitr ui add form` copies a styled version into `app/components/ui/form.tsx`. Every component `kitr ui add` copies is plain Tailwind on the theme classes and `cn()`, and the code is yours to change.
+For a finished look, `kitr ui add form` copies a styled version into `app/components/ui/form.tsx`. Every component `kitr ui add` copies is plain Tailwind on theme classes and `cn()`, and the code is yours to change.
 
 ## Use plain Tailwind colors
 
@@ -434,11 +437,11 @@ To use Tailwind without kitr's tokens, remove the preset import, and the theme s
 @source '../';
 ```
 
-Then set `preset: false` in `config/tailwind.ts` so the file still describes the project. Without the preset, `bg-primary` and the other theme classes stop existing, `dark:` goes back to following `prefers-color-scheme`, and components from `kitr ui add` lose their colours.
+Then set `preset: false` in `config/tailwind.ts`. Without the preset, `bg-primary` and the other theme classes stop existing, `dark:` follows `prefers-color-scheme` again, and `kitr ui add` components lose their colours.
 
 ## Wire Tailwind into a custom Vite config
 
-The `kitr()` plugin loads `@tailwindcss/vite` for you. If you build a Vite config without `kitr()`, or want to control the plugin order, turn it off there and add `kitrTailwind()` from `@kitr/tailwind/vite`. It returns exactly `@tailwindcss/vite`'s plugins:
+The `kitr()` plugin loads `@tailwindcss/vite` for you. If you build a Vite config without `kitr()`, or want to control plugin order, turn it off there and add `kitrTailwind()` from `@kitr/tailwind/vite`:
 
 ```ts
 // vite.config.ts
@@ -451,11 +454,12 @@ export default defineConfig({
 })
 ```
 
-Don't add Tailwind's plugin while `kitr()` also loads it. The CSS is then processed twice.
+> [!WARNING] One Tailwind plugin
+> Don't add Tailwind's plugin while `kitr()` also loads it: the CSS is processed twice.
 
 ## Fix styles that do not apply
 
-Most Tailwind problems in a kitr app come from one of a few causes. Check them in this order:
+Check these causes in order:
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
@@ -467,11 +471,11 @@ Most Tailwind problems in a kitr app come from one of a few causes. Check them i
 | A caller's `className` does not win | The component joins classes with a template string. | Use `cn(base, className)`. |
 | A custom class disappears when merged | tailwind-merge treats it as a conflicting class. | Extend it ([Teach cn() about your own tokens](#teach-cn-about-your-own-tokens)). |
 
-`kitr doctor` checks the part kitr owns: it warns when `vite.config.ts` does not use the `kitr()` plugin. In the browser's devtools, a class that appears on the element but has no matching rule in the Styles panel was not generated; one that has a rule crossed out was overridden.
+`kitr doctor` warns when `vite.config.ts` does not use the `kitr()` plugin. In devtools, a class on the element with no matching rule was not generated; one with a rule crossed out was overridden.
 
 ## Testing
 
-Tests do not build CSS. The `vitest.config.ts` that kitr writes runs `kitr({ plugins: { tailwind: false } })`, so a test checks which classes a component renders, not what they look like. Test `cn()` merges and variant classes directly:
+Tests do not build CSS: the generated `vitest.config.ts` runs `kitr({ plugins: { tailwind: false } })`. A test checks which classes a component renders, so test `cn()` merges and variant classes directly:
 
 ```tsx
 // app/components/orders/order-status-badge.test.tsx
@@ -514,12 +518,10 @@ describe('OrderStatusBadge', () => {
 })
 ```
 
-To check how a page actually looks, light and dark, use a browser test with [Playwright](https://playwright.dev/docs/screenshots) against `npm run dev`.
+To check how a page looks, light and dark, use a browser test with [Playwright](https://playwright.dev/docs/screenshots) against `npm run dev`.
 
 ## Next steps
 
 - [API reference](/packages/tailwind/api): `cn`, `defineConfig`, `TailwindConfig` and `kitrTailwind`.
-- [Tailwind CSS docs](https://tailwindcss.com/docs): every utility, variant and the `@theme` syntax.
-- [Theme](/packages/theme): the tokens behind the classes, `useTheme()` and `kitr ui add`.
+- [Theme](/packages/theme): the tokens behind the classes and `useTheme()`.
 - [Forms](/packages/forms): headless fields you style with the `data-kitr` attributes.
-- [Project structure](/docs/project-structure): where `app/styles/app.css` and `config/` sit.

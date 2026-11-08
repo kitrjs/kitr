@@ -6,13 +6,16 @@ order: 1
 
 # Cache
 
-Some reads are slow or expensive: a project report that joins six tables, a call to a rate-limited exchange-rate API, an invoice PDF summary rendered from a template. `@kitr/cache` keeps the result for a while, so the next request gets it straight from memory or Redis. When the data changes, you clear every cached result about it with one tag instead of hunting down keys.
+Some reads are slow or expensive: a project report that joins six tables, a call to a rate-limited API. `@kitr/cache` keeps the result for a while, so the next request gets it straight from memory or Redis. When the data changes, one tag clears every cached result about it.
 
-Values are stored as JSON through a six-method driver, with a memory driver built in and an [unstorage](https://unstorage.unjs.io) driver for Redis, Upstash, Cloudflare KV and the rest. On top of a plain key-value store it adds expiry times, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
+> [!SUMMARY]
+> Remember slow results on the server and clear them by tag when the data changes. Add it with `kitr add cache`; the overview is at [/packages/cache](/packages/cache).
 
-It runs on the server only. The provider does nothing in the browser. To cache what the API returns on the client, use [query](/packages/query), which already does.
+Values are stored as JSON through a six-method driver: memory is built in, with [unstorage](https://unstorage.unjs.io) and Redis drivers for production. On top it adds expiry, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
 
-The examples on this page follow Acme's project dashboard at `app.acme.com`: a report per project, a list of a team's open invoices, and an exchange rate used to show order totals in euros.
+It runs on the server only. To cache API results on the client, use [query](/packages/query).
+
+The examples follow Acme's project dashboard at `app.acme.com`: project reports, open invoices and an exchange rate.
 
 ## Install
 
@@ -20,21 +23,26 @@ The examples on this page follow Acme's project dashboard at `app.acme.com`: a r
 kitr add cache
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
-- Adds the [server](/packages/server) package first if the project does not have it yet (and [logger](/packages/logger), which the server needs). The cache only runs on the server.
+- Adds the [server](/packages/server) package first when missing, which also adds [logger](/packages/logger).
 - Adds `@kitr/cache` to `dependencies` in `package.json` and installs it. Pass `--no-install` to skip the install.
 - Adds `() => import('@kitr/cache/provider')` to `providers` and `'@kitr/cache'` to `packages` in `kitrrc.ts`. The provider binds `cache` in the container.
 - Writes `config/cache.ts`, with `prefix` set to your package name.
 - Adds a `## kitr: cache` section to `AGENTS.md`: expensive reads go through `cache.remember()` or `cached()`, `useCache(ctx.app)` in controllers, and writes invalidate by tag instead of guessing keys.
 
-It adds no env variables, no scripts and asks no questions. No kit includes the cache, so every project adds it with this command.
+It asks no questions. No kit includes the cache.
 
-`kitr remove cache` reverses every step above: it takes the provider and the package out of `kitrrc.ts`, deletes `config/cache.ts`, removes the dependency and the `AGENTS.md` section, then lists the files that still import `@kitr/cache`.
+`kitr remove cache` reverses every step: it removes the provider and package from `kitrrc.ts`, deletes `config/cache.ts`, removes the dependency and the `AGENTS.md` section, then lists files that still import `@kitr/cache`.
+
+</details>
 
 ## Configure
 
-`kitr add cache` writes this file. In a project whose `package.json` is named `acme-app`, it reads:
+`kitr add cache` writes this file (here for a project named `acme-app`):
 
 ```ts
 // config/cache.ts
@@ -53,9 +61,7 @@ export default defineConfig({
 | `prefix` | `''` | Prepended to every key before it reaches the driver, so several apps can share one Redis. |
 | `defaultTtl` | `300` | Seconds an entry lives when `set()`, `remember()` or `cached()` is called without a `ttl`. |
 
-The cache reads no env variables itself. A Redis driver usually reads `REDIS_URL`; see [unstorage](#unstorage).
-
-Config files are TypeScript, so you can choose values per environment in the file. To keep entries short-lived in development while you iterate on a report:
+The cache reads no env variables itself; a Redis driver usually reads `REDIS_URL`. Config files are TypeScript, so values can differ per environment, such as short-lived entries in development:
 
 ```ts
 // config/cache.ts
@@ -69,7 +75,7 @@ export default defineConfig({
 
 ## Cache your first slow read
 
-On the server, get the cache with `useCache(app)` and wrap the slow call in `remember()`. This controller builds Acme's project report once every ten minutes:
+Get the cache with `useCache(app)` and wrap the slow call in `remember()`. This controller builds a project report once every ten minutes:
 
 ```ts
 // server/controllers/reports-controller.ts
@@ -102,7 +108,7 @@ export const routes = defineRoutes((router) =>
 )
 ```
 
-The first `GET /api/projects/42/report` runs `buildProjectReport('42')`, stores the result under `acme-app:report:project:42` for 600 seconds and returns it. Every request in the next ten minutes gets the stored copy without touching the database. After a write to project 42, clear the `project:42` tag (see [Clear entries by tag](#clear-entries-by-tag)) and the next request builds a fresh report.
+The first request runs `buildProjectReport('42')` and stores the result for 600 seconds; later requests skip the database. After a write to project 42, [clear the tag](#clear-entries-by-tag) and the next request builds a fresh report.
 
 ## Get the cache on the server
 
@@ -121,7 +127,7 @@ export default class InvoicesController {
 }
 ```
 
-`app.container.use('cache')` returns the same object; `useCache` is a shorter, typed spelling. In a background job, the job context carries the app:
+`useCache` is a typed spelling of `app.container.use('cache')`. In a background job, the job context carries the app:
 
 ```ts
 // server/jobs/warm-reports.ts
@@ -143,7 +149,8 @@ export const warmReportsJob = defineJob('warm-reports', {
 })
 ```
 
-If the provider is not registered, `useCache` throws `[kitr] No binding named "cache". Did you add the package that provides it?`. Run `kitr add cache`, or check that `() => import('@kitr/cache/provider')` is still in `kitrrc.ts`. The same error appears in browser code, because the provider binds nothing on the client.
+> [!WARNING] No binding named "cache"
+> `useCache` throws this when the provider is not registered, or in browser code. Run `kitr add cache`, or check `kitrrc.ts` still lists `@kitr/cache/provider`.
 
 ## Remember a result
 
@@ -168,7 +175,7 @@ export function teamSummary(cache: Cache, teamId: string) {
 // => { teamId: 'design', openInvoices: 3 }   (from the cache, nothing runs)
 ```
 
-Four rules decide what `remember()` stores:
+What `remember()` stores:
 
 | `fn` returns or throws | Stored? | Next call |
 | --- | --- | --- |
@@ -177,7 +184,7 @@ Four rules decide what `remember()` stores:
 | Throws or rejects | No; the error reaches every waiting caller | Runs `fn` again |
 | Still running when another call arrives with the same key | Once | Waits for the same run |
 
-The last row is the reason to prefer `remember()` over a `get()` then `set()` pair. When a popular entry expires, fifty requests can miss at the same moment. With `get()` and `set()`, all fifty rebuild the report. With `remember()`, the first call runs `fn` and the other forty-nine wait for its result:
+The last row is why to prefer `remember()` over `get()` then `set()`: when a popular entry expires, fifty simultaneous misses rebuild the report fifty times with `get()`, but once with `remember()`:
 
 ```ts
 // server/reports/warm.ts
@@ -193,9 +200,7 @@ export async function loadReportForEveryone(cache: Cache) {
 // buildProjectReport ran once; all 50 calls got its result.
 ```
 
-Sharing a run works inside one server process. Two instances that miss together each run `fn` once.
-
-A failure is not cached, so a database blip does not leave a broken answer in place for ten minutes. Every caller that was waiting on the failed run gets the same error, and the next call tries again:
+Sharing a run works inside one server process. A failure is not cached, so a database blip does not leave a broken answer in place; waiting callers get the same error and the next call tries again:
 
 ```ts
 // server/rates/eur_rate.ts
@@ -218,7 +223,7 @@ export async function eurRate(cache: Cache): Promise<number | null> {
 
 ## Choose a key
 
-A key names one answer. Put every input that changes the answer into it, from the most general to the most specific:
+A key names one answer. Put every input that changes the answer into it, general to specific:
 
 ```ts
 // server/reports/keys.ts
@@ -228,15 +233,14 @@ export const invoicesKey = (teamId: string, status: 'open' | 'paid', page: numbe
 export const rateKey = (from: string, to: string) => `rate:${from}:${to}`
 ```
 
-Keeping keys in one module means the code that reads an entry and the code that deletes it can't drift apart.
+Keep keys in one module so the code that reads an entry and the code that deletes it can't drift apart. The `config/cache.ts` prefix is added for you: `cache.get('rate:USD:EUR')` reads `acme-app:rate:USD:EUR`.
 
-Anything that differs per user belongs in the key. Don't cache "my invoices" under `invoices:mine`: the first person to load it, say Ada, would have her invoices served to Grace. Use `invoices:user:${user.id}` instead, or cache the shared part and filter per user after the read.
-
-The `prefix` from `config/cache.ts` is added in front of every key before it reaches the driver. You never write it yourself: `cache.get('rate:USD:EUR')` reads `acme-app:rate:USD:EUR` from the driver.
+> [!WARNING] Per-user data
+> Anything that differs per user belongs in the key. Cached under `invoices:mine`, Ada's invoices would be served to Grace. Use `invoices:user:${user.id}`.
 
 ## Set expiry times
 
-Every entry written through the cache expires. `ttl` is in seconds; without one, the entry gets `defaultTtl` from the config (300 unless you change it):
+Every entry expires. `ttl` is in seconds; without one the entry gets `defaultTtl` (300):
 
 ```ts
 // server/rates/refresh.ts
@@ -251,13 +255,11 @@ export async function refreshRates(app: KitrApp) {
 }
 ```
 
-An entry is gone at exactly `ttl` seconds: a `get()` one millisecond before returns the value, a `get()` at the deadline returns `undefined`. The memory driver also sweeps expired entries that nobody reads again, at most once a minute, so a cache full of one-off keys does not grow forever.
-
-Pick the ttl from how stale the answer may be, not from how slow it is to build. A team's invoice count can be two minutes old; an exchange rate for display can be an hour old; a permission check should not be cached at all. When you clear by tag after every write, a long ttl is safe, because the entry is replaced as soon as its data changes.
+Pick the ttl from how stale the answer may be, not how slow it is to build. An invoice count can be two minutes old, a display exchange rate an hour; a permission check should not be cached. When you clear by tag after every write, a long ttl is safe.
 
 ## Clear entries by tag
 
-Tag an entry with what it is about when you store it. After a write, clear the tag, and every entry about that thing is gone, whatever its key:
+Tag an entry with what it is about. After a write, clear the tag and every entry about that thing is gone, whatever its key:
 
 ```ts
 // server/controllers/projects-controller.ts
@@ -274,7 +276,7 @@ export default class ProjectsController {
 }
 ```
 
-The report under `report:project:42` and anything else tagged `project:42` are cleared. Entries tagged only `project:43` stay. `invalidateTags()` takes several tags at once and clears an entry that carries any of them:
+Entries tagged `project:43` stay. `invalidateTags()` takes several tags and clears an entry that carries any of them:
 
 ```ts
 // server/controllers/invoices-controller.ts
@@ -291,15 +293,14 @@ export default class InvoicesController {
 }
 ```
 
-A tag that matches nothing is not an error. With the memory driver, overwriting a key with `set()` drops the old value's tags, so a value written later is never cleared by tags that belonged to the one it replaced. The Redis driver below keeps a key in its old tag sets until those tags are cleared, which can clear a newer value early but never serves a stale one.
+A tag that matches nothing is not an error. Tag by the records a result depends on (`project:42`) and by kind (`reports`), so `invalidateTags('reports')` clears a whole family after a deploy.
 
-Tag by the records a result depends on (`project:42`, `team:design`) and by kind (`reports`, `invoices`). Kind tags let you clear a whole family after a deploy changes how it is built: `invalidateTags('reports')`.
-
-Don't guess keys after a write with a loop of `delete()` calls. Lists, pages and summaries hide under many keys, and the one you forget serves stale data. Clear the tag instead.
+> [!WARNING]
+> Don't guess keys after a write with a loop of `delete()` calls. Lists and summaries hide under many keys, and the one you forget serves stale data. Clear the tag.
 
 ## Wrap a function
 
-`cached(cache, fn, options)` turns a function into one that remembers its results. Each distinct argument list gets its own entry, named by `options.key`:
+`cached(cache, fn, options)` turns a function into one that remembers its results, one entry per argument list, named by `options.key`:
 
 ```ts
 // server/rates/exchange_rate.ts
@@ -333,13 +334,14 @@ export default class OrdersController {
 }
 ```
 
-The wrapped function has the same arguments and returns a promise of the same result. It follows every `remember()` rule: one run for concurrent callers, `undefined` and errors not stored. Use `cached()` when a function is called from many places; use `remember()` inline when it is called from one.
+The wrapper follows every `remember()` rule. Use `cached()` when a function is called from many places and `remember()` inline when from one. Entries live in the driver, so building the wrapper per request costs nothing.
 
-Entries live in the driver, not in the wrapper, so building the wrapper per request costs nothing and every request shares the stored rates. Don't call `useCache(server.app)` at module level: the module loads before the server boots, and the provider has not bound `cache` yet.
+> [!WARNING]
+> Don't call `useCache(server.app)` at module level: the module loads before the provider has bound `cache`.
 
 ## Read and write entries directly
 
-The cache also works as a typed key-value store. Values go in and come out as JSON:
+The cache is also a typed key-value store:
 
 ```ts
 // server/teams/budget.ts
@@ -372,11 +374,11 @@ export async function budgetExample(app: KitrApp) {
 | `clear()` | `Promise<void>` | Remove every entry from the driver. |
 | `driver` | `CacheDriver` | The driver underneath. |
 
-`get()` returns `undefined` for a miss and the stored value otherwise, so a stored `0`, `false` or `null` comes back as itself. Use `has()` when you need to know whether a key exists without reading it.
+`get()` returns `undefined` only for a miss, so a stored `0`, `false` or `null` comes back as itself.
 
 ## Store values that survive JSON
 
-Every value passes through `JSON.stringify` on the way in and `JSON.parse` on the way out. Plain objects, arrays, strings, numbers, booleans and `null` round-trip exactly. Other types change shape:
+Values pass through JSON. Plain objects, arrays, strings, numbers, booleans and `null` round-trip exactly; other types change shape:
 
 ```ts
 // server/orders/last_order.ts
@@ -405,11 +407,11 @@ export async function lastOrderExample(app: KitrApp) {
 | `BigInt` | `set()` throws a `TypeError` |
 | Class instance | Plain object, no methods |
 
-Convert on the way out when you need the richer type: `new Date(order.placedAt)`. Or cache the plain data and build the object after the read.
+Convert after the read when you need the richer type: `new Date(order.placedAt)`.
 
 ## Drivers
 
-A driver decides where entries live. The cache talks to it through six methods over strings, so swapping drivers changes nothing else in your code.
+A driver decides where entries live; swapping drivers changes nothing else in your code.
 
 | Driver | Shared between instances | Survives a restart | Use for |
 | --- | --- | --- | --- |
@@ -419,7 +421,7 @@ A driver decides where entries live. The cache talks to it through six methods o
 
 ### Memory
 
-The default. Nothing to install and no config: leave `driver` out of `config/cache.ts`. To pass it explicitly, for example to share one memory driver between two caches in a script:
+The default: leave `driver` out of `config/cache.ts`. To pass it explicitly, for example to share one driver between two caches:
 
 ```ts
 // config/cache.ts
@@ -432,11 +434,11 @@ export default defineConfig({
 })
 ```
 
-Each server process has its own copy, and it empties when the process restarts. Once you run two instances behind a load balancer, `invalidateTags()` on one instance leaves the other serving the old value until its ttl runs out. Move to a shared store before that happens.
+Each process has its own copy, emptied on restart. Behind a load balancer, `invalidateTags()` on one instance leaves the others serving the old value, so move to a shared store first.
 
 ### unstorage
 
-`createUnstorageCacheDriver` stores entries through any [unstorage](https://unstorage.unjs.io) instance, so one line picks the backend from unstorage's [drivers](https://unstorage.unjs.io/drivers): Redis, Upstash, Cloudflare KV, Vercel KV, the filesystem and more. Install unstorage and the client its driver needs:
+`createUnstorageCacheDriver` stores entries through any [unstorage](https://unstorage.unjs.io) instance, so one line picks a [backend](https://unstorage.unjs.io/drivers). Install unstorage and the client its driver needs:
 
 ```sh
 pnpm add unstorage ioredis
@@ -456,11 +458,11 @@ export default defineConfig({
 })
 ```
 
-Expiry is checked on every read, so drivers without native expiry work too; the ttl is also passed to drivers that expire keys themselves, such as Redis. Entries live under the `kitr-cache` base (pass `{ base: 'other' }` as the second argument to change it), and `clear()` only removes keys under that base. Like the memory driver, overwriting a key drops the old value's tags.
+Expiry is checked on every read, so drivers without native expiry work too. Entries live under the `kitr-cache` base (change it with `{ base: 'other' }`), and `clear()` only removes keys under it.
 
 ### Redis
 
-`createRedisCacheDriver` talks to Redis directly: Redis expires entries itself, tags are Redis sets, and every instance reads and clears the same entries. Install a Redis client. The driver takes an [ioredis](https://github.com/redis/ioredis) client:
+`createRedisCacheDriver` talks to Redis directly: Redis expires entries, tags are Redis sets, and every instance shares them. It takes an [ioredis](https://github.com/redis/ioredis) client:
 
 ```sh
 pnpm add ioredis
@@ -490,23 +492,18 @@ REDIS_URL=redis://localhost:6379
 | --- | --- | --- |
 | `base` | `'kitr:cache:'` | Prefix for every key the driver writes. Second argument: `{ base }`. |
 
-When Grace's invoice report is cached on instance A with `tags: ['team:team_acme']`, the entry lands at `kitr:cache:e:acme-app:report:invoices`. Instance B reads the same key, and `invalidateTags('team:team_acme')` on either instance removes it for both. As with the memory driver, setting a key again drops the old value's tags, so a stale tag never removes a fresh value.
-
-`clear()` scans for keys under `base` and deletes them, so it never touches sessions, queues or anything else in the same Redis. On a large cache it is a slow scan; prefer tags for routine invalidation. See the [ioredis docs](https://github.com/redis/ioredis#readme) for TLS, clusters and Sentinel.
-
-The cache passes tag names to the driver with the prefix in front, as it does keys, so two apps that share one Redis and use the same tag name keep their entries apart.
+`invalidateTags()` on any instance removes the entry for all of them. `clear()` scans for keys under `base`, so it never touches sessions or queues in the same Redis, but it is slow on a large cache; prefer tags. Tag names carry the prefix too, so two apps sharing a Redis keep their entries apart. See the [ioredis docs](https://github.com/redis/ioredis#readme) for TLS, clusters and Sentinel.
 
 ## Use the cache in production
 
-- **More than one instance needs a shared driver.** With the memory driver, each instance has its own entries, and a tag cleared on one instance stays on the others. Use the [Redis](#redis) or [unstorage](#unstorage) driver.
-- **`remember()` shares one run per instance, not per cluster.** Ten concurrent misses on one instance run `fn` once; the same miss on three instances at once runs it three times. For a very slow `fn`, warm the entry from a [job](/packages/jobs) instead of on the first request.
-- **The memory driver empties on deploy.** The first requests after a restart all miss. Warm the slowest entries from a job (see [Get the cache on the server](#get-the-cache-on-the-server)) if a cold start hurts.
-- **A cache is not a store.** Anything in it can vanish at any time: a restart, an eviction, a `clear()`. Never keep the only copy of data in the cache.
-- **Driver errors are not caught.** If Redis is down, `get()`, `set()` and `remember()` reject with the driver's error. Catch it in the caller when the page should still load without the cache.
+- **Several instances need a shared driver.** Use [Redis](#redis) or [unstorage](#unstorage).
+- **`remember()` shares one run per instance, not per cluster.** For a very slow `fn`, warm the entry from a [job](/packages/jobs).
+- **A cache is not a store.** Anything in it can vanish. Never keep the only copy of data there.
+- **Driver errors are not caught.** If Redis is down, `get()`, `set()` and `remember()` reject. Catch it where the page should still load without the cache.
 
 ## Testing
 
-`createCache()` builds a cache with the memory driver and no app, which is all most tests need. Vitest's fake timers move the clock past a ttl without waiting:
+`createCache()` builds a cache with the memory driver and no app. Vitest's fake timers move the clock past a ttl:
 
 ```ts
 // server/reports/team_summary.test.ts
@@ -569,11 +566,11 @@ it('binds the cache from config', async () => {
 })
 ```
 
-`createTestApp` boots the app with `environment: 'test'`, which the cache provider treats like the server. Only `environment: 'client'` makes it bind nothing. Each `createCache()` and each test app gets its own memory driver, so tests never see each other's entries.
+Each `createCache()` and test app gets its own memory driver, so tests never see each other's entries.
 
 ## Extend
 
-A driver is an object that implements `CacheDriver`: a `name` and six async methods over string keys and string values. The cache has already added the prefix to every key and serialised every value to JSON by the time the driver sees it.
+A driver implements `CacheDriver`: a `name` and six async methods over strings. The prefix and JSON are already applied.
 
 | Member | Called by | Must |
 | --- | --- | --- |
@@ -585,7 +582,7 @@ A driver is an object that implements `CacheDriver`: a `name` and six async meth
 | `invalidateTags(tags)` | `invalidateTags` | Remove every key that carries any of `tags`. |
 | `clear()` | `clear` | Remove everything the driver holds. |
 
-`createRedisCacheDriver` in the source is a complete example over Redis. Drivers also compose. This one wraps another driver and counts hits and misses, which helps tune ttls:
+Drivers compose. This one wraps another and counts hits and misses, which helps tune ttls:
 
 ```ts
 // server/cache/counting_driver.ts
@@ -627,17 +624,14 @@ export default defineConfig({
 })
 ```
 
-`cacheStats.stats` now reads `{ hits: 41, misses: 3 }` after a busy minute. See [`CacheDriver`](/packages/cache/api#cachedriver) in the API reference for the exact signatures.
+See [`CacheDriver`](/packages/cache/api#cachedriver) for the exact signatures.
 
 ## Devtools
 
-When the [devtools](/packages/devtools) package is installed, the cache provider logs the driver it booted with to the `cache` channel at start-up, for example `driver: memory`. That line is the quickest way to confirm that production picked up the Redis driver.
+With [devtools](/packages/devtools) installed, the provider logs its driver (for example `driver: memory`) to the `cache` channel, which confirms production picked up Redis.
 
 ## Next steps
 
 - [API reference](/packages/cache/api): every export with its signature.
-- [Query](/packages/query): cache API responses in the browser.
 - [Jobs](/packages/jobs): warm slow entries on a schedule.
-- [Server](/packages/server): the runtime the cache provider binds into.
-- [ioredis](https://github.com/redis/ioredis): the Redis client the Redis driver takes.
-- [Run on more than one instance](/guides/scale-out): the cache, queue, limits and sockets on shared Redis.
+- [Run on more than one instance](/guides/scale-out): the cache, queue and limits on shared Redis.

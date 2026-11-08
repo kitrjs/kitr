@@ -6,13 +6,16 @@ order: 1
 
 # Mobile
 
-Your customers want the app on their phone, with an icon on the home screen, the Android back button that works and data that survives the OS clearing its caches. `@kitr/mobile` is the iOS and Android platform. It wraps the same `app/` you ship to the browser in a native shell, and switches the kitr packages that have a native driver (the platform hooks and storage) to it while the app runs on a phone.
+Your customers want the app on their phone, with a home-screen icon, a working Android back button and data that survives the OS clearing its caches. `@kitr/mobile` is the iOS and Android platform: it wraps the same `app/` you ship to the browser in a native shell.
 
-It is built on [Capacitor](https://capacitorjs.com/docs): your client build runs in the system WebView, and Capacitor plugins reach native APIs. kitr adds the platform on top: `kitr dev` runs the app on a simulator with live reload, `kitr build` builds the bundle and syncs it into the Xcode and Android Studio projects, and `@kitr/mobile/provider` registers the native drivers.
+> [!SUMMARY]
+> Ship your app to iPhone and Android as a native shell, with native storage and platform hooks. Add it with `kitr add mobile phone`; the overview is at [/packages/mobile](/packages/mobile).
 
-The provider and `@kitr/mobile/client` run in the app, in the WebView and in a plain browser alike. The platform hooks (`kitr dev`, `kitr build`) run in the CLI on your machine. For an installable web app with no store listing, the PWA option of the [Web](/packages/web) platform is enough. For desktop windows, use [Desktop](/packages/desktop) (Electron) or its alternative, [Tauri](/packages/tauri).
+It is built on [Capacitor](https://capacitorjs.com/docs): your client build runs in the system WebView and Capacitor plugins reach native APIs. `kitr dev` runs the app on a simulator with live reload, and `kitr build` syncs the bundle into the Xcode and Android Studio projects.
 
-The examples on this page ship the Acme orders app to phones: Ada's field team checks orders and invoices on iPhone and Android, with the same code the browser runs at `app.acme.com`.
+For an installable web app with no store listing, the PWA option of the [Web](/packages/web) platform is enough. For desktop windows, use [Desktop](/packages/desktop) or [Tauri](/packages/tauri).
+
+The examples ship the Acme orders app to phones: Ada's field team checks orders and invoices with the same code the browser runs at `app.acme.com`.
 
 ## Install
 
@@ -22,7 +25,10 @@ Add a mobile platform named `phone`:
 kitr add mobile phone
 ```
 
-`mobile` is the platform type and `phone` is the name you address it by (`kitr dev phone`). `kitr add mobile` with no name uses the usual name for the type and prints `No name given: calling the mobile platform "phone".`
+`mobile` is the platform type and `phone` is the name you address it by (`kitr dev phone`).
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add mobile phone` does, in order:
 
@@ -34,9 +40,13 @@ What `kitr add mobile phone` does, in order:
 - Writes `platforms/phone/capacitor.config.ts` (shown under Configure), `platforms/phone/package.json` (generated; see [Sync the plugins](#sync-the-plugins)) and `platforms/phone/.gitignore`, which ignores `ios/App/Pods`, `ios/App/build`, `android/build`, `android/app/build` and `android/.gradle`.
 - Adds a `## kitr: platform phone` section to `AGENTS.md`: how to run and build, never to sniff user agents, and to wrap other Capacitor plugins in `nativeOnly()`.
 
-It does not create the `ios/` and `android/` projects. The first `kitr build phone` or `kitr dev phone` runs `cap add` for each target.
+It does not create the `ios/` and `android/` projects; the first `kitr build phone` or `kitr dev phone` runs `cap add` for each target.
 
-Platform options are flags on the same command. Option names are the flag names, in camelCase:
+`kitr platforms remove phone` takes the platform out of `kitrrc.ts`. It leaves `platforms/phone/`, the Capacitor packages and the provider for you to delete.
+
+</details>
+
+Platform options are flags on the same command:
 
 ```sh
 kitr add mobile phone --targets ios,android --appId com.acme.orders --appName "Acme Orders"
@@ -53,13 +63,11 @@ kitr add mobile phone --targets ios,android --appId com.acme.orders --appName "A
 | `--no-install` | | Edit `package.json` without running the package manager. |
 | `--dry-run` | | Print what would change. |
 
-The `mobile` kit already has a `phone` platform next to a `site` web platform with `pwa: true`. Start a new project from it, picking the targets:
+The `mobile` kit already has a `phone` platform next to a `site` web platform with `pwa: true`:
 
 ```sh
 kitr new acme-orders --kit mobile --targets ios
 ```
-
-`kitr platforms remove phone` takes the platform out of `kitrrc.ts`. It leaves `platforms/phone/`, the Capacitor packages and the provider in place; delete them yourself when you no longer ship to phones.
 
 ## Configure
 
@@ -89,7 +97,7 @@ export default defineKitrConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `targets` | `['ios', 'android']` | Native projects to create and build. Each must be `ios` or `android`. |
-| `appId` | `com.example.<app>` | Reverse-DNS bundle identifier. The default lower-cases the app name and drops everything but letters and digits: `acme-orders` gives `com.example.acmeorders`. |
+| `appId` | `com.example.<app>` | Reverse-DNS bundle identifier. `acme-orders` gives `com.example.acmeorders`. |
 | `appName` | the package name | Name shown on the home screen. `acme-orders` becomes `Acme Orders`. |
 | `scheme` | | URL scheme for deep links: `acme` opens `acme://...`. |
 | `port` | `3100` | Port of the dev server the device loads with `kitr dev phone`. |
@@ -102,7 +110,7 @@ An unknown target fails when `kitrrc.ts` loads:
   targets: targets must be ios or android, got windows
 ```
 
-The platform writes the Capacitor config next to the native projects, from the options above. With `appId: 'com.acme.orders'` and `appName: 'Acme Orders'` it is:
+The platform writes the Capacitor config from these options. With `appId: 'com.acme.orders'` and `appName: 'Acme Orders'` it is:
 
 ```ts
 // platforms/phone/capacitor.config.ts
@@ -124,7 +132,7 @@ const config: CapacitorConfig = {
 export default config
 ```
 
-`webDir` points at the client build of this platform, so `kitr build phone` and `cap sync` agree on where the bundle is. The file is yours after it is written: kitr never overwrites it.
+`webDir` points at the client build, so `kitr build phone` and `cap sync` agree on where the bundle is. The file is yours once written; kitr never overwrites it.
 
 | Variable | Used for |
 | --- | --- |
@@ -132,11 +140,11 @@ export default config
 | `KITR_PHONE_<OPTION>` | Overrides one option for one run of the CLI: `KITR_PHONE_PORT=3300 kitr dev phone`, `KITR_PHONE_TARGETS=android kitr build phone`. |
 | `KITR_PLATFORM` | Set to `phone` by `kitr dev` and `kitr build`, so the Vite plugin builds this platform into `dist/phone`. |
 
-The other platform types each have their own guide and options table: [Web](/packages/web), [Server](/packages/server), [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri). [Platforms](/docs/platforms) lists them side by side.
+[Platforms](/docs/platforms) lists every platform type side by side.
 
 ## Run the app on a phone
 
-You need Xcode for iOS (macOS only) or Android Studio for Android, as the [Capacitor environment setup](https://capacitorjs.com/docs/getting-started/environment-setup) describes. Then add the platform and build once, which creates the native projects:
+You need Xcode for iOS (macOS only) or Android Studio for Android; see the [Capacitor environment setup](https://capacitorjs.com/docs/getting-started/environment-setup). Then add the platform and build once to create the native projects:
 
 ```sh
 kitr add mobile phone --appId com.acme.orders --appName "Acme Orders"
@@ -175,11 +183,11 @@ kitr dev phone --target ios
 # phone: dev server on http://192.168.1.20:3100, the ios app loads it live
 ```
 
-The iOS simulator opens Acme Orders and shows "Running on ios in the native app". The same page in a browser at `kitr dev site` says "in the browser".
+The simulator opens Acme Orders and shows "Running on ios in the native app"; in a browser it says "in the browser".
 
 ## Ship the same app to the web and the phone
 
-Both platforms build the same `app/`. Keep a web platform next to the mobile one, and each command addresses one of them or both:
+Both platforms build the same `app/`. Keep a web platform next to the mobile one; each command addresses one or both:
 
 ```sh
 kitr dev site          # the browser on port 3000
@@ -187,30 +195,36 @@ kitr dev phone         # the simulator on port 3100
 kitr build             # every platform, one after another
 ```
 
-Inside the shell, `@kitr/mobile/provider` registers the native drivers. In a plain browser it registers nothing, so the web build of the same bundle keeps the browser behaviour. Components ask [Platform](/packages/platform) instead of checking where they run.
+Inside the shell, `@kitr/mobile/provider` registers the native drivers; in a plain browser it registers nothing. Components ask [Platform](/packages/platform) instead of checking where they run.
 
 ## Run on a simulator or device
 
 `kitr dev phone` does four things:
 
-1. Picks the target: `--target ios` or `--target android`. With both targets and no flag, it runs `ios` on macOS and `android` elsewhere, and says so.
-2. Creates the native project with `cap add <target>` if `platforms/phone/<target>` does not exist yet.
-3. Starts Vite on your machine's LAN address and the platform's port, so the device can reach it.
-4. Waits for the dev server, then runs `cap run <target> --no-sync` with `CAP_SERVER_URL` set to that address.
+1. Picks the target: `--target ios` or `--target android`. With both and no flag, it runs `ios` on macOS and `android` elsewhere.
+2. Creates the native project with `cap add <target>` if it does not exist yet.
+3. Starts Vite on your machine's LAN address, so the device can reach it.
+4. Runs `cap run <target> --no-sync` with `CAP_SERVER_URL` set to that address.
 
-To pick a connected device or a specific simulator, pass its id with `--device`. `npx cap run ios --list` from `platforms/phone` prints the ids:
+> [!WARNING] Same network
+> The phone and your machine must be on the same network.
+
+To pick a connected device or simulator, pass its id with `--device`; `npx cap run ios --list` from `platforms/phone` prints the ids:
 
 ```sh
 kitr dev phone --target android --device emulator-5554
 ```
 
-When the LAN address kitr picks is the wrong one (a VPN or a second network card), set the host and port yourself:
+<details>
+<summary>Wrong LAN address</summary>
+
+With a VPN or a second network card, kitr may pick the wrong address. Set the host and port yourself:
 
 ```sh
 kitr dev phone --target android --host 192.168.1.20 --port 3300
 ```
 
-The phone and your machine must be on the same network. `cleartext: true` in the Capacitor config lets Android load the `http://` dev server.
+</details>
 
 ## Build and open the native projects
 
@@ -227,9 +241,7 @@ Pass `--open` to open each project in Xcode or Android Studio after the sync, an
 kitr build phone --target ios --open
 ```
 
-From the IDE you run on devices, set signing and produce the archive for the stores. The projects in `platforms/phone/ios` and `platforms/phone/android` are yours: edit `Info.plist`, `AndroidManifest.xml`, icons and splash screens there. `kitr build` only syncs the web bundle and plugin list into them.
-
-The mobile platform has no production server, so `kitr start phone` prints `phone: the mobile platform has no start step` and returns.
+From the IDE you run on devices, set signing and produce the archive for the stores. The projects in `platforms/phone/ios` and `platforms/phone/android` are yours: edit `Info.plist`, `AndroidManifest.xml`, icons and splash screens there. `kitr build` only syncs the bundle and plugin list into them.
 
 ## Pick the targets
 
@@ -248,22 +260,23 @@ pnpm add @capacitor/android
 kitr build phone --target android
 ```
 
-`kitr config` only edits `kitrrc.ts`. Install `@capacitor/<target>` yourself when you add one; `kitr doctor` reports it when it is missing. A `--target` the platform does not list fails with `phone has no android target (targets: ios)`.
+`kitr config` only edits `kitrrc.ts`; install `@capacitor/<target>` yourself. `kitr doctor` reports it when missing.
 
 ## Set the bundle id and app name
 
-`appId` and `appName` are written into `capacitor.config.ts` when the platform is added. Set them before the first `kitr build`, because `cap add` copies them into the native projects:
+Set `appId` and `appName` before the first `kitr build`, because `cap add` copies them into the native projects:
 
 ```sh
 kitr config phone appId com.acme.orders
 kitr config phone appName "Acme Orders"
 ```
 
-`capacitor.config.ts` is written once and never overwritten, and `kitr platforms scaffold phone` skips files that exist. After changing the options, edit `appId` and `appName` in `platforms/phone/capacitor.config.ts` too, or delete the file and run `kitr platforms scaffold phone` to write it again. Once the native projects exist, change the bundle id in Xcode and in `android/app/build.gradle` as well.
+> [!WARNING] The config file is written once
+> After changing the options, edit `platforms/phone/capacitor.config.ts` too, or delete it and run `kitr platforms scaffold phone`. Once the native projects exist, change the bundle id in Xcode and `android/app/build.gradle` as well.
 
 ## Add Capacitor plugin config
 
-Plugin settings go in the `capacitor` option. They are merged last into the generated `capacitor.config.ts`:
+Plugin settings go in the `capacitor` option, merged last into `capacitor.config.ts`:
 
 ```ts
 // kitrrc.ts
@@ -298,13 +311,16 @@ The generated file then ends with:
 }
 ```
 
-Like `appId`, `capacitor` is read when the file is written. For an existing project, edit `capacitor.config.ts` directly.
+`capacitor` is read when the file is written; for an existing project, edit `capacitor.config.ts` directly.
 
 ## Sync the plugins
 
-The Capacitor CLI finds a project's plugins in the `package.json` of the folder it runs in, and kitr runs `cap` in `platforms/phone/`. So that every plugin the app installed reaches the native projects, kitr writes `platforms/phone/package.json` from the app's `dependencies` before each `cap` command (`kitr build`, `kitr dev`). Do not edit it: it is regenerated, and a plugin you install with `pnpm add @capacitor/camera` appears in it on the next build.
+Capacitor finds plugins in the `package.json` of the folder it runs in, so kitr regenerates `platforms/phone/package.json` from the app's `dependencies` before each `cap` command. A plugin you install with `pnpm add @capacitor/camera` appears on the next build.
 
-`cap sync` prints what it found, so you can check that a plugin arrived:
+> [!WARNING] Don't edit platforms/phone/package.json
+> It is regenerated.
+
+`cap sync` prints what it found:
 
 ```sh
 kitr build phone
@@ -314,11 +330,11 @@ kitr build phone
 #        ...
 ```
 
-The device packages ([Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater)) use these plugins. `kitr add <package>` installs the ones it needs. If you added a device package before the mobile platform, run `kitr add <package>` again.
+The device packages ([Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater)) use these plugins; `kitr add <package>` installs the ones it needs. If you added one before the mobile platform, run it again.
 
 ## Check whether the app runs in the shell
 
-Most code should ask [Platform](/packages/platform) (`usePlatform()`, `platform.is('ios')`). For the few places that need Capacitor itself, `@kitr/mobile/client` reads the Capacitor runtime directly:
+Most code should ask [Platform](/packages/platform). Where you need Capacitor itself, `@kitr/mobile/client` reads its runtime:
 
 ```ts
 // app/lib/orders/where.ts
@@ -334,11 +350,11 @@ isPluginAvailable('App')
 // => true when the native side registered the plugin
 ```
 
-These read the global `Capacitor` object the native shell injects, so they are correct before any import resolves. In a browser, and on the server, they return `'web'` and `false`.
+In a browser and on the server they return `'web'` and `false`.
 
 ## Call a Capacitor plugin
 
-Other Capacitor plugins are plain dependencies. Install one, sync it into the native projects, and wrap the call in `nativeOnly()` so the web build keeps working:
+Other Capacitor plugins are plain dependencies. Install one, sync it, and wrap the call in `nativeOnly()` so the web build keeps working:
 
 ```sh
 pnpm add @capacitor/share
@@ -363,13 +379,14 @@ export async function shareOrder(order: { id: string; customer: string }) {
 // => 'shared' in the shell, 'copy' in a browser
 ```
 
-`nativeOnly(fn, fallback)` runs `fn` inside the shell and returns `fallback` everywhere else, without calling `fn`. Import the plugin inside `fn` so the browser bundle never evaluates it. Without a fallback it returns `undefined` on the web.
+`nativeOnly(fn, fallback)` runs `fn` inside the shell and returns `fallback` elsewhere. Import the plugin inside `fn` so the browser bundle never evaluates it.
 
-`kitr build phone` runs `cap sync`, which registers the new plugin in the native projects. A plugin you installed but did not sync makes `isPluginAvailable('Share')` return `false`.
+> [!WARNING] Sync new plugins
+> A plugin you installed but did not sync with `kitr build phone` makes `isPluginAvailable('Share')` return `false`.
 
 ## Handle the Android back button
 
-On Android, `useBackButton()` from `@kitr/platform/react` receives the hardware back button with `canGoBack` from the WebView history:
+On Android, `useBackButton()` from `@kitr/platform/react` receives the hardware back button with `canGoBack`:
 
 ```tsx
 // app/components/back-button.tsx
@@ -392,11 +409,14 @@ export function BackButtonHandler({ onCloseSheet }: { onCloseSheet: () => boolea
 }
 ```
 
-Capacitor turns off the default back behaviour as soon as a listener is registered, so the handler must go back or exit itself, as above. `platform.exit()` closes the app on Android. Wrap the handler in `useCallback`: the hook subscribes again whenever the function changes. In a browser and on iOS the handler never runs.
+> [!WARNING] The handler must go back or exit
+> Capacitor turns off the default back behaviour once a listener is registered. Wrap the handler in `useCallback`, because the hook resubscribes when the function changes.
+
+The handler never runs in a browser or on iOS.
 
 ## Open deep links
 
-To open `acme://orders/1042` in the app, set `scheme: 'acme'` on the platform in `kitrrc.ts`. The next build adds it to the iOS and Android projects. `https` links need extra setup on each platform; see the [Capacitor deep links guide](https://capacitorjs.com/docs/guides/deep-links). Then hand each URL to the router:
+To open `acme://orders/1042` in the app, set `scheme: 'acme'` on the platform in `kitrrc.ts`. `https` links need extra setup; see the [Capacitor deep links guide](https://capacitorjs.com/docs/guides/deep-links). Then hand each URL to the router:
 
 ```tsx
 // app/components/deep-links.tsx
@@ -414,11 +434,11 @@ export function DeepLinks() {
 // https://app.acme.com/orders/1042?tab=invoices => /orders/1042?tab=invoices
 ```
 
-The mobile driver listens to Capacitor's `appUrlOpen` event, which fires when the OS hands the app a URL while it runs. The second argument is the router path: the scheme and host removed, then any `deepLinkPrefixes` from `config/platform.ts`. [Platform](/packages/platform) documents the prefixes.
+The second argument is the router path, with the scheme and host removed and any `deepLinkPrefixes` from `config/platform.ts` applied; see [Platform](/packages/platform).
 
 ## React to the app going to the background
 
-`useAppState()` is `true` while the app is in the foreground. Inside the shell it follows Capacitor's `appStateChange`; in a browser it follows page visibility:
+`useAppState()` is `true` while the app is in the foreground (in a browser it follows page visibility):
 
 ```tsx
 // app/components/orders/live-orders.tsx
@@ -430,11 +450,14 @@ export function LiveOrdersBadge() {
 }
 ```
 
-Pause polling and sockets while it is `false`, and refetch when it turns `true` again.
+Pause polling and sockets while it is `false`, and refetch when it turns `true`.
 
 ## Respect the notch and home indicator
 
-`useSafeArea()` returns the insets in pixels, read from the CSS `env(safe-area-inset-*)` values. iOS reports them only when the viewport opts in, so keep `viewport-fit=cover` in the root route's viewport meta:
+`useSafeArea()` returns the insets in pixels from the CSS `env(safe-area-inset-*)` values:
+
+> [!WARNING] Keep viewport-fit=cover
+> iOS reports insets only when the root route's viewport meta opts in.
 
 ```tsx
 // app/components/bottom-bar.tsx
@@ -447,11 +470,11 @@ export function BottomBar() {
 // insets on an iPhone with a notch, for example => { top: 47, right: 0, bottom: 34, left: 0 }
 ```
 
-The insets are zero on the server and on the first render, then update on mount and on every resize. For layout alone, the CSS `env()` values work without the hook: `pb-[env(safe-area-inset-bottom)]`.
+The insets are zero on the server and first render, then update on mount and resize. For layout alone, CSS works without the hook: `pb-[env(safe-area-inset-bottom)]`.
 
 ## Keep data in native storage
 
-Inside the shell, `@kitr/mobile/provider` registers a storage driver on [`@capacitor/preferences`](https://capacitorjs.com/docs/apis/preferences). Every `local` item from [Storage](/packages/storage) then lives in native preferences, which iOS does not clear the way it can clear WebView `localStorage`:
+Inside the shell, every `local` item from [Storage](/packages/storage) lives in [`@capacitor/preferences`](https://capacitorjs.com/docs/apis/preferences), which iOS does not clear the way it can clear WebView `localStorage`:
 
 ```ts
 // app/storage.ts
@@ -460,13 +483,11 @@ import { defineStorage } from '@kitr/storage'
 export const lastOrderId = defineStorage('lastOrderId', { default: '' })
 ```
 
-Nothing changes in the code that reads or writes the item. The driver loads every key at boot, so reads stay synchronous, and writes go to Preferences in the background. `session` items stay in memory.
-
-The storage provider looks for a native driver again when the app boots, after every provider has registered, so the order of `@kitr/mobile/provider` and `@kitr/storage/provider` in `kitrrc.ts` does not matter.
+Your code does not change. Reads stay synchronous and writes go to Preferences in the background. `session` items stay in memory.
 
 ## Open links in the system browser
 
-Links to other sites should leave the app. `platform.openExternal()` opens the system browser inside the shell, and a new tab in a browser:
+`platform.openExternal()` opens the system browser inside the shell, and a new tab in a browser:
 
 ```tsx
 // app/components/invoice-link.tsx
@@ -517,13 +538,9 @@ The mobile platform answers these commands:
 | `kitr platforms scaffold <name>` | Writes `capacitor.config.ts` and `.gitignore` when they are missing. Existing files are kept. |
 | `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`. |
 
-Capacitor's own CLI works from `platforms/phone` for everything else: `pnpm exec cap open android`, `pnpm exec cap run ios --list`, `pnpm exec cap doctor`.
+Capacitor's own CLI works from `platforms/phone` for everything else, such as `pnpm exec cap doctor`.
 
-`kitr doctor` checks each mobile platform and reports:
-
-- an error for each missing package: `@capacitor/core`, `@capacitor/cli`, `@capacitor/app`, `@capacitor/preferences` and `@capacitor/<target>`. Fix: `pnpm add <package>`.
-- an error when `platforms/phone/capacitor.config.ts` is missing. Fix: `kitr platforms scaffold phone`.
-- an info line for each target whose native project does not exist yet. Fix: `kitr build phone`, which runs `cap add`.
+`kitr doctor` reports each missing Capacitor package (fix: `pnpm add <package>`), a missing `capacitor.config.ts` (fix: `kitr platforms scaffold phone`) and any target without a native project yet (fix: `kitr build phone`).
 
 ## Errors
 
@@ -538,9 +555,7 @@ Capacitor's own CLI works from `platforms/phone` for everything else: `pnpm exec
 
 ## Testing
 
-Unit tests run in Node or `happy-dom`, where there is no Capacitor runtime. The helpers in `@kitr/mobile/client` read the global `Capacitor` object, so a test sets a fake one to play the native shell and deletes it afterwards.
-
-This test checks the platform options, that the app picks the native driver inside the shell, and that `shareOrder()` from "Call a Capacitor plugin" falls back in the browser:
+Unit tests run where there is no Capacitor runtime. The helpers in `@kitr/mobile/client` read the global `Capacitor` object, so a test sets a fake one and deletes it afterwards. This checks the options, the native driver and the browser fallback:
 
 ```ts
 // test/mobile.test.ts
@@ -595,13 +610,10 @@ describe('the phone platform', () => {
 })
 ```
 
-The fake shell is enough for the drivers kitr registers, because they reach the Capacitor plugins only when a listener or method is used. To test code that calls a plugin, mock it with `vi.mock('@capacitor/share', () => ({ Share: { share: vi.fn() } }))`. Test the real native build on a simulator or device with `kitr dev phone`.
+To test code that calls a plugin, mock it with `vi.mock('@capacitor/share', () => ({ Share: { share: vi.fn() } }))`. Test the real native build on a simulator with `kitr dev phone`.
 
 ## Next steps
 
-- [API reference](/packages/mobile/api)
-- [Platform](/packages/platform): app state, back button, deep links and safe areas on every platform
-- [Storage](/packages/storage): typed items that move to native preferences on a phone
-- [Web](/packages/web): the browser build of the same app, installable as a PWA
-- [Platforms](/docs/platforms): every platform type and the commands they share
-- [Capacitor documentation](https://capacitorjs.com/docs)
+- [API reference](/packages/mobile/api): every export and type.
+- [Platform](/packages/platform): app state, back button, deep links and safe areas.
+- [Platforms](/docs/platforms): every platform type and the commands they share.
