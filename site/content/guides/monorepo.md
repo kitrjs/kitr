@@ -185,9 +185,9 @@ pnpm --filter @acme/web --filter @acme/api add @acme/contracts@workspace:*
 The API validates request bodies with the shared schema, so the rules the form checks in the browser are the rules the server enforces:
 
 ```ts
-// apps/api/server/controllers/orders_controller.ts
+// apps/api/server/controllers/orders-controller.ts
 import { type NewOrder, newOrderSchema, type Order } from '@acme/contracts/orders'
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 
 const orders = new Map<string, Order>()
 
@@ -212,10 +212,10 @@ The browser runs on another origin in development (`localhost:3000` calling `loc
 
 ```ts
 // apps/api/server/routes.ts
-import { cors } from 'kitr/api'
+import { cors } from '@kitr/api'
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import OrdersController from '#server/controllers/orders_controller'
+import api from '@kitr/api/routes'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.group({ prefix: '/api', middleware: [cors({ origin: ['http://localhost:3000', 'https://app.acme.com'] })] }, (r) =>
@@ -238,11 +238,11 @@ VITE_API_URL=http://localhost:3001/api
 ```
 
 ```ts
-// apps/web/app/features/orders/queries.ts
+// apps/web/app/queries/orders.ts
 import type { NewOrder, Order, OrdersPage } from '@acme/contracts/orders'
 import { createKeys } from 'kitr/app'
-import { httpMutation, httpQuery } from 'kitr/http'
-import { mutationFrom, queryFrom } from 'kitr/query'
+import { httpMutation, httpQuery } from '@kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
 import { app } from '#app/app'
 
 const http = () => app.container.use('http')

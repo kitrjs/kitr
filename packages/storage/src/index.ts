@@ -186,7 +186,7 @@ export function createAsyncStorageDriver(options: {
   onError?: (error: unknown) => void
 }): StorageDriver {
   const cache = new Map<string, string>()
-  const fail = options.onError ?? ((e) => console.error(`[kitr/storage] ${options.name}:`, e))
+  const fail = options.onError ?? ((e) => console.error(`[@kitr/storage] ${options.name}:`, e))
   return {
     name: options.name,
     async hydrate() {
@@ -472,7 +472,7 @@ function headerFrom(source: CookieSource): string | null | undefined {
  *   locale.get()                      // client: document.cookie
  *   locale.get(request.headers)       // server: any Headers / Cookie header string
  *   locale.set('de')                  // client
- *   cookies(event).set(locale, 'de')  // server (kitr/storage/server)
+ *   cookies(event).set(locale, 'de')  // server (@kitr/storage/server)
  */
 export function defineCookie<T = string>(
   name: string,

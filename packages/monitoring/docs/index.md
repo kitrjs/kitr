@@ -6,11 +6,11 @@ order: 1
 
 # Error monitoring
 
-When something breaks in production, you want to know before a user writes in, and you want enough context to fix it: who it happened to, which page they were on and what they did beforehand. `kitr/monitoring` catches render errors, uncaught errors and failed server requests, adds the signed-in user, tags and breadcrumbs, and sends each report to [Sentry](https://docs.sentry.io/platforms/javascript/) or any other service through one small API.
+When something breaks in production, you want to know before a user writes in, and you want enough context to fix it: who it happened to, which page they were on and what they did beforehand. `@kitr/monitoring` catches render errors, uncaught errors and failed server requests, adds the signed-in user, tags and breadcrumbs, and sends each report to [Sentry](https://docs.sentry.io/platforms/javascript/) or any other service through one small API.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com`, where Ada imports projects from a CSV file, Grace manages her team's invoices, and Linus is on call when a report comes in.
 
-`kitr/monitoring` runs in the browser and on the server. The provider and its error boundary need React; a server-only project uses the same API without the provider. It is for failures someone should fix. For lines a developer reads while debugging, use the [logger](/packages/logger); for counting what users do, use [analytics](/packages/analytics).
+`@kitr/monitoring` runs in the browser and on the server. The provider and its error boundary need React; a server-only project uses the same API without the provider. It is for failures someone should fix. For lines a developer reads while debugging, use the [logger](/packages/logger); for counting what users do, use [analytics](/packages/analytics).
 
 ## Install
 
@@ -50,7 +50,7 @@ In a project with React, `kitr add monitoring` writes this file:
 
 ```ts
 // config/monitoring.ts
-import { defineConfig } from 'kitr/monitoring'
+import { defineConfig } from '@kitr/monitoring'
 import { env } from '#app/env'
 
 /**
@@ -71,7 +71,7 @@ In a server-only project it writes this one, with `service` set to the `name` in
 
 ```ts
 // config/monitoring.ts
-import { defineConfig } from 'kitr/monitoring'
+import { defineConfig } from '@kitr/monitoring'
 
 /** Reporters: development prints to the console, production sends nowhere until one is added. */
 export default defineConfig({
@@ -103,8 +103,8 @@ Neither variable does anything until you uncomment the reporter line. Until then
 Errors you catch and handle are not reported unless you say so. In a component, read the service with `useService('monitoring')` and call `captureException` in the `catch`:
 
 ```tsx
-// app/features/projects/import-projects-button.tsx
-import { useService } from 'kitr/react'
+// app/components/projects/import-projects-button.tsx
+import { useService } from '@kitr/react'
 
 export function ImportProjectsButton({ file }: { file: File }) {
   const monitoring = useService('monitoring')
@@ -163,7 +163,7 @@ pnpm add @sentry/react
 ```ts
 // config/monitoring.ts
 import * as Sentry from '@sentry/react'
-import { defineConfig, sentry } from 'kitr/monitoring'
+import { defineConfig, sentry } from '@kitr/monitoring'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -193,7 +193,7 @@ pnpm add @sentry/node
 ```ts
 // config/monitoring.ts
 import * as Sentry from '@sentry/node'
-import { defineConfig, sentry } from 'kitr/monitoring'
+import { defineConfig, sentry } from '@kitr/monitoring'
 
 export default defineConfig({
   reporters: [...(process.env.SENTRY_DSN ? [sentry(Sentry, { dsn: process.env.SENTRY_DSN })] : [])],
@@ -215,7 +215,7 @@ The reporter maps each call to the SDK: `captureException` and `captureMessage` 
 
 ```ts
 // config/monitoring.ts
-import { consoleReporter, defineConfig } from 'kitr/monitoring'
+import { consoleReporter, defineConfig } from '@kitr/monitoring'
 
 export default defineConfig({ reporters: [consoleReporter()], debug: false })
 ```
@@ -242,7 +242,7 @@ Prints exceptions with `console.error('[monitoring]', source, error, extra)` and
 | `source` | Where it came from. The built-in sources are `error-boundary`, `window` and `server`. |
 
 ```ts
-// app/features/invoices/download-invoice.ts
+// app/lib/invoices/download-invoice.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function downloadInvoice(app: KitrApp, invoiceNumber: string) {
@@ -269,7 +269,7 @@ Outside React, the service is `app.container.use('monitoring')`. Don't report an
 `captureMessage(message, context?)` reports something worth knowing that is not an exception:
 
 ```ts
-// app/features/projects/import-limit.ts
+// app/lib/projects/import-limit.ts
 import type { KitrApp } from 'kitr/app'
 
 export function warnImportLimit(app: KitrApp, teamId: string, rows: number) {
@@ -288,7 +288,7 @@ Messages skip `shouldReport`; every call is sent.
 `setUser(user)` attaches the signed-in user to every report that follows, so Linus can see that Ada hit the error and contact her. Call it after sign-in and pass `null` on sign-out:
 
 ```ts
-// app/features/auth/session.ts
+// app/lib/auth/session.ts
 import type { KitrApp } from 'kitr/app'
 
 export function onSignedIn(app: KitrApp, user: { id: string; email: string; teamId: string }) {
@@ -307,7 +307,7 @@ The user needs an `id`; `email`, `username` and any other field are optional. On
 A breadcrumb is a step on the way to a possible error. Reporters that support them, such as Sentry, attach the most recent ones to the next report:
 
 ```ts
-// app/features/projects/import-projects.ts
+// app/lib/projects/import-projects.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function importProjects(app: KitrApp, file: File) {
@@ -338,7 +338,7 @@ Tags are short strings you filter by. Set them in three places, from widest to n
 - `tags` in the context of one call, as in [Report a caught error](#report-a-caught-error).
 
 ```ts
-// app/features/teams/team-context.ts
+// app/lib/teams/team-context.ts
 import type { KitrApp } from 'kitr/app'
 
 export function onTeamSelected(app: KitrApp, team: { id: string; plan: 'free' | 'pro' }) {
@@ -348,15 +348,15 @@ export function onTeamSelected(app: KitrApp, team: { id: string; plan: 'free' | 
 }
 ```
 
-`setTag` is passed to reporters that keep their own scope, such as Sentry. The config tags and per-call tags are merged into each report by `kitr/monitoring` itself, with per-call tags winning.
+`setTag` is passed to reporters that keep their own scope, such as Sentry. The config tags and per-call tags are merged into each report by `@kitr/monitoring` itself, with per-call tags winning.
 
 ## Wrap a function
 
 `wrap(fn, context?)` runs `fn`, reports anything it throws or rejects with, and rethrows. It works for sync and async functions:
 
 ```ts
-// server/services/invoice_service.ts
-import type { Monitoring } from 'kitr/monitoring'
+// server/services/invoice-service.ts
+import type { Monitoring } from '@kitr/monitoring'
 
 export function totalInvoice(monitoring: Monitoring, lines: Array<{ amount: number }>) {
   return monitoring.wrap(() => lines.reduce((sum, line) => sum + line.amount, 0), {
@@ -384,7 +384,7 @@ Use it for work that runs outside a request or render, such as a timer or a queu
 
 ```ts
 // config/monitoring.ts
-import { defaultShouldReport, defineConfig } from 'kitr/monitoring'
+import { defaultShouldReport, defineConfig } from '@kitr/monitoring'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -402,7 +402,7 @@ export default defineConfig({
 ```ts
 // scripts/should_report.ts
 import { KitrError } from 'kitr/app'
-import { defaultShouldReport } from 'kitr/monitoring'
+import { defaultShouldReport } from '@kitr/monitoring'
 
 defaultShouldReport(KitrError.notFound('Project')) // => false
 defaultShouldReport(new KitrError('INTERNAL', 'db down')) // => true
@@ -415,10 +415,10 @@ defaultShouldReport(new Error('Import failed with 500')) // => true
 The provider's boundary rethrows so the router's error component renders. To keep the rest of a page working when one widget fails, put your own `MonitoringErrorBoundary` around it with a `fallback`:
 
 ```tsx
-// app/features/invoices/invoice-chart-section.tsx
-import { MonitoringErrorBoundary } from 'kitr/monitoring/provider'
-import { useService } from 'kitr/react'
-import { InvoiceChart } from './invoice-chart'
+// app/components/invoices/invoice-chart-section.tsx
+import { MonitoringErrorBoundary } from '@kitr/monitoring/provider'
+import { useService } from '@kitr/react'
+import { InvoiceChart } from '#app/components/invoices/invoice-chart'
 
 export function InvoiceChartSection() {
   const monitoring = useService('monitoring')
@@ -450,15 +450,15 @@ The report carries `source: 'error-boundary'` and the React component stack in `
 
 ## Report server errors
 
-On the server, `reportErrors(monitoring)` from `kitr/monitoring/server` is middleware that reports every error a route throws, with the method, URL and request id, then rethrows so kitr's error handler still sends the response.
+On the server, `reportErrors(monitoring)` from `@kitr/monitoring/server` is middleware that reports every error a route throws, with the method, URL and request id, then rethrows so kitr's error handler still sends the response.
 
 In a project with React, the provider binds the service on the server too. The app boots on the first request, so resolve the service per request:
 
 ```ts
 // server/main.ts
-import { mountRoutes } from 'kitr/api'
-import { reportErrors } from 'kitr/monitoring/server'
-import { createServer } from 'kitr/server'
+import { mountRoutes } from '@kitr/api'
+import { reportErrors } from '@kitr/monitoring/server'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { routes } from '#server/routes'
@@ -473,10 +473,10 @@ In a server-only project there is no provider, so create the service from the co
 
 ```ts
 // server/main.ts
-import { mountRoutes } from 'kitr/api'
-import { createMonitoring } from 'kitr/monitoring'
-import { reportErrors } from 'kitr/monitoring/server'
-import { createServer } from 'kitr/server'
+import { mountRoutes } from '@kitr/api'
+import { createMonitoring } from '@kitr/monitoring'
+import { reportErrors } from '@kitr/monitoring/server'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { routes } from '#server/routes'
@@ -508,7 +508,7 @@ Reporters send in the background. In a script, a serverless function or a shutdo
 
 ```ts
 // scripts/rebuild_invoices.ts
-import { createMonitoring } from 'kitr/monitoring'
+import { createMonitoring } from '@kitr/monitoring'
 import { config } from '../config'
 
 const monitoring = createMonitoring(config.monitoring)
@@ -528,12 +528,12 @@ try {
 `memoryReporter()` keeps every report in arrays. Boot an app with the provider and a memory reporter, run the code, and assert on what was reported:
 
 ```ts
-// test/download_invoice.test.ts
-import { memoryReporter } from 'kitr/monitoring'
-import monitoringProvider from 'kitr/monitoring/provider'
-import { createTestApp } from 'kitr/testing'
+// test/download-invoice.test.ts
+import { memoryReporter } from '@kitr/monitoring'
+import monitoringProvider from '@kitr/monitoring/provider'
+import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { downloadInvoice } from '#app/features/invoices/download-invoice'
+import { downloadInvoice } from '#app/lib/invoices/download-invoice'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -571,9 +571,9 @@ Breadcrumbs and tags set with `setTag` are not kept. To check that an expected e
 Without the provider, `createMonitoring({ reporters: [reporter] })` gives you the same service with no `environment` tag. Use it to test the server middleware without a server:
 
 ```ts
-// test/report_errors.test.ts
-import { createMonitoring, memoryReporter } from 'kitr/monitoring'
-import { reportErrors } from 'kitr/monitoring/server'
+// test/report-errors.test.ts
+import { createMonitoring, memoryReporter } from '@kitr/monitoring'
+import { reportErrors } from '@kitr/monitoring/server'
 import { expect, it } from 'vitest'
 
 it('reports a failed route with its request id', async () => {
@@ -605,7 +605,7 @@ This one posts each exception to an internal endpoint, with the user and the las
 
 ```ts
 // app/monitoring/acme-reporter.ts
-import type { Breadcrumb, MonitoringUser, Reporter } from 'kitr/monitoring'
+import type { Breadcrumb, MonitoringUser, Reporter } from '@kitr/monitoring'
 
 export function acmeReporter(options: { endpoint: string }): Reporter {
   let user: MonitoringUser | null = null
@@ -645,7 +645,7 @@ Register it in `config/monitoring.ts` next to any others:
 
 ```ts
 // config/monitoring.ts
-import { defineConfig } from 'kitr/monitoring'
+import { defineConfig } from '@kitr/monitoring'
 import { acmeReporter } from '#app/monitoring/acme-reporter'
 import { env } from '#app/env'
 

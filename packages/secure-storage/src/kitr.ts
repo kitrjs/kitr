@@ -15,15 +15,15 @@ export default definePackage({
     ctx.provider.add('@kitr/secure-storage/provider')
     ctx.config(
       'secure-storage',
-      `import { defineConfig } from 'kitr/secure-storage'\n\nexport default defineConfig({\n  // OS vault on mobile/desktop; AES-GCM in the browser. true refuses the browser fallback.\n  requireSecure: false,\n})\n`,
+      `import { defineConfig } from '@kitr/secure-storage'\n\nexport default defineConfig({\n  // OS vault on mobile/desktop; AES-GCM in the browser. true refuses the browser fallback.\n  requireSecure: false,\n})\n`,
     )
     ctx.write(
       'app/secure.ts',
-      `import { defineSecureItem } from 'kitr/secure-storage'\n\n/** Secrets, typed once: \`useSecureItem(sessionItem)\` in components, \`sessionItem(storage).get()\` elsewhere. */\nexport const sessionItem = defineSecureItem<{ token: string; expiresAt: number }>('session')\n`,
+      `import { defineSecureItem } from '@kitr/secure-storage'\n\n/** Secrets, typed once: \`useSecureItem(sessionItem)\` in components, \`sessionItem(storage).get()\` elsewhere. */\nexport const sessionItem = defineSecureItem<{ token: string; expiresAt: number }>('session')\n`,
     )
     ctx.agents.add(
       'secure-storage',
-      `- Tokens and secrets go through \`kitr/secure-storage\` (\`app/secure.ts\`), never \`defineStorage\` or localStorage. \`useSecureItem(item)\` returns \`[value, set, { loading, secure }]\`; the value is undefined until the vault answers.`,
+      `- Tokens and secrets go through \`@kitr/secure-storage\` (\`app/secure.ts\`), never \`defineStorage\` or localStorage. \`useSecureItem(item)\` returns \`[value, set, { loading, secure }]\`; the value is undefined until the vault answers.`,
     )
   },
   remove(ctx) {

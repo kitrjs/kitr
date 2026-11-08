@@ -126,7 +126,9 @@ export function createSecureStorage(
   const known = new Set<string>()
   const guard = () => {
     if (config.requireSecure && !driver.secure)
-      throw new Error('kitr/secure-storage: no secure vault on this platform (requireSecure is on)')
+      throw new Error(
+        '@kitr/secure-storage: no secure vault on this platform (requireSecure is on)',
+      )
   }
   return {
     driver,

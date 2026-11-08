@@ -175,13 +175,13 @@ export const web = definePlatform<WebOptions>(
     agents: [
       `- \`kitr dev ${'<name>'}\` runs Vite on the platform's port; \`kitr build\` writes \`dist/<name>\`; \`kitr start\` serves it (${options.mode === 'ssr' ? 'the Start server bundle' : 'static files'}).`,
       options.mode === 'ssr'
-        ? '- Routes render on the server by default; `ssrRoute(false)` from kitr/seo opts a route out.'
+        ? '- Routes render on the server by default; `ssrRoute(false)` from @kitr/seo opts a route out.'
         : options.mode === 'static'
           ? '- Every route is prerendered at build time; data must be available at build or fetched on the client.'
           : '- Routes render on the client; loaders run in the browser.',
       ...(options.pwa
         ? [
-            '- The service worker is only emitted by `kitr build`; render `<PwaUpdate />` once so updates are offered (`useServiceWorker` from kitr/web/client).',
+            '- The service worker is only emitted by `kitr build`; render `<PwaUpdate />` once so updates are offered (`useServiceWorker` from @kitr/web/client).',
           ]
         : []),
     ].join('\n'),

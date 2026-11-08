@@ -1,7 +1,7 @@
 {
   "name": "@kitr/tailwind",
   "version": "0.1.0",
-  "description": "kitr/tailwind: Tailwind v4 wiring, the kitr preset (tokens as @theme) and a tailwind-merge aware cn().",
+  "description": "@kitr/tailwind: Tailwind v4 wiring, the kitr preset (tokens as @theme) and a tailwind-merge aware cn().",
   "kitr": {
     "name": "tailwind",
     "title": "Tailwind",
@@ -44,6 +44,7 @@
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"
     },
+    "./preset.css": "./preset.css",
     "./package.json": "./package.json"
   },
   "files": [

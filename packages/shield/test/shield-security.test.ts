@@ -357,7 +357,7 @@ describe('shieldMiddlewares', () => {
 })
 
 describe('corsPolicy', () => {
-  it('accepts one origin as a string, like kitr/api always did', () => {
+  it('accepts one origin as a string, like @kitr/api always did', () => {
     const policy = corsPolicy({ origin: 'https://a.dev' })
     expect(policy('https://a.dev').headers['access-control-allow-origin']).toBe('https://a.dev')
     expect(policy('https://b.dev').headers).toEqual({})

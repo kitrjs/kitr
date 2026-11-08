@@ -177,7 +177,7 @@ export function createOffline(
 /**
  * A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do
  * not survive a reload. Give every named mutation (`defineMutation('projects.rename', ...)` in
- * kitr/actions, or one registered in the app's `operations`) its defaults by name, so a mutation
+ * @kitr/actions, or one registered in the app's `operations`) its defaults by name, so a mutation
  * paused offline still runs, with its cache effects, after the app restarts. Mutations without a
  * name need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
  * `createOffline` does this from `app.operations` when it is given the app.

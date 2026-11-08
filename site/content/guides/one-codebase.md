@@ -16,8 +16,8 @@ Most of the app should not know where it runs. Pages, queries, forms and storage
 | Need | Tool | Decided |
 | --- | --- | --- |
 | A page that exists on some platforms only | `platforms` on the page | when the route tree is built |
-| A different implementation per platform | `forPlatform()` from `kitr/platform` | once, from the build's platform |
-| A different implementation per operating system | `perPlatform()` from `kitr/platform` | at run time |
+| A different implementation per platform | `forPlatform()` from `@kitr/platform` | once, from the build's platform |
+| A different implementation per operating system | `perPlatform()` from `@kitr/platform` | at run time |
 | A piece of UI on some platforms or screen sizes | `<Only>`, `<Except>`, `useFormFactor()` | at render |
 | Code that must not be in a bundle at all | `import.meta.env.KITR_PLATFORM` | by the bundler |
 
@@ -98,16 +98,16 @@ export const routes = defineRoutes([router], (r) =>
 
 The other builds leave `/download` out of their route tree, so in the phone app it is a 404 like any unknown path. Its chunk is still in their bundles, unused; the section on keeping code out of a bundle covers code that must not ship at all. `<Link to="/download">` still type-checks everywhere, because the type of the table is the same on every platform; render such a link only where the page exists, as the next sections show. A layout whose pages are all left out is left out too.
 
-When the guard should depend on more than the build, such as the operating system or whether the app runs in a native shell, use `onlyPlatform()` from `kitr/router` as the page's `beforeLoad` instead. Its keys can be platform names, types, operating systems or `native`, and it can redirect instead of rendering not-found: `beforeLoad: onlyPlatform(['site', 'desk'], { to: '/' })` keeps a page off phones and sends them home.
+When the guard should depend on more than the build, such as the operating system or whether the app runs in a native shell, use `onlyPlatform()` from `@kitr/router` as the page's `beforeLoad` instead. Its keys can be platform names, types, operating systems or `native`, and it can redirect instead of rendering not-found: `beforeLoad: onlyPlatform(['site', 'desk'], { to: '/' })` keeps a page off phones and sends them home.
 
 ## Pick an implementation per platform
 
 Sharing an invoice opens the share sheet on a phone and copies the link everywhere else. `forPlatform()` picks the implementation once, from the platform the bundle was built for, so components call `shareInvoice()` without asking where they are:
 
 ```ts
-// app/features/invoices/share-invoice.ts
-import { forPlatform } from 'kitr/platform'
-import type { Invoice } from './queries'
+// app/lib/invoices/share-invoice.ts
+import { forPlatform } from '@kitr/platform'
+import type { Invoice } from '#app/queries/invoices'
 
 const linkTo = (invoice: Invoice) => `https://app.acme.com/invoices/${invoice.id}`
 
@@ -130,8 +130,8 @@ export const shareInvoice = forPlatform<(invoice: Invoice) => Promise<'shared' |
 When the answer depends on the device rather than the build, such as iOS against Android inside the same phone build, use `perPlatform()` at run time with the platform service:
 
 ```ts
-// app/features/invoices/payment-link.ts
-import { perPlatform } from 'kitr/platform'
+// app/lib/invoices/payment-link.ts
+import { perPlatform } from '@kitr/platform'
 import { app } from '#app/app'
 
 export function paymentHint() {
@@ -151,8 +151,8 @@ The most specific key wins: the platform name, then the operating system, then t
 
 ```tsx
 // app/components/account-extras.tsx
-import { Only } from 'kitr/platform/react'
-import { Link } from 'kitr/router'
+import { Only } from '@kitr/platform/react'
+import { Link } from '@kitr/router'
 
 export function AccountExtras() {
   return (
@@ -176,8 +176,8 @@ A phone wants a tab bar at the bottom. A desktop window, or a browser on a lapto
 
 ```tsx
 // app/pages/tabs.tsx
-import { Only, useFormFactor } from 'kitr/platform/react'
-import { StackTabs } from 'kitr/router/stack'
+import { Only, useFormFactor } from '@kitr/platform/react'
+import { StackTabs } from '@kitr/router/stack'
 import { DeepLinks } from '#app/components/deep-links'
 import { MenuCommands } from '#app/components/menu-commands'
 
@@ -258,7 +258,7 @@ The web platform is a single-page app here, which suits a signed-in tool. If the
 
 ```ts
 // app/routes.ts
-import { ssrRoute } from 'kitr/seo'
+import { ssrRoute } from '@kitr/seo'
 
 r.page('/download', {
   platforms: ['site'],
@@ -275,8 +275,8 @@ Keep `ssrRoute(false)` on the signed-in layout in that case: its pages read the 
 
 ```ts
 // test/platforms.test.ts
-import { createKitrRouter, createMemoryHistory } from 'kitr/router'
-import { createTestApp } from 'kitr/testing'
+import { createKitrRouter, createMemoryHistory } from '@kitr/router'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { routes } from '#app/routes'
 

@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add http`: the ky client with auth headers, token refresh and kitr error normalisation. */
 export default definePackage({
@@ -16,11 +16,11 @@ export default definePackage({
     )
     ctx.config(
       'http',
-      `import { defineConfig } from 'kitr/http'\nimport { env } from '#app/env'\n\nexport default defineConfig({\n  baseUrl: env.VITE_API_URL,\n  // getToken: () => auth.getToken(), refresh: () => auth.refresh(),\n})\n`,
+      `import { defineConfig } from '@kitr/http'\nimport { env } from '#app/env'\n\nexport default defineConfig({\n  baseUrl: env.VITE_API_URL,\n  // getToken: () => auth.getToken(), refresh: () => auth.refresh(),\n})\n`,
     )
     ctx.agents.add(
       'http',
-      `- The HTTP client is \`app.container.use('http')\` (a ky instance). Wrap endpoints with \`httpQuery\`/\`httpMutation\` from \`kitr/http\` and pass them to \`queryFrom\`/\`mutationFrom\`.\n- Errors are already \`KitrError\`; a 422 with \`fieldErrors\` maps onto form fields through \`<Form>\`.`,
+      `- The HTTP client is \`app.container.use('http')\` (a ky instance). Wrap endpoints with \`httpQuery\`/\`httpMutation\` from \`@kitr/http\` and pass them to \`queryFrom\`/\`mutationFrom\`.\n- Errors are already \`KitrError\`; a 422 with \`fieldErrors\` maps onto form fields through \`<Form>\`.`,
     )
   },
   remove(ctx) {
@@ -30,13 +30,13 @@ export default definePackage({
   },
   generators: {
     queries: {
-      description: 'Create a feature queries file in app/features/<name>/queries.ts',
-      target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/features/${naming.snake(name)}/queries.ts`,
-      }),
+      description: 'Create the typed queries and mutations of one HTTP resource in app/queries',
+      definition:
+        'Typed query and mutation contracts for an external HTTP API, one file per resource.',
+      target: (name, project) => generatorFile(project, 'app', 'queries', name),
       stub: ({ name }) => `import { createKeys } from 'kitr/app'
-import { mutationFrom, queryFrom } from 'kitr/query'
-import { httpMutation, httpQuery } from 'kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
+import { httpMutation, httpQuery } from '@kitr/http'
 import { app } from '#app/app'
 
 // A function: this file loads with the route table, before the app has booted.
@@ -66,7 +66,7 @@ export const update${naming.pascal(name)} = mutationFrom(
 `,
     },
   },
-  wraps: { ky: 'kitr/http' },
-  eject: { 'kitr/http': 'ky' },
+  wraps: { ky: '@kitr/http' },
+  eject: { '@kitr/http': 'ky' },
   vite: { optimizeDeps: ['ky'] },
 })

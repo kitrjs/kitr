@@ -1,5 +1,5 @@
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 /**
  * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every

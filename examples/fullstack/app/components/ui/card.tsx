@@ -1,4 +1,4 @@
-import { cn } from 'kitr/tailwind'
+import { cn } from '@kitr/tailwind'
 import type { ComponentProps } from 'react'
 
 export function Card({ className, ...props }: ComponentProps<'div'>) {

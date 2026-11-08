@@ -6,7 +6,7 @@
 pnpm kitr add forms
 ```
 
-`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `kitr/forms`.
+`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `@kitr/forms`.
 
 Built on react-hook-form.
 

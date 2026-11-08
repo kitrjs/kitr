@@ -6,7 +6,7 @@ order: 1
 
 # Offline
 
-A train goes into a tunnel, the warehouse wifi drops, the app is reopened on a plane. Without help, every screen turns into a spinner or an error. `kitr/offline` keeps a copy of the data your app already loaded on the device and puts it back before the first render, so the app opens with the last known data. Changes made with no connection wait in a queue and are sent when the network returns.
+A train goes into a tunnel, the warehouse wifi drops, the app is reopened on a plane. Without help, every screen turns into a spinner or an error. `@kitr/offline` keeps a copy of the data your app already loaded on the device and puts it back before the first render, so the app opens with the last known data. Changes made with no connection wait in a queue and are sent when the network returns.
 
 It is built on [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode)'s own network mode and its [dehydrate and hydrate](https://tanstack.com/query/latest/docs/framework/react/reference/hydration) functions, and stores the snapshot through [Storage](/packages/storage), so desktop and mobile apps keep it in the native store. kitr adds the throttled save, the restore at boot, version-based invalidation and a `useOffline()` hook for a status line.
 
@@ -16,7 +16,7 @@ This guide follows Linus, who visits Acme's customers with a tablet: he opens th
 
 ## When to use it
 
-Use `kitr/offline` to keep **server data** you loaded with [Query](/packages/query) usable with no connection: lists, details, the signed-in user. It saves the query cache as a whole and needs no change to your queries.
+Use `@kitr/offline` to keep **server data** you loaded with [Query](/packages/query) usable with no connection: lists, details, the signed-in user. It saves the query cache as a whole and needs no change to your queries.
 
 Use [Storage](/packages/storage) for values the device itself owns, such as preferences and drafts. Storage items are always there; the offline snapshot is a cache that can expire, be busted by a new version and be cleared on sign-out.
 
@@ -32,13 +32,13 @@ What `kitr add` does:
 - Adds `() => import('@kitr/offline/provider')` to the end of `providers` in `kitrrc.ts`.
 - Writes `config/offline.ts` (shown under [Configure](#configure)).
 - Adds `VITE_APP_VERSION` to the public variables in `app/env.ts` as `e.string({ default: '0.0.0' })`, and `VITE_APP_VERSION=0.0.0` to `.env.example` (and to `.env` when it exists).
-- Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, named mutations replay even after a restart, give any other mutation a `mutationKey` and `setMutationDefaults` and an optimistic `onMutate`, and use `useOffline()` from `kitr/offline/react` for a status line.
+- Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, named mutations replay even after a restart, give any other mutation a `mutationKey` and `setMutationDefaults` and an optimistic `onMutate`, and use `useOffline()` from `@kitr/offline/react` for a status line.
 
 `kitr add offline` asks no questions and adds no scripts. No kit includes it.
 
 The provider reads the `queryClient` that [Query](/packages/query) binds, and the snapshot goes through [Storage](/packages/storage). `kitr add offline` adds both first when the project lacks them. Like every package that runs in the browser, it is refused in a server-only project.
 
-`kitr remove offline` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, deletes `config/offline.ts`, and lists the files that still import `kitr/offline`. It leaves `VITE_APP_VERSION` in `app/env.ts` and `.env.example`, and leaves Query and Storage installed.
+`kitr remove offline` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, deletes `config/offline.ts`, and lists the files that still import `@kitr/offline`. It leaves `VITE_APP_VERSION` in `app/env.ts` and `.env.example`, and leaves Query and Storage installed.
 
 ## Configure
 
@@ -46,7 +46,7 @@ The provider reads the `queryClient` that [Query](/packages/query) binds, and th
 
 ```ts
 // config/offline.ts
-import { defineConfig } from 'kitr/offline'
+import { defineConfig } from '@kitr/offline'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -83,7 +83,7 @@ TanStack Query removes a query from memory five minutes after the last component
 
 ```ts
 // config/query.ts
-import { defineConfig } from 'kitr/query'
+import { defineConfig } from '@kitr/query'
 
 export default defineConfig({
   staleTime: 30_000,
@@ -104,7 +104,7 @@ r.page('/orders', { lazy: () => import('./pages/orders') })
 
 ```tsx
 // app/pages/orders.tsx
-import { queryFrom, useQuery } from 'kitr/query'
+import { queryFrom, useQuery } from '@kitr/query'
 
 interface Order {
   id: string
@@ -150,11 +150,11 @@ kitr:query-cache  {"at":1731000000000,"buster":"1.4.0","state":{"mutations":[],"
 
 ## Show the connection status
 
-`useOffline()` from `kitr/offline/react` gives a component the network state, the number of changes waiting to be sent, and whether the cache came from a snapshot:
+`useOffline()` from `@kitr/offline/react` gives a component the network state, the number of changes waiting to be sent, and whether the cache came from a snapshot:
 
 ```tsx
 // app/components/connection-status.tsx
-import { useOffline } from 'kitr/offline/react'
+import { useOffline } from '@kitr/offline/react'
 
 export function ConnectionStatus() {
   const { online, pending, restored } = useOffline()
@@ -183,7 +183,7 @@ On the server the provider binds nothing, so during server rendering `useOffline
 
 ```ts
 // config/offline.ts
-import { defineConfig } from 'kitr/offline'
+import { defineConfig } from '@kitr/offline'
 import { env } from '#app/env'
 
 const neverSaved = new Set(['search', 'notifications', 'billing'])
@@ -205,8 +205,8 @@ The snapshot is plain JSON in local storage or the native store. Anyone with the
 
 ```tsx
 // app/components/sign-out-button.tsx
-import { useQueryClient } from 'kitr/query'
-import { useOffline } from 'kitr/offline/react'
+import { useQueryClient } from '@kitr/query'
+import { useOffline } from '@kitr/offline/react'
 
 export function SignOutButton({ onSignedOut }: { onSignedOut: () => void }) {
   const { clear } = useOffline()
@@ -260,7 +260,7 @@ Linus's tablet holds a snapshot saved by `1.4.0`. After the `1.5.0` update the p
 
 ```ts
 // config/offline.ts
-import { defineConfig } from 'kitr/offline'
+import { defineConfig } from '@kitr/offline'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -281,8 +281,8 @@ Mutations need no change either. TanStack Query's default `networkMode: 'online'
 Give each mutation a `mutationKey`, so it can be replayed after a reload (next section), and an optimistic `onMutate`, so the screen shows the change while it waits:
 
 ```ts
-// app/features/orders/use-create-order.ts
-import { mutationFrom, useMutation, useQueryClient } from 'kitr/query'
+// app/hooks/orders/use-create-order.ts
+import { mutationFrom, useMutation, useQueryClient } from '@kitr/query'
 
 export interface Order {
   id: string
@@ -322,8 +322,8 @@ export function useCreateOrder() {
 ```
 
 ```tsx
-// app/features/orders/new-order-button.tsx
-import { useCreateOrder } from './use-create-order'
+// app/components/orders/new-order-button.tsx
+import { useCreateOrder } from '#app/hooks/orders/use-create-order'
 
 export function NewOrderButton() {
   const createOrder = useCreateOrder()
@@ -348,7 +348,7 @@ For a mutation without a name, register the function for its `mutationKey` with 
 ```ts
 // app/providers/offline-mutations.ts
 import { defineProvider } from 'kitr/app'
-import { createOrder } from '#app/features/orders/use-create-order'
+import { createOrder } from '#app/hooks/orders/use-create-order'
 
 export default defineProvider({
   name: 'offline-mutations',
@@ -391,8 +391,8 @@ Don't set the defaults in `boot()` or in a component. By then the mutation was r
 The provider saves on its own: one second after the last cache change, and right away when the page is hidden or closed, so a change made just before Linus locks the tablet is not lost. Outside React, the `offline` service gives you the same controls:
 
 ```ts
-// app/features/sync/sync-now.ts
-import { useOffline } from 'kitr/offline'
+// app/lib/sync/sync-now.ts
+import { useOffline } from '@kitr/offline'
 import { app } from '#app/app'
 
 export async function resetDeviceCache() {
@@ -414,9 +414,9 @@ To use the service with a `QueryClient` you build yourself, outside the provider
 
 ```ts
 // scripts/warm-cache.ts
-import { createOffline } from 'kitr/offline'
-import { QueryClient } from 'kitr/query'
-import { createMemoryStorageDriver } from 'kitr/storage'
+import { createOffline } from '@kitr/offline'
+import { QueryClient } from '@kitr/query'
+import { createMemoryStorageDriver } from '@kitr/storage'
 
 const storage = createMemoryStorageDriver()
 const client = new QueryClient()
@@ -434,7 +434,7 @@ Outside the provider, for example in a test, pass anything with `isOnline()` and
 
 ```ts
 // test/support/network.ts
-import { bindOnlineManager } from 'kitr/offline'
+import { bindOnlineManager } from '@kitr/offline'
 
 let setNetwork: (online: boolean) => void = () => {}
 
@@ -457,13 +457,13 @@ TanStack's `onlineManager` is global, so the binding applies to every `QueryClie
 The provider only runs when the app's environment is `client`, so pass `environment: 'client'` to `createTestApp`. Give it an in-memory storage driver in config, seed a snapshot with `createOffline`, and boot: the cache holds the seeded data before any test code runs. TanStack's `onlineManager` lets you take the app offline:
 
 ```ts
-// app/features/orders/offline.test.ts
-import { createOffline } from 'kitr/offline'
-import offlineProvider from 'kitr/offline/provider'
-import { onlineManager, QueryClient } from 'kitr/query'
-import queryProvider from 'kitr/query/provider'
-import { createMemoryStorageDriver } from 'kitr/storage'
-import { createTestApp } from 'kitr/testing'
+// app/lib/orders/offline.test.ts
+import { createOffline } from '@kitr/offline'
+import offlineProvider from '@kitr/offline/provider'
+import { onlineManager, QueryClient } from '@kitr/query'
+import queryProvider from '@kitr/query/provider'
+import { createMemoryStorageDriver } from '@kitr/storage'
+import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it } from 'vitest'
 
 afterEach(() => onlineManager.setOnline(true))
@@ -524,12 +524,12 @@ To test that a mutation queues, build it on the client with `client.getMutationC
 
 The snapshot goes through a `StorageDriver`, the same interface [Storage](/packages/storage) uses for its native stores (see [Write a storage driver](/packages/storage#write-a-storage-driver)). Pass your own as `storage` to keep the snapshot somewhere else. The usual reason is size: [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) holds far more than the 5 MB of `localStorage`.
 
-The offline service reads the snapshot synchronously with `get()`, so an async store must be loaded into memory first. `createAsyncStorageDriver` from `kitr/storage` does that in its `hydrate()`. This driver uses [idb-keyval](https://github.com/jakearchibald/idb-keyval):
+The offline service reads the snapshot synchronously with `get()`, so an async store must be loaded into memory first. `createAsyncStorageDriver` from `@kitr/storage` does that in its `hydrate()`. This driver uses [idb-keyval](https://github.com/jakearchibald/idb-keyval):
 
 ```ts
 // app/lib/idb-snapshot.ts
 import { createStore, del, get, set } from 'idb-keyval'
-import { createAsyncStorageDriver } from 'kitr/storage'
+import { createAsyncStorageDriver } from '@kitr/storage'
 
 const store = createStore('acme-offline', 'snapshots')
 
@@ -546,7 +546,7 @@ export const idbSnapshotStorage = createAsyncStorageDriver({
 
 ```ts
 // config/offline.ts
-import { defineConfig } from 'kitr/offline'
+import { defineConfig } from '@kitr/offline'
 import { env } from '#app/env'
 import { idbSnapshotStorage } from '#app/lib/idb-snapshot'
 
@@ -572,11 +572,11 @@ export default defineProvider({
 })
 ```
 
-Writes go to IndexedDB in the background after each save. A failed write is logged as `[kitr/storage] idb:offline: <error>`; pass `onError` to `createAsyncStorageDriver` to handle it yourself.
+Writes go to IndexedDB in the background after each save. A failed write is logged as `[@kitr/storage] idb:offline: <error>`; pass `onError` to `createAsyncStorageDriver` to handle it yourself.
 
 ## Devtools
 
-`kitr/offline` has no panel. With [Devtools](/packages/devtools) installed it writes to the Log panel under `offline`: `restored` with the number of queries and mutations it loaded at boot, and `persist failed` with the error when a save is refused, usually because storage is full. The restored queries show in the [Query](/packages/query) panel like any others.
+`@kitr/offline` has no panel. With [Devtools](/packages/devtools) installed it writes to the Log panel under `offline`: `restored` with the number of queries and mutations it loaded at boot, and `persist failed` with the error when a save is refused, usually because storage is full. The restored queries show in the [Query](/packages/query) panel like any others.
 
 ## Next steps
 

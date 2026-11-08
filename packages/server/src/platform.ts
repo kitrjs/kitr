@@ -100,7 +100,7 @@ export type ServerRoutes = typeof routes.$types
       ctx.write(
         options.entry,
         `import { loadRc } from 'kitr/app'
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { routes } from '${routesSpec}'
 import { config } from '../config'
 import rc from '../kitrrc'

@@ -1,4 +1,4 @@
-import { getRouteApi, Link } from 'kitr/router'
+import { getRouteApi, Link } from '@kitr/router'
 import { useEffect, useState } from 'react'
 import { api } from '#app/api/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'

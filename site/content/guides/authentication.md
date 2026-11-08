@@ -121,8 +121,8 @@ Keep everything that touches the session cookie in one module, so the API, the a
 // server/auth/sessions.ts
 import { randomBytes } from 'node:crypto'
 import { and, eq, gt } from 'drizzle-orm'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { app } from '#app/app'
 import type { User } from '#app/abilities'
 import type { AppDb } from '#config/db'
@@ -177,7 +177,7 @@ Update `app/abilities.ts` so `User` matches the columns, and `Project` has an ow
 
 ```ts
 // app/abilities.ts
-import { defineAbilities } from 'kitr/auth'
+import { defineAbilities } from '@kitr/auth'
 
 export interface User {
   id: string
@@ -204,12 +204,12 @@ export const abilities = defineAbilities({
 Three routes are enough: start a session, read it, end it. Put them in a controller:
 
 ```ts
-// server/controllers/session_controller.ts
+// server/controllers/session-controller.ts
 import { eq } from 'drizzle-orm'
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
-import { currentUser } from 'kitr/auth/server'
-import { useDb } from 'kitr/db'
+import { currentUser } from '@kitr/auth/server'
+import { useDb } from '@kitr/db'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
 import type { AppDb } from '#config/db'
@@ -245,17 +245,17 @@ export default class SessionController {
 
 The same message for an unknown email and a wrong password is deliberate: a different answer would tell an attacker which emails have accounts.
 
-Register the routes, and read the cookie on every API request with `authMiddleware` from `kitr/auth/server`:
+Register the routes, and read the cookie on every API request with `authMiddleware` from `@kitr/auth/server`:
 
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import { authMiddleware, can } from 'kitr/auth/server'
+import api from '@kitr/api/routes'
+import { authMiddleware, can } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
 import { findUserBySession, SESSION_COOKIE } from '#server/auth/sessions'
-import ProjectsController from '#server/controllers/projects_controller'
-import SessionController from '#server/controllers/session_controller'
+import ProjectsController from '#server/controllers/projects-controller'
+import SessionController from '#server/controllers/session-controller'
 import { findProject } from '#server/services/projects'
 
 const optionalAuth = authMiddleware<User>({
@@ -295,8 +295,8 @@ export type ServerRoutes = typeof routes.$types
 ```ts
 // server/services/projects.ts
 import { eq } from 'drizzle-orm'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
@@ -329,7 +329,7 @@ The browser side of [Auth](/packages/auth) asks an adapter for the session. With
 
 ```ts
 // config/auth.ts
-import { createSession, customAdapter, defineConfig } from 'kitr/auth'
+import { createSession, customAdapter, defineConfig } from '@kitr/auth'
 import { KitrError } from 'kitr/app'
 import { abilities, type User } from '#app/abilities'
 
@@ -378,9 +378,9 @@ r.page('/sign-in', {
 
 ```tsx
 // app/pages/sign-in.tsx
-import { useAuth } from 'kitr/auth'
-import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
-import { getRouteApi, useNavigate } from 'kitr/router'
+import { useAuth } from '@kitr/auth'
+import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
+import { getRouteApi, useNavigate } from '@kitr/router'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
 
@@ -429,9 +429,9 @@ Move the pages that need a user under a pathless layout, `_app`, and guard it on
 
 ```ts
 // app/routes.ts
-import type { Session } from 'kitr/auth'
-import { requireAuth } from 'kitr/router'
-import { ssrRoute } from 'kitr/seo'
+import type { Session } from '@kitr/auth'
+import { requireAuth } from '@kitr/router'
+import { ssrRoute } from '@kitr/seo'
 import type { User } from '#app/abilities'
 
 r.layout('_app', {
@@ -468,7 +468,7 @@ A server action is an HTTP endpoint like any other, so it checks the session its
 ```ts
 // app/actions/middleware/session.ts
 import { getRequest } from '@tanstack/react-start/server'
-import { createMiddleware } from 'kitr/actions'
+import { createMiddleware } from '@kitr/actions'
 import { findUserBySession, sessionIdFrom } from '#server/auth/sessions'
 
 export const sessionMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
@@ -483,9 +483,9 @@ Now the action takes the team from the session, not from the browser. Before, `p
 ```ts
 // app/actions/projects/list.ts
 import { desc, eq } from 'drizzle-orm'
-import { defineQuery, requireSession } from 'kitr/actions'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { defineQuery, requireSession } from '@kitr/actions'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { sessionMiddleware } from '#app/actions/middleware/session'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
@@ -509,10 +509,10 @@ Mutations check permissions the same way. Load the row, then ask the same `abili
 ```ts
 // app/actions/projects/rename.ts
 import { eq } from 'drizzle-orm'
-import { defineMutation, requireSession } from 'kitr/actions'
+import { defineMutation, requireSession } from '@kitr/actions'
 import { KitrError } from 'kitr/app'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
 import { abilities } from '#app/abilities'
 import { sessionMiddleware } from '#app/actions/middleware/session'
@@ -542,8 +542,8 @@ A project in another team answers "not found", not "forbidden": the caller shoul
 In components, `useCan()` asks the same rules for the signed-in user. Hide the actions a user cannot take:
 
 ```tsx
-// app/features/projects/project-row.tsx
-import { useCan } from 'kitr/auth'
+// app/components/projects/project-row.tsx
+import { useCan } from '@kitr/auth'
 import type { Project } from '#server/db/schema'
 
 export function ProjectRow({ project, onRename }: { project: Project; onRename: () => void }) {
@@ -567,8 +567,8 @@ Show who is signed in, with a way out, in the layout:
 
 ```tsx
 // app/components/account-menu.tsx
-import { useAuth, useUser } from 'kitr/auth'
-import { useNavigate } from 'kitr/router'
+import { useAuth, useUser } from '@kitr/auth'
+import { useNavigate } from '@kitr/router'
 import type { User } from '#app/abilities'
 
 export function AccountMenu() {
@@ -599,7 +599,7 @@ Test the rules, the sign-in route and the guard on an action. The API test signs
 ```ts
 // @vitest-environment node
 // test/sign-in.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -651,7 +651,7 @@ Both tests expect a project `prj_ada_roadmap` owned by Ada in the test database;
 
 ## Before you go to production
 
-- Rate-limit `POST /api/session`, so nobody can try passwords as fast as your server answers. `rateLimit({ max: 10 })` from `kitr/api` on that route allows ten attempts a minute per IP.
+- Rate-limit `POST /api/session`, so nobody can try passwords as fast as your server answers. `rateLimit({ max: 10 })` from `@kitr/api` on that route allows ten attempts a minute per IP.
 - Serve over HTTPS only. The cookie is `Secure` in production and the browser will not send it over plain HTTP.
 - Delete expired sessions on a schedule, such as a nightly `delete from sessions where expires_at < now()`.
 - Let users reset a forgotten password. That needs an email: [Mail](/packages/mail) sends it, with a single-use token stored like a session.

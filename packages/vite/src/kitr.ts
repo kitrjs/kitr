@@ -12,7 +12,7 @@ export default definePackage({
     ctx.deps.add({ name: 'vite', dev: true })
     ctx.write(
       'vite.config.ts',
-      `import { kitr } from 'kitr/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({\n  plugins: [kitr()],\n})\n`,
+      `import { kitr } from '@kitr/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({\n  plugins: [kitr()],\n})\n`,
     )
     ctx.tsconfig.addTypes('vite/client', '@kitr/vite/client')
     ctx.tsconfig.addInclude('vite.config.ts')
@@ -30,15 +30,15 @@ export default definePackage({
   doctor(project) {
     if (!project.exists('vite.config.ts'))
       return [{ level: 'error', message: 'vite.config.ts is missing', fix: 'kitr add vite' }]
-    if (!project.read('vite.config.ts').includes('kitr/vite'))
+    if (!project.read('vite.config.ts').includes('@kitr/vite'))
       return [
         {
           level: 'warn',
           message: 'vite.config.ts does not use the kitr() plugin',
-          fix: "import { kitr } from 'kitr/vite' and add kitr() to plugins",
+          fix: "import { kitr } from '@kitr/vite' and add kitr() to plugins",
         },
       ]
     return []
   },
-  eject: { 'kitr/vite': 'vite + @tanstack/router-plugin (your own vite.config.ts)' },
+  eject: { '@kitr/vite': 'vite + @tanstack/router-plugin (your own vite.config.ts)' },
 })

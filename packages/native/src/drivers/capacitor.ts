@@ -127,7 +127,7 @@ export function capacitorGeolocation(): GeolocationDriver {
     const { location } = await Geolocation.checkPermissions()
     if (location === 'granted') return Geolocation
     const asked = await Geolocation.requestPermissions({ permissions: ['location'] })
-    if (asked.location !== 'granted') throw new Error('kitr/native: location permission was denied')
+    if (asked.location !== 'granted') throw new Error('@kitr/native: location permission was denied')
     return Geolocation
   }
   return {

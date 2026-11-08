@@ -28,7 +28,7 @@ export interface DesktopOptions {
  * macOS, Windows and Linux through an Electron shell: Chromium and Node ship inside the app, so
  * it renders the same everywhere. The main and preload processes live in `platforms/<name>/`;
  * the window loads the same client build the web platform ships. For a smaller binary on the
- * OS webview, use `kitr/tauri` instead.
+ * OS webview, use `@kitr/tauri` instead.
  *
  *   platforms: { app: desktop({ title: 'Acme' }) }
  *   kitr dev app        # Vite on :3200 and the Electron window with HMR
@@ -129,8 +129,8 @@ export const desktop = definePlatform<DesktopOptions>(
               ],
       },
       agents: `- \`kitr dev <name>\` starts Vite and Electron (main + preload rebuilt on change); \`kitr build <name>\` builds the client, main and preload into \`dist/<name>\` and packages installers with electron-builder.
-- IPC is typed end to end: declare in \`platforms/<name>/ipc.ts\`, implement in \`platforms/<name>/main.ts\` (\`handleIpc\`), call from the app via \`createIpcClient\` from \`kitr/desktop/client\`. Guard desktop-only UI with \`isElectron()\`.
-- Windows keep context isolation and the sandbox on; never enable nodeIntegration. The packaged app serves the client from \`app://-/\`; storage items from \`kitr/storage\` persist in a JSON file in userData through \`handleKitrIpc\`.`,
+- IPC is typed end to end: declare in \`platforms/<name>/ipc.ts\`, implement in \`platforms/<name>/main.ts\` (\`handleIpc\`), call from the app via \`createIpcClient\` from \`@kitr/desktop/client\`. Guard desktop-only UI with \`isElectron()\`.
+- Windows keep context isolation and the sandbox on; never enable nodeIntegration. The packaged app serves the client from \`app://-/\`; storage items from \`@kitr/storage\` persist in a JSON file in userData through \`handleKitrIpc\`.`,
     }),
 )
 
@@ -172,7 +172,7 @@ export const channels = {
   ctx.write(
     `${base}/main.ts`,
     `import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron'
-import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from 'kitr/desktop/main'
+import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from '@kitr/desktop/main'
 import type { Ipc, IpcPush } from './ipc'
 
 const window = ${win}
@@ -207,7 +207,7 @@ app.on('window-all-closed', () => {
   ctx.write(
     `${base}/preload.ts`,
     `import { contextBridge, ipcRenderer } from 'electron'
-import { allowChannels, exposeIpc } from 'kitr/desktop/preload'
+import { allowChannels, exposeIpc } from '@kitr/desktop/preload'
 import { channels } from './ipc'
 
 // Only the channels declared in ipc.ts (and kitr's own kitr:* channels) reach the renderer.
@@ -263,7 +263,7 @@ linux:
   )
   ctx.write(
     'app/ipc.ts',
-    `import { createIpcClient } from 'kitr/desktop/client'
+    `import { createIpcClient } from '@kitr/desktop/client'
 import type { Ipc, IpcPush } from '../platforms/${ctx.name}/ipc'
 
 /** Typed renderer-side client. \`ipc.available\` is false in a plain browser, so the web build still runs. */

@@ -8,17 +8,17 @@ export default definePackage({
     ctx.provider.add('@kitr/shield/provider')
     ctx.config(
       'shield',
-      `import { defineConfig } from 'kitr/shield'\n\nexport default defineConfig({\n  headers: {}, // sensible security headers; set contentSecurityPolicy to tighten\n  cors: false, // { origin: ['https://app.example.com'], credentials: true } for a separate front end\n  rateLimit: { max: 300, windowMs: 60_000 }, // per IP per minute\n  csrf: {}, // double-submit cookie; kitr/http sends the token on every non-GET request\n})\n`,
+      `import { defineConfig } from '@kitr/shield'\n\nexport default defineConfig({\n  headers: {}, // sensible security headers; set contentSecurityPolicy to tighten\n  cors: false, // { origin: ['https://app.example.com'], credentials: true } for a separate front end\n  rateLimit: { max: 300, windowMs: 60_000 }, // per IP per minute\n  csrf: {}, // double-submit cookie; @kitr/http sends the token on every non-GET request\n})\n`,
     )
     ctx.server.attach({
       marker: 'shield(server',
-      import: "import { shield } from 'kitr/shield'",
+      import: "import { shield } from '@kitr/shield'",
       line: '// Security headers, CORS, rate limit and CSRF from config/shield.ts.\nshield(server)',
       first: true,
     })
     ctx.agents.add(
       'shield',
-      `- \`shield(server)\` in \`server/main.ts\` applies \`config/shield.ts\`: security headers, CORS, rate limiting and CSRF. Rate-limited requests get 429 with RateLimit-* headers; CSRF failures get 403. Do not add helmet/cors by hand; tune the config instead.\n- The Content-Security-Policy allows inline scripts and styles only with the request's nonce: write \`<script nonce={useCspNonce()}>\` (from \`kitr/shield\`) for inline tags; \`<ThemeScript />\` and Start's own scripts already carry it. Do not add \`'unsafe-inline'\` to the policy.`,
+      `- \`shield(server)\` in \`server/main.ts\` applies \`config/shield.ts\`: security headers, CORS, rate limiting and CSRF. Rate-limited requests get 429 with RateLimit-* headers; CSRF failures get 403. Do not add helmet/cors by hand; tune the config instead.\n- The Content-Security-Policy allows inline scripts and styles only with the request's nonce: write \`<script nonce={useCspNonce()}>\` (from \`@kitr/shield\`) for inline tags; \`<ThemeScript />\` and Start's own scripts already carry it. Do not add \`'unsafe-inline'\` to the policy.`,
     )
   },
   remove(ctx) {

@@ -1,6 +1,6 @@
 /**
  * Browser-side helpers of the mobile platform. The lifecycle hooks (app state, back button,
- * deep links, online) live in `kitr/platform/react`, where every platform shares them.
+ * deep links, online) live in `@kitr/platform/react`, where every platform shares them.
  */
 
 import { detectRuntime } from '@kitr/platform'

@@ -6,7 +6,7 @@ order: 1
 
 # Shield
 
-Every API that a browser can reach gets the same unwanted visitors: other sites that try to post forms as your signed-in users, pages that frame yours to trick clicks, scripts that hammer the sign-in route. `kitr/shield` turns on the four defences every API needs, from one config file: safe response headers, CORS for a separate front end, CSRF protection for cookie sessions, and a rate limit per client.
+Every API that a browser can reach gets the same unwanted visitors: other sites that try to post forms as your signed-in users, pages that frame yours to trick clicks, scripts that hammer the sign-in route. `@kitr/shield` turns on the four defences every API needs, from one config file: safe response headers, CORS for a separate front end, CSRF protection for cookie sessions, and a rate limit per client.
 
 Each defence is a plain [h3](https://h3.dev/guide/basics/middleware) middleware with no dependencies of its own. kitr adds the defaults, the order they run in, a config file, and refusals for settings that would open a hole, such as CORS for every origin with cookies.
 
@@ -26,7 +26,7 @@ What `kitr add` does:
 - Adds `@kitr/shield` to `dependencies` in `package.json` and installs it. Pass `--no-install` to skip the install.
 - Adds `() => import('@kitr/shield/provider')` to `providers` and `'@kitr/shield'` to `packages` in `kitrrc.ts`. The provider checks `config/shield.ts` at boot.
 - Writes `config/shield.ts` (see [Configure](#configure)).
-- Edits `server/main.ts`, when it exists and does not already call `shield(server`: imports `shield` from `kitr/shield` and calls `shield(server)` straight after `createServer()`, so the shield sees every request first.
+- Edits `server/main.ts`, when it exists and does not already call `shield(server`: imports `shield` from `@kitr/shield` and calls `shield(server)` straight after `createServer()`, so the shield sees every request first.
 - Adds a `## kitr: shield` section to `AGENTS.md`: `shield(server)` applies `config/shield.ts`, rate-limited requests get 429 with `RateLimit-*` headers, CSRF failures get 403, and agents tune the config instead of adding helmet or cors by hand.
 
 It adds no env variables, no scripts and asks no questions. No kit includes the shield, so every project adds it with this command.
@@ -35,9 +35,9 @@ After `kitr add shield`, the top of `server/main.ts` reads:
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
-import { shield } from 'kitr/shield'
-import { mountRoutes } from 'kitr/api'
+import { createServer } from '@kitr/server'
+import { shield } from '@kitr/shield'
+import { mountRoutes } from '@kitr/api'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { routes } from './routes'
@@ -59,13 +59,13 @@ If the project has no `server/main.ts` yet, add those two lines yourself once th
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   headers: {}, // sensible security headers; set contentSecurityPolicy to tighten
   cors: false, // { origin: ['https://app.example.com'], credentials: true } for a separate front end
   rateLimit: { max: 300, windowMs: 60_000 }, // per IP per minute
-  csrf: {}, // double-submit cookie; kitr/http sends the token on every non-GET request
+  csrf: {}, // double-submit cookie; @kitr/http sends the token on every non-GET request
 })
 ```
 
@@ -109,7 +109,7 @@ Config files are TypeScript, so you can vary values per environment. Tests often
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   headers: {},
@@ -155,7 +155,7 @@ content-type: application/json; charset=utf-8
 {"code":"FORBIDDEN","message":"CSRF token missing or invalid","status":403}
 ```
 
-Your own front end doesn't see that error: [kitr/http](/packages/http) reads the `kitr-csrf` cookie and sends it back as `x-csrf-token` on every request that is not `GET`, `HEAD` or `OPTIONS`.
+Your own front end doesn't see that error: [@kitr/http](/packages/http) reads the `kitr-csrf` cookie and sends it back as `x-csrf-token` on every request that is not `GET`, `HEAD` or `OPTIONS`.
 
 ## Set security headers
 
@@ -174,7 +174,7 @@ Change one header and the rest keep their defaults. Acme's dashboard needs its o
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   headers: {
@@ -192,7 +192,7 @@ Set a header to `false` to leave it out, for example when a proxy in front of th
 
 ```ts
 // server/security/csp.ts
-import { DEFAULT_CSP } from 'kitr/shield'
+import { DEFAULT_CSP } from '@kitr/shield'
 
 console.log(DEFAULT_CSP)
 // => default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}';
@@ -227,12 +227,12 @@ Paths the server has routes for are answered there; every other path goes to `pa
 Then the nonce reaches every inline tag without further code:
 
 - `createKitrRouter` reads it and sets `router.options.ssr.nonce`, which TanStack Start puts on its hydration scripts, `<HeadContent />` and `<Scripts />`.
-- `<ThemeScript />` from `kitr/theme` puts it on its script and style.
+- `<ThemeScript />` from `@kitr/theme` puts it on its script and style.
 - Your own inline tags read it with `useCspNonce()`, which returns `undefined` in the browser and outside a request:
 
 ```tsx
 // app/components/analytics-snippet.tsx
-import { useCspNonce } from 'kitr/shield'
+import { useCspNonce } from '@kitr/shield'
 
 export function AnalyticsSnippet() {
   const nonce = useCspNonce()
@@ -255,7 +255,7 @@ When a page loads something from another origin, write the whole policy and put 
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 const csp = [
   "default-src 'self'",
@@ -286,7 +286,7 @@ Acme's tag manager loads more scripts at run time from hosts that change. `stric
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   headers: { strictDynamic: true },
@@ -299,7 +299,7 @@ A third-party widget that writes its own `<script>` or `<style>` tags into the p
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   headers: { unsafeInline: true },
@@ -315,7 +315,7 @@ HSTS tells browsers to use HTTPS for your domain, and its subdomains, for the ne
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   headers: { hsts: process.env.NODE_ENV === 'production' ? 300 : false },
@@ -331,14 +331,14 @@ Browsers refuse to let a page on one origin read responses from another unless t
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   cors: { origin: ['https://app.acme.com'], credentials: true },
 })
 ```
 
-`origin` takes `'*'`, one origin, a list or a function `(origin) => boolean`. The `cors()` that `kitr/api` exports for route groups is this one: the same options and the same rules, fitted to route middleware, so a policy written for either works in both.
+`origin` takes `'*'`, one origin, a list or a function `(origin) => boolean`. The `cors()` that `@kitr/api` exports for route groups is this one: the same options and the same rules, fitted to route middleware, so a policy written for either works in both.
 
 A request from `https://app.acme.com` now gets `Access-Control-Allow-Origin: https://app.acme.com`, `Access-Control-Allow-Credentials: true` and `Vary: Origin`. A preflight (`OPTIONS`) from it gets `204 No Content` with the allowed methods, headers and max-age, before any route, rate limit or CSRF check runs. A request from any other origin gets no CORS headers, so the browser blocks the read.
 
@@ -346,7 +346,7 @@ Origins in the list match exactly. `https://app.acme.com.evil.com`, `http://app.
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   cors: {
@@ -361,10 +361,10 @@ Don't write `origin.endsWith('acme.com')`: `https://evilacme.com` ends with it t
 For a public, read-only API with no cookies, `origin: '*'` answers `Access-Control-Allow-Origin: *` to everyone. Combining `'*'` with `credentials: true` would let any website send requests with your users' cookies, so the shield refuses it. `cors()` throws when it is created, and the provider stops the app at boot:
 
 ```text
-Error: [kitr/shield] cors.origin "*" cannot be combined with credentials; list the origins instead.
+Error: [@kitr/shield] cors.origin "*" cannot be combined with credentials; list the origins instead.
 ```
 
-Projects scaffolded from a kit put `cors()` from [kitr/api](/packages/api) on the `/api` route group. Once the shield handles CORS, remove that middleware from `server/routes.ts`, so one place decides which origins may call the API.
+Projects scaffolded from a kit put `cors()` from [@kitr/api](/packages/api) on the `/api` route group. Once the shield handles CORS, remove that middleware from `server/routes.ts`, so one place decides which origins may call the API.
 
 ## Protect cookie sessions from CSRF
 
@@ -372,7 +372,7 @@ CSRF is another site making the browser post to your API with your user's cookie
 
 The cookie is set on the first response that finds none: 48 hex characters, `Path=/`, `SameSite=Lax`, plus `Secure` in production. It is not `HttpOnly`, because your own page has to read it.
 
-With [kitr/http](/packages/http), you do nothing. With plain `fetch`, read the cookie and send it:
+With [@kitr/http](/packages/http), you do nothing. With plain `fetch`, read the cookie and send it:
 
 ```ts
 // app/lib/post_json.ts
@@ -397,7 +397,7 @@ export async function postJson(path: string, body: unknown) {
 
 A missing header, a header that differs from the cookie, or a header with no cookie all get `403` with code `FORBIDDEN`.
 
-You can rename the cookie and header with `csrf.cookie` and `csrf.header`. kitr/http always reads `kitr-csrf` and sends `x-csrf-token`, so renaming either means sending the token yourself.
+You can rename the cookie and header with `csrf.cookie` and `csrf.header`. @kitr/http always reads `kitr-csrf` and sends `x-csrf-token`, so renaming either means sending the token yourself.
 
 The cookie has no `Domain` attribute, so only pages on the API's own host can read it. When the front end lives on another host, as `app.acme.com` does for `api.acme.com`, serve the API under the front end's host (`app.acme.com/api` through a proxy, or the web platform's `/api/*` route), or authenticate that front end with a bearer token instead of a cookie.
 
@@ -405,7 +405,7 @@ An API that authenticates every request with an `Authorization` header and never
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   csrf: false, // bearer tokens only: no cookie for another site to ride on
@@ -421,7 +421,7 @@ Stripe, GitHub and other services post to your API from their servers. They have
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   csrf: { ignore: ['/webhooks'] },
@@ -464,7 +464,7 @@ The config sets one limit for the whole server. For a stricter limit on one rout
 
 ```ts
 // server/security/sign_in_limit.ts
-import { rateLimit } from 'kitr/shield'
+import { rateLimit } from '@kitr/shield'
 import type { Middleware } from 'h3'
 
 const limiter = rateLimit({ max: 5, windowMs: 15 * 60_000 })
@@ -476,8 +476,8 @@ export const signInLimit: Middleware = (event, next) =>
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
-import { shield } from 'kitr/shield'
+import { createServer } from '@kitr/server'
+import { shield } from '@kitr/shield'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { signInLimit } from './security/sign_in_limit'
@@ -501,7 +501,7 @@ pnpm add ioredis
 
 ```ts
 // config/shield.ts
-import { createRedisRateLimitStore, defineConfig } from 'kitr/shield'
+import { createRedisRateLimitStore, defineConfig } from '@kitr/shield'
 import { Redis } from 'ioredis'
 
 export default defineConfig({
@@ -527,7 +527,7 @@ REDIS_URL=redis://localhost:6379
 
 Each window is one Redis key under `prefix` (default `kitr:rl:`). The first request in a window creates it with `SET ... PX windowMs NX`, so it expires on its own and a crash between commands never leaves a counter that lives forever; each request after that is one `INCR`. When Linus's 301st request of the minute reaches instance C after 300 went to A and B, C answers `429` with the same `RateLimit-*` headers.
 
-Behind a load balancer, set `trustProxy` too (see [Run behind a proxy](#run-behind-a-proxy)): otherwise every request appears to come from the balancer and all visitors share one counter. The same store works for the per-route `rateLimit()` in [Limit one route more tightly](#limit-one-route-more-tightly) and for `rateLimit()` from [kitr/api](/packages/api).
+Behind a load balancer, set `trustProxy` too (see [Run behind a proxy](#run-behind-a-proxy)): otherwise every request appears to come from the balancer and all visitors share one counter. The same store works for the per-route `rateLimit()` in [Limit one route more tightly](#limit-one-route-more-tightly) and for `rateLimit()` from [@kitr/api](/packages/api).
 
 ## Run behind a proxy
 
@@ -535,7 +535,7 @@ By default the rate limit keys on the address of the TCP connection. Behind a lo
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   rateLimit: { max: 300, windowMs: 60_000, trustProxy: true },
@@ -553,7 +553,7 @@ The shield then uses the first entry of `X-Forwarded-For`. A request with neithe
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 
 export default defineConfig({
   rateLimit: {
@@ -575,8 +575,8 @@ Only key on a header that a client cannot change at will, or that you verify els
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
-import { shield } from 'kitr/shield'
+import { createServer } from '@kitr/server'
+import { shield } from '@kitr/shield'
 
 export const server = createServer()
 shield(server, { cors: { origin: ['https://app.acme.com'] }, csrf: false })
@@ -586,8 +586,8 @@ shield(server, { cors: { origin: ['https://app.acme.com'] }, csrf: false })
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
-import { cors, csrf, rateLimit, securityHeaders } from 'kitr/shield'
+import { createServer } from '@kitr/server'
+import { cors, csrf, rateLimit, securityHeaders } from '@kitr/shield'
 
 export const server = createServer()
 server.use(securityHeaders({ frameOptions: 'SAMEORIGIN' }))
@@ -612,11 +612,11 @@ Keep the order when you attach them by hand: CORS must answer preflights before 
 
 | Code | When | What to do |
 | --- | --- | --- |
-| `FORBIDDEN` (403) | A `POST`, `PUT`, `PATCH` or `DELETE` without a CSRF header, or with one that differs from the `kitr-csrf` cookie. Message `CSRF token missing or invalid`. | Send the request with [kitr/http](/packages/http), or read the cookie and send `x-csrf-token`. Add webhook paths to `csrf.ignore`. |
+| `FORBIDDEN` (403) | A `POST`, `PUT`, `PATCH` or `DELETE` without a CSRF header, or with one that differs from the `kitr-csrf` cookie. Message `CSRF token missing or invalid`. | Send the request with [@kitr/http](/packages/http), or read the cookie and send `x-csrf-token`. Add webhook paths to `csrf.ignore`. |
 | `RATE_LIMITED` (429) | A client sent more than `max` requests in the window. Message `Too many requests`. | Wait `Retry-After` seconds. On your side, raise `max`, add `ignore` paths, or set `trustProxy` behind a proxy. |
 | Boot error | `cors.origin` is `'*'` and `cors.credentials` is `true`. | List the origins instead of `'*'`. |
 
-Both runtime errors are `KitrError` responses, so the body is `{ code, message, status }` and kitr/http throws them as `KitrError` on the client. The 429 still carries the CORS headers, so the front end can read it and show a message.
+Both runtime errors are `KitrError` responses, so the body is `{ code, message, status }` and @kitr/http throws them as `KitrError` on the client. The 429 still carries the CORS headers, so the front end can read it and show a message.
 
 ## Testing
 
@@ -624,9 +624,9 @@ Build a small server in the test, attach the shield with an explicit config, and
 
 ```ts
 // server/security/shield.test.ts
-import { silentLogger } from 'kitr/logger'
-import { createServer } from 'kitr/server'
-import { shield } from 'kitr/shield'
+import { silentLogger } from '@kitr/logger'
+import { createServer } from '@kitr/server'
+import { shield } from '@kitr/shield'
 import { describe, expect, it } from 'vitest'
 
 function acmeServer() {
@@ -687,7 +687,7 @@ To test your real app, import `server` from `#server/main` and use `createTestCl
 
 ```ts
 // test/projects.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -717,7 +717,7 @@ The default memory store counts per process; `createRedisRateLimitStore` shares 
 
 ```ts
 // server/security/kv_rate_limit_store.ts
-import type { RateLimitStore } from 'kitr/shield'
+import type { RateLimitStore } from '@kitr/shield'
 
 interface KvNamespace {
   get(key: string): Promise<string | null>
@@ -743,7 +743,7 @@ Register it in the config:
 
 ```ts
 // config/shield.ts
-import { defineConfig } from 'kitr/shield'
+import { defineConfig } from '@kitr/shield'
 import { createKvRateLimitStore } from '#server/security/kv_rate_limit_store'
 import { env } from 'cloudflare:workers'
 

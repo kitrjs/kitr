@@ -13,7 +13,7 @@ No kitr command prompts. `kitr new my-app --kit app --pm pnpm`, `kitr add auth`,
 
 ## AGENTS.md is kept up to date
 
-`kitr new` writes an `AGENTS.md` at the project root, and every `kitr add` appends that package's conventions, such as "import from `kitr/query`, never from `@tanstack/react-query`" or "mutations declare effects; never invalidate inline". `kitr remove` takes them out again. Most agents read `AGENTS.md` automatically.
+`kitr new` writes an `AGENTS.md` at the project root, and every `kitr add` appends that package's conventions, such as "import from `@kitr/query`, never from `@tanstack/react-query`" or "mutations declare effects; never invalidate inline". `kitr remove` takes them out again. Most agents read `AGENTS.md` automatically.
 
 ## Explicit wiring
 

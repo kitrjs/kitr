@@ -15,7 +15,7 @@ import {
   projectBin,
 } from '../context'
 import { kitAnswers, kitNames, kitPackageNames, loadKit } from '../kits'
-import { base } from '../kits-base'
+import { base, writeReadme } from '../kits-base'
 import { cliResolve, ensureAvailable } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { enablePreviews, isPreview, isPreviewKit } from '../preview'
@@ -60,7 +60,7 @@ export const newCommand = defineCommand({
       default: false,
     },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     if (args.preview) enablePreviews()
     if (!kitNames.includes(args.kit) && !args.kit.includes('/'))
       throw new Error(`Unknown kit "${args.kit}". Kits: ${kitNames.join(', ')}`)
@@ -146,6 +146,7 @@ export const newCommand = defineCommand({
     if (kit.package && kit.package in { ...ctx.pkg.dependencies, ...ctx.pkg.devDependencies })
       codemods.removePackages([kit.package])
     await codemods.flush({ install: false })
+    writeReadme(ctx, projectName, args.kit)
     if (args.git && !existsSync(ctx.path('.git'))) {
       try {
         execSync('git init -q', { cwd: dir })
@@ -165,8 +166,12 @@ export const newCommand = defineCommand({
       await generateTypesQuietly(ctx)
     }
     log.plain('')
+    if (args.kit === 'blank' && !rawArgs.some((a) => a === '--kit' || a.startsWith('--kit=')))
+      log.plain(
+        `Using the blank kit: no platform and no dev server yet. For a web app, run kitr new ${args.name} --kit app, or kitr add web site in this project.`,
+      )
     log.success(
-      `Ready. Next:\n  cd ${args.name}\n  ${args.install ? '' : `${pm} install\n  `}${pm} ${pm === 'npm' ? 'run ' : ''}dev${Object.keys(platforms).length > 1 ? `   # or: kitr dev ${Object.keys(platforms)[0]}` : ''}`,
+      `Ready. Next:\n  cd ${args.name}\n  ${args.install ? '' : `${pm} install\n  `}${pm} ${pm === 'npm' ? 'run ' : ''}dev${Object.keys(platforms).length > 1 ? `   # or: kitr dev ${Object.keys(platforms)[0]}` : ''}\n\nDocs: https://kitr.dev/docs/getting-started\nRun kitr --help for every command.`,
     )
   },
 })

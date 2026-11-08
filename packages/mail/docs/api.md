@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/mail, with its signature.
+description: Every export of @kitr/mail, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/mail`, `kitr/mail/provider`, read from the published type definitions. The [guide](/packages/mail/guide) shows them in use.
+Every export of `@kitr/mail`, `@kitr/mail/provider`, read from the published type definitions. The [guide](/packages/mail/guide) shows them in use.
 
-## kitr/mail
+## @kitr/mail
 
 ### address
 
@@ -318,7 +318,7 @@ type Recipient = string | Address;
 
 An address in any accepted form: `'ada@acme.com'`, `'Ada <ada@acme.com>'` or an `Address`.
 
-## kitr/mail/provider
+## @kitr/mail/provider
 
 ### mailProvider
 

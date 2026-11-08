@@ -6,7 +6,7 @@ order: 1
 
 # Feature flags
 
-Feature flags let you merge unfinished work behind a switch, turn a redesign on for 10% of users, or switch a feature off in production without a deploy. `kitr/flags` declares every flag once, with a typed default, so a misspelt flag is a type error. Providers decide each flag's value per user: an env variable, a stable percentage rollout, your own rules, or any [OpenFeature](https://openfeature.dev/docs/reference/intro) vendor such as LaunchDarkly, Flagsmith or Unleash.
+Feature flags let you merge unfinished work behind a switch, turn a redesign on for 10% of users, or switch a feature off in production without a deploy. `@kitr/flags` declares every flag once, with a typed default, so a misspelt flag is a type error. Providers decide each flag's value per user: an env variable, a stable percentage rollout, your own rules, or any [OpenFeature](https://openfeature.dev/docs/reference/intro) vendor such as LaunchDarkly, Flagsmith or Unleash.
 
 On top of that provider chain kitr adds type coercion, so `FLAG_MAX_UPLOAD_MB=25` arrives as a number, a per-request answer on the server that never leaks from one user to another, and a snapshot the server embeds so the browser starts with the same values.
 
@@ -25,7 +25,7 @@ What `kitr add` does:
 - Adds `@kitr/flags` to `dependencies` in `package.json` and installs it. Pass `--no-install` to skip the install.
 - Adds `() => import('@kitr/flags/provider')` to `providers` and `'@kitr/flags'` to `packages` in `kitrrc.ts`. The provider binds `flags` in the container.
 - Writes `app/flags.ts`, which declares two example flags, and `config/flags.ts`, which lists the providers (see [Configure](#configure)).
-- Adds a `## kitr: flags` section to `AGENTS.md`. In a project with React it says: flags live in `app/flags.ts`, components read `useFlag('new-dashboard')` from `kitr/flags/react`, the server resolves them per request with `resolveFlags` and embeds them with `<FlagsScript />`, and feature switches never read `import.meta.env`. In a server-only project it says: resolve per request with `resolveFlags(app, event, { userId })` from `kitr/flags/server`, providers ordered in `config/flags.ts`.
+- Adds a `## kitr: flags` section to `AGENTS.md`. In a project with React it says: flags live in `app/flags.ts`, components read `useFlag('new-dashboard')` from `@kitr/flags/react`, the server resolves them per request with `resolveFlags` and embeds them with `<FlagsScript />`, and feature switches never read `import.meta.env`. In a server-only project it says: resolve per request with `resolveFlags(app, event, { userId })` from `@kitr/flags/server`, providers ordered in `config/flags.ts`.
 
 It adds no env variables, no scripts and asks no questions. No kit includes flags, so every project adds it with this command.
 
@@ -37,7 +37,7 @@ It adds no env variables, no scripts and asks no questions. No kit includes flag
 
 ```ts
 // app/flags.ts
-import { defineFlags } from 'kitr/flags'
+import { defineFlags } from '@kitr/flags'
 
 /** Every flag with its default, so unknown flags are a type error. */
 export const flags = defineFlags({
@@ -50,7 +50,7 @@ And where their values come from:
 
 ```ts
 // config/flags.ts
-import { defineConfig, envFlagsProvider, percentageFlagsProvider } from 'kitr/flags'
+import { defineConfig, envFlagsProvider, percentageFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 
 export default defineConfig({
@@ -80,14 +80,14 @@ The env provider reads `process.env`, so it answers on the server. In the browse
 
 ## Show a feature to some users
 
-In a component, `useFlag` from `kitr/flags/react` returns a flag's current value and re-renders when it changes:
+In a component, `useFlag` from `@kitr/flags/react` returns a flag's current value and re-renders when it changes:
 
 ```tsx
-// app/features/dashboard/dashboard_page.tsx
-import { useFlag } from 'kitr/flags/react'
+// app/components/dashboard/dashboard-page.tsx
+import { useFlag } from '@kitr/flags/react'
 import type { flags } from '#app/flags'
-import { ClassicDashboard } from './classic_dashboard'
-import { NewDashboard } from './new_dashboard'
+import { ClassicDashboard } from '#app/components/dashboard/classic-dashboard'
+import { NewDashboard } from '#app/components/dashboard/new-dashboard'
 
 export function DashboardPage() {
   const redesigned = useFlag<typeof flags, 'new-dashboard'>('new-dashboard')
@@ -103,7 +103,7 @@ Every flag lives in `app/flags.ts`. The `default` sets both the value when no pr
 
 ```ts
 // app/flags.ts
-import { defineFlags } from 'kitr/flags'
+import { defineFlags } from '@kitr/flags'
 
 export const flags = defineFlags({
   'new-dashboard': { default: false, description: 'The redesigned dashboard' },
@@ -128,7 +128,7 @@ Choose defaults that are safe to fall back to. If the flag service is down, ever
 
 ```ts
 // app/use_flag.ts
-import { useFlag } from 'kitr/flags/react'
+import { useFlag } from '@kitr/flags/react'
 import type { flags } from '#app/flags'
 
 type AcmeFlags = typeof flags
@@ -140,7 +140,7 @@ export function useAcmeFlag<K extends keyof AcmeFlags & string>(key: K) {
 ```
 
 ```tsx
-// app/features/invoices/upload_hint.tsx
+// app/components/invoices/upload-hint.tsx
 import { useAcmeFlag } from '#app/use_flag'
 
 export function UploadHint() {
@@ -154,11 +154,11 @@ Calling `useFlag('max-upload-mb')` with no type arguments also works, but the va
 
 ## Read every flag at once
 
-`useFlags()` from `kitr/flags/react` returns every flag as one object, for a settings page or a debug panel:
+`useFlags()` from `@kitr/flags/react` returns every flag as one object, for a settings page or a debug panel:
 
 ```tsx
-// app/features/settings/flags_panel.tsx
-import { useFlags } from 'kitr/flags/react'
+// app/components/settings/flags-panel.tsx
+import { useFlags } from '@kitr/flags/react'
 import type { flags } from '#app/flags'
 
 export function FlagsPanel() {
@@ -172,12 +172,12 @@ The object is frozen and stays the same object until the flags change, so it is 
 
 ## Read a flag outside React
 
-Outside components, get the service from the container with `useFlags(app)` from `kitr/flags`. Its reads are synchronous and answer from the current snapshot:
+Outside components, get the service from the container with `useFlags(app)` from `@kitr/flags`. Its reads are synchronous and answer from the current snapshot:
 
 ```ts
-// app/features/invoices/validate_upload.ts
+// app/lib/invoices/validate-upload.ts
 import type { KitrApp } from 'kitr/app'
-import { useFlags } from 'kitr/flags'
+import { useFlags } from '@kitr/flags'
 import type { flags } from '#app/flags'
 
 export function checkUploadSize(app: KitrApp, file: File) {
@@ -202,12 +202,12 @@ export function checkUploadSize(app: KitrApp, file: File) {
 
 ## Read flags on the server
 
-On the server, one process answers many users at once, so flags are resolved per request. `resolveFlags(app, event, context)` from `kitr/flags/server` asks the providers for this request's user and caches the answer on the request:
+On the server, one process answers many users at once, so flags are resolved per request. `resolveFlags(app, event, context)` from `@kitr/flags/server` asks the providers for this request's user and caches the answer on the request:
 
 ```ts
-// server/controllers/dashboard_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { resolveFlags } from 'kitr/flags/server'
+// server/controllers/dashboard-controller.ts
+import type { HttpContext } from '@kitr/api'
+import { resolveFlags } from '@kitr/flags/server'
 import type { flags } from '#app/flags'
 import { classicSummary, newSummary } from '#server/dashboard/summaries'
 
@@ -222,9 +222,9 @@ export default class DashboardController {
 The user comes from `locals.user.id` when [auth](/packages/auth) middleware has set it, so a percentage rollout gives Ada the same answer on every request. Pass more context as the third argument; it is merged over the user id and every provider receives it:
 
 ```ts
-// server/controllers/invoices_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { resolveFlags } from 'kitr/flags/server'
+// server/controllers/invoices-controller.ts
+import type { HttpContext } from '@kitr/api'
+import { resolveFlags } from '@kitr/flags/server'
 import type { flags } from '#app/flags'
 
 export default class InvoicesController {
@@ -245,12 +245,12 @@ Inside a request, the request's own app (a fork of the server app) keeps the res
 
 The browser can't read `process.env`, and it may not know the user id when it boots. So the server resolves the flags and embeds the result in the page as a JSON script tag. When the client app boots, the flags provider reads that tag and loads it before the first render, without asking any provider.
 
-`<FlagsScript values={...} />` from `kitr/flags/react` renders the tag. In a server-rendered app, resolve in the root route's loader and put the tag in the document head:
+`<FlagsScript values={...} />` from `@kitr/flags/react` renders the tag. In a server-rendered app, resolve in the root route's loader and put the tag in the document head:
 
 ```ts
 // app/server/load_flags.ts
-import { createServerFn } from 'kitr/actions'
-import { resolveFlags } from 'kitr/flags/server'
+import { createServerFn } from '@kitr/actions'
+import { resolveFlags } from '@kitr/flags/server'
 import type { flags } from '#app/flags'
 import { server } from '#server/main'
 import { currentUserId } from '#server/session'
@@ -271,8 +271,8 @@ r.root({ head, loader: () => loadFlags(), component: RootDocument })
 
 ```tsx
 // app/document.tsx
-import { FlagsScript } from 'kitr/flags/react'
-import { getRouteApi, HeadContent, Outlet, Scripts } from 'kitr/router'
+import { FlagsScript } from '@kitr/flags/react'
+import { getRouteApi, HeadContent, Outlet, Scripts } from '@kitr/router'
 
 const root = getRouteApi('__root__')
 
@@ -301,11 +301,11 @@ The page now carries:
 
 Values are escaped (`<` becomes `<`), so a string flag can't close the tag. The client treats the embedded JSON as input: it keeps only declared keys, coerces each to its declared type, and falls back to the default for anything it can't read. A broken tag is ignored, and the provider resolves at boot instead.
 
-Outside React, `flagsScript(values)` from `kitr/flags/server` returns the same tag as a string, for a server that writes HTML by hand:
+Outside React, `flagsScript(values)` from `@kitr/flags/server` returns the same tag as a string, for a server that writes HTML by hand:
 
 ```ts
 // server/pages/invoice_print.ts
-import { flagsScript } from 'kitr/flags/server'
+import { flagsScript } from '@kitr/flags/server'
 
 const head = `<head><title>Invoice</title>${flagsScript({ 'invoice-layout': 'compact' })}</head>`
 // => <head><title>Invoice</title><script type="application/json" id="__kitr_flags__">{"invoice-layout":"compact"}</script></head>
@@ -320,8 +320,8 @@ In a single-page app with no server rendering, there is nothing to embed. The pr
 In the browser, `resolve(context)` updates the snapshot, and every `useFlag` re-renders with the new answer. Call it once you know who the user is:
 
 ```tsx
-// app/features/auth/after_sign_in.tsx
-import { useApp } from 'kitr/react'
+// app/components/auth/after-sign-in.tsx
+import { useApp } from '@kitr/react'
 import { useEffect } from 'react'
 
 export function ResolveFlagsFor({ userId }: { userId: string }) {
@@ -352,7 +352,7 @@ Built in; nothing to install. Good for turning a flag on per environment, or for
 
 ```ts
 // config/flags.ts
-import { defineConfig, envFlagsProvider } from 'kitr/flags'
+import { defineConfig, envFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 
 export default defineConfig({
@@ -374,7 +374,7 @@ Built in. Turns a flag on for a share of users, from 0 to 100:
 
 ```ts
 // config/flags.ts
-import { defineConfig, envFlagsProvider, percentageFlagsProvider } from 'kitr/flags'
+import { defineConfig, envFlagsProvider, percentageFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 
 export default defineConfig({
@@ -393,7 +393,7 @@ Built in. A fixed map, or a function of the context for rules you write in code:
 
 ```ts
 // config/flags.ts
-import { defineConfig, envFlagsProvider, staticFlagsProvider } from 'kitr/flags'
+import { defineConfig, envFlagsProvider, staticFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 
 export default defineConfig({
@@ -421,7 +421,7 @@ pnpm add @openfeature/server-sdk
 ```ts
 // config/flags.ts
 import { InMemoryProvider, OpenFeature } from '@openfeature/server-sdk'
-import { defineConfig, envFlagsProvider, openFeatureFlagsProvider } from 'kitr/flags'
+import { defineConfig, envFlagsProvider, openFeatureFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 
 // Replace InMemoryProvider with your vendor's provider, configured with its SDK key.
@@ -451,7 +451,7 @@ Providers often answer with strings, from env files or remote JSON. Each answer 
 
 ```ts
 // scripts/coercion_demo.ts
-import { createFlags, envFlagsProvider, staticFlagsProvider } from 'kitr/flags'
+import { createFlags, envFlagsProvider, staticFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 
 const demo = createFlags(flags, {
@@ -472,7 +472,7 @@ A flag is finished when the feature has shipped to everyone. Delete it from `app
 
 ```ts
 // app/flags.ts
-import { defineFlags } from 'kitr/flags'
+import { defineFlags } from '@kitr/flags'
 
 export const flags = defineFlags({
   'max-upload-mb': { default: 10, description: 'Largest invoice PDF a team may upload' },
@@ -487,8 +487,8 @@ Every typed `useFlag<typeof flags, 'new-dashboard'>` and `resolveFlags<typeof fl
 `createFlags(definitions, config)` builds a flags service with no app. Give it a `staticFlagsProvider` to test both sides of a flag:
 
 ```ts
-// app/features/invoices/validate_upload.test.ts
-import { createFlags, staticFlagsProvider } from 'kitr/flags'
+// app/lib/invoices/validate-upload.test.ts
+import { createFlags, staticFlagsProvider } from '@kitr/flags'
 import { describe, expect, it } from 'vitest'
 import { flags } from '#app/flags'
 
@@ -519,15 +519,15 @@ describe('upload limit flag', () => {
 To render a component with a flag set, boot a client app with the flags provider and render it with `renderWithKitr` from [testing](/packages/testing). The provider resolves at boot on the client, so the first render already has the value:
 
 ```tsx
-// app/features/dashboard/dashboard_page.test.tsx
-import { defineConfig, staticFlagsProvider } from 'kitr/flags'
-import flagsProvider from 'kitr/flags/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+// app/components/dashboard/dashboard-page.test.tsx
+import { defineConfig, staticFlagsProvider } from '@kitr/flags'
+import flagsProvider from '@kitr/flags/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { flags } from '#app/flags'
-import { DashboardPage } from './dashboard_page'
+import { DashboardPage } from './dashboard-page'
 
 // NewDashboard renders <h1>Your new dashboard</h1>.
 it('shows the new dashboard when the flag is on', async () => {
@@ -561,7 +561,7 @@ A provider is an object with a `name`, an optional `init(context)` and `resolve(
 
 ```ts
 // app/flag_providers/team_overrides.ts
-import type { FlagsProvider, FlagValue } from 'kitr/flags'
+import type { FlagsProvider, FlagValue } from '@kitr/flags'
 
 /** Overrides by team, from https://flags.acme.com/teams/<teamId>.json: { "new-dashboard": true }. */
 export function teamOverridesProvider(baseUrl = 'https://flags.acme.com/teams'): FlagsProvider {
@@ -587,7 +587,7 @@ When the file can't be fetched, `init` throws, the provider is skipped for that 
 
 ```ts
 // config/flags.ts
-import { defineConfig, envFlagsProvider, percentageFlagsProvider } from 'kitr/flags'
+import { defineConfig, envFlagsProvider, percentageFlagsProvider } from '@kitr/flags'
 import { flags } from '#app/flags'
 import { teamOverridesProvider } from '#app/flag_providers/team_overrides'
 

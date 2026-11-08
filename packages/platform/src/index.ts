@@ -43,7 +43,7 @@ export interface SafeArea {
 }
 
 /**
- * What a platform package implements so `kitr/platform` can answer for it. Register one with
+ * What a platform package implements so `@kitr/platform` can answer for it. Register one with
  * `app.drivers.register('platform', driver)`; every optional member falls back to a browser default.
  */
 export interface PlatformDriver {

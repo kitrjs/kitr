@@ -7,7 +7,7 @@
 export type AuthProvider = 'session' | 'better-auth' | 'token'
 
 /** `config/auth.ts` for bearer tokens: the original adapter, for an SPA in front of an API that issues tokens. */
-export const tokenConfig = `import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+export const tokenConfig = `import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -30,7 +30,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 `
 
 /** `config/auth.ts` for cookie sessions, over plain `fetch`: the cookie rides along, the CSRF token is echoed on writes. */
-export const sessionConfig = `import { defineConfig, type SessionPayload, sessionAdapter } from 'kitr/auth'
+export const sessionConfig = `import { defineConfig, type SessionPayload, sessionAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 
 /** shield's double-submit token: the readable cookie, echoed in a header on writes. */
@@ -71,7 +71,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 
 /** `server/auth.ts`: the session service and the users it signs in. */
 export const serverAuth = `import { inProduction } from 'kitr/app'
-import { createCookieSession, createMemorySessionStore, createMemoryUserProvider } from 'kitr/auth/server'
+import { createCookieSession, createMemorySessionStore, createMemoryUserProvider } from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -106,7 +106,7 @@ export const auth = { sessions, users }
 /** `server/controllers/auth_controller.ts`. */
 export const authController = (
   emails: boolean,
-) => `import { createSessionController } from 'kitr/auth/server'
+) => `import { createSessionController } from '@kitr/auth/server'
 ${emails ? "import { resetPasswordMail, verifyEmailMail } from '#server/mail/auth'\n" : ''}import { auth } from '#server/auth'
 
 /**
@@ -126,8 +126,8 @@ export default createSessionController({
 `
 
 /** `server/mail/auth.tsx`: the two emails the controller sends. */
-export const authMail = `import { defineMail } from 'kitr/mail'
-import type { AuthMailProps } from 'kitr/auth/server'
+export const authMail = `import { defineMail } from '@kitr/mail'
+import type { AuthMailProps } from '@kitr/auth/server'
 
 const page = (heading: string, intro: string, cta: string, url: string) => (
   <html lang="en">
@@ -162,8 +162,8 @@ export const resetPasswordMail = defineMail<AuthMailProps>('reset-password', {
 `
 
 /** A plain sign-in page for projects without a kit's components. */
-export const signInPage = `import { useAuth } from 'kitr/auth'
-import { useNavigate } from 'kitr/router'
+export const signInPage = `import { useAuth } from '@kitr/auth'
+import { useNavigate } from '@kitr/router'
 import { useState } from 'react'
 import type { User } from '#app/abilities'
 
@@ -237,7 +237,7 @@ export default defineProvider({
 
 /** `config/auth.ts` for Better Auth: its client adapter, talking to `/api/auth/*` on the same origin. */
 export const betterAuthConfig = `import { createAuthClient } from 'better-auth/client'
-import { betterAuthAdapter, defineConfig } from 'kitr/auth'
+import { betterAuthAdapter, defineConfig } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 
 /** Better Auth's own routes (\`/api/auth/*\`, mounted in server/main.ts) set and read the session cookie. */

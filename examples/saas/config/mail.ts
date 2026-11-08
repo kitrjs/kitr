@@ -1,4 +1,4 @@
-import { createResendTransport, defineConfig } from 'kitr/mail'
+import { createResendTransport, defineConfig } from '@kitr/mail'
 
 /**
  * Without a transport, development logs every message and production refuses to boot, so a

@@ -172,7 +172,7 @@ class SceneBoundary extends Component<BoundaryProps, { failed: boolean }> {
     if (this.props.onError) this.props.onError(error)
     else
       console.error(
-        '[kitr/3d] The scene failed and its fallback is shown.',
+        '[@kitr/3d] The scene failed and its fallback is shown.',
         error,
         info.componentStack,
       )

@@ -3,7 +3,13 @@
     "title": "Start here",
     "pages": [
       {
+        "slug": "what-is-kitr"
+      },
+      {
         "slug": "getting-started"
+      },
+      {
+        "slug": "compare"
       },
       {
         "slug": "project-structure"
@@ -75,7 +81,7 @@
         "slug": "entry-points",
         "source": "../../../docs/entry-points.md",
         "title": "Entry points",
-        "description": "How kitr/* imports map to packages, and the rules behind them."
+        "description": "How @kitr/* packages wrap upstream libraries, and the rules behind them."
       },
       {
         "slug": "departures",

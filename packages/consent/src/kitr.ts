@@ -9,11 +9,11 @@ export default definePackage({
     ctx.provider.add('@kitr/consent/provider')
     ctx.config(
       'consent',
-      `import { defineConfig } from 'kitr/consent'\n\nexport default defineConfig({\n  categories: ['analytics', 'marketing'],\n  version: 1, // bump to ask everyone again\n  analytics: 'analytics', // analytics waits for this category\n  monitoring: false, // error reports are not gated\n})\n`,
+      `import { defineConfig } from '@kitr/consent'\n\nexport default defineConfig({\n  categories: ['analytics', 'marketing'],\n  version: 1, // bump to ask everyone again\n  analytics: 'analytics', // analytics waits for this category\n  monitoring: false, // error reports are not gated\n})\n`,
     )
     ctx.write(
       'app/components/consent-banner.tsx',
-      `import { useConsent } from 'kitr/consent/react'
+      `import { useConsent } from '@kitr/consent/react'
 
 /** Mount once in the root layout. Renders nothing once a choice is recorded. */
 export function ConsentBanner() {

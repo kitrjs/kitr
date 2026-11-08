@@ -3,7 +3,7 @@ import type { KitrApp } from '@kitr/core'
 /**
  * `beforeLoad` step that makes `requireAuth()` and `can()` work in server-rendered routes: it
  * loads the session into the app in the route context before the guard reads it. During SSR the
- * session comes from the request being rendered (see `runWithSession` in `kitr/auth/server`);
+ * session comes from the request being rendered (see `runWithSession` in `@kitr/auth/server`);
  * in the browser from the cookie-backed session endpoint, cached in the query client, so a
  * client-side navigation costs no request while the cache is fresh.
  *

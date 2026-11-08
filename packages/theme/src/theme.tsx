@@ -120,7 +120,7 @@ export function ThemeProvider({
  */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('[kitr/theme] useTheme() must be used inside <ThemeProvider>.')
+  if (!ctx) throw new Error('[@kitr/theme] useTheme() must be used inside <ThemeProvider>.')
   return ctx
 }
 
@@ -136,7 +136,7 @@ export function ThemeScript(props: {
   tokens?: ThemeConfig['tokens']
   /**
    * The Content-Security-Policy nonce for the inline script and style. Default: the nonce
-   * `kitr/shield` made for this request (server-side), so a page under the default policy works
+   * `@kitr/shield` made for this request (server-side), so a page under the default policy works
    * as it is; pass one only when you made your own.
    */
   nonce?: string
@@ -168,7 +168,7 @@ export function ThemeScript(props: {
 }
 
 /**
- * The CSS for `config/theme.ts` tokens. `:root:root` outranks `kitr/theme/styles.css` (`:root`,
+ * The CSS for `config/theme.ts` tokens. `:root:root` outranks `@kitr/theme/styles.css` (`:root`,
  * `[data-theme="dark"]`) wherever the stylesheet loads. `<` is escaped so a value cannot close the tag.
  */
 export function tokenCss(
@@ -183,7 +183,7 @@ export function tokenCss(
   return css.replace(/</g, '\\3c ')
 }
 
-/** The nonce `kitr/shield` made for the request being rendered; undefined in the browser and outside a request. `@kitr/server` leaves the reader on `globalThis`. */
+/** The nonce `@kitr/shield` made for the request being rendered; undefined in the browser and outside a request. `@kitr/server` leaves the reader on `globalThis`. */
 function requestNonce(): string | undefined {
   if (typeof window !== 'undefined') return undefined
   const read = (globalThis as unknown as Record<symbol, unknown>)[

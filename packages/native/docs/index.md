@@ -6,7 +6,7 @@ order: 1
 
 # Native
 
-Copy a link, open the share sheet, buzz the phone when an order goes through, read where someone is standing, take a photo, ask for a fingerprint: every app reaches for these sooner or later, and every platform has its own API for each one. `kitr/native` puts the six behind one `native` service. Each capability has a web driver built on the matching browser API, reports whether it works on this device, and can be replaced by a native driver without changing the code that calls it.
+Copy a link, open the share sheet, buzz the phone when an order goes through, read where someone is standing, take a photo, ask for a fingerprint: every app reaches for these sooner or later, and every platform has its own API for each one. `@kitr/native` puts the six behind one `native` service. Each capability has a web driver built on the matching browser API, reports whether it works on this device, and can be replaced by a native driver without changing the code that calls it.
 
 The web drivers use the [Clipboard API](https://developer.mozilla.org/docs/Web/API/Clipboard_API), [Web Share](https://developer.mozilla.org/docs/Web/API/Web_Share_API), [`navigator.vibrate`](https://developer.mozilla.org/docs/Web/API/Navigator/vibrate), the [Geolocation API](https://developer.mozilla.org/docs/Web/API/Geolocation_API), a file input with `capture`, and [WebAuthn](https://developer.mozilla.org/docs/Web/API/Web_Authentication_API) with the device's own authenticator. kitr adds the `supported` flag, a typed `UnsupportedError`, React hooks, memory drivers for tests and a driver slot per capability.
 
@@ -24,7 +24,7 @@ What `kitr add` does:
 
 - Installs `@kitr/native` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/native/provider')` to `providers` in `kitrrc.ts`.
-- Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
+- Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `@kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
 
 It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It adds [platform](/packages/platform) first when the project lacks it. The web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
 
@@ -32,15 +32,15 @@ It writes no config file and adds no environment variables or scripts. `kitr add
 kitr add native --dry-run
 ```
 
-`kitr remove native` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/native.ts` if you created one. It then lists the files that still import `kitr/native`.
+`kitr remove native` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/native.ts` if you created one. It then lists the files that still import `@kitr/native`.
 
 ## Configure
 
-`kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
+`@kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
 
 ```ts
 // config/native.ts
-import { defineConfig } from 'kitr/native'
+import { defineConfig } from '@kitr/native'
 import { electronClipboard } from '#app/native/electron-clipboard'
 
 export default defineConfig({
@@ -68,8 +68,8 @@ The same object goes to `createNative(config, app)` when you build the service b
 `useClipboard()` copies text and flips `copied` to `true` for 1.5 seconds, long enough for a "Copied" label:
 
 ```tsx
-// app/features/invoices/copy-invoice-link.tsx
-import { useClipboard } from 'kitr/native/react'
+// app/components/invoices/copy-invoice-link.tsx
+import { useClipboard } from '@kitr/native/react'
 
 export function CopyInvoiceLink({ invoiceId }: { invoiceId: string }) {
   const { copy, copied, supported } = useClipboard()
@@ -92,8 +92,8 @@ r.page('/invoices/$invoiceId', { lazy: () => import('./pages/invoices/invoiceId'
 
 ```tsx
 // app/pages/invoices/invoiceId.tsx
-import { CopyInvoiceLink } from '#app/features/invoices/copy-invoice-link'
-import { getRouteApi } from 'kitr/router'
+import { CopyInvoiceLink } from '#app/components/invoices/copy-invoice-link'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/invoices/$invoiceId')
 
@@ -123,8 +123,8 @@ Every capability carries three fields next to its methods:
 `native.supported()` reports all six at once. In a component, read the service with `useNative()`:
 
 ```tsx
-// app/features/orders/device-features.tsx
-import { useNative } from 'kitr/native/react'
+// app/components/orders/device-features.tsx
+import { useNative } from '@kitr/native/react'
 
 export function DeviceFeatures() {
   const native = useNative()
@@ -151,8 +151,8 @@ The web camera driver always exists in a browser, because it only opens a file i
 Outside the hook, `native.clipboard` has `writeText(text)` and `readText()`:
 
 ```tsx
-// app/features/orders/paste-order-number.tsx
-import { useNative } from 'kitr/native/react'
+// app/components/orders/paste-order-number.tsx
+import { useNative } from '@kitr/native/react'
 import { useState } from 'react'
 
 export function PasteOrderNumber({ onFound }: { onFound: (orderId: string) => void }) {
@@ -185,8 +185,8 @@ Browsers ask permission before a page reads the clipboard, and reject with the b
 `useShare()` returns `{ supported, canShare, share }`. Show a share button where the device has a share sheet and fall back to copying everywhere else:
 
 ```tsx
-// app/features/invoices/share-invoice.tsx
-import { useClipboard, useShare } from 'kitr/native/react'
+// app/components/invoices/share-invoice.tsx
+import { useClipboard, useShare } from '@kitr/native/react'
 
 export function ShareInvoice({ invoiceId, total }: { invoiceId: string; total: string }) {
   const { canShare, share } = useShare()
@@ -215,8 +215,8 @@ export function ShareInvoice({ invoiceId, total }: { invoiceId: string; total: s
 To act on the result:
 
 ```tsx
-// app/features/invoices/use-share-invoice.ts
-import { useShare } from 'kitr/native/react'
+// app/hooks/invoices/use-share-invoice.ts
+import { useShare } from '@kitr/native/react'
 
 export function useShareInvoice() {
   const { share } = useShare()
@@ -233,8 +233,8 @@ export function useShareInvoice() {
 The payload takes `files: File[]` as well. Browsers that cannot share files say so through `canShare`, so check with the files included:
 
 ```tsx
-// app/features/invoices/share-invoice-pdf.tsx
-import { useShare } from 'kitr/native/react'
+// app/components/invoices/share-invoice-pdf.tsx
+import { useShare } from '@kitr/native/react'
 
 export function ShareInvoicePdf({ invoiceId }: { invoiceId: string }) {
   const { canShare, share } = useShare()
@@ -264,8 +264,8 @@ Where the browser has `navigator.share` but no `navigator.canShare`, the web dri
 `haptics.impact(kind)` plays a short vibration. Use it to confirm something the person did, such as placing an order:
 
 ```tsx
-// app/features/orders/place-order-button.tsx
-import { useNative } from 'kitr/native/react'
+// app/components/orders/place-order-button.tsx
+import { useNative } from '@kitr/native/react'
 
 export function PlaceOrderButton({ onPlace }: { onPlace: () => Promise<void> }) {
   const { haptics } = useNative()
@@ -304,8 +304,8 @@ Don't call `impact` without checking `supported` first: on an unsupported device
 `geolocation.current()` resolves to a `Position` once. Acme's drivers check in at a delivery address:
 
 ```tsx
-// app/features/orders/check-in-button.tsx
-import { useNative } from 'kitr/native/react'
+// app/components/orders/check-in-button.tsx
+import { useNative } from '@kitr/native/react'
 
 export function CheckInButton({ orderId }: { orderId: string }) {
   const { geolocation } = useNative()
@@ -344,8 +344,8 @@ On the web the call rejects with the browser's [`GeolocationPositionError`](http
 `useGeolocation()` reads the position once on mount. With `watch: true` it keeps `position` fresh until the component unmounts:
 
 ```tsx
-// app/features/orders/delivery-tracker.tsx
-import { useGeolocation } from 'kitr/native/react'
+// app/components/orders/delivery-tracker.tsx
+import { useGeolocation } from '@kitr/native/react'
 
 export function DeliveryTracker() {
   const { position, error, supported } = useGeolocation({ watch: true, highAccuracy: true })
@@ -365,8 +365,8 @@ export function DeliveryTracker() {
 Outside React, `watch` returns a function that stops it:
 
 ```ts
-// app/features/orders/track-delivery.ts
-import type { Native } from 'kitr/native'
+// app/lib/orders/track-delivery.ts
+import type { Native } from '@kitr/native'
 
 export function trackDelivery(native: Native, report: (lat: number, lng: number) => void) {
   const stop = native.geolocation.watch((p) => report(p.latitude, p.longitude), {
@@ -383,8 +383,8 @@ On an unsupported device `watch` returns a no-op stop function instead of throwi
 `camera.capture()` resolves to a `Photo` (`{ blob, type, source }`) or `null` when the person cancels. Grace photographs a signed delivery note and attaches it to the order:
 
 ```tsx
-// app/features/orders/attach-delivery-note.tsx
-import { useNative } from 'kitr/native/react'
+// app/components/orders/attach-delivery-note.tsx
+import { useNative } from '@kitr/native/react'
 
 export function AttachDeliveryNote({ orderId }: { orderId: string }) {
   const { camera } = useNative()
@@ -417,8 +417,8 @@ On the web, `capture()` opens a hidden `<input type="file" accept="image/*">`. W
 `biometrics.available()` says whether the device has Touch ID, Face ID, Windows Hello or a screen lock set up. `authenticate()` shows the prompt and resolves to `true` on success and `false` when the person cancels or fails:
 
 ```tsx
-// app/features/invoices/invoice-lock.tsx
-import { useNative } from 'kitr/native/react'
+// app/components/invoices/invoice-lock.tsx
+import { useNative } from '@kitr/native/react'
 import { type ReactNode, useEffect, useState } from 'react'
 
 export function InvoiceLock({ children }: { children: ReactNode }) {
@@ -456,7 +456,7 @@ To keep the credential id under another key, for example one per signed-in user,
 
 ```ts
 // config/native.ts
-import { defineConfig, webBiometrics } from 'kitr/native'
+import { defineConfig, webBiometrics } from '@kitr/native'
 
 export default defineConfig({
   drivers: {
@@ -481,8 +481,8 @@ A capability with no driver still exists on the service, with `supported: false`
 Catch it by class and read `capability`:
 
 ```ts
-// app/features/invoices/copy-or-explain.ts
-import { type Native, UnsupportedError } from 'kitr/native'
+// app/lib/invoices/copy-or-explain.ts
+import { type Native, UnsupportedError } from '@kitr/native'
 
 export async function copyInvoiceNumber(native: Native, invoiceId: string) {
   try {
@@ -491,7 +491,7 @@ export async function copyInvoiceNumber(native: Native, invoiceId: string) {
   } catch (error) {
     if (error instanceof UnsupportedError) return `Copy ${invoiceId} by hand`
     // error.capability => 'clipboard'
-    // error.message => 'kitr/native: clipboard is not supported on this platform'
+    // error.message => '@kitr/native: clipboard is not supported on this platform'
     throw error
   }
 }
@@ -501,12 +501,12 @@ Checking `supported` before rendering the button is the better habit. Catching `
 
 ## Use it outside React
 
-Outside components, read the service from the app's container. `useNative(app)` from `kitr/native` does the same thing:
+Outside components, read the service from the app's container. `useNative(app)` from `@kitr/native` does the same thing:
 
 ```ts
-// app/features/orders/after-place.ts
+// app/lib/orders/after-place.ts
 import type { KitrApp } from 'kitr/app'
-import { useNative } from 'kitr/native'
+import { useNative } from '@kitr/native'
 
 export async function afterOrderPlaced(app: KitrApp, orderId: string) {
   const native = useNative(app) // same as app.container.use('native')
@@ -546,7 +546,7 @@ In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the
 | `clipboard` | `@capacitor/clipboard` | No permission prompt. iOS shows its "pasted from" banner on reads. |
 | `share` | `@capacitor/share` | `canShare()` is `false` for a payload with `files`: a `File` cannot cross the bridge, so save it with [Files](/packages/files) and share its `url`. A dismissed sheet resolves `false`. |
 | `haptics` | `@capacitor/haptics` | `light`, `medium` and `heavy` are impacts, `success`, `warning` and `error` are notifications, `selection` plays the selection start, change and end ticks. |
-| `geolocation` | `@capacitor/geolocation` | Asks for the permission before the first read and rejects with `kitr/native: location permission was denied` when refused. iOS needs `NSLocationWhenInUseUsageDescription` in `Info.plist`; Android needs `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` in the manifest. |
+| `geolocation` | `@capacitor/geolocation` | Asks for the permission before the first read and rejects with `@kitr/native: location permission was denied` when refused. iOS needs `NSLocationWhenInUseUsageDescription` in `Info.plist`; Android needs `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` in the manifest. |
 | `camera`, `biometrics` | none | `supported: false`. Register a driver as shown under [Extend](#extend). |
 
 `kitr add native` installs the four plugins when the project has the mobile platform; `kitr new --kit mobile` installs all of them. Without the mobile platform, add them yourself:
@@ -559,7 +559,7 @@ A plugin that is not installed does not fall back to the webview. The call rejec
 
 ```tsx
 // app/components/copy-link.tsx
-import { useClipboard } from 'kitr/native/react'
+import { useClipboard } from '@kitr/native/react'
 
 export function CopyInvoiceLink({ url }: { url: string }) {
   const clipboard = useClipboard()
@@ -588,7 +588,7 @@ Both drivers also carry a `system` object with what desktop apps want beyond the
 
 ```ts
 // app/system.ts
-import { createElectronNativeDriver } from 'kitr/native'
+import { createElectronNativeDriver } from '@kitr/native'
 
 const { system } = createElectronNativeDriver()
 
@@ -651,15 +651,15 @@ Requirements: `@tauri-apps/plugin-clipboard-manager`, `@tauri-apps/plugin-os`, `
 Pass overrides to replace one, and hand the result to the app through `config.native.drivers`:
 
 ```tsx
-// app/features/invoices/share-invoice.test.tsx
+// app/components/invoices/share-invoice.test.tsx
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { createMemoryNativeDrivers } from 'kitr/native'
-import { nativeProvider } from 'kitr/native/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createMemoryNativeDrivers } from '@kitr/native'
+import { nativeProvider } from '@kitr/native/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
 import { InvoiceLock } from './invoice-lock'
-import { ShareInvoice } from './share-invoice'
+import { ShareInvoice } from '#app/components/invoices/share-invoice'
 
 describe('invoice sharing', () => {
   it('shares the invoice link and records it', async () => {
@@ -715,8 +715,8 @@ describe('invoice sharing', () => {
 To test a fallback, leave a capability out on purpose. `createNative()` with no drivers in Node reports every capability unsupported:
 
 ```ts
-// app/features/invoices/copy-or-explain.test.ts
-import { createNative } from 'kitr/native'
+// app/lib/invoices/copy-or-explain.test.ts
+import { createNative } from '@kitr/native'
 import { expect, it } from 'vitest'
 import { copyInvoiceNumber } from './copy-or-explain'
 
@@ -758,14 +758,14 @@ interface BiometricsDriver {
 }
 ```
 
-Register a driver from a provider's `register()`, so it is in place before the `native` service is built. This one gives the Capacitor shell real haptics with [`@capacitor/haptics`](https://capacitorjs.com/docs/apis/haptics). Install it with `pnpm add @capacitor/haptics`, then create the provider with `kitr make:provider native_drivers`:
+Register a driver from a provider's `register()`, so it is in place before the `native` service is built. This one gives the Capacitor shell real haptics with [`@capacitor/haptics`](https://capacitorjs.com/docs/apis/haptics). Install it with `pnpm add @capacitor/haptics`, then create the provider with `kitr make:provider native-drivers`:
 
 ```ts
-// app/providers/native_drivers_provider.ts
+// app/providers/native-drivers-provider.ts
 import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
 import { defineProvider } from 'kitr/app'
-import type { HapticKind, HapticsDriver } from 'kitr/native'
+import type { HapticKind, HapticsDriver } from '@kitr/native'
 
 const impacts = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy }
 const notices = {
@@ -793,14 +793,14 @@ export default defineProvider({
 })
 ```
 
-Add `() => import('#app/providers/native_drivers_provider')` to `providers` in `kitrrc.ts`. Inside the iOS or Android app, `native.haptics.name` is now `'mobile'` and `impact('success')` plays the system success pattern; in the browser the web driver still applies. A registered driver has priority 10 by default, and a higher `priority` wins when two providers register the same capability.
+Add `() => import('#app/providers/native-drivers-provider')` to `providers` in `kitrrc.ts`. Inside the iOS or Android app, `native.haptics.name` is now `'mobile'` and `impact('success')` plays the system success pattern; in the browser the web driver still applies. A registered driver has priority 10 by default, and a higher `priority` wins when two providers register the same capability.
 
 The Electron shell runs Node only in the main process, so a native driver there calls main over IPC. Add a channel to the IPC contract the desktop platform wrote, handle it in main with Electron's [`clipboard`](https://www.electronjs.org/docs/latest/api/clipboard) module, and wrap the client in a driver:
 
 ```ts
 // app/native/electron-clipboard.ts
-import { createIpcClient } from 'kitr/desktop/client'
-import type { ClipboardDriver } from 'kitr/native'
+import { createIpcClient } from '@kitr/desktop/client'
+import type { ClipboardDriver } from '@kitr/native'
 
 type ClipboardIpc = {
   'clipboard.read': () => string
@@ -821,7 +821,7 @@ export function electronClipboard(): ClipboardDriver | undefined {
 ```ts
 // platforms/app/main.ts
 import { clipboard, ipcMain } from 'electron'
-import { handleIpc } from 'kitr/desktop/main'
+import { handleIpc } from '@kitr/desktop/main'
 
 handleIpc<{ 'clipboard.read': () => string; 'clipboard.write': (text: string) => void }>(ipcMain, {
   'clipboard.read': () => clipboard.readText(),

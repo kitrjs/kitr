@@ -1,5 +1,5 @@
 import handler, { createServerEntry } from '@tanstack/react-start/server-entry'
-import { runWithSession } from 'kitr/auth/server'
+import { runWithSession } from '@kitr/auth/server'
 import { auth } from '#server/auth'
 import { server } from '#server/main'
 

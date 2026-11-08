@@ -205,7 +205,7 @@ export interface SessionAdapterOptions<TUser, TCredentials> {
 
 /**
  * Cookie sessions for the browser and for server rendering: the session lives in an HttpOnly
- * cookie (see `createCookieSession` in `kitr/auth/server`), so the client never holds a token.
+ * cookie (see `createCookieSession` in `@kitr/auth/server`), so the client never holds a token.
  * In the browser the session comes from `GET /auth/session`, cached in the query client and
  * replaced on sign-in and sign-out. During SSR it comes from the request being rendered, with no
  * HTTP call: `runWithSession` in the server entry puts it in scope.

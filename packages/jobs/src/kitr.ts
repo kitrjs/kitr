@@ -1,4 +1,4 @@
-import { definePackage } from '@kitr/core/package'
+import { definePackage, generatorFile } from '@kitr/core/package'
 
 const pascal = (s: string) =>
   s.replace(/(^|[-_/\s])(\w)/g, (_, __, c: string) => c.toUpperCase()).replace(/[^\w]/g, '')
@@ -32,11 +32,11 @@ export default definePackage({
     ctx.provider.add('@kitr/jobs/provider')
     ctx.config(
       'jobs',
-      `import { defineConfig } from 'kitr/jobs'\nimport { exampleJob } from '#server/jobs/example'\n\nexport default defineConfig({\n  // Every job the worker runs (kitr make:job <name> writes one in server/jobs/).\n  jobs: [exampleJob],\n  // In-memory queue by default: fine for one process. For several, pass a shared driver.\n  concurrency: 5,\n  worker: ${worker}, // ${worker ? 'false when a separate worker process runs the jobs' : 'the worker runs in its own process: `kitr jobs:work`'}\n})\n`,
+      `import { defineConfig } from '@kitr/jobs'\nimport { exampleJob } from '#server/jobs/example'\n\nexport default defineConfig({\n  // Every job the worker runs (kitr make:job <name> writes one in server/jobs/).\n  jobs: [exampleJob],\n  // In-memory queue by default: fine for one process. For several, pass a shared driver.\n  concurrency: 5,\n  worker: ${worker}, // ${worker ? 'false when a separate worker process runs the jobs' : 'the worker runs in its own process: `kitr jobs:work`'}\n})\n`,
     )
     ctx.write(
       'server/jobs/example.ts',
-      `import { defineJob } from 'kitr/jobs'\nimport { z } from 'zod'\n\n/** Dispatch with \`useJobs(app).dispatch(exampleJob, { id })\`; it runs on the worker with retries. */\nexport const exampleJob = defineJob('example', {\n  schema: z.object({ id: z.string() }),\n  retries: 3,\n  // schedule: { every: '1h' },\n  async run({ id }, ctx) {\n    console.info(\`example job \${id} (attempt \${ctx.attempt})\`)\n  },\n})\n`,
+      `import { defineJob } from '@kitr/jobs'\nimport { z } from 'zod'\n\n/** Dispatch with \`useJobs(app).dispatch(exampleJob, { id })\`; it runs on the worker with retries. */\nexport const exampleJob = defineJob('example', {\n  schema: z.object({ id: z.string() }),\n  retries: 3,\n  // schedule: { every: '1h' },\n  async run({ id }, ctx) {\n    console.info(\`example job \${id} (attempt \${ctx.attempt})\`)\n  },\n})\n`,
     )
     if (!worker) ctx.scripts.add('worker', 'kitr jobs:work')
     ctx.agents.add(
@@ -53,10 +53,10 @@ export default definePackage({
   generators: {
     job: {
       description: 'Create a background job in server/jobs',
-      target: (name, project) => ({
-        file: `${project.rc.directories.server ?? 'server'}/jobs/${snake(name)}.ts`,
-      }),
-      stub: ({ name }) => `import { defineJob } from 'kitr/jobs'
+      definition:
+        'A background unit of work with a payload schema, retries and an optional schedule.',
+      target: (name, project) => generatorFile(project, 'server', 'jobs', name),
+      stub: ({ name }) => `import { defineJob } from '@kitr/jobs'
 import { z } from 'zod'
 
 export const ${camel(name)}Input = z.object({

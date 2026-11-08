@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /**
- * Browser-side hooks of the web platform. Import from `kitr/web/client`.
- * Online status, app state and the rest live in `kitr/platform/react`, where every platform shares them.
+ * Browser-side hooks of the web platform. Import from `@kitr/web/client`.
+ * Online status, app state and the rest live in `@kitr/platform/react`, where every platform shares them.
  */
 
 interface BeforeInstallPromptEvent extends Event {

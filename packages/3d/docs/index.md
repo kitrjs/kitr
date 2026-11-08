@@ -6,7 +6,7 @@ order: 1
 
 # 3D
 
-Product pages that let you turn the item around, a configurator that recolours it, a hero scene on the landing page: 3D is now an ordinary part of web and app interfaces. `kitr/3d` renders those scenes so they behave like the rest of the page: nothing during server rendering, a fallback image when the device has no WebGL, no drawing while the scene is off screen or the app is in the background, a still scene for visitors who ask for less motion, and a lower resolution when a phone starts dropping frames.
+Product pages that let you turn the item around, a configurator that recolours it, a hero scene on the landing page: 3D is now an ordinary part of web and app interfaces. `@kitr/3d` renders those scenes so they behave like the rest of the page: nothing during server rendering, a fallback image when the device has no WebGL, no drawing while the scene is off screen or the app is in the background, a still scene for visitors who ask for less motion, and a lower resolution when a phone starts dropping frames.
 
 It is [React Three Fiber](https://r3f.docs.pmnd.rs) and [drei](https://drei.docs.pmnd.rs), re-exported unchanged, on top of [three.js](https://threejs.org). Meshes, lights, `useFrame`, `useThree` and every drei helper work exactly as their docs show. kitr adds `<Scene>`, a `<Canvas>` with the behaviour above; `useModel()`, which loads compressed models with a decoder your app serves itself instead of a CDN; `useThemeColor()`, which hands three.js the colours of your theme; and `kitr 3d:decoders` with a `kitr doctor` check to keep that decoder in place.
 
@@ -24,21 +24,21 @@ What `kitr add` does:
 
 - Adds `@kitr/3d`, `three`, `@react-three/fiber` and `@react-three/drei` to `dependencies`, and `@types/three` to `devDependencies`, then installs them. Pass `--no-install` to skip the install.
 - Adds `'@kitr/3d'` to `packages` in `kitrrc.ts`. It registers no provider.
-- Adds a `## kitr: 3d` section to `AGENTS.md`: wrap every scene in `<Scene>` rather than a bare `<Canvas>`, import from `kitr/3d` and `kitr/3d/drei`, keep models in `public/models/` and load them with `useModel()`, take colours from the theme with `useThemeColor()`, and run `kitr 3d:decoders` for Draco-compressed models.
+- Adds a `## kitr: 3d` section to `AGENTS.md`: wrap every scene in `<Scene>` rather than a bare `<Canvas>`, import from `@kitr/3d` and `@kitr/3d/drei`, keep models in `public/models/` and load them with `useModel()`, take colours from the theme with `useThemeColor()`, and run `kitr 3d:decoders` for Draco-compressed models.
 
 It writes no config file, adds no env variables or scripts and asks no questions. 3D needs React, so `kitr add` adds the [react](/packages/react) package first when the project has none, and refuses in a server-only project. No kit includes it.
 
-`kitr remove 3d` takes `'@kitr/3d'` out of `kitrrc.ts`, removes the four dependencies and the `AGENTS.md` section, then lists files that still import `kitr/3d`. It leaves `public/draco/` and your models in place.
+`kitr remove 3d` takes `'@kitr/3d'` out of `kitrrc.ts`, removes the four dependencies and the `AGENTS.md` section, then lists files that still import `@kitr/3d`. It leaves `public/draco/` and your models in place.
 
-`kitr doctor` flags imports from `@react-three/fiber` and `@react-three/drei` and suggests `kitr/3d` and `kitr/3d/drei`. `three` itself is imported directly, as `import { Color } from 'three'`, because its examples live under deep paths that no single entry can cover.
+`kitr doctor` flags imports from `@react-three/fiber` and `@react-three/drei` and suggests `@kitr/3d` and `@kitr/3d/drei`. `three` itself is imported directly, as `import { Color } from 'three'`, because its examples live under deep paths that no single entry can cover.
 
 ## Configure
 
-`kitr/3d` has no config file. Each scene is configured by the props of `<Scene>`:
+`@kitr/3d` has no config file. Each scene is configured by the props of `<Scene>`:
 
 ```tsx
 // app/components/headset-viewer.tsx
-import { Scene } from 'kitr/3d'
+import { Scene } from '@kitr/3d'
 
 export function HeadsetViewer() {
   return (
@@ -78,7 +78,7 @@ A turning cube in the brand colour, lit from above. Give the scene a height, bec
 
 ```tsx
 // app/components/brand-cube.tsx
-import { Scene, useFrame, useThemeColor } from 'kitr/3d'
+import { Scene, useFrame, useThemeColor } from '@kitr/3d'
 import { useRef } from 'react'
 import type { Mesh } from 'three'
 
@@ -115,8 +115,8 @@ Put `.glb` files in `public/models/` and load them with `useModel()`. It suspend
 
 ```tsx
 // app/components/headset-viewer.tsx
-import { Scene, useModel } from 'kitr/3d'
-import { Center, Html, OrbitControls } from 'kitr/3d/drei'
+import { Scene, useModel } from '@kitr/3d'
+import { Center, Html, OrbitControls } from '@kitr/3d/drei'
 
 function Headset() {
   const model = useModel('/models/headset.glb')
@@ -175,7 +175,7 @@ Some devices cannot draw WebGL: older browsers, locked-down corporate machines, 
 
 ```tsx
 // app/components/order-preview.tsx
-import { Scene } from 'kitr/3d'
+import { Scene } from '@kitr/3d'
 
 export function OrderPreview({ order }: { order: { id: string; image: string } }) {
   return (
@@ -198,7 +198,7 @@ three.js materials take a colour string, but kitr's theme defines colours in `ok
 
 ```tsx
 // app/components/headset-stand.tsx
-import { useThemeColor } from 'kitr/3d'
+import { useThemeColor } from '@kitr/3d'
 
 export function HeadsetStand() {
   const surface = useThemeColor('--kitr-color-muted')
@@ -226,7 +226,7 @@ When Grace switches to dark mode, `data-theme` on `<html>` changes, the hook re-
 
 ```tsx
 // app/components/floating-headset.tsx
-import { useFrame, useModel } from 'kitr/3d'
+import { useFrame, useModel } from '@kitr/3d'
 import { useRef } from 'react'
 import type { Group } from 'three'
 
@@ -244,7 +244,7 @@ export function FloatingHeadset() {
 
 Change the object directly through the ref. Don't call `setState` inside `useFrame`: that re-renders the React tree 60 times a second, where a ref change costs nothing.
 
-For animations stored in the model file, use drei's `useAnimations(model.animations, ref)` from `kitr/3d/drei`, then `actions['Unfold']?.play()`.
+For animations stored in the model file, use drei's `useAnimations(model.animations, ref)` from `@kitr/3d/drei`, then `actions['Unfold']?.play()`.
 
 ## Respect reduced motion
 
@@ -254,7 +254,7 @@ When a scene's movement is the point, such as a short product turn that starts o
 
 ```tsx
 // app/components/turn-button.tsx
-import { usePrefersReducedMotion } from 'kitr/3d'
+import { usePrefersReducedMotion } from '@kitr/3d'
 
 export function TurnButton({ onTurn }: { onTurn: (speed: number) => void }) {
   const reduce = usePrefersReducedMotion()
@@ -274,8 +274,8 @@ A scene that only moves when it is dragged, like the headset viewer, doesn't nee
 
 ```tsx
 // app/components/still-headset.tsx
-import { Scene, useModel } from 'kitr/3d'
-import { OrbitControls } from 'kitr/3d/drei'
+import { Scene, useModel } from '@kitr/3d'
+import { OrbitControls } from '@kitr/3d/drei'
 
 function Headset() {
   const model = useModel('/models/headset.glb')
@@ -346,7 +346,7 @@ drei's `<Environment preset="city" />` downloads its lighting file from a CDN wh
 
 ```tsx
 // app/components/studio-lighting.tsx
-import { ContactShadows, Environment } from 'kitr/3d/drei'
+import { ContactShadows, Environment } from '@kitr/3d/drei'
 
 export function StudioLighting() {
   return (
@@ -379,7 +379,7 @@ Draco decoder copied. useModel() loads it from /draco/.
 
 With a custom folder, pass it to `useModel(url, { draco: '/static/draco/' })`.
 
-`kitr doctor` warns when a model under `public/` is Draco-compressed and `public/draco/` has no decoder, and when a file imports `@react-three/fiber` or `@react-three/drei` instead of `kitr/3d` and `kitr/3d/drei`.
+`kitr doctor` warns when a model under `public/` is Draco-compressed and `public/draco/` has no decoder, and when a file imports `@react-three/fiber` or `@react-three/drei` instead of `@kitr/3d` and `@kitr/3d/drei`.
 
 ## Testing
 
@@ -394,7 +394,7 @@ Then render a component, advance a few frames and assert on the three.js objects
 ```tsx
 // app/components/brand-cube.test.tsx
 import ReactThreeTestRenderer from '@react-three/test-renderer'
-import { useFrame } from 'kitr/3d'
+import { useFrame } from '@kitr/3d'
 import { useRef } from 'react'
 import type { Mesh } from 'three'
 import { describe, expect, it } from 'vitest'
@@ -429,7 +429,7 @@ describe('brand cube', () => {
 `<Scene>` itself needs a real browser to draw. In Vitest with happy-dom there is no WebGL, so a page that contains a scene renders its `fallback`, which makes page tests stable and lets you assert on it:
 
 ```tsx
-// app/routes/orders/order.test.tsx
+// app/pages/order.test.tsx
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { HeadsetViewer } from '#app/components/headset-viewer'
@@ -444,9 +444,9 @@ For the real thing, a Playwright test against `kitr dev` runs Chromium with WebG
 
 ## Next steps
 
-- [API reference](/packages/3d/api): every export kitr adds to `kitr/3d`.
-- [React Three Fiber](https://r3f.docs.pmnd.rs): the canvas, hooks, events and performance, all imported from `kitr/3d`.
-- [drei](https://drei.docs.pmnd.rs): controls, loaders, staging and helpers, imported from `kitr/3d/drei`.
+- [API reference](/packages/3d/api): every export kitr adds to `@kitr/3d`.
+- [React Three Fiber](https://r3f.docs.pmnd.rs): the canvas, hooks, events and performance, all imported from `@kitr/3d`.
+- [drei](https://drei.docs.pmnd.rs): controls, loaders, staging and helpers, imported from `@kitr/3d/drei`.
 - [three.js manual](https://threejs.org/manual/): geometry, materials, lights and cameras.
 - [Animation](/packages/animation): DOM and page animation with the same reduced-motion rules.
 - [Theme](/packages/theme): the colour tokens `useThemeColor()` reads.

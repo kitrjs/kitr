@@ -1,4 +1,4 @@
-import { defineConfig, sessionAdapter } from 'kitr/auth'
+import { defineConfig, sessionAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 

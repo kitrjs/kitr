@@ -27,7 +27,7 @@ const KINDS = { defineQuery: 'query', defineMutation: 'mutation' } as const
 
 /** Where `defineQuery` and `defineMutation` are declared: the @kitr/actions package, in a workspace or in node_modules. */
 const ACTIONS_PACKAGE = /[\\/](?:@kitr[\\/]actions|packages[\\/]actions)[\\/]/
-/** An import specifier that names the actions package or its `kitr/actions` re-export. */
+/** An import specifier that names the actions package or its `@kitr/actions` re-export. */
 const ACTIONS_SPECIFIER = /^(?:@kitr|kitr)\/actions(?:\/|$)/
 
 export interface ScanOptions {
@@ -101,7 +101,7 @@ export async function scanActions(
     return { symbol: current, resolved: true }
   }
 
-  /** `k.defineQuery(...)` where `k` is `import * as k from 'kitr/actions'` that did not resolve (not installed yet). */
+  /** `k.defineQuery(...)` where `k` is `import * as k from '@kitr/actions'` that did not resolve (not installed yet). */
   const namespaceKind = (call: import('typescript').CallExpression) => {
     const { expression } = call
     if (!ts.isPropertyAccessExpression(expression) || !ts.isIdentifier(expression.expression))
@@ -166,7 +166,7 @@ export async function scanActions(
       const first = call.arguments[0]
       if (!first || !(ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first)))
         throw new Error(
-          `[kitr/actions] ${where(first ?? call)}: the name passed to ${kind === 'query' ? 'defineQuery' : 'defineMutation'}() for \`${exported.name}\` must be a string literal, like 'projects.list': \`kitr types\` reads names without running your code.`,
+          `[@kitr/actions] ${where(first ?? call)}: the name passed to ${kind === 'query' ? 'defineQuery' : 'defineMutation'}() for \`${exported.name}\` must be a string literal, like 'projects.list': \`kitr types\` reads names without running your code.`,
         )
       out.push({ file, exportName: exported.name, name: first.text, kind })
     }
@@ -208,12 +208,12 @@ export function renderActions(found: FoundOperation[], ctx: Pick<GenerateContext
   for (const op of found) {
     if (!NAME.test(op.name))
       throw new Error(
-        `[kitr/actions] "${op.name}" in ${op.file} is not a valid name: use dotted identifiers like projects.update`,
+        `[@kitr/actions] "${op.name}" in ${op.file} is not a valid name: use dotted identifiers like projects.update`,
       )
     const other = byName.get(op.name)
     if (other)
       throw new Error(
-        `[kitr/actions] "${op.name}" is defined twice: ${other.file} (${other.exportName}) and ${op.file} (${op.exportName})`,
+        `[@kitr/actions] "${op.name}" is defined twice: ${other.file} (${other.exportName}) and ${op.file} (${op.exportName})`,
       )
     byName.set(op.name, op)
   }
@@ -222,7 +222,7 @@ export function renderActions(found: FoundOperation[], ctx: Pick<GenerateContext
     for (const candidate of names)
       if (candidate.startsWith(`${name}.`))
         throw new Error(
-          `[kitr/actions] "${name}" cannot be both an operation and a group: "${candidate}" is nested under it`,
+          `[@kitr/actions] "${name}" cannot be both an operation and a group: "${candidate}" is nested under it`,
         )
   const files = [...new Set(found.map((op) => op.file))].sort()
   const alias = new Map(files.map((file, i) => [file, `m${i}`]))

@@ -29,7 +29,7 @@ const fromBase64Url = (text: string): Uint8Array<ArrayBuffer> | undefined => {
 
 const hmacKey = (secret: string, usage: 'sign' | 'verify') => {
   if (secret.length < 16)
-    throw new Error('[kitr/uploads] The signing secret must be at least 16 characters.')
+    throw new Error('[@kitr/uploads] The signing secret must be at least 16 characters.')
   return crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),

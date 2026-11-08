@@ -6,11 +6,11 @@ order: 1
 
 # Mobile
 
-Your customers want the app on their phone, with an icon on the home screen, the Android back button that works and data that survives the OS clearing its caches. `kitr/mobile` is the iOS and Android platform. It wraps the same `app/` you ship to the browser in a native shell, and switches the kitr packages that have a native driver (the platform hooks and storage) to it while the app runs on a phone.
+Your customers want the app on their phone, with an icon on the home screen, the Android back button that works and data that survives the OS clearing its caches. `@kitr/mobile` is the iOS and Android platform. It wraps the same `app/` you ship to the browser in a native shell, and switches the kitr packages that have a native driver (the platform hooks and storage) to it while the app runs on a phone.
 
-It is built on [Capacitor](https://capacitorjs.com/docs): your client build runs in the system WebView, and Capacitor plugins reach native APIs. kitr adds the platform on top: `kitr dev` runs the app on a simulator with live reload, `kitr build` builds the bundle and syncs it into the Xcode and Android Studio projects, and `kitr/mobile/provider` registers the native drivers.
+It is built on [Capacitor](https://capacitorjs.com/docs): your client build runs in the system WebView, and Capacitor plugins reach native APIs. kitr adds the platform on top: `kitr dev` runs the app on a simulator with live reload, `kitr build` builds the bundle and syncs it into the Xcode and Android Studio projects, and `@kitr/mobile/provider` registers the native drivers.
 
-The provider and `kitr/mobile/client` run in the app, in the WebView and in a plain browser alike. The platform hooks (`kitr dev`, `kitr build`) run in the CLI on your machine. For an installable web app with no store listing, the PWA option of the [Web](/packages/web) platform is enough. For desktop windows, use [Desktop](/packages/desktop) (Electron) or its alternative, [Tauri](/packages/tauri).
+The provider and `@kitr/mobile/client` run in the app, in the WebView and in a plain browser alike. The platform hooks (`kitr dev`, `kitr build`) run in the CLI on your machine. For an installable web app with no store listing, the PWA option of the [Web](/packages/web) platform is enough. For desktop windows, use [Desktop](/packages/desktop) (Electron) or its alternative, [Tauri](/packages/tauri).
 
 The examples on this page ship the Acme orders app to phones: Ada's field team checks orders and invoices on iPhone and Android, with the same code the browser runs at `app.acme.com`.
 
@@ -29,7 +29,7 @@ What `kitr add mobile phone` does, in order:
 - Adds `@kitr/mobile` to `packages` in `kitrrc.ts` and installs it. The mobile package requires [Router](/packages/router) (and [React](/packages/react) before it), [Platform](/packages/platform), which writes `config/platform.ts`, and [Storage](/packages/storage), which writes `config/storage.ts` and `app/storage.ts`, so `kitr add` runs their setup first when they are missing.
 - Installs `@capacitor/core`, `@capacitor/app` and `@capacitor/preferences`, `@capacitor/cli` as a dev dependency, and one package per target: `@capacitor/ios` and `@capacitor/android`.
 - Adds `() => import('@kitr/mobile/provider')` to `providers` in `kitrrc.ts`.
-- Writes `phone: mobile({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { mobile } from 'kitr/mobile'`.
+- Writes `phone: mobile({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { mobile } from '@kitr/mobile'`.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
 - Writes `platforms/phone/capacitor.config.ts` (shown under Configure), `platforms/phone/package.json` (generated; see [Sync the plugins](#sync-the-plugins)) and `platforms/phone/.gitignore`, which ignores `ios/App/Pods`, `ios/App/build`, `android/build`, `android/app/build` and `android/.gradle`.
 - Adds a `## kitr: platform phone` section to `AGENTS.md`: how to run and build, never to sniff user agents, and to wrap other Capacitor plugins in `nativeOnly()`.
@@ -63,13 +63,13 @@ kitr new acme-orders --kit mobile --targets ios
 
 ## Configure
 
-`kitr/mobile` has no config file in `config/`. Its options live on the `mobile()` call in `kitrrc.ts`:
+`@kitr/mobile` has no config file in `config/`. Its options live on the `mobile()` call in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { mobile } from 'kitr/mobile'
-import { web } from 'kitr/web'
+import { mobile } from '@kitr/mobile'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/platform', '@kitr/storage', '@kitr/web', '@kitr/mobile'],
@@ -152,7 +152,7 @@ r.page('/', { lazy: () => import('./pages/index') })
 
 ```tsx
 // app/pages/index.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export default function OrdersHome() {
   const platform = usePlatform()
@@ -187,7 +187,7 @@ kitr dev phone         # the simulator on port 3100
 kitr build             # every platform, one after another
 ```
 
-Inside the shell, `kitr/mobile/provider` registers the native drivers. In a plain browser it registers nothing, so the web build of the same bundle keeps the browser behaviour. Components ask [Platform](/packages/platform) instead of checking where they run.
+Inside the shell, `@kitr/mobile/provider` registers the native drivers. In a plain browser it registers nothing, so the web build of the same bundle keeps the browser behaviour. Components ask [Platform](/packages/platform) instead of checking where they run.
 
 ## Run on a simulator or device
 
@@ -268,7 +268,7 @@ Plugin settings go in the `capacitor` option. They are merged last into the gene
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { mobile } from 'kitr/mobile'
+import { mobile } from '@kitr/mobile'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/platform', '@kitr/storage', '@kitr/mobile'],
@@ -318,11 +318,11 @@ The device packages [Native](/packages/native), [Notifications](/packages/notifi
 
 ## Check whether the app runs in the shell
 
-Most code should ask [Platform](/packages/platform) (`usePlatform()`, `platform.is('ios')`). For the few places that need Capacitor itself, `kitr/mobile/client` reads the Capacitor runtime directly:
+Most code should ask [Platform](/packages/platform) (`usePlatform()`, `platform.is('ios')`). For the few places that need Capacitor itself, `@kitr/mobile/client` reads the Capacitor runtime directly:
 
 ```ts
-// app/features/orders/where.ts
-import { capacitorPlatform, isCapacitor, isPluginAvailable } from 'kitr/mobile/client'
+// app/lib/orders/where.ts
+import { capacitorPlatform, isCapacitor, isPluginAvailable } from '@kitr/mobile/client'
 
 capacitorPlatform()
 // => 'ios' on an iPhone, 'android' on Android, 'web' in a browser
@@ -346,8 +346,8 @@ kitr build phone
 ```
 
 ```ts
-// app/features/orders/share-order.ts
-import { nativeOnly } from 'kitr/mobile/client'
+// app/lib/orders/share-order.ts
+import { nativeOnly } from '@kitr/mobile/client'
 
 export async function shareOrder(order: { id: string; customer: string }) {
   const url = `https://app.acme.com/orders/${order.id}`
@@ -369,11 +369,11 @@ export async function shareOrder(order: { id: string; customer: string }) {
 
 ## Handle the Android back button
 
-On Android, `useBackButton()` from `kitr/platform/react` receives the hardware back button with `canGoBack` from the WebView history:
+On Android, `useBackButton()` from `@kitr/platform/react` receives the hardware back button with `canGoBack` from the WebView history:
 
 ```tsx
 // app/components/back-button.tsx
-import { usePlatform, useBackButton } from 'kitr/platform/react'
+import { usePlatform, useBackButton } from '@kitr/platform/react'
 import { useCallback } from 'react'
 
 export function BackButtonHandler({ onCloseSheet }: { onCloseSheet: () => boolean }) {
@@ -401,7 +401,7 @@ To open `acme://orders/1042` in the app, set `scheme: 'acme'` on the platform in
 ```tsx
 // app/components/deep-links.tsx
 import { useNavigate } from '@tanstack/react-router'
-import { useDeepLink } from 'kitr/platform/react'
+import { useDeepLink } from '@kitr/platform/react'
 import { useCallback } from 'react'
 
 export function DeepLinks() {
@@ -421,8 +421,8 @@ The mobile driver listens to Capacitor's `appUrlOpen` event, which fires when th
 `useAppState()` is `true` while the app is in the foreground. Inside the shell it follows Capacitor's `appStateChange`; in a browser it follows page visibility:
 
 ```tsx
-// app/features/orders/live-orders.tsx
-import { useAppState } from 'kitr/platform/react'
+// app/components/orders/live-orders.tsx
+import { useAppState } from '@kitr/platform/react'
 
 export function LiveOrdersBadge() {
   const active = useAppState()
@@ -438,7 +438,7 @@ Pause polling and sockets while it is `false`, and refetch when it turns `true` 
 
 ```tsx
 // app/components/bottom-bar.tsx
-import { useSafeArea } from 'kitr/platform/react'
+import { useSafeArea } from '@kitr/platform/react'
 
 export function BottomBar() {
   const insets = useSafeArea()
@@ -451,11 +451,11 @@ The insets are zero on the server and on the first render, then update on mount 
 
 ## Keep data in native storage
 
-Inside the shell, `kitr/mobile/provider` registers a storage driver on [`@capacitor/preferences`](https://capacitorjs.com/docs/apis/preferences). Every `local` item from [Storage](/packages/storage) then lives in native preferences, which iOS does not clear the way it can clear WebView `localStorage`:
+Inside the shell, `@kitr/mobile/provider` registers a storage driver on [`@capacitor/preferences`](https://capacitorjs.com/docs/apis/preferences). Every `local` item from [Storage](/packages/storage) then lives in native preferences, which iOS does not clear the way it can clear WebView `localStorage`:
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 export const lastOrderId = defineStorage('lastOrderId', { default: '' })
 ```
@@ -470,7 +470,7 @@ Links to other sites should leave the app. `platform.openExternal()` opens the s
 
 ```tsx
 // app/components/invoice-link.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function InvoiceLink({ invoiceId }: { invoiceId: string }) {
   const platform = usePlatform()
@@ -489,7 +489,7 @@ export function InvoiceLink({ invoiceId }: { invoiceId: string }) {
 
 ```tsx
 // app/components/about-version.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 import { useEffect, useState } from 'react'
 
 export function AboutVersion() {
@@ -505,7 +505,7 @@ export function AboutVersion() {
 
 ## Commands
 
-`kitr/mobile` adds no generators. The mobile platform answers these commands:
+`@kitr/mobile` adds no generators. The mobile platform answers these commands:
 
 | Command | What it does |
 | --- | --- |
@@ -538,17 +538,17 @@ Capacitor's own CLI works from `platforms/phone` for everything else: `pnpm exec
 
 ## Testing
 
-Unit tests run in Node or `happy-dom`, where there is no Capacitor runtime. The helpers in `kitr/mobile/client` read the global `Capacitor` object, so a test sets a fake one to play the native shell and deletes it afterwards.
+Unit tests run in Node or `happy-dom`, where there is no Capacitor runtime. The helpers in `@kitr/mobile/client` read the global `Capacitor` object, so a test sets a fake one to play the native shell and deletes it afterwards.
 
 This test checks the platform options, that the app picks the native driver inside the shell, and that `shareOrder()` from "Call a Capacitor plugin" falls back in the browser:
 
 ```ts
 // test/mobile.test.ts
-import { mobileProvider } from 'kitr/mobile/provider'
-import { platformProvider } from 'kitr/platform/provider'
-import { createTestApp } from 'kitr/testing'
+import { mobileProvider } from '@kitr/mobile/provider'
+import { platformProvider } from '@kitr/platform/provider'
+import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { shareOrder } from '#app/features/orders/share-order'
+import { shareOrder } from '#app/lib/orders/share-order'
 import rc from '../kitrrc'
 
 function fakeShell(os: 'ios' | 'android') {

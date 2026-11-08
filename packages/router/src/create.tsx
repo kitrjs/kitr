@@ -55,7 +55,7 @@ declare module '@kitr/core' {
 }
 
 /**
- * The CSP nonce of the request being rendered, when `kitr/shield` made one: TanStack Start puts
+ * The CSP nonce of the request being rendered, when `@kitr/shield` made one: TanStack Start puts
  * `router.options.ssr.nonce` on its inline hydration scripts, `<HeadContent />` and `<Scripts />`.
  * Start builds the router inside the request, so the server's request context is current here.
  * `@kitr/server` leaves its reader on `globalThis` (this package cannot import it: the browser

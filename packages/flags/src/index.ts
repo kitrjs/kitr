@@ -202,7 +202,7 @@ export function createFlags<D extends FlagDefinitions>(
 }
 
 function warn(message: string, error: unknown) {
-  console.warn(`[kitr/flags] ${message}:`, error)
+  console.warn(`[@kitr/flags] ${message}:`, error)
 }
 
 /**

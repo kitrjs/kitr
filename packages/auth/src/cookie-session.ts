@@ -151,7 +151,7 @@ export function createCookieSession(options: CookieSessionOptions): CookieSessio
   const secrets = Array.isArray(options.secret) ? options.secret : [options.secret]
   if (!secrets.length || secrets.some((s) => s.length < 32))
     throw new Error(
-      '[kitr/auth] The session secret must be at least 32 characters. Generate one with `openssl rand -base64 32`.',
+      '[@kitr/auth] The session secret must be at least 32 characters. Generate one with `openssl rand -base64 32`.',
     )
   const { store } = options
   const name = options.cookie?.name ?? 'kitr-session'

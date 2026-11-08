@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/flags, with its signature.
+description: Every export of @kitr/flags, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/flags`, `kitr/flags/react`, `kitr/flags/provider`, `kitr/flags/server`, read from the published type definitions. The [guide](/packages/flags/guide) shows them in use.
+Every export of `@kitr/flags`, `@kitr/flags/react`, `@kitr/flags/provider`, `@kitr/flags/server`, read from the published type definitions. The [guide](/packages/flags/guide) shows them in use.
 
-## kitr/flags
+## @kitr/flags
 
 ### createFlags
 
@@ -228,7 +228,7 @@ type FlagValues<D extends FlagDefinitions> = {
 
 The resolved value of every flag in `D`, typed by each default.
 
-## kitr/flags/react
+## @kitr/flags/react
 
 ### FlagsScript
 
@@ -262,7 +262,7 @@ function useFlags<D extends FlagDefinitions = FlagDefinitions>(): FlagValues<D>;
 
 Every flag, as a plain object.
 
-## kitr/flags/provider
+## @kitr/flags/provider
 
 ### flagsProvider
 
@@ -274,7 +274,7 @@ Binds `flags` from `config/flags.ts` (`definitions` from `app/flags.ts`, `provid
 browser a snapshot embedded by `<FlagsScript>` loads before the first render; otherwise
 `resolve()` runs at boot. On the server, `resolveFlags(app, event)` answers per request.
 
-## kitr/flags/server
+## @kitr/flags/server
 
 ### flagsScript
 

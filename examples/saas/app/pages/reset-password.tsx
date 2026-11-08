@@ -1,5 +1,5 @@
-import { useSchemaForm } from 'kitr/forms'
-import { getRouteApi, useNavigate } from 'kitr/router'
+import { useSchemaForm } from '@kitr/forms'
+import { getRouteApi, useNavigate } from '@kitr/router'
 import { z } from 'zod'
 import { api } from '#app/api/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'

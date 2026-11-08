@@ -37,7 +37,7 @@ export interface HttpQueryOptions<TInput, TOutput> {
   staleTime?: number
 }
 
-/** External HTTP API as a query contract. Use with `queryFrom` from kitr/query. */
+/** External HTTP API as a query contract. Use with `queryFrom` from @kitr/query. */
 export function httpQuery<TInput = void, TOutput = unknown>(
   client: HttpClientSource,
   opts: HttpQueryOptions<TInput, TOutput>,
@@ -77,7 +77,7 @@ export interface HttpMutationOptions<TInput, TOutput> {
   options?: Options
 }
 
-/** External HTTP API as a mutation contract. Use with `mutationFrom` from kitr/query. */
+/** External HTTP API as a mutation contract. Use with `mutationFrom` from @kitr/query. */
 export function httpMutation<TInput = void, TOutput = unknown>(
   client: HttpClientSource,
   opts: HttpMutationOptions<TInput, TOutput>,

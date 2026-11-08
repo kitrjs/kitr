@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/actions, with its signature.
+description: Every export of @kitr/actions, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/actions`, `kitr/actions/types`, read from the published type definitions. The [guide](/packages/actions/guide) shows them in use.
+Every export of `@kitr/actions`, `@kitr/actions/types`, read from the published type definitions. The [guide](/packages/actions/guide) shows them in use.
 
-## kitr/actions
+## @kitr/actions
 
 Re-exports `@tanstack/start-client-core` unchanged, plus the following.
 
@@ -134,7 +134,7 @@ interface ServerMutation<TInput, TOutput, TContext = unknown> extends MutationDe
 }
 ```
 
-A server mutation: a `MutationDefinition` from `kitr/query` that is also a function. Call it to
+A server mutation: a `MutationDefinition` from `@kitr/query` that is also a function. Call it to
 mutate, pass it to `useMutation` for pending state and cache effects, or use it by name.
 
 ### ServerQuery
@@ -151,7 +151,7 @@ interface ServerQuery<TInput, TOutput, TContext = unknown> extends QueryDefiniti
 }
 ```
 
-A server query: a `QueryDefinition` from `kitr/query` that is also a function. Call it to fetch,
+A server query: a `QueryDefinition` from `@kitr/query` that is also a function. Call it to fetch,
 pass `.options(input)` to any TanStack hook or loader, or use it by name once `kitr types` has
 registered it.
 
@@ -178,7 +178,7 @@ type ServerFn<TOutput> = (opts: {
 
 The raw TanStack server function behind a definition, for `useServerFn` or middleware composition.
 
-## kitr/actions/types
+## @kitr/actions/types
 
 ### renderActions
 

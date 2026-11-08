@@ -1,4 +1,4 @@
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 import { useState } from 'react'
 
 export const meta = {

@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/router, with its signature.
+description: Every export of @kitr/router, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/router`, `kitr/router/routes`, `kitr/router/stack`, read from the published type definitions. The [guide](/packages/router/guide) shows them in use.
+Every export of `@kitr/router`, `@kitr/router/routes`, `@kitr/router/stack`, read from the published type definitions. The [guide](/packages/router/guide) shows them in use.
 
-## kitr/router
+## @kitr/router
 
 Re-exports `@tanstack/history`, `@tanstack/react-router`, `@tanstack/router-core` unchanged, plus the following.
 
@@ -164,7 +164,7 @@ The pages extension for the kitr route table: `.root`, `.page` and `.layout` on
 `defineRoutes([pages], ...)`, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
 
 ```ts
-import pages from 'kitr/router/routes'
+import pages from '@kitr/router/routes'
 export const routes = defineRoutes([pages], (r) =>
   r.root({ head, component: RootDocument }).page('/', { lazy: () => import('./pages/home') }),
 )
@@ -456,7 +456,7 @@ type WithChildren<Rt, C> = IsAny<Rt extends {
 
 `Rt` with its `TChildren` replaced by `C`, for a root or a child route.
 
-## kitr/router/routes
+## @kitr/router/routes
 
 ### compileTree
 
@@ -501,7 +501,7 @@ The pages extension for the kitr route table: `.root`, `.page` and `.layout` on
 `defineRoutes([pages], ...)`, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
 
 ```ts
-import pages from 'kitr/router/routes'
+import pages from '@kitr/router/routes'
 export const routes = defineRoutes([pages], (r) =>
   r.root({ head, component: RootDocument }).page('/', { lazy: () => import('./pages/home') }),
 )
@@ -646,7 +646,7 @@ type WithChildren<Rt, C> = IsAny<Rt extends {
 
 `Rt` with its `TChildren` replaced by `C`, for a root or a child route.
 
-## kitr/router/stack
+## @kitr/router/stack
 
 ### animate
 

@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/uploads, with its signature.
+description: Every export of @kitr/uploads, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/uploads`, `kitr/uploads/react`, `kitr/uploads/server`, `kitr/uploads/provider`, read from the published type definitions. The [guide](/packages/uploads/guide) shows them in use.
+Every export of `@kitr/uploads`, `@kitr/uploads/react`, `@kitr/uploads/server`, `@kitr/uploads/provider`, read from the published type definitions. The [guide](/packages/uploads/guide) shows them in use.
 
-## kitr/uploads
+## @kitr/uploads
 
 ### accepts
 
@@ -193,7 +193,7 @@ interface UploadsConfig extends UploadRules {
 
 The shape of `config/uploads.ts`: the default rules plus where files are stored and served.
 
-## kitr/uploads/react
+## @kitr/uploads/react
 
 ### useUpload
 
@@ -234,7 +234,7 @@ interface UseUploadState {
 
 The state `useUpload()` returns next to `send`, `cancel` and `reset`.
 
-## kitr/uploads/server
+## @kitr/uploads/server
 
 ### createDiskUploadsDriver
 
@@ -508,7 +508,7 @@ type SignatureCheck = 'ok' | 'unsigned' | 'expired' | 'invalid';
 
 Why a signed link was refused, or `ok`; `unsigned` when the request carries no signature at all.
 
-## kitr/uploads/provider
+## @kitr/uploads/provider
 
 ### uploadsProvider
 

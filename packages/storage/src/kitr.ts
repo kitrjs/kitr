@@ -8,7 +8,7 @@ export default definePackage({
     ctx.provider.add('@kitr/storage/provider')
     ctx.config(
       'storage',
-      `import { defineConfig } from 'kitr/storage'
+      `import { defineConfig } from '@kitr/storage'
 
 export default defineConfig({
   // Prefixes every storage key and cookie name so several apps on one origin never collide.
@@ -20,16 +20,16 @@ export default defineConfig({
     ctx.write(
       'app/storage.ts',
       serverOnly
-        ? `import { defineCookie } from 'kitr/storage'
+        ? `import { defineCookie } from '@kitr/storage'
 
-/** Cookies are typed once and read with \`cookies(event).get(item)\` from kitr/storage/server. */
+/** Cookies are typed once and read with \`cookies(event).get(item)\` from @kitr/storage/server. */
 export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
 `
-        : `import { defineCookie, defineStorage } from 'kitr/storage'
+        : `import { defineCookie, defineStorage } from '@kitr/storage'
 
 /**
  * Every persisted value, in one file, typed. Components read them with
- * \`useStorage(item)\` / \`useCookie(item)\` from kitr/storage/react; plain code with \`item.get()\`.
+ * \`useStorage(item)\` / \`useCookie(item)\` from @kitr/storage/react; plain code with \`item.get()\`.
  */
 export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
 
@@ -46,13 +46,13 @@ export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 *
     ctx.agents.add(
       'storage',
       serverOnly
-        ? `- Cookies: declare with \`defineCookie\` in \`app/storage.ts\`; in controllers use \`const jar = cookies(ctx.event)\` from \`kitr/storage/server\`, then \`jar.get(item)\` / \`jar.set(item, value, { httpOnly: true })\`.`
-        : `- Persisted values are declared once in \`app/storage.ts\` (\`defineStorage\` for local/session storage, \`defineCookie\` for cookies) and never read through \`localStorage\`/\`document.cookie\` directly.\n- Components: \`const [value, setValue] = useStorage(item)\` / \`useCookie(item)\` from \`kitr/storage/react\`. Both are hydration-safe: the server and first render see the default.\n- Server side (actions, controllers): \`cookies(event).get(item)\` / \`.set(item, value)\` from \`kitr/storage/server\`; wrap the root route in \`<CookieHeader value={request.headers.get('cookie')}>\` so \`useCookie\` renders the right value during SSR.\n- Add \`schema\` (zod/valibot) to validate what comes back from storage, \`version\` + \`migrate\` when a shape changes, \`ttl\` to expire.`,
+        ? `- Cookies: declare with \`defineCookie\` in \`app/storage.ts\`; in controllers use \`const jar = cookies(ctx.event)\` from \`@kitr/storage/server\`, then \`jar.get(item)\` / \`jar.set(item, value, { httpOnly: true })\`.`
+        : `- Persisted values are declared once in \`app/storage.ts\` (\`defineStorage\` for local/session storage, \`defineCookie\` for cookies) and never read through \`localStorage\`/\`document.cookie\` directly.\n- Components: \`const [value, setValue] = useStorage(item)\` / \`useCookie(item)\` from \`@kitr/storage/react\`. Both are hydration-safe: the server and first render see the default.\n- Server side (actions, controllers): \`cookies(event).get(item)\` / \`.set(item, value)\` from \`@kitr/storage/server\`; wrap the root route in \`<CookieHeader value={request.headers.get('cookie')}>\` so \`useCookie\` renders the right value during SSR.\n- Add \`schema\` (zod/valibot) to validate what comes back from storage, \`version\` + \`migrate\` when a shape changes, \`ttl\` to expire.`,
     )
   },
   remove(ctx) {
     ctx.provider.remove('@kitr/storage/provider')
     ctx.agents.remove('storage')
   },
-  eject: { 'kitr/storage': 'localStorage / document.cookie (+ a cookie parser)' },
+  eject: { '@kitr/storage': 'localStorage / document.cookie (+ a cookie parser)' },
 })

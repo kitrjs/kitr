@@ -6,11 +6,11 @@ order: 1
 
 # Testing
 
-The hard part of testing an app is rarely the assertion. It is the setup: the providers a component expects, the query cache, the router, a server listening on a port. `kitr/testing` boots your real app for each test, renders components inside its providers, and sends requests to your API by calling its fetch handler directly, so no server starts and no port opens.
+The hard part of testing an app is rarely the assertion. It is the setup: the providers a component expects, the query cache, the router, a server listening on a port. `@kitr/testing` boots your real app for each test, renders components inside its providers, and sends requests to your API by calling its fetch handler directly, so no server starts and no port opens.
 
-It is built on [Vitest](https://vitest.dev) and [Testing Library](https://testing-library.com/docs/react-testing-library/intro/). It adds three helpers on top: `createTestApp()` boots an app with your providers and config, `createTestClient()` sends JSON requests to anything with a `fetch(request)` method, and `renderWithKitr()` from `kitr/testing/react` renders a component inside that app with the query cache already filled.
+It is built on [Vitest](https://vitest.dev) and [Testing Library](https://testing-library.com/docs/react-testing-library/intro/). It adds three helpers on top: `createTestApp()` boots an app with your providers and config, `createTestClient()` sends JSON requests to anything with a `fetch(request)` method, and `renderWithKitr()` from `@kitr/testing/react` renders a component inside that app with the query cache already filled.
 
-It runs in your test process only, never in the app bundle. `kitr/testing` has no React in it, so a backend without React uses it as is; `kitr/testing/react` adds the component half. To fake an API your frontend calls, rather than test your own, use [mocks](/packages/mocks) alongside it.
+It runs in your test process only, never in the app bundle. `@kitr/testing` has no React in it, so a backend without React uses it as is; `@kitr/testing/react` adds the component half. To fake an API your frontend calls, rather than test your own, use [mocks](/packages/mocks) alongside it.
 
 The examples on this page test Acme's order screens at `app.acme.com`: an `/api/orders` API that Ada, Grace and Linus use to create and list orders, and an order list component that shows them.
 
@@ -26,22 +26,22 @@ What `kitr add` does:
 - Adds `'@kitr/testing'` to `packages` in `kitrrc.ts`. It registers no provider, because nothing runs at app startup.
 - Writes `vitest.config.ts`, unless one exists. See [Configure](#configure) for both versions.
 - Writes `test/example.test.ts`, unless one exists. In a project without React it is an API test of `/api/health` through `createTestClient(server)`; with React it is a one-line `expect(1 + 1).toBe(2)` that proves the runner works.
-- Adds a `## kitr: testing` section to `AGENTS.md`: `pnpm test` runs Vitest, components render with `renderWithKitr(<X />, { app, queryData })` from `kitr/testing/react`, APIs are called with `createTestClient(server).get('/api/x')`, and no running backend is needed.
+- Adds a `## kitr: testing` section to `AGENTS.md`: `pnpm test` runs Vitest, components render with `renderWithKitr(<X />, { app, queryData })` from `@kitr/testing/react`, APIs are called with `createTestClient(server).get('/api/x')`, and no running backend is needed.
 
 It writes no config file, adds no env variables, adds no scripts and asks no questions. Projects created with `kitr new` already have `"test": "vitest run"` in `package.json`; in an older project, add that script yourself.
 
 Every kit except `blank` includes testing: `app`, `fullstack`, `server`, `saas`, `site`, `realtime`, `desktop` and `mobile`.
 
-`kitr remove testing` takes `'@kitr/testing'` out of `kitrrc.ts`, removes the `@kitr/testing` dependency and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `kitr/testing`. It leaves `vitest.config.ts`, everything under `test/` and the other dev dependencies in place.
+`kitr remove testing` takes `'@kitr/testing'` out of `kitrrc.ts`, removes the `@kitr/testing` dependency and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `@kitr/testing`. It leaves `vitest.config.ts`, everything under `test/` and the other dev dependencies in place.
 
 ## Configure
 
-`kitr/testing` has no config file. The test runner reads `vitest.config.ts`, which `kitr add testing` writes. In a project with React it reads:
+`@kitr/testing` has no config file. The test runner reads `vitest.config.ts`, which `kitr add testing` writes. In a project with React it reads:
 
 ```ts
 // vitest.config.ts
 import { defineConfig } from 'vitest/config'
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 
 export default defineConfig({
   plugins: [kitr({ plugins: { tailwind: false } })],
@@ -66,7 +66,7 @@ export default defineConfig({
 })
 ```
 
-Tests live next to the code they test (`app/features/orders/order-list.test.tsx`) or under `test/` (`test/orders.test.ts`). Every other [Vitest option](https://vitest.dev/config/) works in this file as usual.
+Tests live next to the code they test (`app/components/orders/order-list.test.tsx`) or under `test/` (`test/orders.test.ts`). Every other [Vitest option](https://vitest.dev/config/) works in this file as usual.
 
 The three helpers take their options per call. `createTestApp(options)` takes the same options as `createApp()`:
 
@@ -86,7 +86,7 @@ The three helpers take their options per call. `createTestApp(options)` takes th
 | `target` | required | A kitr server, any object with `fetch(request)`, or a base URL string such as `'https://staging.acme.com'`. |
 | `defaults.headers` | `{}` | Headers sent with every request. Per-call headers override them. |
 
-`renderWithKitr(ui, options)` from `kitr/testing/react` takes every [Testing Library render option](https://testing-library.com/docs/react-testing-library/api#render-options) plus:
+`renderWithKitr(ui, options)` from `@kitr/testing/react` takes every [Testing Library render option](https://testing-library.com/docs/react-testing-library/api#render-options) plus:
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -100,7 +100,7 @@ Start with the API, because it needs no DOM. The server in `server/main.ts` is a
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -159,7 +159,7 @@ Inside a file, `it.only` runs one test and `it.skip` skips one. Remove them befo
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -200,7 +200,7 @@ Every call resolves to a `TestResponse` with four fields:
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -234,7 +234,7 @@ Pass headers once in `defaults` and every request carries them. A per-call heade
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -265,7 +265,7 @@ When a controller's `static validation` rejects a body, the server answers `422`
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -303,7 +303,7 @@ Every error a kitr server sends has the same JSON shape, so one assertion style 
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -334,7 +334,7 @@ Pass a URL string instead of the server and the client sends real HTTP requests 
 
 ```ts
 // test/smoke.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 
 const baseUrl = process.env.SMOKE_URL ?? 'https://staging.acme.com'
@@ -357,7 +357,7 @@ The target only needs a `fetch(request)` method that returns a `Response`. That 
 
 ```ts
 // test/stripe-webhook.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { handleStripeWebhook } from '#server/webhooks/stripe'
 
@@ -380,8 +380,8 @@ Wrapping a plain function in `{ fetch: ... }` is enough. The client builds `Requ
 To test a service, a provider or anything else that lives in the container, boot an app with `createTestApp()` and read from it. This one checks that the billing provider binds an `invoices` service with the configured currency:
 
 ```ts
-// app/features/invoices/invoices.test.ts
-import { createTestApp } from 'kitr/testing'
+// app/lib/invoices/invoices.test.ts
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import billingProvider from '#app/providers/billing'
 
@@ -409,15 +409,15 @@ app.container.use('mailer')
 // => Error: [kitr] No binding named "mailer". Did you add the package that provides it?
 ```
 
-`kitr/testing` also re-exports `createApp`, for a test that wants to add providers with `app.use()` before booting it itself.
+`@kitr/testing` also re-exports `createApp`, for a test that wants to add providers with `app.use()` before booting it itself.
 
 ## Use your real providers and config
 
 In a project with React, the `kitr()` plugin in `vitest.config.ts` serves the same two virtual modules the app uses. Import them to boot the app exactly as `app/app.ts` does:
 
 ```ts
-// app/features/orders/app.test.ts
-import { createTestApp } from 'kitr/testing'
+// app/lib/orders/app.test.ts
+import { createTestApp } from '@kitr/testing'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { expect, it } from 'vitest'
@@ -441,11 +441,11 @@ Tests should not send real emails or charge real cards. Bind a fake under the sa
 ```ts
 // test/order-confirmation.test.ts
 import { defineProvider } from 'kitr/app'
-import { createTestApp } from 'kitr/testing'
+import { createTestApp } from '@kitr/testing'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { expect, it } from 'vitest'
-import { sendOrderConfirmation } from '#app/features/orders/confirmation'
+import { sendOrderConfirmation } from '#app/lib/orders/confirmation'
 
 it('emails the customer when an order is placed', async () => {
   const sent: Array<{ to: string; subject: string }> = []
@@ -465,7 +465,7 @@ To fake a service the API server uses, bind it on `server.app` before the reques
 
 ```ts
 // test/orders-due.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -482,15 +482,15 @@ Call `server.boot()` first, so the real provider's binding exists before you rep
 
 ## Render a component
 
-On the client, `renderWithKitr` from `kitr/testing/react` renders a component inside every provider the app has, the same tree `KitrProvider` builds in the browser. Then query the screen with [Testing Library](https://testing-library.com/docs/queries/about):
+On the client, `renderWithKitr` from `@kitr/testing/react` renders a component inside every provider the app has, the same tree `KitrProvider` builds in the browser. Then query the screen with [Testing Library](https://testing-library.com/docs/queries/about):
 
 ```tsx
-// app/features/orders/order-total.test.tsx
+// app/components/orders/order-total.test.tsx
 import { screen } from '@testing-library/react'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
-import { OrderTotal } from './order-total'
+import { OrderTotal } from '#app/components/orders/order-total'
 
 it('shows the order total', async () => {
   const app = await createTestApp()
@@ -507,14 +507,14 @@ it('shows the order total', async () => {
 A component that loads data with [query](/packages/query) would try the network on first render. Pass `queryData` and it renders with the data already in the cache. Each entry is a query key and the data under it:
 
 ```tsx
-// app/features/orders/order-list.test.tsx
-import queryProvider from 'kitr/query/provider'
+// app/components/orders/order-list.test.tsx
+import queryProvider from '@kitr/query/provider'
 import { screen } from '@testing-library/react'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
 import { OrderList } from './order-list'
-import { ordersQuery } from './queries'
+import { ordersQuery } from '#app/queries/orders'
 
 it('lists the orders from the cache', async () => {
   const app = await createTestApp({ providers: [queryProvider] })
@@ -531,8 +531,8 @@ it('lists the orders from the cache', async () => {
 The query and the component under test read the same key:
 
 ```ts
-// app/features/orders/queries.ts
-import { queryFrom } from 'kitr/query'
+// app/queries/orders.ts
+import { queryFrom } from '@kitr/query'
 
 export interface Order {
   id: string
@@ -550,9 +550,9 @@ export const ordersQuery = queryFrom<void, Order[]>({
 ```
 
 ```tsx
-// app/features/orders/order-list.tsx
-import { useQuery } from 'kitr/query'
-import { ordersQuery } from './queries'
+// app/components/orders/order-list.tsx
+import { useQuery } from '@kitr/query'
+import { ordersQuery } from '#app/queries/orders'
 
 export function OrderList() {
   const { data, isPending } = useQuery(ordersQuery.options())
@@ -576,13 +576,13 @@ Take the key from the query definition (`ordersQuery.key()`), not a hand-written
 A component that calls `useService('clock')` gets whatever the app's container holds. Register a fake provider and the component renders with it:
 
 ```tsx
-// app/features/orders/due-badge.test.tsx
+// app/components/orders/due-badge.test.tsx
 import { screen } from '@testing-library/react'
 import { defineProvider } from 'kitr/app'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
-import { DueBadge } from './due-badge'
+import { DueBadge } from '#app/components/orders/due-badge'
 
 const fixedClock = defineProvider({
   name: 'clock',
@@ -610,7 +610,7 @@ import {
   createRootRoute,
   createRouter,
   RouterProvider,
-} from 'kitr/router'
+} from '@kitr/router'
 import { type ReactNode, useMemo } from 'react'
 
 /** A wrapper that renders the element under test as the root route at `path`. */
@@ -629,10 +629,10 @@ export function withRouter(path = '/') {
 ```
 
 ```tsx
-// app/features/orders/order-row.test.tsx
+// app/components/orders/order-row.test.tsx
 import { screen } from '@testing-library/react'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
 import { withRouter } from '../../../test/with-router'
 import { OrderRow } from './order-row'
@@ -658,9 +658,9 @@ To test a page with its loader, its search params and its layout, build the real
 ```tsx
 // app/pages/orders.test.tsx
 import { act, render, screen } from '@testing-library/react'
-import queryProvider from 'kitr/query/provider'
-import { createKitrRouter, createMemoryHistory, RouterProvider } from 'kitr/router'
-import { createTestApp } from 'kitr/testing'
+import queryProvider from '@kitr/query/provider'
+import { createKitrRouter, createMemoryHistory, RouterProvider } from '@kitr/router'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { routes } from '#app/routes'
 
@@ -688,12 +688,12 @@ The page's loader runs for real, so either seed its data with `app.container.use
 When a component really fetches, answer its requests with [mocks](/packages/mocks) instead of seeding the cache. MSW intercepts `fetch` in the test process, so the component, the query and the http client all run as in production:
 
 ```tsx
-// app/features/orders/order-list.network.test.tsx
-import queryProvider from 'kitr/query/provider'
+// app/components/orders/order-list.network.test.tsx
+import queryProvider from '@kitr/query/provider'
 import { screen } from '@testing-library/react'
-import { HttpResponse, http, setupNodeMocks } from 'kitr/mocks'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { HttpResponse, http, setupNodeMocks } from '@kitr/mocks'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { OrderList } from './order-list'
 
@@ -723,7 +723,7 @@ The React config runs every file in `happy-dom`. API tests do not need a DOM, an
 ```ts
 // @vitest-environment node
 // test/invoices.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -741,7 +741,7 @@ Vitest runs each file in its own module graph, so files never share a server or 
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -766,7 +766,7 @@ For services, prefer a fresh `createTestApp()` per test over one shared at the t
 
 ```ts
 // test/orders.test.ts
-import { createTestApp } from 'kitr/testing'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 
 describe('orders', () => {
@@ -780,7 +780,7 @@ describe('orders', () => {
 })
 ```
 
-The name is turned into snake case, so `kitr make:test invoice-totals` writes `test/invoice_totals.test.ts`. A `stubs/test.ts` file in your project (`kitr eject stub test` copies the default) replaces the template. The generator ships with `@kitr/testing`, so `make:test` is there once the package is added. Testing adds no `kitr doctor` checks.
+The name is turned into kebab case, so `kitr make:test invoice-totals` writes `test/invoice-totals.test.ts`. A `stubs/test.ts` file in your project (`kitr eject stub test` copies the default) replaces the template. The generator ships with `@kitr/testing`, so `make:test` is there once the package is added. Testing adds no `kitr doctor` checks.
 
 ## Testing
 
@@ -790,7 +790,7 @@ This helper signs a client in as one of Acme's users:
 
 ```ts
 // test/helpers.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 
 type Target = Parameters<typeof createTestClient>[0]
 
@@ -863,7 +863,7 @@ The same inline-handler trick tests any code that takes a fetch target: retry wr
 
 ## Next steps
 
-- [API reference](/packages/testing/api): every export of `kitr/testing` and `kitr/testing/react`.
+- [API reference](/packages/testing/api): every export of `@kitr/testing` and `@kitr/testing/react`.
 - [Mocks](/packages/mocks): fake the API your frontend calls, in tests and in the browser.
 - [Vitest docs](https://vitest.dev/guide/): matchers, mocking modules, timers, coverage.
 - [Testing Library queries](https://testing-library.com/docs/queries/about): which query to use for which element.

@@ -6,7 +6,7 @@ order: 1
 
 # Notifications
 
-A reminder to approve an invoice, a note that an order has shipped, a nudge before a meeting: some things should reach people even when your tab is in the background. `kitr/notifications` gives you one `notifications` service to ask for permission, show a notification now or at a set time, and find out which one was tapped so the app opens the right page.
+A reminder to approve an invoice, a note that an order has shipped, a nudge before a meeting: some things should reach people even when your tab is in the background. `@kitr/notifications` gives you one `notifications` service to ask for permission, show a notification now or at a set time, and find out which one was tapped so the app opens the right page.
 
 In the browser it is built on the [Notification API](https://developer.mozilla.org/docs/Web/API/Notifications_API), with timers for scheduling. kitr adds stable ids you can cancel by, a `url` carried from the notification to its tap, a React hook for the permission state, a memory driver for tests and a driver slot for native shells.
 
@@ -33,7 +33,7 @@ It adds no environment variables or scripts. `kitr add notifications` asks no qu
 kitr add notifications --dry-run
 ```
 
-`kitr remove notifications` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/notifications.ts`, then lists the files that still import `kitr/notifications`.
+`kitr remove notifications` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/notifications.ts`, then lists the files that still import `@kitr/notifications`.
 
 ## Configure
 
@@ -41,7 +41,7 @@ kitr add notifications --dry-run
 
 ```ts
 // config/notifications.ts
-import { defineConfig } from 'kitr/notifications'
+import { defineConfig } from '@kitr/notifications'
 
 export default defineConfig({
   icon: '/icon-192.png',
@@ -66,8 +66,8 @@ Point `icon` at a file that exists. The [Web](/packages/web) platform's PWA mani
 Ask for permission from a button, then show a notification:
 
 ```tsx
-// app/features/invoices/notify-me.tsx
-import { useNotificationPermission, useNotifications } from 'kitr/notifications/react'
+// app/components/invoices/notify-me.tsx
+import { useNotificationPermission, useNotifications } from '@kitr/notifications/react'
 
 export function NotifyMe() {
   const { permission, request } = useNotificationPermission()
@@ -112,8 +112,8 @@ Ada clicks **Turn on notifications**, the browser asks, and she allows it. The b
 `request()` resolves to the new state, so you can act on the answer in the same handler:
 
 ```tsx
-// app/features/invoices/enable-reminders.tsx
-import { useNotificationPermission } from 'kitr/notifications/react'
+// app/components/invoices/enable-reminders.tsx
+import { useNotificationPermission } from '@kitr/notifications/react'
 
 export function EnableReminders({ onEnabled }: { onEnabled: () => void }) {
   const { permission, request } = useNotificationPermission()
@@ -144,8 +144,8 @@ Outside React, `notifications.permission()` reads the state without asking.
 `notifications.show(options)` resolves to the notification's id:
 
 ```ts
-// app/features/orders/notify-shipped.ts
-import type { Notifications } from 'kitr/notifications'
+// app/lib/orders/notify-shipped.ts
+import type { Notifications } from '@kitr/notifications'
 
 export async function notifyShipped(notifications: Notifications, orderId: string) {
   const id = await notifications.show({
@@ -179,8 +179,8 @@ Use it for events that happen while the app is open, such as a realtime message 
 Give a notification your own `id` to update it instead of stacking a second one. Showing the same id again closes the first:
 
 ```ts
-// app/features/orders/orders-export.ts
-import type { Notifications } from 'kitr/notifications'
+// app/lib/orders/orders-export.ts
+import type { Notifications } from '@kitr/notifications'
 
 export async function reportExport(notifications: Notifications, done: number, total: number) {
   await notifications.show({
@@ -199,8 +199,8 @@ Each call replaces the last, so Ada sees one notification that ends as "Orders e
 `notifications.schedule(options)` takes everything `show` takes plus `at`, a `Date` or a timestamp in milliseconds, and resolves to the id:
 
 ```tsx
-// app/features/invoices/remind-later.tsx
-import { useNotifications } from 'kitr/notifications/react'
+// app/components/invoices/remind-later.tsx
+import { useNotifications } from '@kitr/notifications/react'
 
 export function RemindLater({ invoiceId }: { invoiceId: string }) {
   const notifications = useNotifications()
@@ -226,12 +226,12 @@ export function RemindLater({ invoiceId }: { invoiceId: string }) {
 A time in the past shows the notification straight away. Scheduling an id that is already scheduled replaces it, so `approve-inv_1042` can only fire once. An invalid `at`, such as `new Date('next week')` or `NaN`, rejects:
 
 ```ts
-// app/features/invoices/bad-reminder.ts
-import type { Notifications } from 'kitr/notifications'
+// app/lib/invoices/bad-reminder.ts
+import type { Notifications } from '@kitr/notifications'
 
 export async function badReminder(notifications: Notifications) {
   await notifications.schedule({ title: 'Approve invoice inv_1042', at: new Date('next week') })
-  // throws Error: [kitr/notifications] schedule() needs a valid `at`, got Invalid Date
+  // throws Error: [@kitr/notifications] schedule() needs a valid `at`, got Invalid Date
 }
 ```
 
@@ -245,8 +245,8 @@ The web driver waits in steps, so a reminder 40 days out does not fire early whe
 Cancel by the id that `show` or `schedule` resolved to, list what is still waiting, or clear everything:
 
 ```ts
-// app/features/invoices/approve.ts
-import type { Notifications } from 'kitr/notifications'
+// app/lib/invoices/approve.ts
+import type { Notifications } from '@kitr/notifications'
 
 export async function onInvoiceApproved(notifications: Notifications, invoiceId: string) {
   await notifications.cancel(`approve-${invoiceId}`)
@@ -268,8 +268,8 @@ export async function onSignOut(notifications: Notifications) {
 
 ```tsx
 // app/components/notification-router.tsx
-import { useNotificationTap } from 'kitr/notifications/react'
-import { useNavigate } from 'kitr/router'
+import { useNotificationTap } from '@kitr/notifications/react'
+import { useNavigate } from '@kitr/router'
 import { useCallback } from 'react'
 
 export function NotificationRouter() {
@@ -287,7 +287,7 @@ export function NotificationRouter() {
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { NotificationRouter } from '#app/components/notification-router'
 
 export function RootDocument() {
@@ -313,8 +313,8 @@ Don't mount `useNotificationTap` in each page that shows notifications: a tap on
 Outside React, `notifications.onTap(listener)` returns a function that removes the listener:
 
 ```ts
-// app/features/invoices/track-taps.ts
-import type { Notifications } from 'kitr/notifications'
+// app/lib/invoices/track-taps.ts
+import type { Notifications } from '@kitr/notifications'
 
 export function trackReminderTaps(notifications: Notifications, record: (id: string) => void) {
   return notifications.onTap((tap) => {
@@ -330,7 +330,7 @@ Chrome on Android does not let a page construct a `Notification`. When the const
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   // ...
@@ -344,12 +344,12 @@ Taps on those notifications reach the worker's `notificationclick` event, not `o
 
 ## Use it outside React
 
-Read the service from the app's container. `useNotifications(app)` from `kitr/notifications` does the same thing:
+Read the service from the app's container. `useNotifications(app)` from `@kitr/notifications` does the same thing:
 
 ```ts
-// app/features/orders/on-shipped.ts
+// app/lib/orders/on-shipped.ts
 import type { KitrApp } from 'kitr/app'
-import { useNotifications } from 'kitr/notifications'
+import { useNotifications } from '@kitr/notifications'
 
 export async function onOrderShipped(app: KitrApp, orderId: string) {
   const notifications = useNotifications(app) // same as app.container.use('notifications')
@@ -393,7 +393,7 @@ Push notifications are separate from the service, because they need a server to 
 
 ```tsx
 // app/push.ts
-import { capacitorPush } from 'kitr/notifications'
+import { capacitorPush } from '@kitr/notifications'
 
 const push = capacitorPush()
 
@@ -428,7 +428,7 @@ The driver asks the main process to create an Electron [`Notification`](https://
 
 ```ts
 // app/orders/badge.ts
-import { createElectronNotificationsDriver } from 'kitr/notifications'
+import { createElectronNotificationsDriver } from '@kitr/notifications'
 
 /** Show how many orders wait for Ada's team on the dock icon. */
 export async function showPendingOrders(count: number) {
@@ -454,7 +454,7 @@ Requirements:
 
 | Error | When | What to do |
 | --- | --- | --- |
-| ``[kitr/notifications] schedule() needs a valid `at` `` | `at` is an invalid `Date` or `NaN`. | Pass a `Date` or a timestamp in milliseconds. |
+| ``[@kitr/notifications] schedule() needs a valid `at` `` | `at` is an invalid `Date` or `NaN`. | Pass a `Date` or a timestamp in milliseconds. |
 | `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no notifications driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts` to run the web driver inside the webview. |
 | `TypeError: Illegal constructor` (browser) | Chrome for Android, with no service worker controlling the page. | Turn on `pwa` in the web platform. |
 
@@ -473,13 +473,13 @@ A `show()` without permission is not an error: it resolves and shows nothing. A 
 Hand it to the app through `config.notifications.driver`:
 
 ```tsx
-// app/features/invoices/remind-later.test.tsx
+// app/components/invoices/remind-later.test.tsx
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { createMemoryNotificationsDriver } from 'kitr/notifications'
-import { notificationsProvider } from 'kitr/notifications/provider'
-import { useNotificationTap } from 'kitr/notifications/react'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createMemoryNotificationsDriver } from '@kitr/notifications'
+import { notificationsProvider } from '@kitr/notifications/provider'
+import { useNotificationTap } from '@kitr/notifications/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it, vi } from 'vitest'
 import { EnableReminders } from './enable-reminders'
 import { RemindLater } from './remind-later'
@@ -533,8 +533,8 @@ describe('invoice reminders', () => {
 To test code that takes the service directly, build one with `createNotifications`:
 
 ```ts
-// app/features/invoices/approve.test.ts
-import { createMemoryNotificationsDriver, createNotifications } from 'kitr/notifications'
+// app/lib/invoices/approve.test.ts
+import { createMemoryNotificationsDriver, createNotifications } from '@kitr/notifications'
 import { expect, it } from 'vitest'
 import { onInvoiceApproved } from './approve'
 
@@ -567,14 +567,14 @@ interface NotificationsDriver {
 }
 ```
 
-This driver hands notifications to iOS and Android through [`@capacitor/local-notifications`](https://capacitorjs.com/docs/apis/local-notifications), so scheduled ones fire with the app closed. Capacitor needs whole-number ids, so the driver hashes kitr's string id and keeps the original in `extra`. Install it with `pnpm add @capacitor/local-notifications`, then create the provider with `kitr make:provider notifications_driver`:
+This driver hands notifications to iOS and Android through [`@capacitor/local-notifications`](https://capacitorjs.com/docs/apis/local-notifications), so scheduled ones fire with the app closed. Capacitor needs whole-number ids, so the driver hashes kitr's string id and keeps the original in `extra`. Install it with `pnpm add @capacitor/local-notifications`, then create the provider with `kitr make:provider notifications-driver`:
 
 ```ts
-// app/providers/notifications_driver_provider.ts
+// app/providers/notifications-driver-provider.ts
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { defineProvider } from 'kitr/app'
-import type { NotificationPermission, NotificationsDriver } from 'kitr/notifications'
+import type { NotificationPermission, NotificationsDriver } from '@kitr/notifications'
 
 const numeric = (id: string) => {
   let hash = 0
@@ -626,7 +626,7 @@ export default defineProvider({
 })
 ```
 
-Add `() => import('#app/providers/notifications_driver_provider')` to `providers` in `kitrrc.ts`. Inside the iOS or Android app, `notifications.driver.name` is now `'capacitor'` and Ada's reminder fires even after she closes the app; in the browser, the web driver still applies. The `NotificationsDriver`, `NotificationOptions` and `NotificationTap` types are in the [API reference](/packages/notifications/api).
+Add `() => import('#app/providers/notifications-driver-provider')` to `providers` in `kitrrc.ts`. Inside the iOS or Android app, `notifications.driver.name` is now `'capacitor'` and Ada's reminder fires even after she closes the app; in the browser, the web driver still applies. The `NotificationsDriver`, `NotificationOptions` and `NotificationTap` types are in the [API reference](/packages/notifications/api).
 
 ## Next steps
 

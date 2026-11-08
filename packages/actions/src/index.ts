@@ -107,7 +107,7 @@ export type ServerFn<TOutput> = (opts: {
 }) => Promise<Envelope<TOutput>>
 
 /**
- * A server query: a `QueryDefinition` from `kitr/query` that is also a function. Call it to fetch,
+ * A server query: a `QueryDefinition` from `@kitr/query` that is also a function. Call it to fetch,
  * pass `.options(input)` to any TanStack hook or loader, or use it by name once `kitr types` has
  * registered it.
  */
@@ -121,7 +121,7 @@ export interface ServerQuery<TInput, TOutput, TContext = unknown>
 }
 
 /**
- * A server mutation: a `MutationDefinition` from `kitr/query` that is also a function. Call it to
+ * A server mutation: a `MutationDefinition` from `@kitr/query` that is also a function. Call it to
  * mutate, pass it to `useMutation` for pending state and cache effects, or use it by name.
  */
 export interface ServerMutation<TInput, TOutput, TContext = unknown>
@@ -204,7 +204,7 @@ export function defineMutation<
 /** The error envelope for a failed operation. Server errors are logged and, in production, masked. */
 function failure(name: string, error: unknown): Envelope<never> {
   const kitrError = toKitrError(error)
-  if (kitrError.status >= 500) console.error(`[kitr/actions] ${name} failed:`, error)
+  if (kitrError.status >= 500) console.error(`[@kitr/actions] ${name} failed:`, error)
   // Same rule as the kitr server: in production a server error's message and data
   // stay in the server log and never reach the browser.
   return failEnvelope(kitrError, { mask: inProduction() })

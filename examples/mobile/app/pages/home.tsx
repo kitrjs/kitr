@@ -1,5 +1,5 @@
-import { useAppState, useBackButton, useOnline, usePlatform } from 'kitr/platform/react'
-import { useInstallPrompt } from 'kitr/web/client'
+import { useAppState, useBackButton, useOnline, usePlatform } from '@kitr/platform/react'
+import { useInstallPrompt } from '@kitr/web/client'
 import { useCallback, useState } from 'react'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
@@ -8,7 +8,7 @@ import { PageHeader } from '#components/ui/page-header'
 
 /**
  * One page, three homes: the browser, the installed PWA, and the Capacitor shell on iOS/Android.
- * Everything below works in all three; `kitr/platform` answers the same way everywhere.
+ * Everything below works in all three; `@kitr/platform` answers the same way everywhere.
  */
 export default function HomePage() {
   const platform = usePlatform()

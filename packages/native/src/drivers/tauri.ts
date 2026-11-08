@@ -86,7 +86,7 @@ export function createTauriDriver(_options: DriverOptions = {}): TauriNativeDriv
       appVersion: async () => (await plugin<AppApi>('@tauri-apps/api/app', '')).getVersion(),
       async openExternal(url) {
         if (!SAFE_PROTOCOLS.includes(new URL(url).protocol))
-          throw new Error(`kitr/native: opening ${new URL(url).protocol} links is not allowed`)
+          throw new Error(`@kitr/native: opening ${new URL(url).protocol} links is not allowed`)
         await (
           await plugin<OpenerPlugin>(
             '@tauri-apps/plugin-opener',

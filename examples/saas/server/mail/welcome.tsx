@@ -1,4 +1,4 @@
-import { defineMail } from 'kitr/mail'
+import { defineMail } from '@kitr/mail'
 
 export interface WelcomeProps {
   name: string

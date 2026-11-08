@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/native, with its signature.
+description: Every export of @kitr/native, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, `kitr/native/driver`, `kitr/native/drivers/web`, `kitr/native/drivers/electron`, `kitr/native/drivers/tauri`, `kitr/native/drivers/capacitor`, read from the published type definitions. The [guide](/packages/native/guide) shows them in use.
+Every export of `@kitr/native`, `@kitr/native/react`, `@kitr/native/provider`, `@kitr/native/driver`, `@kitr/native/drivers/web`, `@kitr/native/drivers/electron`, `@kitr/native/drivers/tauri`, `@kitr/native/drivers/capacitor`, read from the published type definitions. The [guide](/packages/native/guide) shows them in use.
 
-## kitr/native
+## @kitr/native
 
 ### capacitorClipboard
 
@@ -504,7 +504,7 @@ type PowerEvent = 'suspend' | 'resume' | 'battery' | 'ac';
 
 A change in how the computer is powered, as `system.onPower` reports it.
 
-## kitr/native/react
+## @kitr/native/react
 
 ### useClipboard
 
@@ -554,7 +554,7 @@ function useShare(): {
 
 `const { share, canShare } = useShare()`: the share sheet, with a flag to hide the button where there is none.
 
-## kitr/native/provider
+## @kitr/native/provider
 
 ### nativeProvider
 
@@ -565,7 +565,7 @@ const nativeProvider: import("@kitr/core").KitrProvider;
 Binds `native` from the drivers platform packages registered (`clipboard`, `share`, `haptics`,
 `geolocation`, `camera`, `biometrics`) with web drivers for the rest.
 
-## kitr/native/driver
+## @kitr/native/driver
 
 ### selectDriver
 
@@ -603,7 +603,7 @@ type DriverOptions = SelectDriverOptions;
 
 Options of `selectDriver()`.
 
-## kitr/native/drivers/web
+## @kitr/native/drivers/web
 
 ### webBiometrics
 
@@ -660,7 +660,7 @@ function webShare(): ShareDriver | null;
 
 Share driver on Web Share. Resolves false when dismissed; null where `navigator.share` is missing.
 
-## kitr/native/drivers/electron
+## @kitr/native/drivers/electron
 
 ### createElectronDriver
 
@@ -723,7 +723,7 @@ type PowerEvent = 'suspend' | 'resume' | 'battery' | 'ac';
 
 A change in how the computer is powered, as `system.onPower` reports it.
 
-## kitr/native/drivers/tauri
+## @kitr/native/drivers/tauri
 
 ### createTauriDriver
 
@@ -750,7 +750,7 @@ interface TauriNativeDriver extends Driver {
 
 The Tauri driver: the capabilities the plugins cover plus the `system` helpers.
 
-## kitr/native/drivers/capacitor
+## @kitr/native/drivers/capacitor
 
 ### capacitorClipboard
 

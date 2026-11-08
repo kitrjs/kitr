@@ -204,10 +204,10 @@ function checkExternal(url: string, allowed: readonly string[]) {
   try {
     protocol = new URL(url).protocol
   } catch {
-    throw new Error(`kitr/desktop: "${url}" is not a URL`)
+    throw new Error(`@kitr/desktop: "${url}" is not a URL`)
   }
   if (!allowed.includes(protocol))
-    throw new Error(`kitr/desktop: opening ${protocol} links is not allowed`)
+    throw new Error(`@kitr/desktop: opening ${protocol} links is not allowed`)
 }
 
 /**
@@ -328,7 +328,7 @@ export function handleKitrDevices(ipcMain: IpcMain, app: App, options: KitrIpcOp
     const weak = safeStorage.getSelectedStorageBackend?.() === 'basic_text'
     if (!safeStorage.isEncryptionAvailable() || weak)
       throw new Error(
-        'kitr/desktop: the operating system has no secret vault (safeStorage); secrets are not stored',
+        '@kitr/desktop: the operating system has no secret vault (safeStorage); secrets are not stored',
       )
     return safeStorage
   }
@@ -427,7 +427,7 @@ export function handleKitrDevices(ipcMain: IpcMain, app: App, options: KitrIpcOp
   const mayAccess = (path: string) => {
     const target = resolve(path)
     for (const root of granted) if (within(root, target)) return target
-    throw new Error(`kitr/desktop: ${path} was not chosen in a dialog; refusing to access it`)
+    throw new Error(`@kitr/desktop: ${path} was not chosen in a dialog; refusing to access it`)
   }
   handle(
     'kitr:files:open',

@@ -40,7 +40,7 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
       ...rest.hooks,
       beforeRequest: [
         async ({ request }) => {
-          // Bearer token, and kitr/shield's double-submit CSRF cookie echoed on writes.
+          // Bearer token, and @kitr/shield's double-submit CSRF cookie echoed on writes.
           applyRequestHeaders(request.headers, {
             method: request.method,
             token: await getToken?.(),

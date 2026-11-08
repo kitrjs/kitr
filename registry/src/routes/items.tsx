@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
 import {
   type ColumnDef,
   type DataTableFeatures,
   parseTableSearch,
   useUrlTableState,
-} from 'kitr/table'
+} from '@kitr/table'
+import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '#components/ui/button'
 import { DataTable } from '#components/ui/data-table'
 import { PageHeader } from '#components/ui/page-header'

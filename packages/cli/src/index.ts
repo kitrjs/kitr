@@ -4,7 +4,7 @@ import { add, describePackage, remove } from './commands/add'
 import { doctor } from './commands/doctor'
 import { eject } from './commands/eject'
 import { generate, typecheck } from './commands/generate'
-import { coreGeneratorCommands, packageGenerators } from './commands/make'
+import { coreGeneratorCommands, makeCommand, nearestKind, packageGenerators } from './commands/make'
 import { newCommand } from './commands/new'
 import { packageCheck } from './commands/package-check'
 import { build, config, dev, platforms, start } from './commands/platforms'
@@ -27,7 +27,12 @@ export { Codemods } from './codemods'
 export type { Finding } from './commands/doctor'
 export { runChecks } from './commands/doctor'
 export type { StubFn } from './commands/make'
-export { coreGenerators, renderStub, stubOverrides } from './commands/make'
+export {
+  coreGenerators,
+  generatorRows,
+  renderStub,
+  stubOverrides,
+} from './commands/make'
 export { configurePackages } from './configure'
 export type { ProjectContext, RcInfo } from './context'
 export { createContext, findProjectRoot, readRcInfo } from './context'
@@ -109,6 +114,7 @@ export const main = defineCommand({
     new: newCommand,
     add,
     remove,
+    make: makeCommand,
     ...coreGeneratorCommands,
     dev,
     build,
@@ -217,6 +223,23 @@ export async function runMain(rawArgv = process.argv.slice(2)) {
     })
     if (Object.keys(extra).length)
       command = defineCommand({ ...main, subCommands: { ...core, ...extra } })
+  }
+  // `kitr make:controler`: name the generator they meant instead of citty's "unknown command".
+  if (first?.startsWith('make:') && !wantsHelp) {
+    const commands = command.subCommands as Record<string, CommandDef<any>>
+    if (!(first in commands)) {
+      const kinds = Object.keys(commands)
+        .filter((n) => n.startsWith('make:'))
+        .map((n) => n.slice('make:'.length))
+      const near = nearestKind(first.slice('make:'.length), kinds)
+      console.error(
+        `\n${pc.red('✖')} There is no ${first} generator in this project.${
+          near ? ` Did you mean make:${near}?` : ''
+        } Run kitr make to list them, or kitr add <package> for its generators.`,
+      )
+      process.exitCode = 1
+      return
+    }
   }
   if (wantsHelp || (argv.length === 1 && argv[0] === '--version'))
     return cittyRunMain(command, { rawArgs: argv })

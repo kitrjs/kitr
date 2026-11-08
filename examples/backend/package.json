@@ -35,6 +35,7 @@
   "imports": {
     "#app/*": "./app/*",
     "#config/*": "./config/*",
+    "#components/*": "./app/components/*",
     "#server/*": "./server/*",
     "#kitr/*": "./.kitr/*"
   }

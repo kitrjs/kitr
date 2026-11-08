@@ -35,7 +35,7 @@ import type { KitrRouterContext } from './context'
  * TanStack Router route tree by `createKitrRouter({ routes, app })` (the `tanstack` target).
  *
  *   import { defineRoutes } from 'kitr/app'
- *   import pages from 'kitr/router/routes'
+ *   import pages from '@kitr/router/routes'
  *
  *   export const routes = defineRoutes([pages], (r) =>
  *     r.root({ component: RootDocument })
@@ -466,7 +466,7 @@ interface PageEntry extends RouteEntry {
  * The pages extension for the kitr route table: `.root`, `.page` and `.layout` on
  * `defineRoutes([pages], ...)`, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
  *
- *   import pages from 'kitr/router/routes'
+ *   import pages from '@kitr/router/routes'
  *   export const routes = defineRoutes([pages], (r) =>
  *     r.root({ head, component: RootDocument }).page('/', { lazy: () => import('./pages/home') }),
  *   )
@@ -477,7 +477,7 @@ const pages = defineRouteExtension({
   methods: {
     root(this: AnyRouteTable, options: Record<string, unknown>) {
       if (this.entries.some((e) => e.kind === 'page-root'))
-        throw new Error('[kitr/router] routes.root() may only be called once')
+        throw new Error('[@kitr/router] routes.root() may only be called once')
       this.add({ kind: 'page-root', path: '/', name: '~root', parent: null, segment: '', options })
       return this
     },

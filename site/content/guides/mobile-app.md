@@ -79,10 +79,10 @@ cors({
 A phone app has no cookie jar it can rely on across restarts, so it signs in with a bearer token, which the API from the server guide already accepts. Give the API a route that trades an email and password for a token, and one that returns the user behind a token:
 
 ```ts
-// acme-billing-api/server/controllers/session_controller.ts
-import type { HttpContext } from 'kitr/api'
+// acme-billing-api/server/controllers/session-controller.ts
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
-import { requireUser } from 'kitr/auth/server'
+import { requireUser } from '@kitr/auth/server'
 import { z } from 'zod'
 import { type ApiUser, signInWith } from '#server/auth'
 
@@ -131,7 +131,7 @@ On the phone, keep the token in a [Storage](/packages/storage) item. Inside the 
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 /** The API token. On a phone this lives in native preferences, which iOS does not clear. */
 export const apiToken = defineStorage<string | null>('api-token', { default: null })
@@ -144,7 +144,7 @@ Then hand that item to the token adapter in `config/auth.ts`, and let the HTTP c
 
 ```ts
 // config/auth.ts
-import { defineConfig, tokenAdapter } from 'kitr/auth'
+import { defineConfig, tokenAdapter } from '@kitr/auth'
 import { abilities, type User } from '#app/abilities'
 import { env } from '#app/env'
 import { apiToken } from '#app/storage'
@@ -172,7 +172,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -188,10 +188,10 @@ When the app starts, the auth provider reads the stored token, calls `/me` and r
 Put the API's endpoints in one file as queries and mutations. Pages and loaders read them through the query cache, so the list and the detail share data and a payment refreshes both:
 
 ```ts
-// app/features/invoices/queries.ts
+// app/queries/invoices.ts
 import { createKeys } from 'kitr/app'
-import { httpMutation, httpQuery } from 'kitr/http'
-import { mutationFrom, queryFrom } from 'kitr/query'
+import { httpMutation, httpQuery } from '@kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
 import { app } from '#app/app'
 
 export interface Invoice {
@@ -241,9 +241,9 @@ On a phone, opening an invoice pushes it over the list. The list stays mounted u
 ```ts
 // app/routes.ts
 import { defineRoutes } from 'kitr/app'
-import { requireAuth } from 'kitr/router'
-import router from 'kitr/router/routes'
-import { invoiceQuery, invoicesQuery } from '#app/features/invoices/queries'
+import { requireAuth } from '@kitr/router'
+import router from '@kitr/router/routes'
+import { invoiceQuery, invoicesQuery } from '#app/queries/invoices'
 import { head, RootDocument } from './document'
 
 export const routes = defineRoutes([router], (r) =>
@@ -280,7 +280,7 @@ The layout renders `<StackTabs>`, which keeps one stack per tab. Leave the Invoi
 
 ```tsx
 // app/pages/tabs.tsx
-import { StackTabs } from 'kitr/router/stack'
+import { StackTabs } from '@kitr/router/stack'
 import { DeepLinks } from '#app/components/deep-links'
 
 const tabs = [
@@ -322,10 +322,10 @@ The list reads the cache the loader filled, so it renders without a spinner. The
 
 ```tsx
 // app/pages/invoices.tsx
-import { useSuspenseQuery } from 'kitr/query'
-import { Link } from 'kitr/router'
-import { useStorage } from 'kitr/storage/react'
-import { formatAmount, invoicesQuery } from '#app/features/invoices/queries'
+import { useSuspenseQuery } from '@kitr/query'
+import { Link } from '@kitr/router'
+import { useStorage } from '@kitr/storage/react'
+import { formatAmount, invoicesQuery } from '#app/queries/invoices'
 import { invoiceFilter } from '#app/storage'
 
 export default function InvoicesPage() {
@@ -365,11 +365,11 @@ The detail page has a back button only when there is a page to go back to, a pay
 
 ```tsx
 // app/pages/invoice.tsx
-import { useMutation, useSuspenseQuery } from 'kitr/query'
-import { getRouteApi } from 'kitr/router'
-import { useStack } from 'kitr/router/stack'
-import { formatAmount, invoiceQuery, payInvoice } from '#app/features/invoices/queries'
-import { shareInvoice } from '#app/features/invoices/share-invoice'
+import { useMutation, useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
+import { useStack } from '@kitr/router/stack'
+import { formatAmount, invoiceQuery, payInvoice } from '#app/queries/invoices'
+import { shareInvoice } from '#app/lib/invoices/share-invoice'
 
 const route = getRouteApi('/_tabs/invoices/$id')
 
@@ -410,9 +410,9 @@ pnpm add @capacitor/share
 ```
 
 ```ts
-// app/features/invoices/share-invoice.ts
-import { nativeOnly } from 'kitr/mobile/client'
-import type { Invoice } from './queries'
+// app/lib/invoices/share-invoice.ts
+import { nativeOnly } from '@kitr/mobile/client'
+import type { Invoice } from '#app/queries/invoices'
 
 export async function shareInvoice(invoice: Invoice) {
   const url = `https://app.acme.com/invoices/${invoice.id}`
@@ -434,8 +434,8 @@ On an iPhone, Share opens the system sheet with Messages, Mail and Slack. On the
 
 ```tsx
 // app/components/deep-links.tsx
-import { useDeepLink } from 'kitr/platform/react'
-import { useNavigate } from 'kitr/router'
+import { useDeepLink } from '@kitr/platform/react'
+import { useNavigate } from '@kitr/router'
 import { useCallback } from 'react'
 
 /** acme://invoices/inv_2041 and https://app.acme.com/invoices/inv_2041 open the invoice. */
@@ -466,11 +466,11 @@ Unit tests run in Node, where there is no Capacitor. A fake `Capacitor` global p
 
 ```ts
 // test/phone.test.ts
-import { mobileProvider } from 'kitr/mobile/provider'
-import { platformProvider } from 'kitr/platform/provider'
-import { createTestApp } from 'kitr/testing'
+import { mobileProvider } from '@kitr/mobile/provider'
+import { platformProvider } from '@kitr/platform/provider'
+import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { shareInvoice } from '#app/features/invoices/share-invoice'
+import { shareInvoice } from '#app/lib/invoices/share-invoice'
 
 function fakeShell(os: 'ios' | 'android') {
   ;(globalThis as any).Capacitor = { getPlatform: () => os, isNativePlatform: () => true, isPluginAvailable: () => true }

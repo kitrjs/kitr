@@ -301,7 +301,7 @@ const units: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000,
 /** Parse an interval such as `'30s'`, `'5m'` or `'1.5h'` into milliseconds (`'5m'` → 300000). Throws on anything else. */
 export function parseInterval(text: string): number {
   const m = /^(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)$/.exec(text.trim())
-  if (!m) throw new Error(`[kitr/jobs] Bad interval "${text}" (use 30s, 5m, 1h, 1d)`)
+  if (!m) throw new Error(`[@kitr/jobs] Bad interval "${text}" (use 30s, 5m, 1h, 1d)`)
   return Number(m[1]) * units[m[2]!]!
 }
 
@@ -311,7 +311,7 @@ function cronField(
   max: number,
   expression: string,
 ): (value: number) => boolean {
-  const bad = () => new Error(`[kitr/jobs] Bad cron "${expression}" (field "${field}")`)
+  const bad = () => new Error(`[@kitr/jobs] Bad cron "${expression}" (field "${field}")`)
   const int = (text: string | undefined) => {
     if (!text || !/^\d+$/.test(text)) throw bad()
     return Number(text)
@@ -337,7 +337,7 @@ function cronField(
 /** Does a 5-field cron expression (minute hour day month weekday) match this minute? */
 export function cronMatches(expression: string, date: Date): boolean {
   const fields = expression.trim().split(/\s+/)
-  if (fields.length !== 5) throw new Error(`[kitr/jobs] Bad cron "${expression}" (5 fields)`)
+  if (fields.length !== 5) throw new Error(`[@kitr/jobs] Bad cron "${expression}" (5 fields)`)
   const [mi, h, d, mo, w] = fields as [string, string, string, string, string]
   // Weekday 7 is Sunday too, as in every cron.
   // Parse every field before matching any, so a bad one throws whatever the date is.

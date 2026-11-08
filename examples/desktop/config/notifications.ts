@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/notifications'
+import { defineConfig } from '@kitr/notifications'
 
 export default defineConfig({
   icon: '/icon-192.png',

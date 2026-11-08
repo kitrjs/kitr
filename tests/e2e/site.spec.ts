@@ -300,6 +300,56 @@ test.describe('in the browser', () => {
     await expect(page.locator('.docs-bar-section')).toHaveText('Testing')
   })
 
+  test('on a phone, the package search stays flush under a header that stays put', async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 360, height: 800 })
+    await page.goto('/packages')
+    await page.waitForLoadState('networkidle')
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.wheel(0, 300)
+      await page.waitForTimeout(80)
+    }
+    await page.waitForTimeout(300)
+    const geometry = await page.evaluate(() => ({
+      hidden: document.documentElement.classList.contains('header-hidden'),
+      header: document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0,
+      search: document.querySelector('.dir-search')?.getBoundingClientRect().top ?? 0,
+    }))
+    expect(geometry.hidden).toBe(false)
+    expect(geometry.header).toBeGreaterThan(0)
+    expect(geometry.search - geometry.header).toBeLessThanOrEqual(0)
+  })
+
+  test('on a phone, the docs bar meets the header and long page names end in an ellipsis', async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 360, height: 800 })
+    await page.goto('/docs/building-packages')
+    await page.waitForLoadState('networkidle')
+    // Scroll a little, as a reader would, so the bar is stuck under the header.
+    await page.mouse.wheel(0, 400)
+    await page.waitForTimeout(300)
+    const geometry = await page.evaluate(() => {
+      const header = document.querySelector('.site-header')?.getBoundingClientRect()
+      const bar = document.querySelector('.docs-bar')?.getBoundingClientRect()
+      const where = document.querySelector<HTMLElement>('.docs-bar-where')
+      return {
+        // The bar may tuck under the header, never leave a gap below it.
+        gap: (bar?.top ?? 0) - (header?.bottom ?? 0),
+        clipped: (where?.scrollWidth ?? 0) > (where?.clientWidth ?? 0),
+        ellipsis: where ? getComputedStyle(where).textOverflow : '',
+        display: where ? getComputedStyle(where).display : '',
+      }
+    })
+    expect(geometry.gap).toBeLessThanOrEqual(0)
+    expect(geometry.clipped).toBe(true)
+    expect(geometry.ellipsis).toBe('ellipsis')
+    expect(geometry.display).toBe('block')
+  })
+
   test('on a phone, the header menu lists every header link', async ({ page }) => {
     await isolate(page)
     await page.setViewportSize({ width: 375, height: 800 })

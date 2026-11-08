@@ -115,7 +115,7 @@ describe('createShell', () => {
 
     const without = createShell({ ...base, bridge: () => undefined })
     await expect(without.invoke('kitr:app:version')).rejects.toThrow(
-      /\[kitr\/desktop\] the electron bridge is not available/,
+      /\[@kitr\/desktop\] the electron bridge is not available/,
     )
     await expect(createShell(base).invoke('x')).rejects.toThrow(/not available/)
     expect(createShell(base).bridge()).toBeUndefined()

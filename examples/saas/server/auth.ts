@@ -4,7 +4,7 @@ import {
   createMemorySessionStore,
   createMemoryUserProvider,
   hashPassword,
-} from 'kitr/auth/server'
+} from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import { env } from '#app/env'
 

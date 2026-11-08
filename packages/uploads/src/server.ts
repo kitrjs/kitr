@@ -300,7 +300,7 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
         : undefined,
   })
   if (config.requireSigned && !config.secret)
-    throw new Error('[kitr/uploads] requireSigned needs `secret` in config/uploads.ts.')
+    throw new Error('[@kitr/uploads] requireSigned needs `secret` in config/uploads.ts.')
   const uploads: Uploads = {
     driver,
     config,
@@ -345,7 +345,7 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
     remove: (key) => driver.delete(key),
     async signedUrl(key, options) {
       if (!config.secret)
-        throw new Error('[kitr/uploads] signedUrl() needs `secret` in config/uploads.ts.')
+        throw new Error('[@kitr/uploads] signedUrl() needs `secret` in config/uploads.ts.')
       const base = (options.path ?? '/api/uploads').replace(/\/$/, '')
       return signedUrl(`${base}/${key.split('/').map(encodeURIComponent).join('/')}`, {
         expiresIn: options.expiresIn,
@@ -376,7 +376,7 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
       if (check === 'unsigned' && config.authorize) {
         const app = options.app ?? (event.context as { kitr?: { app?: KitrApp } }).kitr?.app
         if (!app)
-          throw new Error('[kitr/uploads] authorize needs the app: mount uploads on a kitr server.')
+          throw new Error('[@kitr/uploads] authorize needs the app: mount uploads on a kitr server.')
         const allowed = await config.authorize(
           { event, request: event.req as unknown as Request, app },
           { key, name, type: served.type, size: file.data.byteLength },

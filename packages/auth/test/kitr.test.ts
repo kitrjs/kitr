@@ -86,7 +86,7 @@ function fakeCtx(
   return { ctx, rec }
 }
 
-const PLAIN_ROUTER = `import { createKitrRouter } from 'kitr/router'
+const PLAIN_ROUTER = `import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { routes } from './routes'
 

@@ -37,7 +37,7 @@ This package has no config file. Everything is declared on each definition, so a
 
 ```ts
 // app/actions/projects/update.ts
-import { defineMutation } from 'kitr/actions'
+import { defineMutation } from '@kitr/actions'
 import { z } from 'zod'
 
 export const updateProject = defineMutation('projects.update', {
@@ -77,9 +77,9 @@ Then give it a schema and a handler:
 
 ```ts
 // app/actions/projects/rename.ts
-import { defineMutation } from 'kitr/actions'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { defineMutation } from '@kitr/actions'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
@@ -101,7 +101,7 @@ Use it in a component by name:
 
 ```tsx
 // app/components/rename-button.tsx
-import { useMutation } from 'kitr/query'
+import { useMutation } from '@kitr/query'
 
 export function RenameButton({ id }: { id: string }) {
   const rename = useMutation('projects.rename')
@@ -123,9 +123,9 @@ A query is an action that only reads. It is sent as a GET and cached like any ot
 
 ```ts
 // app/actions/projects/list.ts
-import { defineQuery } from 'kitr/actions'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { defineQuery } from '@kitr/actions'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
@@ -142,7 +142,7 @@ In a component:
 
 ```tsx
 // app/components/project-list.tsx
-import { useSuspenseQuery } from 'kitr/query'
+import { useSuspenseQuery } from '@kitr/query'
 
 export function ProjectList() {
   const { data: projects } = useSuspenseQuery('projects.list', { status: 'open' })
@@ -150,7 +150,7 @@ export function ProjectList() {
 }
 ```
 
-`useQuery`, `useSuspenseQuery` and `queryOptions` from `kitr/query` all take a name as the first argument and the input as the second. When every field of the input is optional, the input can be left out: `useQuery('projects.list')`. The query key is `['action', 'projects.list', input]`, so `['action', 'projects.list']` invalidates every variant.
+`useQuery`, `useSuspenseQuery` and `queryOptions` from `@kitr/query` all take a name as the first argument and the input as the second. When every field of the input is optional, the input can be left out: `useQuery('projects.list')`. The query key is `['action', 'projects.list', input]`, so `['action', 'projects.list']` invalidates every variant.
 
 ## Load before the page renders
 
@@ -158,7 +158,7 @@ In a route loader, `queryOptions` by name hands TanStack Router the same options
 
 ```ts
 // app/routes.ts
-import { queryOptions } from 'kitr/query'
+import { queryOptions } from '@kitr/query'
 
 r.page('/projects/', {
   loader: ({ context }) =>
@@ -189,10 +189,10 @@ const project = await renameProject({ id: 'prj_42', name: 'Acme site' })
 
 In the browser this is one request. On the server, during rendering or inside another handler, Start runs the handler in-process; there is no HTTP hop. A direct call applies no cache effects, because there is no cache in play; use `useMutation` in components for that.
 
-When all you have is the name, `call` from `kitr/query` looks it up in the app's registry (`app.operations`), so pass the app:
+When all you have is the name, `call` from `@kitr/query` looks it up in the app's registry (`app.operations`), so pass the app:
 
 ```ts
-import { call } from 'kitr/query'
+import { call } from '@kitr/query'
 
 await call(app, 'projects.rename', { id: 'prj_42', name: 'Acme site' })
 const open = await call(app, 'projects.list', { status: 'open' })
@@ -211,7 +211,7 @@ await actions.projects.rename({ id: 'prj_42', name: 'Acme site' })
 A name resolves through the registry that `createApp({ operations })` fills. When you prefer an import to a string, every hook takes the definition too, with the same types:
 
 ```tsx
-import { useMutation, useSuspenseQuery } from 'kitr/query'
+import { useMutation, useSuspenseQuery } from '@kitr/query'
 import { listProjects } from '#app/actions/projects/list'
 import { renameProject } from '#app/actions/projects/rename'
 
@@ -241,7 +241,7 @@ Start middleware runs before the handler and can add to `context`. A session mid
 ```ts
 // app/actions/middleware/session.ts
 import { getRequest } from '@tanstack/react-start/server'
-import { createMiddleware } from 'kitr/actions'
+import { createMiddleware } from '@kitr/actions'
 import { sessionFromRequest } from '#server/session'
 
 export const sessionMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
@@ -253,7 +253,7 @@ export const sessionMiddleware = createMiddleware({ type: 'function' }).server(a
 
 ```ts
 // app/actions/projects/archive.ts
-import { defineMutation, requireSession } from 'kitr/actions'
+import { defineMutation, requireSession } from '@kitr/actions'
 import { z } from 'zod'
 import { sessionMiddleware } from '#app/actions/middleware/session'
 
@@ -269,11 +269,11 @@ export const archiveProject = defineMutation('projects.archive', {
 
 The handler's `context` type is built from the middleware list: each middleware adds what it passes to `next({ context })`. An error thrown in middleware, like `requireSession`'s `UNAUTHORIZED`, reaches the caller as a `KitrError` exactly as a handler's would, and a server error's message is masked in production the same way. `redirect()` and `notFound()` pass through to the router.
 
-`createMiddleware` is re-exported from `kitr/actions` so every middleware uses the same import. Any middleware can wrap the call:
+`createMiddleware` is re-exported from `@kitr/actions` so every middleware uses the same import. Any middleware can wrap the call:
 
 ```ts
 // app/actions/middleware/timing.ts
-import { createMiddleware } from 'kitr/actions'
+import { createMiddleware } from '@kitr/actions'
 
 export const timing = createMiddleware({ type: 'function' }).server(async ({ next }) => {
   const started = Date.now()
@@ -394,8 +394,8 @@ To test a component that uses a name, register the definitions on the test app a
 
 ```tsx
 // test/components/rename-button.test.tsx
-import { renderWithKitr } from 'kitr/testing/react'
-import { createTestApp } from 'kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
+import { createTestApp } from '@kitr/testing'
 import { operations } from '#kitr/actions'
 import { RenameButton } from '#components/rename-button'
 

@@ -1,7 +1,7 @@
 {
   "name": "@kitr/monitoring",
   "version": "0.1.0",
-  "description": "kitr/monitoring: captureException, breadcrumbs and user context behind one API, with Sentry and console reporters; error boundary and server middleware.",
+  "description": "@kitr/monitoring: captureException, breadcrumbs and user context behind one API, with Sentry and console reporters; error boundary and server middleware.",
   "keywords": [
     "kitr",
     "kitr-package"

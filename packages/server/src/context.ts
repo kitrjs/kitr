@@ -25,7 +25,7 @@ export interface RequestContext {
   /**
    * The Content-Security-Policy nonce for this request, set by `shield` when its policy uses
    * nonces. Inline `<script>` and `<style>` tags in the page carry it; `useCspNonce()` from
-   * `kitr/shield` reads it.
+   * `@kitr/shield` reads it.
    */
   nonce?: string
   /** True when the request is a page the server hands to the app's renderer (`server.fetch(request, { pages })`), not one of the server's own routes. */
@@ -41,7 +41,7 @@ export function runWithRequest<T>(ctx: RequestContext, fn: () => T): T {
 }
 
 /**
- * The key client-safe packages (`kitr/router`, `kitr/shield`) read the current request's nonce
+ * The key client-safe packages (`@kitr/router`, `@kitr/shield`) read the current request's nonce
  * through. They cannot import this file (it needs `node:async_hooks`), so the server leaves a
  * reader on `globalThis` the first time it runs a request; it stays unset in the browser.
  */
@@ -56,7 +56,7 @@ function publishNonceReader() {
 /** The current request, from anywhere on the server (services, db hooks, loggers). */
 export function useRequest(): RequestContext {
   const ctx = storage.getStore()
-  if (!ctx) throw new Error('[kitr/server] useRequest() called outside a request.')
+  if (!ctx) throw new Error('[@kitr/server] useRequest() called outside a request.')
   return ctx
 }
 
@@ -70,5 +70,5 @@ export function useRequestApp(fallback?: KitrApp): KitrApp {
   const ctx = storage.getStore()
   if (ctx) return ctx.app
   if (fallback) return fallback
-  throw new Error('[kitr/server] useRequestApp() called outside a request and no fallback given.')
+  throw new Error('[@kitr/server] useRequestApp() called outside a request and no fallback given.')
 }

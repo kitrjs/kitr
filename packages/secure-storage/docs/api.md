@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/secure-storage, with its signature.
+description: Every export of @kitr/secure-storage, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/secure-storage`, `kitr/secure-storage/react`, `kitr/secure-storage/provider`, `kitr/secure-storage/driver`, `kitr/secure-storage/drivers/web`, `kitr/secure-storage/drivers/electron`, `kitr/secure-storage/drivers/tauri`, `kitr/secure-storage/drivers/capacitor`, read from the published type definitions. The [guide](/packages/secure-storage/guide) shows them in use.
+Every export of `@kitr/secure-storage`, `@kitr/secure-storage/react`, `@kitr/secure-storage/provider`, `@kitr/secure-storage/driver`, `@kitr/secure-storage/drivers/web`, `@kitr/secure-storage/drivers/electron`, `@kitr/secure-storage/drivers/tauri`, `@kitr/secure-storage/drivers/capacitor`, read from the published type definitions. The [guide](/packages/secure-storage/guide) shows them in use.
 
-## kitr/secure-storage
+## @kitr/secure-storage
 
 ### createCapacitorSecureStorageDriver
 
@@ -253,7 +253,7 @@ type Driver = SecureStorageDriver;
 
 What a secure-storage driver is: `SecureStorageDriver`, whichever runtime supplies it.
 
-## kitr/secure-storage/react
+## @kitr/secure-storage/react
 
 ### useSecureItem
 
@@ -279,7 +279,7 @@ function useSecureStorage(): SecureStorage;
 
 The app's `secureStorage` service in a component.
 
-## kitr/secure-storage/provider
+## @kitr/secure-storage/provider
 
 ### secureStorageProvider
 
@@ -291,7 +291,7 @@ Binds `secureStorage` to the platform vault (registered by the mobile/desktop pr
 the `secure-storage` capability) or the encrypted web fallback. On the server it is an in-memory
 store, so code that runs in both places needs no branches.
 
-## kitr/secure-storage/driver
+## @kitr/secure-storage/driver
 
 ### selectDriver
 
@@ -323,7 +323,7 @@ type Driver = SecureStorageDriver;
 
 What a secure-storage driver is: `SecureStorageDriver`, whichever runtime supplies it.
 
-## kitr/secure-storage/drivers/web
+## @kitr/secure-storage/drivers/web
 
 ### createWebSecureStorageDriver
 
@@ -334,7 +334,7 @@ function createWebSecureStorageDriver(storage?: StorageDriver): SecureStorageDri
 Encrypts values with AES-GCM before handing them to a `StorageDriver`. The key never leaves
 the browser's key store, so the ciphertext in local storage cannot be read elsewhere.
 
-## kitr/secure-storage/drivers/electron
+## @kitr/secure-storage/drivers/electron
 
 ### createElectronDriver
 
@@ -350,7 +350,7 @@ refuses to store and `set()` rejects, so nothing is ever kept in the clear.
 
 Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
-## kitr/secure-storage/drivers/tauri
+## @kitr/secure-storage/drivers/tauri
 
 ### createTauriDriver
 
@@ -385,7 +385,7 @@ interface TauriSecureStorageOptions extends DriverOptions {
 
 Options of the Tauri secure-storage driver, passed to `createTauriDriver()`.
 
-## kitr/secure-storage/drivers/capacitor
+## @kitr/secure-storage/drivers/capacitor
 
 ### createCapacitorDriver
 

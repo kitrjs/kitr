@@ -71,13 +71,13 @@ export function createCapacitorDriver(_options: DriverOptions = {}): Driver {
         if (state.installStatus === FlexibleUpdateInstallStatus.DOWNLOADED) settle.resolve(true)
         else if (state.installStatus === FlexibleUpdateInstallStatus.CANCELED) settle.resolve(false)
         else if (state.installStatus === FlexibleUpdateInstallStatus.FAILED)
-          settle.reject(new Error('kitr/updater: the Play Store update failed to download'))
+          settle.reject(new Error('@kitr/updater: the Play Store update failed to download'))
       })
       try {
         const result = await AppUpdate.startFlexibleUpdate()
         if (result.code === AppUpdateResultCode.CANCELED) return
         if (result.code !== AppUpdateResultCode.OK)
-          throw new Error(`kitr/updater: the Play Store update did not start (code ${result.code})`)
+          throw new Error(`@kitr/updater: the Play Store update did not start (code ${result.code})`)
         if (!(await done)) return
         onProgress?.(1)
         await AppUpdate.completeFlexibleUpdate()

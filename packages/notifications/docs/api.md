@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/notifications, with its signature.
+description: Every export of @kitr/notifications, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifications/provider`, `kitr/notifications/driver`, `kitr/notifications/drivers/web`, `kitr/notifications/drivers/electron`, `kitr/notifications/drivers/tauri`, `kitr/notifications/drivers/capacitor`, read from the published type definitions. The [guide](/packages/notifications/guide) shows them in use.
+Every export of `@kitr/notifications`, `@kitr/notifications/react`, `@kitr/notifications/provider`, `@kitr/notifications/driver`, `@kitr/notifications/drivers/web`, `@kitr/notifications/drivers/electron`, `@kitr/notifications/drivers/tauri`, `@kitr/notifications/drivers/capacitor`, read from the published type definitions. The [guide](/packages/notifications/guide) shows them in use.
 
-## kitr/notifications
+## @kitr/notifications
 
 ### capacitorPush
 
@@ -332,7 +332,7 @@ type NotificationPermission = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 Where permission stands: `prompt` until asked, `unsupported` where there is no notification API.
 
-## kitr/notifications/react
+## @kitr/notifications/react
 
 ### useNotificationPermission
 
@@ -361,7 +361,7 @@ function useNotificationTap(handler: (tap: NotificationTap) => void): void;
 
 Run a handler when a notification is tapped, typically `(tap) => tap.url && navigate(tap.url)`.
 
-## kitr/notifications/provider
+## @kitr/notifications/provider
 
 ### notificationsProvider
 
@@ -372,7 +372,7 @@ const notificationsProvider: import("@kitr/core").KitrProvider;
 Binds `notifications` to the platform driver (`notifications` capability) or the web
 Notification API. With `requestOnBoot` it asks for permission as the app starts.
 
-## kitr/notifications/driver
+## @kitr/notifications/driver
 
 ### selectDriver
 
@@ -404,7 +404,7 @@ type Driver = NotificationsDriver;
 
 What a notifications driver is: `NotificationsDriver`, whichever runtime supplies it.
 
-## kitr/notifications/drivers/web
+## @kitr/notifications/drivers/web
 
 ### createWebNotificationsDriver
 
@@ -417,7 +417,7 @@ function createWebNotificationsDriver(config?: {
 Driver on the browser Notification API, with timers for scheduling. Scheduled ones are lost when
 the page closes. Falls back to the service worker where the constructor is not allowed.
 
-## kitr/notifications/drivers/electron
+## @kitr/notifications/drivers/electron
 
 ### createElectronDriver
 
@@ -445,7 +445,7 @@ interface ElectronNotificationsDriver extends Driver {
 
 The Electron driver, with the dock/taskbar badge that only desktop shells have.
 
-## kitr/notifications/drivers/tauri
+## @kitr/notifications/drivers/tauri
 
 ### createTauriDriver
 
@@ -468,7 +468,7 @@ function numericId(id: string): number;
 
 The plugin wants a 32-bit integer id; the service's ids are strings.
 
-## kitr/notifications/drivers/capacitor
+## @kitr/notifications/drivers/capacitor
 
 ### capacitorPush
 

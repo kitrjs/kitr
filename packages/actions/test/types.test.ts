@@ -17,7 +17,7 @@ const scan = (source: string, extra: Record<string, string> = {}) =>
 describe('scanActions', () => {
   it('finds exported defineQuery and defineMutation calls, ignoring comments and strings', async () => {
     const src = `
-import { defineMutation, defineQuery } from 'kitr/actions'
+import { defineMutation, defineQuery } from '@kitr/actions'
 // export const old = defineQuery('projects.old', { handler: () => 1 })
 /* export const older = defineMutation('projects.older', { handler: () => 1 }) */
 const note = "export const fake = defineQuery('nope'"
@@ -37,7 +37,7 @@ const internal = defineQuery('projects.internal', { handler: () => 1 })
   it('follows import aliases, namespace imports, export lists and renamed exports', async () => {
     const src = `
 import * as k from '@kitr/actions'
-import { defineQuery as query, defineMutation } from 'kitr/actions'
+import { defineQuery as query, defineMutation } from '@kitr/actions'
 const listProjects = query('projects.list', { handler: () => [] })
 const rename = defineMutation(\`projects.rename\`, { handler: () => 1 })
 export const archive = (k.defineMutation('projects.archive', { handler: () => 1 }) as const)
@@ -56,7 +56,7 @@ export { listProjects, rename as renameProject }
         'export declare function defineQuery(name: string, options: object): { kind: "query" }',
       'node_modules/kitr/actions.d.ts': "export * from '@kitr/actions'",
       'app/lib/ops.ts':
-        "import { defineQuery } from 'kitr/actions'\nexport const shared = defineQuery('shared.list', {})",
+        "import { defineQuery } from '@kitr/actions'\nexport const shared = defineQuery('shared.list', {})",
       'app/lib/define.ts':
         'export function defineQuery(name: string, o: object) { return { name, o } }',
     }
@@ -75,7 +75,7 @@ export { shared as again } from '../lib/ops'
   })
 
   it('names the file and line when an operation name is not a string literal', async () => {
-    const src = `import { defineQuery } from 'kitr/actions'
+    const src = `import { defineQuery } from '@kitr/actions'
 const name = 'projects.list'
 export const listProjects = defineQuery(name, { handler: () => [] })
 `
@@ -143,7 +143,7 @@ describe('the generator', () => {
   it('reads app/actions (or directories.actions), skipping tests and declarations', async () => {
     const files: Record<string, string> = {
       'app/actions/projects.ts':
-        "import { defineQuery } from 'kitr/actions'\nexport const listProjects = defineQuery('projects.list', { handler: () => [] })",
+        "import { defineQuery } from '@kitr/actions'\nexport const listProjects = defineQuery('projects.list', { handler: () => [] })",
       'app/actions/projects.test.ts':
         "export const nope = defineQuery('projects.nope', { handler: () => [] })",
       'app/actions/env.d.ts':

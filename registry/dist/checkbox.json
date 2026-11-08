@@ -11,7 +11,7 @@
       "path": "app/components/ui/checkbox.tsx",
       "type": "registry:ui",
       "target": "app/components/ui/checkbox.tsx",
-      "content": "import { cn } from 'kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport function Checkbox({ className, ...props }: Omit<ComponentProps<'input'>, 'type'>) {\n  return (\n    <input\n      type=\"checkbox\"\n      className={cn(\n        'h-4 w-4 shrink-0 rounded-sm border border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n"
+      "content": "import { cn } from '@kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport function Checkbox({ className, ...props }: Omit<ComponentProps<'input'>, 'type'>) {\n  return (\n    <input\n      type=\"checkbox\"\n      className={cn(\n        'h-4 w-4 shrink-0 rounded-sm border border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n"
     }
   ]
 }

@@ -6,7 +6,7 @@
 pnpm kitr add cache
 ```
 
-`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `kitr/cache`.
+`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `@kitr/cache`.
 
 Read the guide at https://kitr.dev/packages/cache.
 

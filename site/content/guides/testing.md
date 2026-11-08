@@ -73,7 +73,7 @@ describe('projects.update', () => {
 })
 ```
 
-The same goes for the zod schema in `app/features/projects/schema.ts`: `newProjectSchema.safeParse({ teamId: 'team_acme', name: 'A' }).success` is `false`, and that is a one-line test. [Add sign-in, end to end](/guides/authentication) writes these abilities.
+The same goes for the zod schema in `app/validators/projects.ts`: `newProjectSchema.safeParse({ teamId: 'team_acme', name: 'A' }).success` is `false`, and that is a one-line test. [Add sign-in, end to end](/guides/authentication) writes these abilities.
 
 ## Give the tests their own database
 
@@ -92,7 +92,7 @@ DATABASE_URL=postgres://postgres:acme@localhost:5432/acme_test
 
 ```ts
 // vitest.config.ts
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
@@ -132,7 +132,7 @@ Each test should create the rows it reads and start from an empty table. Truncat
 ```ts
 // test/setup.ts
 import { sql } from 'drizzle-orm'
-import { useDb } from 'kitr/db'
+import { useDb } from '@kitr/db'
 import { beforeEach } from 'vitest'
 import type { AppDb } from '#config/db'
 import { server } from '#server/main'
@@ -219,7 +219,7 @@ Middleware itself, such as the session lookup, gets its own test, or is covered 
 ```ts
 // @vitest-environment node
 // test/projects-api.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -253,7 +253,7 @@ Routes behind `authMiddleware` need a token. Sign in through the real route and 
 
 ```ts
 // test/helpers/sign-in.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { server } from '#server/main'
 
 export async function signedInClient(email: string, password = 'correct horse battery') {
@@ -270,13 +270,13 @@ The helper throws with the status when sign-in fails, so a broken seed shows up 
 A component test renders one component inside the app's providers and checks what a person would see. Seed the query cache when the test is about rendering, so nothing touches the network:
 
 ```tsx
-// app/features/projects/project-list.test.tsx
+// app/components/projects/project-list.test.tsx
 import { screen } from '@testing-library/react'
-import queryProvider from 'kitr/query/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import queryProvider from '@kitr/query/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
-import { ProjectList } from './project-list'
+import { ProjectList } from '#app/components/projects/project-list'
 
 it('lists the team’s projects', async () => {
   const app = await createTestApp({ providers: [queryProvider] })
@@ -299,11 +299,11 @@ Action queries live under `['action', '<name>', input]`, so the seeded key is th
 A form test checks what the user sees when they get it wrong. Register the generated operations so `useMutation('projects.create')` resolves, and fill the form the way a person would:
 
 ```tsx
-// app/features/projects/new-project-form.test.tsx
+// app/components/projects/new-project-form.test.tsx
 import { fireEvent, screen } from '@testing-library/react'
-import queryProvider from 'kitr/query/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import queryProvider from '@kitr/query/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
 import { operations } from '#kitr/actions'
 import { NewProjectForm } from './new-project-form'
@@ -328,9 +328,9 @@ A page test renders the real route table at a URL, runs its loader and checks th
 ```tsx
 // app/pages/projects/index.test.tsx
 import { act, render, screen } from '@testing-library/react'
-import queryProvider from 'kitr/query/provider'
-import { createKitrRouter, createMemoryHistory, RouterProvider } from 'kitr/router'
-import { createTestApp } from 'kitr/testing'
+import queryProvider from '@kitr/query/provider'
+import { createKitrRouter, createMemoryHistory, RouterProvider } from '@kitr/router'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { routes } from '#app/routes'
 
@@ -446,7 +446,7 @@ jobs:
 | Step | What it catches |
 | --- | --- |
 | `pnpm typecheck` | Runs `kitr types` and then `tsc`, so a renamed action or a removed column fails here first. |
-| `kitr doctor --strict` | Providers that do not resolve, a missing config file, an upstream library imported directly where a `kitr/*` entry exists. `--strict` turns warnings into failures. |
+| `kitr doctor --strict` | Providers that do not resolve, a missing config file, an upstream library imported directly where an `@kitr/*` package re-exports it. `--strict` turns warnings into failures. |
 | `pnpm test` | Rules, actions, the API, components and pages. |
 | `playwright test` | The built app, end to end. |
 

@@ -1,4 +1,4 @@
-import { createApiClient, registerRoutes } from 'kitr/api/client'
+import { createApiClient, registerRoutes } from '@kitr/api/client'
 import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 

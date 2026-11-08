@@ -6,7 +6,7 @@ import { type ResolvedSession, resolveSession } from './request'
 import { createToken, fingerprint, readToken } from './tokens'
 import type { AuthUser, UserProvider } from './users'
 
-/** An email template as the controller sends it: `defineMail(...)` from `kitr/mail` fits. */
+/** An email template as the controller sends it: `defineMail(...)` from `@kitr/mail` fits. */
 export interface AuthMailTemplate<Props> {
   readonly name: string
   readonly subject: string | ((props: Props) => string)
@@ -23,7 +23,7 @@ export interface AuthMailProps {
   name?: string
 }
 
-/** The mailer the controller sends through: the `mailer` binding from `kitr/mail`. */
+/** The mailer the controller sends through: the `mailer` binding from `@kitr/mail`. */
 export interface AuthMailer {
   send(template: any, props: any, options: { to: string }): Promise<unknown>
 }

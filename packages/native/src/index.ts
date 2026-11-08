@@ -208,7 +208,7 @@ export const defineConfig = createDefineConfig<NativeConfig>()
 /** Thrown when a method is called on a capability that has no driver here. `capability` names it. */
 export class UnsupportedError extends Error {
   constructor(public capability: NativeCapability) {
-    super(`kitr/native: ${capability} is not supported on this platform`)
+    super(`@kitr/native: ${capability} is not supported on this platform`)
     this.name = 'UnsupportedError'
   }
 }

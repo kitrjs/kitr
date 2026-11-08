@@ -1,8 +1,8 @@
 import { defineRoutes } from 'kitr/app'
-import { ensureSession } from 'kitr/auth'
-import { requireAuth } from 'kitr/router'
-import router from 'kitr/router/routes'
-import { parseTableSearch } from 'kitr/table'
+import { ensureSession } from '@kitr/auth'
+import { requireAuth } from '@kitr/router'
+import router from '@kitr/router/routes'
+import { parseTableSearch } from '@kitr/table'
 import { projectsQuery } from '#app/features/projects/queries'
 import { head, RootDocument } from './document'
 

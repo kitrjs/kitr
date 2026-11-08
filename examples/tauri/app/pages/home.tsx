@@ -1,4 +1,4 @@
-import { isTauri, useTauriEvent } from 'kitr/tauri/client'
+import { isTauri, useTauriEvent } from '@kitr/tauri/client'
 import { useCallback, useState } from 'react'
 import { app } from '#app/app'
 import { commands } from '#app/commands'
@@ -65,7 +65,7 @@ export default function HomePage() {
         <Card>
           <CardHeader>
             <CardTitle>Device</CardTitle>
-            <CardDescription>Secrets go to the OS vault, notifications to the OS: `kitr/secure-storage` and `kitr/notifications`.</CardDescription>
+            <CardDescription>Secrets go to the OS vault, notifications to the OS: `@kitr/secure-storage` and `@kitr/notifications`.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <Input aria-label="Secret" data-testid="secret-input" value={secret} onChange={(e) => setSecret(e.target.value)} />

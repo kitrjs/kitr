@@ -34,7 +34,7 @@ export interface RcInfo {
 export interface RcPlatform {
   /** The factory called (`web`, `server`...), which is the platform type for kitr's packages. */
   factory: string
-  /** Where the factory is imported from, when it is (`kitr/web`). */
+  /** Where the factory is imported from, when it is (`@kitr/web`). */
   source?: string
   /** Literal options, when they parse as JSON-ish; otherwise undefined. */
   options?: Record<string, unknown>

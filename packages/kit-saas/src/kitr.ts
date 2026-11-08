@@ -14,7 +14,7 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
     2,
   )} as const\n`
 
-const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
+const apiClient = `import { createApiClient, registerRoutes } from '@kitr/api/client'
 import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
@@ -51,7 +51,7 @@ const files = (ctx: AddContext, name: string) => {
 
   write(
     ctx,
-    'app/features/projects/schema.ts',
+    'app/validators/projects.ts',
     `import { z } from 'zod'
 
 /** Shared by the controller (validation) and the form (client-side checks). */
@@ -76,10 +76,10 @@ export interface Project {
 
   write(
     ctx,
-    'server/controllers/projects_controller.ts',
-    `import type { HttpContext } from 'kitr/api'
+    'server/controllers/projects-controller.ts',
+    `import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
-import { requireUser } from 'kitr/auth/server'
+import { requireUser } from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import {
   type CreateProject,
@@ -87,7 +87,7 @@ import {
   type UpdateProject,
   createProjectSchema,
   updateProjectSchema,
-} from '#app/features/projects/schema'
+} from '#app/validators/projects'
 
 type Ctx<B = unknown> = HttpContext<{ id: string }, Record<string, string | string[]>, B>
 
@@ -162,7 +162,7 @@ import {
   createMemorySessionStore,
   createMemoryUserProvider,
   hashPassword,
-} from 'kitr/auth/server'
+} from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -213,14 +213,14 @@ export const auth = { sessions, users }
   // file: the kit attaches the shield (CSRF for the cookie session) and the mail preview itself.
   ctx.server.attach({
     marker: 'shield(server',
-    import: "import { shield } from 'kitr/shield'",
+    import: "import { shield } from '@kitr/shield'",
     line: '// Security headers, CORS, rate limit and CSRF from config/shield.ts.\nshield(server)',
     first: true,
   })
   ctx.server.attach({
     marker: 'mailPreview(',
     import:
-      "import { mailPreview } from 'kitr/mail'\nimport { resetPasswordMail, verifyEmailMail } from './mail/auth'\nimport { welcomeMail } from './mail/welcome'",
+      "import { mailPreview } from '@kitr/mail'\nimport { resetPasswordMail, verifyEmailMail } from './mail/auth'\nimport { welcomeMail } from './mail/welcome'",
     line: '// Rendered templates at /_kitr/mail in development.\nif (server.app.isDevelopment) mailPreview(server, [welcomeMail, verifyEmailMail, resetPasswordMail])',
   })
   // The web platform (added after the packages) writes app/server.ts, so the kit wires the session in.
@@ -230,7 +230,7 @@ export const auth = { sessions, users }
       : src
           .replace(
             "import { server } from '#server/main'\n",
-            "import { runWithSession } from 'kitr/auth/server'\nimport { auth } from '#server/auth'\nimport { server } from '#server/main'\n",
+            "import { runWithSession } from '@kitr/auth/server'\nimport { auth } from '#server/auth'\nimport { server } from '#server/main'\n",
           )
           .replace(
             'return handler.fetch(request, options)',
@@ -242,12 +242,12 @@ export const auth = { sessions, users }
     ctx,
     'server/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import { sessionMiddleware } from 'kitr/auth/server'
-import api from 'kitr/api/routes'
+import { sessionMiddleware } from '@kitr/auth/server'
+import api from '@kitr/api/routes'
 import { auth } from '#server/auth'
-import AuthController from '#server/controllers/auth_controller'
-import HealthController from '#server/controllers/health_controller'
-import ProjectsController from '#server/controllers/projects_controller'
+import AuthController from '#server/controllers/auth-controller'
+import HealthController from '#server/controllers/health-controller'
+import ProjectsController from '#server/controllers/projects-controller'
 
 /** Resolves the session cookie and answers 401 without one. */
 const requireSession = sessionMiddleware(auth)
@@ -300,12 +300,12 @@ export type ServerRoutes = typeof routes.$types
   write(
     ctx,
     'config/auth.ts',
-    `import { defineConfig, sessionAdapter } from 'kitr/auth'
+    `import { defineConfig, sessionAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
 /**
- * The session is an HttpOnly cookie the API sets (server/controllers/auth_controller.ts), so there
+ * The session is an HttpOnly cookie the API sets (server/controllers/auth-controller.ts), so there
  * is no token to keep: this adapter asks \`GET /api/auth/session\` in the browser and reads the
  * request's own session while a page renders on the server. Swap for betterAuthAdapter(createAuthClient())
  * or a customAdapter({...}) if you move to another identity provider.
@@ -324,7 +324,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
   write(
     ctx,
     'config/http.ts',
-    `import { defineConfig } from 'kitr/http'
+    `import { defineConfig } from '@kitr/http'
 
 /** Same-origin API; the bearer token is attached by the auth provider once signed in. */
 export default defineConfig({
@@ -336,10 +336,10 @@ export default defineConfig({
   write(
     ctx,
     'app/router.tsx',
-    `import type { Session } from 'kitr/auth'
-import { dehydrate, hydrate, type DehydratedState } from 'kitr/query'
+    `import type { Session } from '@kitr/auth'
+import { dehydrate, hydrate, type DehydratedState } from '@kitr/query'
 import type { KitrApp } from 'kitr/app'
-import { createKitrRouter } from 'kitr/router'
+import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
 import { routes } from './routes'
@@ -388,8 +388,8 @@ declare module '@kitr/router' {
 
   write(
     ctx,
-    'app/features/projects/queries.ts',
-    `import { mutationFrom, queryFrom } from 'kitr/query'
+    'app/queries/projects.ts',
+    `import { mutationFrom, queryFrom } from '@kitr/query'
 import { api } from '#app/api/client'
 
 /** One place for every query and mutation of the feature; routes and components import from here. */
@@ -423,11 +423,11 @@ export const deleteProject = mutationFrom(
     ctx,
     'app/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import { ensureSession } from 'kitr/auth'
-import { requireAuth } from 'kitr/router'
-import router from 'kitr/router/routes'
-import { parseTableSearch } from 'kitr/table'
-import { projectsQuery } from '#app/features/projects/queries'
+import { ensureSession } from '@kitr/auth'
+import { requireAuth } from '@kitr/router'
+import router from '@kitr/router/routes'
+import { parseTableSearch } from '@kitr/table'
+import { projectsQuery } from '#app/queries/projects'
 import { head, RootDocument } from './document'
 
 /**
@@ -468,7 +468,7 @@ export const routes = defineRoutes([router], (r) =>
           // functions, and the route context of a server-rendered page must be serializable.
           await requireAuth()(ctx)
         },
-        lazy: () => import('./pages/app-layout'),
+        lazy: () => import('./layouts/app'),
       },
       (app) =>
         app
@@ -491,10 +491,10 @@ export type AppRoutes = typeof routes.$types
   write(
     ctx,
     'app/pages/sign-in.tsx',
-    `import { useAnalytics } from 'kitr/analytics/react'
-import { useAuth } from 'kitr/auth'
-import { useSchemaForm } from 'kitr/forms'
-import { getRouteApi, Link, useNavigate } from 'kitr/router'
+    `import { useAnalytics } from '@kitr/analytics/react'
+import { useAuth } from '@kitr/auth'
+import { useSchemaForm } from '@kitr/forms'
+import { getRouteApi, Link, useNavigate } from '@kitr/router'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
 import type { AppEvents } from '#app/analytics'
@@ -554,11 +554,11 @@ export default function SignInPage() {
 
   write(
     ctx,
-    'app/pages/app-layout.tsx',
+    'app/layouts/app.tsx',
     `import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
-import { useAuth, useUser } from 'kitr/auth'
-import { useQueryClient } from 'kitr/query'
-import { Outlet, useNavigate } from 'kitr/router'
+import { useAuth, useUser } from '@kitr/auth'
+import { useQueryClient } from '@kitr/query'
+import { Outlet, useNavigate } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'
@@ -606,11 +606,11 @@ export default function AppLayout() {
   write(
     ctx,
     'app/pages/overview.tsx',
-    `import { useUser } from 'kitr/auth'
-import { useSuspenseQuery } from 'kitr/query'
-import { Link } from 'kitr/router'
+    `import { useUser } from '@kitr/auth'
+import { useSuspenseQuery } from '@kitr/query'
+import { Link } from '@kitr/router'
 import type { User } from '#app/abilities'
-import { projectsQuery } from '#app/features/projects/queries'
+import { projectsQuery } from '#app/queries/projects'
 import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
@@ -672,15 +672,15 @@ export default function OverviewPage() {
   write(
     ctx,
     'app/pages/projects.tsx',
-    `import { useAnalytics } from 'kitr/analytics/react'
-import { useSchemaForm } from 'kitr/forms'
-import { useMutation, useSuspenseQuery } from 'kitr/query'
-import { getRouteApi } from 'kitr/router'
-import { type ColumnDef, type DataTableFeatures, useUrlTableState } from 'kitr/table'
+    `import { useAnalytics } from '@kitr/analytics/react'
+import { useSchemaForm } from '@kitr/forms'
+import { useMutation, useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
+import { type ColumnDef, type DataTableFeatures, useUrlTableState } from '@kitr/table'
 import { useState } from 'react'
 import type { AppEvents } from '#app/analytics'
-import { createProject, deleteProject, projectsQuery } from '#app/features/projects/queries'
-import { type Project, createProjectSchema } from '#app/features/projects/schema'
+import { createProject, deleteProject, projectsQuery } from '#app/queries/projects'
+import { type Project, createProjectSchema } from '#app/validators/projects'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
 import { DataTable } from '#components/ui/data-table'
@@ -800,8 +800,8 @@ function NewProjectDialog({
   write(
     ctx,
     'app/pages/forgot-password.tsx',
-    `import { useSchemaForm } from 'kitr/forms'
-import { Link } from 'kitr/router'
+    `import { useSchemaForm } from '@kitr/forms'
+import { Link } from '@kitr/router'
 import { useState } from 'react'
 import { z } from 'zod'
 import { api } from '#app/api/client'
@@ -853,8 +853,8 @@ export default function ForgotPasswordPage() {
   write(
     ctx,
     'app/pages/reset-password.tsx',
-    `import { useSchemaForm } from 'kitr/forms'
-import { getRouteApi, useNavigate } from 'kitr/router'
+    `import { useSchemaForm } from '@kitr/forms'
+import { getRouteApi, useNavigate } from '@kitr/router'
 import { z } from 'zod'
 import { api } from '#app/api/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
@@ -900,7 +900,7 @@ export default function ResetPasswordPage() {
   write(
     ctx,
     'app/pages/verify-email.tsx',
-    `import { getRouteApi, Link } from 'kitr/router'
+    `import { getRouteApi, Link } from '@kitr/router'
 import { useEffect, useState } from 'react'
 import { api } from '#app/api/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'

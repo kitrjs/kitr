@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/files, with its signature.
+description: Every export of @kitr/files, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/files`, `kitr/files/react`, `kitr/files/provider`, `kitr/files/driver`, `kitr/files/drivers/web`, `kitr/files/drivers/electron`, `kitr/files/drivers/tauri`, `kitr/files/drivers/capacitor`, read from the published type definitions. The [guide](/packages/files/guide) shows them in use.
+Every export of `@kitr/files`, `@kitr/files/react`, `@kitr/files/provider`, `@kitr/files/driver`, `@kitr/files/drivers/web`, `@kitr/files/drivers/electron`, `@kitr/files/drivers/tauri`, `@kitr/files/drivers/capacitor`, read from the published type definitions. The [guide](/packages/files/guide) shows them in use.
 
-## kitr/files
+## @kitr/files
 
 ### acceptFor
 
@@ -374,7 +374,7 @@ type FileData = string | Blob | Uint8Array | ArrayBuffer;
 
 What `save()` accepts: text, a Blob or File, or raw bytes.
 
-## kitr/files/react
+## @kitr/files/react
 
 ### useDropFiles
 
@@ -415,7 +415,7 @@ function useFiles(): Files;
 
 The `files` service from the app in context. Use `useFileDialogs()` when you want a busy flag.
 
-## kitr/files/provider
+## @kitr/files/provider
 
 ### filesProvider
 
@@ -426,7 +426,7 @@ const filesProvider: import("@kitr/core").KitrProvider;
 Binds `files` to the native dialog driver a platform package registered (`files` capability),
 or the web driver. Nothing runs on the server beyond a no-op binding.
 
-## kitr/files/driver
+## @kitr/files/driver
 
 ### selectDriver
 
@@ -454,7 +454,7 @@ type DriverOptions = SelectDriverOptions;
 
 Options of `selectDriver()`.
 
-## kitr/files/drivers/web
+## @kitr/files/drivers/web
 
 ### createWebFilesDriver
 
@@ -464,7 +464,7 @@ function createWebFilesDriver(): FilesDriver;
 
 File System Access API when available, `<input type="file">` and a download link otherwise.
 
-## kitr/files/drivers/electron
+## @kitr/files/drivers/electron
 
 ### createElectronDriver
 
@@ -508,7 +508,7 @@ interface PickedFolder {
 
 A folder the person chose: list it, then read the files in it.
 
-## kitr/files/drivers/tauri
+## @kitr/files/drivers/tauri
 
 ### createTauriDriver
 
@@ -523,7 +523,7 @@ makes the method that needs it reject with `E_DRIVER_UNAVAILABLE`. The dialog pl
 chosen path to the fs scope for the session, so the window reaches only what the person picked
 unless your capability file grants more.
 
-## kitr/files/drivers/capacitor
+## @kitr/files/drivers/capacitor
 
 ### capacitorFileStore
 

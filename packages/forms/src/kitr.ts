@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add forms`: React Hook Form with Standard Schema resolvers, `<Form>` with server-error mapping. */
 export default definePackage({
@@ -8,7 +8,7 @@ export default definePackage({
     ctx.deps.add('react-hook-form', '@hookform/resolvers', 'zod')
     ctx.agents.add(
       'forms',
-      `- Forms: \`const form = useSchemaForm(schema, { defaultValues })\` then \`<Form form={form} onSubmit={...}>\` from \`kitr/forms\` (or the styled copy in \`app/components/ui/form.tsx\`).\n- Throw or reject with a KitrError carrying \`fieldErrors\` and the fields show the messages; anything else lands in \`useRootError()\`.`,
+      `- Forms: \`const form = useSchemaForm(schema, { defaultValues })\` then \`<Form form={form} onSubmit={...}>\` from \`@kitr/forms\` (or the styled copy in \`app/components/ui/form.tsx\`).\n- Throw or reject with a KitrError carrying \`fieldErrors\` and the fields show the messages; anything else lands in \`useRootError()\`.`,
     )
   },
   remove(ctx) {
@@ -18,10 +18,10 @@ export default definePackage({
   generators: {
     form: {
       description: 'Create a form component in app/components/forms',
-      target: (name, project) => ({
-        file: `${project.rc.directories.components ?? 'app/components'}/forms/${naming.snake(name)}_form.tsx`,
-      }),
-      stub: ({ name }) => `import { useSchemaForm } from 'kitr/forms'
+      definition: 'A component that owns one schema-validated form and its submit.',
+      target: (name, project) =>
+        generatorFile(project, 'components', 'forms', name, { suffix: '-form', ext: '.tsx' }),
+      stub: ({ name }) => `import { useSchemaForm } from '@kitr/forms'
 import { z } from 'zod'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 
@@ -45,7 +45,7 @@ export function ${naming.pascal(name)}Form({ defaultValues, onSubmit }: { defaul
 `,
     },
   },
-  wraps: { 'react-hook-form': 'kitr/forms' },
-  eject: { 'kitr/forms': 'react-hook-form + @hookform/resolvers' },
+  wraps: { 'react-hook-form': '@kitr/forms' },
+  eject: { '@kitr/forms': 'react-hook-form + @hookform/resolvers' },
   vite: { optimizeDeps: ['react-hook-form', '@hookform/resolvers/standard-schema'] },
 })

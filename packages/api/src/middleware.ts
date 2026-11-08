@@ -11,7 +11,7 @@ export function defineMiddleware<P = any, Q = any, B = any>(
 }
 
 /**
- * Options for `cors()`: the same type `kitr/shield` takes, because both run the same policy.
+ * Options for `cors()`: the same type `@kitr/shield` takes, because both run the same policy.
  * `origin` is `'*'`, one origin, a list or a predicate; `headers` defaults to Content-Type,
  * Authorization, X-CSRF-Token and X-Requested-With (earlier releases of this package allowed only
  * the first two, so a browser client sending the CSRF header needed them listed).
@@ -22,7 +22,7 @@ export type { CorsOptions }
 export const handlesPreflight = Symbol.for('kitr.api.handlesPreflight')
 
 /**
- * CORS for the origins you list; handles preflight. This is `cors()` of `kitr/shield` fitted to
+ * CORS for the origins you list; handles preflight. This is `cors()` of `@kitr/shield` fitted to
  * route middleware: the same options and the same rules, so a policy written for one works in the
  * other. Without `origin` no cross-origin caller is allowed. Throws at once for
  * `origin: '*'` with credentials, which would let any site act as the user.
@@ -43,7 +43,7 @@ export function cors(options: CorsOptions = {}): Middleware {
 }
 
 /**
- * Where rate-limit counters live. The same shape as `RateLimitStore` in `kitr/shield`, so
+ * Where rate-limit counters live. The same shape as `RateLimitStore` in `@kitr/shield`, so
  * `createRedisRateLimitStore` from there plugs in here too.
  */
 export interface RateLimitStore {
@@ -61,7 +61,7 @@ export interface RateLimitOptions {
   key?: (ctx: HttpContext) => string
   /**
    * Where counters live. Default: this process, so each instance counts on its own. Pass
-   * `createRedisRateLimitStore(redis)` from `kitr/shield` to share one limit across instances.
+   * `createRedisRateLimitStore(redis)` from `@kitr/shield` to share one limit across instances.
    */
   store?: RateLimitStore
 }
@@ -125,7 +125,7 @@ export function compose(middleware: Middleware[]): Middleware {
   return (ctx, final) => {
     let index = -1
     const dispatch = async (i: number): Promise<unknown> => {
-      if (i <= index) throw new Error('[kitr/api] next() called more than once')
+      if (i <= index) throw new Error('[@kitr/api] next() called more than once')
       index = i
       const fn = middleware[i]
       if (!fn) return final()

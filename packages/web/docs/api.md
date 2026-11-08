@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/web, with its signature.
+description: Every export of @kitr/web, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/web`, `kitr/web/client`, `kitr/web/provider`, `kitr/web/vite`, read from the published type definitions. The [guide](/packages/web/guide) shows them in use.
+Every export of `@kitr/web`, `@kitr/web/client`, `@kitr/web/provider`, `@kitr/web/vite`, read from the published type definitions. The [guide](/packages/web/guide) shows them in use.
 
-## kitr/web
+## @kitr/web
 
 ### pwaManifest
 
@@ -142,7 +142,7 @@ type WebMode = 'static' | 'spa' | 'ssr';
 
 How a web platform renders: prerendered HTML (`static`), a client-rendered shell (`spa`) or per-request server rendering (`ssr`).
 
-## kitr/web/client
+## @kitr/web/client
 
 ### useInstallPrompt
 
@@ -174,7 +174,7 @@ function useServiceWorker(options?: {
 Registers the service worker vite-plugin-pwa emits (`/sw.js`) and reports a waiting update.
 With `registerType: 'prompt'`, call `update()` to activate it and reload.
 
-## kitr/web/provider
+## @kitr/web/provider
 
 ### webProvider
 
@@ -183,9 +183,9 @@ const webProvider: import("@kitr/core").KitrProvider;
 ```
 
 Runtime provider of the web platform. Registers the `platform` driver that tells
-`kitr/platform` the app runs in a browser (or on the server rendering for one).
+`@kitr/platform` the app runs in a browser (or on the server rendering for one).
 
-## kitr/web/vite
+## @kitr/web/vite
 
 ### kitrPwa
 

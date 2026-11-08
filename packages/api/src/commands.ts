@@ -18,7 +18,7 @@ async function loadRoutes(file?: string) {
   const { createJiti } = await import('jiti')
   const jiti = createJiti(resolve(root(), 'package.json'), { alias: readAliases(), jsx: true })
   const mod = (await jiti.import(path)) as Record<string, unknown>
-  const api = (await jiti.import('kitr/api')) as {
+  const api = (await jiti.import('@kitr/api')) as {
     toOpenApi: (
       router: unknown,
       info: { title: string; version: string; description?: string },

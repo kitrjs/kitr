@@ -6,11 +6,11 @@ order: 1
 
 # Jobs
 
-Some work should not keep a request waiting: emailing an invoice, generating a PDF, syncing orders with a payment provider, pruning expired sessions at 3am. `kitr/jobs` hands that work to a background worker. You define a job with a typed payload, dispatch it from a controller, and the worker runs it with retries, exponential backoff, a timeout and an optional cron or interval schedule.
+Some work should not keep a request waiting: emailing an invoice, generating a PDF, syncing orders with a payment provider, pruning expired sessions at 3am. `@kitr/jobs` hands that work to a background worker. You define a job with a typed payload, dispatch it from a controller, and the worker runs it with retries, exponential backoff, a timeout and an optional cron or interval schedule.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` generates a monthly invoice for each team, emails it to the team owner, and cleans up old data every night.
 
-`kitr/jobs` runs on the server only, with no dependencies beyond kitr. The built-in queue lives in the server's memory, which suits one process. For several servers, or for jobs that must survive a restart, give it a shared driver ([Extend](#extend)). For work that must finish before the response (charging a card), call the code directly instead of dispatching a job.
+`@kitr/jobs` runs on the server only, with no dependencies beyond kitr. The built-in queue lives in the server's memory, which suits one process. For several servers, or for jobs that must survive a restart, give it a shared driver ([Extend](#extend)). For work that must finish before the response (charging a card), call the code directly instead of dispatching a job.
 
 ## Install
 
@@ -49,7 +49,7 @@ No kit includes jobs; add it to any kit with a server platform.
 
 ```ts
 // config/jobs.ts
-import { defineConfig } from 'kitr/jobs'
+import { defineConfig } from '@kitr/jobs'
 import { exampleJob } from '#server/jobs/example'
 
 export default defineConfig({
@@ -72,7 +72,7 @@ export default defineConfig({
 
 Per-job options (`retries`, `backoff`, `timeout`, `schedule`) live on the job itself; see [Define a job](#define-a-job).
 
-`kitr/jobs` reads no env variables. Use your own in `config/jobs.ts` when a setting changes per deploy, as in [Run the worker in its own process](#run-the-worker-in-its-own-process).
+`@kitr/jobs` reads no env variables. Use your own in `config/jobs.ts` when a setting changes per deploy, as in [Run the worker in its own process](#run-the-worker-in-its-own-process).
 
 ## Dispatch your first job
 
@@ -82,11 +82,11 @@ Generate a job:
 kitr make:job generate-invoice
 ```
 
-That writes `server/jobs/generate_invoice.ts`. Edit it to build a team's invoice for a month:
+That writes `server/jobs/generate-invoice.ts`. Edit it to build a team's invoice for a month:
 
 ```ts
-// server/jobs/generate_invoice.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/generate-invoice.ts
+import { defineJob } from '@kitr/jobs'
 import { z } from 'zod'
 
 export const generateInvoiceInput = z.object({
@@ -108,7 +108,7 @@ List it in `config/jobs.ts`, next to the example:
 
 ```ts
 // config/jobs.ts
-import { defineConfig } from 'kitr/jobs'
+import { defineConfig } from '@kitr/jobs'
 import { exampleJob } from '#server/jobs/example'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 
@@ -122,9 +122,9 @@ export default defineConfig({
 Dispatch it from a controller. `dispatch()` checks the payload, queues the job and resolves with its id straight away:
 
 ```ts
-// server/controllers/invoices_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useJobs } from 'kitr/jobs'
+// server/controllers/invoices-controller.ts
+import type { HttpContext } from '@kitr/api'
+import { useJobs } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 
 export default class InvoicesController {
@@ -172,8 +172,8 @@ Without a schema, the type parameter types the payload: `defineJob<{ teamId: str
 On the server, `useJobs(app).dispatch(job, payload, options?)` queues a job and resolves with its id. It works in controllers, actions, services and other jobs:
 
 ```ts
-// server/jobs/close_month.ts
-import { defineJob, useJobs } from 'kitr/jobs'
+// server/jobs/close-month.ts
+import { defineJob, useJobs } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 
 /** Fans out one invoice job per team. */
@@ -190,7 +190,7 @@ export const closeMonth = defineJob<{ month: string; teamIds: string[] }>('close
 | --- | --- |
 | A controller | `useJobs(ctx.app)` |
 | A job | `useJobs(ctx.app)` in `run(payload, ctx)` |
-| An action or service during a request | `useJobs(useRequestApp())`, with `useRequestApp` from `kitr/server` |
+| An action or service during a request | `useJobs(useRequestApp())`, with `useRequestApp` from `@kitr/server` |
 | A script | `useJobs(server.app)` after `await server.boot()` |
 
 `useJobs(app)` is `app.container.use('jobs')`. The provider binds nothing in the browser.
@@ -204,9 +204,9 @@ Don't `setTimeout(() => sendEmail(), 0)` in a request handler. The work has no r
 Pass `delay` in milliseconds, or `at` for a fixed time:
 
 ```ts
-// server/services/trial_service.ts
+// server/services/trial-service.ts
 import type { KitrApp } from 'kitr/app'
-import { useJobs } from 'kitr/jobs'
+import { useJobs } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 
 export async function scheduleFirstInvoice(app: KitrApp, teamId: string) {
@@ -234,8 +234,8 @@ The job is queued at once with that `runAt` time, and the worker leaves it until
 Give a job a `schedule` and list it in `config/jobs.ts`. The worker dispatches it itself; you never call `dispatch()`:
 
 ```ts
-// server/jobs/prune_sessions.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/prune-sessions.ts
+import { defineJob } from '@kitr/jobs'
 
 /** Every day at 03:00 server time. */
 export const pruneSessions = defineJob('prune_sessions', {
@@ -247,8 +247,8 @@ export const pruneSessions = defineJob('prune_sessions', {
 ```
 
 ```ts
-// server/jobs/sync_orders.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/sync-orders.ts
+import { defineJob } from '@kitr/jobs'
 
 /** Every five minutes, starting when the worker starts. */
 export const syncOrders = defineJob('sync_orders', {
@@ -277,11 +277,11 @@ Intervals take a number and a unit: `250ms`, `30s`, `5m`, `1.5h`, `1d`. An inter
 
 A scheduled job is dispatched with an `undefined` payload, so it cannot have a schema that rejects `undefined`. If it does, the worker logs `[jobs] could not queue scheduled <name>` every time and the job never runs.
 
-A bad expression throws at once, in `register()` or when the app boots with it in `config/jobs.ts`: `[kitr/jobs] Bad cron "61 * * * *" (field "61")`. Every field is checked, including ones after a field that would not match. A bad interval throws the same way. Check new expressions with `cronMatches()`:
+A bad expression throws at once, in `register()` or when the app boots with it in `config/jobs.ts`: `[@kitr/jobs] Bad cron "61 * * * *" (field "61")`. Every field is checked, including ones after a field that would not match. A bad interval throws the same way. Check new expressions with `cronMatches()`:
 
 ```ts
 // scripts/check_cron.ts
-import { cronMatches, parseInterval } from 'kitr/jobs'
+import { cronMatches, parseInterval } from '@kitr/jobs'
 
 cronMatches('0 3 * * *', new Date(2026, 10, 7, 3, 0)) // => true
 cronMatches('*/15 9-17 * * 1-5', new Date(2026, 10, 7, 9, 30)) // => false, a Saturday
@@ -295,9 +295,9 @@ Every process with a running worker checks the schedules. With the memory driver
 When `run` throws or times out, the worker queues the job again after `backoff × 2^(attempt - 1)` milliseconds, until it has used its retries:
 
 ```ts
-// server/jobs/send_invoice_email.ts
-import { defineJob } from 'kitr/jobs'
-import { useMailer } from 'kitr/mail'
+// server/jobs/send-invoice-email.ts
+import { defineJob } from '@kitr/jobs'
+import { useMailer } from '@kitr/mail'
 import { z } from 'zod'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
@@ -328,7 +328,7 @@ A payload that fails the schema when the worker picks it up is dropped without a
 
 ```ts
 // config/jobs.ts
-import { defineConfig } from 'kitr/jobs'
+import { defineConfig } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { sendInvoiceEmail } from '#server/jobs/send_invoice_email'
 
@@ -353,8 +353,8 @@ export default defineConfig({
 `onFailed` has no `app`. To report through [monitoring](/packages/monitoring), catch and report inside `run` with `ctx.app`, and rethrow so the job still retries:
 
 ```ts
-// server/jobs/generate_invoice.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/generate-invoice.ts
+import { defineJob } from '@kitr/jobs'
 
 export const generateInvoice = defineJob<{ teamId: string; month: string }>('generate_invoice', {
   retries: 3,
@@ -374,8 +374,8 @@ export const generateInvoice = defineJob<{ teamId: string; month: string }>('gen
 Each attempt gets `timeout` milliseconds, 60 seconds by default. At the limit, `ctx.signal` aborts and the attempt fails with `[jobs] <name> timed out after <ms>ms`, which counts as a failure and is retried. Pass the signal to anything that accepts one, so the work really stops:
 
 ```ts
-// server/jobs/export_projects.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/export-projects.ts
+import { defineJob } from '@kitr/jobs'
 
 export const exportProjects = defineJob<{ teamId: string }>('export_projects', {
   timeout: 5 * 60_000,
@@ -396,7 +396,7 @@ A job that ignores its signal still fails at the timeout and frees its worker sl
 
 ```ts
 // scripts/backfill_invoices.ts
-import { useJobs } from 'kitr/jobs'
+import { useJobs } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { server } from '#server/main'
 
@@ -418,7 +418,7 @@ pnpm add ioredis
 
 ```ts
 // config/jobs.ts
-import { createRedisJobsDriver, defineConfig } from 'kitr/jobs'
+import { createRedisJobsDriver, defineConfig } from '@kitr/jobs'
 import { Redis } from 'ioredis'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { pruneSessions } from '#server/jobs/prune_sessions'
@@ -460,7 +460,7 @@ When long jobs should not compete with requests, run a worker process and turn t
 
 ```ts
 // config/jobs.ts
-import { createRedisJobsDriver, defineConfig } from 'kitr/jobs'
+import { createRedisJobsDriver, defineConfig } from '@kitr/jobs'
 import { Redis } from 'ioredis'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { pruneSessions } from '#server/jobs/prune_sessions'
@@ -475,7 +475,7 @@ export default defineConfig({
 
 ```ts
 // server/worker.ts
-import { useJobs } from 'kitr/jobs'
+import { useJobs } from '@kitr/jobs'
 import { server } from '#server/main'
 
 await server.boot()
@@ -501,9 +501,9 @@ Deploy the web servers with `JOBS_WORKER=off`, and start one or more workers nex
 The `Jobs` service exposes its state for health checks and admin pages:
 
 ```ts
-// server/controllers/admin_jobs_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useJobs } from 'kitr/jobs'
+// server/controllers/admin-jobs-controller.ts
+import type { HttpContext } from '@kitr/api'
+import { useJobs } from '@kitr/jobs'
 
 export default class AdminJobsController {
   async show({ app }: HttpContext) {
@@ -538,7 +538,7 @@ export default class AdminJobsController {
 | --- | --- |
 | `kitr jobs:list` | Loads `config/jobs.ts` and prints each job's name, retries, timeout and schedule. `--json` prints the rows as JSON. |
 | `kitr jobs:work` | Boots the app from `server/main.ts` and runs the worker in this process until `SIGINT` or `SIGTERM`, then waits for running jobs. `--entry <file>` boots another file. |
-| `kitr make:job <name>` | Writes a job to `server/jobs/<snake_name>.ts`. `--force` overwrites an existing file. |
+| `kitr make:job <name>` | Writes a job to `server/jobs/<name>.ts` (kebab-case, nested names allowed). `--force` overwrites an existing file. |
 | `kitr eject stub job` | Copies the generator's template to `stubs/job.ts`, so `make:job` writes your own starting point. |
 
 `kitr jobs:list` reads the defaults when a job sets none (3 retries, a 60,000 ms timeout):
@@ -554,11 +554,11 @@ kitr jobs:list
 
 `kitr doctor` adds one finding from this package: an info line when `config/jobs.ts` lists no jobs (`jobs: []`), with the fix `kitr make:job <name>`, then add it to `jobs: [...]`.
 
-`kitr make:job generate-invoice` writes `server/jobs/generate_invoice.ts`:
+`kitr make:job generate-invoice` writes `server/jobs/generate-invoice.ts`:
 
 ```ts
-// server/jobs/generate_invoice.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/generate-invoice.ts
+import { defineJob } from '@kitr/jobs'
 import { z } from 'zod'
 
 export const generateInvoiceInput = z.object({
@@ -583,9 +583,9 @@ The generator does not add the job to `config/jobs.ts`; add it to `jobs` yoursel
 | Error | When | What to do |
 | --- | --- | --- |
 | `KitrError` `VALIDATION` (422), message `[jobs] <name>: bad payload` | `dispatch()` or `run()` with a payload the schema rejects. `error.fieldErrors` lists the fields. | Fix the payload. In a controller it becomes a 422 response. |
-| `[kitr/jobs] Bad cron "<expr>" (5 fields)` | A cron expression without exactly five fields. | Use `minute hour day month weekday`. |
-| `[kitr/jobs] Bad cron "<expr>" (field "<field>")` | A field out of range, a name like `MON`, or a step of `0`. | See the table in [Run a job on a schedule](#run-a-job-on-a-schedule). |
-| `[kitr/jobs] Bad interval "<text>" (use 30s, 5m, 1h, 1d)` | `{ every }` without a number and a unit. | Write `5m`, not `5 minutes`. |
+| `[@kitr/jobs] Bad cron "<expr>" (5 fields)` | A cron expression without exactly five fields. | Use `minute hour day month weekday`. |
+| `[@kitr/jobs] Bad cron "<expr>" (field "<field>")` | A field out of range, a name like `MON`, or a step of `0`. | See the table in [Run a job on a schedule](#run-a-job-on-a-schedule). |
+| `[@kitr/jobs] Bad interval "<text>" (use 30s, 5m, 1h, 1d)` | `{ every }` without a number and a unit. | Write `5m`, not `5 minutes`. |
 | `[jobs] <name> timed out after <ms>ms` | An attempt ran past `timeout`. Counts as a failure. | Raise `timeout`, or pass `signal` to the slow call. |
 
 The worker never throws: it logs these messages through the app's [logger](/packages/logger) instead.
@@ -604,10 +604,10 @@ The worker never throws: it logs these messages through the app's [logger](/pack
 In a test the worker does not start: `createTestApp()` boots the app but does not run the providers' `ready` step. Dispatched jobs wait in the memory queue, where you can read them, and `jobs.run()` runs one inline:
 
 ```ts
-// test/generate_invoice.test.ts
-import { useJobs } from 'kitr/jobs'
-import jobsProvider from 'kitr/jobs/provider'
-import { createTestApp } from 'kitr/testing'
+// test/generate-invoice.test.ts
+import { useJobs } from '@kitr/jobs'
+import jobsProvider from '@kitr/jobs/provider'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 
@@ -657,9 +657,9 @@ describe('generate_invoice', () => {
 `jobs.run()` waits the real backoff between attempts, so a failing job with the defaults takes 7 seconds to give up. To test failure handling, pass `retries: 0` on a test job, or keep `backoff` small:
 
 ```ts
-// test/flaky_job.test.ts
-import { createJobs, defineJob } from 'kitr/jobs'
-import { createTestApp } from 'kitr/testing'
+// test/flaky-job.test.ts
+import { createJobs, defineJob } from '@kitr/jobs'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 
 it('retries until the third attempt succeeds', async () => {
@@ -683,8 +683,8 @@ To test the worker loop itself, start it with a short poll and wait for the effe
 
 ```ts
 // test/worker.test.ts
-import { createJobs, defineJob } from 'kitr/jobs'
-import { createTestApp } from 'kitr/testing'
+import { createJobs, defineJob } from '@kitr/jobs'
+import { createTestApp } from '@kitr/testing'
 import { expect, it, vi } from 'vitest'
 
 it('runs dispatched jobs on the worker', async () => {
@@ -716,9 +716,9 @@ A driver is where queued jobs wait. It has four methods and an optional fifth; t
 kitr ships a complete Redis driver (see [Share the queue between processes](#share-the-queue-between-processes)). To see the shape, here is the smallest driver that shares a queue: one [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`, with [ioredis](https://github.com/redis/ioredis). Each job is claimed with `ZREM`, so two workers never run the same one:
 
 ```ts
-// server/jobs/sorted_set_driver.ts
+// server/jobs/sorted-set-driver.ts
 import { Redis } from 'ioredis'
-import type { JobsDriver, QueuedJob } from 'kitr/jobs'
+import type { JobsDriver, QueuedJob } from '@kitr/jobs'
 
 export function createSortedSetDriver(url: string, key = 'acme:jobs'): JobsDriver {
   const redis = new Redis(url)
@@ -750,7 +750,7 @@ Register it in `config/jobs.ts`:
 
 ```ts
 // config/jobs.ts
-import { defineConfig } from 'kitr/jobs'
+import { defineConfig } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { createSortedSetDriver } from '#server/jobs/sorted_set_driver'
 

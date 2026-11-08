@@ -1,6 +1,6 @@
 import { defineRoutes } from 'kitr/app'
-import { sessionMiddleware } from 'kitr/auth/server'
-import api from 'kitr/api/routes'
+import { sessionMiddleware } from '@kitr/auth/server'
+import api from '@kitr/api/routes'
 import { auth } from '#server/auth'
 import AuthController from '#server/controllers/auth_controller'
 import HealthController from '#server/controllers/health_controller'

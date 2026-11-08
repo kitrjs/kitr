@@ -100,7 +100,7 @@ export function createRedisRealtimeAdapter(
   options: RedisRealtimeAdapterOptions = {},
 ): RealtimeAdapter {
   const prefix = options.prefix ?? 'kitr:rt:'
-  const report = options.onError ?? ((error) => console.error('[kitr/realtime] redis', error))
+  const report = options.onError ?? ((error) => console.error('[@kitr/realtime] redis', error))
   const subscriber = options.subscriber ?? redis.duplicate()
   const local = createMemoryRealtimeAdapter()
   const counts = new Map<string, number>()
@@ -169,7 +169,7 @@ export interface TopicRouter<Conn> {
 export function createTopicRouter<Conn>(
   adapter: RealtimeAdapter,
   deliver: (conn: Conn, payload: string) => void,
-  onError: (error: unknown) => void = (error) => console.error('[kitr/realtime]', error),
+  onError: (error: unknown) => void = (error) => console.error('[@kitr/realtime]', error),
 ): TopicRouter<Conn> {
   const topics = new Map<string, { conns: Set<Conn>; off: Promise<(() => void) | undefined> }>()
   return {

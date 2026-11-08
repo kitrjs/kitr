@@ -152,8 +152,8 @@ export const mobile = definePlatform<MobileOptions>(
         },
       },
       agents: `- \`kitr dev ${'<name>'} --target ios|android\` runs the app on a simulator or device with live reload; \`kitr build <name>\` builds the bundle and runs \`cap sync\`. Native projects are in \`platforms/<name>/ios|android\` and are yours to edit in Xcode or Android Studio.
-- Never branch on user agents: use \`usePlatform()\` / \`platform.is('ios')\` from \`kitr/platform/react\`. Storage items from \`kitr/storage\` persist in native Preferences here, so \`localStorage\` eviction on iOS never loses data.
-- Other Capacitor plugins are plain dependencies; wrap their calls in \`nativeOnly(fn, fallback)\` from \`kitr/mobile/client\` so the web build keeps working.`,
+- Never branch on user agents: use \`usePlatform()\` / \`platform.is('ios')\` from \`@kitr/platform/react\`. Storage items from \`@kitr/storage\` persist in native Preferences here, so \`localStorage\` eviction on iOS never loses data.
+- Other Capacitor plugins are plain dependencies; wrap their calls in \`nativeOnly(fn, fallback)\` from \`@kitr/mobile/client\` so the web build keeps working.`,
     }),
 )
 

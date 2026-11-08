@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/shield, with its signature.
+description: Every export of @kitr/shield, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/shield`, `kitr/shield/provider`, read from the published type definitions. The [guide](/packages/shield/guide) shows them in use.
+Every export of `@kitr/shield`, `@kitr/shield/provider`, read from the published type definitions. The [guide](/packages/shield/guide) shows them in use.
 
-## kitr/shield
+## @kitr/shield
 
 ### cors
 
@@ -24,8 +24,8 @@ Middleware that answers CORS preflights with 204 and adds `Access-Control-Allow-
 function corsPolicy(options?: CorsOptions): (requestOrigin: string | null) => CorsDecision;
 ```
 
-The CORS rules for `options`, independent of any framework: `kitr/shield` wraps it as h3
-middleware and `kitr/api` as route middleware, so both apply exactly the same policy. Throws
+The CORS rules for `options`, independent of any framework: `@kitr/shield` wraps it as h3
+middleware and `@kitr/api` as route middleware, so both apply exactly the same policy. Throws
 at once for `origin: '*'` with credentials, which would let any site send requests with the
 user's cookies.
 
@@ -60,8 +60,7 @@ function csrf(options?: CsrfOptions): Middleware;
 ```
 
 Double-submit cookie CSRF: a readable cookie carries a token the browser must echo in a header
-(`fetch` from another origin cannot read the cookie, so it cannot forge the header). kitr/http
-sends the header automatically.
+(`fetch` from another origin cannot read the cookie, so it cannot forge the header).
 
 ### defaultCsp
 
@@ -322,7 +321,7 @@ interface ShieldConfig {
 
 The options in `config/shield.ts`. Each key takes its middleware's options, or false to turn it off.
 
-## kitr/shield/provider
+## @kitr/shield/provider
 
 ### shieldProvider
 

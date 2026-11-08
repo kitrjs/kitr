@@ -1,7 +1,7 @@
 {
   "name": "@kitr/server",
   "version": "0.1.0",
-  "description": "kitr/server: the kitr app on h3. Standalone (srvx) or as a fetch handler inside TanStack Start, Nitro or any runtime. No React.",
+  "description": "@kitr/server: the kitr app on h3. Standalone (srvx) or as a fetch handler inside TanStack Start, Nitro or any runtime. No React.",
   "kitr": {
     "name": "server",
     "title": "Server",

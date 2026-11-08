@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/3d, with its signature.
+description: Every export of @kitr/3d, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/3d`, `kitr/3d/drei`, read from the published type definitions. The [guide](/packages/3d/guide) shows them in use.
+Every export of `@kitr/3d`, `@kitr/3d/drei`, read from the published type definitions. The [guide](/packages/3d/guide) shows them in use.
 
-## kitr/3d
+## @kitr/3d
 
 Re-exports `@react-three/fiber` unchanged, plus the following.
 
@@ -176,7 +176,7 @@ type SceneReducedMotion = 'user' | 'always' | 'never';
 
 How a scene treats the visitor's "reduce motion" setting.
 
-## kitr/3d/drei
+## @kitr/3d/drei
 
 Re-exports `@react-three/drei`, `camera-controls` unchanged, plus the following.
 

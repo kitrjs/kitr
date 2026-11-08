@@ -22,8 +22,9 @@ const navItems: Array<{
 ]
 
 /**
- * On phones the header slides away while you scroll down and comes back as soon as you scroll
- * up, so a page's own sticky bar (the docs section bar) has the top of the screen to itself.
+ * On phones, on a page with the docs bar, the header slides away while you scroll down and comes
+ * back as soon as you scroll up, so the bar has the top of the screen to itself. Other pages keep
+ * the header: their own sticky bars (the package search) sit under it.
  */
 function useHideOnScroll(paused: boolean) {
   useEffect(() => {
@@ -38,7 +39,8 @@ function useHideOnScroll(paused: boolean) {
     const update = () => {
       frame = 0
       const y = window.scrollY
-      if (!phone.matches || y < 120) root.classList.remove('header-hidden')
+      if (!phone.matches || y < 120 || !document.querySelector('.docs-bar'))
+        root.classList.remove('header-hidden')
       else if (y > last + 6) root.classList.add('header-hidden')
       else if (y < last - 6) root.classList.remove('header-hidden')
       else return

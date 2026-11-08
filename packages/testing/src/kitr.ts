@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add testing`: Vitest, Testing Library, renderWithKitr and a request client for API tests. */
 export default definePackage({
@@ -19,17 +19,17 @@ export default definePackage({
     ctx.scripts.add('test', 'vitest run')
     ctx.write(
       'vitest.config.ts',
-      `import { defineConfig } from 'vitest/config'\n${serverOnly ? '' : "import { kitr } from 'kitr/vite'\n"}\nexport default defineConfig({\n${serverOnly ? '' : '  plugins: [kitr({ plugins: { tailwind: false } })],\n'}  test: {\n    environment: '${serverOnly ? 'node' : 'happy-dom'}',\n    include: ['app/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],\n  },\n})\n`,
+      `import { defineConfig } from 'vitest/config'\n${serverOnly ? '' : "import { kitr } from '@kitr/vite'\n"}\nexport default defineConfig({\n${serverOnly ? '' : '  plugins: [kitr({ plugins: { tailwind: false } })],\n'}  test: {\n    environment: '${serverOnly ? 'node' : 'happy-dom'}',\n    include: ['app/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],\n  },\n})\n`,
     )
     ctx.write(
       'test/example.test.ts',
       serverOnly
-        ? `import { createTestClient } from 'kitr/testing'\nimport { expect, it } from 'vitest'\nimport { server } from '../server/main'\n\nit('answers health', async () => {\n  const client = createTestClient(server)\n  const res = await client.get<{ ok: boolean }>('/api/health')\n  expect(res.status).toBe(200)\n  expect(res.body.ok).toBe(true)\n})\n`
+        ? `import { createTestClient } from '@kitr/testing'\nimport { expect, it } from 'vitest'\nimport { server } from '../server/main'\n\nit('answers health', async () => {\n  const client = createTestClient(server)\n  const res = await client.get<{ ok: boolean }>('/api/health')\n  expect(res.status).toBe(200)\n  expect(res.body.ok).toBe(true)\n})\n`
         : `import { expect, it } from 'vitest'\n\nit('runs', () => {\n  expect(1 + 1).toBe(2)\n})\n`,
     )
     ctx.agents.add(
       'testing',
-      `- \`${ctx.pm} test\` runs Vitest. Components: \`renderWithKitr(<X />, { app, queryData })\` from \`kitr/testing/react\`. APIs: \`createTestClient(server).get('/api/x')\`. No running backend is needed.`,
+      `- \`${ctx.pm} test\` runs Vitest. Components: \`renderWithKitr(<X />, { app, queryData })\` from \`@kitr/testing/react\`. APIs: \`createTestClient(server).get('/api/x')\`. No running backend is needed.`,
     )
   },
   remove(ctx) {
@@ -39,9 +39,11 @@ export default definePackage({
   generators: {
     test: {
       description: 'Create a vitest file in test/',
+      definition:
+        'An app-level Vitest file; unit tests may also sit beside their file as *.test.ts.',
       // test/, where every kit's vitest config and tsconfig look.
-      target: (name) => ({ file: `test/${naming.snake(name)}.test.ts` }),
-      stub: ({ name }) => `import { createTestApp } from 'kitr/testing'
+      target: (name, project) => generatorFile(project, 'test', '', name, { suffix: '.test' }),
+      stub: ({ name }) => `import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 
 describe('${naming.snake(name)}', () => {

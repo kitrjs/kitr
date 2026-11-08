@@ -1,7 +1,7 @@
 {
   "name": "@kitr/shield",
   "version": "0.1.0",
-  "description": "kitr/shield: security headers, CORS, CSRF double-submit cookies and rate limiting as h3 middleware, configured in config/shield.ts.",
+  "description": "@kitr/shield: security headers, CORS, CSRF double-submit cookies and rate limiting as h3 middleware, configured in config/shield.ts.",
   "keywords": [
     "kitr",
     "kitr-package"

@@ -1,7 +1,7 @@
 {
   "name": "@kitr/auth",
   "version": "0.1.0",
-  "description": "kitr/auth: one session interface, cookie sessions with stores and password hashing, bearer-token and Better Auth adapters, route guards and API middleware.",
+  "description": "@kitr/auth: one session interface, cookie sessions with stores and password hashing, bearer-token and Better Auth adapters, route guards and API middleware.",
   "kitr": {
     "name": "auth",
     "title": "Auth",

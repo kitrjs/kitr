@@ -6,7 +6,7 @@ order: 1
 
 # State
 
-Some values belong to the whole app rather than one component: the order Ada is putting together before she submits it, whether the sidebar is open, which currency Linus prefers. `kitr/state` gives you a small store for those values that any component can read and update, and that can remember them across page reloads.
+Some values belong to the whole app rather than one component: the order Ada is putting together before she submits it, whether the sidebar is open, which currency Linus prefers. `@kitr/state` gives you a small store for those values that any component can read and update, and that can remember them across page reloads.
 
 It is [Zustand](https://zustand.docs.pmnd.rs), re-exported, plus one helper, `createKitrStore`, that makes a store safe for server rendering, saves it in the browser when you ask, and connects it to the Redux DevTools in development.
 
@@ -44,15 +44,15 @@ What `kitr add` does:
 kitr add state --dry-run
 ```
 
-`kitr remove state` removes the `packages` entry, both dependencies and the `AGENTS.md` section. It leaves `app/stores/` and your stores in place, and lists the files that still import `kitr/state`.
+`kitr remove state` removes the `packages` entry, both dependencies and the `AGENTS.md` section. It leaves `app/stores/` and your stores in place, and lists the files that still import `@kitr/state`.
 
 ## Configure
 
-`kitr/state` has no config file. Each store takes its options as the first argument of `createKitrStore`:
+`@kitr/state` has no config file. Each store takes its options as the first argument of `createKitrStore`:
 
 ```ts
 // app/stores/preferences.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface PreferencesState {
   currency: 'USD' | 'EUR'
@@ -102,7 +102,7 @@ Put each store in `app/stores/`. This one holds the order Ada is building:
 
 ```ts
 // app/stores/order-draft.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 export interface DraftLine {
   sku: string
@@ -182,7 +182,7 @@ Open `/orders/new` and press **Add a seat** three times: the count reads `3 item
 Pass a selector to the hook. The component re-renders only when the selected value changes, so `DraftCount` ignores a change to `customer`:
 
 ```tsx
-// app/features/orders/draft-customer.tsx
+// app/components/orders/draft-customer.tsx
 import { useOrderDraft } from '#app/stores/order-draft'
 
 export function DraftCustomer() {
@@ -202,7 +202,7 @@ Actions are part of the state, and they never change, so selecting one never cau
 Calling the hook with no selector returns the whole state. The component then re-renders on every change to any field, so keep that for small stores or for debugging:
 
 ```tsx
-// app/features/orders/draft-debug.tsx
+// app/components/orders/draft-debug.tsx
 import { useOrderDraft } from '#app/stores/order-draft'
 
 export function DraftDebug() {
@@ -216,7 +216,7 @@ export function DraftDebug() {
 A selector that builds a new object or array on every call, such as `(s) => ({ customer: s.customer, count: s.lines.length })`, returns a different value each time, and React keeps re-rendering. Either call the hook once per value, or wrap the selector in Zustand's `useShallow`, which compares the result field by field:
 
 ```tsx
-// app/features/orders/draft-header.tsx
+// app/components/orders/draft-header.tsx
 import { useShallow } from 'zustand/react/shallow'
 import { useOrderDraft } from '#app/stores/order-draft'
 
@@ -240,7 +240,7 @@ Inside the creator, `set` merges a partial state into the current one. Pass an o
 
 ```ts
 // app/stores/invoice-selection.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface InvoiceSelectionState {
   selected: string[]
@@ -272,7 +272,7 @@ Don't mutate the state in place (`s.selected.push(id)`). `set` compares by refer
 The third value is the browser's store instance. Use it in code that is not a component: an event handler set up at startup, a route loader, a mutation's `onSuccess`:
 
 ```ts
-// app/features/orders/place-order.ts
+// app/lib/orders/place-order.ts
 import { orderDraftStore } from '#app/stores/order-draft'
 
 export async function placeDraftOrder() {
@@ -298,7 +298,7 @@ export async function placeDraftOrder() {
 `subscribe` lets code outside React react to changes. This keeps the page title in step with the draft:
 
 ```ts
-// app/features/orders/draft-title.ts
+// app/lib/orders/draft-title.ts
 import { orderDraftStore } from '#app/stores/order-draft'
 
 export const stopDraftTitle = orderDraftStore?.subscribe((state, previous) => {
@@ -325,7 +325,7 @@ Pass an object to control what is saved. `partialize` picks the fields; here the
 
 ```ts
 // app/stores/order-draft.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 import type { DraftLine } from './types'
 
 interface OrderDraftState {
@@ -359,7 +359,7 @@ When the state's shape changes, data saved by the old version no longer fits. Bu
 
 ```ts
 // app/stores/preferences.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface PreferencesState {
   currency: 'USD' | 'EUR'
@@ -395,7 +395,7 @@ export const [usePreferences, PreferencesProvider, preferencesStore] =
 
 ```ts
 // app/stores/import-wizard.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 import { createJSONStorage } from 'zustand/middleware'
 
 interface ImportWizardState {
@@ -423,7 +423,7 @@ export const [useImportWizard, ImportWizardProvider, importWizardStore] =
 
 ```ts
 // app/routes.ts
-import { orderQuery } from '#app/features/orders/queries'
+import { orderQuery } from '#app/queries/orders'
 
 r.page('/orders/$orderId/edit', {
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderQuery.options(params.orderId)),
@@ -434,8 +434,8 @@ r.page('/orders/$orderId/edit', {
 ```tsx
 // app/pages/orders/orderId/edit.tsx
 import { OrderDraftProvider } from '#app/stores/order-draft'
-import { DraftEditor } from '#app/features/orders/draft-editor'
-import { getRouteApi } from 'kitr/router'
+import { DraftEditor } from '#app/components/orders/draft-editor'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders/$orderId/edit')
 
@@ -462,7 +462,7 @@ If a page renders on the server (a `web` platform in `ssr` or `static` mode), wr
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { OrderDraftProvider } from '#app/stores/order-draft'
 
 export function RootDocument() {
@@ -485,7 +485,7 @@ export function RootDocument() {
 Without a provider, a server render fails with:
 
 ```txt
-[kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
+[@kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
 ```
 
 In a client-only app (`spa` mode, desktop, mobile) you can skip the provider entirely.
@@ -494,11 +494,11 @@ A saved store renders its initial state on the server, because the server cannot
 
 ## Use plain Zustand
 
-`kitr/state` re-exports `zustand` unchanged, so `create`, `createStore`, `useStore` and the types work as in the [Zustand docs](https://zustand.docs.pmnd.rs). Middleware comes from `zustand/middleware`. A store made with `create` is a module-level singleton on the server too, so use it only in client-only apps or for state that is the same for every user:
+`@kitr/state` re-exports `zustand` unchanged, so `create`, `createStore`, `useStore` and the types work as in the [Zustand docs](https://zustand.docs.pmnd.rs). Middleware comes from `zustand/middleware`. A store made with `create` is a module-level singleton on the server too, so use it only in client-only apps or for state that is the same for every user:
 
 ```ts
 // app/stores/toasts.ts
-import { create } from 'kitr/state'
+import { create } from '@kitr/state'
 
 interface ToastState {
   messages: string[]
@@ -521,11 +521,11 @@ export const useToasts = create<ToastState>()((set) => ({
 kitr make:store order-draft
 ```
 
-It writes `app/stores/order_draft.ts`. The file name is snake case; the exports are camel and pascal case:
+It writes `app/stores/order-draft.ts`. The file name is kebab-case; the exports are camel and pascal case:
 
 ```ts
-// app/stores/order_draft.ts
-import { createKitrStore } from 'kitr/state'
+// app/stores/order-draft.ts
+import { createKitrStore } from '@kitr/state'
 
 interface OrderDraftState {
   count: number
@@ -628,7 +628,7 @@ In development, every store connects to the [Redux DevTools](https://github.com/
 ## Next steps
 
 - [API reference](/packages/state/api)
-- [Zustand docs](https://zustand.docs.pmnd.rs): everything there works as written, imported from `kitr/state`.
+- [Zustand docs](https://zustand.docs.pmnd.rs): everything there works as written, imported from `@kitr/state`.
 - [Zustand persist options](https://zustand.docs.pmnd.rs/middlewares/persist): every option `persist` accepts.
 - [Query](/packages/query): where server data belongs.
 - [Forms](/packages/forms): form state, validation and server errors, without a store.

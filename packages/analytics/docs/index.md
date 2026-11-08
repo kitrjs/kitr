@@ -6,11 +6,11 @@ order: 1
 
 # Analytics
 
-Sooner or later someone asks how many people created a project this week, or which page they left from. `kitr/analytics` gives you four calls (`page`, `track`, `identify` and `reset`) and sends each one to the services you configure: [Google Analytics](https://developers.google.com/analytics/devguides/collection/ga4), [Plausible](https://plausible.io/docs), [PostHog](https://posthog.com/docs/libraries/js), or several at once. Page views are counted for you on every route change, every vendor call is wrapped so a blocked script never breaks a button, and calls can wait in a queue until the visitor agrees to tracking.
+Sooner or later someone asks how many people created a project this week, or which page they left from. `@kitr/analytics` gives you four calls (`page`, `track`, `identify` and `reset`) and sends each one to the services you configure: [Google Analytics](https://developers.google.com/analytics/devguides/collection/ga4), [Plausible](https://plausible.io/docs), [PostHog](https://posthog.com/docs/libraries/js), or several at once. Page views are counted for you on every route change, every vendor call is wrapped so a blocked script never breaks a button, and calls can wait in a queue until the visitor agrees to tracking.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` counts how often Ada creates a project, which plan Grace's team is on, and when Linus pays an invoice.
 
-`kitr/analytics` runs in the browser. On the server it binds the same service so components render, but no vendor script loads. To record events your server owns (a paid invoice, a cancelled subscription), write them to your database or send them from a [job](/packages/jobs); to report errors rather than usage, use [monitoring](/packages/monitoring).
+`@kitr/analytics` runs in the browser. On the server it binds the same service so components render, but no vendor script loads. To record events your server owns (a paid invoice, a cancelled subscription), write them to your database or send them from a [job](/packages/jobs); to report errors rather than usage, use [monitoring](/packages/monitoring).
 
 ## Install
 
@@ -43,7 +43,7 @@ The `saas` and `site` kits include analytics. It is a client package, so in a se
 
 ```ts
 // config/analytics.ts
-import { defineConfig, googleAnalytics } from 'kitr/analytics'
+import { defineConfig, googleAnalytics } from '@kitr/analytics'
 import { env } from '#app/env'
 
 /**
@@ -88,7 +88,7 @@ Variables that start with `VITE_` are bundled into the browser code. Measurement
 
 ```ts
 // app/analytics.ts
-import type { EventMap } from 'kitr/analytics'
+import type { EventMap } from '@kitr/analytics'
 
 /** Every event the app sends, with its props. `useAnalytics<AppEvents>()` checks names and props. */
 export interface AppEvents extends EventMap {
@@ -97,11 +97,11 @@ export interface AppEvents extends EventMap {
 }
 ```
 
-In a component, get the analytics service with `useAnalytics()` from `kitr/analytics/react` and call `track()` after the thing happened:
+In a component, get the analytics service with `useAnalytics()` from `@kitr/analytics/react` and call `track()` after the thing happened:
 
 ```tsx
-// app/features/projects/new-project-button.tsx
-import { useAnalytics } from 'kitr/analytics/react'
+// app/components/projects/new-project-button.tsx
+import { useAnalytics } from '@kitr/analytics/react'
 import type { AppEvents } from '#app/analytics'
 
 export function NewProjectButton({ onCreate }: { onCreate: () => Promise<{ id: string }> }) {
@@ -136,7 +136,7 @@ Add a line to `AppEvents` for every new event. Use `undefined` for an event with
 
 ```ts
 // app/analytics.ts
-import type { EventMap } from 'kitr/analytics'
+import type { EventMap } from '@kitr/analytics'
 
 export interface AppEvents extends EventMap {
   'sign-in.completed': { method: 'password' | 'oauth' }
@@ -150,8 +150,8 @@ export interface AppEvents extends EventMap {
 `useAnalytics<AppEvents>()` gives your editor the list of names and the props for each, so `analytics.track('inv` completes to `'invoice.paid'` and shows its props:
 
 ```tsx
-// app/features/invoices/pay-button.tsx
-import { useAnalytics } from 'kitr/analytics/react'
+// app/components/invoices/pay-button.tsx
+import { useAnalytics } from '@kitr/analytics/react'
 import type { AppEvents } from '#app/analytics'
 
 export function PayButton({ invoiceId, amount }: { invoiceId: string; amount: number }) {
@@ -174,8 +174,8 @@ Name events `object.action` in the past tense (`project.created`, `invoice.paid`
 `defineEvents<AppEvents>()` ties the event map to a config object. It returns its input unchanged and exists for code that builds its own analytics instance:
 
 ```ts
-// app/features/onboarding/analytics.ts
-import { consoleAdapter, createAnalytics, defineEvents } from 'kitr/analytics'
+// app/lib/onboarding/analytics.ts
+import { consoleAdapter, createAnalytics, defineEvents } from '@kitr/analytics'
 import type { AppEvents } from '#app/analytics'
 
 const config = defineEvents<AppEvents>()({ adapters: [consoleAdapter({ prefix: '[onboarding]' })] })
@@ -198,13 +198,13 @@ analytics.page('/projects', { url: 'https://app.acme.com/projects', title: 'Proj
 // adapters receive: ('/projects', { app: 'acme', url: 'https://app.acme.com/projects', title: 'Projects · Acme' })
 ```
 
-The tracker needs the router that `createKitrRouter()` from [`kitr/router`](/packages/router) binds into the container. Without one, it sends nothing.
+The tracker needs the router that `createKitrRouter()` from [`@kitr/router`](/packages/router) binds into the container. Without one, it sends nothing.
 
 To send page views yourself, turn the automatic ones off:
 
 ```ts
 // config/analytics.ts
-import { defineConfig } from 'kitr/analytics'
+import { defineConfig } from '@kitr/analytics'
 
 export default defineConfig({
   adapters: [],
@@ -215,8 +215,8 @@ export default defineConfig({
 Then call `page()` where you decide a page was seen, for example when a wizard step changes but the URL does not:
 
 ```tsx
-// app/features/onboarding/step.tsx
-import { useAnalytics } from 'kitr/analytics/react'
+// app/components/onboarding/step.tsx
+import { useAnalytics } from '@kitr/analytics/react'
 import { useEffect } from 'react'
 
 export function OnboardingStep({ step }: { step: 'team' | 'project' | 'invite' }) {
@@ -228,15 +228,15 @@ export function OnboardingStep({ step }: { step: 'team' | 'project' | 'invite' }
 }
 ```
 
-If you build the React tree by hand instead of through the provider, render `<TrackPageViews />` from `kitr/analytics/react` once inside it. It renders nothing and does the same work as the provider's tracker.
+If you build the React tree by hand instead of through the provider, render `<TrackPageViews />` from `@kitr/analytics/react` once inside it. It renders nothing and does the same work as the provider's tracker.
 
 ## Identify a signed-in user
 
 After sign-in, tell the services who the visitor is, so later events join up with their earlier ones. Pass a stable id, never an email address:
 
 ```tsx
-// app/features/auth/sign-in-form.tsx
-import { useAnalytics } from 'kitr/analytics/react'
+// app/components/auth/sign-in-form.tsx
+import { useAnalytics } from '@kitr/analytics/react'
 import type { AppEvents } from '#app/analytics'
 
 export function useAfterSignIn() {
@@ -255,8 +255,8 @@ Call the returned function when Grace's sign-in succeeds: `afterSignIn({ id: 'us
 Call `reset()` when the visitor signs out, so the next person on a shared computer is not counted as them:
 
 ```tsx
-// app/features/auth/sign-out-button.tsx
-import { useAnalytics } from 'kitr/analytics/react'
+// app/components/auth/sign-out-button.tsx
+import { useAnalytics } from '@kitr/analytics/react'
 
 export function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
   const analytics = useAnalytics()
@@ -282,7 +282,7 @@ Google Analytics clears `user_id`, PostHog calls `posthog.reset()`, and adapters
 
 ```ts
 // config/analytics.ts
-import { defineConfig, plausible } from 'kitr/analytics'
+import { defineConfig, plausible } from '@kitr/analytics'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -298,8 +298,8 @@ A prop on the call wins over a global prop with the same name: `track('project.c
 Outside React, read the service from the container. In a store, a query hook or a provider, `app.container.use('analytics')` returns the same instance the components use:
 
 ```ts
-// app/features/projects/create-project.ts
-import type { Analytics } from 'kitr/analytics'
+// app/lib/projects/create-project.ts
+import type { Analytics } from '@kitr/analytics'
 import type { KitrApp } from 'kitr/app'
 import type { AppEvents } from '#app/analytics'
 
@@ -336,7 +336,7 @@ Nothing to install. `googleAnalytics()` injects the `gtag.js` script once and tu
 
 ```ts
 // config/analytics.ts
-import { defineConfig, googleAnalytics } from 'kitr/analytics'
+import { defineConfig, googleAnalytics } from '@kitr/analytics'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -365,7 +365,7 @@ Nothing to install. `plausible()` injects Plausible's manual script (`/js/script
 
 ```ts
 // config/analytics.ts
-import { defineConfig, plausible } from 'kitr/analytics'
+import { defineConfig, plausible } from '@kitr/analytics'
 
 export default defineConfig({
   adapters: [plausible({ domain: 'app.acme.com' })],
@@ -376,7 +376,7 @@ For a self-hosted Plausible, point `apiHost` at it. A trailing slash is removed:
 
 ```ts
 // config/analytics.ts
-import { defineConfig, plausible } from 'kitr/analytics'
+import { defineConfig, plausible } from '@kitr/analytics'
 
 export default defineConfig({
   adapters: [plausible({ domain: 'app.acme.com', apiHost: 'https://stats.acme.com' })],
@@ -401,7 +401,7 @@ pnpm add posthog-js
 ```ts
 // config/analytics.ts
 import posthogJs from 'posthog-js'
-import { defineConfig, posthog } from 'kitr/analytics'
+import { defineConfig, posthog } from '@kitr/analytics'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -453,7 +453,7 @@ The adapter calls `posthog.init(apiKey, { api_host, capture_pageview: false, ...
 
 ```ts
 // config/analytics.ts
-import { consoleAdapter, defineConfig, plausible } from 'kitr/analytics'
+import { consoleAdapter, defineConfig, plausible } from '@kitr/analytics'
 
 export default defineConfig({
   adapters: [plausible({ domain: 'app.acme.com' }), consoleAdapter({ prefix: '[acme]' })],
@@ -475,7 +475,7 @@ In much of the world you need permission before tracking. Set `enabled: false` a
 
 ```ts
 // config/analytics.ts
-import { defineConfig, googleAnalytics } from 'kitr/analytics'
+import { defineConfig, googleAnalytics } from '@kitr/analytics'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -490,7 +490,7 @@ When the visitor agrees, call `enable()`. It loads each adapter's script, then s
 
 ```tsx
 // app/components/tracking-choice.tsx
-import { useAnalytics } from 'kitr/analytics/react'
+import { useAnalytics } from '@kitr/analytics/react'
 import { useState } from 'react'
 
 export function TrackingChoice() {
@@ -541,9 +541,9 @@ The one exception is `analytics: false` in `config/consent.ts`, which tells cons
 `use()` adds an adapter after the app has started. If analytics is already enabled, the adapter's script loads at once; otherwise it loads on `enable()`. Use it for a service you only want for some visitors, such as session replay for Acme staff:
 
 ```tsx
-// app/features/staff/staff-tools.tsx
-import { posthog } from 'kitr/analytics'
-import { useAnalytics } from 'kitr/analytics/react'
+// app/components/staff/staff-tools.tsx
+import { posthog } from '@kitr/analytics'
+import { useAnalytics } from '@kitr/analytics/react'
 import posthogJs from 'posthog-js'
 import { useEffect } from 'react'
 
@@ -565,7 +565,7 @@ An added adapter only receives calls made after it was added. `analytics.adapter
 Ad blockers block analytics scripts, and vendors have outages. Every adapter call runs inside a `try`, and a rejected promise from an adapter is caught, so `track()` never throws into your click handler and the other adapters still receive the call:
 
 ```ts
-import { createAnalytics, memoryAdapter } from 'kitr/analytics'
+import { createAnalytics, memoryAdapter } from '@kitr/analytics'
 
 const memory = memoryAdapter()
 const analytics = createAnalytics({
@@ -592,12 +592,12 @@ Call `track()` from event handlers and effects, never during render or in a rout
 Pass `memoryAdapter()` in config and assert on its `calls`. Each call is recorded as `{ type, args }`, with `globalProps` already merged in. This test renders the button from [Track your first event](#track-your-first-event) inside a test app and checks the event it sends:
 
 ```tsx
-// app/features/projects/new-project-button.test.tsx
+// app/components/projects/new-project-button.test.tsx
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { memoryAdapter } from 'kitr/analytics'
-import { analyticsProvider } from 'kitr/analytics/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { memoryAdapter } from '@kitr/analytics'
+import { analyticsProvider } from '@kitr/analytics/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
 import { NewProjectButton } from './new-project-button'
 
@@ -625,8 +625,8 @@ describe('NewProjectButton', () => {
 For code outside components, build an instance with `createAnalytics()` and no app at all. This one checks the consent queue:
 
 ```ts
-// app/features/projects/analytics.test.ts
-import { createAnalytics, memoryAdapter } from 'kitr/analytics'
+// app/lib/projects/analytics.test.ts
+import { createAnalytics, memoryAdapter } from '@kitr/analytics'
 import { expect, it } from 'vitest'
 
 it('holds events until tracking is enabled', async () => {
@@ -661,7 +661,7 @@ The assertions you will write most:
 An adapter is an object that implements `AnalyticsAdapter`. Only `name`, `page` and `track` are required:
 
 ```ts
-// The interface, from kitr/analytics
+// The interface, from @kitr/analytics
 export interface AnalyticsAdapter {
   name: string
   init?(): void | Promise<void>
@@ -678,7 +678,7 @@ This adapter sends Acme's events to its own endpoint with `navigator.sendBeacon`
 
 ```ts
 // app/analytics/acme-adapter.ts
-import type { AnalyticsAdapter, EventProps } from 'kitr/analytics'
+import type { AnalyticsAdapter, EventProps } from '@kitr/analytics'
 
 export function acmeAdapter(options: { endpoint: string }): AnalyticsAdapter {
   let userId: string | undefined
@@ -707,7 +707,7 @@ Register it in config like any built-in adapter:
 
 ```ts
 // config/analytics.ts
-import { defineConfig } from 'kitr/analytics'
+import { defineConfig } from '@kitr/analytics'
 import { acmeAdapter } from '#app/analytics/acme-adapter'
 
 export default defineConfig({

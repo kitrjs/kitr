@@ -2,9 +2,11 @@ import { type ChildProcess, execFileSync, spawn } from 'node:child_process'
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -70,6 +72,26 @@ export function copyExample(name: string): string {
   cpSync(join(kit, 'p', 'biome.json'), join(dir, 'biome.json'))
   remove(kit)
   return dir
+}
+
+/**
+ * Install workspace `@kitr/*` packages into a copied example without touching the example: its
+ * linked node_modules becomes a folder of links to the example's entries, plus the new packages.
+ */
+export function linkPackages(dir: string, names: string[]) {
+  const modules = join(dir, 'node_modules')
+  const source = readlinkSync(modules)
+  rmSync(modules)
+  mkdirSync(join(modules, '@kitr'), { recursive: true })
+  for (const name of readdirSync(source)) {
+    if (name === '@kitr') continue
+    symlinkSync(join(source, name), join(modules, name))
+  }
+  for (const name of readdirSync(join(source, '@kitr')))
+    symlinkSync(join(source, '@kitr', name), join(modules, '@kitr', name))
+  for (const name of names)
+    if (!existsSync(join(modules, '@kitr', name)))
+      symlinkSync(join(root, 'packages', name), join(modules, '@kitr', name), 'dir')
 }
 
 export function remove(dir: string) {

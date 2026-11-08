@@ -1,5 +1,5 @@
-import { defineMail } from 'kitr/mail'
-import type { AuthMailProps } from 'kitr/auth/server'
+import { defineMail } from '@kitr/mail'
+import type { AuthMailProps } from '@kitr/auth/server'
 
 const page = (heading: string, intro: string, cta: string, url: string) => (
   <html lang="en">

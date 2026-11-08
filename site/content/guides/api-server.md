@@ -73,8 +73,8 @@ kitr make:controller invoices --resource
 Replace the generated body with Acme's invoices. They live in memory for now; the next section moves them to Postgres:
 
 ```ts
-// server/controllers/invoices_controller.ts
-import type { HttpContext } from 'kitr/api'
+// server/controllers/invoices-controller.ts
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
 
@@ -122,10 +122,10 @@ Register it. `resource()` adds a route for each REST method the controller has, 
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
-import HealthController from '#server/controllers/health_controller'
-import InvoicesController from '#server/controllers/invoices_controller'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
+import HealthController from '#server/controllers/health-controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group('/api', (r) =>
@@ -203,7 +203,7 @@ export const invoices = pgTable('invoices', {
 ```ts
 // config/db.ts
 import { drizzle } from 'drizzle-orm/postgres-js'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import postgres from 'postgres'
 import * as schema from '#server/db/schema'
 
@@ -220,11 +220,11 @@ export default defineDb({
 Set `DATABASE_URL=postgres://postgres:acme@localhost:5432/billing` in `.env`, then create the table with `drizzle-kit` (the [DB guide](/packages/db#run-migrations) shows `drizzle.config.ts` and the scripts). In the controller, `ctx.app` is the app for this request; `useDb` returns the pooled client:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import { desc, eq } from 'drizzle-orm'
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
-import { useDb } from 'kitr/db'
+import { useDb } from '@kitr/db'
 import { z } from 'zod'
 import type { AppDb } from '#config/db'
 import { invoices } from '#server/db/schema'
@@ -264,7 +264,7 @@ The provider connects once during boot, before the first request, and closes the
 
 ## Require a token
 
-`authMiddleware` from `kitr/auth/server` reads `Authorization: Bearer <token>`, looks the user up with your function and puts them on `ctx.locals`. In a project without React, install the package yourself (`kitr add auth` skips client packages here):
+`authMiddleware` from `@kitr/auth/server` reads `Authorization: Bearer <token>`, looks the user up with your function and puts them on `ctx.locals`. In a project without React, install the package yourself (`kitr add auth` skips client packages here):
 
 ```sh
 pnpm add @kitr/auth
@@ -272,7 +272,7 @@ pnpm add @kitr/auth
 
 ```ts
 // server/auth.ts
-import { authMiddleware } from 'kitr/auth/server'
+import { authMiddleware } from '@kitr/auth/server'
 
 export interface ApiUser {
   id: string
@@ -293,11 +293,11 @@ Put it on the group, so every invoice route needs a user:
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
 import { auth } from '#server/auth'
-import HealthController from '#server/controllers/health_controller'
-import InvoicesController from '#server/controllers/invoices_controller'
+import HealthController from '#server/controllers/health-controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group('/api', (r) =>
@@ -318,13 +318,13 @@ When the API and the web app live on different origins (`api.acme.com` and `app.
 
 ```ts
 // server/routes.ts
-import { cors, rateLimit } from 'kitr/api'
+import { cors, rateLimit } from '@kitr/api'
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
 import { auth } from '#server/auth'
-import HealthController from '#server/controllers/health_controller'
-import InvoicesController from '#server/controllers/invoices_controller'
+import HealthController from '#server/controllers/health-controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group(
@@ -347,7 +347,7 @@ A dashboard showing invoices should not poll. [Realtime](/packages/realtime) cha
 
 ```ts
 // app/channels/invoices.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const invoicesChannel = defineChannel({
@@ -366,7 +366,7 @@ The socket is a route on the same table, from the `realtime` extension. `createS
 ```ts
 // server/routes.ts
 // ...
-import realtime from 'kitr/realtime/routes'
+import realtime from '@kitr/realtime/routes'
 import { invoicesChannel } from '#app/channels/invoices'
 
 export const routes = defineRoutes([api, realtime], (router) =>
@@ -381,7 +381,7 @@ export const routes = defineRoutes([api, realtime], (router) =>
 Add a `pay` route and emit from it. `app` is on every `HttpContext`, so the controller reaches the socket server through the container:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 // ...
 import { invoicesChannel } from '#app/channels/invoices'
 
@@ -429,7 +429,7 @@ A kitr frontend in another project imports only the `ServerRoutes` type and the 
 
 ```ts
 // app/api/billing.ts
-import { createApiClient, registerRoutes } from 'kitr/api/client'
+import { createApiClient, registerRoutes } from '@kitr/api/client'
 import type { ServerRoutes } from '@acme/billing-api'
 import { routeTable } from '@acme/billing-api/routes'
 
@@ -464,7 +464,7 @@ The server is a fetch handler, so tests call it without opening a port and run i
 
 ```ts
 // test/invoices.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { server } from '#server/main'
 

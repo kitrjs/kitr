@@ -1,5 +1,5 @@
-import { useSchemaForm } from 'kitr/forms'
-import { Link } from 'kitr/router'
+import { useSchemaForm } from '@kitr/forms'
+import { Link } from '@kitr/router'
 import { useState } from 'react'
 import { z } from 'zod'
 import { api } from '#app/api/client'

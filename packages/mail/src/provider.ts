@@ -11,8 +11,8 @@ export const mailProvider = defineProvider({
     if (app.isProduction && (!config.transport || config.transport.name === 'log'))
       throw new Error(
         config.transport
-          ? '[kitr/mail] The log transport prints every email (reset links included) and is not allowed in production; set Resend, SMTP or your own transport in config/mail.ts.'
-          : '[kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).',
+          ? '[@kitr/mail] The log transport prints every email (reset links included) and is not allowed in production; set Resend, SMTP or your own transport in config/mail.ts.'
+          : '[@kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).',
       )
     app.container.singleton('mailer', () =>
       createMailer({ ...config, transport: config.transport ?? createLogTransport() }),

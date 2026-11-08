@@ -6,7 +6,7 @@ order: 1
 
 # Theme
 
-Users expect dark mode, a page that does not flash white before it turns dark, and buttons that look the same on every screen. `kitr/theme` gives your app light, dark and system themes that follow the operating system and remember the user's choice, a set of design tokens as CSS variables, toasts, and the settings `kitr ui add` uses to copy ready-made components into your app. It is built on [CSS custom properties](https://developer.mozilla.org/docs/Web/CSS/Using_CSS_custom_properties), [sonner](https://sonner.emilkowal.ski) for toasts and [shadcn/ui](https://ui.shadcn.com)-compatible registries for components, and adds a theme provider, a no-flash script and typed token helpers on top.
+Users expect dark mode, a page that does not flash white before it turns dark, and buttons that look the same on every screen. `@kitr/theme` gives your app light, dark and system themes that follow the operating system and remember the user's choice, a set of design tokens as CSS variables, toasts, and the settings `kitr ui add` uses to copy ready-made components into your app. It is built on [CSS custom properties](https://developer.mozilla.org/docs/Web/CSS/Using_CSS_custom_properties), [sonner](https://sonner.emilkowal.ski) for toasts and [shadcn/ui](https://ui.shadcn.com)-compatible registries for components, and adds a theme provider, a no-flash script and typed token helpers on top.
 
 It runs in the browser, and on the server during server rendering. For utility classes on top of the same tokens, add [tailwind](/packages/tailwind) as well; for a server-only project there is nothing to theme.
 
@@ -25,8 +25,8 @@ What `kitr add` does:
 - Adds `'@kitr/theme'` to `packages` and `() => import('@kitr/theme/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/theme.ts` (shown under Configure).
 - Writes `app/styles/tokens.css`, an empty `:root` block for your token overrides.
-- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import 'kitr/theme/styles.css';`. Without it, it links `#app/styles/tokens.css?url` from `head()` in `app/document.tsx`, after `kitr/theme/styles.css`.
-- Edits `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes) to apply the saved theme before first paint: imports `ThemeScript` from `kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A document that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
+- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import '@kitr/theme/styles.css';`. Without it, it links `#app/styles/tokens.css?url` from `head()` in `app/document.tsx`, after `@kitr/theme/styles.css`.
+- Edits `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes) to apply the saved theme before first paint: imports `ThemeScript` from `@kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A document that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
 - Adds a `theme` section to `AGENTS.md`: use `useTheme()`, put `<ThemeScript />` in the document head, take colours and radii from the `--kitr-*` variables, keep components in `app/components/ui/` and add them with `kitr ui add`, and use Hugeicons through `<Icon />`.
 - Adds no environment variables and no scripts. When it finishes it prints `Pull components with kitr ui add button input form`.
 
@@ -38,7 +38,7 @@ kitr add theme --dry-run
 
 The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include theme, and copy in a starter set of components with it (`icon`, `button`, `input`, `card`, `theme-toggle` and more). The `blank` kit does not.
 
-The base stylesheet, `kitr/theme/styles.css`, is linked from the `app/document.tsx` that [router](/packages/router) writes, so it is in place before you add theme. With [tailwind](/packages/tailwind), `app/styles/app.css` imports it instead.
+The base stylesheet, `@kitr/theme/styles.css`, is linked from the `app/document.tsx` that [router](/packages/router) writes, so it is in place before you add theme. With [tailwind](/packages/tailwind), `app/styles/app.css` imports it instead.
 
 `kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning` from `app/document.tsx`, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and the components in `app/components/ui/` stay, because they are yours.
 
@@ -48,7 +48,7 @@ The base stylesheet, `kitr/theme/styles.css`, is linked from the `app/document.t
 
 ```ts
 // config/theme.ts
-import { defineConfig } from 'kitr/theme'
+import { defineConfig } from '@kitr/theme'
 
 export default defineConfig({
   default: 'system',
@@ -85,7 +85,7 @@ The config is read once, when the app is created. `useConfig('theme')` from [rea
 
 ```tsx
 // app/components/theme-button.tsx
-import { useTheme } from 'kitr/theme'
+import { useTheme } from '@kitr/theme'
 
 export function ThemeButton() {
   const { resolved, toggle } = useTheme()
@@ -140,8 +140,8 @@ For a styled toggle with an icon, copy the registry's version instead: `kitr ui 
 `toggle()` is a two-way switch. To offer "match my system" as well, call `setTheme` from a select:
 
 ```tsx
-// app/features/settings/appearance.tsx
-import { type Theme, useTheme } from 'kitr/theme'
+// app/components/settings/appearance.tsx
+import { type Theme, useTheme } from '@kitr/theme'
 
 export function AppearanceSetting() {
   const { theme, setTheme } = useTheme()
@@ -166,9 +166,9 @@ React applies the theme after it hydrates, a moment after the first paint. Witho
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
-import css0 from 'kitr/theme/styles.css?url'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
+import { ThemeScript } from '@kitr/theme'
+import css0 from '@kitr/theme/styles.css?url'
 
 export function head() {
   return {
@@ -204,10 +204,10 @@ If you changed `storageKey` or `attribute` in `config/theme.ts`, pass the same v
 In `ssr` mode the server can send the right theme in the HTML itself. `setTheme` writes the choice to a cookie as well as to `localStorage`, and `themeFromCookie` reads it from the request's `Cookie` header:
 
 ```ts
-// app/features/theme/read-theme.ts
+// app/lib/theme/read-theme.ts
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
-import { themeFromCookie } from 'kitr/theme/server'
+import { themeFromCookie } from '@kitr/theme/server'
 
 /** Runs on the server only: the visitor's theme, straight from the request cookie. */
 export const readTheme = createServerFn({ method: 'GET' }).handler(
@@ -218,7 +218,7 @@ export const readTheme = createServerFn({ method: 'GET' }).handler(
 ```ts
 // app/routes.ts
 import { head, RootDocument } from './document'
-import { readTheme } from '#app/features/theme/read-theme'
+import { readTheme } from '#app/lib/theme/read-theme'
 
 r.root({ head, loader: () => readTheme(), component: RootDocument })
 ```
@@ -226,7 +226,7 @@ r.root({ head, loader: () => readTheme(), component: RootDocument })
 ```tsx
 // app/document.tsx
 // ...
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const root = getRouteApi('__root__')
 
@@ -250,7 +250,7 @@ export function RootDocument() {
 `themeFromCookie` returns only `'light'` or `'dark'`:
 
 ```ts
-import { themeFromCookie } from 'kitr/theme/server'
+import { themeFromCookie } from '@kitr/theme/server'
 
 themeFromCookie('session=abc; kitr-theme=dark') // => 'dark'
 themeFromCookie('kitr-theme=system') // => undefined (the server cannot know the OS setting)
@@ -266,7 +266,7 @@ When it returns `undefined`, keep `<ThemeScript />` to resolve `system` in the b
 
 ```ts
 // config/theme.ts
-import { defineConfig } from 'kitr/theme'
+import { defineConfig } from '@kitr/theme'
 
 export default defineConfig({
   default: 'system',
@@ -279,10 +279,10 @@ On every change of `resolved`, the provider sets the tag's `content` to `colors.
 
 ## Use the tokens in CSS
 
-`kitr/theme/styles.css` defines every token as a `--kitr-*` variable on `:root`, with dark values under `[data-theme="dark"]`. Use them in any stylesheet and the component follows the theme without a line of JavaScript:
+`@kitr/theme/styles.css` defines every token as a `--kitr-*` variable on `:root`, with dark values under `[data-theme="dark"]`. Use them in any stylesheet and the component follows the theme without a line of JavaScript:
 
 ```css
-/* app/features/invoices/invoice-card.module.css */
+/* app/components/invoices/invoice-card.module.css */
 .card {
   background: var(--kitr-color-background);
   color: var(--kitr-color-foreground);
@@ -317,7 +317,7 @@ Don't hard-code `#fff` or `rgb(...)` in a component. A hard-coded colour does no
 The same tokens exist in JavaScript as `defaultTokens` and `darkTokens`:
 
 ```ts
-import { darkTokens, defaultTokens } from 'kitr/theme'
+import { darkTokens, defaultTokens } from '@kitr/theme'
 
 defaultTokens.var('color.primary') // => 'var(--kitr-color-primary)'
 defaultTokens.name('radius.md') // => '--kitr-radius-md'
@@ -342,11 +342,11 @@ To change a token for the whole app, override its variable in `app/styles/tokens
 }
 ```
 
-`kitr add theme` loads this file for you: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise with an import in `app/document.tsx`. If you move it, keep it after `kitr/theme/styles.css`, so your values come later in the cascade and win:
+`kitr add theme` loads this file for you: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise with an import in `app/document.tsx`. If you move it, keep it after `@kitr/theme/styles.css`, so your values come later in the cascade and win:
 
 ```tsx
 // app/document.tsx
-import css0 from 'kitr/theme/styles.css?url'
+import css0 from '@kitr/theme/styles.css?url'
 import tokens from '#app/styles/tokens.css?url'
 
 export function head() {
@@ -359,7 +359,7 @@ export function head() {
 }
 ```
 
-With [tailwind](/packages/tailwind), import it in `app/styles/app.css` after `kitr/theme/styles.css` instead: `@import './tokens.css';`.
+With [tailwind](/packages/tailwind), import it in `app/styles/app.css` after `@kitr/theme/styles.css` instead: `@import './tokens.css';`.
 
 ## Define your own tokens
 
@@ -367,7 +367,7 @@ With [tailwind](/packages/tailwind), import it in `app/styles/app.css` after `ki
 
 ```ts
 // app/styles/acme-tokens.ts
-import { defineTokens } from 'kitr/theme'
+import { defineTokens } from '@kitr/theme'
 
 export const acme = defineTokens(
   {
@@ -390,7 +390,7 @@ acme.css()
 Emit the variables once, from the root layout, or spread `flat()` into a `style` to scope them to one element:
 
 ```tsx
-// app/features/invoices/invoice-status.tsx
+// app/components/invoices/invoice-status.tsx
 import { acme } from '#app/styles/acme-tokens'
 
 export function InvoiceStatus({ status }: { status: 'paid' | 'overdue' }) {
@@ -419,7 +419,7 @@ kitr css:types
 ```
 
 ```ts
-// app/features/invoices/invoice-card.module.css.d.ts
+// app/components/invoices/invoice-card.module.css.d.ts
 // Generated by `kitr css:types`. Do not edit.
 declare const classes: {
   readonly card: string
@@ -431,8 +431,8 @@ export default classes
 `pick(styles, ...parts)` joins class names, with conditions in an object:
 
 ```tsx
-// app/features/invoices/invoice-card.tsx
-import { pick } from 'kitr/theme'
+// app/components/invoices/invoice-card.tsx
+import { pick } from '@kitr/theme'
 import styles from './invoice-card.module.css'
 
 export function InvoiceCard({ id, total, overdue }: { id: string; total: number; overdue: boolean }) {
@@ -452,8 +452,8 @@ export function InvoiceCard({ id, total, overdue }: { id: string; total: number;
 `vars()` builds a `style` object of CSS variables, so a component passes a number to its stylesheet without inline colour or size rules:
 
 ```tsx
-// app/features/projects/progress-bar.tsx
-import { vars } from 'kitr/theme'
+// app/components/projects/progress-bar.tsx
+import { vars } from '@kitr/theme'
 import styles from './progress-bar.module.css'
 
 export function ProgressBar({ done }: { done: number }) {
@@ -463,7 +463,7 @@ export function ProgressBar({ done }: { done: number }) {
 ```
 
 ```css
-/* app/features/projects/progress-bar.module.css */
+/* app/components/projects/progress-bar.module.css */
 .track {
   height: 0.5rem;
   border-radius: var(--kitr-radius-sm);
@@ -480,8 +480,8 @@ export function ProgressBar({ done }: { done: number }) {
 `dataAttrs()` turns an object into `data-*` attributes, so plain CSS can target a component's state with an attribute selector:
 
 ```tsx
-// app/features/orders/order-row.tsx
-import { dataAttrs } from 'kitr/theme'
+// app/components/orders/order-row.tsx
+import { dataAttrs } from '@kitr/theme'
 
 export function OrderRow({ status, selected }: { status: 'open' | 'shipped'; selected: boolean }) {
   return <tr className="order-row" {...dataAttrs({ status, isSelected: selected })} />
@@ -504,11 +504,11 @@ Keys become kebab-case. `true` gives an empty attribute; `false`, `null` and `un
 
 ## Build component variants
 
-`kitr/theme` re-exports [class-variance-authority](https://cva.style) as `cva` (with `VariantProps`) and [clsx](https://github.com/lukeed/clsx) as `clsx` and `cx`. The registry components use them, and so can yours:
+`@kitr/theme` re-exports [class-variance-authority](https://cva.style) as `cva` (with `VariantProps`) and [clsx](https://github.com/lukeed/clsx) as `clsx` and `cx`. The registry components use them, and so can yours:
 
 ```tsx
 // app/components/ui/badge.tsx
-import { cva, cx, type VariantProps } from 'kitr/theme'
+import { cva, cx, type VariantProps } from '@kitr/theme'
 
 const badge = cva('badge', {
   variants: {
@@ -535,8 +535,8 @@ With [tailwind](/packages/tailwind), use its `cn()` instead of `cx`, which also 
 `toast` shows a short message. Call it from anywhere: a component, an event handler or a package.
 
 ```tsx
-// app/features/invoices/save-invoice-button.tsx
-import { toast, toastError } from 'kitr/theme'
+// app/components/invoices/save-invoice-button.tsx
+import { toast, toastError } from '@kitr/theme'
 
 export function SaveInvoiceButton({ id }: { id: string }) {
   async function save() {
@@ -565,8 +565,8 @@ export function SaveInvoiceButton({ id }: { id: string }) {
 `toast.promise` keeps the user informed during a slow save, and returns the same promise so you can still await it:
 
 ```tsx
-// app/features/invoices/send-invoice.ts
-import { toast } from 'kitr/theme'
+// app/lib/invoices/send-invoice.ts
+import { toast } from '@kitr/theme'
 
 export function sendInvoice(id: string) {
   return toast.promise(fetch(`/api/invoices/${id}/send`, { method: 'POST' }), {
@@ -588,7 +588,7 @@ Once `sonner` is installed, the theme provider loads it and mounts its `<Toaster
 Without sonner, every call goes to the console instead, so a package can call `toast` without making sonner a dependency:
 
 ```ts
-import { toast, toastError } from 'kitr/theme'
+import { toast, toastError } from '@kitr/theme'
 
 toast('Draft saved') // console.info('[toast] Draft saved')
 toast.success('Invoice inv_1 saved') // console.info('[toast:success] Invoice inv_1 saved')
@@ -603,9 +603,9 @@ Calls made before sonner has loaded, such as during the first render, also go to
 `setToastImplementation` replaces what `toast` calls. Give it a function with `success`, `error`, `info`, `warning` and `promise` methods. The provider does this for sonner; do it yourself to route toasts to another library or to your own UI:
 
 ```ts
-// app/providers/toast_provider.ts
+// app/providers/toast-provider.ts
 import { defineProvider } from 'kitr/app'
-import { setToastImplementation } from 'kitr/theme'
+import { setToastImplementation } from '@kitr/theme'
 import { notify } from '#app/components/notify'
 
 export default defineProvider({
@@ -635,7 +635,7 @@ kitr ui add button input card dialog
 ```
 
 ```tsx
-// app/features/projects/new-project-card.tsx
+// app/components/projects/new-project-card.tsx
 import { Button } from '#components/ui/button'
 import { Card } from '#components/ui/card'
 
@@ -666,7 +666,7 @@ The components use the `--kitr-*` tokens and `cva`, so they follow the theme and
 | `input`, `label`, `select`, `textarea` | Form controls. |
 | `page-header` | Title, description and actions row for a page. |
 | `skeleton` | Loading placeholder. |
-| `sonner` | Toasts with sonner, themed by `kitr/theme`. |
+| `sonner` | Toasts with sonner, themed by `@kitr/theme`. |
 | `theme-toggle` | Light and dark toggle using `useTheme`. |
 | `list-page` | A list route: page header, data table bound to search params, empty state. Writes a page, not a component. |
 | `sign-in-page` | A sign-in route using [forms](/packages/forms). Writes a page, not a component. |
@@ -678,7 +678,7 @@ To use your company's registry, set `registry` in `config/theme.ts`, pass `--reg
 Icons are [Hugeicons](https://hugeicons.com) in the stroke-rounded style: round caps, round joins, soft corners, drawn in `currentColor`. `kitr ui add icon` (every kit that includes theme has it) gives you `<Icon>`:
 
 ```tsx
-// app/features/projects/add-project-button.tsx
+// app/components/projects/add-project-button.tsx
 import { Add01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '#components/ui/button'
 import { Icon } from '#components/ui/icon'
@@ -700,7 +700,7 @@ Two apps on one domain, such as `app.acme.com` and `admin.acme.com` sharing cook
 
 ```ts
 // config/theme.ts
-import { defineConfig } from 'kitr/theme'
+import { defineConfig } from '@kitr/theme'
 
 export default defineConfig({
   default: 'system',
@@ -716,7 +716,7 @@ export default defineConfig({
 <ThemeScript storageKey="acme-admin-theme" attribute="data-mode" />
 ```
 
-With a different `attribute`, `kitr/theme/styles.css` no longer switches to dark, because its dark block targets `[data-theme="dark"]`. Copy the dark values into your own `[data-mode="dark"]` block in `app/styles/tokens.css`, or keep the default attribute.
+With a different `attribute`, `@kitr/theme/styles.css` no longer switches to dark, because its dark block targets `[data-theme="dark"]`. Copy the dark values into your own `[data-mode="dark"]` block in `app/styles/tokens.css`, or keep the default attribute.
 
 ## Use ThemeProvider on its own
 
@@ -724,9 +724,9 @@ The theme provider in `kitrrc.ts` renders `ThemeProvider` with your config. Outs
 
 ```tsx
 // app/widget/main.tsx
-import { ThemeProvider } from 'kitr/theme'
+import { ThemeProvider } from '@kitr/theme'
 import { createRoot } from 'react-dom/client'
-import { InvoiceStatus } from '../features/invoices/invoice-status'
+import { InvoiceStatus } from '../components/invoices/invoice-status'
 
 createRoot(document.getElementById('acme-widget')!).render(
   <ThemeProvider defaultTheme="dark" storageKey="acme-widget-theme" colors={{ dark: '#0b1020' }}>
@@ -762,7 +762,7 @@ This writes `app/components/ui/theme-toggle.tsx`, `app/components/ui/button.tsx`
 ```tsx
 // app/components/ui/theme-toggle.tsx
 import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'
-import { useTheme } from 'kitr/theme'
+import { useTheme } from '@kitr/theme'
 import { Button } from '#components/ui/button'
 import { Icon } from '#components/ui/icon'
 
@@ -797,7 +797,7 @@ kitr ui list
 
 | Error | When | What to do |
 | --- | --- | --- |
-| `[kitr/theme] useTheme() must be used inside <ThemeProvider>.` | A component called `useTheme` with no theme provider above it. | Add the theme provider with `kitr add theme`, or render inside `ThemeProvider`. In tests, boot an app with `themeProvider`. |
+| `[@kitr/theme] useTheme() must be used inside <ThemeProvider>.` | A component called `useTheme` with no theme provider above it. | Add the theme provider with `kitr add theme`, or render inside `ThemeProvider`. In tests, boot an app with `themeProvider`. |
 | `Component "<name>" not found at <registry> (404)` | `kitr ui add` asked the registry for a component it does not have. | Check the name with `kitr ui list`, or the `registry` setting. |
 | `Component "<name>" not found in <dir>` | The same, for a registry that is a local directory. | Check the directory has `<name>.json`. |
 | No error: the file is kept | `kitr ui add` found the component file already there. It keeps yours and still reports the component as added. | Pass `--overwrite` to replace it with the registry's version. |
@@ -808,8 +808,8 @@ In a test, boot an app with the theme provider and render with `renderWithKitr` 
 
 ```tsx
 // app/components/theme-button.test.tsx
-import themeProvider from 'kitr/theme/provider'
-import { createTestApp, renderWithKitr } from 'kitr/testing/react'
+import themeProvider from '@kitr/theme/provider'
+import { createTestApp, renderWithKitr } from '@kitr/testing/react'
 import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ThemeButton } from './theme-button'
@@ -866,8 +866,8 @@ export function prefersDark(dark: boolean) {
 Toasts need no fake. Without sonner they log, so spy on the console, or install your own implementation and assert on it:
 
 ```ts
-// app/features/invoices/send-invoice.test.ts
-import { setToastImplementation, toastError } from 'kitr/theme'
+// app/lib/invoices/send-invoice.test.ts
+import { setToastImplementation, toastError } from '@kitr/theme'
 import { afterEach, expect, it, vi } from 'vitest'
 
 afterEach(() => setToastImplementation(null))
@@ -890,7 +890,7 @@ it('shows the error message from a failed payment', () => {
 
 ## Next steps
 
-- [API reference](/packages/theme/api): every export of `kitr/theme`, `kitr/theme/provider` and `kitr/theme/server`.
+- [API reference](/packages/theme/api): every export of `@kitr/theme`, `@kitr/theme/provider` and `@kitr/theme/server`.
 - [Tailwind](/packages/tailwind): the same tokens as utility classes, and `cn()`.
 - [Router](/packages/router): writes the `app/document.tsx` where `<ThemeScript />` and the stylesheet go.
 - [sonner](https://sonner.emilkowal.ski): toast options such as `description`, `action` and `duration`.

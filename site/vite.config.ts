@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { defineConfig, type Plugin } from 'vite'
 
 const site = dirname(fileURLToPath(import.meta.url))
@@ -18,7 +18,7 @@ const playPages = readdirSync(packagesDir).flatMap((pkg) => {
 })
 
 /**
- * Package examples live in packages/<pkg>/examples and import `kitr/*` like any app would.
+ * Package examples live in packages/<pkg>/examples and import `@kitr/*` like any app would.
  * Resolve those imports from the site, which has every package installed.
  */
 function examplesResolve(): Plugin {

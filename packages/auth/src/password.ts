@@ -32,7 +32,7 @@ export function toBase64Url(bytes: Uint8Array): string {
 
 /** The bytes of a base64url string. Throws on characters outside the alphabet. */
 export function fromBase64Url(text: string): Uint8Array {
-  if (!/^[A-Za-z0-9_-]*$/.test(text)) throw new Error('[kitr/auth] Not base64url.')
+  if (!/^[A-Za-z0-9_-]*$/.test(text)) throw new Error('[@kitr/auth] Not base64url.')
   const padded = text.replace(/-/g, '+').replace(/_/g, '/')
   const binary = atob(padded.padEnd(padded.length + ((4 - (padded.length % 4)) % 4), '='))
   return Uint8Array.from(binary, (c) => c.charCodeAt(0))

@@ -11,7 +11,7 @@ export default definePackage({
     ctx.deps.add({ name: '@types/three', dev: true })
     ctx.agents.add(
       '3d',
-      `- 3D: wrap every scene in \`<Scene>\` from \`kitr/3d\` (not a bare \`<Canvas>\`): it renders client-only, shows \`fallback\` without WebGL or on error, pauses off screen and respects reduced motion. Give it a size with \`className\`.\n- Hooks and components come from \`kitr/3d\` (React Three Fiber) and \`kitr/3d/drei\` (drei); \`three\` itself is imported directly. Load models with \`useModel('/models/<name>.glb')\` and keep them in \`public/models/\`.\n- Colours from the theme: \`useThemeColor('--kitr-color-primary')\`, never hard-coded hex values. Run \`kitr 3d:decoders\` once when a model is Draco-compressed.`,
+      `- 3D: wrap every scene in \`<Scene>\` from \`@kitr/3d\` (not a bare \`<Canvas>\`): it renders client-only, shows \`fallback\` without WebGL or on error, pauses off screen and respects reduced motion. Give it a size with \`className\`.\n- Hooks and components come from \`@kitr/3d\` (React Three Fiber) and \`@kitr/3d/drei\` (drei); \`three\` itself is imported directly. Load models with \`useModel('/models/<name>.glb')\` and keep them in \`public/models/\`.\n- Colours from the theme: \`useThemeColor('--kitr-color-primary')\`, never hard-coded hex values. Run \`kitr 3d:decoders\` once when a model is Draco-compressed.`,
     )
   },
   remove(ctx) {
@@ -30,7 +30,7 @@ export default definePackage({
       },
     ]
   },
-  wraps: { '@react-three/fiber': 'kitr/3d', '@react-three/drei': 'kitr/3d/drei' },
-  eject: { 'kitr/3d': '@react-three/fiber', 'kitr/3d/drei': '@react-three/drei' },
+  wraps: { '@react-three/fiber': '@kitr/3d', '@react-three/drei': '@kitr/3d/drei' },
+  eject: { '@kitr/3d': '@react-three/fiber', '@kitr/3d/drei': '@react-three/drei' },
   vite: { optimizeDeps: ['three', '@react-three/fiber', '@react-three/drei'] },
 })

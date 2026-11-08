@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/updater, with its signature.
+description: Every export of @kitr/updater, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, `kitr/updater/driver`, `kitr/updater/drivers/web`, `kitr/updater/drivers/electron`, `kitr/updater/drivers/tauri`, `kitr/updater/drivers/capacitor`, read from the published type definitions. The [guide](/packages/updater/guide) shows them in use.
+Every export of `@kitr/updater`, `@kitr/updater/react`, `@kitr/updater/provider`, `@kitr/updater/driver`, `@kitr/updater/drivers/web`, `@kitr/updater/drivers/electron`, `@kitr/updater/drivers/tauri`, `@kitr/updater/drivers/capacitor`, read from the published type definitions. The [guide](/packages/updater/guide) shows them in use.
 
-## kitr/updater
+## @kitr/updater
 
 ### createCapacitorUpdaterDriver
 
@@ -246,7 +246,7 @@ type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' 
 
 Where the update flow is: `idle → checking → available → downloading → ready`, or `up-to-date` / `error`.
 
-## kitr/updater/react
+## @kitr/updater/react
 
 ### useUpdate
 
@@ -275,7 +275,7 @@ function useUpdater(): Updater;
 
 The app's `updater` service in a component. Only bound in the browser.
 
-## kitr/updater/provider
+## @kitr/updater/provider
 
 ### updaterProvider
 
@@ -286,7 +286,7 @@ const updaterProvider: import("@kitr/core").KitrProvider;
 Binds `updater` to the platform updater (`updater` capability) or the service-worker driver,
 checks at boot and on the configured interval, and stops at shutdown.
 
-## kitr/updater/driver
+## @kitr/updater/driver
 
 ### selectDriver
 
@@ -318,7 +318,7 @@ type Driver = UpdaterDriver;
 
 What an updater driver is: `UpdaterDriver`, whichever runtime supplies it.
 
-## kitr/updater/drivers/web
+## @kitr/updater/drivers/web
 
 ### createServiceWorkerUpdaterDriver
 
@@ -331,7 +331,7 @@ function createServiceWorkerUpdaterDriver(options?: {
 Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
 to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
 
-## kitr/updater/drivers/electron
+## @kitr/updater/drivers/electron
 
 ### createElectronDriver
 
@@ -349,7 +349,7 @@ development `check()` resolves to null.
 
 Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
-## kitr/updater/drivers/tauri
+## @kitr/updater/drivers/tauri
 
 ### createTauriDriver
 
@@ -363,7 +363,7 @@ signed update `tauri.conf.json`'s `plugins.updater` points at) and `@tauri-apps/
 the method that needs it reject with `E_DRIVER_UNAVAILABLE`. `apply()` reports the download as a
 fraction when the server sends a content length.
 
-## kitr/updater/drivers/capacitor
+## @kitr/updater/drivers/capacitor
 
 ### createCapacitorDriver
 

@@ -166,7 +166,7 @@ function pickedFile(file: {
 }): PickedFile {
   const bytes = async (): Promise<Uint8Array> => {
     if (file.data !== undefined) return fromBase64(file.data)
-    if (!file.path) throw new Error(`kitr/files: ${file.name} has no path to read from`)
+    if (!file.path) throw new Error(`@kitr/files: ${file.name} has no path to read from`)
     const { Filesystem } = await filesystem()
     const { data } = await Filesystem.readFile({ path: file.path })
     return typeof data === 'string' ? fromBase64(data) : new Uint8Array(await data.arrayBuffer())

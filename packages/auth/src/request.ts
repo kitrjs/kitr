@@ -80,7 +80,7 @@ export async function getRequestUser<TUser extends AuthUser = AuthUser>(): Promi
   const session = await getRequestSession<TUser>()
   if (session === undefined)
     throw new Error(
-      '[kitr/auth] getRequestUser() needs a request: call it inside runWithSession() or behind sessionMiddleware().',
+      '[@kitr/auth] getRequestUser() needs a request: call it inside runWithSession() or behind sessionMiddleware().',
     )
   return session?.user ?? null
 }

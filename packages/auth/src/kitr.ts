@@ -66,7 +66,7 @@ function chooseProvider(ctx: AddContext): AuthProvider {
   if (asked === 'session') {
     if (!ctx.hasPackage('server'))
       throw new Error(
-        '[kitr/auth] --provider session keeps sessions on a server: run `kitr add server api` first, or use --provider token.',
+        '[@kitr/auth] --provider session keeps sessions on a server: run `kitr add server api` first, or use --provider token.',
       )
     return 'session'
   }
@@ -83,7 +83,7 @@ function setupSession(ctx: AddContext) {
     )
   ctx.config('auth', sessionConfig)
   ctx.write('server/auth.ts', serverAuth)
-  ctx.write('server/controllers/auth_controller.ts', authController(emails))
+  ctx.write('server/controllers/auth-controller.ts', authController(emails))
   if (emails) ctx.write('server/mail/auth.tsx', authMail)
   ctx.env.schema('server', 'SESSION_SECRET', 'e.string({ optional: true })', '')
   ctx.env.add({ APP_URL: 'http://localhost:3000' }, 'Auth: where links in emails point')
@@ -110,7 +110,7 @@ function setupSession(ctx: AddContext) {
         table: 'server',
         imports: [
           {
-            from: '#server/controllers/auth_controller',
+            from: '#server/controllers/auth-controller',
             local: 'AuthController',
             imported: 'default',
           },
@@ -133,7 +133,7 @@ function setupSession(ctx: AddContext) {
       : src
           .replace(
             "import { server } from '#server/main'\n",
-            "import { runWithSession } from 'kitr/auth/server'\nimport { auth } from '#server/auth'\nimport { server } from '#server/main'\n",
+            "import { runWithSession } from '@kitr/auth/server'\nimport { auth } from '#server/auth'\nimport { server } from '#server/main'\n",
           )
           .replace(PLAIN_PAGE_HANDLER, SESSION_PAGE_HANDLER),
   )
@@ -162,9 +162,9 @@ function setupBetterAuth(ctx: AddContext) {
   })
 }
 
-const GUARD_NOTES = `- Guard routes with \`beforeLoad: requireAuth()\` (from \`kitr/router\`) on a layout route; permissions with \`can('projects.update', { subject })\` or \`useCan()\` in components.\n- The session is \`useSession()\` / \`useUser()\` from \`kitr/auth\`. Abilities are plain functions in \`app/abilities.ts\`, shared with the API middleware (\`kitr/auth/server\`).`
+const GUARD_NOTES = `- Guard routes with \`beforeLoad: requireAuth()\` (from \`@kitr/router\`) on a layout route; permissions with \`can('projects.update', { subject })\` or \`useCan()\` in components.\n- The session is \`useSession()\` / \`useUser()\` from \`@kitr/auth\`. Abilities are plain functions in \`app/abilities.ts\`, shared with the API middleware (\`@kitr/auth/server\`).`
 const SESSION_NOTES =
-  '\n- Server-rendered guards: `beforeLoad: async (ctx) => { await ensureSession(ctx); await requireAuth()(ctx) }` (`ensureSession` is from `kitr/auth`; drop the return value of the guard, it is not serializable), so the session is read from the request during SSR and from `GET /api/auth/session` in the browser.\n- Sessions are HttpOnly cookies: `server/auth.ts` holds the session service and the `UserProvider` (swap the in-memory users and store for your database and Redis), `server/controllers/auth_controller.ts` the routes. Pages render inside `runWithSession` (app/server.ts). Never put a token in localStorage.'
+  '\n- Server-rendered guards: `beforeLoad: async (ctx) => { await ensureSession(ctx); await requireAuth()(ctx) }` (`ensureSession` is from `@kitr/auth`; drop the return value of the guard, it is not serializable), so the session is read from the request during SSR and from `GET /api/auth/session` in the browser.\n- Sessions are HttpOnly cookies: `server/auth.ts` holds the session service and the `UserProvider` (swap the in-memory users and store for your database and Redis), `server/controllers/auth-controller.ts` the routes. Pages render inside `runWithSession` (app/server.ts). Never put a token in localStorage.'
 const BETTER_AUTH_NOTES =
   "\n- Better Auth runs in the kitr server (`server/better_auth.ts`, `app.container.use('betterAuth')`) and answers `/api/auth/*`; the browser uses its client through `betterAuthAdapter`."
 const agentNotes = (provider: AuthProvider) =>
@@ -211,7 +211,7 @@ export default definePackage({
     ctx.provider.add('@kitr/auth/provider')
     ctx.write(
       'app/abilities.ts',
-      `import { defineAbilities } from 'kitr/auth'\n\nexport interface User {\n  id: string\n  email: string\n  role: 'admin' | 'member'\n}\n\nexport const abilities = defineAbilities({\n  'projects.update': (user: User, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,\n})\n`,
+      `import { defineAbilities } from '@kitr/auth'\n\nexport interface User {\n  id: string\n  email: string\n  role: 'admin' | 'member'\n}\n\nexport const abilities = defineAbilities({\n  'projects.update': (user: User, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,\n})\n`,
     )
     const provider = chooseProvider(ctx)
     if (provider === 'session') setupSession(ctx)
@@ -232,8 +232,8 @@ export default definePackage({
       const cookies = provider === 'session'
       return src
         .replace(
-          "import { createKitrRouter } from 'kitr/router'\n",
-          `${cookies ? "import type { KitrApp } from 'kitr/app'\n" : ''}import type { Session } from 'kitr/auth'\nimport { createKitrRouter } from 'kitr/router'\nimport type { User } from '#app/abilities'\n`,
+          "import { createKitrRouter } from '@kitr/router'\n",
+          `${cookies ? "import type { KitrApp } from 'kitr/app'\n" : ''}import type { Session } from '@kitr/auth'\nimport { createKitrRouter } from '@kitr/router'\nimport type { User } from '#app/abilities'\n`,
         )
         .replace(plain[0], cookies ? cookieRouterCall(plain[1]!) : sessionRouterCall(plain[1]!))
         .concat(SESSION_CONTEXT_TYPE)
@@ -247,7 +247,7 @@ export default definePackage({
           if (!src.includes(call)) continue
           return src
             .replace("import type { KitrApp } from 'kitr/app'\n", '')
-            .replace("import type { Session } from 'kitr/auth'\n", '')
+            .replace("import type { Session } from '@kitr/auth'\n", '')
             .replace("import type { User } from '#app/abilities'\n", '')
             .replace(call, `return createKitrRouter({ ${tree}, app })`)
             .replace(SESSION_CONTEXT_TYPE, '')
@@ -258,7 +258,7 @@ export default definePackage({
     ctx.provider.remove('@kitr/auth/provider')
     ctx.provider.remove('./server/better_auth')
     ctx.agents.remove('auth')
-    for (const file of ['server/auth.ts', 'server/controllers/auth_controller.ts'])
+    for (const file of ['server/auth.ts', 'server/controllers/auth-controller.ts'])
       if (ctx.exists(file)) ctx.log.warn(`${file} is yours now: delete it when nothing imports it.`)
   },
 })

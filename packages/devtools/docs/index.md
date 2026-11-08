@@ -6,11 +6,11 @@ order: 1
 
 # Devtools
 
-When a page shows stale data or a button does nothing, the first question is what the app is doing right now: which route matched, what is in the query cache, who is signed in, which request failed. `kitr/devtools` answers it in the page itself. In development a small "k" button sits in a corner; open it and a panel shows the route, the cache, the session, saved values, errors, analytics calls and one log that every kitr package writes to. Your own providers can add panels and log lines with a few lines of code.
+When a page shows stale data or a button does nothing, the first question is what the app is doing right now: which route matched, what is in the query cache, who is signed in, which request failed. `@kitr/devtools` answers it in the page itself. In development a small "k" button sits in a corner; open it and a panel shows the route, the cache, the session, saved values, errors, analytics calls and one log that every kitr package writes to. Your own providers can add panels and log lines with a few lines of code.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` has a cart for orders, and Ada wants to see what is in it, log each change, and empty it from a button while she builds the checkout.
 
-`kitr/devtools` runs in the browser, in development only. It renders nothing on the server, binds nothing in production, and the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users. It is a view onto kitr; for React component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it.
+`@kitr/devtools` runs in the browser, in development only. It renders nothing on the server, binds nothing in production, and the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users. It is a view onto kitr; for React component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it.
 
 ## Install
 
@@ -23,7 +23,7 @@ What `kitr add` does:
 - Installs `@kitr/devtools`.
 - Adds `() => import('@kitr/devtools/provider')` to `providers` and `'@kitr/devtools'` to `packages` in `kitrrc.ts`.
 - Writes `config/devtools.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
-- Adds a `## kitr: devtools` section to `AGENTS.md` telling coding agents how to open the overlay, to log with `getDevtools(app)?.log(...)`, and to add panels through a provider's `devtools()` method with the parts in `kitr/devtools/ui`.
+- Adds a `## kitr: devtools` section to `AGENTS.md` telling coding agents how to open the overlay, to log with `getDevtools(app)?.log(...)`, and to add panels through a provider's `devtools()` method with the parts in `@kitr/devtools/ui`.
 
 `kitr add devtools` asks no questions and adds no env variables. To edit `package.json` without running the package manager, pass the global flag:
 
@@ -41,7 +41,7 @@ Every kit except `blank` and `server` includes devtools: `app`, `fullstack`, `sa
 
 ```ts
 // config/devtools.ts
-import { defineConfig } from 'kitr/devtools'
+import { defineConfig } from '@kitr/devtools'
 
 /** Development only. The kitr() Vite plugin drops the provider from production builds. */
 export default defineConfig({
@@ -68,7 +68,7 @@ Set `enabled: false` to hide the overlay and stop binding the hub, for example w
 
 ```ts
 // config/devtools.ts
-import { defineConfig } from 'kitr/devtools'
+import { defineConfig } from '@kitr/devtools'
 
 export default defineConfig({
   enabled: false,
@@ -86,7 +86,7 @@ The `kitr()` Vite plugin decides whether the provider is in the bundle at all. P
 
 ```ts
 // vite.config.ts
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -117,7 +117,7 @@ If <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> clashes with your browser o
 
 ```ts
 // config/devtools.ts
-import { defineConfig } from 'kitr/devtools'
+import { defineConfig } from '@kitr/devtools'
 
 export default defineConfig({
   position: 'bottom-right',
@@ -173,10 +173,10 @@ The `files`, `native`, `notifications`, `offline`, `secure-storage` and `updater
 To see what your own code does, log to a channel of your own. `getDevtools(app)` returns the hub in development and `null` everywhere else, so the optional call costs nothing in production:
 
 ```tsx
-// app/features/orders/add-to-cart-button.tsx
-import { getDevtools } from 'kitr/devtools'
-import { useApp } from 'kitr/react'
-import { cart } from './cart'
+// app/components/orders/add-to-cart-button.tsx
+import { getDevtools } from '@kitr/devtools'
+import { useApp } from '@kitr/react'
+import { cart } from '#app/lib/orders/cart'
 
 export function AddToCartButton({ sku }: { sku: string }) {
   const app = useApp()
@@ -203,8 +203,8 @@ Click the button and the Log panel shows a new entry:
 Expand `{1}` to see `items: 1`. The fourth argument is the level, `'info'` by default:
 
 ```ts
-// app/features/orders/checkout.ts
-import { getDevtools } from 'kitr/devtools'
+// app/lib/orders/checkout.ts
+import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 
 export function reportCheckoutProblem(app: KitrApp, orderId: string, reason: string) {
@@ -215,8 +215,8 @@ export function reportCheckoutProblem(app: KitrApp, orderId: string, reason: str
 Logging is cheap enough to time slow work. Here the checkout logs how long the order request took, as an error when it fails:
 
 ```ts
-// app/features/orders/place-order.ts
-import { getDevtools } from 'kitr/devtools'
+// app/lib/orders/place-order.ts
+import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 
 export async function placeOrder(app: KitrApp, orderId: string) {
@@ -245,8 +245,8 @@ Don't log with `console.log` and leave it in. Log calls through `getDevtools(app
 To check whether devtools is active, for example to skip building a costly debug summary, test the return value once:
 
 ```ts
-// app/features/orders/debug-summary.ts
-import { getDevtools } from 'kitr/devtools'
+// app/lib/orders/debug-summary.ts
+import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 import { cart } from './cart'
 
@@ -294,13 +294,13 @@ export default defineKitrConfig({
 })
 ```
 
-Then write the panel. `definePanel()` gives it types; `KeyValue`, `Badge` and the other parts from `kitr/devtools/ui` match the built-in panels:
+Then write the panel. `definePanel()` gives it types; `KeyValue`, `Badge` and the other parts from `@kitr/devtools/ui` match the built-in panels:
 
 ```tsx
 // app/providers/orders-devtools.tsx
-import { definePanel } from 'kitr/devtools'
-import { Badge, KeyValue } from 'kitr/devtools/ui'
-import { cart } from '#app/features/orders/cart'
+import { definePanel } from '@kitr/devtools'
+import { Badge, KeyValue } from '@kitr/devtools/ui'
+import { cart } from '#app/lib/orders/cart'
 
 export const panels = () => [
   definePanel({
@@ -348,7 +348,7 @@ The built-in panels have icons in their tabs; panels you add show the label only
 The overlay re-renders when the hub changes: a new log entry, a panel added or removed, or a call to `notify()`. Data that changes without a log entry, such as the cart above, needs a `notify()`:
 
 ```ts
-// app/features/orders/cart.ts
+// app/lib/orders/cart.ts
 export interface CartItem {
   sku: string
   qty: number
@@ -378,7 +378,7 @@ export const cart = {
 ```ts
 // app/providers/orders.ts
 import { defineProvider, getDevtools } from 'kitr/app'
-import { cart } from '#app/features/orders/cart'
+import { cart } from '#app/lib/orders/cart'
 
 export default defineProvider({
   name: 'orders',
@@ -395,7 +395,7 @@ export default defineProvider({
 
 ## Build panel bodies
 
-`kitr/devtools/ui` exports the parts the built-in panels use. They are plain React components with no dependencies:
+`@kitr/devtools/ui` exports the parts the built-in panels use. They are plain React components with no dependencies:
 
 | Component | Props | Renders |
 | --- | --- | --- |
@@ -412,9 +412,9 @@ A panel that shows the orders log next to the cart:
 
 ```tsx
 // app/providers/orders-devtools.tsx
-import { definePanel } from 'kitr/devtools'
-import { JsonView, LogList } from 'kitr/devtools/ui'
-import { cart } from '#app/features/orders/cart'
+import { definePanel } from '@kitr/devtools'
+import { JsonView, LogList } from '@kitr/devtools/ui'
+import { cart } from '#app/lib/orders/cart'
 
 export const panels = () => [
   definePanel({
@@ -441,8 +441,8 @@ export const panels = () => [
 The hub is bound as `devtools` in the container while devtools is active. Besides `log()` and `notify()`, it can read and clear entries and register panels at run time:
 
 ```ts
-// app/features/orders/debug.ts
-import { getDevtools } from 'kitr/devtools'
+// app/lib/orders/debug.ts
+import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 
 export function ordersLog(app: KitrApp) {
@@ -472,11 +472,11 @@ app.page('/orders/$orderId', { lazy: () => import('./pages/orders/orderId') })
 
 ```tsx
 // app/pages/orders/orderId.tsx
-import { getDevtools } from 'kitr/devtools'
-import { KeyValue } from 'kitr/devtools/ui'
-import { useApp } from 'kitr/react'
+import { getDevtools } from '@kitr/devtools'
+import { KeyValue } from '@kitr/devtools/ui'
+import { useApp } from '@kitr/react'
 import { useEffect } from 'react'
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/_app/orders/$orderId')
 
@@ -502,9 +502,9 @@ The effect returns the function `register()` gave back, so the tab disappears wh
 Devtools is only active in the browser in development, so a test app built with `createTestApp()` has no hub and `getDevtools(app)` returns `null`. Code that logs keeps working in tests and logs nothing. To assert on what your code logs, bind a hub of your own with `createDevtoolsHub()`:
 
 ```ts
-// app/features/orders/checkout.test.ts
-import { createDevtoolsHub, getDevtools } from 'kitr/devtools'
-import { createTestApp } from 'kitr/testing'
+// app/lib/orders/checkout.test.ts
+import { createDevtoolsHub, getDevtools } from '@kitr/devtools'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { reportCheckoutProblem } from './checkout'
 
@@ -530,9 +530,9 @@ To check that a provider contributes its panel, boot the real devtools provider 
 ```ts
 // app/providers/orders.test.ts
 import { createApp, getDevtools } from 'kitr/app'
-import { devtoolsProvider } from 'kitr/devtools/provider'
+import { devtoolsProvider } from '@kitr/devtools/provider'
 import { expect, it } from 'vitest'
-import { cart } from '#app/features/orders/cart'
+import { cart } from '#app/lib/orders/cart'
 import ordersProvider from './orders'
 
 it('adds the Orders panel and empties the cart', async () => {
@@ -559,10 +559,10 @@ Run tests that render the overlay or touch `localStorage` in a DOM environment (
 
 ## Extend
 
-Panels follow the `DevtoolsPanel` interface from `kitr/devtools`. A panel is an object, so you can also build one from a function and share it between providers:
+Panels follow the `DevtoolsPanel` interface from `@kitr/devtools`. A panel is an object, so you can also build one from a function and share it between providers:
 
 ```ts
-// The interfaces, from kitr/devtools
+// The interfaces, from @kitr/devtools
 export interface DevtoolsPanel {
   id: string
   label: string
@@ -582,8 +582,8 @@ This helper turns any log channel into its own panel, with a clear action:
 
 ```tsx
 // app/devtools/channel-panel.tsx
-import { type DevtoolsPanel, definePanel } from 'kitr/devtools'
-import { LogList } from 'kitr/devtools/ui'
+import { type DevtoolsPanel, definePanel } from '@kitr/devtools'
+import { LogList } from '@kitr/devtools/ui'
 
 export function channelPanel(channel: string, label: string): DevtoolsPanel {
   return definePanel({

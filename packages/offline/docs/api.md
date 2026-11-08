@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/offline, with its signature.
+description: Every export of @kitr/offline, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/offline`, `kitr/offline/react`, `kitr/offline/provider`, read from the published type definitions. The [guide](/packages/offline/guide) shows them in use.
+Every export of `@kitr/offline`, `@kitr/offline/react`, `@kitr/offline/provider`, read from the published type definitions. The [guide](/packages/offline/guide) shows them in use.
 
-## kitr/offline
+## @kitr/offline
 
 ### bindOnlineManager
 
@@ -38,7 +38,7 @@ function registerMutationDefaults(client: QueryClient, operations: OperationRegi
 
 A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do
 not survive a reload. Give every named mutation (`defineMutation('projects.rename', ...)` in
-kitr/actions, or one registered in the app's `operations`) its defaults by name, so a mutation
+@kitr/actions, or one registered in the app's `operations`) its defaults by name, so a mutation
 paused offline still runs, with its cache effects, after the app restarts. Mutations without a
 name need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
 `createOffline` does this from `app.operations` when it is given the app.
@@ -103,7 +103,7 @@ interface OfflineConfig {
 
 Options for `config/offline.ts`: how long, where and what of the query cache is kept on the device.
 
-## kitr/offline/react
+## @kitr/offline/react
 
 ### useOffline
 
@@ -120,7 +120,7 @@ function useOffline(): {
 `{ online, pending, restored }`: whether the network is up, how many mutations wait for it,
 and whether the cache came from a stored snapshot. Hydration-safe: the server says online.
 
-## kitr/offline/provider
+## @kitr/offline/provider
 
 ### offlineProvider
 

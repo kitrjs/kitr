@@ -6,19 +6,19 @@ order: 1
 
 # Files
 
-Sooner or later someone wants to get a file in or out of your app: import last month's orders from a spreadsheet, export invoices as CSV, attach a receipt. `kitr/files` gives you one service with three calls, `open()`, `pick()` and `save()`, that shows the best dialog the current platform has. Components call the same API everywhere and never check which browser or shell they run in.
+Sooner or later someone wants to get a file in or out of your app: import last month's orders from a spreadsheet, export invoices as CSV, attach a receipt. `@kitr/files` gives you one service with three calls, `open()`, `pick()` and `save()`, that shows the best dialog the current platform has. Components call the same API everywhere and never check which browser or shell they run in.
 
 In Chrome and Edge it uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), so saving writes to the exact file the person chose. Everywhere else it falls back to a hidden `<input type="file">` to open and a download link to save. A platform or your own code can register a native driver that adds real file paths. Every picked file has the same shape, a `PickedFile`, with `text()`, `bytes()` and `blob()`.
 
-It runs in the browser and in desktop and mobile shells. On the server the service exists but has no dialogs. To receive files on your server and store them, use [Uploads](/packages/uploads); `kitr/files` only gets them into and out of the browser.
+It runs in the browser and in desktop and mobile shells. On the server the service exists but has no dialogs. To receive files on your server and store them, use [Uploads](/packages/uploads); `@kitr/files` only gets them into and out of the browser.
 
 This guide follows Acme's billing screen at `app.acme.com`: Ada imports orders from a CSV, attaches receipts to an invoice, and exports invoices for Grace in accounting.
 
 ## When to use it
 
-Use `kitr/files` when **the person's own device** is the source or destination: they choose a file to open, or choose where a file you generated is saved. The content stays in the browser until your code sends it somewhere.
+Use `@kitr/files` when **the person's own device** is the source or destination: they choose a file to open, or choose where a file you generated is saved. The content stays in the browser until your code sends it somewhere.
 
-Use [Uploads](/packages/uploads) when the file must **reach your server or object storage**: progress bars, size limits, presigned URLs and virus scanning are its job. The two work together: pick with `kitr/files`, then hand the `Blob` to an upload.
+Use [Uploads](/packages/uploads) when the file must **reach your server or object storage**: progress bars, size limits, presigned URLs and virus scanning are its job. The two work together: pick with `@kitr/files`, then hand the `Blob` to an upload.
 
 ## Install
 
@@ -31,11 +31,11 @@ What `kitr add` does:
 - Installs `@kitr/files` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/files/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/files.ts` (shown under [Configure](#configure)).
-- Adds a `## kitr: files` section to `AGENTS.md`: open, pick and save with `useFileDialogs()` from `kitr/files/react` or `app.container.use('files')`, never build `<input type="file">` or download links by hand, and expect a cancelled dialog to resolve to `[]` or `null`.
+- Adds a `## kitr: files` section to `AGENTS.md`: open, pick and save with `useFileDialogs()` from `@kitr/files/react` or `app.container.use('files')`, never build `<input type="file">` or download links by hand, and expect a cancelled dialog to resolve to `[]` or `null`.
 
 `kitr add files` asks no questions and adds no environment variables or scripts. No kit includes it.
 
-`kitr remove files` reverses every step above and deletes `config/files.ts`, then lists the files that still import `kitr/files`.
+`kitr remove files` reverses every step above and deletes `config/files.ts`, then lists the files that still import `@kitr/files`.
 
 ## Configure
 
@@ -43,7 +43,7 @@ What `kitr add` does:
 
 ```ts
 // config/files.ts
-import { defineConfig } from 'kitr/files'
+import { defineConfig } from '@kitr/files'
 
 export default defineConfig({
   // Filters added to every open/save dialog.
@@ -59,7 +59,7 @@ export default defineConfig({
 | `driver` | the platform's driver, else the driver for the runtime | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
 | `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no files driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-`kitr/files` adds no environment variables.
+`@kitr/files` adds no environment variables.
 
 The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then `selectDriver(runtime)`: the web driver in a browser, an in-memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
@@ -67,7 +67,7 @@ Acme's app has its own project export format, so every dialog offers it:
 
 ```ts
 // config/files.ts
-import { defineConfig } from 'kitr/files'
+import { defineConfig } from '@kitr/files'
 
 export default defineConfig({
   filters: [{ name: 'Acme projects', extensions: ['acme'] }],
@@ -79,8 +79,8 @@ export default defineConfig({
 Export Acme's open orders as a CSV with one button. `useFileDialogs()` returns the service's calls plus a `busy` flag:
 
 ```tsx
-// app/features/orders/export-orders-button.tsx
-import { useFileDialogs } from 'kitr/files/react'
+// app/components/orders/export-orders-button.tsx
+import { useFileDialogs } from '@kitr/files/react'
 
 const orders = [
   { id: 'ord_1042', customer: 'Ada', total: 129 },
@@ -119,8 +119,8 @@ ord_1043,Grace,80
 `pick()` opens a dialog for exactly one file and resolves to a `PickedFile`, or `null` when the person cancels. Read its content with `text()`:
 
 ```tsx
-// app/features/orders/import-orders-button.tsx
-import { useFileDialogs } from 'kitr/files/react'
+// app/components/orders/import-orders-button.tsx
+import { useFileDialogs } from '@kitr/files/react'
 import { useState } from 'react'
 
 interface ImportedOrder {
@@ -165,9 +165,9 @@ Choose the `acme-orders.csv` you exported and the paragraph reads `2 orders impo
 `open()` resolves to an array. Pass `multiple: true` to let the person select more than one file. Without it, `open()` still returns an array, with at most one entry:
 
 ```tsx
-// app/features/invoices/attach-receipts.tsx
-import type { PickedFile } from 'kitr/files'
-import { useFileDialogs } from 'kitr/files/react'
+// app/components/invoices/attach-receipts.tsx
+import type { PickedFile } from '@kitr/files'
+import { useFileDialogs } from '@kitr/files/react'
 import { useState } from 'react'
 
 export function AttachReceipts({ invoiceId }: { invoiceId: string }) {
@@ -210,8 +210,8 @@ Ada selects `taxi.jpg` and `hotel.pdf`; the list shows both with their sizes. A 
 `filters` decides which files the dialog offers. Each filter is a label and a list of extensions. The filters you pass come first, then the ones in `config/files.ts`:
 
 ```ts
-// app/features/projects/open-project.ts
-import { useFiles } from 'kitr/files'
+// app/lib/projects/open-project.ts
+import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
 // With `filters: [{ name: 'Acme projects', extensions: ['acme'] }]` in config,
@@ -224,7 +224,7 @@ export function openProject() {
 Extensions are cleaned before they reach the dialog: `'.PNG'`, `'png'` and `' png '` are the same, duplicates are merged, and `'*'` or `''` is dropped. A filter left with no extensions is not shown in the File System Access picker. `acceptFor()` turns filters into the `accept` string a file input needs, which is what the fallback uses:
 
 ```ts
-import { acceptFor } from 'kitr/files'
+import { acceptFor } from '@kitr/files'
 
 acceptFor([
   { name: 'Images', extensions: ['.PNG', 'jpg', '*'] },
@@ -236,8 +236,8 @@ acceptFor([
 Filters are a convenience, not a check. Most dialogs let the person switch to "All files", and the file input fallback lists every filter as one combined list. Check `file.name` or `file.type` before you trust the content:
 
 ```ts
-// app/features/orders/check-file.ts
-import type { PickedFile } from 'kitr/files'
+// app/lib/orders/check-file.ts
+import type { PickedFile } from '@kitr/files'
 
 export function assertCsv(file: PickedFile) {
   if (!file.name.toLowerCase().endsWith('.csv')) throw new Error(`${file.name} is not a CSV file`)
@@ -261,8 +261,8 @@ A `PickedFile` holds the file's details and reads its content only when you ask:
 Use `text()` for CSV, JSON and Markdown, `bytes()` when you parse a binary format yourself, and `blob()` to preview or send a file:
 
 ```tsx
-// app/features/invoices/receipt-preview.tsx
-import type { PickedFile } from 'kitr/files'
+// app/components/invoices/receipt-preview.tsx
+import type { PickedFile } from '@kitr/files'
 import { useEffect, useState } from 'react'
 
 export function ReceiptPreview({ file }: { file: PickedFile }) {
@@ -297,8 +297,8 @@ To turn a browser `File` from somewhere else, such as a paste event, into the sa
 `save(data, options)` accepts a string, a `Blob` or `File`, a `Uint8Array` or an `ArrayBuffer`. `name` is required and suggests the file name. In the download fallback, `type` sets the MIME type; without it the type comes from the extension:
 
 ```ts
-// app/features/invoices/export.ts
-import { useFiles } from 'kitr/files'
+// app/lib/invoices/export.ts
+import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
 // Text: the type is text/csv, from the extension.
@@ -326,7 +326,7 @@ export async function downloadInvoicePdf() {
 `mimeFor(name)` is the lookup `save()` uses. It knows `txt`, `md`, `csv`, `json`, `html`, `png`, `jpg`, `jpeg`, `gif`, `svg`, `pdf` and `zip`, and returns `application/octet-stream` (or the fallback you pass) for anything else:
 
 ```ts
-import { mimeFor, toBlob } from 'kitr/files'
+import { mimeFor, toBlob } from '@kitr/files'
 
 mimeFor('INV-1042.PDF') // => 'application/pdf'
 mimeFor('website-relaunch.acme') // => 'application/octet-stream'
@@ -342,8 +342,8 @@ toBlob('id,total', 'text/csv').type // => 'text/csv'
 Cancelling a dialog is not an error. `open()` resolves to `[]`, `pick()` to `null` and `save()` to `null`, so a cancel needs no `try`/`catch`:
 
 ```ts
-// app/features/orders/import.ts
-import { useFiles } from 'kitr/files'
+// app/lib/orders/import.ts
+import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
 export async function importOrdersFile() {
@@ -362,8 +362,8 @@ With the file input fallback, the dialog resolves `[]` on cancel only in browser
 `useFileDialogs()` wraps `open`, `pick` and `save` so `busy` is `true` from the moment a call starts until it settles, including the time the dialog is on screen and the time it takes to write the file:
 
 ```tsx
-// app/features/invoices/export-invoices.tsx
-import { useFileDialogs } from 'kitr/files/react'
+// app/components/invoices/export-invoices.tsx
+import { useFileDialogs } from '@kitr/files/react'
 
 export function ExportInvoices({ csv }: { csv: string }) {
   const { save, busy } = useFileDialogs()
@@ -375,16 +375,16 @@ export function ExportInvoices({ csv }: { csv: string }) {
 }
 ```
 
-Disabling the button while `busy` stops a double click from opening two dialogs. If you don't need the flag, `useFiles()` from `kitr/files/react` returns the service itself, including `reveal()` and `driver`.
+Disabling the button while `busy` stops a double click from opening two dialogs. If you don't need the flag, `useFiles()` from `@kitr/files/react` returns the service itself, including `reveal()` and `driver`.
 
 ## Accept dropped files
 
 `useDropFiles(onFiles)` returns drag-and-drop handlers that hand dropped files to your callback as `PickedFile`s, plus an `over` flag for styling the drop zone:
 
 ```tsx
-// app/features/invoices/receipt-drop-zone.tsx
-import type { PickedFile } from 'kitr/files'
-import { useDropFiles } from 'kitr/files/react'
+// app/components/invoices/receipt-drop-zone.tsx
+import type { PickedFile } from '@kitr/files'
+import { useDropFiles } from '@kitr/files/react'
 
 export function ReceiptDropZone({ onReceipts }: { onReceipts: (files: PickedFile[]) => void }) {
   const { over, ...handlers } = useDropFiles(onReceipts)
@@ -400,11 +400,11 @@ Spread only the handlers (`onDragOver`, `onDragLeave` and `onDrop`) onto the ele
 
 ## Use files outside React
 
-Outside components, get the service from the app's container. `useFiles(app)` from `kitr/files` is a shortcut for `app.container.use('files')`:
+Outside components, get the service from the app's container. `useFiles(app)` from `@kitr/files` is a shortcut for `app.container.use('files')`:
 
 ```ts
-// app/features/projects/project-files.ts
-import { useFiles } from 'kitr/files'
+// app/lib/projects/project-files.ts
+import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
 export interface Project {
@@ -431,8 +431,8 @@ export async function importProject(): Promise<Project | null> {
 `reveal(path)` asks the driver to open a file with the system's default app, such as opening the exported PDF in a viewer. Only drivers that know real paths can do it, so check that the driver has `reveal` first:
 
 ```ts
-// app/features/invoices/open-invoice.ts
-import { useFiles } from 'kitr/files'
+// app/lib/invoices/open-invoice.ts
+import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
 export async function saveAndOpenInvoice() {
@@ -450,8 +450,8 @@ The web and memory drivers have no `reveal`; the call resolves and does nothing.
 A `PickedFile` gives you a `Blob`, which `fetch` and `FormData` accept directly. For a small file and your own endpoint, that's enough:
 
 ```ts
-// app/features/invoices/upload-receipt.ts
-import type { PickedFile } from 'kitr/files'
+// app/lib/invoices/upload-receipt.ts
+import type { PickedFile } from '@kitr/files'
 
 export async function uploadReceipt(invoiceId: string, file: PickedFile) {
   const body = new FormData()
@@ -506,7 +506,7 @@ Mobile has no "save as" dialog. `save()` writes the file into the app's cache di
 
 ```tsx
 // app/components/export-invoices.tsx
-import { useFileDialogs } from 'kitr/files/react'
+import { useFileDialogs } from '@kitr/files/react'
 
 export function ExportInvoices({ csv }: { csv: string }) {
   const files = useFileDialogs()
@@ -523,7 +523,7 @@ export function ExportInvoices({ csv }: { csv: string }) {
 
 ```ts
 // app/drafts.ts
-import { capacitorFileStore } from 'kitr/files'
+import { capacitorFileStore } from '@kitr/files'
 
 const drafts = capacitorFileStore({ directory: 'data' })
 
@@ -547,7 +547,7 @@ In a desktop shell the service shows the operating system's dialogs, reads and w
 
 ```ts
 // app/invoices/folder.ts
-import { createElectronFilesDriver } from 'kitr/files'
+import { createElectronFilesDriver } from '@kitr/files'
 
 /** Let Grace pick the folder the month's invoices live in, then read each file. */
 export async function readInvoiceFolder() {
@@ -578,14 +578,14 @@ Cancelling is never an error. Anything else the dialog throws reaches your code 
 | Error | When | What to do |
 | --- | --- | --- |
 | `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no files driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts` to run the web driver inside the webview. |
-| `AbortError` | The person cancelled the File System Access picker. | Nothing: `kitr/files` catches it and resolves `[]` or `null`. |
+| `AbortError` | The person cancelled the File System Access picker. | Nothing: `@kitr/files` catches it and resolves `[]` or `null`. |
 | `SecurityError` | The picker was called without a user gesture, such as from a timer or after an `await` that took too long. | Call `open`, `pick` or `save` directly from a click or key handler. |
 | `NotAllowedError` | The browser or the person denied write access to the chosen file. | Show a message and offer to save again. |
 | `TypeError` | The picker rejected its options, such as a filter it can't read. | Check your `filters`. |
 
 ```ts
-// app/features/invoices/export-safely.ts
-import { useFiles } from 'kitr/files'
+// app/lib/invoices/export-safely.ts
+import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
 export async function exportInvoices(csv: string) {
@@ -605,10 +605,10 @@ export async function exportInvoices(csv: string) {
 Pass `createMemoryFilesDriver(queue)` as the `driver` in config. `open()` and `pick()` take files from the front of `queue` instead of showing a dialog, and `save()` records each call in `driver.saved` and resolves to `name`. An empty queue behaves like a cancelled dialog.
 
 ```ts
-// app/features/orders/files.test.ts
-import { createMemoryFilesDriver, fromFile, useFiles } from 'kitr/files'
-import filesProvider from 'kitr/files/provider'
-import { createTestApp } from 'kitr/testing'
+// app/lib/orders/files.test.ts
+import { createMemoryFilesDriver, fromFile, useFiles } from '@kitr/files'
+import filesProvider from '@kitr/files/provider'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 
 describe('order files', () => {
@@ -639,16 +639,16 @@ describe('order files', () => {
 
 `open({ multiple: true })` takes every queued file at once; without `multiple`, each call takes one. Push more files with `driver.queue.push(...)` between calls.
 
-To test a component, render it inside the same app with `renderWithKitr` from `kitr/testing/react` in a DOM environment, click the button, and read `driver.saved`:
+To test a component, render it inside the same app with `renderWithKitr` from `@kitr/testing/react` in a DOM environment, click the button, and read `driver.saved`:
 
 ```tsx
-// app/features/orders/export-orders-button.test.tsx
+// app/components/orders/export-orders-button.test.tsx
 // @vitest-environment happy-dom
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { createMemoryFilesDriver } from 'kitr/files'
-import filesProvider from 'kitr/files/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createMemoryFilesDriver } from '@kitr/files'
+import filesProvider from '@kitr/files/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
 import { ExportOrdersButton } from './export-orders-button'
 
@@ -684,7 +684,7 @@ The built-in Electron driver covers the common case; the version below shows how
 
 ```ts
 // platforms/app/ipc.ts
-import type { FileFilter } from 'kitr/files'
+import type { FileFilter } from '@kitr/files'
 
 export type Ipc = {
   'app.version': () => string
@@ -703,7 +703,7 @@ Then implement them in the main process:
 // platforms/app/main.ts
 import { readFile, writeFile } from 'node:fs/promises'
 import { app, dialog, ipcMain, shell } from 'electron'
-import { handleIpc, handleKitrIpc } from 'kitr/desktop/main'
+import { handleIpc, handleKitrIpc } from '@kitr/desktop/main'
 import type { Ipc } from './ipc'
 
 handleIpc<Ipc>(ipcMain, {
@@ -743,8 +743,8 @@ In the renderer, turn the IPC calls into a `FilesDriver` and register it under t
 ```ts
 // app/providers/electron-files.ts
 import { defineProvider } from 'kitr/app'
-import { createIpcClient } from 'kitr/desktop/client'
-import { type FileData, type FilesDriver, mimeFor, type PickedFile, toBlob } from 'kitr/files'
+import { createIpcClient } from '@kitr/desktop/client'
+import { type FileData, type FilesDriver, mimeFor, type PickedFile, toBlob } from '@kitr/files'
 import type { Ipc } from '../../platforms/app/ipc'
 
 const ipc = createIpcClient<Ipc>()
@@ -795,7 +795,7 @@ The same shape works for any shell: [Tauri's dialog plugin](https://v2.tauri.app
 
 ## Devtools
 
-`kitr/files` has no panel. With [Devtools](/packages/devtools) installed, the service writes to the Log panel under `files`: `open` with the names of the chosen files, and `save` with the name or path it saved to (`null` on cancel). `pick()` doesn't log.
+`@kitr/files` has no panel. With [Devtools](/packages/devtools) installed, the service writes to the Log panel under `files`: `open` with the names of the chosen files, and `save` with the name or path it saved to (`null` on cancel). `pick()` doesn't log.
 
 ## Next steps
 

@@ -99,7 +99,7 @@ describe('desktop provider', () => {
   it('rejects, naming the shell, when the preload bridge is missing but the user agent says Electron', async () => {
     vi.stubGlobal('navigator', { userAgent: 'Electron/45.0.0' })
     const { app } = await boot()
-    await expect(createPlatform(app).appVersion()).rejects.toThrow(/\[kitr\/desktop\]/)
+    await expect(createPlatform(app).appVersion()).rejects.toThrow(/\[@kitr\/desktop\]/)
   })
 })
 

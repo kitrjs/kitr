@@ -66,7 +66,7 @@ describe('<Scene> with WebGL', () => {
         <Headset />
       </Scene>,
     )
-    expect(log.mock.calls.some((args) => String(args[0]).includes('[kitr/3d]'))).toBe(true)
+    expect(log.mock.calls.some((args) => String(args[0]).includes('[@kitr/3d]'))).toBe(true)
   })
 
   it('shows `loading` while a child suspends', () => {

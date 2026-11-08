@@ -6,11 +6,11 @@ order: 1
 
 # Auth
 
-Almost every screen in an app asks two questions: who is this, and are they allowed to do that? `kitr/auth` answers both, in the browser and on the server, with the same rules in both places. It gives the app one session to read, guards for pages, and permission checks written once as plain functions.
+Almost every screen in an app asks two questions: who is this, and are they allowed to do that? `@kitr/auth` answers both, in the browser and on the server, with the same rules in both places. It gives the app one session to read, guards for pages, and permission checks written once as plain functions.
 
 By default it doesn't store passwords or run a login server: it connects to what you already have, such as your own API's token endpoint or [Better Auth](https://www.better-auth.com/docs), through an adapter. When your app has a kitr server, it can also run the sign-in itself with [cookie sessions](#cookie-sessions-with-a-server). On top it adds React hooks, router guards for [Router](/packages/router), and middleware for [API routes](/packages/api).
 
-The session, hooks and adapters run in the browser. `kitr/auth/server` runs on the server and has no React dependency. If all you need is to protect API routes with a token your server checks, use `kitr/auth/server` alone.
+The session, hooks and adapters run in the browser. `@kitr/auth/server` runs on the server and has no React dependency. If all you need is to protect API routes with a token your server checks, use `@kitr/auth/server` alone.
 
 The examples on this page follow Acme's project tracker at `app.acme.com`. Ada is an admin, Grace and Linus are members, and members can edit only the projects they own.
 
@@ -34,7 +34,7 @@ The generated permissions file:
 
 ```ts
 // app/abilities.ts
-import { defineAbilities } from 'kitr/auth'
+import { defineAbilities } from '@kitr/auth'
 
 export interface User {
   id: string
@@ -47,9 +47,9 @@ export const abilities = defineAbilities({
 })
 ```
 
-`kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. It asks how users sign in: `--provider token` (the default, described on this page), `session` ([cookie sessions](#cookie-sessions-with-a-server)) or `better-auth`; `--no-emails` skips the verification and reset emails of `session`. Use `kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
+`@kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. It asks how users sign in: `--provider token` (the default, described on this page), `session` ([cookie sessions](#cookie-sessions-with-a-server)) or `better-auth`; `--no-emails` skips the verification and reset emails of `session`. Use `@kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
 
-`kitr remove auth` takes the session back out of `app/router.tsx`, unregisters the provider, removes `@kitr/auth` from `package.json` and `kitrrc.ts`, deletes `config/auth.ts` and drops the `AGENTS.md` section. It keeps `app/abilities.ts` and `VITE_API_URL`, and lists the files that still import `kitr/auth`.
+`kitr remove auth` takes the session back out of `app/router.tsx`, unregisters the provider, removes `@kitr/auth` from `package.json` and `kitrrc.ts`, deletes `config/auth.ts` and drops the `AGENTS.md` section. It keeps `app/abilities.ts` and `VITE_API_URL`, and lists the files that still import `@kitr/auth`.
 
 ## Configure
 
@@ -57,7 +57,7 @@ export const abilities = defineAbilities({
 
 ```ts
 // config/auth.ts
-import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -97,8 +97,8 @@ With the provider registered, every component can read the session. Show Ada her
 
 ```tsx
 // app/components/account_menu.tsx
-import { useAuth, useUser } from 'kitr/auth'
-import { Link } from 'kitr/router'
+import { useAuth, useUser } from '@kitr/auth'
+import { Link } from '@kitr/router'
 import type { User } from '#app/abilities'
 
 export function AccountMenu() {
@@ -138,8 +138,8 @@ r.page('/sign-in', {
 
 ```tsx
 // app/pages/sign-in.tsx
-import { useAuth } from 'kitr/auth'
-import { getRouteApi, useNavigate } from 'kitr/router'
+import { useAuth } from '@kitr/auth'
+import { getRouteApi, useNavigate } from '@kitr/router'
 import { type FormEvent, useState } from 'react'
 import type { User } from '#app/abilities'
 
@@ -179,8 +179,8 @@ export default function SignInPage() {
 
 ```tsx
 // app/components/sign_out_button.tsx
-import { useAuth } from 'kitr/auth'
-import { useNavigate } from 'kitr/router'
+import { useAuth } from '@kitr/auth'
+import { useNavigate } from '@kitr/router'
 
 export function SignOutButton() {
   const auth = useAuth()
@@ -211,7 +211,7 @@ An adapter turns your backend into a session. Every adapter produces the same `S
 
 ```ts
 // config/auth.ts
-import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -262,7 +262,7 @@ pnpm add better-auth
 ```ts
 // config/auth.ts
 import { createAuthClient } from 'better-auth/react'
-import { betterAuthAdapter, defineConfig } from 'kitr/auth'
+import { betterAuthAdapter, defineConfig } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 
 const client = createAuthClient({ baseURL: 'https://app.acme.com' })
@@ -277,7 +277,7 @@ export default defineConfig({
 ```ts
 // config/auth.ts
 import { createAuthClient } from 'better-auth/react'
-import { betterAuthAdapter, defineConfig } from 'kitr/auth'
+import { betterAuthAdapter, defineConfig } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 
 const client = createAuthClient({ baseURL: 'https://app.acme.com' })
@@ -298,7 +298,7 @@ The session's `expiresAt` comes from Better Auth's session. Better Auth runs its
 
 ```ts
 // config/auth.ts
-import { createSession, customAdapter, defineConfig } from 'kitr/auth'
+import { createSession, customAdapter, defineConfig } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 
 const adapter = customAdapter<User, { email: string; password: string }>({
@@ -333,7 +333,7 @@ For a reusable adapter, such as one for Firebase or Clerk, see "Extend".
 
 ```ts
 // config/auth.ts
-import { defineConfig, localStorageTokens, memoryStorage, tokenAdapter } from 'kitr/auth'
+import { defineConfig, localStorageTokens, memoryStorage, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -357,7 +357,7 @@ Storage that throws, such as in a private window, is ignored: reads return `null
 
 ```ts
 // app/auth/secure_tokens.ts
-import type { TokenStorage } from 'kitr/auth'
+import type { TokenStorage } from '@kitr/auth'
 import { app } from '#app/app'
 
 export const secureTokens: TokenStorage = {
@@ -377,7 +377,7 @@ Give `tokenAdapter` a `refresh` function, and `auth.refresh()` swaps the stored 
 
 ```ts
 // config/auth.ts
-import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -420,7 +420,7 @@ You rarely call it yourself. Point the HTTP client at it, and a `401` triggers o
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { app } from '#app/app'
 import { env } from '#app/env'
 
@@ -443,8 +443,8 @@ Pages are guarded in `beforeLoad` with `requireAuth()` from [Router](/packages/r
 
 ```tsx
 // app/router.tsx
-import type { Session } from 'kitr/auth'
-import { createKitrRouter } from 'kitr/router'
+import type { Session } from '@kitr/auth'
+import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
 import { routes } from './routes'
@@ -480,7 +480,7 @@ Then guard a layout route. Every page under `_app` needs a signed-in user:
 
 ```ts
 // app/routes.ts
-import { requireAuth } from 'kitr/router'
+import { requireAuth } from '@kitr/router'
 
 r.layout('_app', {
   beforeLoad: requireAuth(),
@@ -493,8 +493,8 @@ The router may copy its context object when it is created, which reads the gette
 
 ```ts
 // app/routes.ts
-import type { Session } from 'kitr/auth'
-import { requireAuth } from 'kitr/router'
+import type { Session } from '@kitr/auth'
+import { requireAuth } from '@kitr/router'
 import type { User } from '#app/abilities'
 
 r.layout('_app', {
@@ -519,7 +519,7 @@ r.page('/', { lazy: () => import('./pages/home') })
 
 ```tsx
 // app/pages/home.tsx
-import { authBranch } from 'kitr/auth'
+import { authBranch } from '@kitr/auth'
 import { Feed } from '#app/components/feed'
 import { Landing } from '#app/components/landing'
 
@@ -528,7 +528,7 @@ export default authBranch({ authed: Feed, guest: Landing })
 
 ```tsx
 // app/components/comment-box.tsx
-import { Authed, Guest } from 'kitr/auth'
+import { Authed, Guest } from '@kitr/auth'
 import { Link } from '@tanstack/react-router'
 
 export function CommentBox() {
@@ -553,8 +553,8 @@ An SSR web app wants a cookie session: the server reads it on the first request 
 
 ```ts
 // config/auth.ts
-import { betterAuthAdapter, defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
-import { forPlatform } from 'kitr/platform'
+import { betterAuthAdapter, defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
+import { forPlatform } from '@kitr/platform'
 import { authClient } from '#app/auth-client'
 
 export default defineConfig({
@@ -582,7 +582,7 @@ export default defineConfig({
 })
 ```
 
-`forPlatform()` resolves from `KITR_PLATFORM_TYPE` when the bundle is built, so the phone bundle never contains the cookie adapter and the web bundle never contains the token one. On the server side, `kitr/auth/server` middleware accepts both a cookie and a bearer header, so the same API serves every build. Swap `localStorageTokens()` for a storage backed by `kitr/secure-storage` to keep the token in the OS keychain.
+`forPlatform()` resolves from `KITR_PLATFORM_TYPE` when the bundle is built, so the phone bundle never contains the cookie adapter and the web bundle never contains the token one. On the server side, `@kitr/auth/server` middleware accepts both a cookie and a bearer header, so the same API serves every build. Swap `localStorageTokens()` for a storage backed by `@kitr/secure-storage` to keep the token in the OS keychain.
 
 ## Define permissions
 
@@ -590,7 +590,7 @@ Write each rule once, as a function of the user and an optional subject, in `app
 
 ```ts
 // app/abilities.ts
-import { defineAbilities } from 'kitr/auth'
+import { defineAbilities } from '@kitr/auth'
 
 export interface User {
   id: string
@@ -618,7 +618,7 @@ Annotate `user` in each rule and leave off the type argument. TypeScript then kn
 Check a rule anywhere, on the client or the server:
 
 ```ts
-// app/features/projects/permissions.ts
+// app/lib/projects/permissions.ts
 import { abilities, type Project, type User } from '#app/abilities'
 
 const ada: User = { id: 'u_ada', email: 'ada@acme.com', role: 'admin', teamId: 't_core' }
@@ -644,8 +644,8 @@ Three rules hold for every check: an anonymous user (`null` or `undefined`) neve
 `useCan()` returns the session's `can`, bound to the signed-in user. Use it to hide what the user can't do:
 
 ```tsx
-// app/features/projects/project_header.tsx
-import { useCan } from 'kitr/auth'
+// app/components/projects/project-header.tsx
+import { useCan } from '@kitr/auth'
 import type { Project } from '#app/abilities'
 
 export function ProjectHeader({ project }: { project: Project }) {
@@ -668,7 +668,7 @@ Grace sees "Edit project" on her own projects only; Ada sees both buttons everyw
 
 ```ts
 // app/routes.ts
-import { can } from 'kitr/router'
+import { can } from '@kitr/router'
 
 app.page('/invoices', {
   beforeLoad: can('invoices.view'),
@@ -681,14 +681,14 @@ app.page('/invoices', {
 export default () => <h1>Invoices</h1>
 ```
 
-Grace gets the route's error screen with a `FORBIDDEN` error, `Missing permission "invoices.view"`. Pass `{ to: '/' }` to redirect instead, or `{ subject }` to check against one record. Don't confuse it with `can` from `kitr/auth/server`, which is API middleware.
+Grace gets the route's error screen with a `FORBIDDEN` error, `Missing permission "invoices.view"`. Pass `{ to: '/' }` to redirect instead, or `{ subject }` to check against one record. Don't confuse it with `can` from `@kitr/auth/server`, which is API middleware.
 
 ## Use the session outside components
 
 The provider binds the `auth` service in the container. Use it in loaders, stores and services:
 
 ```ts
-// app/features/projects/loaders.ts
+// app/lib/projects/loaders.ts
 import { app } from '#app/app'
 
 const auth = app.container.use('auth')
@@ -723,14 +723,14 @@ With `eager: false`, the session stays anonymous until something calls `auth.loa
 
 ## Protect API routes
 
-On the server, `authMiddleware` from `kitr/auth/server` reads the token, finds the user and puts them on `ctx.locals`. It works with any [API routes](/packages/api) router:
+On the server, `authMiddleware` from `@kitr/auth/server` reads the token, finds the user and puts them on `ctx.locals`. It works with any [API routes](/packages/api) router:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
-import { authMiddleware } from 'kitr/auth/server'
+import { defineRoutes } from '@kitr/api'
+import { authMiddleware } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
-import ProjectsController from '#server/controllers/projects_controller'
+import ProjectsController from '#server/controllers/projects-controller'
 import { findUserByToken } from '#server/services/sessions'
 
 const auth = authMiddleware<User>({ verify: (token) => findUserByToken(token), abilities })
@@ -764,10 +764,10 @@ Import the same `abilities` from `app/abilities.ts` on both sides, so the browse
 `requireUser(ctx)` returns the user `authMiddleware` set, typed, or throws `401`. `currentUser(ctx)` returns `null` instead, for routes with `optional: true`:
 
 ```ts
-// server/controllers/projects_controller.ts
-import type { HttpContext } from 'kitr/api'
+// server/controllers/projects-controller.ts
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
-import { currentUser, requireUser } from 'kitr/auth/server'
+import { currentUser, requireUser } from '@kitr/auth/server'
 import { abilities, type Project, type User } from '#app/abilities'
 
 const projects = new Map<string, Project>([['p_roadmap', { id: 'p_roadmap', ownerId: 'u_ada', teamId: 't_core' }]])
@@ -792,15 +792,15 @@ export default class ProjectsController {
 
 ## Require a permission on an API route
 
-`can()` from `kitr/auth/server` is middleware. It loads the subject from the context, checks the ability, and answers `403` before the handler runs:
+`can()` from `@kitr/auth/server` is middleware. It loads the subject from the context, checks the ability, and answers `403` before the handler runs:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
-import { authMiddleware, can } from 'kitr/auth/server'
+import { defineRoutes } from '@kitr/api'
+import { authMiddleware, can } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
-import InvoicesController from '#server/controllers/invoices_controller'
-import ProjectsController from '#server/controllers/projects_controller'
+import InvoicesController from '#server/controllers/invoices-controller'
+import ProjectsController from '#server/controllers/projects-controller'
 import { findProject } from '#server/services/projects'
 import { findUserByToken } from '#server/services/sessions'
 
@@ -837,7 +837,7 @@ For cookie sessions, such as a cookie your sign-in endpoint sets, read the token
 
 ```ts
 // server/middleware/auth.ts
-import { authMiddleware } from 'kitr/auth/server'
+import { authMiddleware } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
 import { findUserBySession } from '#server/services/sessions'
 
@@ -880,7 +880,7 @@ kitr add auth --provider session
 
 ```ts
 // server/auth.ts
-import { createCookieSession, createMemorySessionStore } from 'kitr/auth/server'
+import { createCookieSession, createMemorySessionStore } from '@kitr/auth/server'
 
 export const sessions = createCookieSession({
   secret: process.env.SESSION_SECRET!,
@@ -914,8 +914,8 @@ In a route that renders on the server, load the session first:
 
 ```ts
 // app/routes.ts
-import { ensureSession } from 'kitr/auth'
-import { requireAuth } from 'kitr/router'
+import { ensureSession } from '@kitr/auth'
+import { requireAuth } from '@kitr/router'
 
 .layout('_app', {
   beforeLoad: async (ctx) => {
@@ -938,7 +938,7 @@ On the server `ensureSession` reads the session of the request being rendered (`
 | `UNAUTHORIZED` (401) | `betterAuthAdapter` signed in but Better Auth has no session. Message: `Sign-in failed`. | Check Better Auth's cookie settings and base URL. |
 | `INTERNAL` (500) | `signIn()` on a `tokenAdapter` without `signIn` (`tokenAdapter: signIn not configured`), or a `betterAuthAdapter` with no email sign-in (`betterAuthAdapter: no signIn configured`). | Configure `signIn` on the adapter. |
 
-`auth.signIn()` on a custom adapter without `signIn` throws a plain `Error`: `[kitr/auth] adapter has no signIn`. Errors your own `signIn` throws, such as `Invalid credentials` in the generated config, reach the caller unchanged. Throw `KitrError.unauthorized('Wrong email or password')` from `kitr/app` instead to get a kitr error with a `401` status.
+`auth.signIn()` on a custom adapter without `signIn` throws a plain `Error`: `[@kitr/auth] adapter has no signIn`. Errors your own `signIn` throws, such as `Invalid credentials` in the generated config, reach the caller unchanged. Throw `KitrError.unauthorized('Wrong email or password')` from `kitr/app` instead to get a kitr error with a `401` status.
 
 ## Testing
 
@@ -947,10 +947,10 @@ Test with a fake adapter: `customAdapter` with an in-memory user, booted with `c
 ```tsx
 // test/auth.test.tsx
 import { act, screen } from '@testing-library/react'
-import { createSession, customAdapter, useCan, useUser } from 'kitr/auth'
-import authProvider from 'kitr/auth/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createSession, customAdapter, useCan, useUser } from '@kitr/auth'
+import authProvider from '@kitr/auth/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
 import { abilities, type User } from '#app/abilities'
 
@@ -1010,8 +1010,8 @@ describe('auth', () => {
 Test the server middleware by calling it with a minimal context. It needs only `request.header()` and `locals`:
 
 ```ts
-// test/auth_middleware.test.ts
-import { authMiddleware, can, requireUser } from 'kitr/auth/server'
+// test/auth-middleware.test.ts
+import { authMiddleware, can, requireUser } from '@kitr/auth/server'
 import { describe, expect, it } from 'vitest'
 import { abilities, type User } from '#app/abilities'
 
@@ -1064,7 +1064,7 @@ An adapter for Acme's single sign-on service, which keeps the session in another
 
 ```ts
 // app/auth/acme_sso_adapter.ts
-import { type Abilities, type AuthAdapter, createSession } from 'kitr/auth'
+import { type Abilities, type AuthAdapter, createSession } from '@kitr/auth'
 
 interface AcmeSsoClient {
   currentUser(): Promise<{ id: string; email: string; role: 'admin' | 'member'; teamId: string } | null>
@@ -1098,7 +1098,7 @@ Register it in the config like any adapter:
 
 ```ts
 // config/auth.ts
-import { defineConfig } from 'kitr/auth'
+import { defineConfig } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { acmeSsoAdapter } from '#app/auth/acme_sso_adapter'
 import { ssoClient } from '#app/auth/sso_client'

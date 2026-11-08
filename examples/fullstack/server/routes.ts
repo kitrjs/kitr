@@ -1,7 +1,7 @@
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
-import HealthController from '#server/controllers/health_controller'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
+import HealthController from '#server/controllers/health-controller'
 import { exampleChannel } from '#app/channels/example'
 
 /**
@@ -11,7 +11,7 @@ import { exampleChannel } from '#app/channels/example'
 export const routes = defineRoutes([api, realtime], (root) =>
   root.group('/api', (r) =>
     r.get('/health', [HealthController, 'show'], { name: 'health' }),
-    // r.resource('projects', () => import('#server/controllers/projects_controller'))
+    // r.resource('projects', () => import('#server/controllers/projects-controller'))
   )
     .ws('/api/ws', { channels: [exampleChannel] /* , authorize: (request) => ... */ }),
 )

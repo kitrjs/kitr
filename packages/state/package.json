@@ -1,7 +1,7 @@
 {
   "name": "@kitr/state",
   "version": "0.1.0",
-  "description": "kitr/state: Zustand re-exported, plus an SSR-safe store factory.",
+  "description": "@kitr/state: Zustand re-exported, plus an SSR-safe store factory.",
   "kitr": {
     "name": "state",
     "title": "State",

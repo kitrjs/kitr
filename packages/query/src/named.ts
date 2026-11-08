@@ -145,7 +145,7 @@ function isApp(value: unknown): value is KitrApp {
 function asQuery(op: OperationLike, source: unknown): QueryDefinition<unknown, unknown> {
   if (op.kind !== 'query')
     throw new Error(
-      `[kitr/query] ${typeof source === 'string' ? `"${source}"` : op.name} is a mutation; use useMutation or call`,
+      `[@kitr/query] ${typeof source === 'string' ? `"${source}"` : op.name} is a mutation; use useMutation or call`,
     )
   return op as unknown as QueryDefinition<unknown, unknown>
 }
@@ -153,7 +153,7 @@ function asQuery(op: OperationLike, source: unknown): QueryDefinition<unknown, u
 function asMutation(op: OperationLike, source: unknown): MutationDefinition<unknown, unknown> {
   if (op.kind !== 'mutation')
     throw new Error(
-      `[kitr/query] ${typeof source === 'string' ? `"${source}"` : op.name} is a query; use useQuery or queryOptions`,
+      `[@kitr/query] ${typeof source === 'string' ? `"${source}"` : op.name} is a query; use useQuery or queryOptions`,
     )
   return op as unknown as MutationDefinition<unknown, unknown>
 }
@@ -201,7 +201,7 @@ export const useMutation: NamedUseMutation & typeof tanstackUseMutation = ((
   const extra = (overrides ?? {}) as MutationOverrides<unknown, unknown>
   const base = definition.options({ queryClient })
   return tanstackUseMutation({
-    // A named mutation is keyed by its name, so a paused one saved by kitr/offline finds its
+    // A named mutation is keyed by its name, so a paused one saved by @kitr/offline finds its
     // mutationFn again after the app restarts (mutationKeyFor).
     ...(name ? { mutationKey: mutationKeyFor(name) } : {}),
     ...base,
@@ -230,7 +230,7 @@ export const queryOptions: NamedQueryOptions & typeof tanstackQueryOptions = ((
   // Outside a hook a name needs the app; without one the error says so instead of calling useApp().
   if (typeof source === 'string' && !app)
     throw new Error(
-      `[kitr/query] queryOptions("${source}") outside a component needs the app: queryOptions(context.app, "${source}", input)`,
+      `[@kitr/query] queryOptions("${source}") outside a component needs the app: queryOptions(context.app, "${source}", input)`,
     )
   const op = resolve(source, app)
   if (!op) return tanstackQueryOptions(source as any)

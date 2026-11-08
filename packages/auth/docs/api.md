@@ -1,6 +1,6 @@
 ---
 title: API reference
-description: Every export of kitr/auth and kitr/auth/server.
+description: Every export of @kitr/auth and @kitr/auth/server.
 order: 2
 ---
 
@@ -88,7 +88,7 @@ abilities.for(user)('name', subject)
 
 Checks return `false` for an anonymous user, an unknown ability and a rule that throws. Annotate `user` in each rule instead of passing `<User>` to keep the ability names typed.
 
-## kitr/auth/server
+## @kitr/auth/server
 
 No React. Works with any `@kitr/api` router.
 
@@ -169,7 +169,7 @@ createSessionController({ sessions, users, mail?, appUrl? })
 
 `auth` is `{ sessions, users }`. The controller methods are `session` (`GET`, `Cache-Control: no-store`), `signIn`, `signUp`, `signOut`, `signOutAll`, `requestVerification`, `verifyEmail`, `requestPasswordReset` and `resetPassword`; each state-changing one verifies the CSRF token.
 
-### kitr/auth additions
+### @kitr/auth additions
 
 ```ts
 sessionAdapter<TUser>({ abilities?, fetchSession, signIn, signOut? }) // cookie-backed adapter; caches through the query layer

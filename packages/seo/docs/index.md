@@ -6,11 +6,11 @@ order: 1
 
 # SEO
 
-Paste a link into Slack or search for your product, and what people see comes from a handful of tags: the title, the description, a share image, a canonical URL. `kitr/seo` writes those tags for a route from one call, `seo({ title, description })`, adds structured data for rich results, and tells the build which pages to prerender as plain HTML and where the sitemap lives. It builds on [TanStack Router's `head`](https://tanstack.com/router/latest/docs/framework/react/guide/document-head-management) and [TanStack Start's prerendering](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering); kitr adds the tag set, the site defaults and the build wiring.
+Paste a link into Slack or search for your product, and what people see comes from a handful of tags: the title, the description, a share image, a canonical URL. `@kitr/seo` writes those tags for a route from one call, `seo({ title, description })`, adds structured data for rich results, and tells the build which pages to prerender as plain HTML and where the sitemap lives. It builds on [TanStack Router's `head`](https://tanstack.com/router/latest/docs/framework/react/guide/document-head-management) and [TanStack Start's prerendering](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering); kitr adds the tag set, the site defaults and the build wiring.
 
 The examples on this page follow one scenario: Acme's marketing site at `acme.com` has a pricing page, a blog with posts by Ada and Grace, and a sign-in link to the app at `app.acme.com`, which search engines should not index.
 
-`kitr/seo` runs on both sides: `seo()` and the other helpers are plain functions that the server renders into HTML and the client keeps up to date while people navigate. Tags only help when the HTML reaches crawlers, so use a web platform in `ssr` or `static` mode for pages you want found. In an `spa` app, crawlers and link previews see the same empty shell for every URL.
+`@kitr/seo` runs on both sides: `seo()` and the other helpers are plain functions that the server renders into HTML and the client keeps up to date while people navigate. Tags only help when the HTML reaches crawlers, so use a web platform in `ssr` or `static` mode for pages you want found. In an `spa` app, crawlers and link previews see the same empty shell for every URL.
 
 ## Install
 
@@ -41,7 +41,7 @@ The `fullstack`, `saas`, `site` and `realtime` kits include seo. The `site` kit 
 
 ```ts
 // config/seo.ts
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   site: { name: 'acme-site' },
@@ -54,7 +54,7 @@ Fill in the rest of `site` before you launch:
 
 ```ts
 // config/seo.ts
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   site: {
@@ -93,7 +93,7 @@ Set `head` on a route and return `seo()` from it, passing the `head` argument as
 
 ```ts
 // app/routes.ts
-import { seo } from 'kitr/seo'
+import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
   head: (ctx) => seo({ title: 'Pricing', description: 'Plans for every team size.' }, ctx),
@@ -129,7 +129,7 @@ Open `/pricing` and view the page source. The root route's `<HeadContent />` ren
 
 ```ts
 // app/routes.ts
-import { seo } from 'kitr/seo'
+import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
   head: (ctx) =>
@@ -194,8 +194,8 @@ Tags from the root route apply to every page. A child route's `<title>` and its 
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { seo } from 'kitr/seo'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
+import { seo } from '@kitr/seo'
 
 /** `app/routes.ts` passes this to `.root({ head, component: RootDocument })`. */
 export function head(ctx: object) {
@@ -231,7 +231,7 @@ Chat apps and social networks show `og:image` as a large card. Pass an absolute 
 
 ```ts
 // app/routes.ts
-import { seo } from 'kitr/seo'
+import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
   head: (ctx) =>
@@ -261,9 +261,9 @@ For a blog post, read the post in the loader and build the tags from `loaderData
 
 ```ts
 // app/routes.ts
-import { notFound } from 'kitr/router'
+import { notFound } from '@kitr/router'
 import { getPost } from '#app/content/posts'
-import { seo } from 'kitr/seo'
+import { seo } from '@kitr/seo'
 
 r.page('/blog/$slug', {
   loader: ({ params }) => {
@@ -288,7 +288,7 @@ r.page('/blog/$slug', {
 
 ```tsx
 // app/pages/blog/slug.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/blog/$slug')
 
@@ -306,7 +306,7 @@ Sign-in pages, drafts and anything behind a login should not show up in search. 
 
 ```ts
 // app/routes.ts
-import { seo } from 'kitr/seo'
+import { seo } from '@kitr/seo'
 
 r.page('/sign-in', {
   head: (ctx) => seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }, ctx),
@@ -327,7 +327,7 @@ Structured data tells search engines what a page is about: an organization, an a
 
 ```ts
 // app/routes.ts
-import { jsonLd, seo } from 'kitr/seo'
+import { jsonLd, seo } from '@kitr/seo'
 
 r.page('/', {
   head: (ctx) => ({
@@ -364,7 +364,7 @@ Test the page with Google's [Rich Results Test](https://search.google.com/test/r
 `jsonLd()` escapes the JSON for a `<script>` tag: `<`, `>` and `&` become `\u003c`, `\u003e` and `\u0026`, and the line separators U+2028 and U+2029 are escaped too. A review titled `</script><script>alert(1)</script>` stays inside the tag, and search engines read the escapes back as the same characters, so values from users are safe to pass. The same escaping is exported as `safeJson(value)` for your own inline scripts:
 
 ```ts
-import { safeJson } from 'kitr/seo'
+import { safeJson } from '@kitr/seo'
 
 safeJson({ headline: 'Q3 </script> report' })
 // => {"headline":"Q3 \u003c/script\u003e report"} (the string's characters)
@@ -376,7 +376,7 @@ Pages that are the same for every visitor, such as the home page, pricing and th
 
 ```ts
 // config/seo.ts
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   site: { name: 'Acme', url: 'https://acme.com' },
@@ -408,7 +408,7 @@ Set `site.url` to a string literal and the build turns on [TanStack Start's site
 
 ```ts
 // config/seo.ts
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   site: { name: 'Acme', url: 'https://acme.com' },
@@ -425,7 +425,7 @@ Don't read the URL from an env variable here (`url: process.env.SITE_URL`). The 
 `robotsTxt(config)` returns the text of a `robots.txt` built from `robots` and `site.url`:
 
 ```ts
-import { robotsTxt } from 'kitr/seo'
+import { robotsTxt } from '@kitr/seo'
 
 robotsTxt({ site: { url: 'https://acme.com' }, robots: { disallow: ['/app', '/api'] } })
 // => 'User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /api\n\nSitemap: https://acme.com/sitemap.xml\n'
@@ -439,7 +439,7 @@ In a web platform in `ssr` mode, every route renders on the server by default, o
 
 ```ts
 // app/routes.ts
-import { ssrRoute } from 'kitr/seo'
+import { ssrRoute } from '@kitr/seo'
 
 app.page('/reports', {
   ...ssrRoute('data-only'),
@@ -453,7 +453,7 @@ app.page('/reports', {
 
 ```tsx
 // app/pages/reports.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/_app/reports')
 
@@ -475,7 +475,7 @@ When one route table serves several platforms, the mode can differ per platform.
 
 ```ts
 // app/routes.ts
-import { ssrRoute } from 'kitr/seo'
+import { ssrRoute } from '@kitr/seo'
 
 r.page('/', {
   // The marketing build renders on the server for crawlers; the authed web app runs the loader
@@ -493,8 +493,8 @@ The `www` build gets `{ ssr: true }`, every other web build `{ ssr: 'data-only' 
 
 ```ts
 // app/routes.ts
-import { cacheHeaders } from 'kitr/seo'
-import { seo } from 'kitr/seo'
+import { cacheHeaders } from '@kitr/seo'
+import { seo } from '@kitr/seo'
 
 r.page('/blog/', {
   headers: () => cacheHeaders({ sMaxAge: 60, staleWhileRevalidate: 300 }),
@@ -528,7 +528,7 @@ With no options it returns `{ 'cache-control': 'public' }`. For a page that show
 ```ts
 // app/seo.test.ts
 import { createApp } from 'kitr/app'
-import { robotsTxt, seo } from 'kitr/seo'
+import { robotsTxt, seo } from '@kitr/seo'
 import { describe, expect, it } from 'vitest'
 import seoConfig from '#config/seo'
 

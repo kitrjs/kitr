@@ -1,4 +1,4 @@
-import { I18nextProvider, useTranslation } from 'kitr/i18n'
+import { I18nextProvider, useTranslation } from '@kitr/i18n'
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { type Locale, localeCookie } from '#app/storage'
 

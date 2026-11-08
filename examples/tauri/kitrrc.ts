@@ -1,6 +1,6 @@
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
-import { tauri } from 'kitr/tauri'
+import { web } from '@kitr/web'
+import { tauri } from '@kitr/tauri'
 
 /**
  * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every

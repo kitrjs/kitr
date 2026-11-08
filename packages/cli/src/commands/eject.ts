@@ -5,7 +5,7 @@ import { installedPackages } from '../packages'
 import { coreGenerators, packageGeneratorList } from './make'
 
 /**
- * Eject is deliberately small. kitr ships no runtime magic to eject: `kitr/*` entry points
+ * Eject is deliberately small. kitr ships no runtime magic to eject: `@kitr/*` packages
  * re-export upstream libraries unchanged, so leaving kitr is "replace imports", and each
  * package says what replaces it. What you can eject are the generator stubs (to customise
  * `make:*`) and the providers (to wire the libraries by hand).

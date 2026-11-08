@@ -1,4 +1,4 @@
-import { cn } from 'kitr/tailwind'
+import { cn } from '@kitr/tailwind'
 import type { ComponentProps } from 'react'
 
 export function Input({ className, type = 'text', ...props }: ComponentProps<'input'>) {

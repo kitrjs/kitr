@@ -1,4 +1,4 @@
-import { defineConfig, googleAnalytics } from 'kitr/analytics'
+import { defineConfig, googleAnalytics } from '@kitr/analytics'
 import { env } from '#app/env'
 
 /**

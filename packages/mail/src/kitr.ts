@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add mail`: emails as React components, sent through your provider, previewed in development. */
 export default definePackage({
@@ -9,11 +9,11 @@ export default definePackage({
     ctx.env.add({ RESEND_API_KEY: '', MAIL_FROM: 'App <hello@example.com>' }, 'Mail')
     ctx.config(
       'mail',
-      `import { createResendTransport, defineConfig } from 'kitr/mail'\n\n/**\n * Without a transport, development logs every message and production refuses to boot, so a\n * missing RESEND_API_KEY can never print password reset links to production logs.\n * For SMTP, \`pnpm add nodemailer\`, then: createSmtpTransport(nodemailer, { host, port, auth })\n * with \`import nodemailer from 'nodemailer'\`.\n */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : undefined,\n})\n`,
+      `import { createResendTransport, defineConfig } from '@kitr/mail'\n\n/**\n * Without a transport, development logs every message and production refuses to boot, so a\n * missing RESEND_API_KEY can never print password reset links to production logs.\n * For SMTP, \`pnpm add nodemailer\`, then: createSmtpTransport(nodemailer, { host, port, auth })\n * with \`import nodemailer from 'nodemailer'\`.\n */\nexport default defineConfig({\n  from: process.env.MAIL_FROM ?? 'App <hello@example.com>',\n  transport: process.env.RESEND_API_KEY\n    ? createResendTransport({ apiKey: process.env.RESEND_API_KEY })\n    : undefined,\n})\n`,
     )
     ctx.write(
       'server/mail/welcome.tsx',
-      `import { defineMail } from 'kitr/mail'
+      `import { defineMail } from '@kitr/mail'
 
 export interface WelcomeProps {
   name: string
@@ -37,7 +37,7 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
     ctx.server.attach({
       marker: 'mailPreview(',
       import:
-        "import { mailPreview } from 'kitr/mail'\nimport { welcomeMail } from './mail/welcome'",
+        "import { mailPreview } from '@kitr/mail'\nimport { welcomeMail } from './mail/welcome'",
       line: '// Rendered templates at /_kitr/mail in development.\nif (server.app.isDevelopment) mailPreview(server, [welcomeMail])',
     })
     ctx.agents.add(
@@ -52,10 +52,9 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
   generators: {
     mail: {
       description: 'Create an email template in server/mail',
-      target: (name, project) => ({
-        file: `${project.rc.directories.server ?? 'server'}/mail/${naming.snake(name)}.tsx`,
-      }),
-      stub: ({ name }) => `import { defineMail } from 'kitr/mail'
+      definition: 'A React email template with its subject and preview props.',
+      target: (name, project) => generatorFile(project, 'server', 'mail', name, { ext: '.tsx' }),
+      stub: ({ name }) => `import { defineMail } from '@kitr/mail'
 
 export interface ${naming.pascal(name)}Props {
   firstName: string

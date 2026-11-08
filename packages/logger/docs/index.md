@@ -6,11 +6,11 @@ order: 1
 
 # Logger
 
-When Ada reports that her order never shipped, the logs are where you find out why. In development you want lines you can read at a glance: a coloured level, the time, the message. In production you want one JSON object per line, so your log service can search and filter by `orderId` or `requestId`. `kitr/logger` writes both from the same calls, with levels, child loggers that carry fields, timing, and a request id on every line the server writes.
+When Ada reports that her order never shipped, the logs are where you find out why. In development you want lines you can read at a glance: a coloured level, the time, the message. In production you want one JSON object per line, so your log service can search and filter by `orderId` or `requestId`. `@kitr/logger` writes both from the same calls, with levels, child loggers that carry fields, timing, and a request id on every line the server writes.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` ships orders, generates invoices and syncs projects, and the team (Ada, Grace and Linus) reads the logs when something goes wrong.
 
-`kitr/logger` has no dependencies and runs on the server and in the browser. It is for lines a developer reads. To be alerted about errors with the user and the steps that led to them, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
+`@kitr/logger` has no dependencies and runs on the server and in the browser. It is for lines a developer reads. To be alerted about errors with the user and the steps that led to them, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
 
 ## Install
 
@@ -41,7 +41,7 @@ The [server](/packages/server) package requires the logger, so `kitr add server`
 
 ```ts
 // config/logger.ts
-import { defineConfig } from 'kitr/logger'
+import { defineConfig } from '@kitr/logger'
 
 export default defineConfig({
   name: 'app',
@@ -69,8 +69,8 @@ The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the br
 In a controller, the logger is `ctx.logger`. It is a child of the app's logger that adds the request id to every line:
 
 ```ts
-// server/controllers/orders_controller.ts
-import type { HttpContext } from 'kitr/api'
+// server/controllers/orders-controller.ts
+import type { HttpContext } from '@kitr/api'
 
 export default class OrdersController {
   async ship({ logger, params }: HttpContext<{ id: string }>) {
@@ -110,7 +110,7 @@ Each level has a method. Lines below the configured `level` are dropped before t
 `silent` is a level for configuration only: it drops everything.
 
 ```ts
-// server/services/project_service.ts
+// server/services/project-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function syncProject(app: KitrApp, projectId: string) {
@@ -126,7 +126,7 @@ export async function syncProject(app: KitrApp, projectId: string) {
 Pass the `Error` itself to `error()` or `fatal()`. Its message becomes `msg`, and its name, message, stack and `code` are kept under `err`:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function generateInvoice(app: KitrApp, invoiceNumber: string) {
@@ -155,7 +155,7 @@ The server already logs every 5xx response at `error` level with the method, pat
 `child(bindings, name?)` returns a logger that adds `bindings` to every record. Use it to carry an id through a piece of work instead of repeating it in every call:
 
 ```ts
-// server/services/order_service.ts
+// server/services/order-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function shipOrder(app: KitrApp, orderId: string) {
@@ -177,7 +177,7 @@ A child keeps its parent's bindings and adds its own; fields passed in a call wi
 
 ```ts
 // config/logger.ts
-import { defineConfig } from 'kitr/logger'
+import { defineConfig } from '@kitr/logger'
 
 export default defineConfig({
   name: 'app',
@@ -195,12 +195,12 @@ On the server, every request gets its own child logger with `requestId`. The id 
 | Where | How |
 | --- | --- |
 | A controller | `ctx.logger` |
-| Middleware, an action or a service during a request | `useRequest().logger`, with `useRequest` from `kitr/server` |
+| Middleware, an action or a service during a request | `useRequest().logger`, with `useRequest` from `@kitr/server` |
 | Code that may run inside or outside a request | `tryUseRequest()?.logger ?? app.container.use('logger')` |
 
 ```ts
-// server/services/team_service.ts
-import { useRequest } from 'kitr/server'
+// server/services/team-service.ts
+import { useRequest } from '@kitr/server'
 
 export function inviteToTeam(teamId: string, email: string) {
   const { logger } = useRequest()
@@ -208,7 +208,7 @@ export function inviteToTeam(teamId: string, email: string) {
 }
 ```
 
-`useRequest()` throws `[kitr/server] useRequest() called outside a request.` when nothing is in flight, such as in a job or at startup.
+`useRequest()` throws `[@kitr/server] useRequest() called outside a request.` when nothing is in flight, such as in a job or at startup.
 
 When a request finishes, the server writes one line at `debug` level with the method, path, status, client IP and duration:
 
@@ -223,8 +223,8 @@ Set `LOG_LEVEL=debug` to see these lines; at the default `info` they are dropped
 The provider binds the logger as `logger` in the container. Jobs, scripts and providers read it from there:
 
 ```ts
-// server/jobs/prune_sessions.ts
-import { defineJob } from 'kitr/jobs'
+// server/jobs/prune-sessions.ts
+import { defineJob } from '@kitr/jobs'
 
 export const pruneSessions = defineJob('prune_sessions', {
   schedule: '0 3 * * *',
@@ -239,11 +239,11 @@ The server keeps the same logger as `server.logger`, after `server.boot()`. Befo
 
 ## Log in the browser
 
-The provider also runs in the browser. In a component, read the logger with `useService` from [`kitr/react`](/packages/react):
+The provider also runs in the browser. In a component, read the logger with `useService` from [`@kitr/react`](/packages/react):
 
 ```tsx
-// app/features/projects/project-actions.tsx
-import { useService } from 'kitr/react'
+// app/components/projects/project-actions.tsx
+import { useService } from '@kitr/react'
 
 export function ArchiveProjectButton({ projectId }: { projectId: string }) {
   const logger = useService('logger')
@@ -262,7 +262,7 @@ Browser lines go to the browser console as `console.info('[app] project archived
 `logger.time(msg, fn, fields?)` runs an async function, logs `msg` at `info` with `durationMs` when it settles, and returns its result:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function renderInvoicePdf(app: KitrApp, invoiceNumber: string) {
@@ -286,8 +286,8 @@ The line is written even when the function throws, and then the error is rethrow
 `level` is a property you can set. Turn on debug output in a running process without a restart:
 
 ```ts
-// server/controllers/admin_controller.ts
-import type { HttpContext } from 'kitr/api'
+// server/controllers/admin-controller.ts
+import type { HttpContext } from '@kitr/api'
 
 export default class AdminController {
   async setLogLevel({ app, body }: HttpContext<{}, {}, { level: 'debug' | 'info' }>) {
@@ -308,7 +308,7 @@ Force one format everywhere, for example JSON in a staging environment that runs
 
 ```ts
 // config/logger.ts
-import { defineConfig } from 'kitr/logger'
+import { defineConfig } from '@kitr/logger'
 
 export default defineConfig({
   name: 'app',
@@ -326,7 +326,7 @@ Most hosting platforms (Fly, Render, Railway, Kubernetes) collect stdout and std
 ```ts
 // config/logger.ts
 import { appendFileSync } from 'node:fs'
-import { defineConfig } from 'kitr/logger'
+import { defineConfig } from '@kitr/logger'
 
 export default defineConfig({
   name: 'app',
@@ -342,7 +342,7 @@ export default defineConfig({
 
 ```ts
 // server/log_shipper.ts
-import type { LogRecord } from 'kitr/logger'
+import type { LogRecord } from '@kitr/logger'
 
 const buffer: LogRecord[] = []
 
@@ -368,7 +368,7 @@ setInterval(flushLogs, 5_000).unref()
 
 ```ts
 // config/logger.ts
-import { defineConfig } from 'kitr/logger'
+import { defineConfig } from '@kitr/logger'
 import { shipLog } from '#server/log_shipper'
 
 export default defineConfig({ name: 'app', format: 'json', write: shipLog })
@@ -382,7 +382,7 @@ A `write` that throws throws out of the `logger.info()` call that triggered it, 
 
 ```ts
 // scripts/import_projects.ts
-import { createLogger } from 'kitr/logger'
+import { createLogger } from '@kitr/logger'
 
 const logger = createLogger({ name: 'import', level: 'debug' })
 logger.info('importing projects', { file: 'projects.csv' })
@@ -401,11 +401,11 @@ While devtools is active and you have not set `write`, every line goes to `conso
 `createLogger({ write })` lets a test collect records and assert on them. To test code that reads the logger from the container, boot an app with the provider and a `write` that collects:
 
 ```ts
-// test/ship_order.test.ts
-import { type LogRecord, loggerProvider } from 'kitr/logger'
-import { createTestApp } from 'kitr/testing'
+// test/ship-order.test.ts
+import { type LogRecord, loggerProvider } from '@kitr/logger'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
-import { shipOrder } from '#server/services/order_service'
+import { shipOrder } from '#server/services/order-service'
 
 describe('shipOrder', () => {
   it('logs each step with the order id', async () => {
@@ -444,9 +444,9 @@ Each record is a plain object, so assertions are on fields:
 To check the exact text a line produces, assert on the first argument of `write` instead of the record. To keep a noisy test quiet, configure `level: 'silent'` or pass `silentLogger`:
 
 ```ts
-// test/quiet_server.test.ts
-import { silentLogger } from 'kitr/logger'
-import { createServer } from 'kitr/server'
+// test/quiet-server.test.ts
+import { silentLogger } from '@kitr/logger'
+import { createServer } from '@kitr/server'
 import { expect, it } from 'vitest'
 
 it('answers the health check without printing', async () => {
