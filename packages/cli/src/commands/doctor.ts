@@ -1,9 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { resolvePackageName, shortPackageName } from '@kitr/core/package'
 import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createProjectInfo } from '../add-context'
 import { createContext, type ProjectContext } from '../context'
 import { installedPackages, type LoadedPackage } from '../packages'
+import { readPlatformConfig, withoutOf } from '../platform-config'
 import { createPlatformContext, loadPlatforms } from '../platforms'
 import { runTypes } from '../types'
 import { versions } from '../versions'
@@ -136,6 +138,27 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
         fix: `kitr add ${p.factory} ${name}`,
       })
   }
+  // Per-platform builds: `without` names a listed package, and config/<dir>/ names a platform.
+  const listed = new Set(rc.packages.map(resolvePackageName))
+  for (const name of platformNames)
+    for (const left of withoutOf(rc, name))
+      if (!listed.has(resolvePackageName(left)))
+        out.push({
+          level: 'error',
+          message: `platform ${name}: without lists "${left}", which is not in kitrrc.ts packages`,
+          fix: rc.packages.length
+            ? `name one of ${rc.packages.map(shortPackageName).join(', ')}`
+            : 'remove it from without',
+        })
+  const layout = readPlatformConfig(ctx, rc)
+  for (const dir of layout.strayDirs)
+    out.push({
+      level: 'warn',
+      message: `${layout.dir}/${dir}/ is not a platform name, so no build reads it`,
+      fix: platformNames.length
+        ? `rename it to one of ${platformNames.join(', ')}, or move its files up into ${layout.dir}/`
+        : `move its files up into ${layout.dir}/`,
+    })
   if (!platformNames.length)
     out.push({
       level: serverOnly || 'react' in deps ? 'error' : 'info',

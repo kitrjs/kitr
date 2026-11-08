@@ -3,6 +3,7 @@ import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { Codemods } from '../codemods'
 import { createContext } from '../context'
+import { readPlatformConfig } from '../platform-config'
 import {
   addPlatform,
   loadPlatforms,
@@ -98,8 +99,12 @@ export const platforms = defineCommand({
       ctx.log.info(`No platforms yet. Add one: kitr add ${platformTypeNames.join('|')} <name>`)
       return
     }
+    const layout = readPlatformConfig(ctx)
     for (const [name, p] of entries) {
-      const opts = Object.entries(p.options)
+      const opts = Object.entries({
+        ...p.options,
+        ...(p.without.length ? { without: p.without } : {}),
+      })
         .filter(([, v]) => v !== undefined)
         .map(
           ([k, v]) =>
@@ -107,6 +112,12 @@ export const platforms = defineCommand({
         )
         .join(' ')
       ctx.log.plain(`  ${pc.bold(name.padEnd(10))} ${p.type.padEnd(8)} ${pc.dim(opts)}`)
+      // The config files this build imports, and where each comes from.
+      const files = layout.platforms[name]?.files ?? []
+      if (files.length)
+        ctx.log.plain(
+          `  ${' '.repeat(10)} ${pc.dim('config'.padEnd(8))} ${files.map((f) => `${f.name} ${pc.dim(`(${f.source})`)}`).join(', ')}`,
+        )
     }
   },
 })
@@ -131,7 +142,12 @@ export const config = defineCommand({
     if (!args.key) {
       ctx.log.title(`${name} (${instance.type})`)
       for (const [key, spec] of Object.entries(describe)) {
-        const current = (instance.options as Record<string, unknown>)[key]
+        const current =
+          key === 'without'
+            ? instance.without.length
+              ? instance.without
+              : undefined
+            : (instance.options as Record<string, unknown>)[key]
         const shown =
           current === undefined
             ? pc.dim('unset')
@@ -158,6 +174,8 @@ export const config = defineCommand({
     if (args.unset) {
       instance.with({ [args.key]: undefined })
       setRcPlatformOption(ctx, name, args.key, undefined)
+      // The standalone server's config/index.ts follows `without`.
+      if (args.key === 'without') new Codemods(ctx).syncConfigIndex()
       ctx.log.success(`${name}.${args.key} unset`)
       return
     }
@@ -172,6 +190,7 @@ export const config = defineCommand({
     // The platform's own schema decides what is valid.
     instance.with({ [args.key]: value })
     setRcPlatformOption(ctx, name, args.key, value)
+    if (args.key === 'without') new Codemods(ctx).syncConfigIndex()
     ctx.log.success(`${name}.${args.key} = ${JSON.stringify(value)}`)
   },
 })

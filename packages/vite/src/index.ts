@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { PackageDefinition, PackageViteNeeds } from '@kitr/core/package'
-import { pickPackageDefinition } from '@kitr/core/package'
+import { pickPackageDefinition, resolvePackageName, shortPackageName } from '@kitr/core/package'
 import type { Plugin, PluginOption } from 'vite'
 
 export interface KitrPluginOptions {
@@ -147,6 +147,8 @@ interface ActivePlatform {
   type: string
   mode: WebMode
   options: Record<string, any>
+  /** Packages left out of this build (`without` in kitrrc.ts), as full names (`@kitr/analytics`). */
+  without: string[]
 }
 
 function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | undefined {
@@ -164,7 +166,42 @@ function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | 
   const [name, p] = pick
   const options = p.options ?? {}
   const mode: WebMode = p.factory === 'web' ? (options.mode ?? 'spa') : 'spa'
-  return { name, type: p.factory, mode, options }
+  const without = Array.isArray(options.without)
+    ? options.without
+        .filter((w: unknown): w is string => typeof w === 'string')
+        .map(resolvePackageName)
+    : []
+  return { name, type: p.factory, mode, options, without }
+}
+
+/** `config/<name>.ts` files (no folders, no generated index), by name. */
+function configFiles(dir: string): Map<string, string> {
+  const out = new Map<string, string>()
+  if (!existsSync(dir)) return out
+  for (const f of readdirSync(dir).sort()) {
+    if (!/\.(ts|js|mts|mjs)$/.test(f) || /^index\.\w+$/.test(f)) continue
+    if (!statSync(join(dir, f)).isFile()) continue
+    out.set(f.replace(/\.\w+$/, ''), join(dir, f))
+  }
+  return out
+}
+
+/**
+ * The config files one build imports, by name: every shared `config/<name>.ts`, replaced by
+ * `config/<platform>/<name>.ts` where that exists, minus the names in `dropped` (the packages
+ * the platform leaves out, server-only files in a browser bundle).
+ */
+function platformConfigFiles(
+  dir: string,
+  platform: { name: string } | undefined,
+  dropped: string[] = [],
+): Map<string, string> {
+  const files = configFiles(dir)
+  if (platform)
+    for (const [name, file] of configFiles(join(dir, platform.name)))
+      if (files.has(name)) files.set(name, file)
+  for (const name of dropped) files.delete(name)
+  return files
 }
 
 /**
@@ -187,6 +224,10 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   let serverOnlyConfig: string[] = []
   /** Packages whose provider never ships in a production build. */
   let devOnlyProviders: string[] = []
+  /** Short name (`config/<name>.ts`) of each installed package, by full package name. */
+  let configNames = new Map<string, string>()
+  const configNamesOf = (p: ActivePlatform | undefined) =>
+    (p?.without ?? []).map((pkg) => configNames.get(pkg) ?? shortPackageName(pkg))
 
   const core: Plugin = {
     name: 'kitr',
@@ -202,6 +243,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       platform = pickPlatform(rc, wantedPlatform)
       const declared = await needs
       serverOnlyConfig = declared.filter((n) => n.needs.serverOnlyConfig).map((n) => n.name)
+      configNames = new Map(declared.map((n) => [n.package, n.name]))
       const configDir = resolve(root, rc.directories.config ?? 'config')
       devOnlyProviders = declared
         .filter((n) => n.needs.provider?.production === false)
@@ -258,10 +300,12 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       if (id === '\0virtual:kitr/providers') {
         // Production builds never import the devtools provider, so the overlay is not in the bundle.
         const dropped = (spec: string) => devOnlyProviders.some((pkg) => providerOf(spec, pkg))
-        const specs =
+        const left = (spec: string) => !!platform?.without.some((pkg) => providerOf(spec, pkg))
+        const specs = (
           options.devtools === false || production
             ? rc.providers.filter((spec) => !dropped(spec))
             : rc.providers
+        ).filter((spec) => !left(spec))
         const imports = specs
           .map((spec, i) => `import p${i} from ${JSON.stringify(spec)}`)
           .join('\n')
@@ -271,20 +315,14 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         const dir = resolve(root, rc.directories.config ?? 'config')
         // Server-only config (config/server.ts imports Node APIs) never reaches the browser bundle.
         const serverOnly = loadOptions?.ssr ? [] : serverOnlyConfig
-        const files = existsSync(dir)
-          ? readdirSync(dir).filter(
-              (f) =>
-                /\.(ts|js|mts|mjs)$/.test(f) &&
-                !/^index\.\w+$/.test(f) && // the generated index the standalone server imports
-                !serverOnly.includes(f.replace(/\.\w+$/, '')),
-            )
-          : []
+        // `config/<platform>/<name>.ts` replaces the shared file; `without` drops the package's file.
+        const files = [
+          ...platformConfigFiles(dir, platform, [...serverOnly, ...configNamesOf(platform)]),
+        ]
         const imports = files
-          .map((f, i) => `import c${i} from ${JSON.stringify(join(dir, f))}`)
+          .map(([, file], i) => `import c${i} from ${JSON.stringify(file)}`)
           .join('\n')
-        const entries = files
-          .map((f, i) => `${JSON.stringify(basename(f).replace(/\.\w+$/, ''))}: c${i}`)
-          .join(', ')
+        const entries = files.map(([name], i) => `${JSON.stringify(name)}: c${i}`).join(', ')
         return `${imports}\nexport const config = { ${entries} }\n`
       }
       return null
@@ -302,13 +340,29 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
     async configureServer(server) {
       const rcPath = findRc(root)
       if (rcPath) server.watcher.add(rcPath)
+      const invalidate = (ids: string[]) => {
+        for (const id of ids) {
+          const mod = server.moduleGraph.getModuleById(id)
+          if (mod) server.moduleGraph.invalidateModule(mod)
+        }
+      }
+      const configDir = () => resolve(root, rc.directories.config ?? 'config')
+      // A file added to or removed from config/ or config/<platform>/ changes which files ship.
+      const platformDir = () => (platform ? join(configDir(), platform.name) : undefined)
+      server.watcher.add(configDir())
+      if (platformDir()) server.watcher.add(platformDir()!)
+      const onConfigFile = (file: string) => {
+        const parent = dirname(file)
+        if (parent === configDir() || parent === platformDir())
+          invalidate(['\0virtual:kitr/config'])
+      }
+      server.watcher.on('add', onConfigFile)
+      server.watcher.on('unlink', onConfigFile)
       server.watcher.on('change', (file) => {
         if (file === rcPath) {
           rc = readRc(root)
-          for (const id of ['\0virtual:kitr/providers', '\0virtual:kitr/config']) {
-            const mod = server.moduleGraph.getModuleById(id)
-            if (mod) server.moduleGraph.invalidateModule(mod)
-          }
+          platform = pickPlatform(rc, wantedPlatform)
+          invalidate(['\0virtual:kitr/providers', '\0virtual:kitr/config'])
         }
       })
       if (options.types === false) return

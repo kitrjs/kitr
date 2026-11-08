@@ -152,6 +152,18 @@ export function UploadHint() {
 
 Calling `useFlag('max-upload-mb')` with no type arguments also works, but the value is typed as `boolean | string | number` and a typo is not caught.
 
+## Pick flags per platform
+
+One project that builds a phone app and a desktop app keeps one flags service and splits the definitions into groups: `app/flags/mobile.ts` exports `mobileFlags`, `app/flags/desktop.ts` exports `desktopFlags`, and `app/flags.ts` exports their union, `{ ...mobileFlags, ...desktopFlags }`, for shared components to import. `config/flags.ts` lists the union, so the web and server builds see every flag. A file in a platform's config folder replaces it for that build, so `config/phone/flags.ts` lists `definitions: mobileFlags` and can use its own providers; see [Platforms](/docs/platforms).
+
+```ts
+// config/phone/flags.ts
+import { defineConfig, envFlagsProvider } from '@kitr/flags'
+import { mobileFlags } from '#app/flags/mobile'
+
+export default defineConfig({ definitions: mobileFlags, providers: [envFlagsProvider()] })
+```
+
 ## Read every flag at once
 
 `useFlags()` from `@kitr/flags/react` returns every flag as one object, for a settings page or a debug panel:

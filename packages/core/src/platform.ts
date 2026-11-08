@@ -101,18 +101,41 @@ export interface PlatformHooks<O extends object = any> {
   agents?: string
 }
 
+/**
+ * Options core reads for every platform type, built in or third party. They are taken out of
+ * the input before the package's own schema sees it, so no platform has to declare them.
+ */
+export interface PlatformBundleOptions {
+  /**
+   * Packages left out of this platform's build, by the name in `packages` (`'analytics'` or
+   * `'@kitr/analytics'`): their provider and their `config/<name>.ts` do not ship in it.
+   */
+  without?: string[]
+}
+
+/** How `without` reads in `kitr config <name>`, `kitr platforms` and `kitr add <type> --help`. */
+export const withoutOption = Object.freeze({
+  description: "Packages left out of this platform's build (their provider and config file)",
+  type: 'list',
+  default: Object.freeze([]) as unknown as string[],
+}) satisfies PlatformOptionSpec
+
 export interface PlatformInstance<O extends object = any> extends PlatformHooks<O> {
   readonly type: string
   /** Validated options with defaults applied. */
   readonly options: O
+  /** Packages left out of this platform's build (`without` in kitrrc.ts). Empty by default. */
+  readonly without: string[]
   /** The options as written in kitrrc.ts, before defaults. */
   readonly input: Partial<O>
   readonly definition: PlatformDefinition<O>
   /** The same platform with some options replaced (`kitr dev <name> --port 4000`, `KITR_<NAME>_PORT`). */
-  with(overrides: Partial<O>): PlatformInstance<O>
+  with(overrides: Partial<O> & PlatformBundleOptions): PlatformInstance<O>
 }
 
-export type PlatformFactory<O extends object> = (options?: Partial<O>) => PlatformInstance<O>
+export type PlatformFactory<O extends object> = (
+  options?: Partial<O> & PlatformBundleOptions,
+) => PlatformInstance<O>
 
 /**
  * Define a platform package:
@@ -132,19 +155,36 @@ export function definePlatform<O extends object>(
   definition: PlatformDefinition<O>,
   factory: (options: O) => PlatformHooks<O>,
 ): PlatformFactory<O> {
-  const create = (input: Partial<O> = {}): PlatformInstance<O> => {
-    const options = parseOptions(definition, input)
+  // `without` is core's: listed with the package's own options, never handed to its schema.
+  const described: PlatformDefinition<O> = {
+    ...definition,
+    describe: { ...definition.describe, without: withoutOption },
+  }
+  const create = (all: Partial<O> & PlatformBundleOptions = {}): PlatformInstance<O> => {
+    const { without, ...input } = all as Partial<O> & PlatformBundleOptions
+    const options = parseOptions(definition, input as Partial<O>)
     const hooks = factory(options)
     return {
       ...hooks,
       type: definition.type,
       options,
-      input,
-      definition,
-      with: (overrides) => create({ ...input, ...overrides }),
+      without: parseWithout(definition.type, without),
+      input: input as Partial<O>,
+      definition: described,
+      // `without` lives outside `input`, so a replacement keeps it unless it names its own.
+      with: (overrides) => create({ ...input, without, ...overrides } as Partial<O>),
     }
   }
   return create
+}
+
+function parseWithout(type: string, value: unknown): string[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.some((v) => typeof v !== 'string' || !v))
+    throw new Error(
+      `[kitr] Invalid options for ${type} platform:\n  without: expected a list of package names, such as ['analytics'], got ${JSON.stringify(value)}`,
+    )
+  return [...value]
 }
 
 /** Validate platform options with the definition's schema, or fill defaults from `describe`. */

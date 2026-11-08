@@ -248,6 +248,33 @@ export function DeskOnlyTools() {
 
 After `kitr build`, `dist/desk/client` has a `receipt-printer` chunk and `dist/site/client` has none. Keep the import inside the condition: a `lazy(() => import(...))` at the top of the file is a chunk in every build, even when nothing renders it. The same goes for pages: `platforms` takes a page out of a build's route tree, but its chunk is still emitted, so put code that must not ship behind `KITR_PLATFORM`.
 
+## Give one platform its own config
+
+The back office wants a dark theme by default, and the phone app should not load the analytics package the web app uses. Neither needs a code change. A file in `config/desk/` replaces the shared file of the same name in the desktop build only:
+
+```ts
+// config/desk/theme.ts
+import { defineConfig } from '@kitr/theme'
+import base from '../theme'
+
+export default defineConfig({ ...base, default: 'dark' })
+```
+
+The file replaces `config/theme.ts`; nothing is merged, so spread the shared one to keep the rest. The site and phone builds still read `config/theme.ts`.
+
+`without` takes a package out of one build. Its provider is not registered there and its `config/analytics.ts` does not ship:
+
+```ts
+// kitrrc.ts
+platforms: {
+  site: web({ mode: 'spa', pwa: true }),
+  phone: mobile({ appId: 'com.acme.billing', appName: 'Acme Billing', scheme: 'acme', without: ['analytics'] }),
+  desk: desktop({ title: 'Acme Billing', appId: 'com.acme.billing' }),
+},
+```
+
+`kitr config phone without analytics` writes the same line. `kitr platforms` then lists, for each platform, the config files its build uses and where each comes from. More on both in [Platforms](/docs/platforms).
+
 ## Render public pages on the server
 
 The web platform is a single-page app here, which suits a signed-in tool. If the web build also carries public pages that search engines should read, switch it to `mode: 'ssr'` and decide per page. `ssrRoute()` from [SEO](/packages/seo) takes a table that resolves by platform name, then type, then `default`, so the web build renders the download page on the server while the shells, which have no server, render it in the window:

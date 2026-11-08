@@ -53,10 +53,12 @@ Any npm package with a kitr setup module works: `kitr add @acme/stripe`. See [Pa
 | `kitr dev [names...]` | Run every platform in development, or only the named ones: `kitr dev site`. |
 | `kitr build [names...]` | Build for production into `dist/<name>/`. |
 | `kitr start [names...]` | Serve the builds. `kitr serve` is an alias. |
-| `kitr platforms` | List platforms and their options. `types`, `scaffold <name>` and `remove <name>` are subcommands. |
-| `kitr config <name> [option] [value]` | Read or set one platform option: `kitr config site port 4000`. |
+| `kitr platforms` | List platforms, their options and the config files each build uses. `types`, `scaffold <name>` and `remove <name>` are subcommands. |
+| `kitr config <name> [option] [value]` | Read or set one platform option: `kitr config site port 4000`, `kitr config admin without analytics,consent`. |
 
 With more than one platform, `kitr dev` prefixes each line with the platform's name (`[site]`). `KITR_<NAME>_<OPTION>` overrides any option at run time: `KITR_SITE_PORT=4000 kitr dev site`.
+
+The server without Vite imports `config/index.ts`, which `kitr add` regenerates. When a platform has a `config/<platform>/` folder or a `without` list, that file picks the build's object with `forBuildPlatform()`; see [Config per platform](platforms.md#config-per-platform).
 
 ## Workspaces
 

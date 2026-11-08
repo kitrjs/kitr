@@ -47,6 +47,12 @@ Override any option at run time with an environment variable or a flag: `KITR_SI
 
 ## Options
 
+Every platform takes `without`, whatever its type:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `without` | `[]` | Packages left out of this build: their provider and their `config/<name>.ts`. See [Leave a package out](#leave-a-package-out). |
+
 **web** (`@kitr/web`)
 
 | Option | Default | Description |
@@ -187,6 +193,7 @@ server/
   controllers/
   realtime.ts        # createRealtimeServer({ channels })
 config/              # one file per package (config/seo.ts, config/realtime.ts, config/theme.ts, ...)
+  <platform>/        # files that replace a shared one for one platform's build
 platforms/
   app/               # desktop: the Electron main/preload sources; tauri: src-tauri/
   phone/             # mobile: capacitor.config.ts, ios/, android/
@@ -194,21 +201,87 @@ dist/<name>/         # build output per platform
 kitrrc.ts
 ```
 
-## One route table, many apps
+## One project, several apps
 
-A site, a web app, a phone app and a desktop app can share one route table and one set of components. These tools handle the differences:
+A site, an admin, an API, a phone app and a desktop app can be one project or several. Pick by what they share:
+
+| Use | When |
+| --- | --- |
+| Platforms in one `kitrrc.ts` | The apps share code, packages and their versions, and ship together. |
+| A workspace (`kitr.workspace.ts`) | The apps need different package versions, release dates or teams. |
+
+With platforms, each build can differ in three ways: its config files, the packages it leaves out, and its pages.
+
+### Config per platform
+
+A file in `config/<platform>/` replaces the shared file of the same name, for that platform's build only:
+
+```
+config/
+  theme.ts         # every build
+  flags.ts
+  admin/
+    theme.ts       # the admin build uses this instead of config/theme.ts
+  phone/
+    flags.ts
+```
+
+The file replaces the shared one. Nothing is merged. To change a few keys, spread the shared file:
+
+```ts
+// config/admin/theme.ts
+import { defineConfig } from '@kitr/theme'
+import base from '../theme'
+
+export default defineConfig({ ...base, default: 'dark' })
+```
+
+The folder name must be a platform name; `kitr doctor` warns about any other folder in `config/`. `kitr platforms` lists the config files each platform uses and where each comes from. For a one-line difference, `forPlatform()` inside the shared file is enough.
+
+### Leave a package out
+
+`without` takes packages out of one build. Name them as in `packages`, with or without `@kitr/`:
+
+```ts
+platforms: {
+  www: web({ mode: 'ssr' }),
+  admin: web({ mode: 'spa', port: 3002, without: ['analytics', 'consent'] }),
+  phone: mobile({ without: ['analytics'] }),
+},
+```
+
+That build has neither the package's provider nor its `config/<name>.ts`, so `app.container.has('analytics')` is false there. `kitr config admin without analytics,consent` sets it. A name that is not in `packages` is a `kitr doctor` error. A service only one platform needs is a provider that returns early unless `app.platform` is that platform.
+
+### Flags per platform
+
+Keep one flags service and split the definitions into groups:
+
+```ts
+// app/flags/mobile.ts
+export const mobileFlags = defineFlags({ 'offline-sync': { default: false } })
+
+// app/flags/desktop.ts
+export const desktopFlags = defineFlags({ 'menu-bar': { default: true } })
+
+// app/flags.ts: shared code imports this one
+export const flags = { ...mobileFlags, ...desktopFlags }
+```
+
+`config/flags.ts` lists `flags`, so the web and server builds see every flag. `config/phone/flags.ts` lists `mobileFlags` and `config/desk/flags.ts` lists `desktopFlags`. Each file can also use its own providers.
+
+### Theme per platform
+
+`config/admin/theme.ts` spreads the shared theme and changes `default`, `colors` or `tokens`. Styles in `app/styles/` stay shared. Two versions of a package in one project are not possible; that is a workspace.
+
+### Pages per platform
 
 | Need | Tool |
 | --- | --- |
-| A route that exists on some platforms only | `onlyPlatform('www')` guard in `@kitr/router` |
-| Server rendering on the site, client rendering in the shells | `ssrRoute({ www: true, default: false })` in `@kitr/seo` |
-| A guest landing and a member feed on the same URL | `authBranch()`, `<Authed>`, `<Guest>` in `@kitr/auth` |
-| A different adapter, implementation or layout per platform | `forPlatform()` (build time) and `perPlatform()` (run time) in `@kitr/platform` |
-| A piece of UI on some platforms or form factors | `<Only>`, `<Except>`, `useFormFactor()` in `@kitr/platform/react` |
-| Native stack navigation: push, swipe back, tabs, sheets | `<StackOutlet>`, `<StackTabs>`, `<SplitStack>` in `@kitr/router/stack` |
-| Compile-time branches on the build | `import.meta.env.KITR_PLATFORM`, typed after `kitr types` |
+| Some pages differ | `platforms: ['admin']` on the page or its group. |
+| A whole different tree | Two tables, `app/routes.ts` and `app/admin/routes.ts`. In `app/router.tsx`, `import.meta.env.KITR_PLATFORM === 'admin' ? adminRoutes : routes` drops the other tree from the bundle. |
+| A page that must not render elsewhere, even when linked | `beforeLoad: onlyPlatform('admin')` from `@kitr/router`. |
 
-When the apps are separate projects in one repository, `kitr.workspace.ts` names them and the CLI fans out from the root; see [Workspaces](cli.md#workspaces).
+The rest of the toolbox works per platform too: `ssrRoute({ www: true, default: false })` in `@kitr/seo`, `forPlatform()` and `perPlatform()` in `@kitr/platform`, `<Only>`, `<Except>` and `useFormFactor()` in `@kitr/platform/react`, and the stacks in `@kitr/router/stack`. For apps in separate projects, see [Workspaces](cli.md#workspaces).
 
 ## Writing a platform package
 
