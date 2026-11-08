@@ -10,6 +10,7 @@ import server from './server'
 import storage from './storage'
 import tailwind from './tailwind'
 import theme from './theme'
+import toast from './toast'
 
 export const config = {
   api,
@@ -23,4 +24,5 @@ export const config = {
   storage,
   tailwind,
   theme,
+  toast,
 }

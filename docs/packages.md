@@ -18,7 +18,8 @@ Four packages load data: `http`, `api`, `actions` and `realtime`. [Choosing a da
 | `3d` | `@kitr/3d` | client | react | Render 3D scenes and models that stay smooth on phones and fall back when WebGL is missing. |
 | `state` | `@kitr/state` | client |  | Keep app-wide values like a cart or settings, and optionally save them in the browser. |
 | `tailwind` | `@kitr/tailwind` | client |  | Style with Tailwind CSS classes, already set up with kitr's colours. |
-| `theme` | `@kitr/theme` | client |  | Light, dark and system themes with no flash on load, design tokens, toasts, and the components you copy into your app. |
+| `theme` | `@kitr/theme` | client |  | Light, dark and system themes with no flash on load, design tokens, and the components you copy into your app. |
+| `toast` | `@kitr/toast` | client | react | Show short messages like "Saved" or "Could not send" from anywhere in your app, even outside React. |
 | `auth` | `@kitr/auth` | client |  | Sign users in and out, protect pages, and check who can do what. |
 | `logger` | `@kitr/logger` | any |  | Write readable logs in development and structured logs in production. |
 | `server` | `@kitr/server` | any | logger | Run a Node server that starts, logs and shuts down cleanly. |
@@ -74,12 +75,12 @@ The full walkthrough of every kit is in [Kits](kits.md).
 | Kit | Platforms | Packages |
 | --- | --- | --- |
 | `blank` | none | none. `kitr add web site` adds Vite, React and the router. |
-| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing |
+| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |
 | `saas` | `site` (ssr), `api` | the fullstack set with analytics and monitoring; sign-in, guarded shell, projects CRUD, tests |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing; prerendered pages, blog, newsletter |
-| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, storage, seo, api, realtime, testing; chat over typed channels |
+| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing; chat over typed channels |
 | `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform; Electron, native dialogs over typed IPC |
 | `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform; Tauri, typed Rust commands and events |
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform; installable PWA and the Capacitor shell |

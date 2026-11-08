@@ -39,15 +39,6 @@ function pick<K extends string>(styles: CssModule<K>, ...parts: Array<K | Partia
 
 Pick classes from a module with optional conditions: `pick(styles, 'card', { active })`.
 
-### setToastImplementation
-
-```ts
-function setToastImplementation(fn: ToastFn | null): void;
-```
-
-Replace what `toast` calls: a function with `success`, `error`, `info`, `warning` and `promise` methods.
-The theme provider sets sonner's `toast` once it loads; `null` goes back to the console fallback.
-
 ### themeFromCookie
 
 ```ts
@@ -80,14 +71,6 @@ Inline script for the document head; applies the stored theme before first paint
 `storageKey`, `attribute` and `tokens` default to `config/theme.ts` (through the theme
 provider), so the head and the provider always agree. `tokens` are emitted as a `<style>` of
 `--kitr-*` overrides: `light` on `:root`, `dark` under the dark attribute.
-
-### toastError
-
-```ts
-function toastError(error: unknown, fallbackMessage?: string): void;
-```
-
-Show a KitrError (or anything) as an error toast with its message.
 
 ### tokenCss
 
@@ -189,15 +172,6 @@ const ThemeConfigContext: import("react").Context<ThemeConfig | null>;
 
 `config/theme.ts`, provided by the theme provider so `<ThemeScript />` uses the same settings.
 
-### toast
-
-```ts
-const toast: ToastFn;
-```
-
-Show a toast: `toast('Saved')`, `toast.success()`, `.error()`, `.info()`, `.warning()` and `.promise()`.
-Goes to sonner when it is installed and loaded, and to the console otherwise.
-
 ### DefineTokensResult
 
 ```ts
@@ -244,17 +218,10 @@ interface ThemeConfig {
   registry?: string;
   /** Where components are written. Default `app/components/ui`. */
   componentsDir?: string;
-  /** The sonner toaster the provider mounts once `sonner` is installed. */
-  toaster?: {
-    /** Where toasts appear. Default `'bottom-right'`. */
-    position?: 'top-right' | 'top-center' | 'bottom-right' | 'bottom-center';
-    /** Coloured success, error, info and warning toasts. Default `true`. */
-    richColors?: boolean;
-  };
 }
 ```
 
-The options of `config/theme.ts`: the default theme, where it is stored, window colours, the toaster and the component registry.
+The options of `config/theme.ts`: the default theme, where it is stored, window colours and the component registry.
 
 ### ThemeProviderProps
 
@@ -344,7 +311,7 @@ Every dotted path to a leaf of a token tree (`'color.primary'`), so token names 
 const themeProvider: import("@kitr/core").KitrProvider;
 ```
 
-Wraps the app in ThemeProvider with `config/theme.ts` and mounts the toaster (sonner, if installed).
+Wraps the app in ThemeProvider with `config/theme.ts`.
 Listed in kitrrc.ts as `() => import('@kitr/theme/provider')`. Pair with `<ThemeScript />` in the document head.
 
 ## @kitr/theme/server

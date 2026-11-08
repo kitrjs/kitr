@@ -1094,6 +1094,7 @@ export default definePackage({
       'state',
       'tailwind',
       'theme',
+      'toast',
       'storage',
       'testing',
       'seo',

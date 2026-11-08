@@ -1,8 +1,10 @@
 /**
- * Toasts go through sonner when it is installed. `toast` degrades to console
- * output otherwise, so a package can call it without forcing the dependency.
+ * The headless core: `toast` calls whatever implementation is set, and the console until one is.
+ * It imports nothing, so any package or plain module can call it. The provider sets sonner.
  */
-type ToastFn = ((message: string, options?: Record<string, unknown>) => unknown) & {
+
+/** What `toast` calls: a function with `success`, `error`, `info`, `warning` and `promise` methods. */
+export type ToastFn = ((message: string, options?: Record<string, unknown>) => unknown) & {
   success: (message: string, options?: Record<string, unknown>) => unknown
   error: (message: string, options?: Record<string, unknown>) => unknown
   info: (message: string, options?: Record<string, unknown>) => unknown
@@ -25,7 +27,7 @@ const fallback: ToastFn = Object.assign((message: string) => console.info(`[toas
 
 /**
  * Replace what `toast` calls: a function with `success`, `error`, `info`, `warning` and `promise` methods.
- * The theme provider sets sonner's `toast` once it loads; `null` goes back to the console fallback.
+ * The toast provider sets sonner's `toast` when the app boots; `null` goes back to the console fallback.
  */
 export function setToastImplementation(fn: ToastFn | null) {
   impl = fn
@@ -33,7 +35,7 @@ export function setToastImplementation(fn: ToastFn | null) {
 
 /**
  * Show a toast: `toast('Saved')`, `toast.success()`, `.error()`, `.info()`, `.warning()` and `.promise()`.
- * Goes to sonner when it is installed and loaded, and to the console otherwise.
+ * Goes to sonner once the toast provider has booted, and to the console before that or without it.
  */
 export const toast: ToastFn = Object.assign(
   (message: string, options?: Record<string, unknown>) => (impl ?? fallback)(message, options),

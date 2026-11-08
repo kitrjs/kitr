@@ -13,6 +13,7 @@ import shield from './shield'
 import storage from './storage'
 import tailwind from './tailwind'
 import theme from './theme'
+import toast from './toast'
 
 export const config = {
   analytics,
@@ -29,4 +30,5 @@ export const config = {
   storage,
   tailwind,
   theme,
+  toast,
 }

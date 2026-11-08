@@ -82,7 +82,8 @@ Start with [what kitr is](https://kitr.dev/docs/what-is-kitr), then follow the g
 | `@kitr/3d` | `@react-three/fiber`, `@react-three/drei` | `<Scene>` (WebGL fallback, pauses off screen, adaptive resolution), `useModel` with a self-hosted Draco decoder, `useThemeColor`; `@kitr/3d/drei` |
 | `@kitr/state` | `zustand` | `createKitrStore` (SSR-safe, per-request on the server) |
 | `@kitr/tailwind` | | `cn()`, the preset mapping kitr tokens to `@theme`, `@kitr/tailwind/vite` |
-| `@kitr/theme` | `clsx`, `cva` | `defineTokens`, `ThemeProvider`, `useTheme`, `toast`, registry config; `@kitr/theme/styles.css` |
+| `@kitr/theme` | `clsx`, `cva` | `defineTokens`, `ThemeProvider`, `useTheme`, registry config; `@kitr/theme/styles.css` |
+| `@kitr/toast` | `sonner` | `toast()` from any module, `toastError`, a provider that mounts the toaster |
 | `@kitr/logger` | | `createLogger`, child loggers, request ids |
 | `@kitr/server` | `h3` | `createServer` (standalone via srvx, or a `fetch` handler), request context, the `server()` platform |
 | `@kitr/api` | | `defineRoutes`, controllers, validators, middleware, `toOpenApi`; `@kitr/api/client` is the typed client |
