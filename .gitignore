@@ -17,3 +17,6 @@ test-results
 playwright-report
 .type-perf
 .claude/worktrees/
+
+# Redis snapshots from local runs
+dump.rdb
