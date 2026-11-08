@@ -8,7 +8,7 @@ order: 0
 
 ## What it is
 
-`@kitr/monitoring` catches render errors, uncaught errors, unhandled rejections and failed server requests, adds the user and breadcrumbs, and hands each report to a reporter such as Sentry. In development, reports show in [devtools](/packages/devtools) instead.
+`@kitr/monitoring` catches render errors, uncaught errors, unhandled rejections and failed server requests, adds the user and breadcrumbs, and hands each report to a reporter such as Sentry or Better Stack. In development, reports show in [devtools](/packages/devtools) instead.
 
 Runs in the browser and on the server. For debugging lines, use the [logger](/packages/logger).
 
@@ -55,19 +55,20 @@ Make the import fail in development and the console reporter prints the report:
 [monitoring] error Error: Import failed with 500 { fileName: 'projects.csv', size: 18234 }
 ```
 
-The report also appears in the devtools Errors panel. Set `VITE_SENTRY_DSN` and the same call goes to Sentry. Next in the guide: [Report your first error](/packages/monitoring/guide#report-your-first-error).
+The report also appears in the devtools Errors panel. Set `VITE_SENTRY_DSN` and the same call goes to Sentry or Better Stack. Next in the guide: [Report your first error](/packages/monitoring/guide#report-your-first-error).
 
 ## Built on
 
-Reports go through a `Reporter`. Three are built in:
+Reports go through a `Reporter`. These are built in:
 
 | Reporter | Built on | Use it for |
 | --- | --- | --- |
 | `sentry()` | [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/) | Production. |
+| `betterStack()` | The Sentry SDK with a [Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) DSN | Production. |
 | `devtoolsReporter` | The devtools hub | Development. |
 | `memoryReporter` | An array | Tests. |
 
-kitr adds the global handlers, the error boundary, shared user and breadcrumb context, expected-error filtering, server middleware and the `Reporter` interface.
+kitr adds the global handlers, the error boundary, shared user and breadcrumb context, expected-error filtering, server middleware and the `Reporter` interface. Any other service plugs in with one function: [Extend](/packages/monitoring/guide#extend).
 
 ## Problems it solves
 

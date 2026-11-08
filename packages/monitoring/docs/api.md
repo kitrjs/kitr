@@ -10,6 +10,15 @@ Every export of `@kitr/monitoring`, `@kitr/monitoring/provider`, `@kitr/monitori
 
 ## @kitr/monitoring
 
+### betterStack
+
+```ts
+function betterStack(Sentry: SentryLike, options: Parameters<typeof sentry>[1]): Reporter;
+```
+
+Better Stack reporter. Better Stack accepts the Sentry SDK, so this is the Sentry reporter
+with your Better Stack DSN (Errors -> your application -> Ingest): `betterStack(Sentry, { dsn })`.
+
 ### consoleReporter
 
 ```ts
@@ -210,7 +219,7 @@ interface Reporter {
 }
 ```
 
-A destination for reports (Sentry, the console, your own endpoint). Only `name` and `captureException` are required.
+A destination for reports (Sentry, Better Stack, the console, your own endpoint). Only `name` and `captureException` are required.
 
 ### SentryLike
 
@@ -233,7 +242,7 @@ interface SentryLike {
 }
 ```
 
-The subset of `@sentry/react` / `@sentry/browser` / `@sentry/node` these reporters call.
+The subset of `@sentry/react` / `@sentry/browser` / `@sentry/node` the `sentry` and `betterStack` reporters call.
 
 ### Severity
 

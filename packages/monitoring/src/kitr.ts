@@ -1,6 +1,6 @@
 import { definePackage } from '@kitr/core/package'
 
-/** `kitr add monitoring`: captureException, breadcrumbs and user context behind one API (Sentry or console). */
+/** `kitr add monitoring`: captureException, breadcrumbs and user context behind one API (Sentry, Better Stack or console). */
 export default definePackage({
   name: 'monitoring',
   add(ctx) {
@@ -17,6 +17,7 @@ export default defineConfig({
   reporters: [
     // import * as Sentry from '@sentry/node'  (pnpm add @sentry/node)
     // ...(process.env.SENTRY_DSN ? [sentry(Sentry, { dsn: process.env.SENTRY_DSN })] : []),
+    // Better Stack takes the same SDK: betterStack(Sentry, { dsn }) with its DSN.
   ],
   tags: { service: '${ctx.pkg.name ?? 'app'}' },
 })
@@ -37,6 +38,7 @@ export default defineConfig({
   reporters: [
     // import * as Sentry from '@sentry/react'  (pnpm add @sentry/react)
     // ...(env.VITE_SENTRY_DSN ? [sentry(Sentry, { dsn: env.VITE_SENTRY_DSN })] : []),
+    // Better Stack takes the same SDK: betterStack(Sentry, { dsn }) with its DSN.
   ],
   // shouldReport: (error) => !(error instanceof KitrError && error.status < 500),
   tags: { app: env.VITE_APP_NAME },
