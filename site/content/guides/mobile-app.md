@@ -4,7 +4,6 @@ description: Ship an iPhone and Android app from the same React code as your web
 packages: mobile, platform, router, query, auth, storage
 platforms: mobile, web
 time: 45 min
-preview: true
 ---
 
 # Build a phone app
@@ -13,23 +12,16 @@ Acme's finance team chases unpaid invoices from wherever they are, and a web pag
 
 The app is the same React code that runs in a browser. kitr wraps it in a [Capacitor](https://capacitorjs.com) shell, and while it runs inside the shell, the kitr packages that have a native version switch to it: storage moves to native preferences, the platform hooks get the hardware back button and the app's lifecycle, and links to other sites open in the system browser.
 
-> **Preview**
-> The mobile platform is a preview. `@kitr/mobile` and `@kitr/platform` are not on npm, because their native shells are not built in CI. The commands below need `--preview` and a kitr checkout, as the next section shows.
-
 ## Before you start
 
 You need [Node.js](https://nodejs.org) 22 or newer, pnpm, and a native toolchain for the phone you test on: Xcode for iOS (macOS only) or Android Studio for Android, set up as the [Capacitor environment guide](https://capacitorjs.com/docs/getting-started/environment-setup) describes. You also need the invoices API from [Build an API server without React](/guides/api-server) running on port 3001.
 
-Until the mobile packages are published, create the project inside a kitr checkout, where `--preview` links the workspace packages:
+Create the project:
 
 ```sh
-git clone https://github.com/kitrjs/kitr.git && cd kitr
-pnpm install && pnpm build
-node packages/kitr/bin/kitr.mjs new examples/acme-billing --kit mobile --preview \
-  --targets ios,android --no-install --no-git --registry $PWD/registry/dist
+kitr new acme-billing --kit mobile --targets ios,android
+cd acme-billing
 ```
-
-Then point `kitr` and every `@kitr/*` dependency in `examples/acme-billing/package.json` at `workspace:*` and run `pnpm install` at the root. Once the packages ship, this is `kitr new acme-billing --kit mobile`.
 
 ## Look at what the kit made
 
@@ -48,7 +40,7 @@ platforms: {
 Name the app before the first native build, because `cap add` copies the id into the Xcode and Android Studio projects:
 
 ```sh
-cd examples/acme-billing
+cd acme-billing
 kitr config phone appId com.acme.billing
 kitr config phone appName "Acme Billing"
 kitr config phone scheme acme

@@ -12,8 +12,6 @@ export interface Page {
   packages?: string[]
   /** Guides only: roughly how long the guide takes, such as `30 min`. */
   time?: string
-  /** Guides only: built on preview packages. */
-  preview?: boolean
   blocks: Block[]
   toc: Array<{ depth: number; id: string; text: string }>
   editUrl: string
@@ -42,8 +40,6 @@ export interface GuideItem {
   /** Platform types the guide ships to: web, server, desktop, tauri, mobile. */
   platforms: string[]
   time?: string
-  /** Built on preview packages. */
-  preview?: boolean
 }
 
 export const guidesNav = guidesNavJson as Array<{

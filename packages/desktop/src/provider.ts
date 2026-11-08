@@ -1,56 +1,39 @@
-import { defineProvider } from '@kitr/core'
-import type { PlatformDriver } from '@kitr/platform'
+import { createShellProvider } from '@kitr/platform/shell'
 import { createAsyncStorageDriver, type StorageDriver } from '@kitr/storage'
 import { IPC_BRIDGE_KEY, type IpcBridge, isElectron } from './client'
+
+function bridge(): IpcBridge | undefined {
+  return (globalThis as Record<string, unknown>)[IPC_BRIDGE_KEY] as IpcBridge | undefined
+}
 
 /**
  * Runtime provider of the desktop platform. Inside Electron it registers the `platform` and
  * `storage` drivers on the kitr IPC channels that `handleKitrIpc` serves from main. In a plain
- * browser it does nothing, so the web build of the same app keeps working.
+ * browser it does nothing, so the web build of the same app keeps working. The shared shell
+ * behaviour (detection, registration, app state, devtools) is `createShellProvider()`.
  */
-export const desktopProvider = defineProvider({
+export const desktopProvider = createShellProvider({
   name: 'desktop',
-  register(app) {
-    if (!isElectron()) return
-    app.drivers.register('platform', electronPlatformDriver(), { platform: 'desktop' })
+  platform: 'desktop',
+  type: 'desktop',
+  runtime: 'electron',
+  detect: isElectron,
+  bridge,
+  driver: (shell) => ({
+    appVersion: async () => (await shell.invoke('kitr:app:version')) as string,
+    openExternal: async (url) => {
+      await shell.invoke('kitr:shell:open', url)
+    },
+    exit: async () => {
+      await shell.invoke('kitr:app:quit')
+    },
+  }),
+  register: (app) => {
     app.drivers.register('storage', electronStorageDriver(), { platform: 'desktop' })
   },
 })
 
 export default desktopProvider
-
-function desktopOs(): string {
-  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent
-  if (/mac os/i.test(ua)) return 'macos'
-  if (/windows/i.test(ua)) return 'windows'
-  if (/linux/i.test(ua)) return 'linux'
-  return 'unknown'
-}
-
-function bridge(): IpcBridge | undefined {
-  return (globalThis as any)[IPC_BRIDGE_KEY]
-}
-
-function electronPlatformDriver(): PlatformDriver {
-  return {
-    type: 'desktop',
-    native: true,
-    os: desktopOs,
-    standalone: () => true,
-    appVersion: async () => (await bridge()?.invoke('kitr:app:version')) as string,
-    onAppState: (listener) => {
-      const handler = () => listener(document.visibilityState === 'visible')
-      document.addEventListener('visibilitychange', handler)
-      return () => document.removeEventListener('visibilitychange', handler)
-    },
-    openExternal: async (url) => {
-      await bridge()?.invoke('kitr:shell:open', url)
-    },
-    exit: async () => {
-      await bridge()?.invoke('kitr:app:quit')
-    },
-  }
-}
 
 /** Storage over the `kitr:storage:*` IPC channels that `handleKitrIpc` serves from main. */
 export function electronStorageDriver(): StorageDriver {

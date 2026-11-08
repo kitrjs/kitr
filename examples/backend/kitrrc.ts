@@ -6,10 +6,20 @@ import { server } from '@kitr/server'
  * platform by name. `kitr add`, `kitr remove` and `kitr config` edit this file; so can you.
  */
 export default defineKitrConfig({
-  packages: ['@kitr/logger', '@kitr/server', '@kitr/api', '@kitr/db', '@kitr/realtime', '@kitr/testing'],
-  providers: [() => import('@kitr/logger'), () => import('@kitr/db')],
+  packages: [
+    '@kitr/logger',
+    '@kitr/server',
+    '@kitr/api',
+    '@kitr/db',
+    '@kitr/realtime',
+    '@kitr/testing',
+  ],
+  providers: [
+    () => import('@kitr/logger'),
+    () => import('@kitr/db'),
+  ],
   platforms: {
-   api: server(),
+    api: server(),
   },
   directories: {
     app: 'app',

@@ -2,8 +2,10 @@
 import auth from './auth'
 import devtools from './devtools'
 import http from './http'
+import notifications from './notifications'
 import platform from './platform'
 import query from './query'
+import secureStorage from './secure-storage'
 import storage from './storage'
 import tailwind from './tailwind'
 import theme from './theme'
@@ -12,8 +14,10 @@ export const config = {
   auth,
   devtools,
   http,
+  notifications,
   platform,
   query,
+  'secure-storage': secureStorage,
   storage,
   tailwind,
   theme,

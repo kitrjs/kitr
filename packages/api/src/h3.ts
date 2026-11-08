@@ -3,7 +3,7 @@ import { type KitrApp, KitrError, validate } from '@kitr/core'
 import type { KitrServer } from '@kitr/server'
 import { H3, type H3Event } from 'h3'
 import { createHttpContext } from './context'
-import { controllerInstance, isControllerRef, resolveControllerClass } from './controller'
+import { isControllerRef, resolveControllerClass } from './controller'
 import { compose, handlesPreflight } from './middleware'
 import { httpEntries } from './routes'
 import type { RouteEntry, Validators } from './types'
@@ -61,7 +61,8 @@ async function dispatch(route: RouteEntry, event: H3Event, app: KitrApp) {
     let fn: (ctx: any) => unknown
     if (isControllerRef(handler)) {
       const cls = await resolveControllerClass(handler[0] as any)
-      const instance = controllerInstance(cls)
+      // Built from the request's container: its services, its own instance.
+      const instance = await ctx.app.container.make(cls)
       const method = (instance as any)[handler[1]]
       if (typeof method !== 'function')
         throw KitrError.notFound(`Controller method ${cls.name}.${handler[1]}`)

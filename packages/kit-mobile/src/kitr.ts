@@ -5,8 +5,25 @@ import {
   writeTemplate as write,
 } from '@kitr/core/package'
 
+/** The Capacitor plugins the device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) drive on a phone. */
+// kitr-allow-module-state: immutable list of plugin names
+const devicePlugins = [
+  '@capacitor/clipboard',
+  '@capacitor/share',
+  '@capacitor/haptics',
+  '@capacitor/geolocation',
+  '@capacitor/local-notifications',
+  '@capacitor/push-notifications',
+  '@capacitor/filesystem',
+  '@capawesome/capacitor-file-picker',
+  '@aparajita/capacitor-secure-storage',
+  '@capawesome/capacitor-app-update',
+]
+
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
+  // Installed up front so `kitr add native` (and the other device packages) find them on a phone.
+  ctx.deps.add(...devicePlugins)
   write(
     ctx,
     'app/document.tsx',

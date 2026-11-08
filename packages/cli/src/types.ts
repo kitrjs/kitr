@@ -45,6 +45,7 @@ export interface TypesRunOptions {
 }
 
 /** The built-in generator: `.kitr/platforms.d.ts` from the `platforms` block of kitrrc.ts. */
+// kitr-allow-module-state: constant generator definition, never mutated
 export const platformsGenerator: TypesGenerator = {
   name: 'platforms',
   watch: ['kitrrc.ts', 'kitrrc.mts', 'kitrrc.js', 'kitrrc.mjs'],

@@ -2,6 +2,7 @@
 import type { KitrManifest } from './manifest'
 
 /** Packages and platforms, by short name. */
+// kitr-allow-module-state: generated constant data, never mutated
 export const manifests: Record<string, KitrManifest & { package: string }> = {
   "3d": {
     "package": "@kitr/3d",
@@ -160,8 +161,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "kind": "platform",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "devtools": {
     "package": "@kitr/devtools",
@@ -172,8 +172,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "runsOn": "client",
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "files": {
     "package": "@kitr/files",
@@ -187,8 +186,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "flags": {
     "package": "@kitr/flags",
@@ -259,8 +257,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "server"
     ],
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "logger": {
     "package": "@kitr/logger",
@@ -307,8 +304,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform",
-    "preview": true
+    "kind": "platform"
   },
   "mocks": {
     "package": "@kitr/mocks",
@@ -350,8 +346,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "notifications": {
     "package": "@kitr/notifications",
@@ -365,8 +360,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "offline": {
     "package": "@kitr/offline",
@@ -398,8 +392,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "query": {
     "package": "@kitr/query",
@@ -477,8 +470,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "seo": {
     "package": "@kitr/seo",
@@ -599,8 +591,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "testing": {
     "package": "@kitr/testing",
@@ -647,8 +638,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "uploads": {
     "package": "@kitr/uploads",
@@ -661,8 +651,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
       "server"
     ],
     "docs": "docs",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "vite": {
     "package": "@kitr/vite",
@@ -701,6 +690,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
 }
 
 /** Kits (`kitr new --kit <name>`), by short name. */
+// kitr-allow-module-state: generated constant data, never mutated
 export const kitManifests: Record<string, KitrManifest & { package: string }> = {
   "app": {
     "package": "@kitr/kit-app",
@@ -720,8 +710,7 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "fullstack": {
     "package": "@kitr/kit-fullstack",
@@ -741,8 +730,7 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   },
   "realtime": {
     "package": "@kitr/kit-realtime",
@@ -792,7 +780,6 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr",
-    "preview": true
+    "setup": "./kitr"
   }
 }

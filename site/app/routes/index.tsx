@@ -171,7 +171,7 @@ function Home() {
             </Link>
           </div>
           <p className="status-strip">
-            Web and server are ready. Desktop and mobile are in preview.
+            Web, server, desktop and mobile are ready.
           </p>
         </div>
         <div className="hero-platforms">

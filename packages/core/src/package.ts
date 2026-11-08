@@ -124,8 +124,8 @@ export interface AddContext extends ProjectInfo {
     remove(...names: string[]): void
   }
   provider: {
-    /** Add `() => import('<spec>')` to kitrrc.ts providers. */
-    add(spec: string): void
+    /** Add `() => import('<spec>')` to kitrrc.ts providers, with an optional `// comment` line above it. */
+    add(spec: string, options?: { comment?: string }): void
     remove(spec: string): void
   }
   /** Write `config/<name>.ts`. Skipped when it exists unless `overwrite`. */
@@ -237,6 +237,7 @@ export interface AddContext extends ProjectInfo {
 }
 
 /** Name casing helpers for generators and setup modules: `pascal('send-receipt')` is `SendReceipt`. */
+// kitr-allow-module-state: constant naming helpers, stateless
 export const naming = {
   pascal: (s: string): string =>
     s.replace(/(^|[-_/\s])(\w)/g, (_, __, c: string) => c.toUpperCase()).replace(/[^\w]/g, ''),
@@ -418,6 +419,12 @@ export interface PackageDefinition {
   wraps?: Record<string, string>
   /** Type generation this package runs on `kitr types` (`defineTypes`). Lazy, like `commands`. */
   types?: () => Promise<unknown>
+  /**
+   * A step `kitr generate` runs after the type generators: the name of one of this package's own
+   * `commands` (`'api:sync'`) and, for `kitr generate --watch`, the globs that should re-run it.
+   * The command is called with no arguments, so it must work from its defaults.
+   */
+  generate?: { command: string; watch?: string[] }
   vite?: PackageViteNeeds
   /** For `kind: 'platform'`. */
   platform?: PlatformPackage
@@ -484,6 +491,8 @@ export interface StartDocumentOptions {
   head: string
   body: string
   extra?: string
+  /** Parameters of `head()`, when a kit's tags need the route context (`ctx: object` for `seo(..., ctx)`). Default none. */
+  headParams?: string
   /** Statements at the top of RootDocument. */
   prelude?: string
   /** Opening and closing JSX around the body. */
@@ -502,7 +511,7 @@ import { ThemeScript } from '@kitr/theme'
 import css from '#app/styles/app.css?url'
 ${options.imports}
 /** Head tags for every page. Pages add their own with \`head\` on their route in app/routes.ts. */
-export function head() {
+export function head(${options.headParams ?? ''}) {
   return {
 ${options.head}
     links: [{ rel: 'stylesheet', href: css }],

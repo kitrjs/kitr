@@ -115,3 +115,45 @@ describe('scoped bindings', () => {
     expect(await child.make('cache')).not.toBe(root.use('cache'))
   })
 })
+
+describe('make(Class)', () => {
+  it('builds a new instance per call from the bindings named by static inject', async () => {
+    const { Container } = await import('../src')
+    const root = new Container()
+    let n = 0
+    root.scoped('counter', () => ({ id: ++n }))
+    root.singleton('name', async () => 'projects')
+    class Controller {
+      static inject = ['name', 'counter'] as const
+      constructor(
+        readonly name: string,
+        readonly counter: { id: number },
+      ) {}
+    }
+    const a = root.child()
+    const b = root.child()
+    const first = await a.make(Controller)
+    expect(first).toBeInstanceOf(Controller)
+    expect(first.name).toBe('projects')
+    // A new instance each time, but the services come from the container that built it.
+    expect(await a.make(Controller)).not.toBe(first)
+    expect((await a.make(Controller)).counter).toBe(first.counter)
+    expect((await b.make(Controller)).counter).not.toBe(first.counter)
+  })
+
+  it('builds a class without inject with no arguments, and reports a missing binding', async () => {
+    const { Container } = await import('../src')
+    class Plain {
+      args: unknown[]
+      constructor(...args: unknown[]) {
+        this.args = args
+      }
+    }
+    expect((await new Container().make(Plain)).args).toEqual([])
+    class Needy {
+      static inject = ['db'] as const
+      readonly ready = true
+    }
+    await expect(new Container().make(Needy)).rejects.toThrow(/No binding named "db"/)
+  })
+})

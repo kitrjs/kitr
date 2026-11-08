@@ -4,7 +4,6 @@ description: Turn your React app into a Windows, macOS and Linux app with Electr
 packages: desktop, platform, router, query, storage
 platforms: desktop, web
 time: 40 min
-preview: true
 ---
 
 # Build a desktop app
@@ -13,23 +12,16 @@ The people in Acme's back office keep the billing app open all day next to their
 
 kitr runs the same `app/` folder in an [Electron](https://www.electronjs.org) window. Electron ships its own Chromium, so the page your team tests is the page every user runs. Native work happens in Electron's main process, a Node.js program you write in `platforms/app/main.ts`, and the window calls it through IPC commands that are typed from one file.
 
-> **Preview**
-> The desktop platform is a preview. `@kitr/desktop` and `@kitr/platform` are not on npm, because their native shells are not built in CI. The commands below need `--preview` and a kitr checkout, as the next section shows.
-
 ## Before you start
 
 You need [Node.js](https://nodejs.org) 22 or newer and pnpm. Electron downloads its own runtime on install, so there is no other toolchain to set up. You need the invoices API from [Build an API server without React](/guides/api-server) running on port 3001, with the `/api/sign-in` and `/api/me` routes from [Build a phone app](/guides/mobile-app).
 
-Until the desktop packages are published, create the project inside a kitr checkout:
+Create the project:
 
 ```sh
-git clone https://github.com/kitrjs/kitr.git && cd kitr
-pnpm install && pnpm build
-node packages/kitr/bin/kitr.mjs new examples/acme-desk --kit desktop --preview \
-  --no-install --no-git --registry $PWD/registry/dist
+kitr new acme-desk --kit desktop
+cd acme-desk
 ```
-
-Point `kitr` and every `@kitr/*` dependency in `examples/acme-desk/package.json` at `workspace:*` and run `pnpm install` at the root. Once the packages ship, this is `kitr new acme-desk --kit desktop`.
 
 ## Look at what the kit made
 
@@ -58,7 +50,7 @@ platforms: {
 Set the window and the bundle id, and remove the About link from the kit's navigation in `app/document.tsx`, since the guide replaces the pages:
 
 ```sh
-cd examples/acme-desk
+cd acme-desk
 kitr config app title "Acme Billing"
 kitr config app appId com.acme.billing
 kitr config app minWidth 900
@@ -408,7 +400,7 @@ When download size matters more than identical rendering, the [Tauri](/packages/
 
 ```sh
 kitr platforms remove app
-kitr add tauri app --preview
+kitr add tauri app
 ```
 
 ## Next steps

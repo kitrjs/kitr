@@ -1,7 +1,7 @@
 import { ConfigStore } from './config'
 import { Container } from './container'
 import { DriverRegistry } from './drivers'
-import { type OperationLike, type OperationRegistry, operations } from './operations'
+import { type OperationLike, OperationRegistry } from './operations'
 import type { PlatformName } from './platforms'
 import { type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 import type { KitrNode } from './types'
@@ -27,8 +27,8 @@ export interface CreateAppOptions {
   platform?: PlatformName
   /**
    * Every named query and mutation, by name: the `operations` map `kitr types` writes to
-   * `.kitr/actions.ts`. Registered process-wide, so `useQuery('projects.list')` and
-   * `call('projects.update', input)` resolve anywhere.
+   * `.kitr/actions.ts`. Registered on this app (and every fork of it), so `useQuery('projects.list')`
+   * and `call(app, 'projects.update', input)` resolve through `app.operations`.
    */
   operations?: Record<string, OperationLike>
 }
@@ -50,8 +50,8 @@ export class KitrApp {
   readonly drivers = new DriverRegistry()
   /** The platform name from kitrrc.ts this bundle runs as, when known. */
   readonly platform: PlatformName | undefined
-  /** The process-wide operation registry (see `operations` in `@kitr/core`). */
-  readonly operations: OperationRegistry = operations
+  /** This app's named queries and mutations. A fork reads through to its parent's. */
+  readonly operations: OperationRegistry = new OperationRegistry()
   private inputs: ProviderInput[]
   private phase: Phase = 'created'
   private readying: Promise<this> | undefined
@@ -147,7 +147,7 @@ export class KitrApp {
       env: this.env,
       drivers: this.drivers,
       platform: this.platform,
-      operations: this.operations,
+      operations: this.operations.child(),
       providers: this.providers,
       inputs: [],
       phase: this.phase,

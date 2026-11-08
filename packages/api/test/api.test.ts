@@ -167,3 +167,34 @@ function silent() {
   l.child = () => l
   return l
 }
+
+describe('controllers are built per request from the container', () => {
+  class GreetingController {
+    static inject = ['greeting'] as const
+    static validation = { hello: { query: schemaFrom((v: object) => v) } }
+    calls = 0
+    constructor(readonly greeting: string) {}
+    async hello() {
+      this.calls++
+      return { greeting: this.greeting, calls: this.calls }
+    }
+  }
+
+  it('injects services, gives each request its own instance and keeps lazy imports working', async () => {
+    const server = createServer({ logger: silent() })
+    server.app.container.value('greeting' as never, 'hi' as never)
+    const routes = defineRoutes((r) =>
+      r
+        .get('/hello', [GreetingController, 'hello'], { name: 'hello' })
+        .get('/lazy', [() => Promise.resolve({ default: GreetingController }), 'hello'], {
+          name: 'lazy',
+        }),
+    )
+    mountRoutes(server, routes)
+    for (const path of ['/hello', '/hello', '/lazy']) {
+      const res = await server.fetch(new Request(`http://test${path}`))
+      // `calls` is 1 every time: a shared instance would count up.
+      expect(await res.json()).toEqual({ greeting: 'hi', calls: 1 })
+    }
+  })
+})

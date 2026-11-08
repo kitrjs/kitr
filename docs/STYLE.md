@@ -94,7 +94,7 @@ These apply to every sentence and every code block.
 
 Package docs explain one package. Guides on kitr.dev/guides walk through one goal from an empty folder to a working result, across as many packages as it takes: "Build a full-stack app", "Deploy to production", "Migrate from Next.js". They live in `site/content/guides/<slug>.md`, are listed in `site/content/guides/nav.json`, and are checked by `pnpm docs:guides`.
 
-**Frontmatter.** `title` (verb first, the goal: "Add sign-in, end to end"), `description` (one sentence on what the reader ends up with), `packages` (the kitr packages the guide uses, comma-separated; each becomes a chip and a link), `platforms` (`web`, `server`, ...; the platform pages list the guides for them) `time` ("45 min") and, for a guide built on unreleased packages, `preview: true` (rule 3).
+**Frontmatter.** `title` (verb first, the goal: "Add sign-in, end to end"), `description` (one sentence on what the reader ends up with), `packages` (the kitr packages the guide uses, comma-separated; each becomes a chip and a link), `platforms` (`web`, `server`, ...; the platform pages list the guides for them) and `time` ("45 min").
 
 **Lead (no heading).** One paragraph on the situation and why it is hard, one on what the reader will build, with the running example named (`acme-projects`, `acme-billing`).
 
@@ -108,7 +108,7 @@ Rules on top of the writing rules above:
 
 1. **Continue an earlier guide's app rather than starting a new one**, when one fits. The testing, deploy and sign-in guides all build on `acme-projects` from the full-stack guide, so a reader can follow them in a row.
 2. **Link packages, don't re-document them.** A guide shows the code the goal needs and links `/packages/<name>` for every option. When a guide needs more than a package's docs explain, fix the package docs first.
-3. **Only document what ships.** A guide uses packages, commands and options that exist on `main` and are published. Packages marked `"private": true` are previews: a guide that needs them sets `preview: true` in its frontmatter and opens with a `> **Preview**` callout that names what is unreleased and how to try it from a kitr checkout. The site badges it, and the checker rejects a preview package in any other guide. Never document an API that is not on `main`.
+3. **Only document what ships.** A guide uses packages, commands and options that exist on `main`. Never document an API that is not on `main`.
 4. **Say where it stops.** When kitr has no answer (incremental static regeneration, `next/image`), say so in a table with what to do instead.
 5. **Floors:** 1,000 prose words and 10 code blocks. Most guides land at 1,800 to 3,000 words.
 

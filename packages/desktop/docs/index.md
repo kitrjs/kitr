@@ -229,7 +229,7 @@ export const channels = {
 } satisfies Record<keyof Ipc | keyof IpcPush, true>
 ```
 
-`channels` is the same list at run time, for the preload script's allow list ([Limit which channels reach the window](#limit-which-channels-reach-the-window)). The `satisfies` makes a channel missing from it, or left over after you delete a command, a type error. Name channels `<area>.<verb>`, as above. Arguments and return values cross the process boundary through the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm): plain objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work, while functions, class instances and DOM nodes do not. A command may return a value or a promise; the window always gets a promise. Channels starting with `kitr:` are reserved for the ones `handleKitrIpc()` serves.
+`channels` is the same list at run time, for the preload script's allow list ([Limit which channels reach the window](#limit-which-channels-reach-the-window)). The `satisfies` makes a channel missing from it, or left over after you delete a command, a type error. Name channels `<area>.<verb>`, as above. Arguments and return values cross the process boundary through the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm): plain objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work, while functions, class instances and DOM nodes do not. A command may return a value or a promise; the window always gets a promise. Channels starting with `kitr:` are reserved for the ones `handleKitrIpc()` serves: storage, the app and shell calls, and the device packages (see [Run the device packages in Electron](#run-the-device-packages-in-electron)).
 
 ## Implement a command in the main process
 
@@ -422,7 +422,7 @@ import { channels } from './ipc'
 exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
 ```
 
-`allowChannels()` takes the `channels` record or a plain array, and always lets the `kitr:` channels through. `allow` also takes any `(channel) => boolean`. A call to any other channel rejects with `IPC channel "fs.readAnything" is not allowed`; `on()` and `send()` for it do nothing. A hand-written `allow` must keep the `kitr:` channels, because the provider's storage and platform drivers use them.
+`allowChannels()` takes the `channels` record or a plain array, and always lets the channels in `KITR_CHANNELS` through: the exact `kitr:*` names `handleKitrIpc()` serves and pushes, not every name that starts with `kitr:`. `allow` also takes any `(channel) => boolean`. A call to any other channel rejects with `IPC channel "fs.readAnything" is not allowed`; `on()` and `send()` for it do nothing. A hand-written `allow` must keep the `KITR_CHANNELS`, because the provider's storage and platform drivers and the device packages use them.
 
 > **Warning**
 > The allow list is your boundary if the window ever loads content you did not write, such as a remote page or user HTML. Keep it to the channels the app uses, and keep the scaffold's `contextIsolation: true`, `sandbox: true` and `nodeIntegration: false`. Turning any of them off gives page scripts direct access to Node.js and the file system.
@@ -553,6 +553,38 @@ app.whenReady().then(() => {
 ```
 
 On macOS the default file is `~/Library/Application Support/Acme Orders/kitr-storage.json`. Writes are queued, so two quick changes never interleave. If the file is missing or not valid JSON, the store starts empty. Without `handleKitrIpc()`, reads find nothing and every write logs `[@kitr/storage] electron:ipc:` with Electron's "No handler registered" error.
+
+## Run the device packages in Electron
+
+[Secure storage](/packages/secure-storage), [Notifications](/packages/notifications), [Files](/packages/files), [Updater](/packages/updater) and [Native](/packages/native) each have an Electron driver. They run in the window and call the main process over `kitr:*` channels, so the same `handleKitrIpc(ipcMain, app)` call that serves storage serves all of them, and no setting turns `nodeIntegration` on:
+
+| Package | Main-process work | Channels |
+| --- | --- | --- |
+| `secure-storage` | `safeStorage` encrypts; ciphertext in `kitr-secure-storage.json` in `userData` | `kitr:secure:get`, `set`, `remove`, `keys` |
+| `notifications` | `Notification`, timers for scheduled ones, `app.setBadgeCount`; click and close are pushed back | `kitr:notify:permission`, `show`, `schedule`, `cancel`, `cancel-all`, `pending`, `badge`; `kitr:notify:click`, `close` |
+| `files` | `dialog.showOpenDialog` and `showSaveDialog`, then `fs/promises` on the paths they returned | `kitr:files:open`, `choose-save`, `read`, `write`, `stat`, `list`, `reveal` |
+| `updater` | `electron-updater`: check, download with progress, `quitAndInstall` | `kitr:updater:check`, `download`, `install`; `kitr:updater:available`, `progress` |
+| `native` | `clipboard`, Touch ID, `net.isOnline()`, `nativeTheme`, `powerMonitor`, `shell.openExternal` | `kitr:native:*`, `kitr:shell:open`; `kitr:native:theme`, `power` |
+
+The window never gets a path or a key it did not earn. Files are read and written only at paths a dialog returned in this session (and inside a folder the person picked); secure storage returns plaintext only for the key asked and refuses to store when the operating system has no vault; `openExternal` opens `http:`, `https:`, `mailto:` and `tel:` links. Options go in the third argument:
+
+```ts
+// platforms/app/main.ts
+import { join } from 'node:path'
+import { app, ipcMain } from 'electron'
+import { handleKitrIpc } from '@kitr/desktop/main'
+
+app.whenReady().then(() => {
+  const stop = handleKitrIpc(ipcMain, app, {
+    storageFile: join(app.getPath('userData'), 'acme-orders.json'),
+    secureFile: join(app.getPath('userData'), 'acme-vault.json'),
+    externalProtocols: ['https:', 'mailto:', 'acme:'],
+  })
+  app.on('will-quit', stop) // removes the handlers, timers and power listeners
+})
+```
+
+`handleKitrIpc()` returns a function that removes the device handlers. To register only the device handlers, call `handleKitrDevices(ipcMain, app, options)`; it takes the same options and returns the same function. `electron-updater` is imported the first time the updater is used, so an app that does not use it does not need it; `kitr add desktop` and `kitr add updater` add it to `dependencies`, where electron-builder packs it. The window-side drivers need `exposeIpc()` in the preload script, which `allowChannels()` already covers.
 
 ## Use the platform service on the desktop
 
@@ -703,7 +735,7 @@ Any option is also a flag on `dev`, `build` and `start` for one run: `kitr dev a
 
 `kitr doctor` checks each desktop platform and reports:
 
-- an error for each missing dev dependency: `electron`, `electron-vite`, `electron-builder`. Fix: `pnpm add -D <package>`.
+- an error for each missing dev dependency: `electron`, `electron-vite`, `electron-builder`. Fix: `pnpm add -D <package>`. `electron-updater` is not checked: it is only needed once you use the updater.
 - an error when `platforms/app/main.ts` is missing. Fix: `kitr platforms scaffold app`.
 - a warning when `"main"` in `package.json` is not `dist/app/electron/main/index.js`.
 
@@ -715,6 +747,9 @@ Any option is also a flag on `dev`, `build` and `start` for one run: `kitr dev a
 | `IPC channel "<channel>" is not allowed` | The preload `allow` function rejected the channel. | Add the channel to the allow list. |
 | `Error invoking remote method '<channel>': Error: No handler registered for '<channel>'` | No `handleIpc()` handler for the channel, or it was removed. | Implement it in `main.ts`. For `kitr:*` channels, call `handleKitrIpc()`. |
 | `Error invoking remote method '<channel>': <error>` | The handler in main threw. | Read the error after the colon; it is the one main threw. |
+| `@kitr/desktop: the operating system has no secret vault (safeStorage); secrets are not stored` | `secureStorage.set()` on a machine with no keychain, or on Linux with only the `basic_text` backend. | Install and unlock GNOME Keyring or KWallet. Nothing was written. |
+| `@kitr/desktop: <path> was not chosen in a dialog; refusing to access it` | A files call named a path no open or save dialog returned this session. | Let the person pick it with `files.open()` or `files.save()`. |
+| `@kitr/desktop: opening <scheme> links is not allowed` | `openExternal()` got a URL other than http, https, mailto or tel. | Pass `externalProtocols` to `handleKitrIpc()` to allow a scheme of your own. |
 | `Attempted to register a second handler for '<channel>'` | `handleIpc()` registered a channel that already has a handler. | Call the dispose function from the first `handleIpc()` first. |
 | `Platform name "<name>" must be a short identifier (site, api, app, phone...)` | `kitr add desktop` got a name with spaces or symbols. | Use letters, digits, `-` and `_`. |
 | `desktop has no option "<flag>" (options: port, title, width, height, minWidth, minHeight, appId, devtools)` | `kitr add desktop` got an unknown flag. | Use one of the listed options; names are camelCase. |

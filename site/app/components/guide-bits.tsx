@@ -8,10 +8,7 @@ export function GuideCard({ guide }: { guide: GuideItem }) {
   const used = guide.packages.map(findPackage).filter((p) => p !== undefined)
   return (
     <Link to="/guides/$slug" params={{ slug: guide.slug }} className="guide-card">
-      <span className="guide-card-title">
-        {guide.title}
-        {guide.preview && <PreviewBadge />}
-      </span>
+      <span className="guide-card-title">{guide.title}</span>
       <span className="guide-card-summary">{guide.description}</span>
       <span className="guide-card-foot">
         <span className="guide-tiles">
@@ -27,30 +24,12 @@ export function GuideCard({ guide }: { guide: GuideItem }) {
   )
 }
 
-/** On a guide built on preview packages. */
-function PreviewBadge() {
-  return (
-    <span className="badge badge-status guide-preview" title="Built on preview packages">
-      Preview
-    </span>
-  )
-}
-
 /** Under a guide's title: how long it takes and the packages it uses, each linked. */
-export function GuideMeta({
-  packages,
-  time,
-  preview,
-}: {
-  packages: string[]
-  time?: string
-  preview?: boolean
-}) {
+export function GuideMeta({ packages, time }: { packages: string[]; time?: string }) {
   const used = packages.map(findPackage).filter((p) => p !== undefined)
-  if (!used.length && !time && !preview) return null
+  if (!used.length && !time) return null
   return (
     <div className="guide-meta">
-      {preview && <PreviewBadge />}
       {time && <span className="mono muted">{time}</span>}
       {used.length > 0 && (
         <ul className="kit-chips" aria-label="Packages this guide uses">

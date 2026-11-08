@@ -60,10 +60,11 @@ export default defineConfig({
 | --- | --- | --- |
 | `requireSecure` | `false` | `true` makes every write throw when no vault is registered, instead of using the encrypted browser fallback. Reads and removes still work. |
 | `prefix` | `'kitr:secure:'` | Put in front of every key, so `session` is stored as `kitr:secure:session`. Two apps on one origin need different prefixes. |
-| `driver` | registered, else the browser fallback | A `SecureStorageDriver` that replaces the one the service would pick. For tests and custom vaults. |
+| `driver` | registered, else the driver for the runtime | A `SecureStorageDriver` that replaces the one the service would pick. For tests and custom vaults. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no vault driver, use the encrypted browser fallback inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. `secure` stays `false`. |
 | `storage` | the app's local storage driver | Where the browser fallback keeps its ciphertext. Any [Storage](/packages/storage) `StorageDriver`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `secure-storage`, then the browser fallback in a browser, or a memory driver on the server.
+The service picks its driver in this order: `driver` from the config, a driver a provider registered under `secure-storage`, then `selectDriver(runtime)`: the browser fallback in a browser, a memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. A shell never silently stores secrets in webview storage.
 
 A stricter setup for a banking-grade desktop build:
 
@@ -309,7 +310,7 @@ Reads and removes still work, so a value written before you turned it on can be 
 
 ## How the browser fallback works
 
-In the browser, and in a shell with no vault registered, each value is encrypted before it is stored:
+In the browser, and in a shell with no vault registered when you set `fallbackToWeb: true`, each value is encrypted before it is stored:
 
 - On first use the driver creates a 256-bit AES-GCM key with `extractable: false` and keeps it in IndexedDB (`kitr-secure-storage`). Script can use the key but cannot read its bytes.
 - Every write uses a fresh 12-byte IV and stores `<iv>.<ciphertext>` in base64 in local storage.
@@ -338,16 +339,92 @@ On the server the service is an in-memory store, so code shared with the client 
 | Where it runs | Driver | `secure` |
 | --- | --- | --- |
 | Browser | `createWebSecureStorageDriver()`: AES-GCM, ciphertext in local storage | `false` |
-| Desktop and mobile shells | The same fallback inside the webview, unless a provider registers a vault. The ciphertext goes to the shell's storage driver when one is registered. | `false` |
+| Mobile shell (Capacitor) | `createCapacitorSecureStorageDriver()`: the iOS Keychain, the Android Keystore | `true` |
 | A registered vault | Whatever the driver wraps, such as Electron `safeStorage` | `true` when the driver says so |
 | Server | `createMemorySecureStorageDriver()`, in memory | `false` |
+| Electron | `createElectronDriver()`: `safeStorage` in the main process, ciphertext in `userData` | `true` |
+| Tauri | `createTauriDriver()`: a Stronghold snapshot, opened with a secret from the OS keyring | `true` |
 
-[Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in the Keychain, the Keystore or Electron's `safeStorage`, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell the service uses `@aparajita/capacitor-secure-storage`, an optional peer dependency imported the first time a method runs. `kitr add secure-storage` installs it when the project has the mobile platform. Values go to the iOS Keychain and, on Android, to storage encrypted with a key in the Android Keystore. `secure` is `true`, so `requireSecure: true` is satisfied. Secrets are never written to `localStorage` or IndexedDB there.
+
+```ts
+// app/session.ts
+import { createSecureStorage } from '@kitr/secure-storage'
+
+const storage = createSecureStorage({ requireSecure: true })
+await storage.set('refresh-token', 'rt_ada_91f')
+await storage.get('refresh-token') // => 'rt_ada_91f'
+console.log(storage.driver.name, storage.secure) // => capacitor-keychain true
+```
+
+- The driver turns off iCloud Keychain sync and sets `whenUnlockedThisDeviceOnly`: a secret is readable only while the phone is unlocked, never leaves the device and is not restored onto a new phone. People sign in again after a restore.
+- The iOS Keychain survives uninstalling the app, so a reinstalled app can still read the old secrets. Clear them on first launch if that is wrong for your app.
+- On Android, uninstalling the app removes its secrets.
+- If the plugin is not installed, every call rejects with `E_DRIVER_UNAVAILABLE` and `install @aparajita/capacitor-secure-storage`. When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have vault drivers, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers only `platform` and `storage` drivers, not `secure-storage`: to keep secrets in the Keychain or the Keystore there, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+
+## Use it in Electron and Tauri
+
+In a desktop shell the service picks the shell's vault by itself, so `secureStorage.secure` is `true` and `requireSecure: true` lets writes through. The platform's provider reports the runtime and `selectDriver()` does the rest; `config/secure-storage.ts` does not change.
+
+### Electron
+
+The Electron driver encrypts in the main process with [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage): the macOS Keychain, Windows DPAPI or the desktop's secret service on Linux. The ciphertext is one JSON file, `kitr-secure-storage.json`, in the app's `userData` folder, readable only by its owner. The window never sees the key. It calls `kitr:secure:get`, `kitr:secure:set`, `kitr:secure:remove` and `kitr:secure:keys` over the preload bridge, and `handleKitrIpc(ipcMain, app)` in `main.ts` serves them. A new desktop project already has both calls; to keep the file somewhere else, pass `secureFile`:
+
+```ts
+// platforms/app/main.ts
+import { join } from 'node:path'
+import { app, ipcMain } from 'electron'
+import { handleKitrIpc } from '@kitr/desktop/main'
+
+app.whenReady().then(() => {
+  handleKitrIpc(ipcMain, app, { secureFile: join(app.getPath('userData'), 'acme-vault.json') })
+})
+```
+
+Requirements:
+
+- `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
+- A secret store on the machine. On Linux without GNOME Keyring or KWallet, Electron's `safeStorage` falls back to a hard-coded password, which is not a vault. kitr checks `getSelectedStorageBackend()` and refuses: `set()` rejects and nothing is written, while `get()` of a value that no longer decrypts reads as missing.
+- Sign-in on the same account and machine. Ciphertext copied to another computer or user does not decrypt.
+
+### Tauri
+
+The Tauri driver uses [`@tauri-apps/plugin-stronghold`](https://v2.tauri.app/plugin/stronghold/), an encrypted [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) snapshot (`kitr-vault.hold`) in the app data folder. Stronghold, not `@tauri-apps/plugin-store`: the store plugin writes plain JSON to disk, which is storage, not a vault. Opening the snapshot needs a password. The scaffolded Rust side creates a random 32-byte secret on first run, keeps it in the operating system's keyring (Keychain, Credential Manager or the Secret Service) and hands it to the page through the `kitr_vault_key` command, so no password sits in your bundle. Opening the snapshot derives a key with Argon2, so the first call is slower than the ones after it.
+
+```ts
+// app/providers/vault.ts
+import { defineProvider } from 'kitr/app'
+import { createTauriSecureStorageDriver } from '@kitr/secure-storage'
+
+/** Supply your own password source, such as a prompt, instead of the keyring secret. */
+export default defineProvider({
+  name: 'vault',
+  register(app) {
+    app.drivers.register(
+      'secure-storage',
+      createTauriSecureStorageDriver({ password: async () => window.prompt('Vault passphrase') ?? '', file: 'acme.hold' }),
+      { platform: 'tauri' },
+    )
+  },
+})
+```
+
+Requirements:
+
+- `@tauri-apps/plugin-stronghold` and `@tauri-apps/api` in `package.json`. `kitr add tauri` and `kitr add secure-storage` in a Tauri project install them. The driver imports the plugin on first use; when it is missing, every method rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- `tauri-plugin-stronghold`, `keyring` and `rand` in `src-tauri/Cargo.toml`, the plugin registered in `lib.rs` with an Argon2 salt file, the `kitr_vault_key` command in `generate_handler!`, and `stronghold:default` in `capabilities/default.json`. The Tauri scaffold writes all of them; an app created before this version needs them added by hand.
+- Every script in the window can call `kitr_vault_key`, as it can use the vault. Keep a strict `csp` in `tauri.conf.json`.
 
 ## Errors
 
 | Error | When | What to do |
 | --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no secure-storage driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/secure-storage.ts` to run the web driver inside the webview. |
+| `@kitr/desktop: the operating system has no secret vault (safeStorage); secrets are not stored` | `set()` in Electron on a machine with no keychain, or on Linux with only the `basic_text` backend. | Install and unlock a secret service (GNOME Keyring or KWallet), then restart the app. Nothing was written. |
 | `@kitr/secure-storage: no secure vault on this platform (requireSecure is on)` | `set()` under `requireSecure: true` with no vault. | Check `storage.secure` first, or register a vault driver. |
 | `@kitr/secure-storage: Web Crypto is not available` | The browser fallback's first use, without `crypto.subtle` (a plain `http://` page other than `localhost`). | Serve the app over HTTPS. |
 | `@kitr/secure-storage: could not store the encryption key` | IndexedDB refused the new key and holds none. | Rare; usually storage is full or blocked in a private window. |
@@ -429,7 +506,7 @@ interface SecureStorageDriver {
 }
 ```
 
-This driver keeps secrets in Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage), which encrypts with the macOS Keychain, Windows DPAPI or the Linux secret store. The main process encrypts and writes a file in the app's data folder; the renderer reaches it over the IPC bridge the desktop platform sets up:
+The built-in Electron driver already does this, so you only need the version below for a vault of your own; it shows the whole shape. It keeps secrets in Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage), which encrypts with the macOS Keychain, Windows DPAPI or the Linux secret store. The main process encrypts and writes a file in the app's data folder; the renderer reaches it over the IPC bridge the desktop platform sets up:
 
 ```ts
 // platforms/app/main.ts

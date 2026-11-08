@@ -2,7 +2,6 @@ import type { Answers, KitPackage } from '@kitr/core/package'
 import type { ProjectContext } from './context'
 import { kitManifests } from './manifests.gen'
 import { ensureAvailable, loadPackage } from './packages'
-import { assertReleased } from './preview'
 
 /**
  * Kits are packages (`kind: 'kit'`, `@kitr/kit-saas`) the CLI loads the way it loads any setup
@@ -16,6 +15,7 @@ export interface Kit extends KitPackage {
   package?: string
 }
 
+// kitr-allow-module-state: constant kit description, never mutated
 export const blankKit: Kit = {
   name: 'blank',
   description:
@@ -24,7 +24,7 @@ export const blankKit: Kit = {
 }
 
 /** The kits this CLI ships: `blank` first, then every official kit package. */
-export const kitNames: string[] = [blankKit.name, ...Object.keys(kitManifests)]
+export const kitNames: string[] = [blankKit.name, ...Object.keys(kitManifests)] // kitr-allow-module-state: constant list, never mutated
 
 /** The short names of a kit's packages, in order. */
 export const kitPackageNames = (kit: Kit): string[] =>
@@ -50,7 +50,6 @@ export async function loadKit(
 ): Promise<Kit> {
   if (name === blankKit.name) return blankKit
   const official = kitManifests[name]
-  if (official) assertReleased(official.package, 'kit')
   const pkg = official?.package ?? (name.includes('/') ? name : undefined)
   if (!pkg) throw new Error(`Unknown kit "${name}". Kits: ${kitNames.join(', ')}`)
   await ensureAvailable(ctx, pkg, options)

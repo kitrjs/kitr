@@ -1,3 +1,4 @@
+import { KitrError } from './errors'
 import type { Prettify } from './types'
 
 /**
@@ -114,7 +115,7 @@ export type GroupChildMap<
   R extends RouteMap,
   P extends string,
   O extends GroupOptions,
-> = Prettify<Omit<Tilde<R>, keyof GroupHooks<K, R, P, O>> & GroupHooks<K, R, P, O>>
+> = Omit<Tilde<R>, keyof GroupHooks<K, R, P, O>> & GroupHooks<K, R, P, O>
 
 /** `/api` + `/projects` → `/api/projects`; trailing slashes dropped. */
 export type JoinPaths<A extends string, B extends string> = A extends '' | '/'
@@ -153,7 +154,7 @@ type OptionsOf<A, O> = A extends string ? O : A extends GroupOptions ? A : {}
 /** The table's own methods. Everything else comes from `RouterExtensions`. */
 export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
   /** Phantom: the accumulated route types. `export type AppRoutes = typeof routes.$types`. */
-  readonly $types: R
+  readonly $types: Prettify<R>
   /** Every registered route, in registration order, full paths. */
   readonly entries: RouteEntry[]
   readonly extensions: readonly RouteExtension[]
@@ -175,13 +176,13 @@ export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
     prefixOrOptions: A,
     options: O,
     define: (r: KitrRouter<K, GroupChildMap<K, R, PrefixOf<A>, O>>) => KitrRouter<K, G> | void,
-  ): KitrRouter<K, Prettify<R & Grouped<G, PrefixOf<A>, O>>>
+  ): KitrRouter<K, R & Grouped<G, PrefixOf<A>, O>>
   group<const A extends PrefixOrOptions, G extends RouteMap = {}>(
     prefixOrOptions: A,
     define: (
       r: KitrRouter<K, GroupChildMap<K, R, PrefixOf<A>, OptionsOf<A, {}>>>,
     ) => KitrRouter<K, G> | void,
-  ): KitrRouter<K, Prettify<R & Grouped<G, PrefixOf<A>, OptionsOf<A, {}>>>>
+  ): KitrRouter<K, R & Grouped<G, PrefixOf<A>, OptionsOf<A, {}>>>
 
   /** Middleware for every route registered after this call (in this table and its groups). */
   use(...middleware: unknown[]): KitrRouter<K, R>
@@ -193,7 +194,7 @@ export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
   merge<G extends RouteMap>(other: {
     readonly $types: G
     readonly entries: RouteEntry[]
-  }): KitrRouter<K, Prettify<R & Untilde<G>>>
+  }): KitrRouter<K, R & Untilde<G>>
 
   /**
    * Hand the entries to every extension that knows `target`: `compile('h3', server)` mounts
@@ -245,18 +246,21 @@ export function defineRouteExtension<const E extends RouteExtension>(extension: 
 
 type KeysOf<E extends readonly RouteExtension[]> = E[number]['key'] & ExtensionKey
 
-const RESERVED = new Set(['prefix', 'middleware', 'as'])
+const RESERVED = new Set(['prefix', 'middleware', 'as']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 export class RouteTable {
   readonly entries: RouteEntry[]
   readonly extensions: readonly RouteExtension[]
   readonly state: Record<string, unknown>
+  readonly middleware: readonly unknown[]
   declare readonly $types: RouteMap
+  /** The same array as `middleware`, typed for the one place that appends to it (`use`). */
+  readonly #middleware: unknown[]
 
   constructor(
     extensions: readonly RouteExtension[],
     readonly prefix = '',
-    readonly middleware: readonly unknown[] = [],
+    middleware: readonly unknown[] = [],
     readonly namePrefix = '',
     entries: RouteEntry[] = [],
     state: Record<string, unknown> = {},
@@ -264,6 +268,8 @@ export class RouteTable {
     this.extensions = extensions
     this.entries = entries
     this.state = state
+    this.#middleware = [...middleware]
+    this.middleware = this.#middleware
     for (const ext of extensions)
       for (const [name, fn] of Object.entries(ext.methods)) {
         if (name in this && !Object.hasOwn(this, name))
@@ -294,15 +300,22 @@ export class RouteTable {
   }
 
   use(...middleware: unknown[]): this {
-    ;(this.middleware as unknown[]).push(...middleware)
+    this.#middleware.push(...middleware)
     return this
   }
 
   merge(other: { entries: RouteEntry[] }): this {
+    const names = new Set(this.entries.map((e) => e.name))
     for (const entry of other.entries) {
-      if (this.entries.some((e) => e.name === entry.name)) continue
-      this.entries.push(entry)
+      if (names.has(entry.name))
+        throw new KitrError(
+          'CONFLICT',
+          `[kitr] merge(): route "${entry.name}" is already registered. Give one of the two routes a different name, or drop the duplicate.`,
+          { data: { name: entry.name } },
+        )
+      names.add(entry.name)
     }
+    this.entries.push(...other.entries)
     return this
   }
 

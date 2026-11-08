@@ -4,13 +4,9 @@ description: Put every piece of state a kitr app keeps in memory into Redis and 
 packages: server, realtime, cache, shield, api, jobs, uploads
 platforms: server, web
 time: 40 min
-preview: true
 ---
 
 # Run on more than one instance
-
-> **Preview**
-> The background jobs (`@kitr/jobs`) and file uploads (`@kitr/uploads`) steps use preview packages, which are not on npm. Use them from a kitr checkout with `KITR_PREVIEW=1`; every other step uses published packages.
 
 One instance is the right way to start, and a kitr app runs on one without any of this. The day you add a second, for uptime during deploys or for load, everything a package kept in the memory of its process starts to disagree: Ada's live update reaches only the clients on her instance, a rate limit lets a client through three times, a cached report cleared on one instance is still served by the other, a nightly job runs once per instance, and an upload saved to one disk is a 404 on the next request.
 

@@ -32,6 +32,7 @@ export type KitrErrorCode =
   | 'PAYLOAD_TOO_LARGE'
   | (string & {})
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const defaultStatus: Record<string, number> = {
   BAD_REQUEST: 400,
   VALIDATION: 422,
@@ -47,6 +48,7 @@ const defaultStatus: Record<string, number> = {
   PAYLOAD_TOO_LARGE: 413,
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const statusToCode: Record<number, string> = {
   400: 'BAD_REQUEST',
   401: 'UNAUTHORIZED',

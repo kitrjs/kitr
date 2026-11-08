@@ -4,6 +4,7 @@ import type { Codemods } from './codemods'
 import type { ProjectContext } from './context'
 import { type PlanStep, resolvePlan } from './plan'
 import { resolveAnswers } from './questions'
+import { peersFor } from './shell-peers'
 
 /** The questions a package asks right now, as a list. */
 export async function questionsOf(step: PlanStep, ctx: ProjectContext): Promise<Question[]> {
@@ -58,6 +59,13 @@ export async function configurePackages(
     codemods.installPackages([{ name: step.package, dev: def.dev }])
     codemods.addPackage(step.package)
     await def.add?.(createAddContext(ctx, codemods, answers, added))
+    // The native drivers' optional peers (Tauri plugins, electron-updater) for the platforms the project has.
+    codemods.installPackages(
+      peersFor(
+        step.name,
+        Object.values(ctx.readRc().platforms).map((p) => p.factory),
+      ),
+    )
     added.add(step.package)
     done.push(step)
     if (options.report !== false) ctx.log.success(step.name)

@@ -1,3 +1,4 @@
+import type { CreateAppOptions } from './app'
 import type { PlatformInstance } from './platform'
 import type { ProviderInput } from './provider'
 
@@ -76,4 +77,30 @@ export interface KitrWorkspace {
 
 export function defineWorkspace(workspace: KitrWorkspace): KitrWorkspace {
   return { packages: ['packages/*'], ...workspace }
+}
+
+/**
+ * The `createApp` options every entry point shares: the providers listed in `kitrrc.ts` and the
+ * config from `config/`. One shape, so `app/app.ts` and `server/main.ts` read the same:
+ *
+ *   createApp({ ...loadRc(rc, config), env })      // outside Vite: rc from ../kitrrc, config from ../config
+ *   createApp({ ...loadRc({ providers }, config), env })  // in the app: both from the Vite plugin's virtual modules
+ *
+ * The app's own bundle takes `providers` and `config` from `virtual:kitr/providers` and
+ * `virtual:kitr/config` because the plugin leaves out what must not ship to the browser (the
+ * devtools provider in production, server-only config files); the server, tests and scripts,
+ * which run without Vite, import `kitrrc.ts` and `config/index.ts` directly. `loadRc` accepts the
+ * rc itself, its module namespace (`import * as rc`) or just `{ providers }`, and says what is
+ * wrong when the providers are missing, instead of an error from inside `createApp`.
+ */
+export function loadRc(
+  rc: { providers: ProviderInput[] } | { default: { providers: ProviderInput[] } },
+  config: Record<string, unknown> = {},
+): Required<Pick<CreateAppOptions, 'providers' | 'config'>> {
+  const source = 'default' in rc ? rc.default : rc
+  if (!source || !Array.isArray(source.providers))
+    throw new Error(
+      '[kitr] loadRc() needs the `providers` list from kitrrc.ts: loadRc(rc, config) with `import rc from "../kitrrc"`, or loadRc({ providers }, config) with the list from virtual:kitr/providers.',
+    )
+  return { providers: source.providers, config }
 }

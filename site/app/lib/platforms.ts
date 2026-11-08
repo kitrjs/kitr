@@ -21,10 +21,8 @@ export interface PlatformEntry {
   native: string[]
   nativeLabel: string
   alternative?: string
-  /** False while the platform package is kept off npm (`"private": true`). */
-  available: boolean
   packages: { native: string[]; other: string[] }
-  kits: Array<{ name: string; available: boolean }>
+  kits: string[]
   docs: Array<{ title: string; url: string; description?: string }>
   guides: Array<{ title: string; description?: string; url: string }>
   resources: Array<{ title: string; url: string; text: string }>
@@ -38,7 +36,6 @@ export interface BuilderChoice {
   dev: string
   on?: boolean
   group?: string
-  available: boolean
 }
 
 export interface BuilderLine {
@@ -52,13 +49,10 @@ export interface BuilderLine {
 const data = platformsJson as unknown as {
   platforms: PlatformEntry[]
   builder: { pre: string; lines: BuilderLine[]; choices: BuilderChoice[] }
-  unpublished: string[]
 }
 
 export const platforms = data.platforms
 export const builder = data.builder
-/** Packages kept off npm for now; the platform pages leave them out. */
-export const unpublished = new Set(data.unpublished)
 
 export const findPlatform = (type: string) => platforms.find((p) => p.type === type)
 

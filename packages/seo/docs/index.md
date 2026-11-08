@@ -23,7 +23,7 @@ What `kitr add` does:
 - Installs `@kitr/seo`.
 - Adds `'@kitr/seo'` to `packages` in `kitrrc.ts`. There is no provider: nothing runs at startup.
 - Writes `config/seo.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
-- Adds a `## kitr: seo` section to `AGENTS.md` telling coding agents to set `head: () => seo({ title, description })` on routes, to add structured data with `jsonLd()`, and to use `ssrRoute()` and `cacheHeaders()` for rendering and CDN caching.
+- Adds a `## kitr: seo` section to `AGENTS.md` telling coding agents to set `head: (ctx) => seo({ title, description }, ctx)` on routes, to add structured data with `jsonLd()`, and to use `ssrRoute()` and `cacheHeaders()` for rendering and CDN caching.
 
 `kitr add seo` asks no questions and adds no env variables. To edit `package.json` without running the package manager, pass the global flag:
 
@@ -85,18 +85,18 @@ export default defineConfig({
 | `robots.sitemap` | `true` | Add `Sitemap: <site.url>/sitemap.xml` when `site.url` is set. |
 | `ssr` | `true` | How routes without their own `ssr` render: `true`, `'data-only'` or `false`. [`ssrRoute()`](#choose-how-a-route-renders) on a route overrides it. |
 
-`seo()` uses `site` from this file as its defaults: `defineConfig` records it when the app's config is imported, before any route renders. The build reads `prerender` and `site.url` from the file's source text, without running it, so both must be written out as literals.
+`seo()` uses `site` from this file as its defaults: the config lives on the app (`app.config.get('seo')`), and `seo()` finds the app through the `ctx` you pass it, so two apps in one process, or two tests, keep their own site. The build reads `prerender` and `site.url` from the file's source text, without running it, so both must be written out as literals.
 
 ## Give a page its title
 
-Set `head` on a route and return `seo()` from it:
+Set `head` on a route and return `seo()` from it, passing the `head` argument as the second argument so it can find the app's site defaults:
 
 ```ts
 // app/routes.ts
 import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
-  head: () => seo({ title: 'Pricing', description: 'Plans for every team size.' }),
+  head: (ctx) => seo({ title: 'Pricing', description: 'Plans for every team size.' }, ctx),
   lazy: () => import('./pages/pricing'),
 })
 ```
@@ -125,19 +125,22 @@ Open `/pricing` and view the page source. The root route's `<HeadContent />` ren
 
 ## Use your site defaults on every page
 
-`seo()` takes the site name, default share image, handle and locale from `site` in `config/seo.ts`, so every title gets the site name with nothing to pass. Give each page its own URL:
+`seo()` takes the site name, default share image, handle and locale from `site` in `config/seo.ts`, so every title gets the site name once you pass `ctx`. Give each page its own URL:
 
 ```ts
 // app/routes.ts
 import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
-  head: () =>
-    seo({
-      title: 'Pricing',
-      description: 'Plans for every team size.',
-      url: 'https://acme.com/pricing',
-    }),
+  head: (ctx) =>
+    seo(
+      {
+        title: 'Pricing',
+        description: 'Plans for every team size.',
+        url: 'https://acme.com/pricing',
+      },
+      ctx,
+    ),
   lazy: () => import('./pages/pricing'),
 })
 ```
@@ -195,12 +198,12 @@ import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { seo } from '@kitr/seo'
 
 /** `app/routes.ts` passes this to `.root({ head, component: RootDocument })`. */
-export function head() {
+export function head(ctx: object) {
   return {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      ...seo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }).meta,
+      ...seo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }, ctx).meta,
     ],
   }
 }
@@ -231,13 +234,16 @@ Chat apps and social networks show `og:image` as a large card. Pass an absolute 
 import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
-  head: () =>
-    seo({
-      title: 'Pricing',
-      description: 'Plans for every team size.',
-      url: 'https://acme.com/pricing',
-      image: 'https://acme.com/og/pricing.png',
-    }),
+  head: (ctx) =>
+    seo(
+      {
+        title: 'Pricing',
+        description: 'Plans for every team size.',
+        url: 'https://acme.com/pricing',
+        image: 'https://acme.com/og/pricing.png',
+      },
+      ctx,
+    ),
   lazy: () => import('./pages/pricing'),
 })
 ```
@@ -265,14 +271,17 @@ r.page('/blog/$slug', {
     if (!post) throw notFound()
     return post
   },
-  head: ({ loaderData, params }) =>
-    seo({
-      title: loaderData?.title,
-      description: loaderData?.excerpt,
-      url: `https://acme.com/blog/${params.slug}`,
-      type: 'article',
-      keywords: loaderData?.tags,
-    }),
+  head: (ctx) =>
+    seo(
+      {
+        title: ctx.loaderData?.title,
+        description: ctx.loaderData?.excerpt,
+        url: `https://acme.com/blog/${ctx.params.slug}`,
+        type: 'article',
+        keywords: ctx.loaderData?.tags,
+      },
+      ctx,
+    ),
   lazy: () => import('./pages/blog/slug'),
 })
 ```
@@ -300,7 +309,7 @@ Sign-in pages, drafts and anything behind a login should not show up in search. 
 import { seo } from '@kitr/seo'
 
 r.page('/sign-in', {
-  head: () => seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }),
+  head: (ctx) => seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }, ctx),
   lazy: () => import('./pages/sign-in'),
 })
 ```
@@ -321,8 +330,8 @@ Structured data tells search engines what a page is about: an organization, an a
 import { jsonLd, seo } from '@kitr/seo'
 
 r.page('/', {
-  head: () => ({
-    ...seo({ title: 'Acme', url: 'https://acme.com' }),
+  head: (ctx) => ({
+    ...seo({ title: 'Acme', url: 'https://acme.com' }, ctx),
     scripts: [
       jsonLd({
         '@type': 'Organization',
@@ -489,7 +498,7 @@ import { seo } from '@kitr/seo'
 
 r.page('/blog/', {
   headers: () => cacheHeaders({ sMaxAge: 60, staleWhileRevalidate: 300 }),
-  head: () => seo({ title: 'Blog', url: 'https://acme.com/blog' }),
+  head: (ctx) => seo({ title: 'Blog', url: 'https://acme.com/blog' }, ctx),
   lazy: () => import('./pages/blog/index'),
 })
 ```
@@ -514,21 +523,27 @@ With no options it returns `{ 'cache-control': 'public' }`. For a page that show
 
 ## Testing
 
-`seo()` is a plain function, so test what your pages put in `head` without rendering anything. Import `config/seo.ts` first, so `seo()` has the site defaults, and assert on the tags your pages depend on:
+`seo()` is a plain function, so test what your pages put in `head` without rendering anything. Make an app from `config/seo.ts` and pass it as the second argument, so `seo()` has the site defaults, and assert on the tags your pages depend on:
 
 ```ts
 // app/seo.test.ts
+import { createApp } from 'kitr/app'
 import { robotsTxt, seo } from '@kitr/seo'
 import { describe, expect, it } from 'vitest'
 import seoConfig from '#config/seo'
 
+const app = createApp({ config: { seo: seoConfig } })
+
 describe('seo', () => {
   it('adds the site name and the canonical URL', () => {
-    const { meta, links } = seo({
-      title: 'Pricing',
-      description: 'Plans for every team size.',
-      url: 'https://acme.com/pricing',
-    })
+    const { meta, links } = seo(
+      {
+        title: 'Pricing',
+        description: 'Plans for every team size.',
+        url: 'https://acme.com/pricing',
+      },
+      app,
+    )
     expect(meta).toContainEqual({ title: 'Pricing · Acme' })
     expect(meta).toContainEqual({ property: 'og:title', content: 'Pricing' })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
@@ -536,7 +551,7 @@ describe('seo', () => {
   })
 
   it('keeps the sign-in page out of search results', () => {
-    const { meta } = seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true })
+    const { meta } = seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }, app)
     expect(meta).toContainEqual({ name: 'robots', content: 'noindex, nofollow' })
   })
 
@@ -546,7 +561,7 @@ describe('seo', () => {
 })
 ```
 
-The test runs in Node; there is no app to boot and nothing to fake. The `#config` alias comes from the `kitr()` Vite plugin, which your `vitest.config.ts` uses. To check the final HTML of a prerendered page, run `kitr build site` and read `/pricing/index.html` from the build output in an end-to-end test.
+The test runs in Node; the app is never booted and nothing is faked. The `#config` alias comes from the `kitr()` Vite plugin, which your `vitest.config.ts` uses. To check the final HTML of a prerendered page, run `kitr build site` and read `/pricing/index.html` from the build output in an end-to-end test.
 
 ## Next steps
 

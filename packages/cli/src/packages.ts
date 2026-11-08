@@ -30,7 +30,7 @@ export interface LoadedPackage {
   source: 'project' | 'cli'
 }
 
-const cache = new WeakMap<ProjectContext, Map<string, Promise<LoadedPackage | undefined>>>()
+const cache = new WeakMap<ProjectContext, Map<string, Promise<LoadedPackage | undefined>>>() // kitr-allow-module-state: CLI process cache of loaded packages, keyed by project context (a WeakMap, so it never outlives one); the CLI runs one command per process
 
 function cacheFor(ctx: ProjectContext) {
   const existing = cache.get(ctx)

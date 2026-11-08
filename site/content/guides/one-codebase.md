@@ -4,7 +4,6 @@ description: One kitr project that builds a web app, an iPhone and Android app a
 packages: platform, router, mobile, desktop, web
 platforms: web, mobile, desktop
 time: 35 min
-preview: true
 ---
 
 # Ship one app to the web, phones and desktops
@@ -21,9 +20,6 @@ Most of the app should not know where it runs. Pages, queries, forms and storage
 | A piece of UI on some platforms or screen sizes | `<Only>`, `<Except>`, `useFormFactor()` | at render |
 | Code that must not be in a bundle at all | `import.meta.env.KITR_PLATFORM` | by the bundler |
 
-> **Preview**
-> The mobile and desktop platforms are previews. `@kitr/mobile`, `@kitr/desktop` and `@kitr/platform` are not on npm. The commands below need `--preview` and a kitr checkout.
-
 ## Before you start
 
 Work through [Build a phone app](/guides/mobile-app) first. This guide starts from its project, `acme-billing`, which already has two platforms, `site` and `phone`, and adds the desktop. You need the same toolchains as the two platform guides: Xcode or Android Studio for the phone, and nothing extra for Electron. The invoices API from [Build an API server without React](/guides/api-server) runs on port 3001.
@@ -33,8 +29,8 @@ Work through [Build a phone app](/guides/mobile-app) first. This guide starts fr
 A platform is a named entry in `kitrrc.ts`. Add a desktop platform called `desk` to the phone project:
 
 ```sh
-cd examples/acme-billing
-kitr add desktop desk --preview --title "Acme Billing" --appId com.acme.billing
+cd acme-billing
+kitr add desktop desk --title "Acme Billing" --appId com.acme.billing
 ```
 
 ```ts

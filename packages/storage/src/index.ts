@@ -67,7 +67,7 @@ export const jsonCodec = <T>(): Codec<T> => ({
 })
 
 /** Stores strings as they are, with no quotes. The default for cookies whose default is a string. */
-export const stringCodec: Codec<string> = { encode: (v) => v, decode: (raw) => raw }
+export const stringCodec: Codec<string> = { encode: (v) => v, decode: (raw) => raw } // kitr-allow-module-state: stateless codec object
 
 /* ----------------------------------------------------------------------------
  * Web Storage items
@@ -119,8 +119,8 @@ interface Envelope {
   e?: number
 }
 
-const listenersByKey = new Map<string, Set<() => void>>()
-let crossTabInstalled = false
+const listenersByKey = new Map<string, Set<() => void>>() // kitr-allow-module-state: subscribers to the browser storage, which is one per page: items are defined at import, before any app exists
+let crossTabInstalled = false // kitr-allow-module-state: installs the one window `storage` listener per page
 
 function webStorage(name: StorageArea): Storage | null {
   try {
@@ -209,8 +209,8 @@ export function createAsyncStorageDriver(options: {
   }
 }
 
-const drivers: { local?: StorageDriver | null; session?: StorageDriver | null } = {}
-const driverUnsubscribers: Array<() => void> = []
+const drivers: { local?: StorageDriver | null; session?: StorageDriver | null } = {} // kitr-allow-module-state: the storage backend is one per page (Web Storage or the platform driver the provider installs): items are defined at import, before any app exists
+const driverUnsubscribers: Array<() => void> = [] // kitr-allow-module-state: unsubscribers of the page-wide storage drivers above
 
 /**
  * Replace the Web Storage backing with a platform driver. Called by the storage provider when a
@@ -258,7 +258,7 @@ function emit(key: string) {
   for (const l of listenersByKey.get(key) ?? []) l()
 }
 
-let keyPrefix = ''
+let keyPrefix = '' // kitr-allow-module-state: key prefix of the page-wide storage, set by the provider from config/storage.ts
 /** Set by the provider from `config/storage.ts`; items created later pick it up. */
 export function setStoragePrefix(prefix: string) {
   keyPrefix = prefix
@@ -409,8 +409,8 @@ export interface CookieItem<T> {
   decode(raw: string | undefined): T
 }
 
-const cookieListeners = new Set<() => void>()
-let cookieDefaults: Omit<CookieOptions, 'name'> = {}
+const cookieListeners = new Set<() => void>() // kitr-allow-module-state: subscribers to document.cookie, which is one per page
+let cookieDefaults: Omit<CookieOptions, 'name'> = {} // kitr-allow-module-state: cookie attributes for the page, set by the provider from config/storage.ts
 /** Attributes merged into every cookie this app writes. The provider sets them from `cookie` in config. */
 export function setCookieDefaults(defaults: Omit<CookieOptions, 'name'>) {
   cookieDefaults = defaults

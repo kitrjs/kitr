@@ -80,6 +80,7 @@ export async function addComponents(
 }
 
 /** `kitr ui`: the `add` and `list` subcommands for owned components from a shadcn-compatible registry. */
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const ui = {
   meta: {
     name: 'ui',

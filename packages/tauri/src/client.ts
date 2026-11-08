@@ -1,4 +1,5 @@
 import type { MutationContract, QueryContract } from '@kitr/core'
+import { detectRuntime } from '@kitr/platform'
 import { useEffect } from 'react'
 
 /**
@@ -14,9 +15,9 @@ export type Commands<C extends CommandMap> = {
     : (args: Parameters<C[K]>[0]) => Promise<Awaited<ReturnType<C[K]>>>
 }
 
-/** True inside a Tauri webview (checks `window.__TAURI_INTERNALS__`), false in a browser. */
+/** True inside a Tauri webview (`detectRuntime()` finds `window.__TAURI_INTERNALS__`), false in a browser. */
 export function isTauri(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+  return detectRuntime() === 'tauri'
 }
 
 async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {

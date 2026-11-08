@@ -6,7 +6,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Import framework code from the `@kitr/*` package that `kitr add` installed (`@kitr/router`, `@kitr/query`, ...). Each re-exports the upstream library unchanged plus kitr helpers. `kitr` itself is the CLI and the `kitrrc.ts` config (`kitr/app`, `kitr/env`).
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`. Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generated files are written by `kitr generate` (types under `.kitr/`, the API route table), which `kitr dev`, `kitr build` and `kitr typecheck` run first; import the types from `#kitr/*`. Run `kitr doctor` after changes.
 
 ## kitr: structure
 
@@ -89,6 +89,14 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - In development (or always, with `enabled: true` in config/devtools.ts) a "k" button (ctrl/cmd+shift+K) opens the kitr devtools: App, Router, Query, Auth, Storage, Errors, Analytics and Log panels, plus a command palette (ctrl/cmd+shift+P) with every package's actions.
 - Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`@kitr/devtools`); it is null when devtools is off, so the call costs nothing.
 - A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `@kitr/devtools/ui`.
+
+## kitr: secure-storage
+
+- Tokens and secrets go through `@kitr/secure-storage` (`app/secure.ts`), never `defineStorage` or localStorage. `useSecureItem(item)` returns `[value, set, { loading, secure }]`; the value is undefined until the vault answers.
+
+## kitr: notifications
+
+- `useNotificationPermission()` gives `{ permission, request }`; call `request` from a click. `notifications.show({ title, url })` / `schedule({ ..., at })` resolve to an id for `cancel`. Route taps once, near the router: `useNotificationTap((tap) => tap.url && navigate({ to: tap.url }))`.
 
 ## kitr: vite
 

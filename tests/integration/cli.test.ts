@@ -8,7 +8,6 @@ import {
   copyExample,
   exists,
   kitr,
-  kitrBin,
   linkPackages,
   remove,
   root,
@@ -295,40 +294,6 @@ describe('make:* generators produce code that typechecks and builds', () => {
   it('doctor stays clean after generating', () => {
     const findings = JSON.parse(kitr(dir, 'doctor', '--json')) as Array<{ level: string }>
     expect(findings.filter((f) => f.level === 'error')).toEqual([])
-  })
-})
-
-describe('preview packages', () => {
-  let dir: string
-  beforeAll(() => {
-    dir = copyExample('dashboard')
-  })
-  afterAll(() => remove(dir))
-
-  it('refuses a preview package without --preview, and adds it with the flag', () => {
-    const env = { ...process.env, CI: '1', NO_COLOR: '1', KITR_PREVIEW: '' }
-    const refused = (() => {
-      try {
-        execFileSync(process.execPath, [kitrBin, 'add', 'jobs', '--no-install'], {
-          cwd: dir,
-          encoding: 'utf8',
-          stdio: 'pipe',
-          env,
-        })
-        return ''
-      } catch (error: any) {
-        return `${error.stdout ?? ''}${error.stderr ?? ''}`
-      }
-    })()
-    expect(refused).toContain('@kitr/jobs is a preview package')
-    expect(readFileSync(join(dir, 'package.json'), 'utf8')).not.toContain('@kitr/jobs')
-    execFileSync(process.execPath, [kitrBin, 'add', 'jobs', '--preview', '--no-install', '--yes'], {
-      cwd: dir,
-      encoding: 'utf8',
-      stdio: 'pipe',
-      env,
-    })
-    expect(readFileSync(join(dir, 'package.json'), 'utf8')).toContain('@kitr/jobs')
   })
 })
 

@@ -62,6 +62,9 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
+      semver:
+        specifier: 7.8.6
+        version: 7.8.6
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -332,6 +335,9 @@ importers:
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
+      '@kitr/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@kitr/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -344,6 +350,9 @@ importers:
       '@kitr/router':
         specifier: workspace:*
         version: link:../../packages/router
+      '@kitr/secure-storage':
+        specifier: workspace:*
+        version: link:../../packages/secure-storage
       '@kitr/state':
         specifier: workspace:*
         version: link:../../packages/state
@@ -383,6 +392,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      electron-updater:
+        specifier: ^6.8.11
+        version: 6.8.11
       kitr:
         specifier: workspace:*
         version: link:../../packages/kitr
@@ -414,6 +426,214 @@ importers:
       '@biomejs/biome':
         specifier: 2.6.6
         version: 2.6.6
+      '@kitr/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      '@kitr/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
+      '@tanstack/react-query-devtools':
+        specifier: ^5.107.1
+        version: 5.107.1(@tanstack/react-query@5.107.1(@types/react@19.3.0)(react@19.3.1))(@types/react@19.3.0)(csstype@3.2.3)(react@19.3.1)
+      '@tanstack/react-router-devtools':
+        specifier: ^1.167.2
+        version: 1.167.2(@tanstack/react-router@1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@tanstack/router-core@1.171.39)(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/router-plugin':
+        specifier: ^1.168.48
+        version: 1.168.48(@tanstack/react-router@1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(esbuild@0.28.2)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      '@testing-library/dom':
+        specifier: ^10.4.1
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^6.2.1
+        version: 6.2.1(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      electron:
+        specifier: ^45.2.3
+        version: 45.2.3
+      electron-builder:
+        specifier: ^26.18.0
+        version: 26.18.0
+      electron-vite:
+        specifier: ^6.0.0
+        version: 6.0.0(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      happy-dom:
+        specifier: ^21.0.4
+        version: 21.0.4
+      msw:
+        specifier: ^3.0.4
+        version: 3.0.4(@types/node@22.20.5)(typescript@5.9.3)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.6
+        version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@22.20.5)(@vitest/coverage-v8@5.1.0)(happy-dom@21.0.4)(msw@3.0.4(@types/node@22.20.5)(typescript@5.9.3)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+
+  examples/everywhere:
+    dependencies:
+      '@aparajita/capacitor-secure-storage':
+        specifier: ^8.0.1
+        version: 8.0.1
+      '@capacitor/android':
+        specifier: ^8.6.0
+        version: 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/app':
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.6.0)
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/ios':
+        specifier: ^8.6.0
+        version: 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/local-notifications':
+        specifier: ^8.3.1
+        version: 8.3.1(@capacitor/core@8.6.0)
+      '@capacitor/preferences':
+        specifier: ^8.0.0
+        version: 8.0.1(@capacitor/core@8.6.0)
+      '@capacitor/push-notifications':
+        specifier: ^8.1.3
+        version: 8.1.3(@capacitor/core@8.6.0)
+      '@hookform/resolvers':
+        specifier: ^7.0.3
+        version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
+      '@hugeicons/core-free-icons':
+        specifier: ^4.4.0
+        version: 4.4.0
+      '@hugeicons/react':
+        specifier: ^1.1.10
+        version: 1.1.10(react@19.3.1)
+      '@kitr/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@kitr/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@kitr/desktop':
+        specifier: workspace:*
+        version: link:../../packages/desktop
+      '@kitr/forms':
+        specifier: workspace:*
+        version: link:../../packages/forms
+      '@kitr/http':
+        specifier: workspace:*
+        version: link:../../packages/http
+      '@kitr/mobile':
+        specifier: workspace:*
+        version: link:../../packages/mobile
+      '@kitr/mocks':
+        specifier: workspace:*
+        version: link:../../packages/mocks
+      '@kitr/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@kitr/query':
+        specifier: workspace:*
+        version: link:../../packages/query
+      '@kitr/react':
+        specifier: workspace:*
+        version: link:../../packages/react
+      '@kitr/router':
+        specifier: workspace:*
+        version: link:../../packages/router
+      '@kitr/secure-storage':
+        specifier: workspace:*
+        version: link:../../packages/secure-storage
+      '@kitr/state':
+        specifier: workspace:*
+        version: link:../../packages/state
+      '@kitr/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
+      '@kitr/table':
+        specifier: workspace:*
+        version: link:../../packages/table
+      '@kitr/tailwind':
+        specifier: workspace:*
+        version: link:../../packages/tailwind
+      '@kitr/theme':
+        specifier: workspace:*
+        version: link:../../packages/theme
+      '@kitr/web':
+        specifier: workspace:*
+        version: link:../../packages/web
+      '@tailwindcss/vite':
+        specifier: ^4.3.5
+        version: 4.3.5(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      '@tanstack/react-query':
+        specifier: ^5.107.1
+        version: 5.107.1(@types/react@19.3.0)(react@19.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.170.46
+        version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-start':
+        specifier: ^1.169.4
+        version: 1.169.4(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.3.0)(rollup@4.68.0)(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+      '@tanstack/react-table':
+        specifier: ^9.3.1
+        version: 9.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      electron-updater:
+        specifier: ^6.8.11
+        version: 6.8.11
+      kitr:
+        specifier: workspace:*
+        version: link:../../packages/kitr
+      ky:
+        specifier: ^2.2.0
+        version: 2.2.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      react-dom:
+        specifier: ^19.3.1
+        version: 19.3.1(react@19.3.1)
+      react-hook-form:
+        specifier: ^7.91.0
+        version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
+      tailwind-merge:
+        specifier: ^3.7.0
+        version: 3.7.0
+      tailwindcss:
+        specifier: ^4.3.5
+        version: 4.3.5
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+      zustand:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/react@19.3.0)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1))
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 2.6.6
+        version: 2.6.6
+      '@capacitor/cli':
+        specifier: ^8.6.0
+        version: 8.6.0
       '@kitr/testing':
         specifier: workspace:*
         version: link:../../packages/testing
@@ -655,21 +875,51 @@ importers:
 
   examples/mobile:
     dependencies:
+      '@aparajita/capacitor-secure-storage':
+        specifier: ^8.0.1
+        version: 8.0.1
       '@capacitor/android':
         specifier: ^8.6.0
         version: 8.6.0(@capacitor/core@8.6.0)
       '@capacitor/app':
         specifier: ^8.1.2
         version: 8.1.2(@capacitor/core@8.6.0)
+      '@capacitor/clipboard':
+        specifier: ^8.0.1
+        version: 8.0.1(@capacitor/core@8.6.0)
       '@capacitor/core':
         specifier: ^8.6.0
         version: 8.6.0
+      '@capacitor/filesystem':
+        specifier: ^8.1.5
+        version: 8.1.5(@capacitor/core@8.6.0)
+      '@capacitor/geolocation':
+        specifier: ^8.2.4
+        version: 8.2.4(@capacitor/core@8.6.0)
+      '@capacitor/haptics':
+        specifier: ^8.0.2
+        version: 8.0.2(@capacitor/core@8.6.0)
       '@capacitor/ios':
         specifier: ^8.6.0
         version: 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/local-notifications':
+        specifier: ^8.3.1
+        version: 8.3.1(@capacitor/core@8.6.0)
       '@capacitor/preferences':
         specifier: ^8.0.0
         version: 8.0.1(@capacitor/core@8.6.0)
+      '@capacitor/push-notifications':
+        specifier: ^8.1.3
+        version: 8.1.3(@capacitor/core@8.6.0)
+      '@capacitor/share':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.6.0)
+      '@capawesome/capacitor-app-update':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
+      '@capawesome/capacitor-file-picker':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
@@ -1020,6 +1270,9 @@ importers:
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@kitr/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
       '@kitr/monitoring':
         specifier: workspace:*
         version: link:../../packages/monitoring
@@ -1038,6 +1291,9 @@ importers:
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
+      '@kitr/shield':
+        specifier: workspace:*
+        version: link:../../packages/shield
       '@kitr/state':
         specifier: workspace:*
         version: link:../../packages/state
@@ -1352,6 +1608,9 @@ importers:
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
+      '@kitr/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@kitr/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -1364,6 +1623,9 @@ importers:
       '@kitr/router':
         specifier: workspace:*
         version: link:../../packages/router
+      '@kitr/secure-storage':
+        specifier: workspace:*
+        version: link:../../packages/secure-storage
       '@kitr/state':
         specifier: workspace:*
         version: link:../../packages/state
@@ -1403,15 +1665,36 @@ importers:
       '@tauri-apps/api':
         specifier: ^2.12.4
         version: 2.12.4
+      '@tauri-apps/plugin-clipboard-manager':
+        specifier: ^2.5.0
+        version: 2.5.0
+      '@tauri-apps/plugin-dialog':
+        specifier: ^2.8.4
+        version: 2.8.4
+      '@tauri-apps/plugin-fs':
+        specifier: ^2.7.1
+        version: 2.7.1
+      '@tauri-apps/plugin-notification':
+        specifier: ^2.8.0
+        version: 2.8.0
       '@tauri-apps/plugin-opener':
         specifier: ^2.5.0
         version: 2.7.2
+      '@tauri-apps/plugin-os':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@tauri-apps/plugin-process':
         specifier: ^2.3.0
         version: 2.4.0
       '@tauri-apps/plugin-store':
         specifier: ^2.4.0
         version: 2.5.0
+      '@tauri-apps/plugin-stronghold':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@tauri-apps/plugin-updater':
+        specifier: ^2.14.1
+        version: 2.14.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1639,6 +1922,9 @@ importers:
       '@kitr/server':
         specifier: workspace:*
         version: link:../server
+      '@kitr/shield':
+        specifier: workspace:*
+        version: link:../shield
     devDependencies:
       '@kitr/logger':
         specifier: workspace:*
@@ -1674,6 +1960,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../http
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
@@ -1891,10 +2180,25 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/filesystem':
+        specifier: ^8.1.5
+        version: 8.1.5(@capacitor/core@8.6.0)
+      '@capacitor/share':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.6.0)
+      '@capawesome/capacitor-file-picker':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -2506,10 +2810,28 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:
+      '@capacitor/clipboard':
+        specifier: ^8.0.1
+        version: 8.0.1(@capacitor/core@8.6.0)
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/geolocation':
+        specifier: ^8.2.4
+        version: 8.2.4(@capacitor/core@8.6.0)
+      '@capacitor/haptics':
+        specifier: ^8.0.2
+        version: 8.0.2(@capacitor/core@8.6.0)
+      '@capacitor/share':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.6.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -2531,10 +2853,22 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/local-notifications':
+        specifier: ^8.3.1
+        version: 8.3.1(@capacitor/core@8.6.0)
+      '@capacitor/push-notifications':
+        specifier: ^8.1.3
+        version: 8.1.3(@capacitor/core@8.6.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -2739,6 +3073,9 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -2746,6 +3083,12 @@ importers:
         specifier: workspace:*
         version: link:../storage
     devDependencies:
+      '@aparajita/capacitor-secure-storage':
+        specifier: ^8.0.1
+        version: 8.0.1
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
@@ -3065,10 +3408,19 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../core
+      '@kitr/platform':
+        specifier: workspace:*
+        version: link:../platform
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capawesome/capacitor-app-update':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -3421,6 +3773,10 @@ importers:
         version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
 packages:
+
+  '@aparajita/capacitor-secure-storage@8.0.1':
+    resolution: {integrity: sha512-NSYIQtH6TyBgL3myumQGcCE3iecq2PtGNFlGxl1fJKEU37Dv5DudzDlwg42cgbVxCm1ay72g4X7rTSAvKULsVg==}
+    engines: {node: '>=20.0.0'}
 
   '@apideck/better-ajv-errors@0.3.7':
     resolution: {integrity: sha512-TajUJwGWbDwkCx/CZi7tRE8PVB7simCvKJfHUsSdvps+aTM/PDPP4gkLmKnc+x3CE//y9i/nj74GqdL/hwk7Iw==}
@@ -4013,16 +4369,69 @@ packages:
     engines: {node: '>=22.0.0'}
     hasBin: true
 
+  '@capacitor/clipboard@8.0.1':
+    resolution: {integrity: sha512-iOlbTi8MojKyLnYE+M27priXid7vHd0PlDwyHohPzkuQ8Rkp6q7ykwZmPEUD+OnU/Ink7Qw/pUOfKgraKmA6Eg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/core@8.6.0':
     resolution: {integrity: sha512-9F2zzuGYTJu+wqmQSEmqnFBfGrhC/njjMCfmxbvg9mq8xJT4wNh5pxbMFZxvW/yDhYJWPEBFQxeqzfo1gKrvxg==}
+
+  '@capacitor/filesystem@8.1.5':
+    resolution: {integrity: sha512-m1RkI8L83NJeppEKyRWioK3MDp2vjlA+QfUQcF8/xRlcXNC2HYxqoyYJ+K4M0EcVovy+g+4F24S05+bhK4Vgdg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/geolocation@8.2.4':
+    resolution: {integrity: sha512-FDcUiPQc2AXSTAV61QSDPXml11guKBx5HPEkdWvUqw7kMqrc2Ucp0bsWngeLyRs/01a5aWBI0hEuvetuF3PsrQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/haptics@8.0.2':
+    resolution: {integrity: sha512-c2hZzRR5Fk1tbTvhG1jhh2XBAf3EhnIerMIb2sl7Mt41Gxx1fhBJFDa0/BI1IbY4loVepyyuqNC9820/GZuoWQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/ios@8.6.0':
     resolution: {integrity: sha512-Y2PE4zoBqMrSTWoVMJmX2byBznjn6egmATzoEUJiGVbVubkNpAvkF/tl0SBKDyP67ngyedTx1tQq5IGYIhby1A==}
     peerDependencies:
       '@capacitor/core': ^8.6.0
 
+  '@capacitor/keyboard@8.0.6':
+    resolution: {integrity: sha512-Bbe+9V0qaT6dzEFJEK7BUWR01l2+vZE8FM5ITF/WgKtx+G6eGZ6d5+YiSMRJBAK0VGjdO59v8yiQ10Doa5KyvQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/local-notifications@8.3.1':
+    resolution: {integrity: sha512-F7zu/+p/mIR958YP4axOkeI5hBKRaXDyYjbNPrAil2wWfd7OxScPSTvP9t85NpQ0eULVRu0/sntoxOg6ck477A==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/preferences@8.0.1':
     resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/push-notifications@8.1.3':
+    resolution: {integrity: sha512-UlOCTS3uiw8ZUJ1rkFKJgoqPADipHDNn0lq5mNRwtXALVxQXIeIoRd3iqpzC+962R2LpCRJRkCTjPX2OHK3tBA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/share@8.0.3':
+    resolution: {integrity: sha512-gnvZBV1NPu2B8vd1UKncR56G15ueHd0aZLqgDov++t3SmTBG9Q0VrAZ1VnHn5stxlmglVaTb4RwopMgbpLzroA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/synapse@1.0.4':
+    resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
+
+  '@capawesome/capacitor-app-update@8.1.1':
+    resolution: {integrity: sha512-1TzM4hMN4wgCDu3O0UhaIIoVspUFNfNJ+q+K/EKSQRKkfCbG79S1Fn/sXwMdtMO1Me55LQxdjw1I9rctFtKBOQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capawesome/capacitor-file-picker@8.1.1':
+    resolution: {integrity: sha512-4zDRca+uQbhFkbASoRbMpvXRbuCVhmVATDYLL9MG5UvILer01uUcN7oQhuxpltVir2YnP+1O8LasnwYlqlLM5g==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -5519,14 +5928,35 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
+  '@tauri-apps/plugin-clipboard-manager@2.5.0':
+    resolution: {integrity: sha512-dibUy1nKURYDXRMvjNk4deAbTZ5jPQ8wCE4nolt5xniryWgXQ4sK2GkFXoXlHbRdPzfZptZj95BRLfalA7m/2Q==}
+
+  '@tauri-apps/plugin-dialog@2.8.4':
+    resolution: {integrity: sha512-+6ZOiXenOaxXwb8qCbBPdT2jX2cFPaVVHGIskrpmJLpmWj+qKRTD6X/z9x7hTdSQn7NedcoXCkWGej4a7dC4lw==}
+
+  '@tauri-apps/plugin-fs@2.7.1':
+    resolution: {integrity: sha512-4TBVjpi/q8PuNzjpkAc2iBGXMTLjOrAyfTiiOL8ORaJCZJRG3tjzmQ4sqs2CMG75FvLyRkOkERfP7AyY4iBNwQ==}
+
+  '@tauri-apps/plugin-notification@2.8.0':
+    resolution: {integrity: sha512-BB9Kk2emiNHyMjIQr3k/ye8RKD2RJeOPCjM5OZLF+4/pO6Kfjl9RtkX4hVCe1vqgbAx5HjHXjf0O8rtdW2F2dw==}
+
   '@tauri-apps/plugin-opener@2.7.2':
     resolution: {integrity: sha512-LyybP1VSzTMQiaFYcsbAse47KpivlyXdLZMQzGLEnkgQacGESnpjAfFoQ6h5sqWgAdZDH9szYjPzHMpv0Sz+TQ==}
+
+  '@tauri-apps/plugin-os@2.4.0':
+    resolution: {integrity: sha512-XFQjntNNI3Vlqdy4WUGwiXX8DByzKVvoemAcUVkBm9NJPGmoDtII5i+vfuAzWaJfOE5cUJJLUDqXBnd4reSAIA==}
 
   '@tauri-apps/plugin-process@2.4.0':
     resolution: {integrity: sha512-GddrmsSLAYrLa/yTXlXK/YRDzUgYeeOnUXTbiyvJWkmI424RmDPD3FVLeqcon7rv6O6ZfhBilcrHWnSo7o6hIQ==}
 
   '@tauri-apps/plugin-store@2.5.0':
     resolution: {integrity: sha512-+ykjiQwMJCSk/U2enHA8peKBWgDKgrP7JfZnGwQpqzwA0nVtKTc0LCyxWr2whOrcQoQqtUdr9NVdDZpfKpT1Xw==}
+
+  '@tauri-apps/plugin-stronghold@2.4.0':
+    resolution: {integrity: sha512-5FIKueS+4xs66WtQ7kBmEI2clvc1xtX5V/2oGcZF39TBGZ+azHB0lYANV0YOFA/1zst9ILgq/j7Mzwt0NX4r1A==}
+
+  '@tauri-apps/plugin-updater@2.14.1':
+    resolution: {integrity: sha512-Hr7nlBm1wT6xbwzjZ/S36YULazu8MNlj5vvOwMl47fXI7HTa5Bjl1PbDEwVHaZTAKzE1VZsUy35UqnbrQxmYQw==}
 
   '@testing-library/dom@10.4.2':
     resolution: {integrity: sha512-yzr2S9HyAIdhz2/6qHgbs665Q7PKVcDF05vsOlHPxG1mo36gKVesdYVeDLnXgfjJ03CrKRk08knc6+E/9m8v2Q==}
@@ -6328,6 +6758,9 @@ packages:
 
   electron-to-chromium@1.5.478:
     resolution: {integrity: sha512-pftG+ma5Lm8O6/p45bhYT6StBN5ziQymaRzmCZwFl8DwWHKPPD93FdOmP1aqftcepolQYvrcyTLa17kE8Yf+jg==}
+
+  electron-updater@6.8.11:
+    resolution: {integrity: sha512-12U/mbzaIKQS3Q543aQ7DjyAZMXeVJy1Wpu0qdq5ne4RXpIQDpWYm25zRjgXngAoo6swMrm4C4owGyiIipelsg==}
 
   electron-vite@6.0.0:
     resolution: {integrity: sha512-zafg2uizgll7jdx0BNDkkzO/SowsUBsiHqYN3v9Ieq7XPDHreRGZ4G9IRY/+RslgBktpLOjLM4jlP+IVpV0BGw==}
@@ -7163,6 +7596,13 @@ packages:
 
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
+
+  lodash.escaperegexp@4.1.2:
+    resolution: {integrity: sha512-TM9YBvyC84ZxE3rgfefxUWiQKLilstD6k7PTGt6wfbtXF8ixIJLOL3VYyV/z+ZiPLsVxAsKAFVwWlWeb2Y8Yyw==}
+
+  lodash.isequal@4.5.0:
+    resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
+    deprecated: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
 
   lodash@4.18.1:
     resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
@@ -8318,6 +8758,9 @@ packages:
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
 
+  tiny-typed-emitter@2.1.0:
+    resolution: {integrity: sha512-qVtvMxeXbVej0cQWKqVSSAHmKZEHAvxdF8HEUBFWts8h+xEo5m/lEiPakuyZ3BnCBjOD8i24kzNOiOLLgsSxhA==}
+
   tinybench@6.2.3:
     resolution: {integrity: sha512-Al01C2JIBnO2CXCAPbpAl6sUiOZHeThGtHYNTa51JRw9PyWOCdr+9Ong05R4qg/Sk3+H645E8ov1h2c58ityNw==}
     engines: {node: '>=20.0.0'}
@@ -9032,6 +9475,14 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@aparajita/capacitor-secure-storage@8.0.1':
+    dependencies:
+      '@capacitor/android': 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/app': 8.1.2(@capacitor/core@8.6.0)
+      '@capacitor/core': 8.6.0
+      '@capacitor/ios': 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/keyboard': 8.0.6(@capacitor/core@8.6.0)
 
   '@apideck/better-ajv-errors@0.3.7(ajv@8.20.0)':
     dependencies:
@@ -9778,15 +10229,59 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@capacitor/clipboard@8.0.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
   '@capacitor/core@8.6.0':
     dependencies:
       tslib: 2.9.1
+
+  '@capacitor/filesystem@8.1.5(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+      '@capacitor/synapse': 1.0.4
+
+  '@capacitor/geolocation@8.2.4(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+      '@capacitor/synapse': 1.0.4
+
+  '@capacitor/haptics@8.0.2(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
 
   '@capacitor/ios@8.6.0(@capacitor/core@8.6.0)':
     dependencies:
       '@capacitor/core': 8.6.0
 
+  '@capacitor/keyboard@8.0.6(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/local-notifications@8.3.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
   '@capacitor/preferences@8.0.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/push-notifications@8.1.3(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/share@8.0.3(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/synapse@1.0.4': {}
+
+  '@capawesome/capacitor-app-update@8.1.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capawesome/capacitor-file-picker@8.1.1(@capacitor/core@8.6.0)':
     dependencies:
       '@capacitor/core': 8.6.0
 
@@ -11210,7 +11705,27 @@ snapshots:
       '@tauri-apps/cli-win32-ia32-msvc': 2.12.4
       '@tauri-apps/cli-win32-x64-msvc': 2.12.4
 
+  '@tauri-apps/plugin-clipboard-manager@2.5.0':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-dialog@2.8.4':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-fs@2.7.1':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-notification@2.8.0':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
   '@tauri-apps/plugin-opener@2.7.2':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-os@2.4.0':
     dependencies:
       '@tauri-apps/api': 2.12.4
 
@@ -11219,6 +11734,14 @@ snapshots:
       '@tauri-apps/api': 2.12.4
 
   '@tauri-apps/plugin-store@2.5.0':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-stronghold@2.4.0':
+    dependencies:
+      '@tauri-apps/api': 2.12.4
+
+  '@tauri-apps/plugin-updater@2.14.1':
     dependencies:
       '@tauri-apps/api': 2.12.4
 
@@ -12027,6 +12550,19 @@ snapshots:
       - supports-color
 
   electron-to-chromium@1.5.478: {}
+
+  electron-updater@6.8.11:
+    dependencies:
+      builder-util-runtime: 9.7.0
+      fs-extra: 10.1.0
+      js-yaml: 4.3.2
+      lazy-val: 1.0.5
+      lodash.escaperegexp: 4.1.2
+      lodash.isequal: 4.5.0
+      semver: 7.7.4
+      tiny-typed-emitter: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
 
   electron-vite@6.0.0(vite@8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)):
     dependencies:
@@ -12940,6 +13476,10 @@ snapshots:
       unicode-trie: 2.0.0
 
   lodash.debounce@4.0.8: {}
+
+  lodash.escaperegexp@4.1.2: {}
+
+  lodash.isequal@4.5.0: {}
 
   lodash@4.18.1: {}
 
@@ -14403,6 +14943,8 @@ snapshots:
       semver: 5.7.3
 
   tiny-inflate@1.0.3: {}
+
+  tiny-typed-emitter@2.1.0: {}
 
   tinybench@6.2.3: {}
 

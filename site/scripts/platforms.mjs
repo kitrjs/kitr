@@ -1,11 +1,8 @@
 // Builds app/generated/platforms.json from content/platforms.mjs plus what the repo knows:
-// which packages run on each platform, whether a platform or kit package is published
-// (`"private": true` in its package.json means it is not), and which guides cover it.
+// which packages run on each platform and which guides cover it.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { builder, platforms } from '../content/platforms.mjs'
-
-const readJson = (file) => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null)
 
 /** `web, server` or `[web, server]` → ['web', 'server']. */
 const list = (value) =>
@@ -25,12 +22,8 @@ function splitLines(html) {
   return { pre, lines: inner.split('\n') }
 }
 
-export function buildPlatforms({ repo, site, out, highlight, packages, docs, parseFrontmatter }) {
-  const manifest = (dir) => readJson(join(repo, 'packages', dir, 'package.json'))
-  const isPrivate = (dir) => manifest(dir)?.private === true
-  // Packages kept out of npm for now are left off the platform pages until they ship.
-  const unpublished = packages.filter((p) => isPrivate(p.dir)).map((p) => p.entry.name)
-  const published = packages.filter((p) => !isPrivate(p.dir)).map((p) => p.entry)
+export function buildPlatforms({ site, out, highlight, packages, docs, parseFrontmatter }) {
+  const published = packages.map((p) => p.entry)
 
   // Guides: site/content/guides/*.md with a `platforms:` line, once that section exists;
   // until then, the docs guides named in content/platforms.mjs.
@@ -79,13 +72,12 @@ export function buildPlatforms({ repo, site, out, highlight, packages, docs, par
     return {
       ...p,
       code: highlight(p.code, p.code.includes('</') ? 'tsx' : 'ts'),
-      available: ownPkg ? !isPrivate(ownPkg.dir) : false,
       summary: own?.summary ?? p.tagline,
       packages: {
         native,
         other: eligible.filter((e) => !native.includes(e.name)).map((e) => e.name),
       },
-      kits: p.kits.map((name) => ({ name, available: !isPrivate(`kit-${name}`) })),
+      kits: p.kits,
       docs: (own?.pages ?? [])
         .slice()
         .sort((a, b) => a.order - b.order)
@@ -126,15 +118,12 @@ export function buildPlatforms({ repo, site, out, highlight, packages, docs, par
   const builderOut = {
     pre,
     lines: source.map(([, show], i) => ({ html: lines[i], ...(show ?? {}) })),
-    choices: builder.choices.map((c) => ({
-      ...c,
-      available: result.find((p) => p.type === c.type)?.available ?? false,
-    })),
+    choices: builder.choices,
   }
 
   writeFileSync(
     join(out, 'platforms.json'),
-    JSON.stringify({ platforms: result, builder: builderOut, unpublished }, null, 2),
+    JSON.stringify({ platforms: result, builder: builderOut }, null, 2),
   )
   return result
 }

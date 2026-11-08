@@ -3,8 +3,8 @@ import type { H3Event, Middleware } from 'h3'
 
 /** Options for `cors()` and the `cors` key of `config/shield.ts`. */
 export interface CorsOptions {
-  /** `'*'`, a list of origins, or a predicate. Default: same-origin only (no header). */
-  origin?: '*' | string[] | ((origin: string) => boolean)
+  /** `'*'`, one origin, a list of origins, or a predicate. Default: same-origin only (no header). */
+  origin?: '*' | string | string[] | ((origin: string) => boolean)
   /** Methods a preflight allows. Default GET, POST, PUT, PATCH, DELETE, OPTIONS. */
   methods?: string[]
   /** Request headers a preflight allows. Default Content-Type, Authorization, X-CSRF-Token, X-Requested-With. */
@@ -59,8 +59,27 @@ export interface RateLimitStore {
 
 /** Options for `securityHeaders()` and the `headers` key of `config/shield.ts`. */
 export interface HeadersOptions {
-  /** `Content-Security-Policy`. A string, or false to leave it out. Default: a strict policy for an SPA/SSR app. */
+  /**
+   * `Content-Security-Policy`. A string, or false to leave it out. Default: a strict policy for an
+   * SPA/SSR app (`DEFAULT_CSP`), where inline scripts and styles run only with this request's
+   * nonce. A string may contain `{nonce}`, which becomes the request's nonce, so a custom policy
+   * can allow the page's own inline tags too: `script-src 'self' 'nonce-{nonce}' https://cdn.example.com`.
+   * `strictDynamic` and `unsafeInline` shape the default policy only.
+   */
   contentSecurityPolicy?: string | false
+  /**
+   * Add `'strict-dynamic'` to the default `script-src`: scripts the page's nonced scripts load are
+   * trusted without listing hosts, and `'self'` and host lists are ignored by browsers that know
+   * it. Suits apps that load third-party scripts from their own code. Default false.
+   */
+  strictDynamic?: boolean
+  /**
+   * Allow every inline script and style in the default policy (`'unsafe-inline'`, no nonce), which
+   * is what the policy was before nonces. Only for pages you cannot give a nonce: a widget that
+   * injects inline `<script>` or `<style>` tags itself, or an HTML template you do not render
+   * through kitr. It lets any injected markup run script, so prefer fixing the source. Default false.
+   */
+  unsafeInline?: boolean
   /** `Strict-Transport-Security` max-age in seconds; false to leave it out. Default one year in production. */
   hsts?: number | false
   /** `X-Frame-Options`. Default `DENY`; false to leave it out. */
@@ -94,9 +113,72 @@ declare module '@kitr/core' {
 /** Type the default export of `config/shield.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<ShieldConfig>()
 
-/** The Content-Security-Policy `securityHeaders()` sends when you don't set one: same-origin everything, inline scripts and styles allowed, no framing. */
+/**
+ * The Content-Security-Policy `securityHeaders()` sends when you don't set one, as a template:
+ * `{nonce}` is replaced by each request's nonce. Same-origin everything, inline scripts and style
+ * tags only with the nonce, inline `style=""` attributes allowed (they cannot run script), no framing.
+ */
 export const DEFAULT_CSP =
-  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  "default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+/** The default policy for the options: `strictDynamic` and `unsafeInline` rewrite its `script-src` and `style-src`. */
+export function defaultCsp(
+  options: { strictDynamic?: boolean; unsafeInline?: boolean; devStyles?: boolean } = {},
+): string {
+  let csp = DEFAULT_CSP
+  // Vite's dev server injects `<style>` tags with no nonce, so development allows inline styles.
+  if (options.devStyles && !options.unsafeInline)
+    csp = csp.replace("style-src 'self' 'nonce-{nonce}'", "style-src 'self' 'unsafe-inline'")
+  if (options.unsafeInline)
+    csp = csp
+      .replace("script-src 'self' 'nonce-{nonce}'", "script-src 'self' 'unsafe-inline'")
+      .replace("style-src 'self' 'nonce-{nonce}'", "style-src 'self' 'unsafe-inline'")
+  else if (options.strictDynamic)
+    csp = csp.replace(
+      "script-src 'self' 'nonce-{nonce}'",
+      "script-src 'self' 'nonce-{nonce}' 'strict-dynamic'",
+    )
+  return csp
+}
+
+const makeNonce = () => {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return btoa(String.fromCharCode(...bytes))
+}
+
+declare module 'h3' {
+  interface H3EventContext {
+    /** The CSP nonce `securityHeaders()` made for this request. Use `getCspNonce(event)`. */
+    cspNonce?: string
+  }
+}
+
+/** True when the server hands this request to the app's page renderer rather than one of its own routes. */
+const isPage = (event: H3Event) => !!(event.context.kitr as { page?: boolean } | undefined)?.page
+
+/** The current request's CSP nonce, for code that has the h3 event. Undefined when `securityHeaders()` did not run or the policy is off. */
+export function getCspNonce(event: H3Event): string | undefined {
+  return event.context.cspNonce
+}
+
+/** Where `@kitr/server` leaves its reader of the current request's nonce (see `REQUEST_NONCE_READER` there). */
+const REQUEST_NONCE_READER = Symbol.for('kitr.server.requestNonce')
+
+/**
+ * The CSP nonce of the request being rendered, for inline `<script>` and `<style>` tags you write
+ * yourself: `<script nonce={useCspNonce()}>`. Server-side it comes from the request context
+ * `@kitr/server` keeps for the request; in the browser, and outside a request, it is undefined
+ * (the browser has already checked the tag against the nonce, and hides the attribute afterwards).
+ * `<ThemeScript />` and TanStack Start's own scripts take the nonce without you passing it.
+ */
+export function useCspNonce(): string | undefined {
+  if (typeof window !== 'undefined') return undefined
+  const read = (globalThis as unknown as Record<symbol, unknown>)[REQUEST_NONCE_READER]
+  return typeof read === 'function'
+    ? ((read as () => string | undefined)() ?? undefined)
+    : undefined
+}
 
 const prefixed = (path: string, list: string[] | undefined) =>
   !!list?.some((p) => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`))
@@ -105,7 +187,7 @@ const prefixed = (path: string, list: string[] | undefined) =>
 export function securityHeaders(options: HeadersOptions = {}): Middleware {
   const production = options.production ?? inProduction()
   const {
-    contentSecurityPolicy = DEFAULT_CSP,
+    contentSecurityPolicy = defaultCsp({ ...options, devStyles: !production }),
     hsts = production ? 60 * 60 * 24 * 365 : false,
     frameOptions = 'DENY',
     referrerPolicy = 'strict-origin-when-cross-origin',
@@ -117,14 +199,38 @@ export function securityHeaders(options: HeadersOptions = {}): Middleware {
     if (frameOptions) h.set('x-frame-options', frameOptions)
     if (referrerPolicy) h.set('referrer-policy', referrerPolicy)
     if (permissionsPolicy) h.set('permissions-policy', permissionsPolicy)
-    if (contentSecurityPolicy) h.set('content-security-policy', contentSecurityPolicy)
+    if (contentSecurityPolicy) {
+      // A fresh nonce per request, kept where the renderer and `useCspNonce()` find it.
+      const nonce = makeNonce()
+      event.context.cspNonce = nonce
+      const ctx = event.context.kitr as { nonce?: string } | undefined
+      if (ctx) ctx.nonce = nonce
+      h.set('content-security-policy', contentSecurityPolicy.replaceAll('{nonce}', nonce))
+    }
     if (hsts) h.set('strict-transport-security', `max-age=${hsts}; includeSubDomains`)
     return next()
   }
 }
 
-/** Middleware that answers CORS preflights with 204 and adds `Access-Control-Allow-*` headers for allowed origins. Throws at once for `origin: '*'` with credentials. */
-export function cors(options: CorsOptions = {}): Middleware {
+/** What `corsPolicy()` decides for one request. */
+export interface CorsDecision {
+  /** Headers to set on the actual response: empty when the origin is not allowed. */
+  headers: Record<string, string>
+  /** Whether the response varies by `Origin`, so caches keep one copy per origin. */
+  vary: boolean
+  /** Extra headers for a preflight (`OPTIONS`) answer. */
+  preflight: Record<string, string>
+}
+
+/**
+ * The CORS rules for `options`, independent of any framework: `@kitr/shield` wraps it as h3
+ * middleware and `@kitr/api` as route middleware, so both apply exactly the same policy. Throws
+ * at once for `origin: '*'` with credentials, which would let any site send requests with the
+ * user's cookies.
+ */
+export function corsPolicy(
+  options: CorsOptions = {},
+): (requestOrigin: string | null) => CorsDecision {
   const {
     origin,
     methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -137,25 +243,40 @@ export function cors(options: CorsOptions = {}): Middleware {
     throw new Error(
       '[@kitr/shield] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
     )
+  const list = typeof origin === 'string' && origin !== '*' ? [origin] : origin
   const allow = (from: string | null): string | null => {
-    if (!origin) return null
-    if (origin === '*') return '*'
+    if (!list) return null
+    if (list === '*') return '*'
     if (!from) return null
-    if (typeof origin === 'function') return origin(from) ? from : null
-    return origin.includes(from) ? from : null
+    if (typeof list === 'function') return list(from) ? from : null
+    return list.includes(from) ? from : null
   }
-  return async (event, next) => {
-    const allowed = allow(event.req.headers.get('origin'))
-    const h = event.res.headers
+  const preflight = {
+    'access-control-allow-methods': methods.join(', '),
+    'access-control-allow-headers': headers.join(', '),
+    'access-control-max-age': String(maxAge),
+  }
+  return (requestOrigin) => {
+    const allowed = allow(requestOrigin)
+    const out: Record<string, string> = {}
     if (allowed) {
-      h.set('access-control-allow-origin', allowed)
-      if (allowed !== '*') h.append('vary', 'Origin')
-      if (credentials) h.set('access-control-allow-credentials', 'true')
+      out['access-control-allow-origin'] = allowed
+      if (credentials) out['access-control-allow-credentials'] = 'true'
     }
+    return { headers: out, vary: !!allowed && allowed !== '*', preflight }
+  }
+}
+
+/** Middleware that answers CORS preflights with 204 and adds `Access-Control-Allow-*` headers for allowed origins. Throws at once for `origin: '*'` with credentials. */
+export function cors(options: CorsOptions = {}): Middleware {
+  const policy = corsPolicy(options)
+  return async (event, next) => {
+    const decision = policy(event.req.headers.get('origin'))
+    const h = event.res.headers
+    for (const [k, v] of Object.entries(decision.headers)) h.set(k, v)
+    if (decision.vary) h.append('vary', 'Origin')
     if (event.req.method === 'OPTIONS') {
-      h.set('access-control-allow-methods', methods.join(', '))
-      h.set('access-control-allow-headers', headers.join(', '))
-      h.set('access-control-max-age', String(maxAge))
+      for (const [k, v] of Object.entries(decision.preflight)) h.set(k, v)
       return new Response(null, { status: 204, headers: h })
     }
     return next()
@@ -200,7 +321,8 @@ export function csrf(options: CsrfOptions = {}): Middleware {
       )
     }
     const path = new URL(event.req.url).pathname
-    if (methods.includes(event.req.method) && !prefixed(path, ignore)) {
+    // Pages belong to the app's renderer (Start); they get the cookie but are not checked here.
+    if (methods.includes(event.req.method) && !prefixed(path, ignore) && !isPage(event)) {
       const sent = event.req.headers.get(header)
       if (!sent || sent !== readCookie(event, cookie))
         throw new KitrError('FORBIDDEN', 'CSRF token missing or invalid')
@@ -295,7 +417,7 @@ export function rateLimit(options: RateLimitOptions = {}): Middleware {
   } = options
   return async (event, next) => {
     const path = new URL(event.req.url).pathname
-    if (prefixed(path, ignore)) return next()
+    if (prefixed(path, ignore) || isPage(event)) return next()
     const { count, resetAt } = await store.hit(key(event), windowMs)
     const h = event.res.headers
     h.set('ratelimit-limit', String(max))

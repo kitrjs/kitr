@@ -140,6 +140,12 @@ kitr make:layout settings            # app/layouts/settings.tsx
 
 The same `projects/` folder in each kind is the feature. A feature never gets its own top-level folder with every kind mixed inside: a reader looking for a hook looks in `app/hooks/`, always.
 
+## How far the table scales
+
+One route table keeps exact types as it grows: params, loader data and output stay typed per route, and `keyof typeof routes.$types` lists every name. Chain as many `.page()`, `.get()` and `.group()` calls as the app needs. `.merge()` joins tables from separate files, which is how `server/routes.ts` reaches `app/routes.ts`.
+
+Measured with `tsc --noEmit --extendedDiagnostics` on a laptop-class machine: 300 pages in one chain check in about 4 s, 300 endpoints in one `group('/api')` in about 1.5 s, and three merged tables of 100 routes in about 2 s. A test (`packages/router/test/type-perf.test.ts`) runs these fixtures and fails on TS2589 or a check time over 10 s. Merging two tables that register the same route name throws a `KitrError` naming the duplicate.
+
 ## Imports
 
 Five aliases reach every top-level folder, in TypeScript, in Vite and in Node (they are [subpath imports](https://nodejs.org/api/packages.html#subpath-imports) in `package.json`):

@@ -1,7 +1,6 @@
 {
   "name": "@kitr/platform",
   "version": "0.1.0",
-  "private": true,
   "description": "@kitr/platform: one API for where the app runs. platform(), isNative(), app state, online status, back button, deep links, safe areas, and the driver registry devtools panel.",
   "kitr": {
     "name": "platform",
@@ -42,6 +41,14 @@
     "./devtools": {
       "types": "./dist/devtools.d.ts",
       "default": "./dist/devtools.js"
+    },
+    "./shell": {
+      "types": "./dist/shell.d.ts",
+      "default": "./dist/shell.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "default": "./dist/cli.js"
     },
     "./kitr": {
       "types": "./dist/kitr.d.ts",

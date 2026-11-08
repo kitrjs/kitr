@@ -20,7 +20,12 @@
   --link: #2457cc;
   --ok: #157a3e;
   --warn: #c42626;
-  --blue: #2d6cf0;
+  /* Brand colours, the three pieces of the mark. Each carries --on-brand (white) at 4.9:1. */
+  --brand-blue: #2368ee;
+  --brand-green: #208046;
+  --brand-red: #d62d2c;
+  --on-brand: #ffffff;
+  --blue: var(--brand-blue);
   --code-bg: #f4f6f9;
   --shadow: 0 1px 2px rgb(15 27 43 / 0.06), 0 8px 24px rgb(15 27 43 / 0.08);
   /* Runs-on badges: soft tints with ink of the same hue, apart from the category fills. */
@@ -381,11 +386,11 @@ kbd {
 .button.primary {
   background: var(--blue);
   border-color: var(--blue);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 .button.primary:hover {
   background: #2457cc;
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 .actions {
@@ -631,9 +636,9 @@ a.built-on-link:hover {
   cursor: pointer;
 }
 .terminal-tab[aria-pressed="true"] {
-  background: #2d6cf0;
-  border-color: #2d6cf0;
-  color: #ffffff;
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--on-brand);
 }
 .terminal-note {
   margin-left: auto;
@@ -818,8 +823,8 @@ a.built-on-link:hover {
   align-items: center;
   padding: 48px;
   border-radius: 28px;
-  background: #2d6cf0;
-  color: #ffffff;
+  background: var(--brand-blue);
+  color: var(--on-brand);
 }
 .cta h2 {
   margin: 0 0 10px;
@@ -829,7 +834,7 @@ a.built-on-link:hover {
 .cta p:not(.command-note) {
   margin: 0;
   font-size: 18px;
-  color: #ffffff;
+  color: var(--on-brand);
 }
 .cta .command {
   background: var(--bg);
@@ -1380,13 +1385,6 @@ a.dcard:focus-visible {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-.guide-preview {
-  margin-left: 8px;
-  vertical-align: 2px;
-}
-.guide-meta .guide-preview {
-  margin-left: 0;
 }
 .guide-more,
 .guide-time {
@@ -1978,7 +1976,7 @@ a.dcard:focus-visible {
 .demo-button.primary {
   background: var(--blue);
   border-color: var(--blue);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 .demo-button:disabled {
   opacity: 0.5;
@@ -2104,6 +2102,33 @@ a.dcard:focus-visible {
 }
 .search-dialog::backdrop {
   background: rgb(11 18 28 / 0.5);
+}
+/* The `esc` hint is also the close button: on a phone there is no Escape key. */
+.search-close {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.search-close:hover,
+.search-close:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+@media (pointer: coarse) {
+  .search-close {
+    font-size: 0;
+  }
+  .search-close::before {
+    content: "Close";
+    font-size: 13px;
+  }
 }
 .search-input {
   display: flex;
@@ -2239,6 +2264,7 @@ a.dcard:focus-visible {
 }
 .idea-tile {
   padding: 32px;
+  color: var(--on-brand);
   border-radius: 18px;
   min-height: 220px;
   display: flex;
@@ -2755,21 +2781,6 @@ a.dcard:focus-visible {
 
 /* ------------------------------------------------------------- platforms */
 
-.soon-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  color: var(--muted);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 
 /* the board: one tile per platform, in the hero and on /platforms */
 .platform-board {
@@ -2830,11 +2841,6 @@ a.dcard:focus-visible {
 }
 .platform-tile:hover .platform-tile-marks {
   opacity: 0.75;
-}
-.platform-tile .soon-badge {
-  border-color: rgb(11 18 28 / 0.25);
-  color: #0b121c;
-  background: rgb(255 255 255 / 0.45);
 }
 .platform-tile-text {
   display: flex;
@@ -2974,13 +2980,6 @@ a.dcard:focus-visible {
 }
 .builder-chip-type {
   color: var(--muted);
-}
-.builder-chip-soon {
-  margin-left: auto;
-  font-size: 10.5px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 @media (max-width: 560px) {
   .builder-choices {
@@ -3175,16 +3174,6 @@ a.dcard:focus-visible {
   border-radius: 999px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 13px;
-  line-height: 24px;
-}
-.soon-note {
-  margin: 0;
-  max-width: 560px;
-  padding: 14px 18px;
-  border: 1px dashed var(--line);
-  border-radius: 12px;
-  background: var(--raised);
-  font-size: 15px;
   line-height: 24px;
 }
 .platform-hero-code .shiki {
@@ -3415,11 +3404,6 @@ a.dcard:focus-visible {
   .platform-tile-marks svg {
     width: 14px;
     height: 14px;
-  }
-  .platform-tile .soon-badge {
-    font-size: 9px;
-    padding: 0 6px;
-    height: 18px;
   }
   .platform-tile-name {
     font-size: 15px;

@@ -1,9 +1,11 @@
 import { isElectron } from '@kitr/desktop/client'
 import { useEffect, useState } from 'react'
+import { app } from '#app/app'
 import { ipc } from '#app/ipc'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { Input } from '#components/ui/input'
 import { PageHeader } from '#components/ui/page-header'
 
 /**
@@ -14,6 +16,11 @@ export default function HomePage() {
   const [version, setVersion] = useState<string>()
   const [file, setFile] = useState<string | null>(null)
   const [focused, setFocused] = useState(true)
+  const secure = app.container.use('secureStorage')
+  const notifications = app.container.use('notifications')
+  const [secret, setSecret] = useState('')
+  const [stored, setStored] = useState<string | null>(null)
+  const [status, setStatus] = useState('')
 
   useEffect(() => {
     if (!ipc.available) return
@@ -59,6 +66,37 @@ export default function HomePage() {
             <p className="text-sm text-muted-foreground">
               {ipc.available ? (focused ? 'Window is focused.' : 'Window is in the background.') : 'Available inside Electron.'}
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Device</CardTitle>
+            <CardDescription>Secrets go to the OS vault, notifications to the OS: `@kitr/secure-storage` and `@kitr/notifications`.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Input aria-label="Secret" data-testid="secret-input" value={secret} onChange={(e) => setSecret(e.target.value)} />
+            <div className="flex gap-2">
+              <Button data-testid="secret-save" onClick={() => void secure.set('demo', secret).then(() => setStatus('saved'), (e: Error) => setStatus(e.message))}>
+                Save secret
+              </Button>
+              <Button variant="outline" data-testid="secret-load" onClick={() => void secure.get('demo').then(setStored)}>
+                Load
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground" data-testid="secret-value">{stored ?? 'Nothing stored yet.'}</p>
+            <Button
+              variant="outline"
+              data-testid="notify"
+              onClick={() =>
+                void notifications.show({ title: 'Desktop', body: 'Hello from the device' }).then(
+                  () => setStatus('notification sent'),
+                  (e: Error) => setStatus(e.message),
+                )
+              }
+            >
+              Notify
+            </Button>
+            <p className="text-sm text-muted-foreground" data-testid="device-status">{status}</p>
           </CardContent>
         </Card>
       </div>

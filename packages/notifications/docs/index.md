@@ -54,9 +54,10 @@ export default defineConfig({
 | --- | --- | --- |
 | `icon` | none | Icon for browser notifications that don't set their own. A path under `public/` or a full URL. |
 | `requestOnBoot` | `false` | Ask for permission as the app starts in the browser. Browsers block or bury asks that don't follow a click, so leave it off for websites. |
-| `driver` | registered, else the web driver | A `NotificationsDriver` that replaces the one the service would pick. For tests and custom shells. |
+| `driver` | registered, else the driver for the runtime | A `NotificationsDriver` that replaces the one the service would pick. For tests and custom shells. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no notifications driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `notifications`, then the web driver in a browser, or a memory driver whose permission is `'unsupported'` on the server.
+The service picks its driver in this order: `driver` from the config, a driver a provider registered under `notifications`, then `selectDriver(runtime)`: the web driver in a browser, a memory driver whose permission is `'unsupported'` on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
 Point `icon` at a file that exists. The [Web](/packages/web) platform's PWA manifest uses `/icons/icon-192.png` by default, not the `/icon-192.png` that `kitr add` writes, so with `pwa` on you usually want `icon: '/icons/icon-192.png'`. A missing icon shows the notification with the browser's default image.
 
@@ -365,16 +366,96 @@ To build a service with no app, call `createNotifications(config)`. In a browser
 | --- | --- | --- |
 | Browser | `createWebNotificationsDriver()`, the Notification API | Fire only while the page is open. |
 | Chrome for Android | The same driver, through the service worker | The same. |
-| Desktop and mobile shells | The web driver inside the webview, unless a provider registers one | The same, until a native driver is registered. |
+| Mobile shell (Capacitor) | `createCapacitorNotificationsDriver()`, the OS notification centre | Fire with the app closed. |
 | Server | Memory driver, permission `'unsupported'` | Nothing is shown. |
+| Electron | `createElectronDriver()`: Electron `Notification` in the main process | Kept in the main process; lost when the app quits. |
+| Tauri | `createTauriDriver()`: `@tauri-apps/plugin-notification` | A timer in the window; lost when the app quits. |
 
-[Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell the service uses `@capacitor/local-notifications`, an optional peer dependency imported the first time a method runs. `kitr add notifications` installs it, and `@capacitor/push-notifications`, when the project has the mobile platform.
+
+| Service call | What the driver does |
+| --- | --- |
+| `permission()`, `request()` | `checkPermissions()` and `requestPermissions()`. Capacitor's `prompt-with-rationale` (Android, after one refusal) maps to `'prompt'`; `granted` and `denied` map to themselves. |
+| `show()` | Schedules with no time, so the OS shows it at once. `silent` hides it while the app is in the foreground (iOS). |
+| `schedule()` | The OS keeps the alarm, so it fires with the app closed or killed. |
+| `cancel(id)`, `cancelAll()` | Cancel the pending alarm and remove the delivered notification. |
+| `pending()` | The ids of the alarms the OS still holds, as the ids you used. |
+| `onTap()` | Fires for a tap on a local notification and on a push notification, with `id`, `url` and `data`. |
+| `channel` | On Android, creates a notification channel of that name (default importance) the first time it is used. iOS has no channels and ignores it. |
+
+Capacitor ids are 32-bit integers, so kitr hashes your string id to one and keeps the string in the notification's `extra`. Two different ids that hash to the same integer would replace each other; with a few hundred pending notifications the odds are negligible.
+
+Android 13 and later needs the `POST_NOTIFICATIONS` permission, which `request()` asks for. Exact-time alarms on Android 12 and later need the "Alarms & reminders" setting; without it the OS may delay a scheduled notification by several minutes.
+
+Push notifications are separate from the service, because they need a server to send them. `capacitorPush()` wraps `@capacitor/push-notifications`:
+
+```tsx
+// app/push.ts
+import { capacitorPush } from '@kitr/notifications'
+
+const push = capacitorPush()
+
+/** Ask once, register with FCM or APNs, and send the device token to Acme's server. */
+export async function enablePush(): Promise<string | null> {
+  if ((await push.request()) !== 'granted') return null
+  const token = await push.register()
+  await fetch('https://api.acme.com/devices', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token }),
+  })
+  return token
+}
+
+push.onReceived((message) => console.log('push while open:', message.title))
+push.onAction((tap) => console.log('opened from push:', tap.url, tap.actionId))
+// => push while open: Invoice paid
+```
+
+Taps from push notifications also reach `useNotificationTap()`, so one handler routes both. Push needs `google-services.json` in `android/app` (Firebase) and the Push Notifications capability in Xcode; without them `register()` rejects with the plugin's registration error.
+
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have drivers, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers only `platform` and `storage` drivers: to hand notifications to the operating system there, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+
+## Use it in Electron and Tauri
+
+In a desktop shell the service shows operating-system notifications instead of the browser's, and `config/notifications.ts` does not change. Permission is not a question on desktop: `permission()` and `request()` answer `granted` (or `unsupported` where the system has no notification service), so `useNotificationPermission()` never shows a prompt.
+
+### Electron
+
+The driver asks the main process to create an Electron [`Notification`](https://www.electronjs.org/docs/latest/api/notification) over the `kitr:notify:*` channels that `handleKitrIpc(ipcMain, app)` serves. Clicking one restores and focuses the window and calls your `onTap` listeners with the `url` and `data` it was shown with, so the tap handler under [Open the right page when tapped](#open-the-right-page-when-tapped) works unchanged. Scheduled notifications wait in a timer in the main process: they survive a window reload, not quitting the app. The driver also sets the app badge (the dock on macOS, the launcher on Linux), which the service API has no call for, so import the driver:
+
+```ts
+// app/orders/badge.ts
+import { createElectronNotificationsDriver } from '@kitr/notifications'
+
+/** Show how many orders wait for Ada's team on the dock icon. */
+export async function showPendingOrders(count: number) {
+  await createElectronNotificationsDriver().setBadge(count) // 0 clears it
+}
+```
+
+Requirements:
+
+- `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
+- On Windows, notifications show from a build installed with electron-builder's installer, which sets the AppUserModelID from `appId`; in development call `app.setAppUserModelId(process.execPath)` in `main.ts`. On Linux, they need a running notification service.
+
+### Tauri
+
+The driver uses [`@tauri-apps/plugin-notification`](https://v2.tauri.app/plugin/notification/): `isPermissionGranted()` and `requestPermission()` for the permission (macOS and Windows may ask once), `sendNotification()` to show. The plugin has no scheduling on desktop, so `schedule()` waits in a timer in the window and shows the notification then; it is lost when the app quits. The plugin reports a tap only on mobile, so `onTap` listeners fire there and stay silent on desktop. `cancel(id)` stops a timer, and asks the system to withdraw the notification where the plugin can.
+
+Requirements:
+
+- `@tauri-apps/plugin-notification` in `package.json`; `kitr add tauri` and `kitr add notifications` in a Tauri project install it. The driver imports it on first use; when it is missing, every method rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- `tauri-plugin-notification` in `src-tauri/Cargo.toml`, `.plugin(tauri_plugin_notification::init())` in `lib.rs` and `notification:default` in `capabilities/default.json`. The Tauri scaffold writes all three.
 
 ## Errors
 
 | Error | When | What to do |
 | --- | --- | --- |
 | ``[@kitr/notifications] schedule() needs a valid `at` `` | `at` is an invalid `Date` or `NaN`. | Pass a `Date` or a timestamp in milliseconds. |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no notifications driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts` to run the web driver inside the webview. |
 | `TypeError: Illegal constructor` (browser) | Chrome for Android, with no service worker controlling the page. | Turn on `pwa` in the web platform. |
 
 A `show()` without permission is not an error: it resolves and shows nothing. A denied permission is a state, not an exception.

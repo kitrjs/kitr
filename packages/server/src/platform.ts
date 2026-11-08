@@ -15,7 +15,7 @@ export interface ServerPlatformOptions {
   entry: string
 }
 
-const RUNTIMES: ServerRuntime[] = ['node', 'bun', 'deno', 'workers']
+const RUNTIMES: ServerRuntime[] = ['node', 'bun', 'deno', 'workers'] // kitr-allow-module-state: constant list, never mutated
 
 /**
  * The server platform: the kitr app on h3 as its own process. List it in kitrrc.ts:
@@ -99,13 +99,14 @@ export type ServerRoutes = typeof routes.$types
       const routesSpec = react ? '#server/routes' : relativeImport(options.entry, table)
       ctx.write(
         options.entry,
-        `import { createServer } from '@kitr/server'
+        `import { loadRc } from 'kitr/app'
+import { createServer } from '@kitr/server'
 import { routes } from '${routesSpec}'
 import { config } from '../config'
 import rc from '../kitrrc'
 
 /** The kitr server: providers from kitrrc.ts, config from config/, routes from ${table}. What \`kitr dev ${ctx.name}\` runs${react ? ", what app/server.ts hands the app's own requests to" : ''}, what tests call with \`server.fetch(new Request(...))\`. */
-export const server = createServer({ providers: rc.providers, config, routes })
+export const server = createServer({ ...loadRc(rc, config), routes })
 
 /** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
 export default server
@@ -127,11 +128,14 @@ if (isMain) {
           `import handler, { createServerEntry } from '@tanstack/react-start/server-entry'
 import { server } from '#server/main'
 
-/** Requests for paths the kitr server has routes for (endpoints, sockets, /healthz) go to it; pages go to Start. */
+/** Every request goes through the kitr server's middleware (request context, shield's headers and CSP nonce); paths it has routes for (endpoints, sockets, /healthz) are answered there, pages are rendered by Start inside it. */
 export default createServerEntry({
   fetch(request, options) {
-    if (server.handles(request)) return server.fetch(request)
-    return handler.fetch(request, options)
+    return server.fetch(request, {
+      pages: (request) => {
+        return handler.fetch(request, options)
+      },
+    })
   },
 })
 `,

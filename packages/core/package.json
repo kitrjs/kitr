@@ -24,6 +24,10 @@
       "types": "./dist/package.d.ts",
       "default": "./dist/package.js"
     },
+    "./request": {
+      "types": "./dist/request.d.ts",
+      "default": "./dist/request.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

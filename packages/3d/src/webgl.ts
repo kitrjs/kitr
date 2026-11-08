@@ -1,4 +1,4 @@
-let cached: boolean | undefined
+let cached: boolean | undefined // kitr-allow-module-state: cache of the browser WebGL capability probe, the same for every app on the page
 
 /**
  * Can this browser draw WebGL? False on the server, in old or locked-down browsers, on machines

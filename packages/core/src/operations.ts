@@ -56,11 +56,15 @@ export type OperationOutput<Op> = Op extends { contract: QueryContract<any, infe
     : unknown
 
 /**
- * One registry per process. Definitions hold no state, so every app, request fork and test
- * shares it; `reset()` clears it between tests that register fakes.
+ * The operations of one app. `createApp({ operations })` fills the app's registry, a fork gets a
+ * child registry that reads through to its parent (so a request or a test can register a fake
+ * without touching anyone else's), and nothing is process-wide: two apps in one process, or two
+ * tests in one worker, never see each other's operations.
  */
 export class OperationRegistry {
   private entries = new Map<string, OperationLike>()
+
+  constructor(private readonly parent?: OperationRegistry) {}
 
   /** Add operations by name. A name registered twice is replaced, which is how tests swap in fakes. */
   register(operations: Record<string, OperationLike>): this {
@@ -74,35 +78,39 @@ export class OperationRegistry {
 
   /** The operation under `name`. Throws with the registered names when it is missing. */
   get<N extends string>(name: N): OperationOf<N> {
-    const op = this.entries.get(name)
-    if (!op)
+    const op = this.find(name)
+    if (!op) {
+      const names = this.names()
       throw new Error(
         `[kitr] No operation named "${name}". ${
-          this.entries.size
-            ? `Registered: ${[...this.entries.keys()].join(', ')}.`
+          names.length
+            ? `Registered: ${names.join(', ')}.`
             : 'Nothing is registered: pass the generated map to createApp({ operations }).'
         }`,
       )
+    }
     return op as OperationOf<N>
   }
 
   has(name: string): boolean {
-    return this.entries.has(name)
+    return this.find(name) !== undefined
   }
 
   names(): string[] {
-    return [...this.entries.keys()]
+    return [...new Set([...(this.parent?.names() ?? []), ...this.entries.keys()])]
   }
 
   /** Every registered operation, for devtools and doctor. */
   all(): OperationLike[] {
-    return [...this.entries.values()]
+    return this.names().map((name) => this.find(name)!)
   }
 
-  reset(): void {
-    this.entries.clear()
+  /** A registry for a request or test fork: sees everything registered here, registers on its own. */
+  child(): OperationRegistry {
+    return new OperationRegistry(this)
+  }
+
+  private find(name: string): OperationLike | undefined {
+    return this.entries.get(name) ?? this.parent?.find(name)
   }
 }
-
-/** The process-wide registry. `createApp({ operations })` fills it; `app.operations` is this object. */
-export const operations = new OperationRegistry()

@@ -67,7 +67,7 @@ describe('createKitrRouter', () => {
     expect(router.options.defaultPreload).toBe('intent')
   })
 
-  it('applies ssr from config/seo.ts to routes that set none', () => {
+  it('applies ssr from config/seo.ts as the router default, without touching the routes', () => {
     const root = createRootRouteWithContext<KitrRouterContext>()({ component: () => <Outlet /> })
     const plain = createRoute({ getParentRoute: () => root, path: '/', component: () => null })
     const own = createRoute({
@@ -76,13 +76,20 @@ describe('createKitrRouter', () => {
       ssr: true,
       component: () => null,
     })
+    const tree = root.addChildren([plain, own])
     const app = createApp({ config: { seo: { ssr: 'data-only' } } })
-    createKitrRouter({ routeTree: root.addChildren([plain, own]), app })
-    expect(plain.options.ssr).toBe('data-only')
+    const router = createKitrRouter({ routeTree: tree, app })
+    expect((router.options as { defaultSsr?: unknown }).defaultSsr).toBe('data-only')
+    // Start overwrites `defaultSsr` on every request; the config still applies when it sets none.
+    router.update({ defaultSsr: undefined } as never)
+    expect((router.options as { defaultSsr?: unknown }).defaultSsr).toBe('data-only')
+    router.update({ defaultSsr: false } as never)
+    expect((router.options as { defaultSsr?: unknown }).defaultSsr).toBe(false)
+    // Route objects are shared between requests and are never written to.
+    expect(plain.options.ssr).toBeUndefined()
     expect(own.options.ssr).toBe(true)
-    const untouched = createRoute({ getParentRoute: () => root, path: '/x', component: () => null })
-    createKitrRouter({ routeTree: root.addChildren([untouched]), app: createApp() })
-    expect(untouched.options.ssr).toBeUndefined()
+    const other = createKitrRouter({ routeTree: tree, app: createApp() })
+    expect((other.options as { defaultSsr?: unknown }).defaultSsr).toBeUndefined()
   })
 
   it('renders the default not-found page', async () => {

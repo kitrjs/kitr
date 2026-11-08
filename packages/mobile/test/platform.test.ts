@@ -52,6 +52,47 @@ describe('mobile()', () => {
     })
   })
 
+  describe('shell package.json', () => {
+    it('lists the app dependencies, so cap finds every Capacitor plugin the app installed', () => {
+      const phone = mobile()
+      const f = fakePlatformContext(phone, {
+        name: 'phone',
+        files: {
+          'package.json': JSON.stringify({
+            name: 'app',
+            dependencies: { '@capacitor/haptics': '^8.0.2', react: '^19.0.0' },
+            devDependencies: { vitest: '^5.0.0' },
+          }),
+        },
+      })
+      phone.scaffold!(f.ctx)
+      const shell = JSON.parse(f.files.get('platforms/phone/package.json')!)
+      expect(shell).toMatchObject({
+        name: 'phone-shell',
+        private: true,
+        dependencies: { '@capacitor/haptics': '^8.0.2', react: '^19.0.0' },
+      })
+      expect(shell.devDependencies).toBeUndefined()
+    })
+
+    it('is refreshed before cap runs, so plugins added later are synced', async () => {
+      const phone = mobile()
+      const f = fakePlatformContext(phone, {
+        name: 'phone',
+        files: {
+          'package.json': JSON.stringify({ dependencies: { '@capacitor/share': '^8.0.3' } }),
+          'platforms/phone/package.json': '{}',
+          'platforms/phone/ios/x': '',
+          'platforms/phone/android/x': '',
+        },
+      })
+      await phone.build!(f.ctx)
+      expect(JSON.parse(f.files.get('platforms/phone/package.json')!).dependencies).toEqual({
+        '@capacitor/share': '^8.0.3',
+      })
+    })
+  })
+
   describe('build', () => {
     it('builds the bundle, creates missing native projects and syncs', async () => {
       const phone = mobile()

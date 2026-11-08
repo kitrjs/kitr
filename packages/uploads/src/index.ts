@@ -1,4 +1,5 @@
-import { createDefineConfig } from '@kitr/core'
+import { createDefineConfig, type KitrApp } from '@kitr/core'
+import type { H3Event } from 'h3'
 
 /** What the server returns for every stored file, and what the client resolves with. */
 export interface UploadedFile {
@@ -32,6 +33,49 @@ export interface UploadsConfig extends UploadRules {
   driver?: unknown
   /** Public URL prefix the driver answers under, e.g. `/uploads`. */
   publicPath?: string
+  /**
+   * Declared types served as themselves when the file's bytes carry no signature to check (text
+   * formats have none), always as a download except `text/plain`. Patterns such as `text/*` work.
+   * Files with a recognised signature (images, PDF, audio, video, archives) are served with the
+   * type their bytes show, whatever was declared; anything else is `application/octet-stream`.
+   * Default `['text/plain', 'text/csv', 'application/json']`.
+   */
+  allowTypes?: string[]
+  /**
+   * Secret for signed links (`uploads.signedUrl(key, { expiresIn })`), at least 16 characters.
+   * Set it from the environment, the same on every instance.
+   */
+  secret?: string
+  /**
+   * Decides who may fetch a file without a signed link. Return false (or throw) to answer 403.
+   * Runs for every unsigned `GET`; a valid signed link skips it. Without it, and without
+   * `requireSigned`, files are public to anyone who knows the key.
+   */
+  authorize?: (access: UploadAccess, file: ServedFile) => boolean | Promise<boolean>
+  /** Serve files only through signed links: a request without a valid signature is refused. Needs `secret`. Default false. */
+  requireSigned?: boolean
+}
+
+/** Who is asking, as `authorize` sees it. */
+export interface UploadAccess {
+  /** The h3 event of the request. */
+  event: H3Event
+  /** The request. */
+  request: Request
+  /** The app for this request (a fork per request on a kitr server): `app.container.use('auth')` for the session. */
+  app: KitrApp
+}
+
+/** The stored file `authorize` is asked about. */
+export interface ServedFile {
+  /** The storage key: `<id>/<name>`. */
+  key: string
+  /** The file name, from the key. */
+  name: string
+  /** The type the file will be served with (sniffed from its bytes, or allow-listed). */
+  type: string
+  /** Size in bytes. */
+  size: number
 }
 
 declare module '@kitr/core' {

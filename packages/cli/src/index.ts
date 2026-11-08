@@ -3,6 +3,7 @@ import pc from 'picocolors'
 import { add, describePackage, remove } from './commands/add'
 import { doctor } from './commands/doctor'
 import { eject } from './commands/eject'
+import { generate, typecheck } from './commands/generate'
 import { coreGeneratorCommands, makeCommand, nearestKind, packageGenerators } from './commands/make'
 import { newCommand } from './commands/new'
 import { packageCheck } from './commands/package-check'
@@ -35,6 +36,12 @@ export {
 export { configurePackages } from './configure'
 export type { ProjectContext, RcInfo } from './context'
 export { createContext, findProjectRoot, readRcInfo } from './context'
+export {
+  type GenerateRunResult,
+  type GenerateStep,
+  loadGenerateSteps,
+  runGenerate,
+} from './generate'
 export { blankKit, type Kit, kitNames, loadKit } from './kits'
 export type { KitrManifest } from './manifest'
 export { manifests } from './manifests.gen'
@@ -116,6 +123,8 @@ export const main = defineCommand({
     platforms,
     config,
     types,
+    generate,
+    typecheck,
     doctor,
     'package:check': packageCheck,
     eject,

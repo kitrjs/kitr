@@ -16,12 +16,78 @@ afterEach(() => {
 })
 
 describe('tauri()', () => {
+  // Regression: the provider imports the opener and process plugins, but nothing installed them.
   it('installs every plugin the provider imports', () => {
     const names = tauri().dependencies!.map((d) => d.name)
     for (const dep of ['@tauri-apps/plugin-opener', '@tauri-apps/plugin-process'])
       expect(names).toContain(dep)
   })
 
+  it('installs the plugins the device packages load, but leaves them out of doctor', async () => {
+    const names = tauri().dependencies!.map((d) => d.name)
+    for (const dep of [
+      '@tauri-apps/plugin-stronghold',
+      '@tauri-apps/plugin-notification',
+      '@tauri-apps/plugin-dialog',
+      '@tauri-apps/plugin-fs',
+      '@tauri-apps/plugin-updater',
+      '@tauri-apps/plugin-os',
+      '@tauri-apps/plugin-clipboard-manager',
+    ])
+      expect(names).toContain(dep)
+    const needed = [
+      '@tauri-apps/api',
+      '@tauri-apps/plugin-store',
+      '@tauri-apps/plugin-opener',
+      '@tauri-apps/plugin-process',
+      '@tauri-apps/cli',
+    ]
+    const f = fakePlatformContext(tauri(), {
+      files: {
+        'package.json': JSON.stringify({
+          dependencies: Object.fromEntries(needed.map((n) => [n, '2'])),
+        }),
+      },
+    })
+    const findings = (await tauri().doctor!(f.ctx)) as Array<{ message: string }>
+    expect(findings.map((x) => x.message).join('\n')).not.toContain('plugin-stronghold')
+  })
+
+  it('scaffolds a src-tauri that registers and permits every plugin the drivers use', () => {
+    const app = tauri()
+    const f = fakePlatformContext(app, { files: { 'package.json': '{"name":"notes"}' } })
+    app.scaffold!(f.ctx)
+    const cargo = f.files.get('platforms/app/src-tauri/Cargo.toml')!
+    const lib = f.files.get('platforms/app/src-tauri/src/lib.rs')!
+    const caps = JSON.parse(f.files.get('platforms/app/src-tauri/capabilities/default.json')!)
+    for (const plugin of [
+      'notification',
+      'dialog',
+      'fs',
+      'os',
+      'clipboard-manager',
+      'stronghold',
+      'updater',
+    ]) {
+      expect(cargo, plugin).toContain(`tauri-plugin-${plugin} = "2"`)
+      expect(lib, plugin).toContain(`tauri_plugin_${plugin.replace('-', '_')}::`)
+      expect(JSON.stringify(caps.permissions), plugin).toContain(`${plugin}:`)
+    }
+    // The updater is desktop-only and only registered once tauri.conf.json configures it.
+    expect(cargo).toMatch(
+      /\[target\.'cfg\(not\(any\(target_os = "android", target_os = "ios"\)\)\)'\.dependencies\]\ntauri-plugin-updater/,
+    )
+    expect(lib).toContain('contains_key("updater")')
+    // The vault password comes from the OS keyring through a command, not from the bundle.
+    expect(cargo).toContain('keyring = ')
+    expect(lib).toContain('fn kitr_vault_key')
+    expect(lib).toContain('generate_handler![greet, kitr_vault_key]')
+    // fs is limited to read/write/stat/list on dialog-picked paths, not fs:default's broad scope.
+    expect(caps.permissions).toContain('fs:allow-read-file')
+    expect(caps.permissions).not.toContain('fs:default')
+  })
+
+  // Regression: tauri.conf.json shipped `csp: null`, and the process plugin was not registered.
   it('scaffolds a content security policy and registers the process plugin', () => {
     const app = tauri()
     const f = fakePlatformContext(app, { files: { 'package.json': '{"name":"notes"}' } })
@@ -37,7 +103,7 @@ describe('tauri()', () => {
     expect(caps.permissions).toContain('process:default')
   })
 
-  // `--port` and KITR_<NAME>_PORT move Vite, so the window must load that port, not the scaffold-time devUrl.
+  // Regression: `--port` and KITR_<NAME>_PORT moved Vite but the window still loaded the scaffold-time devUrl.
   it('dev points the window at the port it started Vite on, and passes devtools', async () => {
     const app = tauri({ devtools: false })
     const f = fakePlatformContext(app, { files: icons, flags: { port: 3333 }, signal: aborted() })
@@ -50,7 +116,7 @@ describe('tauri()', () => {
     expect(shell!.env).toMatchObject({ KITR_DEVTOOLS: '0' })
   })
 
-  // Every Rust build needs the icons tauri.conf.json lists.
+  // Regression: the scaffold wrote no icons, so the first Rust build failed.
   it('generates icons from app-icon.png when tauri.conf.json lists missing ones', async () => {
     const app = tauri()
     const f = fakePlatformContext(app, { files: { 'platforms/app/app-icon.png': 'png' } })
@@ -74,6 +140,7 @@ describe('tauri()', () => {
     expect(raw[32 * (64 * 4 + 1) + 1 + 32 * 4 + 3]).toBe(255)
   })
 
+  // Regression: doctor never checked for Rust, which every Tauri build needs.
   it('doctor reports a missing Rust toolchain', async () => {
     vi.stubEnv('PATH', '/nonexistent')
     const app = tauri()

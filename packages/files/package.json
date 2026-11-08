@@ -1,7 +1,6 @@
 {
   "name": "@kitr/files",
   "version": "0.1.0",
-  "private": true,
   "description": "@kitr/files: open, save and pick files through one API with native dialogs on desktop and mobile and a download fallback on the web.",
   "keywords": [
     "kitr",
@@ -30,6 +29,26 @@
       "types": "./dist/provider.d.ts",
       "default": "./dist/provider.js"
     },
+    "./driver": {
+      "types": "./dist/driver.d.ts",
+      "default": "./dist/driver.js"
+    },
+    "./drivers/web": {
+      "types": "./dist/drivers/web.d.ts",
+      "default": "./dist/drivers/web.js"
+    },
+    "./drivers/electron": {
+      "types": "./dist/drivers/electron.d.ts",
+      "default": "./dist/drivers/electron.js"
+    },
+    "./drivers/tauri": {
+      "types": "./dist/drivers/tauri.d.ts",
+      "default": "./dist/drivers/tauri.js"
+    },
+    "./drivers/capacitor": {
+      "types": "./dist/drivers/capacitor.d.ts",
+      "default": "./dist/drivers/capacitor.js"
+    },
     "./kitr": {
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"
@@ -46,13 +65,30 @@
   },
   "dependencies": {
     "@kitr/core": "workspace:*",
+    "@kitr/platform": "workspace:*",
     "@kitr/react": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "@capacitor/core": ">=7.0.0",
+    "@capacitor/filesystem": ">=7.0.0",
+    "@capacitor/share": ">=7.0.0",
+    "@capawesome/capacitor-file-picker": ">=7.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "@capacitor/core": {
+      "optional": true
+    },
+    "@capacitor/filesystem": {
+      "optional": true
+    },
+    "@capacitor/share": {
+      "optional": true
+    },
+    "@capawesome/capacitor-file-picker": {
       "optional": true
     }
   },
@@ -62,7 +98,11 @@
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "react-dom": "^19.3.1",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
+    "@capawesome/capacitor-file-picker": "^8.1.1"
   },
   "kitr": {
     "name": "files",

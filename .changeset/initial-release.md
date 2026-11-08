@@ -46,6 +46,7 @@
 "@kitr/storage": minor
 "@kitr/table": minor
 "@kitr/tailwind": minor
+"@kitr/tauri": minor
 "@kitr/testing": minor
 "@kitr/theme": minor
 "@kitr/updater": minor

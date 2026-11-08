@@ -21,7 +21,7 @@ This is the closest relative. kitr's `web()` platform uses TanStack Start for se
 
 ## Expo
 
-Both aim at one codebase for several platforms. Expo builds React Native apps that render native views, with a mature toolchain and a large library of native modules. kitr's mobile and desktop platforms (Capacitor, Electron and Tauri) wrap your web app in a native shell that shows it in a web view. They are previews. Pick Expo when you need native views, platform-specific interaction and a proven build service. Pick kitr when your app is a web app that you also want in a shell, and a web view is acceptable.
+Both aim at one codebase for several platforms. Expo builds React Native apps that render native views, with a mature toolchain and a large library of native modules. kitr's mobile and desktop platforms (Capacitor, Electron and Tauri) wrap your web app in a native shell that shows it in a web view. Pick Expo when you need native views, platform-specific interaction and a proven build service. Pick kitr when your app is a web app that you also want in a shell, and a web view is acceptable.
 
 ## AdonisJS
 
@@ -38,7 +38,7 @@ Laravel is the reference point for a framework with an opinion on everything: qu
 | Routing | A route table in `app/routes.ts`, over TanStack Router | Files in folders | Route modules, config or files | TanStack Router, files by default | File-based, in the Expo router | Route file in code | Route file in code |
 | Data loading | Query contracts and loaders, cache effects | Server components and fetch | Loaders and actions | Loaders and server functions | Your choice of library | Controllers | Controllers |
 | Server | `server()` on h3, or Start | Built in | Built in | Built in | Not the focus | Core of the framework | Core of the framework |
-| Native apps | Previews: web view shells | No | No | No | Yes, React Native | No | No |
+| Native apps | Yes, web view shells | No | No | No | Yes, React Native | No | No |
 | How opinions are enforced | `kitr add`, generators, `kitr doctor`, `AGENTS.md` | Conventions and lint rules | Conventions | Few | Templates and config plugins | Generators and conventions | Conventions and tooling |
 | Leaving | Rewrite imports to the upstream libraries (`kitr eject all` prints it) | Rewrite to another framework | Rewrite loaders and routes | Small | Rewrite native parts | Rewrite to another backend | Rewrite to another backend |
 
@@ -47,7 +47,7 @@ Cells for other frameworks are general. Check their own documentation for curren
 ## What kitr does not have
 
 - No auth server. The `auth` package works with the one you run.
-- Native shells are previews, and they are web views, not React Native.
+- Native shells are web views, not React Native.
 - The stack is new, so there are fewer answers online and fewer people who know it.
 
 ## Next steps

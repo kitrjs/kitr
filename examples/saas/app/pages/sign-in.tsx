@@ -1,7 +1,7 @@
 import { useAnalytics } from '@kitr/analytics/react'
 import { useAuth } from '@kitr/auth'
 import { useSchemaForm } from '@kitr/forms'
-import { getRouteApi, useNavigate } from '@kitr/router'
+import { getRouteApi, Link, useNavigate } from '@kitr/router'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
 import type { AppEvents } from '#app/analytics'
@@ -27,7 +27,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Sign in to Saas</CardTitle>
-          <CardDescription>Any email works in this demo. The password is "password".</CardDescription>
+          <CardDescription>Demo accounts: admin@example.com or member@example.com, password "password".</CardDescription>
         </CardHeader>
         <CardContent>
           <Form
@@ -47,6 +47,9 @@ export default function SignInPage() {
               <FieldInput type="password" autoComplete="current-password" />
             </FormField>
             <SubmitButton pendingText="Signing in…">Sign in</SubmitButton>
+            <Link to="/forgot-password" className="text-center text-sm text-muted-foreground underline">
+              Forgot your password?
+            </Link>
           </Form>
         </CardContent>
       </Card>
