@@ -33,6 +33,7 @@ export const base = (ctx: ProjectContext, name: string) => {
         imports: {
           '#app/*': './app/*',
           '#config/*': './config/*',
+          '#components/*': './app/components/*',
           '#server/*': './server/*',
           '#kitr/*': './.kitr/*',
         },
@@ -85,7 +86,7 @@ export const base = (ctx: ProjectContext, name: string) => {
   ctx.write('.env.example', '# Copy to .env. Each package adds the variables it reads below.\n')
   ctx.write(
     'AGENTS.md',
-    `# Agent guide\n\nThis app is built with kitr. Each section below is maintained by \`kitr add\`.\n\n## kitr: conventions\n\n- Import framework code from the \`@kitr/*\` package that \`kitr add\` installed (\`@kitr/router\`, \`@kitr/query\`, ...). Each re-exports the upstream library unchanged plus kitr helpers. \`kitr\` itself is the CLI and the \`kitrrc.ts\` config (\`kitr/app\`, \`kitr/env\`).\n- Where the app runs is a platform in \`kitrrc.ts\` (\`platforms: { site: web({...}), api: server({...}) }\`). \`kitr dev <name>\` / \`kitr build <name>\` / \`kitr start <name>\` run one or all; \`kitr config <name> <option> <value>\` edits options; native projects live in \`platforms/<name>/\`.\n- Wiring lives in \`kitrrc.ts\` and \`config/*.ts\`; server code in \`server/\`. Every package brings its own generators (\`kitr make:<kind>\`, see \`kitr --help\`). Generated types live in \`.kitr/\` (\`kitr types\`, also run by \`kitr dev\` and \`kitr build\`); import them from \`#kitr/*\`. Run \`kitr doctor\` after changes.\n`,
+    `# Agent guide\n\nThis app is built with kitr. Each section below is maintained by \`kitr add\`.\n\n## kitr: conventions\n\n- Import framework code from the \`@kitr/*\` package that \`kitr add\` installed (\`@kitr/router\`, \`@kitr/query\`, ...). Each re-exports the upstream library unchanged plus kitr helpers. \`kitr\` itself is the CLI and the \`kitrrc.ts\` config (\`kitr/app\`, \`kitr/env\`).\n- Where the app runs is a platform in \`kitrrc.ts\` (\`platforms: { site: web({...}), api: server({...}) }\`). \`kitr dev <name>\` / \`kitr build <name>\` / \`kitr start <name>\` run one or all; \`kitr config <name> <option> <value>\` edits options; native projects live in \`platforms/<name>/\`.\n- Wiring lives in \`kitrrc.ts\` and \`config/*.ts\`. Generated types live in \`.kitr/\` (\`kitr types\`, also run by \`kitr dev\` and \`kitr build\`); import them from \`#kitr/*\`. Run \`kitr doctor\` after changes.\n\n## kitr: structure\n\n- Every kind of file has one home. \`kitr make\` lists them with the path each \`kitr make:<kind> <name>\` writes; create files with those commands instead of by hand.\n- \`app/\` is what Vite bundles: pages, layouts, components, hooks, stores, queries, actions, validators, exceptions, providers, channels. \`server/\` is the standalone server and never imports React: controllers, services, middleware, jobs, mail. A declaration both sides read lives in \`app/\`.\n- File names are kebab-case. The file carries a kind suffix exactly when its export does (\`UsersController\` in \`users-controller.ts\`, \`BillingService\` in \`billing-service.ts\`); \`define*()\` files have none (\`server/jobs/send-receipt.ts\`). Pages are named by their URL path.\n- Group by feature inside the kind folder: \`kitr make:controller admin/users\` writes \`server/controllers/admin/users-controller.ts\`.\n- Import across folders with \`#app/*\`, \`#components/*\`, \`#server/*\`, \`#config/*\`, \`#kitr/*\`; relative imports only inside one folder.\n`,
   )
 }
 
@@ -111,8 +112,11 @@ export const writeReadme = (ctx: ProjectContext, name: string, kit: string) => {
     ['config/', 'one file per package'],
     ['app/routes.ts', 'the page list'],
     ['app/pages/', 'page components'],
-    ['app/features/', 'feature code'],
-    ['server/', 'server code'],
+    ['app/layouts/', 'components that wrap groups of pages'],
+    ['app/components/', 'reusable components'],
+    ['app/queries/', 'data the app reads and writes'],
+    ['app/validators/', 'zod schemas shared with the server'],
+    ['server/', 'server code: controllers, services, middleware'],
     ['AGENTS.md', 'conventions for coding assistants'],
   ]
     .filter(([p]) => ['kitrrc.ts', 'AGENTS.md'].includes(p as string) || ctx.exists(p as string))
@@ -139,11 +143,13 @@ ${places.join('\n')}
 
 - \`kitr add <package>\`: add sign-in, forms, an API and more
 - \`kitr make:page <path>\`: add a page
+- \`kitr make\`: every kind of file you can generate, and where each one goes
 - \`kitr ui add <component>\`: add a UI component
 
 Run \`kitr --help\` for every command.
 
 Docs: https://kitr.dev/docs/getting-started
+Project structure: https://kitr.dev/docs/project-structure
 Packages: https://kitr.dev/packages
 `,
   )

@@ -573,7 +573,7 @@ The route only says the process is serving. For a deeper check, such as the data
 The server runs the provider lifecycle from `kitrrc.ts`. `register` and `boot` run before the first request, `ready` once the server serves, and `shutdown` when it stops. Put the work in a provider, not in `server/main.ts`:
 
 ```ts
-// app/providers/orders_db_provider.ts
+// app/providers/orders-db-provider.ts
 import { defineProvider } from 'kitr/app'
 import { createPool } from '#server/db/pool'
 
@@ -594,10 +594,10 @@ export default defineProvider({
 ```ts
 // kitrrc.ts
 // ...
-  providers: [() => import('@kitr/logger'), () => import('#app/providers/orders_db_provider')],
+  providers: [() => import('@kitr/logger'), () => import('#app/providers/orders-db-provider')],
 ```
 
-`kitr make:provider orders_db` writes the provider skeleton. Each step happens once:
+`kitr make:provider orders-db` writes the provider skeleton and lists it in `kitrrc.ts`. Each step happens once:
 
 | Call | Runs |
 | --- | --- |

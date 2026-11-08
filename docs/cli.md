@@ -52,29 +52,35 @@ Inside an app directory every command is the app's own, as if there were no work
 
 ## Generators
 
-`kitr make:<kind> <name>` writes one file from a stub. `--force` overwrites. Stubs can be customised per project: `kitr eject stub <kind>` copies it to `stubs/<kind>.ts`, and `make:*` prefers the ejected version.
+Every kind of file has one home; [Project structure](/docs/project-structure) explains them. `kitr make` lists the generators your project has, with the path each one writes (`--json` for scripts and agents). `kitr make:<kind> <name>` writes one file from a stub and registers it where the kind is registered. A nested name puts the file in a feature folder inside the kind's home: `make:controller admin/users` writes `server/controllers/admin/users-controller.ts`. File names are kebab-case whatever you type.
+
+`--dry-run` prints what would be written and changed, `--force` overwrites an existing file, and a mistyped kind (`make:controler`) names the one you meant. Stubs can be customised per project: `kitr eject stub <kind>` copies it to `stubs/<kind>.ts`, and `make:*` prefers the ejected version.
 
 | Command | Writes |
 | --- | --- |
+| `make` | Nothing: lists every generator, its owner, the path it writes and what the kind is |
 | `make:page projects` | `app/pages/projects.tsx`, and `.page('/projects', { lazy })` appended to `app/routes.ts` |
 | `make:page projects/:id` | `app/pages/projects/id.tsx`, and `.page('/projects/$id', { lazy })` |
+| `make:layout admin` | `app/layouts/admin.tsx` with `<Outlet />`, and `.layout('_admin', { lazy }, (admin) => admin)` appended to `app/routes.ts` |
+| `make:component user-card` | `app/components/user-card.tsx` |
+| `make:form project` | `app/components/forms/project-form.tsx` |
+| `make:hook toggle` | `app/hooks/use-toggle.ts` |
+| `make:store cart` | `app/stores/cart.ts` (`createKitrStore`) |
+| `make:queries projects` | `app/queries/projects.ts` (keys, queries, mutation with effects) |
 | `make:query projects/list` | `app/actions/projects/list.ts` (`defineQuery('projects.list', ...)`) |
 | `make:mutation projects/create` | `app/actions/projects/create.ts` (`defineMutation('projects.create', ...)`) |
-| `make:controller projects [--resource]` | `server/controllers/projects_controller.ts` (index/show/store/update/destroy with `--resource`) |
-| `make:middleware audit` | `app/middleware/audit.ts` |
-| `make:channel chat` | `app/channels/chat.ts` (`defineChannel`) |
-| `make:store cart` | `app/stores/cart.ts` (`createKitrStore`) |
-| `make:form project` | `app/components/forms/project_form.tsx` |
-| `make:queries projects` | `app/features/projects/queries.ts` (keys, queries, mutation with effects) |
-| `make:provider analytics` | `app/providers/analytics_provider.ts` |
-| `make:job send_digest` | `server/jobs/send_digest.ts` (`defineJob` with a schema and retries; list it in `config/jobs.ts`). Contributed by the `jobs` package: present once it is added |
-| `make:mail welcome` | `server/mail/welcome.tsx` (`defineMail` with a preview) |
-| `make:service billing` | `server/services/billing_service.ts` (a class to bind in a provider) |
 | `make:validator project` | `app/validators/project.ts` (create/update zod schemas) |
+| `make:exception payment-failed` | `app/exceptions/payment-failed-error.ts` (a `KitrError` subclass) |
+| `make:provider analytics` | `app/providers/analytics-provider.ts`, listed in `kitrrc.ts` `providers` |
+| `make:channel chat` | `app/channels/chat.ts` (`defineChannel`) |
+| `make:controller projects [--resource]` | `server/controllers/projects-controller.ts` (index/show/store/update/destroy with `--resource`); prints the route line for `server/routes.ts` |
+| `make:service billing` | `server/services/billing-service.ts` (a class to bind in a provider) |
+| `make:middleware audit` | `server/middleware/audit.ts` |
+| `make:job send-digest` | `server/jobs/send-digest.ts` (`defineJob` with a schema and retries; list it in `config/jobs.ts`). Contributed by the `jobs` package: present once it is added |
+| `make:mail welcome` | `server/mail/welcome.tsx` (`defineMail` with a preview) |
 | `make:test projects` | `test/projects.test.ts`, run by the project's vitest (`createTestApp`) |
-| `make:component user-card` | `app/components/user-card.tsx` |
-| `make:hook toggle` | `app/hooks/use-toggle.ts` |
-| `make:exception payment_failed` | `app/exceptions/payment_failed_error.ts` (a `KitrError` subclass) |
+
+A package adds a generator with a `generators` entry in its `kitr.ts`; `generatorFile(project, 'server', 'controllers', name, { suffix: '-controller' })` from `@kitr/core/package` gives it the same naming and nesting as the core ones. See [Building packages](/docs/building-packages).
 
 ## Components
 

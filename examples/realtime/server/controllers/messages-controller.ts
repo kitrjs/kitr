@@ -5,7 +5,7 @@ import {
   type SendMessage,
   roomQuerySchema,
   sendMessageSchema,
-} from '#app/features/chat/schema'
+} from '#app/validators/chat'
 import type { z } from 'zod'
 
 type Ctx<Q = Record<string, string | string[]>, B = unknown> = HttpContext<Record<string, string>, Q, B>

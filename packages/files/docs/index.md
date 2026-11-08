@@ -78,7 +78,7 @@ export default defineConfig({
 Export Acme's open orders as a CSV with one button. `useFileDialogs()` returns the service's calls plus a `busy` flag:
 
 ```tsx
-// app/features/orders/export-orders-button.tsx
+// app/components/orders/export-orders-button.tsx
 import { useFileDialogs } from '@kitr/files/react'
 
 const orders = [
@@ -118,7 +118,7 @@ ord_1043,Grace,80
 `pick()` opens a dialog for exactly one file and resolves to a `PickedFile`, or `null` when the person cancels. Read its content with `text()`:
 
 ```tsx
-// app/features/orders/import-orders-button.tsx
+// app/components/orders/import-orders-button.tsx
 import { useFileDialogs } from '@kitr/files/react'
 import { useState } from 'react'
 
@@ -164,7 +164,7 @@ Choose the `acme-orders.csv` you exported and the paragraph reads `2 orders impo
 `open()` resolves to an array. Pass `multiple: true` to let the person select more than one file. Without it, `open()` still returns an array, with at most one entry:
 
 ```tsx
-// app/features/invoices/attach-receipts.tsx
+// app/components/invoices/attach-receipts.tsx
 import type { PickedFile } from '@kitr/files'
 import { useFileDialogs } from '@kitr/files/react'
 import { useState } from 'react'
@@ -209,7 +209,7 @@ Ada selects `taxi.jpg` and `hotel.pdf`; the list shows both with their sizes. A 
 `filters` decides which files the dialog offers. Each filter is a label and a list of extensions. The filters you pass come first, then the ones in `config/files.ts`:
 
 ```ts
-// app/features/projects/open-project.ts
+// app/lib/projects/open-project.ts
 import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
@@ -235,7 +235,7 @@ acceptFor([
 Filters are a convenience, not a check. Most dialogs let the person switch to "All files", and the file input fallback lists every filter as one combined list. Check `file.name` or `file.type` before you trust the content:
 
 ```ts
-// app/features/orders/check-file.ts
+// app/lib/orders/check-file.ts
 import type { PickedFile } from '@kitr/files'
 
 export function assertCsv(file: PickedFile) {
@@ -260,7 +260,7 @@ A `PickedFile` holds the file's details and reads its content only when you ask:
 Use `text()` for CSV, JSON and Markdown, `bytes()` when you parse a binary format yourself, and `blob()` to preview or send a file:
 
 ```tsx
-// app/features/invoices/receipt-preview.tsx
+// app/components/invoices/receipt-preview.tsx
 import type { PickedFile } from '@kitr/files'
 import { useEffect, useState } from 'react'
 
@@ -296,7 +296,7 @@ To turn a browser `File` from somewhere else, such as a paste event, into the sa
 `save(data, options)` accepts a string, a `Blob` or `File`, a `Uint8Array` or an `ArrayBuffer`. `name` is required and suggests the file name. In the download fallback, `type` sets the MIME type; without it the type comes from the extension:
 
 ```ts
-// app/features/invoices/export.ts
+// app/lib/invoices/export.ts
 import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
@@ -341,7 +341,7 @@ toBlob('id,total', 'text/csv').type // => 'text/csv'
 Cancelling a dialog is not an error. `open()` resolves to `[]`, `pick()` to `null` and `save()` to `null`, so a cancel needs no `try`/`catch`:
 
 ```ts
-// app/features/orders/import.ts
+// app/lib/orders/import.ts
 import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
@@ -361,7 +361,7 @@ With the file input fallback, the dialog resolves `[]` on cancel only in browser
 `useFileDialogs()` wraps `open`, `pick` and `save` so `busy` is `true` from the moment a call starts until it settles, including the time the dialog is on screen and the time it takes to write the file:
 
 ```tsx
-// app/features/invoices/export-invoices.tsx
+// app/components/invoices/export-invoices.tsx
 import { useFileDialogs } from '@kitr/files/react'
 
 export function ExportInvoices({ csv }: { csv: string }) {
@@ -381,7 +381,7 @@ Disabling the button while `busy` stops a double click from opening two dialogs.
 `useDropFiles(onFiles)` returns drag-and-drop handlers that hand dropped files to your callback as `PickedFile`s, plus an `over` flag for styling the drop zone:
 
 ```tsx
-// app/features/invoices/receipt-drop-zone.tsx
+// app/components/invoices/receipt-drop-zone.tsx
 import type { PickedFile } from '@kitr/files'
 import { useDropFiles } from '@kitr/files/react'
 
@@ -402,7 +402,7 @@ Spread only the handlers (`onDragOver`, `onDragLeave` and `onDrop`) onto the ele
 Outside components, get the service from the app's container. `useFiles(app)` from `@kitr/files` is a shortcut for `app.container.use('files')`:
 
 ```ts
-// app/features/projects/project-files.ts
+// app/lib/projects/project-files.ts
 import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
@@ -430,7 +430,7 @@ export async function importProject(): Promise<Project | null> {
 `reveal(path)` asks the driver to open a file with the system's default app, such as opening the exported PDF in a viewer. Only drivers that know real paths can do it, so check that the driver has `reveal` first:
 
 ```ts
-// app/features/invoices/open-invoice.ts
+// app/lib/invoices/open-invoice.ts
 import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
@@ -449,7 +449,7 @@ The web and memory drivers have no `reveal`; the call resolves and does nothing.
 A `PickedFile` gives you a `Blob`, which `fetch` and `FormData` accept directly. For a small file and your own endpoint, that's enough:
 
 ```ts
-// app/features/invoices/upload-receipt.ts
+// app/lib/invoices/upload-receipt.ts
 import type { PickedFile } from '@kitr/files'
 
 export async function uploadReceipt(invoiceId: string, file: PickedFile) {
@@ -503,7 +503,7 @@ Cancelling is never an error. Anything else the dialog throws reaches your code 
 | `TypeError` | The picker rejected its options, such as a filter it can't read. | Check your `filters`. |
 
 ```ts
-// app/features/invoices/export-safely.ts
+// app/lib/invoices/export-safely.ts
 import { useFiles } from '@kitr/files'
 import { app } from '#app/app'
 
@@ -524,7 +524,7 @@ export async function exportInvoices(csv: string) {
 Pass `createMemoryFilesDriver(queue)` as the `driver` in config. `open()` and `pick()` take files from the front of `queue` instead of showing a dialog, and `save()` records each call in `driver.saved` and resolves to `name`. An empty queue behaves like a cancelled dialog.
 
 ```ts
-// app/features/orders/files.test.ts
+// app/lib/orders/files.test.ts
 import { createMemoryFilesDriver, fromFile, useFiles } from '@kitr/files'
 import filesProvider from '@kitr/files/provider'
 import { createTestApp } from '@kitr/testing'
@@ -561,7 +561,7 @@ describe('order files', () => {
 To test a component, render it inside the same app with `renderWithKitr` from `@kitr/testing/react` in a DOM environment, click the button, and read `driver.saved`:
 
 ```tsx
-// app/features/orders/export-orders-button.test.tsx
+// app/components/orders/export-orders-button.test.tsx
 // @vitest-environment happy-dom
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { createMemoryFilesDriver } from '@kitr/files'

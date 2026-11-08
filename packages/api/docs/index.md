@@ -32,7 +32,7 @@ What `kitr add api` does:
 - Installs `@kitr/api` and adds it to `packages` in `kitrrc.ts`. API routes register no provider.
 - Writes `config/api.ts` (shown under Configure) and adds it to `config/index.ts`.
 - Writes `server/routes.ts`, the server route table, with `api` from `@kitr/api/routes` in its extension list and one `GET /api/health` route. When another package created the table first, it only adds `api` to the list.
-- Writes `server/controllers/health_controller.ts`, the controller that route calls.
+- Writes `server/controllers/health-controller.ts`, the controller that route calls.
 - When `server/main.ts` exists and does not pass the table to `createServer()` yet, adds `import { routes } from './routes'` and the `routes` option.
 - In a React project, writes `app/api/routes.gen.ts`, the route table with the `health` route, and `app/api/client.ts`, the typed client that registers it. Without the table every named call throws `Unknown route`.
 - Adds an `api:sync` script (`kitr api:sync`) to `package.json`, which regenerates the route table and `openapi.json` from `server/routes.ts`.
@@ -44,7 +44,7 @@ The generated routes file:
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import HealthController from '#server/controllers/health_controller'
+import HealthController from '#server/controllers/health-controller'
 
 /**
  * Endpoints and sockets of this app. `kitr add` keeps the extension list current; `createServer({ routes })`
@@ -53,7 +53,7 @@ import HealthController from '#server/controllers/health_controller'
 export const routes = defineRoutes([api], (root) =>
   root.group('/api', (r) =>
     r.get('/health', [HealthController, 'show'], { name: 'health' }),
-    // r.resource('projects', () => import('#server/controllers/projects_controller'))
+    // r.resource('projects', () => import('#server/controllers/projects-controller'))
   ),
 )
 
@@ -66,7 +66,7 @@ export type ServerRoutes = typeof routes.$types
 The generated controller:
 
 ```ts
-// server/controllers/health_controller.ts
+// server/controllers/health-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class HealthController {
@@ -110,7 +110,7 @@ export default defineConfig({
 Write a controller for orders. Each method receives the request context and returns the response body:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 
@@ -144,8 +144,8 @@ Register it in the routes file:
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import HealthController from '#server/controllers/health_controller'
-import OrdersController from '#server/controllers/orders_controller'
+import HealthController from '#server/controllers/health-controller'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.group({ prefix: '/api' }, (r) =>
@@ -178,7 +178,7 @@ The router has one method per HTTP verb. Each takes a path, a handler and option
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import InvoicesController from '#server/controllers/invoices_controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router
@@ -214,9 +214,9 @@ Give every route you call from the client a `name`. Names are stable when paths 
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import OrdersController from '#server/controllers/orders_controller'
-import TeamsController from '#server/controllers/teams_controller'
-import { audit } from '#app/middleware/audit'
+import OrdersController from '#server/controllers/orders-controller'
+import TeamsController from '#server/controllers/teams-controller'
+import { audit } from '#server/middleware/audit'
 
 export const routes = defineRoutes([api], (router) =>
   router.group({ prefix: '/api' }, (r) =>
@@ -257,9 +257,9 @@ Narrow it with options:
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import InvoicesController from '#server/controllers/invoices_controller'
-import ProjectsController from '#server/controllers/projects_controller'
-import { audit } from '#app/middleware/audit'
+import InvoicesController from '#server/controllers/invoices-controller'
+import ProjectsController from '#server/controllers/projects-controller'
+import { audit } from '#server/middleware/audit'
 
 export const routes = defineRoutes([api], (router) =>
   router.group('/api', (r) =>
@@ -290,8 +290,8 @@ import api from '@kitr/api/routes'
 export const routes = defineRoutes([api], (router) =>
   router.group('/api', (r) =>
     r
-      .resource('orders', () => import('#server/controllers/orders_controller'))
-      .get('/orders/:id/receipt', [() => import('#server/controllers/receipts_controller'), 'show'], {
+      .resource('orders', () => import('#server/controllers/orders-controller'))
+      .get('/orders/:id/receipt', [() => import('#server/controllers/receipts-controller'), 'show'], {
         name: 'orders.receipt',
       }),
   ),
@@ -307,7 +307,7 @@ A lazy controller can't be inspected when routes are defined, so `resource()` re
 A controller is a plain class with a default export. `kitr make:controller orders --resource` writes one with all five methods. Each method receives an `HttpContext`; type its three parameters for `params`, `query` and `body`:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
@@ -391,7 +391,7 @@ kitr creates one instance of each controller class and reuses it for every reque
 Declare schemas per controller method in `static validation`. kitr validates before the method runs, and the typed client picks up the same types:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 // ...
 export default class OrdersController {
   static validation = {
@@ -449,7 +449,7 @@ export type ServerRoutes = typeof routes.$types
 When the shape depends on the request, validate inside the handler with `ctx.validate()`. It throws the same `422`:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { z } from 'zod'
 
@@ -470,7 +470,7 @@ Validators set in route options take precedence over `static validation`. Withou
 `ctx.request` wraps the incoming request:
 
 ```ts
-// server/controllers/webhooks_controller.ts
+// server/controllers/webhooks-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class WebhooksController {
@@ -506,7 +506,7 @@ Malformed JSON answers `400` with `{ "code": "BAD_REQUEST", "message": "Could no
 Whatever the handler returns becomes the JSON body with status `200`. Use `ctx.response` to change that:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class OrdersController {
@@ -544,7 +544,7 @@ A handler that returns `undefined` or `null` answers with an empty body: `204`, 
 Throw a `KitrError` from `kitr/app` to answer with an error. The status follows the code:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 
@@ -568,7 +568,7 @@ Anything else that is thrown becomes `INTERNAL` with status `500`, and in produc
 Middleware is a function of the context and `next`. Call `next()` to run the rest of the chain and return its result; return without calling it to answer early:
 
 ```ts
-// app/middleware/audit.ts
+// server/middleware/audit.ts
 import { defineMiddleware } from '@kitr/api'
 
 export const audit = defineMiddleware(async (ctx, next) => {
@@ -582,15 +582,15 @@ export const audit = defineMiddleware(async (ctx, next) => {
 })
 ```
 
-`kitr make:middleware audit` writes this skeleton in `app/middleware/audit.ts`. Attach middleware to a group, a resource or one route:
+`kitr make:middleware audit` writes this skeleton in `server/middleware/audit.ts`. Attach middleware to a group, a resource or one route:
 
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import InvitesController from '#server/controllers/invites_controller'
-import { audit } from '#app/middleware/audit'
-import { requireTeam } from '#app/middleware/require_team'
+import InvitesController from '#server/controllers/invites-controller'
+import { audit } from '#server/middleware/audit'
+import { requireTeam } from '#server/middleware/require-team'
 
 export const routes = defineRoutes([api], (router) =>
   router.group({ prefix: '/api', middleware: [audit] }, (r) =>
@@ -607,7 +607,7 @@ export type ServerRoutes = typeof routes.$types
 Pass data to the handler through `ctx.locals`, and stop a request by throwing a `KitrError`:
 
 ```ts
-// app/middleware/require_team.ts
+// server/middleware/require-team.ts
 import { defineMiddleware } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 
@@ -630,7 +630,7 @@ Middleware runs outer to inner: group middleware first, then route middleware, t
 import { cors } from '@kitr/api'
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import OrdersController from '#server/controllers/orders_controller'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.group(
@@ -667,7 +667,7 @@ A preflight `OPTIONS /api/orders` answers `204` with the allow headers. kitr reg
 import { rateLimit } from '@kitr/api'
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import InvitesController from '#server/controllers/invites_controller'
+import InvitesController from '#server/controllers/invites-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.post('/api/invites', [InvitesController, 'store'], {
@@ -722,7 +722,7 @@ Use `inviteLimit` in the route's `middleware` list in place of the inline `rateL
 import { requireJson } from '@kitr/api'
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import OrdersController from '#server/controllers/orders_controller'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.group({ prefix: '/api', middleware: [requireJson()] }, (r) =>
@@ -759,7 +759,7 @@ Without a registered table, using a named route such as `api.orders.show` throws
 Every call is checked against the route:
 
 ```ts
-// app/features/orders/load.ts
+// app/lib/orders/load.ts
 import { api } from '#app/api/client'
 
 const orders = await api.orders.index()
@@ -780,7 +780,7 @@ The input object has up to three keys: `params` (required when the path has para
 Each endpoint also exposes helpers:
 
 ```ts
-// app/features/orders/links.ts
+// app/lib/orders/links.ts
 import { api } from '#app/api/client'
 
 api.orders.show.url({ params: { id: 'ord_1042' } })
@@ -806,7 +806,7 @@ api.orders.show.path
 Every endpoint produces [Query](/packages/query) contracts. `query()` uses the endpoint's key and fetch, and `mutation()` takes cache effects:
 
 ```tsx
-// app/features/orders/orders_page.tsx
+// app/components/orders/orders-page.tsx
 import { mutationFrom, queryFrom, useMutation, useSuspenseQuery } from '@kitr/query'
 import { api } from '#app/api/client'
 
@@ -842,7 +842,7 @@ The query key is `['api', '<route name>', params, query]`, so `invalidate: [['ap
 Failed calls reject with a `KitrError` that carries the server's code, status and field errors:
 
 ```ts
-// app/features/orders/create.ts
+// app/lib/orders/create.ts
 import { KitrError } from 'kitr/app'
 import { api } from '#app/api/client'
 
@@ -889,7 +889,7 @@ registerRoutes(api, [...routeTable])
 On the server, or in tests, pass the server's `fetch` so calls skip the network:
 
 ```ts
-// server/jobs/nightly_report.ts
+// server/jobs/nightly-report.ts
 import { createApiClient, registerRoutes } from '@kitr/api/client'
 import { server } from '#server/main'
 import { type ServerRoutes, routes } from '#server/routes'
@@ -924,7 +924,7 @@ export const server = createServer({ providers: rc.providers, config, routes })
 `routes.url()` builds a path from a route name, with encoded parameters and an optional query string:
 
 ```ts
-// server/mail/order_link.ts
+// server/mail/order-link.ts
 import { routes } from '#server/routes'
 
 routes.url('orders.show', { id: 'ord_1042' }, { expand: 'customer' })
@@ -952,7 +952,7 @@ Describe operations with `meta`:
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import OrdersController from '#server/controllers/orders_controller'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.post('/api/orders/:id/refund', [OrdersController, 'refund'], {
@@ -995,7 +995,7 @@ Operations without `meta.tags` are tagged with the first part of the route name 
 | --- | --- |
 | `kitr make:controller <name>` | Writes `server/controllers/<name>_controller.ts` with one `handle` method. |
 | `kitr make:controller <name> --resource` | Writes the controller with `index`, `show`, `store`, `update`, `destroy` and zod validators. |
-| `kitr make:middleware <name>` | Writes `app/middleware/<name>.ts` with `defineMiddleware`. |
+| `kitr make:middleware <name>` | Writes `server/middleware/<name>.ts` with `defineMiddleware`. |
 | `kitr make:validator <name>` | Writes `app/validators/<name>.ts`: a zod schema with `create` and `update` variants and its input type, to share between a form, an action and a controller. |
 | `kitr api:sync` | Writes the OpenAPI document and the client route table. `--file` picks the routes file, `--out` the document path. |
 | `kitr routes:list` | Prints every route: method, path and name. `--file` picks the routes file. |
@@ -1003,7 +1003,7 @@ Operations without `meta.tags` are tagged with the first part of the route name 
 `kitr make:controller orders --resource` writes:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
@@ -1043,7 +1043,7 @@ export default class OrdersController {
 `kitr make:middleware audit` writes:
 
 ```ts
-// app/middleware/audit.ts
+// server/middleware/audit.ts
 import { defineMiddleware } from '@kitr/api'
 
 export const audit = defineMiddleware(async (ctx, next) => {
@@ -1147,7 +1147,7 @@ describe('orders API', () => {
 To test client code without a server, pass a fake `fetch` and assert on the requests it receives:
 
 ```ts
-// test/order_client.test.ts
+// test/order-client.test.ts
 import { createApiClient, registerRoutes } from '@kitr/api/client'
 import { expect, it, vi } from 'vitest'
 import type { ServerRoutes } from '#server/routes'

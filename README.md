@@ -131,7 +131,7 @@ See [docs/entry-points.md](docs/entry-points.md) for the rules behind this table
 ## A taste
 
 ```ts
-// app/features/projects/queries.ts
+// app/queries/projects.ts
 import { createKeys } from 'kitr/app'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { httpMutation, httpQuery } from '@kitr/http'

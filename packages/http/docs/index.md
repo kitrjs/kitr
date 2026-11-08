@@ -103,7 +103,7 @@ export default defineConfig({
 Describe the endpoint once in the feature's `queries.ts`. `httpQuery` turns it into a query contract, and `queryFrom` turns that into something components and loaders use:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpQuery } from '@kitr/http'
@@ -133,7 +133,7 @@ Then show it on a page:
 
 ```ts
 // app/routes.ts
-import { ordersQuery } from '#app/features/orders/queries'
+import { ordersQuery } from '#app/queries/orders'
 
 r.page('/orders', {
   loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
@@ -144,7 +144,7 @@ r.page('/orders', {
 ```tsx
 // app/pages/orders.tsx
 import { useSuspenseQuery } from '@kitr/query'
-import { ordersQuery } from '#app/features/orders/queries'
+import { ordersQuery } from '#app/queries/orders'
 
 export default function OrdersPage() {
   const { data: orders } = useSuspenseQuery(ordersQuery.options())
@@ -169,7 +169,7 @@ The provider binds one client as `http` in the container. It is a normal ky inst
 Outside components, such as in `queries.ts` or a loader, read it from the app:
 
 ```ts
-// app/features/invoices/download.ts
+// app/lib/invoices/download.ts
 import { app } from '#app/app'
 
 const http = app.container.use('http')
@@ -182,7 +182,7 @@ export async function downloadInvoice(id: string) {
 In a component, read it with `useService` from `@kitr/react`:
 
 ```tsx
-// app/features/invoices/download-button.tsx
+// app/components/invoices/download-button.tsx
 import { useService } from '@kitr/react'
 
 export function DownloadButton({ id }: { id: string }) {
@@ -206,9 +206,9 @@ Prefer `httpQuery` for anything a screen shows: the cache, loading states and re
 The client has a method per HTTP verb. Each returns a response promise with `.json()`, `.text()`, `.blob()` and `.arrayBuffer()`:
 
 ```ts
-// app/features/orders/api.ts
+// app/lib/orders/api.ts
 import { app } from '#app/app'
-import type { Order } from './queries'
+import type { Order } from '#app/queries/orders'
 
 const http = app.container.use('http')
 
@@ -226,7 +226,7 @@ A leading slash makes no difference: `http.get('/orders')` and `http.get('orders
 For a client with extra defaults, call ky's `extend`. It keeps the token, refresh and error handling:
 
 ```ts
-// app/features/billing/client.ts
+// app/lib/billing/client.ts
 import { app } from '#app/app'
 
 export const billing = app.container.use('http').extend({
@@ -240,7 +240,7 @@ export const billing = app.container.use('http').extend({
 `httpQuery(client, options)` returns a query contract that sends a `GET`. Pass it to `queryFrom`:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpQuery } from '@kitr/http'
@@ -283,7 +283,7 @@ The query passes TanStack's abort signal to ky, so leaving the page cancels the 
 An API you don't control can change shape. Give `httpQuery` or `httpMutation` a `schema` from zod, valibot or any other Standard Schema library, and a response that fails it becomes a `VALIDATION` error instead of a crash three components later. The schema also types the result, so you can drop the generic:
 
 ```ts
-// app/features/invoices/queries.ts
+// app/queries/invoices.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpQuery } from '@kitr/http'
@@ -322,7 +322,7 @@ The key is the path to the bad value (`0.total`: the first invoice's `total`). T
 `httpMutation(client, options)` returns a mutation contract. Pass it to `mutationFrom` and run it with `useMutation`. Declare `effects` so every screen showing the changed data updates:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { app } from '#app/app'
 import { httpMutation } from '@kitr/http'
 import { mutationFrom } from '@kitr/query'
@@ -352,9 +352,9 @@ export const shipOrder = mutationFrom(
 ```
 
 ```tsx
-// app/features/orders/ship-button.tsx
+// app/components/orders/ship-button.tsx
 import { useMutation } from '@kitr/query'
-import { shipOrder } from './queries'
+import { shipOrder } from '#app/queries/orders'
 
 export function ShipButton({ id }: { id: string }) {
   const ship = useMutation(shipOrder)
@@ -380,7 +380,7 @@ export function ShipButton({ id }: { id: string }) {
 `delete` sends no body by default, and a `204 No Content` response resolves to `undefined`, so the result type is `void`:
 
 ```ts
-// app/features/projects/queries.ts
+// app/queries/projects.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
 import { httpMutation } from '@kitr/http'
@@ -417,10 +417,10 @@ export const renameProject = mutationFrom(
 `httpMutation` always sends JSON. For a file, call the client with a `FormData` body and let the browser set the multipart headers:
 
 ```ts
-// app/features/invoices/import.ts
+// app/lib/invoices/import.ts
 import { app } from '#app/app'
 import { mutationFrom } from '@kitr/query'
-import { invoiceKeys } from './queries'
+import { invoiceKeys } from '#app/queries/invoices'
 
 const http = app.container.use('http')
 
@@ -544,7 +544,7 @@ export default defineConfig({
 For one slow endpoint, pass `options` to the contract instead of changing every request:
 
 ```ts
-// app/features/reports/queries.ts
+// app/queries/reports.ts
 import { app } from '#app/app'
 import { httpQuery } from '@kitr/http'
 import { queryFrom } from '@kitr/query'
@@ -592,7 +592,7 @@ export default defineConfig({
 Every failure becomes a `KitrError` with `code`, `status`, `message` and, when the API sends them, `fieldErrors` and `data`. Components, forms and queries check `code`, never the raw response:
 
 ```ts
-// app/features/orders/place-order.ts
+// app/lib/orders/place-order.ts
 import { app } from '#app/app'
 import { isKitrError } from 'kitr/app'
 
@@ -628,16 +628,16 @@ A `422` whose `fieldErrors` reach a [Forms](/packages/forms) `<Form>` shows each
 
 | Command | What it does |
 | --- | --- |
-| `kitr make:queries <name>` | Writes `app/features/<name>/queries.ts` with keys, a list query, a detail query and an update mutation over `@kitr/http`. |
+| `kitr make:queries <name>` | Writes `app/queries/<name>.ts` with keys, a list query, a detail query and an update mutation over `@kitr/http`. |
 
 ```sh
 kitr make:queries orders
 ```
 
-It writes `app/features/orders/queries.ts`:
+It writes `app/queries/orders.ts`:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { createKeys } from 'kitr/app'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { httpMutation, httpQuery } from '@kitr/http'
@@ -704,7 +704,7 @@ export async function describeError(error: unknown) {
 `createHttpClient` takes ky's `fetch` option, so a test passes a fake `fetch` and never touches the network. The fake sees the real `Request`, with the URL, headers and body the client built:
 
 ```ts
-// app/features/orders/queries.test.ts
+// app/queries/orders.test.ts
 import { createKeys } from 'kitr/app'
 import { createHttpClient, httpMutation, httpQuery } from '@kitr/http'
 import { describe, expect, it, vi } from 'vitest'
@@ -762,7 +762,7 @@ describe('orders endpoints', () => {
 To test with the app's own provider and config, boot a test app and pass the fake `fetch` in the `http` config:
 
 ```ts
-// app/features/orders/provider.test.ts
+// app/lib/orders/provider.test.ts
 import { httpProvider } from '@kitr/http'
 import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'

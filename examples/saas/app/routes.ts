@@ -5,7 +5,7 @@ import router from '@kitr/router/routes'
 import { ssrRoute } from '@kitr/seo'
 import { parseTableSearch } from '@kitr/table'
 import type { User } from '#app/abilities'
-import { projectsQuery } from '#app/features/projects/queries'
+import { projectsQuery } from '#app/queries/projects'
 import { head, RootDocument } from './document'
 
 /**
@@ -34,7 +34,7 @@ export const routes = defineRoutes([router], (r) =>
           const session = context.app.container.use('auth').session as Session<User>
           return requireAuth()({ context: { session }, location })
         },
-        lazy: () => import('./pages/app-layout'),
+        lazy: () => import('./layouts/app'),
       },
       (app) =>
         app

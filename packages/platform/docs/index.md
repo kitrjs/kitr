@@ -104,7 +104,7 @@ Put `<PlatformBadge />` in a page and run `kitr dev site`. On a Mac in Chrome it
 The service lives in the app container, so loaders, stores and plain modules read the same object:
 
 ```ts
-// app/features/orders/receipt.ts
+// app/lib/orders/receipt.ts
 import { app } from '#app/app'
 
 export function receiptFileName(orderId: string) {
@@ -142,7 +142,7 @@ Read it after `app.boot()`. Before boot, or in an app without `@kitr/platform/pr
 Every `on*` method returns a function that removes the listener. Use them in stores, sync engines and anything else that lives outside a component:
 
 ```ts
-// app/features/orders/order-sync.ts
+// app/lib/orders/order-sync.ts
 import { app } from '#app/app'
 
 export function startOrderSync(flush: () => Promise<void>) {
@@ -161,7 +161,7 @@ export function startOrderSync(flush: () => Promise<void>) {
 ```
 
 ```ts
-// app/features/orders/start.ts
+// app/lib/orders/start.ts
 import { startOrderSync } from './order-sync'
 
 const stop = startOrderSync(async () => {
@@ -197,7 +197,7 @@ In the browser, the web driver reads the `(display-mode: standalone)` media quer
 `platform.is()` takes a type or an OS, so one call covers both questions:
 
 ```ts
-// app/features/orders/print.ts
+// app/lib/orders/print.ts
 import { app } from '#app/app'
 
 const platform = app.container.use('platform')
@@ -214,7 +214,7 @@ Don't read `navigator.userAgent` or `window.Capacitor` in components. The driver
 When the same action works differently in each place, `perPlatform()` picks the implementation without an `if` chain. Keys are OS names, platform types or `native`; `default` is required:
 
 ```ts
-// app/features/invoices/save-invoice.ts
+// app/lib/invoices/save-invoice.ts
 import { app } from '#app/app'
 import { perPlatform } from '@kitr/platform'
 
@@ -326,7 +326,7 @@ export function InstallHint() {
 `kitr types` writes `.kitr/platforms.d.ts` from `kitrrc.ts`, and from then on the platform names are a union type everywhere they appear: `platform.name` is `'www' | 'app' | 'phone'`, `platform.is('tablet')` is a compile error in a project without a `tablet` platform, and so is a misspelt key in `perPlatform()` or `<Only platform>`. `import.meta.env.KITR_PLATFORM` is typed the same way, so a branch on it is checked by the compiler and dropped by the bundler in the builds where it is false:
 
 ```ts
-// app/features/share.ts
+// app/lib/share.ts
 import { forPlatform } from '@kitr/platform'
 
 // Resolved at build time: the phone build contains only the share-sheet branch.
@@ -364,7 +364,7 @@ The hook is hydration-safe: the server and the first client render say online, a
 `useAppState()` is `true` in the foreground. In the browser it follows page visibility; inside Capacitor it follows the app state; the desktop drivers follow window focus:
 
 ```tsx
-// app/features/orders/live-orders.tsx
+// app/components/orders/live-orders.tsx
 import { useAppState } from '@kitr/platform/react'
 import { useEffect } from 'react'
 
@@ -429,7 +429,7 @@ export function DeepLinks() {
 Render `<DeepLinks />` once in the root route. Outside React, `app.container.use('platform').linkPath(url)` gives the same path. Both call `deepLinkPath(url, deepLinkPrefixes)`, which drops the scheme and host, keeps the query and hash, then strips the first prefix that matches:
 
 ```ts
-// app/features/links.ts
+// app/lib/links.ts
 import { deepLinkPath } from '@kitr/platform'
 
 deepLinkPath('acme://orders/1042') // => '/orders/1042'
@@ -480,7 +480,7 @@ export function StatusLink() {
 `platform.appVersion()` resolves to the version of the native app, from the driver. Where there is none, such as the browser, it resolves to `'0.0.0'`:
 
 ```ts
-// app/features/support/report.ts
+// app/lib/support/report.ts
 import { app } from '#app/app'
 
 export async function supportReport() {
@@ -495,7 +495,7 @@ export async function supportReport() {
 `platform.exit()` closes the app where the driver supports it: Android at the root of the back stack, and the desktop shells. In the browser it resolves and does nothing. Apple discourages apps that quit themselves, so don't offer it on iOS:
 
 ```ts
-// app/features/session/sign-out.ts
+// app/lib/session/sign-out.ts
 import { app } from '#app/app'
 
 export async function signOutAndExit() {

@@ -73,7 +73,7 @@ The realtime adapter also needs a connection in subscriber mode, which can run n
 Close the connection when the server stops, so a deploy does not cut a command in half. A provider's `shutdown` runs after in-flight requests have finished:
 
 ```ts
-// server/providers/redis_provider.ts
+// server/providers/redis-provider.ts
 import { defineProvider } from 'kitr'
 import { redis } from '#server/redis'
 import { realtimeAdapter } from '#server/realtime_adapter'

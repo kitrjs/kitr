@@ -182,7 +182,7 @@ Open `/orders/new` and press **Add a seat** three times: the count reads `3 item
 Pass a selector to the hook. The component re-renders only when the selected value changes, so `DraftCount` ignores a change to `customer`:
 
 ```tsx
-// app/features/orders/draft-customer.tsx
+// app/components/orders/draft-customer.tsx
 import { useOrderDraft } from '#app/stores/order-draft'
 
 export function DraftCustomer() {
@@ -202,7 +202,7 @@ Actions are part of the state, and they never change, so selecting one never cau
 Calling the hook with no selector returns the whole state. The component then re-renders on every change to any field, so keep that for small stores or for debugging:
 
 ```tsx
-// app/features/orders/draft-debug.tsx
+// app/components/orders/draft-debug.tsx
 import { useOrderDraft } from '#app/stores/order-draft'
 
 export function DraftDebug() {
@@ -216,7 +216,7 @@ export function DraftDebug() {
 A selector that builds a new object or array on every call, such as `(s) => ({ customer: s.customer, count: s.lines.length })`, returns a different value each time, and React keeps re-rendering. Either call the hook once per value, or wrap the selector in Zustand's `useShallow`, which compares the result field by field:
 
 ```tsx
-// app/features/orders/draft-header.tsx
+// app/components/orders/draft-header.tsx
 import { useShallow } from 'zustand/react/shallow'
 import { useOrderDraft } from '#app/stores/order-draft'
 
@@ -272,7 +272,7 @@ Don't mutate the state in place (`s.selected.push(id)`). `set` compares by refer
 The third value is the browser's store instance. Use it in code that is not a component: an event handler set up at startup, a route loader, a mutation's `onSuccess`:
 
 ```ts
-// app/features/orders/place-order.ts
+// app/lib/orders/place-order.ts
 import { orderDraftStore } from '#app/stores/order-draft'
 
 export async function placeDraftOrder() {
@@ -298,7 +298,7 @@ export async function placeDraftOrder() {
 `subscribe` lets code outside React react to changes. This keeps the page title in step with the draft:
 
 ```ts
-// app/features/orders/draft-title.ts
+// app/lib/orders/draft-title.ts
 import { orderDraftStore } from '#app/stores/order-draft'
 
 export const stopDraftTitle = orderDraftStore?.subscribe((state, previous) => {
@@ -423,7 +423,7 @@ export const [useImportWizard, ImportWizardProvider, importWizardStore] =
 
 ```ts
 // app/routes.ts
-import { orderQuery } from '#app/features/orders/queries'
+import { orderQuery } from '#app/queries/orders'
 
 r.page('/orders/$orderId/edit', {
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderQuery.options(params.orderId)),
@@ -434,7 +434,7 @@ r.page('/orders/$orderId/edit', {
 ```tsx
 // app/pages/orders/orderId/edit.tsx
 import { OrderDraftProvider } from '#app/stores/order-draft'
-import { DraftEditor } from '#app/features/orders/draft-editor'
+import { DraftEditor } from '#app/components/orders/draft-editor'
 import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders/$orderId/edit')
@@ -521,10 +521,10 @@ export const useToasts = create<ToastState>()((set) => ({
 kitr make:store order-draft
 ```
 
-It writes `app/stores/order_draft.ts`. The file name is snake case; the exports are camel and pascal case:
+It writes `app/stores/order-draft.ts`. The file name is kebab-case; the exports are camel and pascal case:
 
 ```ts
-// app/stores/order_draft.ts
+// app/stores/order-draft.ts
 import { createKitrStore } from '@kitr/state'
 
 interface OrderDraftState {

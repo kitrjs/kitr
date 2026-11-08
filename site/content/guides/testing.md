@@ -73,7 +73,7 @@ describe('projects.update', () => {
 })
 ```
 
-The same goes for the zod schema in `app/features/projects/schema.ts`: `newProjectSchema.safeParse({ teamId: 'team_acme', name: 'A' }).success` is `false`, and that is a one-line test. [Add sign-in, end to end](/guides/authentication) writes these abilities.
+The same goes for the zod schema in `app/validators/projects.ts`: `newProjectSchema.safeParse({ teamId: 'team_acme', name: 'A' }).success` is `false`, and that is a one-line test. [Add sign-in, end to end](/guides/authentication) writes these abilities.
 
 ## Give the tests their own database
 
@@ -270,13 +270,13 @@ The helper throws with the status when sign-in fails, so a broken seed shows up 
 A component test renders one component inside the app's providers and checks what a person would see. Seed the query cache when the test is about rendering, so nothing touches the network:
 
 ```tsx
-// app/features/projects/project-list.test.tsx
+// app/components/projects/project-list.test.tsx
 import { screen } from '@testing-library/react'
 import queryProvider from '@kitr/query/provider'
 import { createTestApp } from '@kitr/testing'
 import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
-import { ProjectList } from './project-list'
+import { ProjectList } from '#app/components/projects/project-list'
 
 it('lists the team’s projects', async () => {
   const app = await createTestApp({ providers: [queryProvider] })
@@ -299,7 +299,7 @@ Action queries live under `['action', '<name>', input]`, so the seeded key is th
 A form test checks what the user sees when they get it wrong. Register the generated operations so `useMutation('projects.create')` resolves, and fill the form the way a person would:
 
 ```tsx
-// app/features/projects/new-project-form.test.tsx
+// app/components/projects/new-project-form.test.tsx
 import { fireEvent, screen } from '@testing-library/react'
 import queryProvider from '@kitr/query/provider'
 import { createTestApp } from '@kitr/testing'

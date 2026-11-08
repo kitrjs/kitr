@@ -133,6 +133,19 @@ export default definePackage({
 })
 ```
 
+A generator follows the app's [project structure](/docs/project-structure) when its `target` is one call to `generatorFile` from `@kitr/core/package`, which handles kebab-casing, the kind suffix and nested names (`make:webhook billing/refunds` writes `server/webhooks/billing/refunds-webhook.ts`):
+
+```ts
+import { generatorFile } from '@kitr/core/package'
+
+const webhook = {
+  description: 'Create a Stripe webhook handler in server/webhooks',
+  definition: 'A handler for one Stripe event type.', // shown by `kitr make`
+  target: (name, project) => generatorFile(project, 'server', 'webhooks', name, { suffix: '-webhook' }),
+  stub: ({ name, pascal }) => `export default async function handle${pascal}Webhook() {}\n`,
+}
+```
+
 Every question is also a flag (`kitr add stripe --mode embedded`), so agents and CI never see a prompt. `add` and `remove` get codemods for the files kitr owns: `kitrrc.ts` providers, `config/<name>.ts`, `package.json` scripts and dependencies, `.env.example`, `AGENTS.md`, `tsconfig.json`, `vite.config.ts` and the route table; `ctx.write` and `ctx.edit` cover anything else. Add `"setup": "./kitr"` to the manifest and build the module beside your runtime code. The full contract, with every `ctx` method, is in the [package contract](/docs/package-contract) reference.
 
 A platform or a kit is the same package with a `kind`: a platform adds a `platform` block with its `definePlatform` factory, a kit adds a `kit` block naming the platforms, packages, components and files `kitr new --kit` sets up. The [kits](/docs/kits) page shows a complete kit.

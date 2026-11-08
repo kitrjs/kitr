@@ -231,7 +231,7 @@ A schema library works too: pass a [Zod](https://zod.dev) schema's `parse` as `v
 After a form submits or an action finishes, navigate with `useNavigate`:
 
 ```tsx
-// app/features/projects/archive-button.tsx
+// app/components/projects/archive-button.tsx
 import { useNavigate } from '@kitr/router'
 
 export function ArchiveButton({ id }: { id: string }) {
@@ -255,7 +255,7 @@ export function ArchiveButton({ id }: { id: string }) {
 A loader runs before the page renders, on the server during server rendering and in the browser on every navigation. With [query](/packages/query), the loader fills the cache and the component reads the same entry, so the page never shows a spinner on first load:
 
 ```ts
-// app/features/projects/queries.ts
+// app/queries/projects.ts
 import { createKeys } from 'kitr/app'
 import { queryFrom } from '@kitr/query'
 
@@ -278,7 +278,7 @@ export const projectQuery = queryFrom({
 
 ```ts
 // app/routes.ts
-import { projectQuery } from '#app/features/projects/queries'
+import { projectQuery } from '#app/queries/projects'
 
 r.page('/projects/$id', {
   loader: ({ context, params }) =>
@@ -291,7 +291,7 @@ r.page('/projects/$id', {
 // app/pages/project.tsx
 import { useSuspenseQuery } from '@kitr/query'
 import { getRouteApi, Link } from '@kitr/router'
-import { projectQuery } from '#app/features/projects/queries'
+import { projectQuery } from '#app/queries/projects'
 
 const route = getRouteApi('/projects/$id')
 
@@ -352,7 +352,7 @@ The router boots the app before the first loader runs, so every service is ready
 
 ```ts
 // app/routes.ts
-r.layout('_app', { lazy: () => import('./pages/app-layout') }, (app) =>
+r.layout('_app', { lazy: () => import('./layouts/app') }, (app) =>
   app
     .page('/dashboard', { lazy: () => import('./pages/dashboard') })
     .page('/projects', { lazy: () => import('./pages/projects') }),
@@ -360,7 +360,7 @@ r.layout('_app', { lazy: () => import('./pages/app-layout') }, (app) =>
 ```
 
 ```tsx
-// app/pages/app-layout.tsx
+// app/layouts/app.tsx
 import { Link, Outlet } from '@kitr/router'
 
 export default function AppLayout() {
@@ -490,7 +490,7 @@ r.page('/projects/$id', {
 // app/routes.ts
 import { requireAuth } from '@kitr/router'
 
-r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./layouts/app') }, (app) =>
   app.page('/dashboard', { lazy: () => import('./pages/dashboard') }),
 )
 ```
@@ -1050,7 +1050,7 @@ When the same app has a [server](/packages/server) platform, `app/server.ts` is 
 `createKitrRouter` binds the router in the container as `router`, so code that is not a component can navigate without importing the table:
 
 ```ts
-// app/features/projects/open-project.ts
+// app/lib/projects/open-project.ts
 import { app } from '#app/app'
 
 export function openProject(id: string) {
@@ -1070,6 +1070,7 @@ This section is the one place that documents file routes. A project that already
 | Command | What it does |
 | --- | --- |
 | `kitr make:page <path>` | Writes `app/pages/<path>.tsx` with a component, and appends `.page('<path>', { lazy })` to `app/routes.ts`. |
+| `kitr make:layout <name>` | Writes `app/layouts/<name>.tsx`, a component around `<Outlet />`, and appends `.layout('_<name>', { lazy }, (<name>) => <name>)` to `app/routes.ts`. |
 
 ```sh
 kitr make:page 'projects/$id'

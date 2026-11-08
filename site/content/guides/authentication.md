@@ -204,7 +204,7 @@ export const abilities = defineAbilities({
 Three routes are enough: start a session, read it, end it. Put them in a controller:
 
 ```ts
-// server/controllers/session_controller.ts
+// server/controllers/session-controller.ts
 import { eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
@@ -254,8 +254,8 @@ import api from '@kitr/api/routes'
 import { authMiddleware, can } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
 import { findUserBySession, SESSION_COOKIE } from '#server/auth/sessions'
-import ProjectsController from '#server/controllers/projects_controller'
-import SessionController from '#server/controllers/session_controller'
+import ProjectsController from '#server/controllers/projects-controller'
+import SessionController from '#server/controllers/session-controller'
 import { findProject } from '#server/services/projects'
 
 const optionalAuth = authMiddleware<User>({
@@ -542,7 +542,7 @@ A project in another team answers "not found", not "forbidden": the caller shoul
 In components, `useCan()` asks the same rules for the signed-in user. Hide the actions a user cannot take:
 
 ```tsx
-// app/features/projects/project-row.tsx
+// app/components/projects/project-row.tsx
 import { useCan } from '@kitr/auth'
 import type { Project } from '#server/db/schema'
 

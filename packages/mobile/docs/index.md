@@ -305,7 +305,7 @@ Like `appId`, `capacitor` is read when the file is written. For an existing proj
 Most code should ask [Platform](/packages/platform) (`usePlatform()`, `platform.is('ios')`). For the few places that need Capacitor itself, `@kitr/mobile/client` reads the Capacitor runtime directly:
 
 ```ts
-// app/features/orders/where.ts
+// app/lib/orders/where.ts
 import { capacitorPlatform, isCapacitor, isPluginAvailable } from '@kitr/mobile/client'
 
 capacitorPlatform()
@@ -330,7 +330,7 @@ kitr build phone
 ```
 
 ```ts
-// app/features/orders/share-order.ts
+// app/lib/orders/share-order.ts
 import { nativeOnly } from '@kitr/mobile/client'
 
 export async function shareOrder(order: { id: string; customer: string }) {
@@ -405,7 +405,7 @@ The mobile driver listens to Capacitor's `appUrlOpen` event, which fires when th
 `useAppState()` is `true` while the app is in the foreground. Inside the shell it follows Capacitor's `appStateChange`; in a browser it follows page visibility:
 
 ```tsx
-// app/features/orders/live-orders.tsx
+// app/components/orders/live-orders.tsx
 import { useAppState } from '@kitr/platform/react'
 
 export function LiveOrdersBadge() {
@@ -532,7 +532,7 @@ import { mobileProvider } from '@kitr/mobile/provider'
 import { platformProvider } from '@kitr/platform/provider'
 import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { shareOrder } from '#app/features/orders/share-order'
+import { shareOrder } from '#app/lib/orders/share-order'
 import rc from '../kitrrc'
 
 function fakeShell(os: 'ios' | 'android') {

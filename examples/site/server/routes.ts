@@ -1,7 +1,7 @@
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import HealthController from '#server/controllers/health_controller'
-import NewsletterController from '#server/controllers/newsletter_controller'
+import HealthController from '#server/controllers/health-controller'
+import NewsletterController from '#server/controllers/newsletter-controller'
 
 /** Endpoints of this app, served by `createServer({ routes })` in server/main.ts. */
 export const routes = defineRoutes([api], (root) =>

@@ -251,10 +251,64 @@ export const naming = {
   },
   /** `send_receipt` → `send-receipt`. */
   kebab: (s: string): string => naming.snake(s).replace(/_/g, '-'),
+  /**
+   * A nested generator name: `split('admin/Users')` is `{ dir: 'admin', base: 'Users' }`. The
+   * folder segments are kebab-cased; the base is returned as typed so each generator cases it.
+   */
+  split: (s: string): { dir: string; base: string } => {
+    const parts = s.split('/').filter(Boolean)
+    const base = parts.pop() ?? s
+    return { dir: parts.map((p) => naming.kebab(p)).join('/'), base }
+  },
+}
+
+/** Which project folder a generated file lives under (`rc.directories`, with the defaults). */
+export type GeneratorRoot = 'app' | 'server' | 'components' | 'test'
+
+/**
+ * The convention every `kitr make:<kind>` follows, as one call: `<root>/<folder>/<dir>/<kebab
+ * name><suffix><ext>`. `generatorFile(project, 'server', 'controllers', 'admin/Users', { suffix:
+ * '-controller' })` is `{ file: 'server/controllers/admin/users-controller.ts', vars: { name:
+ * 'Users', dir: 'admin', ... } }`. The returned `vars.name` is the last segment, so a stub's
+ * `naming.pascal(name)` gives `UsersController`, not `AdminUsersController`.
+ */
+export function generatorFile(
+  project: Pick<ProjectInfo, 'rc'>,
+  root: GeneratorRoot,
+  folder: string,
+  name: string,
+  options: { suffix?: string; prefix?: string; ext?: string } = {},
+): { file: string; vars: Record<string, string> } {
+  const { dir, base } = naming.split(name)
+  const dirs = project.rc.directories ?? {}
+  const rootDir =
+    root === 'test'
+      ? 'test'
+      : root === 'components'
+        ? (dirs.components ?? `${dirs.app ?? 'app'}/components`)
+        : (dirs[root] ?? root)
+  const kebab = naming.kebab(base)
+  const fileName = `${options.prefix ?? ''}${kebab}${options.suffix ?? ''}${options.ext ?? '.ts'}`
+  const file = [rootDir, folder, dir, fileName].filter(Boolean).join('/')
+  return {
+    file,
+    vars: {
+      name: base,
+      path: name,
+      dir,
+      kebab,
+      pascal: naming.pascal(base),
+      camel: naming.camel(base),
+    },
+  }
 }
 
 export interface GeneratorVars {
-  /** The name as typed. */
+  /**
+   * The name: as typed, or the last segment of a nested name when the target came from
+   * `generatorFile` (`admin/users` → `users`; the full name is then in `path`, the folder in `dir`,
+   * and the casings in `kebab`, `pascal`, `camel`, so an ejected stub needs no helper import).
+   */
   name: string
   [key: string]: string
 }
@@ -267,7 +321,15 @@ export interface GeneratorArg {
 
 /** A `kitr make:<kind>` generator. A project overrides the stub with `kitr eject stub <kind>`. */
 export interface Generator {
+  /** The `--help` line: what the command does and where it writes. */
   description: string
+  /**
+   * What the kind *is*, in one sentence (`A class whose methods answer routes.`). `kitr make`
+   * prints it beside the target pattern, and the Project structure docs page uses the same words.
+   */
+  definition?: string
+  /** The name argument as `kitr make` shows it: `<feature>/<name>`, `<path>`. Default `<name>`. */
+  usage?: string
   /** Extra flags (`make:controller --resource`). */
   args?: Record<string, GeneratorArg>
   /** Where the file goes and what the stub receives, from the typed name and flags. */

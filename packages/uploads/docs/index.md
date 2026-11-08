@@ -80,7 +80,7 @@ export default defineConfig({
 With `kitr add uploads` done, the server already accepts files at `POST /api/uploads`. Set `publicPath: '/api/uploads'` as shown under Configure, so the returned `url` works. Then add a component that sends a file:
 
 ```tsx
-// app/features/orders/invoice-upload.tsx
+// app/components/orders/invoice-upload.tsx
 import { useUpload } from '@kitr/uploads/react'
 
 export function InvoiceUpload() {
@@ -135,7 +135,7 @@ In a component, `useUpload(options)` returns the state and three functions:
 A progress indicator with a cancel button:
 
 ```tsx
-// app/features/orders/attachment-upload.tsx
+// app/components/orders/attachment-upload.tsx
 import { formatBytes } from '@kitr/uploads'
 import { useUpload } from '@kitr/uploads/react'
 
@@ -166,7 +166,7 @@ Calling `send` again while an upload runs aborts the first one. `maxFiles` in th
 `upload(files, options)` from `@kitr/uploads` is the same request without the hook. Use it in a store, an action or plain script code:
 
 ```ts
-// app/features/orders/attach-invoice.ts
+// app/lib/orders/attach-invoice.ts
 import { upload, UploadError } from '@kitr/uploads'
 
 export async function attachInvoice(orderId: string, file: File) {
@@ -205,7 +205,7 @@ In a browser, `upload` uses `XMLHttpRequest`, the only browser API that reports 
 `checkFile(file, rules)` runs the browser half of the rules and returns a message, or `null` when the file passes. `useUpload` calls it for you; call it yourself to show the problem as soon as a file is picked:
 
 ```ts
-// app/features/orders/check-invoice.ts
+// app/lib/orders/check-invoice.ts
 import { checkFile } from '@kitr/uploads'
 
 const scan = new File([new Uint8Array(12 * 1024 * 1024)], 'scan.png', { type: 'image/png' })
@@ -223,7 +223,7 @@ checkFile(new File(['%PDF-1.7'], 'invoice-1042.pdf', { type: 'application/pdf' }
 `accepts(type, name, accept)` is the type test on its own, and `formatBytes(bytes)` formats sizes for hints:
 
 ```ts
-// app/features/orders/accept-hint.ts
+// app/lib/orders/accept-hint.ts
 import { accepts, formatBytes } from '@kitr/uploads'
 
 accepts('image/png', 'logo.png', ['image/*'])
@@ -243,7 +243,7 @@ formatBytes(10 * 1024 * 1024)
 The browser check is for people; the server check is for safety. Keep both from drifting by putting the rules in one module that a component and a controller both import:
 
 ```ts
-// app/features/orders/invoice-rules.ts
+// app/lib/orders/invoice-rules.ts
 import type { UploadRules } from '@kitr/uploads'
 
 export const invoiceRules: UploadRules = {
@@ -254,9 +254,9 @@ export const invoiceRules: UploadRules = {
 ```
 
 ```tsx
-// app/features/orders/invoice-field.tsx
+// app/components/orders/invoice-field.tsx
 import { useUpload } from '@kitr/uploads/react'
-import { invoiceRules } from './invoice-rules'
+import { invoiceRules } from '#app/lib/orders/invoice-rules'
 
 export function InvoiceField({ orderId }: { orderId: string }) {
   const { send, error } = useUpload({ ...invoiceRules, url: `/api/orders/${orderId}/invoice` })
@@ -280,10 +280,10 @@ The controller that receives it is in the next section.
 `mountUploads` gives you one general endpoint. For files that belong to something, such as an order's invoice, receive them in your own [api](/packages/api) controller. On the server, `useUploads(ctx.app)` returns the service the provider bound, and `receive(event, rules)` reads the multipart body, applies the rules and stores the files:
 
 ```ts
-// server/controllers/order_invoices_controller.ts
+// server/controllers/order-invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useUploads } from '@kitr/uploads/server'
-import { invoiceRules } from '#app/features/orders/invoice-rules'
+import { invoiceRules } from '#app/lib/orders/invoice-rules'
 
 export default class OrderInvoicesController {
   async store({ app, event, params }: HttpContext<{ orderId: string }>) {
@@ -297,7 +297,7 @@ export default class OrderInvoicesController {
 ```ts
 // server/routes.ts
 import { defineRoutes } from '@kitr/api'
-import OrderInvoicesController from '#server/controllers/order_invoices_controller'
+import OrderInvoicesController from '#server/controllers/order-invoices-controller'
 
 export const routes = defineRoutes((router) =>
   router.post('/api/orders/:orderId/invoice', [OrderInvoicesController, 'store']),
@@ -339,7 +339,7 @@ The safe name keeps letters, digits, `.`, `_` and `-`, turns slashes into `_` an
 On the server, `store` writes bytes you already have, such as a generated PDF or an import from another system. `read` and `remove` complete the set:
 
 ```ts
-// server/jobs/archive_invoice.ts
+// server/jobs/archive-invoice.ts
 import type { KitrApp } from 'kitr/app'
 import { useUploads } from '@kitr/uploads/server'
 
@@ -389,7 +389,7 @@ Every file under the route is public to anyone with its key. Keys contain a rand
 Read the file in a controller that checks access, and answer with the safe headers:
 
 ```ts
-// server/controllers/order_invoices_controller.ts
+// server/controllers/order-invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { servedFileHeaders, useUploads } from '@kitr/uploads/server'
@@ -415,7 +415,7 @@ export default class OrderInvoicesController {
 A server rejection reaches the browser as an `UploadError`. Its `status` is the HTTP status and its `body` is the parsed response, so field messages are at `body.fieldErrors`:
 
 ```tsx
-// app/features/orders/invoice-error.tsx
+// app/components/orders/invoice-error.tsx
 import { UploadError } from '@kitr/uploads'
 
 export function InvoiceError({ error }: { error: Error | null }) {
@@ -641,7 +641,7 @@ describe('invoice uploads', () => {
 To test code that calls `useUploads(app)`, boot an app with the provider and a memory driver from [testing](/packages/testing):
 
 ```ts
-// server/jobs/archive_invoice.test.ts
+// server/jobs/archive-invoice.test.ts
 import { createTestApp } from '@kitr/testing'
 import { uploadsProvider } from '@kitr/uploads/provider'
 import { createMemoryUploadsDriver, useUploads } from '@kitr/uploads/server'

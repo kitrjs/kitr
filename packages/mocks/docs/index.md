@@ -376,7 +376,7 @@ Requests to any other host go to the real network.
 In a test, `setupNodeMocks(handlers)` starts MSW in Node and returns MSW's server. Start it once per file, reset per-test overrides after each test, and close it at the end:
 
 ```ts
-// app/features/invoices/invoices.test.ts
+// app/lib/invoices/invoices.test.ts
 import { setupNodeMocks } from '@kitr/mocks'
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'
 import { handlers } from '#app/mocks/handlers'
@@ -405,7 +405,7 @@ To render a component against these mocks, combine them with `renderWithKitr` fr
 `mocks.use()` puts handlers in front of the list until the next `resetHandlers()`. Use it to give one test the empty state or the error it needs, without touching the shared handlers:
 
 ```ts
-// app/features/invoices/invoices.test.ts
+// app/lib/invoices/invoices.test.ts
 import { KitrError } from 'kitr/app'
 import { HttpResponse, http, kitrErrorResponse, setupNodeMocks } from '@kitr/mocks'
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'

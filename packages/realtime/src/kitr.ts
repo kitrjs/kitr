@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add realtime`: typed channels over WebSocket (default), Socket.IO or SSE, feeding the query cache. */
 export default definePackage({
@@ -55,9 +55,8 @@ export default definePackage({
   generators: {
     channel: {
       description: 'Create a socket channel in app/channels',
-      target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/channels/${naming.snake(name)}.ts`,
-      }),
+      definition: 'A realtime channel: params, events with cache effects, and who may join.',
+      target: (name, project) => generatorFile(project, 'app', 'channels', name),
       stub: ({ name }) => `import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 

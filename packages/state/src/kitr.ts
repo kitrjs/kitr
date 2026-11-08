@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add state`: Zustand with an SSR-safe store factory (per-request stores on the server). */
 export default definePackage({
@@ -19,9 +19,8 @@ export default definePackage({
   generators: {
     store: {
       description: 'Create a Zustand store in app/stores',
-      target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/stores/${naming.snake(name)}.ts`,
-      }),
+      definition: 'Client-only state; server data belongs in queries, not here.',
+      target: (name, project) => generatorFile(project, 'app', 'stores', name),
       stub: ({ name }) => `import { createKitrStore } from '@kitr/state'
 
 interface ${naming.pascal(name)}State {

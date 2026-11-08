@@ -82,10 +82,10 @@ Generate a template:
 kitr make:mail order-shipped
 ```
 
-That writes `server/mail/order_shipped.tsx`. Edit it to describe the email Ada gets when her order leaves the warehouse:
+That writes `server/mail/order-shipped.tsx`. Edit it to describe the email Ada gets when her order leaves the warehouse:
 
 ```tsx
-// server/mail/order_shipped.tsx
+// server/mail/order-shipped.tsx
 import { defineMail } from '@kitr/mail'
 
 export interface OrderShippedProps {
@@ -111,7 +111,7 @@ export const orderShippedMail = defineMail<OrderShippedProps>('order_shipped', {
 Send it from a controller. `ctx.app` is the request's app, and `useMailer(app)` returns the mailer the provider bound:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
@@ -180,7 +180,7 @@ export function AcmeLayout({ title, children }: { title: string; children: React
 ```
 
 ```tsx
-// server/mail/invoice_ready.tsx
+// server/mail/invoice-ready.tsx
 import { defineMail } from '@kitr/mail'
 import { AcmeLayout } from './layout'
 
@@ -216,7 +216,7 @@ pnpm add @react-email/components
 ```
 
 ```tsx
-// server/mail/team_invite.tsx
+// server/mail/team-invite.tsx
 import { Body, Button, Container, Html, Text } from '@react-email/components'
 import { defineMail } from '@kitr/mail'
 
@@ -268,7 +268,7 @@ htmlToText(
 When the derived text reads badly, usually because of layout tables, write it yourself:
 
 ```tsx
-// server/mail/order_shipped.tsx
+// server/mail/order-shipped.tsx
 import { defineMail } from '@kitr/mail'
 
 export const orderShippedMail = defineMail<{ firstName: string; orderId: string }>('order_shipped', {
@@ -312,7 +312,7 @@ Store `id` next to the order when you want to match it against the provider's de
 Every address field takes one recipient or a list, in any of the three forms:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import type { KitrApp } from 'kitr/app'
 import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
@@ -353,7 +353,7 @@ Don't join several people into one string (`'ada@acme.com, grace@acme.com'`); it
 The sender comes from `from` in `config/mail.ts`. Override it per message, and point replies at a person or a support inbox:
 
 ```ts
-// server/services/support_service.ts
+// server/services/support-service.ts
 import type { KitrApp } from 'kitr/app'
 import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
@@ -378,7 +378,7 @@ Without a `from` anywhere, `send()` and `render()` throw ``[@kitr/mail] No sende
 Pass custom headers in `headers`. The common one is `List-Unsubscribe`, which Gmail and Yahoo require for bulk mail:
 
 ```ts
-// server/services/digest_service.ts
+// server/services/digest-service.ts
 import type { KitrApp } from 'kitr/app'
 import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
@@ -423,7 +423,7 @@ Nothing reaches the transport when a check fails.
 Attachments are `{ filename, content, contentType? }`. `content` is a string or bytes, so a file read with `node:fs` goes straight in:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import { readFile } from 'node:fs/promises'
 import type { KitrApp } from 'kitr/app'
 import { useMailer } from '@kitr/mail'
@@ -452,7 +452,7 @@ The Resend transport base64-encodes each attachment, encoding string content as 
 Sending inside a request makes the response wait for the mail provider, and a provider outage fails the request. Dispatch a [job](/packages/jobs) instead. The request returns at once, and the job retries with backoff when the provider is down:
 
 ```ts
-// server/jobs/send_order_shipped.ts
+// server/jobs/send-order-shipped.ts
 import { defineJob } from '@kitr/jobs'
 import { useMailer } from '@kitr/mail'
 import { z } from 'zod'
@@ -472,7 +472,7 @@ export const sendOrderShipped = defineJob('send_order_shipped', {
 List the job in `config/jobs.ts`, then dispatch it from the controller:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useJobs } from '@kitr/jobs'
 import { sendOrderShipped } from '#server/jobs/send_order_shipped'
@@ -496,7 +496,7 @@ Pass ids and plain values in the payload, not rendered HTML: the job renders the
 `mailer.render(template, props, options?)` builds the finished `Message` and sends nothing. Use it for snapshot tests, for storing a copy of what you sent, or to hand the message to code outside kitr:
 
 ```ts
-// server/services/archive_service.ts
+// server/services/archive-service.ts
 import type { KitrApp } from 'kitr/app'
 import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
@@ -725,13 +725,13 @@ await mailer.send(teamInviteMail, { inviter: 'Grace', teamName: 'Analytical Engi
 
 | Command | What it does |
 | --- | --- |
-| `kitr make:mail <name>` | Writes a template to `server/mail/<snake_name>.tsx`. `--force` overwrites an existing file. |
+| `kitr make:mail <name>` | Writes a template to `server/mail/<name>.tsx` (kebab-case, nested names allowed). `--force` overwrites an existing file. |
 | `kitr eject stub mail` | Copies the generator's template to `stubs/mail.ts`, so `make:mail` writes your own starting point. |
 
-`kitr make:mail order-shipped` writes `server/mail/order_shipped.tsx`:
+`kitr make:mail order-shipped` writes `server/mail/order-shipped.tsx`:
 
 ```tsx
-// server/mail/order_shipped.tsx
+// server/mail/order-shipped.tsx
 import { defineMail } from '@kitr/mail'
 
 export interface OrderShippedProps {
@@ -779,7 +779,7 @@ SMTP errors come from nodemailer unchanged.
 Outside production the provider uses the log transport, which keeps every message. In a test, boot an app with the mail provider and a quiet log transport, run the code that sends, and read `mailer.sent`:
 
 ```ts
-// test/order_shipped.test.ts
+// test/order-shipped.test.ts
 import { createLogTransport, useMailer } from '@kitr/mail'
 import mailProvider from '@kitr/mail/provider'
 import { createTestApp } from '@kitr/testing'
@@ -831,7 +831,7 @@ To test through an HTTP route, send the request with `createTestClient(server)` 
 To check a template's markup without a container, use `createMailer()` and `render()`, and snapshot the result:
 
 ```ts
-// test/invoice_ready.test.ts
+// test/invoice-ready.test.ts
 import { createMailer } from '@kitr/mail'
 import { expect, it } from 'vitest'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
@@ -849,7 +849,7 @@ it('renders the invoice email', async () => {
 To test your code's handling of a transport failure, pass a transport that throws:
 
 ```ts
-// test/transport_failure.test.ts
+// test/transport-failure.test.ts
 import { createMailer, type MailTransport } from '@kitr/mail'
 import { expect, it } from 'vitest'
 import { orderShippedMail } from '#server/mail/order_shipped'
@@ -873,7 +873,7 @@ it('surfaces a provider outage', async () => {
 A transport is an object with a `name` and a `send(message)` method that resolves with `{ id? }`. The `Message` it receives is final: addresses are parsed and checked, the HTML and text are rendered. See [`MailTransport`](/packages/mail/api#mailtransport) and [`Message`](/packages/mail/api#message).
 
 ```ts
-// server/mail/postmark_transport.ts
+// server/mail/postmark-transport.ts
 import { formatAddress, type MailTransport } from '@kitr/mail'
 
 /** Sends through Postmark's HTTP API. Attachments are left out to keep the example short. */
@@ -926,7 +926,7 @@ Use `formatAddress()` whenever your transport writes an address into a string, s
 Transports compose. This one falls back to a second provider when the first throws:
 
 ```ts
-// server/mail/fallback_transport.ts
+// server/mail/fallback-transport.ts
 import type { MailTransport } from '@kitr/mail'
 
 export function withFallback(primary: MailTransport, backup: MailTransport): MailTransport {

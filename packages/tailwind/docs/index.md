@@ -84,7 +84,7 @@ There are no env variables. There is no `tailwind.config.js` either: Tailwind v4
 On the server and in the browser, class names are plain strings, so a styled component is a component with `className`. Here is the badge for an order's status:
 
 ```tsx
-// app/features/orders/order-status-badge.tsx
+// app/components/orders/order-status-badge.tsx
 export function OrderStatusBadge({ status }: { status: 'paid' | 'pending' | 'refunded' }) {
   return (
     <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -98,7 +98,7 @@ Use it anywhere:
 
 ```ts
 // app/routes.ts
-import { OrderStatusBadge } from '#app/features/orders/order-status-badge'
+import { OrderStatusBadge } from '#app/components/orders/order-status-badge'
 
 r.page('/orders/', {
     <main className="mx-auto max-w-3xl p-6">
@@ -138,7 +138,7 @@ The preset maps every kitr token to a Tailwind theme variable. Each colour works
 The preset also sets every element's default border colour to `border-border`, and gives `<body>` the background, text colour and sans font. A plain `border` class therefore draws a themed line.
 
 ```tsx
-// app/features/orders/order-card.tsx
+// app/components/orders/order-card.tsx
 export function OrderCard({ number, customer, total }: { number: string; customer: string; total: string }) {
   return (
     <article className="rounded-lg border bg-background p-4 shadow-sm">
@@ -203,7 +203,7 @@ For a token kitr does not have, add it to Tailwind's theme with an `@theme` bloc
 ```
 
 ```tsx
-// app/features/orders/paid-banner.tsx
+// app/components/orders/paid-banner.tsx
 export function PaidBanner() {
   return (
     <div className="rounded-md bg-success p-3 text-success-foreground">
@@ -239,7 +239,7 @@ The preset redefines the `dark:` variant to match `data-theme="dark"` on any anc
 Theme classes switch by themselves. Use `dark:` only for colours outside the theme:
 
 ```tsx
-// app/features/orders/order-chart-legend.tsx
+// app/components/orders/order-chart-legend.tsx
 export function OrderChartLegend() {
   return (
     <ul className="flex gap-4 text-sm">
@@ -295,7 +295,7 @@ Without merging, `'p-4 p-8'` leaves both classes on the element and the one that
 Components take `className` and put it last in `cn()`, so callers can adjust them without a new prop for every change:
 
 ```tsx
-// app/features/orders/order-card.tsx
+// app/components/orders/order-card.tsx
 import { cn } from '@kitr/tailwind'
 import type { ComponentProps } from 'react'
 
@@ -316,7 +316,7 @@ Don't join with a template string (`` `p-4 ${className}` ``). Both padding class
 A component with variants (a status, a size) maps each one to classes. [class-variance-authority](https://cva.style/docs) is installed by `kitr add tailwind`, and the components from `kitr ui add` use it:
 
 ```tsx
-// app/features/orders/order-status-badge.tsx
+// app/components/orders/order-status-badge.tsx
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@kitr/tailwind'
 import type { ReactNode } from 'react'
@@ -405,7 +405,7 @@ A class that is missing from the build shows up in the HTML but has no style. Th
 Headless kitr components mark their parts with `data-kitr` attributes, so you can reach them with Tailwind's arbitrary variants. The field wrapper from [forms](/packages/forms) is one:
 
 ```tsx
-// app/features/orders/refund-reason-field.tsx
+// app/components/orders/refund-reason-field.tsx
 import { FieldInput, FormField } from '@kitr/forms'
 
 export function RefundReasonField() {
@@ -474,7 +474,7 @@ Most Tailwind problems in a kitr app come from one of a few causes. Check them i
 Tests do not build CSS. The `vitest.config.ts` that kitr writes runs `kitr({ plugins: { tailwind: false } })`, so a test checks which classes a component renders, not what they look like. Test `cn()` merges and variant classes directly:
 
 ```tsx
-// app/features/orders/order-status-badge.test.tsx
+// app/components/orders/order-status-badge.test.tsx
 import { render, screen } from '@testing-library/react'
 import { cn } from '@kitr/tailwind'
 import { describe, expect, it } from 'vitest'

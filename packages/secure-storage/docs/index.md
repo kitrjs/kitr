@@ -92,7 +92,7 @@ export const sessionItem = defineSecureItem<{ token: string; expiresAt: number }
 Read and write it in a component with `useSecureItem`:
 
 ```tsx
-// app/features/account/session-status.tsx
+// app/components/account/session-status.tsx
 import { useSecureItem } from '@kitr/secure-storage/react'
 import { sessionItem } from '#app/secure'
 
@@ -139,7 +139,7 @@ Each `useSecureItem` call binds its own copy of the item, and only that copy hea
 To act after the write, await `set`:
 
 ```tsx
-// app/features/account/sign-in-form.tsx
+// app/components/account/sign-in-form.tsx
 import { useSecureItem } from '@kitr/secure-storage/react'
 import { useNavigate } from '@kitr/router'
 import { sessionItem } from '#app/secure'
@@ -206,7 +206,7 @@ export const lastUnlockItem = defineSecureItem<Date>('last-unlock', {
 An item is a function that binds it to a `SecureStorage` service. Get the service from the app's container, or with `useSecureStorage(app)` from `@kitr/secure-storage`:
 
 ```ts
-// app/features/account/session.ts
+// app/lib/account/session.ts
 import type { KitrApp } from 'kitr/app'
 import { useSecureStorage } from '@kitr/secure-storage'
 import { sessionItem } from '#app/secure'
@@ -223,7 +223,7 @@ export async function currentToken(app: KitrApp): Promise<string | null> {
 A bound item has `key`, `get()`, `set(value)`, `remove()` and `subscribe(listener)`. `subscribe` calls the listener with the new value (or `undefined` after `remove`) on writes made through that bound item, and returns an unsubscribe function:
 
 ```ts
-// app/features/account/watch-session.ts
+// app/lib/account/watch-session.ts
 import type { SecureStorage } from '@kitr/secure-storage'
 import { sessionItem } from '#app/secure'
 
@@ -243,7 +243,7 @@ Make writes through the returned `session` so the listener hears them. In a comp
 Under the items is a plain async key-value API of strings. Use it for secrets you don't type ahead, such as one API key per integration:
 
 ```ts
-// app/features/integrations/api-keys.ts
+// app/lib/integrations/api-keys.ts
 import type { SecureStorage } from '@kitr/secure-storage'
 
 export async function saveIntegrationKey(storage: SecureStorage, integration: string, key: string) {
@@ -277,7 +277,7 @@ Keys are given without the prefix; the service adds it.
 `clear()` removes everything this app stored under its prefix and leaves other apps' entries alone. Call it when Ada signs out, so Linus doesn't inherit her tokens on a shared machine:
 
 ```ts
-// app/features/account/sign-out.ts
+// app/lib/account/sign-out.ts
 import type { SecureStorage } from '@kitr/secure-storage'
 
 export async function signOut(storage: SecureStorage) {
@@ -293,7 +293,7 @@ To remove one secret, use the item's `remove()` or `set(undefined)` from the hoo
 Set `requireSecure: true` when a secret must never be stored outside an OS vault. With no vault registered, writes throw and nothing is stored:
 
 ```ts
-// app/features/account/remember-device.ts
+// app/lib/account/remember-device.ts
 import type { SecureStorage } from '@kitr/secure-storage'
 
 export async function rememberDevice(storage: SecureStorage, deviceToken: string) {
@@ -359,7 +359,7 @@ A value that fails to decrypt, parse or validate is not an error: it is removed 
 `createMemorySecureStorageDriver(name)` keeps values in a `Map`. Its `secure` is `false`; spread it and set `secure: true` to test code that checks for a vault. Pass it through `config['secure-storage'].driver`:
 
 ```tsx
-// app/features/account/session-status.test.tsx
+// app/components/account/session-status.test.tsx
 import { fireEvent, screen } from '@testing-library/react'
 import { createMemorySecureStorageDriver } from '@kitr/secure-storage'
 import { secureStorageProvider } from '@kitr/secure-storage/provider'
@@ -469,7 +469,7 @@ handleIpc<{
 ```
 
 ```ts
-// app/providers/vault_provider.ts
+// app/providers/vault-provider.ts
 import { defineProvider } from 'kitr/app'
 import { createIpcClient } from '@kitr/desktop/client'
 import type { SecureStorageDriver } from '@kitr/secure-storage'
@@ -500,7 +500,7 @@ export default defineProvider({
 })
 ```
 
-Create the provider with `kitr make:provider vault` and add `() => import('#app/providers/vault_provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, `secureStorage.secure` is now `true`, the session status drops "(browser storage)", and `requireSecure: true` lets writes through. In the web build `ipc.available` is `false`, so the browser fallback still applies.
+Create the provider with `kitr make:provider vault`, which also adds `() => import('#app/providers/vault-provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, `secureStorage.secure` is now `true`, the session status drops "(browser storage)", and `requireSecure: true` lets writes through. In the web build `ipc.available` is `false`, so the browser fallback still applies.
 
 On Linux without a secret store, `safeStorage` falls back to a hard-coded password; check `safeStorage.getSelectedStorageBackend()` in main if that matters to you. In a [Tauri](/packages/tauri) app the same driver shape fits over a keyring plugin through Tauri commands. The `SecureStorageDriver` and `SecureItem` types are in the [API reference](/packages/secure-storage/api).
 

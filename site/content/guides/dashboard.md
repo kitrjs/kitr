@@ -267,7 +267,7 @@ export default function SignInPage() {
 // app/routes.ts
 import { requireAuth } from '@kitr/router'
 
-r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./layouts/app') }, (app) =>
   app
     .page('/orders', { lazy: () => import('./pages/orders/index') })
     .page('/orders/new', { lazy: () => import('./pages/orders/new') }),
@@ -275,7 +275,7 @@ r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-la
 ```
 
 ```tsx
-// app/pages/app-layout.tsx
+// app/layouts/app.tsx
 import { useAuth, useUser } from '@kitr/auth'
 import { Outlet } from '@kitr/router'
 import type { User } from '#app/abilities'
@@ -313,10 +313,10 @@ Each feature keeps its data in one `queries.ts`: the cache keys, the queries tha
 kitr make:queries orders
 ```
 
-It writes `app/features/orders/queries.ts` with a list query, a detail query and an update mutation over the HTTP client. Replace it with the two operations this screen needs: one page of orders for the table, and a create mutation:
+It writes `app/queries/orders.ts` with a list query, a detail query and an update mutation over the HTTP client. Replace it with the two operations this screen needs: one page of orders for the table, and a create mutation:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { createKeys } from 'kitr/app'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { mutationFrom, queryFrom } from '@kitr/query'
@@ -371,9 +371,9 @@ Three things to notice:
 Columns describe what each cell shows. Keep them outside the component so the table does not rebuild them on every render:
 
 ```tsx
-// app/features/orders/columns.tsx
+// app/components/orders/columns.tsx
 import type { ColumnDef, DataTableFeatures } from '@kitr/table'
-import type { Order } from './queries'
+import type { Order } from '#app/queries/orders'
 
 export const columns: ColumnDef<DataTableFeatures, Order>[] = [
   { accessorKey: 'id', header: 'Order', enableSorting: false },
@@ -393,7 +393,7 @@ The page validates the search params, loads the matching page before it renders,
 ```ts
 // app/routes.ts
 import { parseTableSearch } from '@kitr/table'
-import { ordersPageQuery } from '#app/features/orders/queries'
+import { ordersPageQuery } from '#app/queries/orders'
 
 app.page('/orders', {
   validateSearch: parseTableSearch,
@@ -409,8 +409,8 @@ import { getRouteApi, Link } from '@kitr/router'
 import { useSuspenseQuery } from '@kitr/query'
 import { useUrlTableState } from '@kitr/table'
 import { DataTable } from '#components/ui/data-table'
-import { columns } from '#app/features/orders/columns'
-import { ordersPageQuery } from '#app/features/orders/queries'
+import { columns } from '#app/components/orders/columns'
+import { ordersPageQuery } from '#app/queries/orders'
 
 const route = getRouteApi('/_app/orders')
 
@@ -444,7 +444,7 @@ Open `/orders`: three rows. Click the Total header and the URL becomes `/orders?
 Start with a schema. The form validates with it in the browser, and your API can validate with the same rules:
 
 ```ts
-// app/features/orders/schema.ts
+// app/validators/orders.ts
 import { z } from 'zod'
 
 export const newOrderSchema = z.object({
@@ -467,8 +467,8 @@ app.page('/orders/new', { lazy: () => import('./pages/orders/new') })
 import { useNavigate } from '@kitr/router'
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
 import { useMutation } from '@kitr/query'
-import { createOrder } from '#app/features/orders/queries'
-import { newOrderSchema } from '#app/features/orders/schema'
+import { createOrder } from '#app/queries/orders'
+import { newOrderSchema } from '#app/validators/orders'
 
 export default function NewOrderPage() {
   const create = useMutation(createOrder)
@@ -506,7 +506,7 @@ Now type a single letter as the customer and submit. The schema allows it, so th
 The kit includes [Testing](/packages/testing) and a `vitest.config.ts`. A component test renders the page's table with the app's providers and the same mock handlers you use in the browser, so the HTTP client, the query cache and the table all run as in production:
 
 ```tsx
-// app/features/orders/orders-table.test.tsx
+// app/components/orders/orders-table.test.tsx
 import { screen } from '@testing-library/react'
 import httpProvider from '@kitr/http/provider'
 import { setupNodeMocks } from '@kitr/mocks'
@@ -517,7 +517,7 @@ import { renderWithKitr } from '@kitr/testing/react'
 import { Suspense } from 'react'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { handlers } from '#app/mocks/handlers'
-import { ordersPageQuery } from './queries'
+import { ordersPageQuery } from '#app/queries/orders'
 
 let mocks: Awaited<ReturnType<typeof setupNodeMocks>>
 beforeAll(async () => {

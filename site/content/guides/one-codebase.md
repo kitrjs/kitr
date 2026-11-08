@@ -105,9 +105,9 @@ When the guard should depend on more than the build, such as the operating syste
 Sharing an invoice opens the share sheet on a phone and copies the link everywhere else. `forPlatform()` picks the implementation once, from the platform the bundle was built for, so components call `shareInvoice()` without asking where they are:
 
 ```ts
-// app/features/invoices/share-invoice.ts
+// app/lib/invoices/share-invoice.ts
 import { forPlatform } from '@kitr/platform'
-import type { Invoice } from './queries'
+import type { Invoice } from '#app/queries/invoices'
 
 const linkTo = (invoice: Invoice) => `https://app.acme.com/invoices/${invoice.id}`
 
@@ -130,7 +130,7 @@ export const shareInvoice = forPlatform<(invoice: Invoice) => Promise<'shared' |
 When the answer depends on the device rather than the build, such as iOS against Android inside the same phone build, use `perPlatform()` at run time with the platform service:
 
 ```ts
-// app/features/invoices/payment-link.ts
+// app/lib/invoices/payment-link.ts
 import { perPlatform } from '@kitr/platform'
 import { app } from '#app/app'
 

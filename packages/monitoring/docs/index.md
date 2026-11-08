@@ -103,7 +103,7 @@ Neither variable does anything until you uncomment the reporter line. Until then
 Errors you catch and handle are not reported unless you say so. In a component, read the service with `useService('monitoring')` and call `captureException` in the `catch`:
 
 ```tsx
-// app/features/projects/import-projects-button.tsx
+// app/components/projects/import-projects-button.tsx
 import { useService } from '@kitr/react'
 
 export function ImportProjectsButton({ file }: { file: File }) {
@@ -242,7 +242,7 @@ Prints exceptions with `console.error('[monitoring]', source, error, extra)` and
 | `source` | Where it came from. The built-in sources are `error-boundary`, `window` and `server`. |
 
 ```ts
-// app/features/invoices/download-invoice.ts
+// app/lib/invoices/download-invoice.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function downloadInvoice(app: KitrApp, invoiceNumber: string) {
@@ -269,7 +269,7 @@ Outside React, the service is `app.container.use('monitoring')`. Don't report an
 `captureMessage(message, context?)` reports something worth knowing that is not an exception:
 
 ```ts
-// app/features/projects/import-limit.ts
+// app/lib/projects/import-limit.ts
 import type { KitrApp } from 'kitr/app'
 
 export function warnImportLimit(app: KitrApp, teamId: string, rows: number) {
@@ -288,7 +288,7 @@ Messages skip `shouldReport`; every call is sent.
 `setUser(user)` attaches the signed-in user to every report that follows, so Linus can see that Ada hit the error and contact her. Call it after sign-in and pass `null` on sign-out:
 
 ```ts
-// app/features/auth/session.ts
+// app/lib/auth/session.ts
 import type { KitrApp } from 'kitr/app'
 
 export function onSignedIn(app: KitrApp, user: { id: string; email: string; teamId: string }) {
@@ -307,7 +307,7 @@ The user needs an `id`; `email`, `username` and any other field are optional. On
 A breadcrumb is a step on the way to a possible error. Reporters that support them, such as Sentry, attach the most recent ones to the next report:
 
 ```ts
-// app/features/projects/import-projects.ts
+// app/lib/projects/import-projects.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function importProjects(app: KitrApp, file: File) {
@@ -338,7 +338,7 @@ Tags are short strings you filter by. Set them in three places, from widest to n
 - `tags` in the context of one call, as in [Report a caught error](#report-a-caught-error).
 
 ```ts
-// app/features/teams/team-context.ts
+// app/lib/teams/team-context.ts
 import type { KitrApp } from 'kitr/app'
 
 export function onTeamSelected(app: KitrApp, team: { id: string; plan: 'free' | 'pro' }) {
@@ -355,7 +355,7 @@ export function onTeamSelected(app: KitrApp, team: { id: string; plan: 'free' | 
 `wrap(fn, context?)` runs `fn`, reports anything it throws or rejects with, and rethrows. It works for sync and async functions:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import type { Monitoring } from '@kitr/monitoring'
 
 export function totalInvoice(monitoring: Monitoring, lines: Array<{ amount: number }>) {
@@ -415,10 +415,10 @@ defaultShouldReport(new Error('Import failed with 500')) // => true
 The provider's boundary rethrows so the router's error component renders. To keep the rest of a page working when one widget fails, put your own `MonitoringErrorBoundary` around it with a `fallback`:
 
 ```tsx
-// app/features/invoices/invoice-chart-section.tsx
+// app/components/invoices/invoice-chart-section.tsx
 import { MonitoringErrorBoundary } from '@kitr/monitoring/provider'
 import { useService } from '@kitr/react'
-import { InvoiceChart } from './invoice-chart'
+import { InvoiceChart } from '#app/components/invoices/invoice-chart'
 
 export function InvoiceChartSection() {
   const monitoring = useService('monitoring')
@@ -528,12 +528,12 @@ try {
 `memoryReporter()` keeps every report in arrays. Boot an app with the provider and a memory reporter, run the code, and assert on what was reported:
 
 ```ts
-// test/download_invoice.test.ts
+// test/download-invoice.test.ts
 import { memoryReporter } from '@kitr/monitoring'
 import monitoringProvider from '@kitr/monitoring/provider'
 import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { downloadInvoice } from '#app/features/invoices/download-invoice'
+import { downloadInvoice } from '#app/lib/invoices/download-invoice'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -571,7 +571,7 @@ Breadcrumbs and tags set with `setTag` are not kept. To check that an expected e
 Without the provider, `createMonitoring({ reporters: [reporter] })` gives you the same service with no `environment` tag. Use it to test the server middleware without a server:
 
 ```ts
-// test/report_errors.test.ts
+// test/report-errors.test.ts
 import { createMonitoring, memoryReporter } from '@kitr/monitoring'
 import { reportErrors } from '@kitr/monitoring/server'
 import { expect, it } from 'vitest'

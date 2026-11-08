@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add forms`: React Hook Form with Standard Schema resolvers, `<Form>` with server-error mapping. */
 export default definePackage({
@@ -18,9 +18,9 @@ export default definePackage({
   generators: {
     form: {
       description: 'Create a form component in app/components/forms',
-      target: (name, project) => ({
-        file: `${project.rc.directories.components ?? 'app/components'}/forms/${naming.snake(name)}_form.tsx`,
-      }),
+      definition: 'A component that owns one schema-validated form and its submit.',
+      target: (name, project) =>
+        generatorFile(project, 'components', 'forms', name, { suffix: '-form', ext: '.tsx' }),
       stub: ({ name }) => `import { useSchemaForm } from '@kitr/forms'
 import { z } from 'zod'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
