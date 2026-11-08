@@ -131,7 +131,7 @@ Start the server with `kitr dev`. The provider calls `connect` during boot, befo
 In a controller, `ctx.app` is the app for the current request. Pass it to `useDb` with your client type:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import { desc, eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
 import { useDb } from '@kitr/db'
@@ -155,7 +155,7 @@ Register the route as usual with [api](/packages/api):
 ```ts
 // server/routes.ts
 import { defineRoutes } from '@kitr/api'
-import OrdersController from '#server/controllers/orders_controller'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes((router) =>
   router.get('/api/teams/:teamId/orders', [OrdersController, 'index']),
@@ -236,7 +236,7 @@ Taking `app` as a parameter keeps the function testable: a test passes an app wi
 `useDb<T>(app)` is a typed shortcut for `app.container.use('db')`. Both return the same object:
 
 ```ts
-// server/controllers/health_controller.ts
+// server/controllers/health-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class HealthController {

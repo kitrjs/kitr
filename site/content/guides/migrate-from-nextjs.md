@@ -265,7 +265,7 @@ export const createProject = defineMutation('projects.create', {
 ```
 
 ```tsx
-// app/features/projects/new-project-form.tsx
+// app/components/projects/new-project-form.tsx
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
 import { useMutation } from '@kitr/query'
 import { z } from 'zod'
@@ -309,7 +309,7 @@ export async function GET() {
 ```
 
 ```ts
-// server/controllers/projects_controller.ts
+// server/controllers/projects-controller.ts
 import { db } from '#server/db'
 
 export default class ProjectsController {
@@ -323,7 +323,7 @@ export default class ProjectsController {
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import ProjectsController from '#server/controllers/projects_controller'
+import ProjectsController from '#server/controllers/projects-controller'
 
 export const routes = defineRoutes([api], (router) =>
   router.group('/api', (r) => api.resource('projects', ProjectsController, { only: ['index'] })),

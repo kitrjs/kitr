@@ -165,7 +165,7 @@ The hook reads the state with `useSyncExternalStore`, so a component re-renders 
 Add a "Check for updates" item to a settings page. `check()` resolves to the update, or `null` when the app is current:
 
 ```tsx
-// app/features/settings/check-for-updates.tsx
+// app/components/settings/check-for-updates.tsx
 import { useUpdate } from '@kitr/updater/react'
 
 export function CheckForUpdates() {
@@ -189,7 +189,7 @@ When something is found, `status` becomes `available` and the banner from the ro
 `apply()` downloads (where the driver needs to) and installs, moving `progress` from 0 to 1 on the way. Call it as many times as you like: while an apply is running or done, more calls do nothing, so a double click installs once.
 
 ```tsx
-// app/features/settings/update-now.tsx
+// app/components/settings/update-now.tsx
 import { useUpdate } from '@kitr/updater/react'
 
 export function UpdateNow() {
@@ -217,7 +217,7 @@ Applying reloads or restarts the app, so anything not saved is lost. Don't call 
 `dismiss()` hides the current update until a different version appears. It sets `status` to `up-to-date` and `update` to `null`:
 
 ```tsx
-// app/features/settings/remind-me-later.tsx
+// app/components/settings/remind-me-later.tsx
 import { useUpdate } from '@kitr/updater/react'
 
 export function RemindMeLater() {
@@ -278,7 +278,7 @@ The service-worker driver needs a registered worker. Without one, `check()` reso
 Neither `check()` nor `apply()` throws. A failure sets `status: 'error'` and keeps the reason in `error`:
 
 ```tsx
-// app/features/settings/update-error.tsx
+// app/components/settings/update-error.tsx
 import { useUpdate } from '@kitr/updater/react'
 
 export function UpdateError() {
@@ -302,7 +302,7 @@ A later `check()` clears `error`. A non-`Error` rejection from the driver, such 
 Outside components, read the service from the app's container. `useUpdater(app)` from `@kitr/updater` does the same:
 
 ```ts
-// app/features/settings/updates-on-focus.ts
+// app/lib/settings/updates-on-focus.ts
 import type { KitrApp } from 'kitr/app'
 import { useUpdater } from '@kitr/updater'
 
@@ -487,7 +487,7 @@ autoUpdater.on('download-progress', (p) => {
 ```
 
 ```ts
-// app/providers/electron_updater_provider.ts
+// app/providers/electron-updater-provider.ts
 import { defineProvider } from 'kitr/app'
 import { createIpcClient } from '@kitr/desktop/client'
 import type { UpdaterDriver } from '@kitr/updater'
@@ -521,7 +521,7 @@ export default defineProvider({
 })
 ```
 
-Create the provider with `kitr make:provider electron_updater` and add `() => import('#app/providers/electron_updater_provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, the banner now shows the release version, the button shows download progress, and the app restarts on the new build. In the web build `ipc.available` is `false`, so the service-worker driver still applies.
+Create the provider with `kitr make:provider electron-updater`, which also adds `() => import('#app/providers/electron-updater-provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, the banner now shows the release version, the button shows download progress, and the app restarts on the new build. In the web build `ipc.available` is `false`, so the service-worker driver still applies.
 
 A [Tauri](/packages/tauri) app does the same with [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/): `check()` resolves to an update or `null`, and the update's `downloadAndInstall()` reports progress before you relaunch. The `UpdaterDriver` and `UpdateInfo` types are in the [API reference](/packages/updater/api).
 

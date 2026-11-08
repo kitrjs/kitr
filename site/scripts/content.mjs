@@ -441,7 +441,7 @@ writeFileSync(
   join(out, 'home-code.json'),
   JSON.stringify({
     contract: highlight(
-      `// app/features/projects/queries.ts
+      `// app/queries/projects.ts
 export const projectsQuery = defineQuery({
   key: () => projectKeys.list(),
   fetch: () => api.projects.index(),

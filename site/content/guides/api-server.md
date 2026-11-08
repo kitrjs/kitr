@@ -73,7 +73,7 @@ kitr make:controller invoices --resource
 Replace the generated body with Acme's invoices. They live in memory for now; the next section moves them to Postgres:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
@@ -124,8 +124,8 @@ Register it. `resource()` adds a route for each REST method the controller has, 
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
-import HealthController from '#server/controllers/health_controller'
-import InvoicesController from '#server/controllers/invoices_controller'
+import HealthController from '#server/controllers/health-controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group('/api', (r) =>
@@ -220,7 +220,7 @@ export default defineDb({
 Set `DATABASE_URL=postgres://postgres:acme@localhost:5432/billing` in `.env`, then create the table with `drizzle-kit` (the [DB guide](/packages/db#run-migrations) shows `drizzle.config.ts` and the scripts). In the controller, `ctx.app` is the app for this request; `useDb` returns the pooled client:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import { desc, eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
@@ -296,8 +296,8 @@ import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { auth } from '#server/auth'
-import HealthController from '#server/controllers/health_controller'
-import InvoicesController from '#server/controllers/invoices_controller'
+import HealthController from '#server/controllers/health-controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group('/api', (r) =>
@@ -323,8 +323,8 @@ import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { auth } from '#server/auth'
-import HealthController from '#server/controllers/health_controller'
-import InvoicesController from '#server/controllers/invoices_controller'
+import HealthController from '#server/controllers/health-controller'
+import InvoicesController from '#server/controllers/invoices-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group(
@@ -381,7 +381,7 @@ export const routes = defineRoutes([api, realtime], (router) =>
 Add a `pay` route and emit from it. `app` is on every `HttpContext`, so the controller reaches the socket server through the container:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 // ...
 import { invoicesChannel } from '#app/channels/invoices'
 

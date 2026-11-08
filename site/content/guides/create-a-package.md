@@ -340,7 +340,7 @@ The CLI finds `@acme/slack` already installed, loads `@acme/slack/kitr` and appl
 Use the service from a controller:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class InvoicesController {

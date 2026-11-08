@@ -130,7 +130,7 @@ The setter takes a value or a function of the current value. The third element, 
 Every item has the same three methods outside components, so services, route loaders and event handlers use the same declaration:
 
 ```ts
-// app/features/orders/search.ts
+// app/lib/orders/search.ts
 import { recentSearches } from '#app/storage'
 
 export function rememberSearch(term: string) {
@@ -149,7 +149,7 @@ recentSearches.get() // => []
 To react to changes without React, subscribe. The listener receives the new value and the call returns an unsubscribe function:
 
 ```ts
-// app/features/layout/body-class.ts
+// app/lib/layout/body-class.ts
 import { sidebar } from '#app/storage'
 
 const stop = sidebar.subscribe((value) => {
@@ -385,7 +385,7 @@ acme:locale=de; Max-Age=31536000; Path=/; SameSite=Lax
 The next request to the server carries `Cookie: acme:locale=de`. Outside React, call the same methods on the item:
 
 ```ts
-// app/features/settings/locale.ts
+// app/lib/settings/locale.ts
 import { localeCookie } from '#app/storage'
 
 localeCookie.set('fr')
@@ -470,7 +470,7 @@ localeCookie.get(null) // => 'en'
 On the server, `cookies()` from `@kitr/storage/server` gives typed access to one request's cookies. Pass it the h3 event in a controller or middleware. Reads come from the request's `Cookie` header; writes append a `Set-Cookie` header to the response:
 
 ```ts
-// server/controllers/settings_controller.ts
+// server/controllers/settings-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { cookies } from '@kitr/storage/server'
 import { type Locale, localeCookie } from '#app/storage'
@@ -531,7 +531,7 @@ export const sessionCookie = defineCookie('sid', {
 ```
 
 ```ts
-// server/controllers/sessions_controller.ts
+// server/controllers/sessions-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { cookies } from '@kitr/storage/server'
 import { sessionCookie } from '#server/auth/session-cookie'

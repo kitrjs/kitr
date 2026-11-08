@@ -38,7 +38,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: query
 
 - Import from `@kitr/query`, never from `@tanstack/react-query` directly.
-- Every data source becomes `queryFrom(...)` / `mutationFrom(...)` in `app/features/<name>/queries.ts`. Components use `useSuspenseQuery(x.options(input))`.
+- Every data source becomes `queryFrom(...)` / `mutationFrom(...)` in `app/queries/<name>.ts`. Components use `useSuspenseQuery(x.options(input))`.
 - Route loaders call `context.queryClient.ensureQueryData(x.options(input))` so data is fetched once for server and client.
 - Mutations declare `effects` (invalidate/set keys). Never call `queryClient.invalidateQueries` inline in components.
 

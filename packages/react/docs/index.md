@@ -92,7 +92,7 @@ You hand the app to React through the props of `KitrProvider` or `KitrBoot`:
 With the router installed there is nothing to wire: `createKitrRouter` renders `KitrProvider` around every page. A component reads a service with `useService` and a config file with `useConfig`:
 
 ```tsx
-// app/features/invoices/invoice-count.tsx
+// app/components/invoices/invoice-count.tsx
 import { useConfig, useService } from '@kitr/react'
 import { useEffect, useState } from 'react'
 
@@ -120,7 +120,7 @@ Use it in any route:
 
 ```ts
 // app/routes.ts
-import { InvoiceCount } from '#app/features/invoices/invoice-count'
+import { InvoiceCount } from '#app/components/invoices/invoice-count'
 
 r.page('/invoices', {
     <main>
@@ -150,7 +150,7 @@ On the client, when you render React yourself (a widget, a micro-frontend, a tes
 import { KitrBoot } from '@kitr/react'
 import { createRoot } from 'react-dom/client'
 import { app } from './app'
-import { InvoiceCount } from './features/invoices/invoice-count'
+import { InvoiceCount } from './components/invoices/invoice-count'
 
 createRoot(document.getElementById('root')!).render(
   <KitrBoot app={app} fallback={<p>Starting Acme Billing…</p>}>
@@ -172,7 +172,7 @@ When you can await, boot first and render `KitrProvider` directly. Nothing suspe
 import { KitrProvider } from '@kitr/react'
 import { createRoot } from 'react-dom/client'
 import { app } from './app'
-import { InvoiceCount } from './features/invoices/invoice-count'
+import { InvoiceCount } from './components/invoices/invoice-count'
 
 await app.boot()
 
@@ -217,7 +217,7 @@ import { KitrProvider } from '@kitr/react'
 import { Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { app } from './app'
-import { InvoiceCount } from './features/invoices/invoice-count'
+import { InvoiceCount } from './components/invoices/invoice-count'
 
 createRoot(document.getElementById('root')!).render(
   <Suspense fallback={<p>Starting Acme Billing…</p>}>
@@ -333,7 +333,7 @@ export class BillingClient {
 A provider binds it during `register`:
 
 ```ts
-// app/providers/billing_provider.ts
+// app/providers/billing-provider.ts
 import { defineProvider } from 'kitr/app'
 import { BillingClient } from '#app/billing/client'
 
@@ -367,7 +367,7 @@ export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
   providers: [
     () => import('@kitr/web/provider'),
-    () => import('#app/providers/billing_provider'),
+    () => import('#app/providers/billing-provider'),
   ],
   platforms: { site: web({ mode: 'spa' }) },
 })
@@ -376,7 +376,7 @@ export default defineKitrConfig({
 Every component can now use it, typed:
 
 ```tsx
-// app/features/invoices/open-invoices.tsx
+// app/components/invoices/open-invoices.tsx
 import { useService } from '@kitr/react'
 import { useEffect, useState } from 'react'
 import type { Invoice } from '#app/billing/client'
@@ -401,7 +401,7 @@ export function OpenInvoices({ team }: { team: string }) {
 }
 ```
 
-`kitr make:provider billing` writes the provider file for you, at `app/providers/billing_provider.ts`, with `register`, `boot` and a commented `wrap`.
+`kitr make:provider billing` writes the provider file for you, at `app/providers/billing-provider.ts`, with `register`, `boot` and a commented `wrap`, and lists it in `providers` in `kitrrc.ts`.
 
 Augment `'@kitr/core'`, the module that declares `ContainerBindings`. Don't augment `'kitr/app'`: it re-exports `@kitr/core` with `export *`, and TypeScript does not merge an interface through a re-export, so `useService('billing')` stays `unknown`.
 
@@ -410,7 +410,7 @@ Augment `'@kitr/core'`, the module that declares `ContainerBindings`. Don't augm
 `useService` is synchronous. A factory that returns a promise works because `app.boot()` resolves every binding before the first render, so by the time a component asks, the instance is cached:
 
 ```ts
-// app/providers/billing_provider.ts
+// app/providers/billing-provider.ts
 import { defineProvider } from 'kitr/app'
 import { BillingClient } from '#app/billing/client'
 
@@ -433,7 +433,7 @@ If a component reads an async binding that is still resolving, `useService` thro
 A provider can put its own React context around the whole app with `wrap()`. `KitrProvider` composes every provider's `wrap` in `kitrrc.ts` order: the first provider is the outermost. That is how the query client, theme, auth session, translations and error boundary all reach your components while the root stays one line.
 
 ```tsx
-// app/providers/team_provider.tsx
+// app/providers/team-provider.tsx
 import { defineProvider } from 'kitr/app'
 import { createContext, type ReactNode, useContext } from 'react'
 
@@ -452,7 +452,7 @@ export default defineProvider({
 With `providers: [query, theme, team]`, the rendered tree is `<QueryClientProvider><ThemeProvider><TeamContext.Provider>{children}`. `wrap` receives the app as its second argument, so it can read config and services:
 
 ```tsx
-// app/providers/team_provider.tsx
+// app/providers/team-provider.tsx
 import { defineProvider } from 'kitr/app'
 import { createContext, type ReactNode, useContext } from 'react'
 
@@ -572,7 +572,7 @@ These are thrown during render, so React's nearest error boundary receives them.
 `renderWithKitr` from [testing](/packages/testing) renders a component inside `KitrProvider` with a test app. `createTestApp` creates and boots an app with `environment: 'test'`, so you pass it the same providers and config your component needs, or a stand-in service:
 
 ```tsx
-// app/features/invoices/open-invoices.test.tsx
+// app/components/invoices/open-invoices.test.tsx
 import { defineProvider } from 'kitr/app'
 import { createTestApp, renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
@@ -610,12 +610,12 @@ describe('OpenInvoices', () => {
 To test a provider's `wrap`, boot an app with it and render under `KitrProvider` from `@kitr/react`:
 
 ```tsx
-// app/providers/team_provider.test.tsx
+// app/providers/team-provider.test.tsx
 import { KitrProvider } from '@kitr/react'
 import { createTestApp } from '@kitr/testing'
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
-import teamProvider, { useTeam } from './team_provider'
+import teamProvider, { useTeam } from './team-provider'
 
 it('puts the team in context', async () => {
   const app = await createTestApp({ providers: [teamProvider] })

@@ -17,13 +17,13 @@ export default definePackage({
     // The server table: endpoints, and sockets when realtime is added. Skipped when it exists.
     ctx.write(
       'server/routes.ts',
-      `import { defineRoutes } from 'kitr/app'\nimport api from '@kitr/api/routes'\nimport HealthController from '#server/controllers/health_controller'\n\n/**\n * Endpoints and sockets of this app. \`kitr add\` keeps the extension list current; \`createServer({ routes })\`\n * in server/main.ts serves it.\n */\nexport const routes = defineRoutes([api], (root) =>\n  root.group('/api', (r) =>\n    r.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // r.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<ServerRoutes>() on the client. */\nexport type ServerRoutes = typeof routes.$types\n`,
+      `import { defineRoutes } from 'kitr/app'\nimport api from '@kitr/api/routes'\nimport HealthController from '#server/controllers/health-controller'\n\n/**\n * Endpoints and sockets of this app. \`kitr add\` keeps the extension list current; \`createServer({ routes })\`\n * in server/main.ts serves it.\n */\nexport const routes = defineRoutes([api], (root) =>\n  root.group('/api', (r) =>\n    r.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // r.resource('projects', () => import('#server/controllers/projects-controller'))\n  ),\n)\n\n/** Pass to createApiClient<ServerRoutes>() on the client. */\nexport type ServerRoutes = typeof routes.$types\n`,
     )
     // Idempotent: adds the http methods to a table another package created, and hands the
     // table to `createServer()` in a server/main.ts written before it existed.
     ctx.routes.extend('@kitr/api/routes', { table: 'server' })
     ctx.write(
-      'server/controllers/health_controller.ts',
+      'server/controllers/health-controller.ts',
       `import type { HttpContext } from '@kitr/api'\n\nexport default class HealthController {\n  async show({ requestId }: HttpContext) {\n    return { ok: true, requestId }\n  }\n}\n`,
     )
     if (!serverOnly) {

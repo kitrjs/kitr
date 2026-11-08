@@ -127,7 +127,7 @@ export const server = createServer({ providers: rc.providers, config, routes })
 `app.container.use('realtime')` is the socket server; `.use(channel, params)` is the topic for one team, and `emit` sends to every connection subscribed to it. `app` is on every `HttpContext`:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { type Order, ordersChannel } from '#app/channels/orders'
@@ -158,7 +158,7 @@ The same call works in a server action, a scheduled task or a webhook handler: a
 `useChannel(transport, channel, params)` subscribes when the component mounts, applies each event's effects, and unsubscribes when it unmounts:
 
 ```tsx
-// app/features/orders/live-orders.tsx
+// app/components/orders/live-orders.tsx
 import { useChannel } from '@kitr/realtime/react'
 import { ordersChannel } from '#app/channels/orders'
 import { realtime } from '#app/realtime'
@@ -178,7 +178,7 @@ Render `<LiveOrders teamId="team_acme" />` on the orders page. The socket only e
 ```ts
 // app/routes.ts
 import { ssrRoute } from '@kitr/seo'
-import { ordersQuery } from '#app/features/orders/queries'
+import { ordersQuery } from '#app/queries/orders'
 
 r.page('/orders', {
   ...ssrRoute(false),
@@ -190,8 +190,8 @@ r.page('/orders', {
 ```tsx
 // app/pages/orders.tsx
 import { useSuspenseQuery } from '@kitr/query'
-import { LiveOrders } from '#app/features/orders/live-orders'
-import { ordersQuery } from '#app/features/orders/queries'
+import { LiveOrders } from '#app/components/orders/live-orders'
+import { ordersQuery } from '#app/queries/orders'
 
 export default function OrdersBoard() {
   const { data: orders } = useSuspenseQuery(ordersQuery.options())

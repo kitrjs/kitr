@@ -32,7 +32,7 @@ const files = (ctx: AddContext, name: string) => {
 
   write(
     ctx,
-    'app/features/projects/schema.ts',
+    'app/validators/projects.ts',
     `import { z } from 'zod'
 
 /** Shared by the controller (validation) and the form (client-side checks). */
@@ -57,7 +57,7 @@ export interface Project {
 
   write(
     ctx,
-    'server/controllers/projects_controller.ts',
+    'server/controllers/projects-controller.ts',
     `import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import {
@@ -66,7 +66,7 @@ import {
   type UpdateProject,
   createProjectSchema,
   updateProjectSchema,
-} from '#app/features/projects/schema'
+} from '#app/validators/projects'
 
 type Ctx<B = unknown> = HttpContext<{ id: string }, Record<string, string | string[]>, B>
 
@@ -130,7 +130,7 @@ export default class ProjectsController {
 
   write(
     ctx,
-    'server/controllers/auth_controller.ts',
+    'server/controllers/auth-controller.ts',
     `import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
@@ -183,9 +183,9 @@ export default class AuthController {
     'server/routes.ts',
     `import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import AuthController from '#server/controllers/auth_controller'
-import HealthController from '#server/controllers/health_controller'
-import ProjectsController from '#server/controllers/projects_controller'
+import AuthController from '#server/controllers/auth-controller'
+import HealthController from '#server/controllers/health-controller'
+import ProjectsController from '#server/controllers/projects-controller'
 
 /** Endpoints of this app, served by \`createServer({ routes })\` in server/main.ts. */
 export const routes = defineRoutes([api], (root) =>
@@ -228,7 +228,7 @@ import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
 /**
- * Tokens come from this app's own API (server/controllers/auth_controller.ts).
+ * Tokens come from this app's own API (server/controllers/auth-controller.ts).
  * Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}) when you have a real identity provider.
  */
 const adapter = tokenAdapter<User>({
@@ -295,7 +295,7 @@ declare module '@kitr/router' {
 
   write(
     ctx,
-    'app/features/projects/queries.ts',
+    'app/queries/projects.ts',
     `import { mutationFrom, queryFrom } from '@kitr/query'
 import { api } from '#app/api/client'
 
@@ -336,7 +336,7 @@ import router from '@kitr/router/routes'
 import { ssrRoute } from '@kitr/seo'
 import { parseTableSearch } from '@kitr/table'
 import type { User } from '#app/abilities'
-import { projectsQuery } from '#app/features/projects/queries'
+import { projectsQuery } from '#app/queries/projects'
 import { head, RootDocument } from './document'
 
 /**
@@ -365,7 +365,7 @@ export const routes = defineRoutes([router], (r) =>
           const session = context.app.container.use('auth').session as Session<User>
           return requireAuth()({ context: { session }, location })
         },
-        lazy: () => import('./pages/app-layout'),
+        lazy: () => import('./layouts/app'),
       },
       (app) =>
         app
@@ -448,7 +448,7 @@ export default function SignInPage() {
 
   write(
     ctx,
-    'app/pages/app-layout.tsx',
+    'app/layouts/app.tsx',
     `import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
 import { useAuth, useUser } from '@kitr/auth'
 import { Outlet, useNavigate } from '@kitr/router'
@@ -500,7 +500,7 @@ export default function AppLayout() {
 import { useSuspenseQuery } from '@kitr/query'
 import { Link } from '@kitr/router'
 import type { User } from '#app/abilities'
-import { projectsQuery } from '#app/features/projects/queries'
+import { projectsQuery } from '#app/queries/projects'
 import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
@@ -569,8 +569,8 @@ import { getRouteApi } from '@kitr/router'
 import { type ColumnDef, type DataTableFeatures, useUrlTableState } from '@kitr/table'
 import { useState } from 'react'
 import type { AppEvents } from '#app/analytics'
-import { createProject, deleteProject, projectsQuery } from '#app/features/projects/queries'
-import { type Project, createProjectSchema } from '#app/features/projects/schema'
+import { createProject, deleteProject, projectsQuery } from '#app/queries/projects'
+import { type Project, createProjectSchema } from '#app/validators/projects'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
 import { DataTable } from '#components/ui/data-table'

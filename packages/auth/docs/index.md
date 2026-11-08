@@ -618,7 +618,7 @@ Annotate `user` in each rule and leave off the type argument. TypeScript then kn
 Check a rule anywhere, on the client or the server:
 
 ```ts
-// app/features/projects/permissions.ts
+// app/lib/projects/permissions.ts
 import { abilities, type Project, type User } from '#app/abilities'
 
 const ada: User = { id: 'u_ada', email: 'ada@acme.com', role: 'admin', teamId: 't_core' }
@@ -644,7 +644,7 @@ Three rules hold for every check: an anonymous user (`null` or `undefined`) neve
 `useCan()` returns the session's `can`, bound to the signed-in user. Use it to hide what the user can't do:
 
 ```tsx
-// app/features/projects/project_header.tsx
+// app/components/projects/project-header.tsx
 import { useCan } from '@kitr/auth'
 import type { Project } from '#app/abilities'
 
@@ -688,7 +688,7 @@ Grace gets the route's error screen with a `FORBIDDEN` error, `Missing permissio
 The provider binds the `auth` service in the container. Use it in loaders, stores and services:
 
 ```ts
-// app/features/projects/loaders.ts
+// app/lib/projects/loaders.ts
 import { app } from '#app/app'
 
 const auth = app.container.use('auth')
@@ -730,7 +730,7 @@ On the server, `authMiddleware` from `@kitr/auth/server` reads the token, finds 
 import { defineRoutes } from '@kitr/api'
 import { authMiddleware } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
-import ProjectsController from '#server/controllers/projects_controller'
+import ProjectsController from '#server/controllers/projects-controller'
 import { findUserByToken } from '#server/services/sessions'
 
 const auth = authMiddleware<User>({ verify: (token) => findUserByToken(token), abilities })
@@ -764,7 +764,7 @@ Import the same `abilities` from `app/abilities.ts` on both sides, so the browse
 `requireUser(ctx)` returns the user `authMiddleware` set, typed, or throws `401`. `currentUser(ctx)` returns `null` instead, for routes with `optional: true`:
 
 ```ts
-// server/controllers/projects_controller.ts
+// server/controllers/projects-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { currentUser, requireUser } from '@kitr/auth/server'
@@ -799,8 +799,8 @@ export default class ProjectsController {
 import { defineRoutes } from '@kitr/api'
 import { authMiddleware, can } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
-import InvoicesController from '#server/controllers/invoices_controller'
-import ProjectsController from '#server/controllers/projects_controller'
+import InvoicesController from '#server/controllers/invoices-controller'
+import ProjectsController from '#server/controllers/projects-controller'
 import { findProject } from '#server/services/projects'
 import { findUserByToken } from '#server/services/sessions'
 
@@ -942,7 +942,7 @@ describe('auth', () => {
 Test the server middleware by calling it with a minimal context. It needs only `request.header()` and `locals`:
 
 ```ts
-// test/auth_middleware.test.ts
+// test/auth-middleware.test.ts
 import { authMiddleware, can, requireUser } from '@kitr/auth/server'
 import { describe, expect, it } from 'vitest'
 import { abilities, type User } from '#app/abilities'

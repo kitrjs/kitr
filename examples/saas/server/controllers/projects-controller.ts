@@ -6,7 +6,7 @@ import {
   type UpdateProject,
   createProjectSchema,
   updateProjectSchema,
-} from '#app/features/projects/schema'
+} from '#app/validators/projects'
 
 type Ctx<B = unknown> = HttpContext<{ id: string }, Record<string, string | string[]>, B>
 

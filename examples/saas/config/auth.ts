@@ -3,7 +3,7 @@ import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
 /**
- * Tokens come from this app's own API (server/controllers/auth_controller.ts).
+ * Tokens come from this app's own API (server/controllers/auth-controller.ts).
  * Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}) when you have a real identity provider.
  */
 const adapter = tokenAdapter<User>({

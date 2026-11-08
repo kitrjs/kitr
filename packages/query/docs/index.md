@@ -31,7 +31,7 @@ What `kitr add` does:
 - Installs `@kitr/query` and `@tanstack/react-query`, and `@tanstack/react-query-devtools` as a dev dependency.
 - Adds `'@kitr/query'` to `packages` and `() => import('@kitr/query/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/query.ts` (shown under [Configure](#configure)).
-- Adds a `## kitr: query` section to `AGENTS.md` with four rules: import from `@kitr/query`, keep each feature's queries in `app/features/<name>/queries.ts`, load data in route loaders with `ensureQueryData`, and declare cache `effects` on mutations instead of calling `invalidateQueries` in components.
+- Adds a `## kitr: query` section to `AGENTS.md` with four rules: import from `@kitr/query`, keep each feature's queries in `app/queries/<name>.ts`, load data in route loaders with `ensureQueryData`, and declare cache `effects` on mutations instead of calling `invalidateQueries` in components.
 
 `kitr add query` asks no questions. Every UI kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
 
@@ -98,7 +98,7 @@ export default defineConfig({
 A query needs two things: a **key**, its name in the cache, and a **fetch** function that loads it. Put both in the feature's `queries.ts`. This one returns fixed data so it runs in a fresh `kitr new` project; the next sections swap in real sources.
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { createKeys } from 'kitr/app'
 import { queryFrom } from '@kitr/query'
 
@@ -130,7 +130,7 @@ r.page('/orders', { lazy: () => import('./pages/orders') })
 ```tsx
 // app/pages/orders.tsx
 import { useQuery } from '@kitr/query'
-import { ordersQuery } from '#app/features/orders/queries'
+import { ordersQuery } from '#app/queries/orders'
 
 export default function OrdersPage() {
   const { data: orders, isPending } = useQuery(ordersQuery.options())
@@ -156,7 +156,7 @@ Open `/orders` and you see two lines, `Ada: $120 (paid)` and `Grace: $80 (open)`
 A key is an array that names a piece of data in the cache. Two calls with equal keys share one cache entry and one request. `createKeys` from `kitr/app` builds keys in one shape for each resource, so every part of the app agrees on what to refresh:
 
 ```ts
-// app/features/orders/keys.ts
+// app/lib/orders/keys.ts
 import { createKeys } from 'kitr/app'
 
 export const orderKeys = createKeys('orders')
@@ -186,7 +186,7 @@ A key must include every input that changes the result. A list filtered by statu
 The first argument of `key` and `fetch` is the query's input. Type it once on `key`, and `options(input)`, `key(input)` and `fetch(input)` all expect it:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { createKeys } from 'kitr/app'
 import { queryFrom } from '@kitr/query'
 import type { Order } from './types'
@@ -230,9 +230,9 @@ Components never learn which source they read from. Swap a REST endpoint for a s
 `useQuery` returns `data` as `undefined` until the first load finishes, plus flags for every state. It is the hook to use when the component draws its own loading and error states:
 
 ```tsx
-// app/features/orders/order-summary.tsx
+// app/components/orders/order-summary.tsx
 import { useQuery } from '@kitr/query'
-import { orderQuery } from './queries'
+import { orderQuery } from '#app/queries/orders'
 
 export function OrderSummary({ id }: { id: string }) {
   const { data: order, isPending, isError, error, isFetching } = useQuery(orderQuery.options(id))
@@ -249,9 +249,9 @@ export function OrderSummary({ id }: { id: string }) {
 `useSuspenseQuery` returns `data` that is always defined. The component suspends until the data arrives, and the nearest `<Suspense>` boundary shows the fallback. A route's `pendingComponent` acts as that boundary:
 
 ```tsx
-// app/features/orders/order-list.tsx
+// app/components/orders/order-list.tsx
 import { useSuspenseQuery } from '@kitr/query'
-import { ordersQuery } from './queries'
+import { ordersQuery } from '#app/queries/orders'
 
 export function OrderList({ page }: { page: number }) {
   const { data: orders } = useSuspenseQuery(ordersQuery.options({ page }))
@@ -270,9 +270,9 @@ Errors thrown by a suspense query go to the nearest error boundary, such as the 
 `options()` returns a plain object, so you can spread it and add any TanStack option for one call site. Here only the count of open orders is selected, and the component re-renders only when that number changes:
 
 ```tsx
-// app/features/orders/open-count.tsx
+// app/components/orders/open-count.tsx
 import { useQuery } from '@kitr/query'
-import { ordersQuery } from './queries'
+import { ordersQuery } from '#app/queries/orders'
 
 export function OpenOrderCount() {
   const { data: count } = useQuery({
@@ -290,7 +290,7 @@ Start the request in the route's loader so the data arrives with the page instea
 
 ```ts
 // app/routes.ts
-import { orderQuery } from '#app/features/orders/queries'
+import { orderQuery } from '#app/queries/orders'
 
 r.page('/orders/$orderId', {
   loader: ({ context, params }) =>
@@ -302,7 +302,7 @@ r.page('/orders/$orderId', {
 ```tsx
 // app/pages/orders/orderId.tsx
 import { useSuspenseQuery } from '@kitr/query'
-import { orderQuery } from '#app/features/orders/queries'
+import { orderQuery } from '#app/queries/orders'
 import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders/$orderId')
@@ -320,9 +320,9 @@ Don't `await` data the page can live without. Start it with `prefetchQuery` and 
 
 ```ts
 // app/routes.ts
-import { ordersQuery } from '#app/features/orders/queries'
-import { OrderList } from '#app/features/orders/order-list'
-import { OpenOrderCount } from '#app/features/orders/open-count'
+import { ordersQuery } from '#app/queries/orders'
+import { OrderList } from '#app/components/orders/order-list'
+import { OpenOrderCount } from '#app/components/orders/open-count'
 
 r.page('/orders/', {
   loader: async ({ context }) => {
@@ -352,7 +352,7 @@ The kitr router preloads a route's loader when the pointer rests on a link to it
 A mutation changes something on the server: pay an invoice, rename a project, ship an order. Define it next to the queries, then run it in a component with `useMutation`:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { mutationFrom } from '@kitr/query'
 import type { Order } from './types'
 
@@ -369,9 +369,9 @@ export const shipOrder = mutationFrom({
 ```
 
 ```tsx
-// app/features/orders/ship-button.tsx
+// app/components/orders/ship-button.tsx
 import { useMutation } from '@kitr/query'
-import { shipOrder } from './queries'
+import { shipOrder } from '#app/queries/orders'
 
 export function ShipButton({ id }: { id: string }) {
   const ship = useMutation(shipOrder)
@@ -393,10 +393,10 @@ export function ShipButton({ id }: { id: string }) {
 `useMutation` returns TanStack's [`useMutation`](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation) result: `mutate`, `mutateAsync`, `isPending`, `error`, `data` and `reset`. Pass any `useMutation` option except `mutationFn` as the second argument. Your `onSuccess` runs after the mutation's own cache effects, so the cache is already updated when it runs:
 
 ```tsx
-// app/features/orders/use-ship-and-return.ts
+// app/hooks/orders/use-ship-and-return.ts
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@kitr/query'
-import { shipOrder } from './queries'
+import { shipOrder } from '#app/queries/orders'
 
 export function useShipAndReturn() {
   const navigate = useNavigate()
@@ -412,7 +412,7 @@ export function useShipAndReturn() {
 After a save, every screen showing the changed data must update. Instead of telling each component to refetch, the mutation declares its **effects** on the cache, and `useMutation` applies them when the mutation succeeds:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { mutationFrom } from '@kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
@@ -444,7 +444,7 @@ They run in that order: `set`, then `remove`, then `invalidate`. The mutation's 
 `effects` is either a function of the result and the input, as above, or a plain object when the effects never depend on the result:
 
 ```ts
-// app/features/invoices/queries.ts
+// app/queries/invoices.ts
 import { createKeys } from 'kitr/app'
 import { mutationFrom } from '@kitr/query'
 
@@ -463,7 +463,7 @@ Don't call `queryClient.invalidateQueries` in the component after `mutate`. The 
 `effectsFor(result, input)` returns the effects a result would produce, which helps when you test them:
 
 ```ts
-import { shipOrder } from '#app/features/orders/queries'
+import { shipOrder } from '#app/queries/orders'
 
 shipOrder.effectsFor(
   { id: 'ord_2', customer: 'Grace', total: 80, status: 'shipped' },
@@ -480,10 +480,10 @@ shipOrder.effectsFor(
 Shipping an order also changes the customer's open invoice. `mergeEffects` from `kitr/app` joins several effects into one, concatenating each list:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { mergeEffects } from 'kitr/app'
 import { mutationFrom } from '@kitr/query'
-import { invoiceKeys } from '#app/features/invoices/queries'
+import { invoiceKeys } from '#app/queries/invoices'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
@@ -509,10 +509,10 @@ export const shipOrder = mutationFrom({
 Sometimes the change comes from somewhere that is not a mutation: a message from a service worker, a `postMessage` from another window, a test. `applyCacheEffect` applies the same effect shape to any client, and `invalidate` marks several keys stale in one call:
 
 ```ts
-// app/features/orders/sync.ts
+// app/lib/orders/sync.ts
 import { app } from '#app/app'
 import { applyCacheEffect, invalidate } from '@kitr/query'
-import { invoiceKeys } from '#app/features/invoices/queries'
+import { invoiceKeys } from '#app/queries/invoices'
 import { orderKeys } from './keys'
 
 const queryClient = app.container.use('queryClient')
@@ -536,10 +536,10 @@ In a component, read the client with TanStack's `useQueryClient()` instead of th
 For an optimistic update, write the expected value before the request, and roll back if it fails. Pass TanStack's `onMutate` and `onError` through `useMutation`; the mutation's own effects still run on success:
 
 ```tsx
-// app/features/orders/use-mark-paid.ts
+// app/hooks/orders/use-mark-paid.ts
 import { mutationFrom, useMutation, useQueryClient } from '@kitr/query'
-import { orderKeys } from './keys'
-import type { Order } from './types'
+import { orderKeys } from '#app/lib/orders/keys'
+import type { Order } from '#app/lib/orders/types'
 
 export const markPaid = mutationFrom({
   mutate: async (id: string) => {
@@ -610,7 +610,7 @@ Every hook also accepts the imported definition in place of the name, `useQuery(
 
 ```ts
 // scripts/print-open-orders.ts
-import { ordersQuery, shipOrder } from '#app/features/orders/queries'
+import { ordersQuery, shipOrder } from '#app/queries/orders'
 
 const open = await ordersQuery.fetch({ status: 'open', page: 1 })
 // => [{ id: 'ord_2', customer: 'Grace', total: 80, status: 'open' }]
@@ -628,7 +628,7 @@ A subscription is a stream of events whose effects land in the same cache that `
 Define it with the input and event types, a `key`, a `subscribe` function that returns an unsubscribe function, and `effects` that map each event to cache changes:
 
 ```ts
-// app/features/orders/subscriptions.ts
+// app/lib/orders/subscriptions.ts
 import { subscriptionFrom } from '@kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
@@ -653,10 +653,10 @@ export const orderEvents = subscriptionFrom<string, OrderEvent>({
 Then subscribe from the component that needs it. The hook subscribes on mount, unsubscribes on unmount and resubscribes only when the input's key changes:
 
 ```tsx
-// app/features/orders/live-orders.tsx
+// app/components/orders/live-orders.tsx
 import { useSubscription } from '@kitr/query'
 import { OrderList } from './order-list'
-import { orderEvents } from './subscriptions'
+import { orderEvents } from '#app/lib/orders/subscriptions'
 
 export function LiveOrders({ teamId }: { teamId: string }) {
   const live = useSubscription(orderEvents, teamId, {
@@ -685,7 +685,7 @@ The hook returns `{ status, lastEvent, error }`. `status` is `'idle'` before sub
 Every failure from `options()` and `useMutation`, whatever its source, reaches you as a `KitrError` from `kitr/app` with a `code`, `status`, `message` and, for validation failures, `fieldErrors`:
 
 ```tsx
-// app/features/orders/order-error.tsx
+// app/components/orders/order-error.tsx
 import { isKitrError } from 'kitr/app'
 
 export function OrderError({ error }: { error: Error }) {
@@ -718,7 +718,7 @@ Queries retry only failures that might pass on a second try. A 4xx means the req
 `staleTime` on the contract overrides the config default for one query. Use a long one for data that rarely changes and `0` for data that must always be fresh:
 
 ```ts
-// app/features/teams/queries.ts
+// app/queries/teams.ts
 import { createKeys } from 'kitr/app'
 import { queryFrom } from '@kitr/query'
 
@@ -738,9 +738,9 @@ export const teamsQuery = queryFrom({
 `teamsQuery.options()` now carries `staleTime: 600000`. A query without its own `staleTime` uses the config value. For one call site, spread the options and override them:
 
 ```tsx
-// app/features/teams/team-picker.tsx
+// app/components/teams/team-picker.tsx
 import { useQuery } from '@kitr/query'
-import { teamsQuery } from './queries'
+import { teamsQuery } from '#app/queries/teams'
 
 export function TeamPicker() {
   // This screen edits teams, so it always wants the latest list.
@@ -768,7 +768,7 @@ Nothing in your code changes for this. Read the client through `context.queryCli
 In a test, boot an app with the query provider, seed the cache with the data the component needs, and render inside the app's providers. `createTestApp` from `@kitr/testing` boots the app; `renderWithKitr` from `@kitr/testing/react` renders inside `KitrProvider` and takes `queryData` as `[key, data]` pairs. Seeded data is fresh for 30 seconds, so the component reads it without calling `fetch`:
 
 ```tsx
-// app/features/orders/orders.test.tsx
+// app/components/orders/orders.test.tsx
 import { act, renderHook, screen } from '@testing-library/react'
 import { createKeys } from 'kitr/app'
 import {
@@ -859,11 +859,11 @@ The assertions you will write most:
 To test effects without React, call `effectsFor` and apply the result to a bare client. No provider is needed:
 
 ```ts
-// app/features/orders/effects.test.ts
+// app/lib/orders/effects.test.ts
 import { applyCacheEffect, QueryClient } from '@kitr/query'
 import { expect, it } from 'vitest'
 import { orderKeys } from './keys'
-import { shipOrder } from './queries'
+import { shipOrder } from '#app/queries/orders'
 
 it('shipping replaces the order and refreshes lists', async () => {
   const queryClient = new QueryClient()
@@ -930,7 +930,7 @@ export function graphqlQuery<TInput = void, TOutput = unknown>(
 ```
 
 ```ts
-// app/features/projects/queries.ts
+// app/queries/projects.ts
 import { createKeys } from 'kitr/app'
 import { queryFrom } from '@kitr/query'
 import { graphqlQuery } from '#app/lib/graphql'

@@ -66,7 +66,7 @@ export default defineConfig({
 })
 ```
 
-Tests live next to the code they test (`app/features/orders/order-list.test.tsx`) or under `test/` (`test/orders.test.ts`). Every other [Vitest option](https://vitest.dev/config/) works in this file as usual.
+Tests live next to the code they test (`app/components/orders/order-list.test.tsx`) or under `test/` (`test/orders.test.ts`). Every other [Vitest option](https://vitest.dev/config/) works in this file as usual.
 
 The three helpers take their options per call. `createTestApp(options)` takes the same options as `createApp()`:
 
@@ -380,7 +380,7 @@ Wrapping a plain function in `{ fetch: ... }` is enough. The client builds `Requ
 To test a service, a provider or anything else that lives in the container, boot an app with `createTestApp()` and read from it. This one checks that the billing provider binds an `invoices` service with the configured currency:
 
 ```ts
-// app/features/invoices/invoices.test.ts
+// app/lib/invoices/invoices.test.ts
 import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import billingProvider from '#app/providers/billing'
@@ -416,7 +416,7 @@ app.container.use('mailer')
 In a project with React, the `kitr()` plugin in `vitest.config.ts` serves the same two virtual modules the app uses. Import them to boot the app exactly as `app/app.ts` does:
 
 ```ts
-// app/features/orders/app.test.ts
+// app/lib/orders/app.test.ts
 import { createTestApp } from '@kitr/testing'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
@@ -445,7 +445,7 @@ import { createTestApp } from '@kitr/testing'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { expect, it } from 'vitest'
-import { sendOrderConfirmation } from '#app/features/orders/confirmation'
+import { sendOrderConfirmation } from '#app/lib/orders/confirmation'
 
 it('emails the customer when an order is placed', async () => {
   const sent: Array<{ to: string; subject: string }> = []
@@ -485,12 +485,12 @@ Call `server.boot()` first, so the real provider's binding exists before you rep
 On the client, `renderWithKitr` from `@kitr/testing/react` renders a component inside every provider the app has, the same tree `KitrProvider` builds in the browser. Then query the screen with [Testing Library](https://testing-library.com/docs/queries/about):
 
 ```tsx
-// app/features/orders/order-total.test.tsx
+// app/components/orders/order-total.test.tsx
 import { screen } from '@testing-library/react'
 import { createTestApp } from '@kitr/testing'
 import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
-import { OrderTotal } from './order-total'
+import { OrderTotal } from '#app/components/orders/order-total'
 
 it('shows the order total', async () => {
   const app = await createTestApp()
@@ -507,14 +507,14 @@ it('shows the order total', async () => {
 A component that loads data with [query](/packages/query) would try the network on first render. Pass `queryData` and it renders with the data already in the cache. Each entry is a query key and the data under it:
 
 ```tsx
-// app/features/orders/order-list.test.tsx
+// app/components/orders/order-list.test.tsx
 import queryProvider from '@kitr/query/provider'
 import { screen } from '@testing-library/react'
 import { createTestApp } from '@kitr/testing'
 import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
 import { OrderList } from './order-list'
-import { ordersQuery } from './queries'
+import { ordersQuery } from '#app/queries/orders'
 
 it('lists the orders from the cache', async () => {
   const app = await createTestApp({ providers: [queryProvider] })
@@ -531,7 +531,7 @@ it('lists the orders from the cache', async () => {
 The query and the component under test read the same key:
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { queryFrom } from '@kitr/query'
 
 export interface Order {
@@ -550,9 +550,9 @@ export const ordersQuery = queryFrom<void, Order[]>({
 ```
 
 ```tsx
-// app/features/orders/order-list.tsx
+// app/components/orders/order-list.tsx
 import { useQuery } from '@kitr/query'
-import { ordersQuery } from './queries'
+import { ordersQuery } from '#app/queries/orders'
 
 export function OrderList() {
   const { data, isPending } = useQuery(ordersQuery.options())
@@ -576,13 +576,13 @@ Take the key from the query definition (`ordersQuery.key()`), not a hand-written
 A component that calls `useService('clock')` gets whatever the app's container holds. Register a fake provider and the component renders with it:
 
 ```tsx
-// app/features/orders/due-badge.test.tsx
+// app/components/orders/due-badge.test.tsx
 import { screen } from '@testing-library/react'
 import { defineProvider } from 'kitr/app'
 import { createTestApp } from '@kitr/testing'
 import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
-import { DueBadge } from './due-badge'
+import { DueBadge } from '#app/components/orders/due-badge'
 
 const fixedClock = defineProvider({
   name: 'clock',
@@ -629,7 +629,7 @@ export function withRouter(path = '/') {
 ```
 
 ```tsx
-// app/features/orders/order-row.test.tsx
+// app/components/orders/order-row.test.tsx
 import { screen } from '@testing-library/react'
 import { createTestApp } from '@kitr/testing'
 import { renderWithKitr } from '@kitr/testing/react'
@@ -688,7 +688,7 @@ The page's loader runs for real, so either seed its data with `app.container.use
 When a component really fetches, answer its requests with [mocks](/packages/mocks) instead of seeding the cache. MSW intercepts `fetch` in the test process, so the component, the query and the http client all run as in production:
 
 ```tsx
-// app/features/orders/order-list.network.test.tsx
+// app/components/orders/order-list.network.test.tsx
 import queryProvider from '@kitr/query/provider'
 import { screen } from '@testing-library/react'
 import { HttpResponse, http, setupNodeMocks } from '@kitr/mocks'
@@ -780,7 +780,7 @@ describe('orders', () => {
 })
 ```
 
-The name is turned into snake case, so `kitr make:test invoice-totals` writes `test/invoice_totals.test.ts`. A `stubs/test.ts` file in your project (`kitr eject stub test` copies the default) replaces the template. The generator ships with `@kitr/testing`, so `make:test` is there once the package is added. Testing adds no `kitr doctor` checks.
+The name is turned into kebab case, so `kitr make:test invoice-totals` writes `test/invoice-totals.test.ts`. A `stubs/test.ts` file in your project (`kitr eject stub test` copies the default) replaces the template. The generator ships with `@kitr/testing`, so `make:test` is there once the package is added. Testing adds no `kitr doctor` checks.
 
 ## Testing
 

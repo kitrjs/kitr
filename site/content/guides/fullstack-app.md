@@ -55,15 +55,16 @@ npm run dev
 
 The site answers on `http://localhost:3000` and the API on `http://localhost:3001`. `kitr dev site` runs the pages alone.
 
-Where the code goes:
+Where the code goes (the full list is on [Project structure](/docs/project-structure)):
 
 | Folder | What lives there | Runs on |
 | --- | --- | --- |
 | `app/routes.ts`, `app/pages/` | The route table and its page modules | Server, then browser |
 | `app/actions/` | Server actions: functions the browser calls | Server |
 | `app/channels/` | Realtime channel definitions | Both |
-| `app/features/` | Queries, forms and components by feature | Browser |
-| `server/` | `main.ts`, `routes.ts`, controllers, the database schema | Server |
+| `app/components/`, `app/layouts/`, `app/hooks/` | React, grouped by feature inside each folder | Browser |
+| `app/queries/`, `app/validators/` | Data contracts and the zod schemas both sides check | Both |
+| `server/` | `main.ts`, `routes.ts`, controllers, services, middleware, the database schema | Server |
 | `config/` | One file per package | Where the package runs |
 
 ## Connect the database
@@ -208,7 +209,7 @@ Open `/projects`. The server runs the loader, which calls the handler in-process
 Put the schema where both sides can import it. The form validates with it in the browser, and the action validates with it again on the server, because the browser can be bypassed:
 
 ```ts
-// app/features/projects/schema.ts
+// app/validators/projects.ts
 import { z } from 'zod'
 
 export const newProjectSchema = z.object({
@@ -232,7 +233,7 @@ import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
-import { newProjectSchema } from '#app/features/projects/schema'
+import { newProjectSchema } from '#app/validators/projects'
 import { projects } from '#server/db/schema'
 
 export const createProject = defineMutation('projects.create', {
@@ -259,10 +260,10 @@ export const createProject = defineMutation('projects.create', {
 Use it from a form:
 
 ```tsx
-// app/features/projects/new-project-form.tsx
+// app/components/projects/new-project-form.tsx
 import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
 import { useMutation } from '@kitr/query'
-import { newProjectSchema } from './schema'
+import { newProjectSchema } from '#app/validators/projects'
 
 export function NewProjectForm({ teamId }: { teamId: string }) {
   const create = useMutation('projects.create')
@@ -289,7 +290,7 @@ kitr make:controller projects
 ```
 
 ```ts
-// server/controllers/projects_controller.ts
+// server/controllers/projects-controller.ts
 import { desc, eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
@@ -319,8 +320,8 @@ export default class ProjectsController {
 import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
-import HealthController from '#server/controllers/health_controller'
-import ProjectsController from '#server/controllers/projects_controller'
+import HealthController from '#server/controllers/health-controller'
+import ProjectsController from '#server/controllers/projects-controller'
 
 export const routes = defineRoutes([api, realtime], (router) =>
   router.group('/api', (r) =>
@@ -407,7 +408,7 @@ export const createProject = defineMutation('projects.create', {
 And subscribe on the page. The socket only exists in the browser, so subscribe from a component that mounts after hydration:
 
 ```tsx
-// app/features/projects/live-projects.tsx
+// app/components/projects/live-projects.tsx
 import { useChannel } from '@kitr/realtime/react'
 import { teamProjectsChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'

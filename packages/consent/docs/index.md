@@ -202,7 +202,7 @@ export default defineConfig({
 Then check it where the feature lives. Here the projects list only remembers Linus's sort order when he allowed `preferences`:
 
 ```tsx
-// app/features/projects/use-sort-order.ts
+// app/hooks/projects/use-sort-order.ts
 import { useConsent } from '@kitr/consent/react'
 import { useEffect, useState } from 'react'
 
@@ -435,7 +435,7 @@ The default, `monitoring: false`, leaves monitoring alone: errors are reported w
 Outside components, read the service from the container. It has the same actions as the hook, plus `subscribe()` for changes:
 
 ```ts
-// app/features/consent/track-choices.ts
+// app/lib/consent/track-choices.ts
 import type { KitrApp } from 'kitr/app'
 
 export function logConsentChanges(app: KitrApp) {
@@ -468,7 +468,7 @@ export function logConsentChanges(app: KitrApp) {
 The record is a cookie, so a server function or loader can read it from the request with `consent.cookie.get(headers)`. Use it to leave a marketing tag out of the HTML entirely for visitors who did not agree:
 
 ```ts
-// app/features/consent/read-consent.ts
+// app/lib/consent/read-consent.ts
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createConsent } from '@kitr/consent'
@@ -556,7 +556,7 @@ The test uses the generated banner. If you added the mount guard from [Show the 
 For logic that only needs the record, `createConsent()` builds a service with no app. It reads and writes `document.cookie`, so it behaves exactly as in the browser:
 
 ```ts
-// app/features/consent/consent.test.ts
+// app/lib/consent/consent.test.ts
 import { createConsent } from '@kitr/consent'
 import { afterEach, expect, it } from 'vitest'
 
