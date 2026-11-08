@@ -140,3 +140,40 @@ export default definePackage({
 ## Leaving kitr
 
 `kitr eject stubs` copies every generator stub. `kitr eject all` also prints the import rewrites that remove kitr entirely: each `kitr/*` entry maps to the upstream package it re-exports.
+
+## CI and releases
+
+`.github/workflows/ci.yml` builds once and fans out. The `build` job installs, builds every package, the component registry, the examples and the docs site, and uploads the result as one artifact. Every other Linux job downloads it and skips the build, then runs in parallel:
+
+| Job | What it checks |
+| --- | --- |
+| `verify` | Generated manifests, READMEs and API pages, the docs rules, Biome, that the examples are unmodified kit output, the production bundle checks, and `pnpm versions:check`. |
+| `typecheck` | `pnpm typecheck` across every package and example. |
+| `unit` | `pnpm test:coverage` on Node 22 and 24, with a real Redis. |
+| `integration` | `pnpm test:integration`: the CLI scaffolding every kit, generators, add and remove, the backend over the network. |
+| `e2e` | Playwright against production and dev builds. |
+| `registry-smoke` | `pnpm smoke:registry`, below. |
+| `windows` | The CLI integration suite (`tests/integration/cli.test.ts`) on `windows-latest`. It builds for itself, since the artifact comes from Linux. |
+
+### The registry smoke test
+
+Nothing else in CI installs from a registry, so `scripts/verdaccio-smoke.mjs` does. It starts a throwaway [Verdaccio](https://verdaccio.org) (`scripts/verdaccio.yaml`), packs every public package under a prerelease version such as `0.1.0-smoke.1731000000000` and publishes them, then:
+
+- checks that every peer of the `kitr` package, every dependency of every package, every library pinned in `packages/cli/src/versions.ts` and every `builtOn` library can be installed from the registry,
+- installs the published `kitr` CLI, then runs `kitr new --kit app` and `--kit fullstack` against the registry, followed by `typecheck` and `build` in each project.
+
+A peer that names a missing package or an unpublished version fails the run, and so does a setup module that adds one. Package files are bumped only while packing and restored afterwards, so versions and changesets stay as they are. On `main` the run adds `--all-packages`, which runs `kitr add` for every released package in one project.
+
+Run it locally after `pnpm build` and `pnpm -C registry build`: `pnpm smoke:registry`. Options: `--kits app,saas`, `--all-packages`, `--skip-projects` (publish and resolve checks only), `--keep` (keep the scratch directory), `--port`.
+
+### Upstream versions
+
+`packages/cli/src/versions.ts` is the set of upstream versions `kitr new` writes and `kitr upgrade` moves to. `pnpm versions:check` fails when a workspace `package.json` declares a range that cannot overlap the one in that file, when the lockfile resolved a version outside it, or when the lockfile no longer matches a manifest. `renovate.json` groups those libraries into a few weekly pull requests (TanStack, Vite and Vitest, Biome and TypeScript, the server runtime, React, Zod and ky, Tailwind, the native shells) and opens each major on its own. The examples are generated, so on a Renovate pull request that changes `versions.ts` run `pnpm sync:examples` and commit the result.
+
+### The nightly canary
+
+`.github/workflows/canary.yml` runs every night and on demand. It checks out `main`, runs `pnpm update --latest --recursive`, builds and runs the unit tests. Nothing is pushed. On a failure it opens one issue, "Canary: upstream update breaks the build" (label `canary`), with the failing step, the tail of its log and the dependency diff. Later failures update that issue, and a green run closes it.
+
+### Publishing
+
+`release.yml` runs Changesets on `main`: it opens a "Version packages" pull request and publishes to npm when that is merged. It needs an `NPM_TOKEN` secret and does nothing without it.

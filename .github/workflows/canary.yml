@@ -1,0 +1,167 @@
+name: Canary
+
+# Every night: main with every dependency moved to its latest release, built and unit tested.
+# Upstream (h3, srvx, TanStack, Vite, Vitest, Biome, Zod, Tailwind, ky...) ships patch releases
+# faster than renovate.json merges them, and CI installs from the lockfile only, so a release
+# that breaks kitr would otherwise be found by a user. A failure opens one issue, "Canary:
+# upstream update breaks the build", labelled `canary`; later failures add a comment to it and a
+# green run closes it. Nothing is pushed: the update only exists in this run.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: canary
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    # Slow upstream installs should not hold the schedule up.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      # `shell: bash` below means `-eo pipefail`, so a failing command before `| tee` fails the step.
+      # The lockfile is trusted at this point; the next step is the one that moves it.
+      - run: pnpm install --frozen-lockfile
+      # `--latest` ignores the ranges in package.json, `--recursive` covers every workspace
+      # package, and `workspace:*` links stay as they are.
+      - name: Update every dependency to latest
+        id: update
+        shell: bash
+        run: |
+          pnpm update --latest --recursive 2>&1 | tee "$RUNNER_TEMP/update.log"
+          git diff --no-color -U0 -- '*package.json' | grep -E '^(\+\+\+ |[-+] +")' > "$RUNNER_TEMP/dependency-diff.txt" || true
+          wc -l "$RUNNER_TEMP/dependency-diff.txt"
+      - name: Build
+        id: build
+        if: steps.update.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: pnpm build 2>&1 | tee "$RUNNER_TEMP/build.log"
+      - name: Unit tests
+        id: test
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: pnpm test 2>&1 | tee "$RUNNER_TEMP/test.log"
+      - name: Report
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          UPDATE: ${{ steps.update.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          TEST: ${{ steps.test.outcome }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const read = (name, max) => {
+              try {
+                const text = fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}`, 'utf8')
+                return text.length > max ? `…\n${text.slice(-max)}` : text
+              } catch {
+                return ''
+              }
+            }
+            const title = 'Canary: upstream update breaks the build'
+            const label = 'canary'
+            const steps = [
+              ['Update every dependency to latest', process.env.UPDATE, 'update.log'],
+              ['Build', process.env.BUILD, 'build.log'],
+              ['Unit tests', process.env.TEST, 'test.log'],
+            ]
+            const failed = steps.find(([, outcome]) => outcome === 'failure')
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+
+            // One issue, found by label: an open one is reused, never duplicated.
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              ...context.repo,
+              state: 'open',
+              labels: label,
+              per_page: 100,
+            })
+            const existing = open.find((issue) => !issue.pull_request)
+
+            if (!failed) {
+              if (existing) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: existing.number,
+                  body: `The canary passes again with the latest upstream releases (${runUrl}). Closing.`,
+                })
+                await github.rest.issues.update({
+                  ...context.repo,
+                  issue_number: existing.number,
+                  state: 'closed',
+                  state_reason: 'completed',
+                })
+              }
+              return
+            }
+
+            const [stepName, , logName] = failed
+            const diff = read('dependency-diff.txt', 20000)
+            const body = [
+              `The nightly canary updated every dependency of \`main\` to its latest release, and **${stepName}** failed.`,
+              '',
+              `Run: ${runUrl}`,
+              `Commit: ${context.sha}`,
+              '',
+              `### Failing step: ${stepName}`,
+              '',
+              '```',
+              read(logName, 8000).trim() || '(no output)',
+              '```',
+              '',
+              '### Dependency diff',
+              '',
+              'The first changed line of a package.json is the range before, the second the range after.',
+              '',
+              '```diff',
+              diff.trim() || '(no package.json changed)',
+              '```',
+            ].join('\n')
+
+            if (existing) {
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number: existing.number,
+                title,
+                body,
+              })
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: existing.number,
+                body: `Still failing at **${stepName}**: ${runUrl}`,
+              })
+            } else {
+              try {
+                await github.rest.issues.getLabel({ ...context.repo, name: label })
+              } catch {
+                await github.rest.issues.createLabel({
+                  ...context.repo,
+                  name: label,
+                  color: 'fbca04',
+                  description: 'The nightly upstream canary failed',
+                })
+              }
+              await github.rest.issues.create({ ...context.repo, title, body, labels: [label] })
+            }
+      # The issue is the report; the red run keeps the failure visible in the Actions tab too.
+      - name: Fail the run when a step failed
+        if: steps.update.outcome == 'failure' || steps.build.outcome == 'failure' || steps.test.outcome == 'failure'
+        run: |
+          echo "::error::The canary failed. See the Canary issue."
+          exit 1
