@@ -14,7 +14,6 @@ import {
   webShare,
 } from '../src'
 import { selectDriver as selectFromModule } from '../src/driver'
-import { createCapacitorDriver } from '../src/drivers/capacitor'
 import { createElectronDriver } from '../src/drivers/electron'
 
 // The Tauri driver loads its plugins lazily and never throws up front: see tauri-driver.test.ts.

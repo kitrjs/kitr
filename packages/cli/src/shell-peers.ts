@@ -5,6 +5,7 @@
  * (`desktop`, `tauri`, `mobile`). A new project gets the same packages from its platform
  * (`dependencies` of `desktop()` and `tauri()`).
  */
+// kitr-allow-module-state: immutable table of shell peer packages
 export const shellPeers: Record<string, Record<string, string[]>> = {
   'secure-storage': { tauri: ['@tauri-apps/api', '@tauri-apps/plugin-stronghold'] },
   notifications: { tauri: ['@tauri-apps/plugin-notification'] },

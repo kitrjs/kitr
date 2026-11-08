@@ -10,6 +10,7 @@ export {
   capacitorShare,
   createCapacitorDriver as createCapacitorNativeDrivers,
 } from './drivers/capacitor'
+export {
   createElectronDriver as createElectronNativeDriver,
   type DesktopSystem,
   type ElectronNativeDriver,

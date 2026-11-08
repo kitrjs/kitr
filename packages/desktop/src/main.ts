@@ -178,6 +178,7 @@ export async function createMainWindow(
 }
 
 /** URL schemes `kitr:shell:open` hands to the operating system. Anything else is refused. */
+// kitr-allow-module-state: immutable list of allowed protocols
 export const EXTERNAL_PROTOCOLS: readonly string[] = ['http:', 'https:', 'mailto:', 'tel:']
 
 /** Options of `handleKitrIpc()`. */

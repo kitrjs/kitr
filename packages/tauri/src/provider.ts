@@ -10,6 +10,7 @@ import { isTauri } from './client'
  * the device packages never name an optional package in code a web build bundles. The Tauri
  * platform installs them all (`kitr add tauri`).
  */
+// kitr-allow-module-state: immutable table of plugin loaders, registered once per process
 export const tauriPluginLoaders: Record<string, ModuleLoader> = {
   '@tauri-apps/api/app': () => import('@tauri-apps/api/app'),
   '@tauri-apps/api/core': () => import('@tauri-apps/api/core'),

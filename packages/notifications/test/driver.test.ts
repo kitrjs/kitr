@@ -3,7 +3,6 @@ import { createPlatform, type Runtime } from '@kitr/platform'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryNotificationsDriver, createNotifications, selectDriver } from '../src'
 import { selectDriver as selectFromModule } from '../src/driver'
-import { createCapacitorDriver } from '../src/drivers/capacitor'
 import { createElectronDriver } from '../src/drivers/electron'
 import { createWebNotificationsDriver } from '../src/drivers/web'
 

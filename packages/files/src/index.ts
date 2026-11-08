@@ -10,6 +10,7 @@ export {
   createCapacitorDriver as createCapacitorFilesDriver,
   type FileEntry,
 } from './drivers/capacitor'
+export {
   createElectronDriver as createElectronFilesDriver,
   type ElectronFilesDriver,
   type PickedFolder,

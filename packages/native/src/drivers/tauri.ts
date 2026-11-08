@@ -33,6 +33,7 @@ export interface TauriNativeDriver extends Driver {
   system: DesktopSystem
 }
 
+// kitr-allow-module-state: immutable list of allowed protocols
 const SAFE_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:']
 
 const missing = (pkg: string, rust: string) =>

@@ -7,6 +7,7 @@ import { IPC_BRIDGE_KEY, type IpcBridge } from './client'
  * events main pushes back. Any other `kitr:` name is refused, so a channel a future version adds
  * is not open to a page until the preload that ships with it lists it.
  */
+// kitr-allow-module-state: immutable set of IPC channel names
 export const KITR_CHANNELS: ReadonlySet<string> = new Set([
   'kitr:storage:load',
   'kitr:storage:set',
