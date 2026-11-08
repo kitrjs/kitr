@@ -1882,6 +1882,33 @@ a.dcard:focus-visible {
 .search-dialog::backdrop {
   background: rgb(11 18 28 / 0.5);
 }
+/* The `esc` hint is also the close button: on a phone there is no Escape key. */
+.search-close {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.search-close:hover,
+.search-close:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+@media (pointer: coarse) {
+  .search-close {
+    font-size: 0;
+  }
+  .search-close::before {
+    content: "Close";
+    font-size: 13px;
+  }
+}
 .search-input {
   display: flex;
   align-items: center;

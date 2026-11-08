@@ -53,7 +53,17 @@ export function Search() {
         <kbd className="mono">⌘K</kbd>
       </button>
       {open && (
-        <dialog ref={dialog} className="search-dialog" onClose={close} aria-label="Search">
+        <dialog
+          ref={dialog}
+          className="search-dialog"
+          onClose={close}
+          // The dialog has no padding, so a click whose target is the dialog itself landed on the
+          // backdrop: close, as a tap outside does on every other sheet.
+          onClick={(e) => {
+            if (e.target === e.currentTarget) close()
+          }}
+          aria-label="Search"
+        >
           <div className="search-input">
             <Icon icon={icons.search} size={18} />
             <input
@@ -74,7 +84,14 @@ export function Search() {
               }}
               aria-controls="search-results"
             />
-            <kbd className="mono">esc</kbd>
+            <button
+              type="button"
+              className="search-close mono"
+              onClick={close}
+              aria-label="Close search"
+            >
+              esc
+            </button>
           </div>
           <ul id="search-results" className="search-results">
             {results.map((r, i) => (

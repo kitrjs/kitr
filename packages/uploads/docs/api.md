@@ -300,7 +300,7 @@ The service is resolved per request, so this can run before the app has booted.
 ### resolveServedType
 
 ```ts
-function resolveServedType(declared: string, data: Uint8Array, allow?: string[]): {
+function resolveServedType(declared: string, data: Uint8Array, allow?: readonly string[]): {
   type: string;
   inline: boolean;
 };
