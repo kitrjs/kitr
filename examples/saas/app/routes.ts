@@ -40,7 +40,9 @@ export const routes = defineRoutes([router], (r) =>
       {
         beforeLoad: async (ctx) => {
           await ensureSession(ctx)
-          return requireAuth()(ctx)
+          // The guard redirects when signed out. Its result is dropped on purpose: it holds
+          // functions, and the route context of a server-rendered page must be serializable.
+          await requireAuth()(ctx)
         },
         lazy: () => import('./pages/app-layout'),
       },

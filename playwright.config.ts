@@ -10,6 +10,7 @@ import { defineConfig, devices } from '@playwright/test'
  *   dashboard       SPA production build served by `kitr start site`
  *   dashboard-dev   the same app on the Vite dev server (`kitr dev site`) with devtools added (a preview package)
  *   fullstack       TanStack Start build served by `kitr start site` (SSR, API, WebSockets)
+ *   saas            the saas kit (cookie sessions, server-rendered guards) behind `kitr start site`
  *   site            kitr.dev: site/dist/client served the way site/nginx.conf serves it
  *
  * With SITE_URL set (the scheduled site-live workflow), only the site checks run, against it.
@@ -17,7 +18,7 @@ import { defineConfig, devices } from '@playwright/test'
 const root = fileURLToPath(new URL('.', import.meta.url))
 const apps = join(tmpdir(), 'kitr-e2e-apps')
 const kitr = `node ${join(root, 'packages/kitr/bin/kitr.mjs')}`
-const ports = { dashboard: 4410, dashboardDev: 4411, fullstack: 4412, site: 4413 }
+const ports = { dashboard: 4410, dashboardDev: 4411, fullstack: 4412, site: 4413, saas: 4414 }
 const siteUrl = process.env.SITE_URL
 
 export default defineConfig({
@@ -49,6 +50,11 @@ export default defineConfig({
       testMatch: 'fullstack.spec.ts',
       use: { baseURL: `http://127.0.0.1:${ports.fullstack}` },
     },
+    {
+      name: 'saas',
+      testMatch: 'saas.spec.ts',
+      use: { baseURL: `http://127.0.0.1:${ports.saas}` },
+    },
   ],
   webServer: siteUrl
     ? []
@@ -76,6 +82,18 @@ export default defineConfig({
           url: `http://127.0.0.1:${ports.fullstack}/api/health`,
           timeout: 240_000,
           reuseExistingServer: !process.env.CI,
+        },
+        {
+          command: `node tests/e2e/prepare.mjs saas saas --build && cd ${apps}/saas && ${kitr} start site --host 127.0.0.1 --port ${ports.saas}`,
+          url: `http://127.0.0.1:${ports.saas}/api/health`,
+          timeout: 300_000,
+          reuseExistingServer: !process.env.CI,
+          // Production boot wants a real secret and a mail transport; these are throwaway values.
+          env: {
+            SESSION_SECRET: 'e2e-session-secret-at-least-32-characters-long',
+            RESEND_API_KEY: 'e2e-not-used',
+            APP_URL: `http://127.0.0.1:${ports.saas}`,
+          },
         },
       ],
 })
