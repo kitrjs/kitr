@@ -162,7 +162,7 @@ Nothing else in CI installs from a registry, so `scripts/verdaccio-smoke.mjs` do
 - checks that every peer of the `kitr` package, every dependency of every package, every library pinned in `packages/cli/src/versions.ts` and every `builtOn` library can be installed from the registry,
 - installs the published `kitr` CLI, then runs `kitr new --kit app` and `--kit fullstack` against the registry, followed by `typecheck` and `build` in each project.
 
-A peer that names a missing package or an unpublished version fails the run, and so does a setup module that adds one. Package files are bumped only while packing and restored afterwards, so versions and changesets stay as they are. On `main` the run adds `--all-packages`, which runs `kitr add` for every released package in one project.
+Each kit runs on its own runner in CI. A peer that names a missing package or an unpublished version fails the run, and so does a setup module that adds one. Package files are bumped only while packing and restored afterwards, so versions and changesets stay as they are. On `main` the run adds `--all-packages`, which runs `kitr add` for every released package in one project.
 
 Run it locally after `pnpm build` and `pnpm -C registry build`: `pnpm smoke:registry`. Options: `--kits app,saas`, `--all-packages`, `--skip-projects` (publish and resolve checks only), `--keep` (keep the scratch directory), `--port`.
 

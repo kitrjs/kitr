@@ -43,8 +43,7 @@ jobs:
         shell: bash
         run: |
           pnpm update --latest --recursive 2>&1 | tee "$RUNNER_TEMP/update.log"
-          git diff --no-color -U0 -- '*package.json' | grep -E '^(\+\+\+ |[-+] +")' > "$RUNNER_TEMP/dependency-diff.txt" || true
-          wc -l "$RUNNER_TEMP/dependency-diff.txt"
+          node scripts/dependency-diff.mjs | tee "$RUNNER_TEMP/dependency-diff.txt"
       - name: Build
         id: build
         if: steps.update.outcome == 'success'
@@ -127,9 +126,9 @@ jobs:
               '',
               '### Dependency diff',
               '',
-              'The first changed line of a package.json is the range before, the second the range after.',
+              'Every range `pnpm update --latest --recursive` changed, with the packages it changed in.',
               '',
-              '```diff',
+              '```',
               diff.trim() || '(no package.json changed)',
               '```',
             ].join('\n')
