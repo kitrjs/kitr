@@ -5,7 +5,7 @@ description: Add your own state, services and drivers in three steps: a provider
 
 # Extending kitr
 
-Three levels. Start at the first. Move down only when you need to.
+Three levels. Start at the first.
 
 | Level | You want | You write |
 | --- | --- | --- |
@@ -13,11 +13,11 @@ Three levels. Start at the first. Move down only when you need to.
 | 2. A driver | Different storage, vault or notifications on one shell | A driver and one `register` call |
 | 3. A package | The same thing in many projects | A package with `definePackage` |
 
-Every snippet below is real code from [`examples/everywhere`](https://github.com/kitrjs/kitr/tree/main/examples/everywhere). It is type-checked and tested in CI.
+The code in levels 1 and 2 is from [`examples/everywhere`](https://github.com/kitrjs/kitr/tree/main/examples/everywhere). CI type-checks and tests it.
 
 ## 1. Your own code in one project
 
-A provider puts a service in the container. Pages read it with `useService()`.
+A provider puts a service in the app. Pages read it with `useService()`.
 
 ### Generate the provider
 
