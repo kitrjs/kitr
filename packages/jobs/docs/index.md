@@ -64,7 +64,7 @@ export default defineConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `jobs` | `[]` | Every job the worker can run. A queued job whose name is not here, and was not dispatched by this process, is dropped with a warning. Schedules only run for jobs listed here or passed to `register()`. |
-| `driver` | the memory driver | Where queued jobs wait. See [Extend](#extend). |
+| `driver` | the memory driver | Where queued jobs wait. `createRedisJobsDriver(redis)` shares the queue between processes; see [Share the queue between processes](#share-the-queue-between-processes) and [Extend](#extend). |
 | `concurrency` | `5` | How many jobs run at once in each process. |
 | `pollInterval` | `500` | Milliseconds between checks of the queue. |
 | `worker` | `true` | Start the worker when the server starts. `false` when a separate process runs jobs. |
@@ -288,7 +288,7 @@ cronMatches('*/15 9-17 * * 1-5', new Date(2026, 10, 7, 9, 30)) // => false, a Sa
 parseInterval('5m') // => 300000
 ```
 
-Every process with a running worker dispatches scheduled jobs. With two web servers that both run the worker, `prune_sessions` runs twice. Run the worker in one process, as below.
+Every process with a running worker checks the schedules. With the memory driver, each of them queues its own copy: two web servers that both run the worker run `prune_sessions` twice. With a driver that can lock (the [Redis driver](#share-the-queue-between-processes) can), each cron minute and each interval is queued once, by whichever worker claims it first. Interval runs then line up on fixed slots of the clock (every 5 minutes from midnight UTC for `'5m'`) instead of starting when the worker starts, so a deploy does not add an extra run. Cron expressions are read in each server's local time zone, so give every server the same `TZ`.
 
 ## Retry a failing job
 
@@ -408,22 +408,66 @@ await server.close()
 
 When every attempt fails, `run()` throws the last error. It waits the real backoff between attempts, and it does not call `onFailed`. A payload that fails the schema throws a `VALIDATION` error at once, without retrying.
 
-## Run the worker in its own process
+## Share the queue between processes
 
-By default the worker runs inside the web server: it starts when `server.listen()` runs, or on the first request served through `server.fetch()` outside tests, and drains on shutdown. That suits one server.
+With the memory driver, the queue lives inside one process: a job dispatched on one web server is never seen by another, and everything queued is lost on restart. On the server, `createRedisJobsDriver` keeps the queue in [Redis](https://redis.io) instead, so every web server can dispatch and every worker can run. Install a Redis client. The driver takes an [ioredis](https://github.com/redis/ioredis) client:
 
-With several web servers, or long jobs that should not compete with requests, run one worker process and turn the worker off in the web servers. The queue must then be shared between processes, so this needs a shared driver ([Extend](#extend)); with the memory driver, a job dispatched in the web server never reaches the worker.
+```sh
+pnpm add ioredis
+```
 
 ```ts
 // config/jobs.ts
-import { defineConfig } from 'kitr/jobs'
+import { createRedisJobsDriver, defineConfig } from 'kitr/jobs'
+import { Redis } from 'ioredis'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { pruneSessions } from '#server/jobs/prune_sessions'
-import { createRedisJobsDriver } from '#server/jobs/redis_driver'
 
 export default defineConfig({
   jobs: [generateInvoice, pruneSessions],
-  driver: createRedisJobsDriver(process.env.REDIS_URL ?? 'redis://localhost:6379'),
+  driver: createRedisJobsDriver(new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379'), {
+    prefix: 'acme-app:jobs:',
+    visibilityTimeout: 10 * 60_000,
+  }),
+})
+```
+
+Add the connection string to `.env`:
+
+```sh
+REDIS_URL=redis://localhost:6379
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `prefix` | `'kitr:jobs:'` | Prepended to the driver's keys, so apps sharing a Redis keep separate queues. |
+| `visibilityTimeout` | `300000` | Milliseconds a pulled job stays hidden from other workers. Keep it above your longest job `timeout`. |
+
+What the driver guarantees:
+
+- **Each due job runs on one worker.** `pull` moves a job from the queue to a reserved set, and only the worker whose `ZREM` succeeds runs it. Twenty invoices dispatched while three workers poll are generated twenty times, not sixty.
+- **A crashed worker's jobs come back.** A reserved job that is not acknowledged within `visibilityTimeout` returns to the queue and runs again. A job that runs longer than `visibilityTimeout` can therefore run twice; raise the timeout or make the job safe to repeat.
+- **Scheduled jobs queue once per run.** Before queuing a cron or interval job, each worker takes a Redis lock named after the job and the minute (or interval slot). One worker gets it.
+- **Retries keep their id.** A retry is queued under the same `jobId` with the next `attempt`, so `onFailed` and your logs see one job.
+
+The queue lives under three keys: `<prefix>queue` (a sorted set by `runAt`), `<prefix>reserved` and `<prefix>data`. `jobs.driver.size()` counts waiting jobs across every process.
+
+## Run the worker in its own process
+
+By default the worker runs inside the web server: it starts when `server.listen()` runs, or on the first request served through `server.fetch()` outside tests, and drains on shutdown. That suits one server, and with the [Redis driver](#share-the-queue-between-processes) it also suits several: every web server works the shared queue.
+
+When long jobs should not compete with requests, run a worker process and turn the worker off in the web servers. The queue must then be shared, so this needs the Redis driver or another shared one; with the memory driver, a job dispatched in the web server never reaches the worker.
+
+```ts
+// config/jobs.ts
+import { createRedisJobsDriver, defineConfig } from 'kitr/jobs'
+import { Redis } from 'ioredis'
+import { generateInvoice } from '#server/jobs/generate_invoice'
+import { pruneSessions } from '#server/jobs/prune_sessions'
+
+export default defineConfig({
+  jobs: [generateInvoice, pruneSessions],
+  driver: createRedisJobsDriver(new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379')),
   // JOBS_WORKER=off on the web servers: they only queue, the worker process runs jobs.
   worker: process.env.JOBS_WORKER !== 'off',
 })
@@ -448,7 +492,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and start one worker next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it boots the app behind the `server` that `server/main.ts` exports. `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
+Deploy the web servers with `JOBS_WORKER=off`, and start one or more workers next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it boots the app behind the `server` that `server/main.ts` exports. `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
 
 `jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
 
@@ -667,15 +711,16 @@ A driver is where queued jobs wait. It has four methods and an optional fifth; t
 | `size()` | Count the jobs waiting. |
 | `clear()` | Remove every job. |
 | `ack(job)` (optional) | Forget a job that has finished. With `ack`, `pull` can reserve jobs instead of deleting them, so a job whose worker died mid-run is pulled again. |
+| `claim(key, ttlMs)` (optional) | Take a lock for `ttlMs` and resolve `true` for exactly one caller. Workers call it before queuing a scheduled run, so the run is queued once however many workers poll. Without it, each worker queues its own copy. |
 
-This driver keeps the queue in a [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`, with [ioredis](https://github.com/redis/ioredis) (`pnpm add ioredis`). Each job is claimed with `ZREM`, so two workers never run the same one:
+kitr ships a complete Redis driver (see [Share the queue between processes](#share-the-queue-between-processes)). To see the shape, here is the smallest driver that shares a queue: one [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`, with [ioredis](https://github.com/redis/ioredis). Each job is claimed with `ZREM`, so two workers never run the same one:
 
 ```ts
-// server/jobs/redis_driver.ts
-import Redis from 'ioredis'
+// server/jobs/sorted_set_driver.ts
+import { Redis } from 'ioredis'
 import type { JobsDriver, QueuedJob } from 'kitr/jobs'
 
-export function createRedisJobsDriver(url: string, key = 'acme:jobs'): JobsDriver {
+export function createSortedSetDriver(url: string, key = 'acme:jobs'): JobsDriver {
   const redis = new Redis(url)
   return {
     name: 'redis',
@@ -707,15 +752,15 @@ Register it in `config/jobs.ts`:
 // config/jobs.ts
 import { defineConfig } from 'kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
-import { createRedisJobsDriver } from '#server/jobs/redis_driver'
+import { createSortedSetDriver } from '#server/jobs/sorted_set_driver'
 
 export default defineConfig({
   jobs: [generateInvoice],
-  driver: createRedisJobsDriver(process.env.REDIS_URL ?? 'redis://localhost:6379'),
+  driver: createSortedSetDriver(process.env.REDIS_URL ?? 'redis://localhost:6379'),
 })
 ```
 
-Payloads pass through `JSON.stringify`, so keep them to plain JSON: a `Date` comes back as a string, and the schema check on pull catches the mismatch. Without `ack`, a job is removed from the queue when it is pulled, before it runs, so if the process dies mid-run the job is gone. A driver that must never lose work moves pulled jobs to a processing list in `pull`, deletes them in `ack`, and pushes back any that are not acknowledged in time. A retry is a new `push`, so `ack` always means that run is over. The same four methods fit a database table: `pull` selects due rows and deletes them in one transaction.
+Payloads pass through `JSON.stringify`, so keep them to plain JSON: a `Date` comes back as a string, and the schema check on pull catches the mismatch. Without `ack`, a job is removed from the queue when it is pulled, before it runs, so if the process dies mid-run the job is gone. A driver that must never lose work moves pulled jobs to a processing list in `pull`, deletes them in `ack`, and pushes back any that are not acknowledged in time, as `createRedisJobsDriver` does. A retry is a new `push`, so `ack` always means that run is over. This small driver has no `claim`, so each worker queues its own copy of a scheduled job; add one with `SET key 1 PX ttl NX` when several workers share it. The same four methods fit a database table: `pull` selects due rows and deletes them in one transaction.
 
 ## Next steps
 
@@ -724,4 +769,5 @@ Payloads pass through `JSON.stringify`, so keep them to plain JSON: a `Date` com
 - [Logger](/packages/logger): where the worker's warnings and errors go.
 - [Monitoring](/packages/monitoring): report jobs that keep failing.
 - [Server](/packages/server): the lifecycle that starts and stops the worker.
+- [Run on more than one instance](/guides/scale-out): the queue, cache, limits and sockets on shared Redis.
 - [Standard Schema](https://standardschema.dev): the schema libraries a job accepts.

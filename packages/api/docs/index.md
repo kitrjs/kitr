@@ -686,10 +686,32 @@ export type ServerRoutes = typeof routes.$types
 | `max` | `100` | Requests allowed per key per window. |
 | `windowMs` | `60000` | Window length in milliseconds. |
 | `key` | client IP | Function from the context to a bucket key, such as a team or user id. |
+| `store` | memory | Where counters live. Any `RateLimitStore`; `createRedisRateLimitStore` from [Shield](/packages/shield) shares them between instances. |
 
-Every response carries `ratelimit-limit`, `ratelimit-remaining` and `ratelimit-reset` (seconds). The sixth request in a minute gets `{ "code": "RATE_LIMITED", "message": "Too many requests", "status": 429 }`.
+Every response carries `ratelimit-limit`, `ratelimit-remaining` and `ratelimit-reset` (seconds); a `429` also carries `retry-after`. The sixth request in a minute gets `{ "code": "RATE_LIMITED", "message": "Too many requests", "status": 429 }`.
 
-The counters live in the process's memory. With several server instances behind a load balancer, each counts on its own, so the real limit is `max` times the number of instances. For one limit across instances, use the rate limiter in [Shield](/packages/shield), which takes a shared `store`.
+By default the counters live in the process's memory. With several server instances behind a load balancer, each counts on its own, so the real limit is `max` times the number of instances. Pass a shared store for one limit across instances:
+
+```ts
+// server/security/invite_limit.ts
+import { rateLimit } from 'kitr/api'
+import { createRedisRateLimitStore } from 'kitr/shield'
+import { Redis } from 'ioredis'
+
+const store = createRedisRateLimitStore(new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379'), {
+  prefix: 'acme-app:invites:',
+})
+
+/** Five invites per team per minute, counted across every instance. */
+export const inviteLimit = rateLimit({
+  max: 5,
+  windowMs: 60_000,
+  key: (ctx) => ctx.request.header('x-acme-team') ?? 'anonymous',
+  store,
+})
+```
+
+Use `inviteLimit` in the route's `middleware` list in place of the inline `rateLimit(...)` above. The store is the same one the shield uses; it needs [ioredis](https://github.com/redis/ioredis) installed (`pnpm add ioredis`).
 
 ## Require JSON bodies
 

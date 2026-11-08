@@ -95,6 +95,78 @@ export function createDiskUploadsDriver(
   }
 }
 
+/**
+ * The part of an [unstorage](https://unstorage.unjs.io) `Storage` the uploads driver uses. Any
+ * unstorage instance fits, whatever its driver: S3 and R2 (`unstorage/drivers/s3`), Azure Blob,
+ * Vercel Blob, Netlify Blobs, the filesystem.
+ */
+export interface UnstorageRawLike {
+  getItemRaw(key: string): Promise<unknown>
+  setItemRaw(key: string, value: Uint8Array): Promise<void>
+  getItem(key: string): Promise<unknown>
+  setItem(key: string, value: string): Promise<void>
+  removeItem(key: string): Promise<void>
+}
+
+/** Bytes as unstorage drivers hand them back: a Buffer, a Uint8Array, an ArrayBuffer or base64. */
+function toBytes(raw: unknown): Uint8Array | undefined {
+  if (raw === null || raw === undefined) return undefined
+  if (raw instanceof Uint8Array) return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+  if (raw instanceof ArrayBuffer) return new Uint8Array(raw)
+  if (typeof raw === 'string') {
+    // Drivers without binary support store raw values as `base64:<data>`.
+    const data = raw.startsWith('base64:') ? raw.slice(7) : raw
+    return Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
+  }
+  return undefined
+}
+
+/**
+ * An uploads driver over any unstorage instance, so every server instance reads and writes the
+ * same files: object storage such as S3 or R2 instead of one machine's disk.
+ *
+ *   driver: createUnstorageUploadsDriver(createStorage({ driver: s3Driver({ bucket: 'acme-uploads', ... }) }))
+ *
+ * Files live under `base` (default `uploads`) with their type and name kept beside them under
+ * `<base>:meta`. `publicPath` gives the driver a `url(key)`, as with the disk driver.
+ */
+export function createUnstorageUploadsDriver(
+  storage: UnstorageRawLike,
+  options: { base?: string; publicPath?: string } = {},
+): UploadsDriver {
+  const base = options.base ?? 'uploads'
+  const file = (key: string) => `${base}:files:${key}`
+  const meta = (key: string) => `${base}:meta:${key}`
+  const check = (key: string) => {
+    if (!key || key.split(/[/:]/).some((part) => part === '..' || part === ''))
+      throw KitrError.forbidden('Bad upload key')
+    return key
+  }
+  return {
+    name: 'unstorage',
+    async put(key, data, info) {
+      check(key)
+      await storage.setItemRaw(file(key), data)
+      await storage.setItem(meta(key), JSON.stringify({ type: info.type, name: info.name }))
+    },
+    async get(key) {
+      check(key)
+      const data = toBytes(await storage.getItemRaw(file(key)))
+      if (!data) return undefined
+      const raw = await storage.getItem(meta(key))
+      const info = (typeof raw === 'string' ? JSON.parse(raw) : raw) as { type?: string } | null
+      return { data, type: info?.type ?? 'application/octet-stream' }
+    },
+    async delete(key) {
+      check(key)
+      await Promise.allSettled([storage.removeItem(file(key)), storage.removeItem(meta(key))])
+    },
+    url: options.publicPath
+      ? (key) => `${options.publicPath!.replace(/\/$/, '')}/${key}`
+      : undefined,
+  }
+}
+
 /** The uploads service, as `createUploads` returns it and `useUploads(app)` reads it from the container. */
 export interface Uploads {
   /** Read a multipart request, apply the rules and store the files. Throws KitrError on violation. */

@@ -82,6 +82,13 @@ export interface JobsDriver {
   size(): Promise<number>
   /** Remove every waiting job. */
   clear(): Promise<void>
+  /**
+   * Take a lock named `key` for `ttlMs`, resolving true for the one caller that got it. Workers
+   * call it before queuing a scheduled job, so with several workers each cron minute and each
+   * `every` interval queues the job once. Without it, every worker queues its own copy: right
+   * for one process, a duplicate per extra worker otherwise.
+   */
+  claim?(key: string, ttlMs: number): Promise<boolean>
 }
 
 /** The options in `config/jobs.ts`. */
@@ -140,7 +147,7 @@ declare module '@kitr/core' {
 /** Types `config/jobs.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<JobsConfig>()
 
-/** The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between processes. */
+/** The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between processes; use `createRedisJobsDriver` for that. */
 export function createMemoryJobsDriver(): JobsDriver {
   const queue: QueuedJob[] = []
   // Pulled but not finished. In memory a crash loses them anyway; a durable driver puts them back.
@@ -166,6 +173,97 @@ export function createMemoryJobsDriver(): JobsDriver {
     async clear() {
       queue.length = 0
       reserved.clear()
+    },
+  }
+}
+
+/**
+ * The part of an [ioredis](https://github.com/redis/ioredis) client the Redis jobs driver uses.
+ * An ioredis `Redis` fits as it is.
+ */
+export interface RedisJobsClient {
+  hset(key: string, field: string, value: string): Promise<number>
+  hget(key: string, field: string): Promise<string | null>
+  hdel(key: string, ...fields: string[]): Promise<number>
+  zadd(key: string, score: number, member: string): Promise<number | string>
+  zrem(key: string, ...members: string[]): Promise<number>
+  zrangebyscore(
+    key: string,
+    min: number | string,
+    max: number | string,
+    limit: 'LIMIT',
+    offset: number,
+    count: number,
+  ): Promise<string[]>
+  zcard(key: string): Promise<number>
+  del(...keys: string[]): Promise<number>
+  set(key: string, value: string, px: 'PX', ms: number, nx: 'NX'): Promise<string | null>
+}
+
+/** Options for `createRedisJobsDriver`. */
+export interface RedisJobsDriverOptions {
+  /** Prepended to the driver's keys, so apps sharing a Redis keep separate queues. Default `kitr:jobs:`. */
+  prefix?: string
+  /**
+   * Milliseconds a pulled job stays hidden from other workers. A worker that dies mid-job leaves
+   * it to be picked up again after this. Keep it above your longest job `timeout`, or a slow
+   * job runs twice. Default 300 000 (5 minutes).
+   */
+  visibilityTimeout?: number
+}
+
+/**
+ * A durable queue over Redis, shared by every worker. Each due job goes to exactly one worker:
+ * pulling moves it from the queue to a reserved set, and only the worker whose `ZREM` succeeds
+ * runs it. A job whose worker dies returns to the queue after `visibilityTimeout`. Scheduled
+ * jobs queue once per run however many workers poll, through `claim`.
+ *
+ *   driver: createRedisJobsDriver(new Redis(process.env.REDIS_URL))
+ */
+export function createRedisJobsDriver(
+  redis: RedisJobsClient,
+  options: RedisJobsDriverOptions = {},
+): JobsDriver {
+  const prefix = options.prefix ?? 'kitr:jobs:'
+  const visibility = options.visibilityTimeout ?? 300_000
+  const queue = `${prefix}queue`
+  const reserved = `${prefix}reserved`
+  const data = `${prefix}data`
+  // A retry reuses the job id, so the attempt is part of the member.
+  const member = (job: { id: string; attempt: number }) => `${job.id}:${job.attempt}`
+  return {
+    name: 'redis',
+    async push(job) {
+      await redis.hset(data, member(job), JSON.stringify(job))
+      await redis.zadd(queue, job.runAt, member(job))
+    },
+    async pull(now, limit) {
+      // Put back jobs whose worker never acked them in time.
+      for (const m of await redis.zrangebyscore(reserved, '-inf', now, 'LIMIT', 0, 100))
+        if ((await redis.zrem(reserved, m)) === 1) await redis.zadd(queue, now, m)
+      const due: QueuedJob[] = []
+      for (const m of await redis.zrangebyscore(queue, '-inf', now, 'LIMIT', 0, limit)) {
+        // Another worker may have taken it since the read; only the one that removes it runs it.
+        if ((await redis.zrem(queue, m)) !== 1) continue
+        await redis.zadd(reserved, now + visibility, m)
+        const raw = await redis.hget(data, m)
+        if (raw) due.push(JSON.parse(raw) as QueuedJob)
+        else await redis.zrem(reserved, m)
+      }
+      return due
+    },
+    async ack(job) {
+      await redis.zrem(reserved, member(job))
+      await redis.hdel(data, member(job))
+    },
+    async size() {
+      return redis.zcard(queue)
+    },
+    async clear() {
+      await redis.del(queue, reserved, data)
+    },
+    async claim(key, ttlMs) {
+      return (await redis.set(`${prefix}lock:${key}`, '1', 'PX', ttlMs, 'NX')) === 'OK'
     },
   }
 }
@@ -238,6 +336,7 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
   let lastCronMinute = -1
   const intervals = new Map<string, number>()
   const lastRun = new Map<string, number>()
+  const lastSlot = new Map<string, number>()
   const log = (level: 'info' | 'warn' | 'error', msg: string, data?: unknown) => {
     const logger: any = app.container.has('logger') ? app.container.use('logger') : undefined
     // An Error's message and stack are not enumerable: passed as-is, a JSON log shows `{}`.
@@ -329,6 +428,16 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
     jobs.dispatch(job, undefined as never).catch((error) => {
       log('error', `[jobs] could not queue scheduled ${job.name}`, error)
     })
+  // With a driver that can lock, only the worker that claims this run's key queues it.
+  const dispatchOnce = async (job: Job<any>, key: string, ttlMs: number) => {
+    try {
+      if (driver.claim && !(await driver.claim(key, ttlMs))) return
+    } catch (error) {
+      log('error', `[jobs] could not claim scheduled ${job.name}`, error)
+      return
+    }
+    await dispatchScheduled(job)
+  }
 
   async function tick() {
     if (!running) return
@@ -348,10 +457,16 @@ export function createJobs(app: KitrApp, config: JobsConfig = {}): Jobs {
       lastCronMinute = minute
       for (const job of registry.values())
         if (typeof job.schedule === 'string' && cronMatches(job.schedule, new Date(now)))
-          void dispatchScheduled(job)
+          void dispatchOnce(job, `cron:${job.name}:${minute}`, 120_000)
     }
     for (const [name, every] of intervals) {
-      if (now - (lastRun.get(name) ?? 0) >= every) {
+      if (driver.claim) {
+        // Shared workers agree on slots of the epoch, so each slot is claimed by one of them.
+        const slot = Math.floor(now / every)
+        if (lastSlot.get(name) === slot) continue
+        lastSlot.set(name, slot)
+        void dispatchOnce(registry.get(name)!, `every:${name}:${slot}`, every + 60_000)
+      } else if (now - (lastRun.get(name) ?? 0) >= every) {
         lastRun.set(name, now)
         void dispatchScheduled(registry.get(name)!)
       }

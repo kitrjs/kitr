@@ -90,7 +90,7 @@ Each key takes its middleware's options, or `false` to turn it off. Headers, rat
 | `rateLimit.max` | `100` | Requests per key per window. |
 | `rateLimit.key` | client IP | `(event) => string`: what counts as one client. |
 | `rateLimit.trustProxy` | `false` | Read the client IP from the first `X-Forwarded-For` entry. |
-| `rateLimit.store` | memory | Where counters live. Any `RateLimitStore`. |
+| `rateLimit.store` | memory | Where counters live. Any `RateLimitStore`; `createRedisRateLimitStore(redis)` shares them between instances. |
 | `rateLimit.ignore` | none | Path prefixes that are never limited. |
 | `csrf` | `{}` (on) | Double-submit cookie CSRF. `false` turns it off. |
 | `csrf.cookie` | `'kitr-csrf'` | Cookie that carries the token. |
@@ -408,6 +408,44 @@ server.use(signInLimit)
 
 The sixth attempt from one IP within 15 minutes gets `429`. The headers on that response describe the tighter limit, because it runs last.
 
+## Share rate limits between instances
+
+The default store counts in each process. With three instances behind a load balancer, a client spread across them gets three times `max`, and a restart resets every counter. On the server, `createRedisRateLimitStore` keeps the counters in [Redis](https://redis.io) so every instance counts against one limit. Install a Redis client. The store takes an [ioredis](https://github.com/redis/ioredis) client:
+
+```sh
+pnpm add ioredis
+```
+
+```ts
+// config/shield.ts
+import { createRedisRateLimitStore, defineConfig } from 'kitr/shield'
+import { Redis } from 'ioredis'
+
+export default defineConfig({
+  headers: {},
+  cors: { origin: ['https://app.acme.com'], credentials: true },
+  rateLimit: {
+    max: 300,
+    windowMs: 60_000,
+    trustProxy: true,
+    store: createRedisRateLimitStore(new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379'), {
+      prefix: 'acme-app:rl:',
+    }),
+  },
+  csrf: { ignore: ['/webhooks'] },
+})
+```
+
+Add the connection string to `.env`:
+
+```sh
+REDIS_URL=redis://localhost:6379
+```
+
+Each window is one Redis key under `prefix` (default `kitr:rl:`). The first request in a window creates it with `SET ... PX windowMs NX`, so it expires on its own and a crash between commands never leaves a counter that lives forever; each request after that is one `INCR`. When Linus's 301st request of the minute reaches instance C after 300 went to A and B, C answers `429` with the same `RateLimit-*` headers.
+
+Behind a load balancer, set `trustProxy` too (see [Run behind a proxy](#run-behind-a-proxy)): otherwise every request appears to come from the balancer and all visitors share one counter. The same store works for the per-route `rateLimit()` in [Limit one route more tightly](#limit-one-route-more-tightly) and for `rateLimit()` from [kitr/api](/packages/api).
+
 ## Run behind a proxy
 
 By default the rate limit keys on the address of the TCP connection. Behind a load balancer or CDN, that is the proxy's address, so every visitor shares one counter and the whole site is limited together. Turn on `trustProxy` to read the client from `X-Forwarded-For`:
@@ -592,26 +630,27 @@ interface RateLimitStore {
 }
 ```
 
-The default memory store counts per process, so with three instances a client gets three times `max`. A Redis store shares the counters. This one uses [ioredis](https://github.com/redis/ioredis) (`pnpm add ioredis`):
+The default memory store counts per process; `createRedisRateLimitStore` shares counters through Redis (see [Share rate limits between instances](#share-rate-limits-between-instances)). Any other shared store is one method. This one keeps counters in a [Cloudflare Workers KV](https://developers.cloudflare.com/kv/) namespace, which suits a Workers deployment without Redis. KV is eventually consistent, so the limit is approximate across locations:
 
 ```ts
-// server/security/redis_rate_limit_store.ts
+// server/security/kv_rate_limit_store.ts
 import type { RateLimitStore } from 'kitr/shield'
-import { Redis } from 'ioredis'
 
-export function createRedisRateLimitStore(url: string, prefix = 'acme-app:ratelimit:'): RateLimitStore {
-  const redis = new Redis(url)
+interface KvNamespace {
+  get(key: string): Promise<string | null>
+  put(key: string, value: string, options: { expirationTtl: number }): Promise<void>
+}
+
+export function createKvRateLimitStore(kv: KvNamespace, prefix = 'acme-app:rl:'): RateLimitStore {
   return {
     async hit(key, windowMs) {
-      const name = prefix + key
-      const results = await redis.multi().incr(name).pttl(name).exec()
-      const count = Number(results?.[0]?.[1] ?? 1)
-      let ttl = Number(results?.[1]?.[1] ?? -1)
-      if (ttl < 0) {
-        await redis.pexpire(name, windowMs)
-        ttl = windowMs
-      }
-      return { count, resetAt: Date.now() + ttl }
+      const now = Date.now()
+      const window = Math.floor(now / windowMs)
+      const name = `${prefix}${key}:${window}`
+      const count = Number((await kv.get(name)) ?? 0) + 1
+      // KV expires keys after at least 60 seconds.
+      await kv.put(name, String(count), { expirationTtl: Math.max(60, Math.ceil(windowMs / 1000)) })
+      return { count, resetAt: (window + 1) * windowMs }
     },
   }
 }
@@ -622,21 +661,15 @@ Register it in the config:
 ```ts
 // config/shield.ts
 import { defineConfig } from 'kitr/shield'
-import { createRedisRateLimitStore } from '#server/security/redis_rate_limit_store'
+import { createKvRateLimitStore } from '#server/security/kv_rate_limit_store'
+import { env } from 'cloudflare:workers'
 
 export default defineConfig({
-  headers: {},
-  cors: { origin: ['https://app.acme.com'], credentials: true },
-  rateLimit: {
-    max: 300,
-    windowMs: 60_000,
-    store: createRedisRateLimitStore(process.env.REDIS_URL ?? 'redis://localhost:6379'),
-  },
-  csrf: { ignore: ['/webhooks'] },
+  rateLimit: { max: 300, windowMs: 60_000, store: createKvRateLimitStore(env.RATE_LIMITS) },
 })
 ```
 
-The first hit in a window creates the key and sets its expiry, so Redis deletes the counter when the window ends. See [`RateLimitStore`](/packages/shield/api#ratelimitstore) in the API reference.
+Windows here line up on the clock (`Math.floor(now / windowMs)`), so every key resets at the same moment. See [`RateLimitStore`](/packages/shield/api#ratelimitstore) in the API reference.
 
 ## Next steps
 
@@ -644,4 +677,5 @@ The first hit in a window creates the key and sets its expiry, so Redis deletes 
 - [Server](/packages/server): the h3 server the shield attaches to.
 - [HTTP](/packages/http): the client that sends the CSRF token for you.
 - [Auth](/packages/auth): sessions, sign-in and permissions.
+- [Run on more than one instance](/guides/scale-out): shared rate limits, cache, queue and sockets.
 - [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/): what each header defends against.

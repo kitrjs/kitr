@@ -239,15 +239,17 @@ Set secrets with `wrangler secret put DATABASE_URL`. A Worker has no long-lived 
 
 ## Run more than one instance
 
-One instance is the right start. When you add a second, two things change:
+One instance is the right start. When you add a second, anything a package keeps in memory stops being shared:
 
-- Realtime: each instance only knows its own WebSocket connections, so an event emitted on one never reaches clients connected to another. [Add live updates](/guides/live-updates) explains the options before you scale.
-- Anything kept in memory, such as the default rate limit store in [Shield](/packages/shield), counts per instance. Move it to a shared store, or accept that the limit is per instance.
+- Realtime: each instance only knows its own WebSocket connections, so an event emitted on one never reaches clients connected to another, until you give the socket link a Redis adapter.
+- The cache: entries and tag invalidations stay on the instance that made them.
+- Rate limits in [Shield](/packages/shield): each instance counts on its own, so the real limit grows with the instance count.
 
-Sessions in a signed cookie or a database work on any number of instances without change.
+Each has a Redis replacement behind the same option, and the in-memory default stays for development. [Run on more than one instance](/guides/scale-out) moves all of them, plus background jobs and uploads, and runs two instances side by side. Sessions in a signed cookie or a database work on any number of instances without change.
 
 ## Next steps
 
+- [Run on more than one instance](/guides/scale-out): Redis for sockets, cache, limits and jobs.
 - [Platforms](/docs/platforms): every option of `web()` and `server()`, and `kitr dev`, `build` and `start`.
 - [Test your app](/guides/testing): the CI pipeline that should pass before every deploy.
 - [Server](/packages/server): `config/server.ts`, the health route, request logging and graceful shutdown.
