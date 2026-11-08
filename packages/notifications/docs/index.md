@@ -366,10 +366,44 @@ To build a service with no app, call `createNotifications(config)`. In a browser
 | --- | --- | --- |
 | Browser | `createWebNotificationsDriver()`, the Notification API | Fire only while the page is open. |
 | Chrome for Android | The same driver, through the service worker | The same. |
-| Desktop and mobile shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the web driver only with `fallbackToWeb: true` | The same as the web driver with the fallback, until a native driver is registered. |
+| Electron | `createElectronDriver()`: Electron `Notification` in the main process | Kept in the main process; lost when the app quits. |
+| Tauri | `createTauriDriver()`: `@tauri-apps/plugin-notification` | A timer in the window; lost when the app quits. |
+| Mobile shell | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the web driver only with `fallbackToWeb: true` | The same as the web driver with the fallback, until a native driver is registered. |
 | Server | Memory driver, permission `'unsupported'` | Nothing is shown. |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have drivers, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers only `platform` and `storage` drivers: to hand notifications to the operating system there, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+
+## Use it in Electron and Tauri
+
+In a desktop shell the service shows operating-system notifications instead of the browser's, and `config/notifications.ts` does not change. Permission is not a question on desktop: `permission()` and `request()` answer `granted` (or `unsupported` where the system has no notification service), so `useNotificationPermission()` never shows a prompt.
+
+### Electron
+
+The driver asks the main process to create an Electron [`Notification`](https://www.electronjs.org/docs/latest/api/notification) over the `kitr:notify:*` channels that `handleKitrIpc(ipcMain, app)` serves. Clicking one restores and focuses the window and calls your `onTap` listeners with the `url` and `data` it was shown with, so the tap handler under [Open the right page when tapped](#open-the-right-page-when-tapped) works unchanged. Scheduled notifications wait in a timer in the main process: they survive a window reload, not quitting the app. The driver also sets the app badge (the dock on macOS, the launcher on Linux), which the service API has no call for, so import the driver:
+
+```ts
+// app/orders/badge.ts
+import { createElectronNotificationsDriver } from 'kitr/notifications'
+
+/** Show how many orders wait for Ada's team on the dock icon. */
+export async function showPendingOrders(count: number) {
+  await createElectronNotificationsDriver().setBadge(count) // 0 clears it
+}
+```
+
+Requirements:
+
+- `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
+- On Windows, notifications show from a build installed with electron-builder's installer, which sets the AppUserModelID from `appId`; in development call `app.setAppUserModelId(process.execPath)` in `main.ts`. On Linux, they need a running notification service.
+
+### Tauri
+
+The driver uses [`@tauri-apps/plugin-notification`](https://v2.tauri.app/plugin/notification/): `isPermissionGranted()` and `requestPermission()` for the permission (macOS and Windows may ask once), `sendNotification()` to show. The plugin has no scheduling on desktop, so `schedule()` waits in a timer in the window and shows the notification then; it is lost when the app quits. The plugin reports a tap only on mobile, so `onTap` listeners fire there and stay silent on desktop. `cancel(id)` stops a timer, and asks the system to withdraw the notification where the plugin can.
+
+Requirements:
+
+- `@tauri-apps/plugin-notification` in `package.json`; `kitr add tauri` and `kitr add notifications` in a Tauri project install it. The driver imports it on first use; when it is missing, every method rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- `tauri-plugin-notification` in `src-tauri/Cargo.toml`, `.plugin(tauri_plugin_notification::init())` in `lib.rs` and `notification:default` in `capabilities/default.json`. The Tauri scaffold writes all three.
 
 ## Errors
 

@@ -26,6 +26,22 @@ function createMemoryRateLimitStore(): RateLimitStore;
 
 The default rate-limit store: counters in this process, pruned past 10,000 keys. Each instance counts on its own.
 
+### createRedisRateLimitStore
+
+```ts
+function createRedisRateLimitStore(redis: RedisRateLimitClient, options?: {
+  prefix?: string;
+}): RateLimitStore;
+```
+
+A rate-limit store over Redis, so every instance counts against the same limit. Each window
+is one key that Redis expires itself, so nothing needs sweeping:
+
+```ts
+rateLimit: { store: createRedisRateLimitStore(new Redis(process.env.REDIS_URL)) }
+```
+Keys live under `prefix` (default `kitr:rl:`).
+
 ### csrf
 
 ```ts
@@ -169,7 +185,7 @@ interface RateLimitOptions {
    * request and is never limited. Default false: the address of the connection.
    */
   trustProxy?: boolean;
-  /** Where counters live. Default: this process. */
+  /** Where counters live. Default: this process, so each instance counts on its own; use `createRedisRateLimitStore` to share one limit. */
   store?: RateLimitStore;
   /** Paths that are never limited. Prefix match. */
   ignore?: string[];
@@ -191,6 +207,24 @@ interface RateLimitStore {
 ```
 
 Where rate-limit counters live. Implement it over Redis to share limits between instances.
+
+### RedisRateLimitClient
+
+```ts
+interface RedisRateLimitClient {
+  /** `SET key value PX ms NX`: starts a window only when none is open. */
+  set(key: string, value: string, px: 'PX', ms: number, nx: 'NX'): Promise<unknown>;
+  /** `INCR`: keeps the key's expiry. */
+  incr(key: string): Promise<number>;
+  /** `PTTL`: milliseconds left on the window. */
+  pttl(key: string): Promise<number>;
+  /** `PEXPIRE`: repairs a counter that lost its window. */
+  pexpire(key: string, ms: number): Promise<number>;
+}
+```
+
+The part of an [ioredis](https://github.com/redis/ioredis) client the Redis rate-limit store
+uses. An ioredis `Redis` or `Cluster` fits as it is.
 
 ### ShieldConfig
 

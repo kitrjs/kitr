@@ -10,6 +10,21 @@ Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifica
 
 ## kitr/notifications
 
+### createElectronNotificationsDriver
+
+```ts
+function createElectronNotificationsDriver(_options?: DriverOptions): ElectronNotificationsDriver;
+```
+
+The notifications driver for the Electron shell. Notifications are Electron `Notification`s
+shown by the main process over the `kitr:notify:*` channels of `handleKitrIpc()`: no permission
+prompt on desktop, so `permission()` and `request()` answer `granted` (or `unsupported` where the
+OS has no notification service). Scheduled notifications live in the main process, so they
+survive a window reload but not quitting the app. Clicking one focuses the window and calls
+`onTap` with the `url` and `data` it was shown with. `setBadge(count)` sets the app badge.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
 ### createMemoryNotificationsDriver
 
 ```ts
@@ -35,6 +50,19 @@ function createNotifications(config?: NotificationsConfig, app?: KitrApp): Notif
 Build the `notifications` service. The driver is `config.driver`, else the one registered on
 `app`, else `selectDriver()` for the runtime: the web driver in a browser, a memory driver (`unsupported`)
 on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
+
+### createTauriNotificationsDriver
+
+```ts
+function createTauriNotificationsDriver(_options?: DriverOptions): Driver;
+```
+
+The notifications driver for the Tauri shell, on `@tauri-apps/plugin-notification` (imported on
+first use, an optional peer: methods reject with `E_DRIVER_UNAVAILABLE` when it is missing).
+Permission is read and asked through the plugin. The desktop plugin shows a notification at once
+and cannot schedule one, so `schedule()` waits in a timer inside the window (lost when the app
+quits) and shows it then; on mobile the same timer applies. The plugin reports a tap only on
+mobile, so `onTap` listeners fire there and stay silent on desktop.
 
 ### createWebNotificationsDriver
 
@@ -92,6 +120,17 @@ interface DriverOptions extends SelectDriverOptions {
 ```
 
 Options of `selectDriver()`.
+
+### ElectronNotificationsDriver
+
+```ts
+interface ElectronNotificationsDriver extends Driver {
+  /** Set the app badge count (dock on macOS, launcher on Linux); 0 clears it. */
+  setBadge(count: number): Promise<void>;
+}
+```
+
+The Electron driver, with the dock/taskbar badge that only desktop shells have.
 
 ### NotificationOptions
 
@@ -329,13 +368,28 @@ the page closes. Falls back to the service worker where the constructor is not a
 ### createElectronDriver
 
 ```ts
-function createElectronDriver(_options?: DriverOptions): Driver;
+function createElectronDriver(_options?: DriverOptions): ElectronNotificationsDriver;
 ```
 
-The notifications driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/notifications` and `electron` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
-to opt in to the WebView behaviour.
+The notifications driver for the Electron shell. Notifications are Electron `Notification`s
+shown by the main process over the `kitr:notify:*` channels of `handleKitrIpc()`: no permission
+prompt on desktop, so `permission()` and `request()` answer `granted` (or `unsupported` where the
+OS has no notification service). Scheduled notifications live in the main process, so they
+survive a window reload but not quitting the app. Clicking one focuses the window and calls
+`onTap` with the `url` and `data` it was shown with. `setBadge(count)` sets the app badge.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
+### ElectronNotificationsDriver
+
+```ts
+interface ElectronNotificationsDriver extends Driver {
+  /** Set the app badge count (dock on macOS, launcher on Linux); 0 clears it. */
+  setBadge(count: number): Promise<void>;
+}
+```
+
+The Electron driver, with the dock/taskbar badge that only desktop shells have.
 
 ## kitr/notifications/drivers/tauri
 
@@ -345,10 +399,20 @@ to opt in to the WebView behaviour.
 function createTauriDriver(_options?: DriverOptions): Driver;
 ```
 
-The notifications driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/notifications` and `tauri` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
-to opt in to the WebView behaviour.
+The notifications driver for the Tauri shell, on `@tauri-apps/plugin-notification` (imported on
+first use, an optional peer: methods reject with `E_DRIVER_UNAVAILABLE` when it is missing).
+Permission is read and asked through the plugin. The desktop plugin shows a notification at once
+and cannot schedule one, so `schedule()` waits in a timer inside the window (lost when the app
+quits) and shows it then; on mobile the same timer applies. The plugin reports a tap only on
+mobile, so `onTap` listeners fire there and stay silent on desktop.
+
+### numericId
+
+```ts
+function numericId(id: string): number;
+```
+
+The plugin wants a 32-bit integer id; the service's ids are strings.
 
 ## kitr/notifications/drivers/capacitor
 

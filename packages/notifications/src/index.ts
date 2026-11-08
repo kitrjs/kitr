@@ -3,7 +3,12 @@ import { runtimeOf } from '@kitr/platform'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export {
+  createElectronDriver as createElectronNotificationsDriver,
+  type ElectronNotificationsDriver,
+} from './drivers/electron'
 export { createMemoryNotificationsDriver } from './drivers/memory'
+export { createTauriDriver as createTauriNotificationsDriver } from './drivers/tauri'
 export { createWebNotificationsDriver } from './drivers/web'
 
 /**

@@ -64,6 +64,14 @@ export const versions: Record<string, string> = {
   '@tauri-apps/plugin-store': '^2.4.0',
   '@tauri-apps/plugin-opener': '^2.5.0',
   '@tauri-apps/plugin-process': '^2.3.0',
+  '@tauri-apps/plugin-stronghold': '^2.4.0',
+  '@tauri-apps/plugin-notification': '^2.8.0',
+  '@tauri-apps/plugin-dialog': '^2.8.4',
+  '@tauri-apps/plugin-fs': '^2.7.1',
+  '@tauri-apps/plugin-updater': '^2.14.1',
+  '@tauri-apps/plugin-os': '^2.4.0',
+  '@tauri-apps/plugin-clipboard-manager': '^2.5.0',
+  'electron-updater': '^6.8.11',
   wrangler: '^4.0.0',
 }
 

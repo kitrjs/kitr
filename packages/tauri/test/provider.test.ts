@@ -68,6 +68,40 @@ describe('tauri provider', () => {
     expect(platform.standalone).toBe(true)
   })
 
+  it('every loader is a literal import that either resolves or rejects, never throws synchronously', async () => {
+    const { tauriPluginLoaders } = await import('../src/provider')
+    for (const load of Object.values(tauriPluginLoaders)) {
+      const result = await Promise.allSettled([Promise.resolve().then(load)])
+      expect(result).toHaveLength(1)
+    }
+  })
+
+  it('registers loaders for every plugin the device drivers load, inside a Tauri webview only', async () => {
+    const { tauriPluginLoaders } = await import('../src/provider')
+    const { loadShellModule } = await import('@kitr/platform')
+    expect(Object.keys(tauriPluginLoaders).sort()).toEqual([
+      '@tauri-apps/api/app',
+      '@tauri-apps/api/core',
+      '@tauri-apps/api/path',
+      '@tauri-apps/api/window',
+      '@tauri-apps/plugin-clipboard-manager',
+      '@tauri-apps/plugin-dialog',
+      '@tauri-apps/plugin-fs',
+      '@tauri-apps/plugin-notification',
+      '@tauri-apps/plugin-opener',
+      '@tauri-apps/plugin-os',
+      '@tauri-apps/plugin-process',
+      '@tauri-apps/plugin-stronghold',
+      '@tauri-apps/plugin-updater',
+    ])
+    ;(globalThis as Record<string, unknown>).window = { __TAURI_INTERNALS__: {} }
+    await boot()
+    // The mocked app module resolves through the registered loader.
+    expect(
+      (await loadShellModule<{ getVersion(): Promise<string> }>('@tauri-apps/api/app')).getVersion,
+    ).toBe(getVersion)
+  })
+
   it('reads the version, opens links and quits through the Tauri plugins', async () => {
     ;(globalThis as Record<string, unknown>).window = { __TAURI_INTERNALS__: {} }
     const platform = createPlatform(await boot())

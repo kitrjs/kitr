@@ -405,3 +405,5 @@ function cssSafeArea(): SafeArea {
   probe.remove()
   return area
 }
+
+export { loadShellModule, type ModuleLoader, registerShellModules } from './modules'

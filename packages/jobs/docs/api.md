@@ -24,7 +24,22 @@ Create the jobs service without the provider, for scripts and tests. Takes the s
 function createMemoryJobsDriver(): JobsDriver;
 ```
 
-The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between processes.
+The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between processes; use `createRedisJobsDriver` for that.
+
+### createRedisJobsDriver
+
+```ts
+function createRedisJobsDriver(redis: RedisJobsClient, options?: RedisJobsDriverOptions): JobsDriver;
+```
+
+A durable queue over Redis, shared by every worker. Each due job goes to exactly one worker:
+pulling moves it from the queue to a reserved set, and only the worker whose `ZREM` succeeds
+runs it. A job whose worker dies returns to the queue after `visibilityTimeout`. Scheduled
+jobs queue once per run however many workers poll, through `claim`.
+
+```ts
+driver: createRedisJobsDriver(new Redis(process.env.REDIS_URL))
+```
 
 ### cronMatches
 
@@ -198,6 +213,13 @@ interface JobsDriver {
   size(): Promise<number>;
   /** Remove every waiting job. */
   clear(): Promise<void>;
+  /**
+   * Take a lock named `key` for `ttlMs`, resolving true for the one caller that got it. Workers
+   * call it before queuing a scheduled job, so with several workers each cron minute and each
+   * `every` interval queues the job once. Without it, every worker queues its own copy: right
+   * for one process, a duplicate per extra worker otherwise.
+   */
+  claim?(key: string, ttlMs: number): Promise<boolean>;
 }
 ```
 
@@ -221,6 +243,42 @@ interface QueuedJob {
 ```
 
 A job waiting in the queue, as drivers store it and `onFailed` receives it.
+
+### RedisJobsClient
+
+```ts
+interface RedisJobsClient {
+  hset(key: string, field: string, value: string): Promise<number>;
+  hget(key: string, field: string): Promise<string | null>;
+  hdel(key: string, ...fields: string[]): Promise<number>;
+  zadd(key: string, score: number, member: string): Promise<number | string>;
+  zrem(key: string, ...members: string[]): Promise<number>;
+  zrangebyscore(key: string, min: number | string, max: number | string, limit: 'LIMIT', offset: number, count: number): Promise<string[]>;
+  zcard(key: string): Promise<number>;
+  del(...keys: string[]): Promise<number>;
+  set(key: string, value: string, px: 'PX', ms: number, nx: 'NX'): Promise<string | null>;
+}
+```
+
+The part of an [ioredis](https://github.com/redis/ioredis) client the Redis jobs driver uses.
+An ioredis `Redis` fits as it is.
+
+### RedisJobsDriverOptions
+
+```ts
+interface RedisJobsDriverOptions {
+  /** Prepended to the driver's keys, so apps sharing a Redis keep separate queues. Default `kitr:jobs:`. */
+  prefix?: string;
+  /**
+   * Milliseconds a pulled job stays hidden from other workers. A worker that dies mid-job leaves
+   * it to be picked up again after this. Keep it above your longest job `timeout`, or a slow
+   * job runs twice. Default 300 000 (5 minutes).
+   */
+  visibilityTimeout?: number;
+}
+```
+
+Options for `createRedisJobsDriver`.
 
 ## kitr/jobs/provider
 

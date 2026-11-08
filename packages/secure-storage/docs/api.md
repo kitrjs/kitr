@@ -10,6 +10,20 @@ Every export of `kitr/secure-storage`, `kitr/secure-storage/react`, `kitr/secure
 
 ## kitr/secure-storage
 
+### createElectronSecureStorageDriver
+
+```ts
+function createElectronSecureStorageDriver(_options?: DriverOptions): Driver;
+```
+
+The secure-storage driver for the Electron shell. Values are encrypted in the main process with
+`safeStorage` (Keychain on macOS, DPAPI on Windows, the desktop's secret service on Linux) and
+the ciphertext is kept in `kitr-secure-storage.json` in `userData`, served over the `kitr:secure:*`
+channels of `handleKitrIpc()`. The window never sees the key. Where the OS has no vault, main
+refuses to store and `set()` rejects, so nothing is ever kept in the clear.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
 ### createMemorySecureStorageDriver
 
 ```ts
@@ -27,6 +41,20 @@ function createSecureStorage(config?: SecureStorageConfig, app?: KitrApp): Secur
 Build the `secureStorage` service. The driver is `config.driver`, else the vault registered on
 `app`, else `selectDriver()` for the runtime: the encrypted web fallback in a browser, the memory driver on
 the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
+
+### createTauriSecureStorageDriver
+
+```ts
+function createTauriSecureStorageDriver(options?: TauriSecureStorageOptions): Driver;
+```
+
+The secure-storage driver for the Tauri shell, on `@tauri-apps/plugin-stronghold`: an encrypted
+IOTA Stronghold snapshot in the app data dir, opened with a password that the Rust side keeps in
+the OS keyring. The plugins are imported on first use and are optional peers; when one is
+missing, every method rejects with `E_DRIVER_UNAVAILABLE`.
+
+Stronghold rather than `plugin-store`: the store plugin writes plain JSON to disk, which is
+storage, not a vault.
 
 ### createWebSecureStorageDriver
 
@@ -187,6 +215,25 @@ interface SecureStorageDriver {
 
 What a vault implements. Keys arrive with the service's prefix already added.
 
+### TauriSecureStorageOptions
+
+```ts
+interface TauriSecureStorageOptions extends DriverOptions {
+  /**
+   * The vault password. Stronghold derives the snapshot key from it, so it must not be a constant
+   * in the bundle. Default: the random secret the scaffolded Rust side keeps in the OS keyring,
+   * read with `invoke('kitr_vault_key')`.
+   */
+  password?: () => Promise<string>;
+  /** The snapshot file inside the app data dir. Default `kitr-vault.hold`. */
+  file?: string;
+  /** The Stronghold client name. Default `kitr`. */
+  client?: string;
+}
+```
+
+Options of the Tauri secure-storage driver, passed to `createTauriDriver()`.
+
 ### Driver
 
 ```ts
@@ -284,23 +331,48 @@ the browser's key store, so the ciphertext in local storage cannot be read elsew
 function createElectronDriver(_options?: DriverOptions): Driver;
 ```
 
-The secure-storage driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/secure-storage` and `electron` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/secure-storage.ts`
-to opt in to the WebView behaviour.
+The secure-storage driver for the Electron shell. Values are encrypted in the main process with
+`safeStorage` (Keychain on macOS, DPAPI on Windows, the desktop's secret service on Linux) and
+the ciphertext is kept in `kitr-secure-storage.json` in `userData`, served over the `kitr:secure:*`
+channels of `handleKitrIpc()`. The window never sees the key. Where the OS has no vault, main
+refuses to store and `set()` rejects, so nothing is ever kept in the clear.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ## kitr/secure-storage/drivers/tauri
 
 ### createTauriDriver
 
 ```ts
-function createTauriDriver(_options?: DriverOptions): Driver;
+function createTauriDriver(options?: TauriSecureStorageOptions): Driver;
 ```
 
-The secure-storage driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/secure-storage` and `tauri` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/secure-storage.ts`
-to opt in to the WebView behaviour.
+The secure-storage driver for the Tauri shell, on `@tauri-apps/plugin-stronghold`: an encrypted
+IOTA Stronghold snapshot in the app data dir, opened with a password that the Rust side keeps in
+the OS keyring. The plugins are imported on first use and are optional peers; when one is
+missing, every method rejects with `E_DRIVER_UNAVAILABLE`.
+
+Stronghold rather than `plugin-store`: the store plugin writes plain JSON to disk, which is
+storage, not a vault.
+
+### TauriSecureStorageOptions
+
+```ts
+interface TauriSecureStorageOptions extends DriverOptions {
+  /**
+   * The vault password. Stronghold derives the snapshot key from it, so it must not be a constant
+   * in the bundle. Default: the random secret the scaffolded Rust side keeps in the OS keyring,
+   * read with `invoke('kitr_vault_key')`.
+   */
+  password?: () => Promise<string>;
+  /** The snapshot file inside the app data dir. Default `kitr-vault.hold`. */
+  file?: string;
+  /** The Stronghold client name. Default `kitr`. */
+  client?: string;
+}
+```
+
+Options of the Tauri secure-storage driver, passed to `createTauriDriver()`.
 
 ## kitr/secure-storage/drivers/capacitor
 

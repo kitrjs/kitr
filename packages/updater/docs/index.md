@@ -329,10 +329,54 @@ export function checkWhenFocused(app: KitrApp) {
 | --- | --- | --- |
 | Browser with `pwa` on | `createServiceWorkerUpdaterDriver()` | Activates the waiting worker and reloads the page. |
 | Browser without a service worker | The same driver | Nothing to apply: every check is `up-to-date`. |
-| Desktop and mobile shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the service-worker driver only with `fallbackToWeb: true` | Same as the browser, with the fallback. |
+| Electron | `createElectronDriver()`: `electron-updater` | Downloads the installer, then quits and installs. |
+| Tauri | `createTauriDriver()`: `@tauri-apps/plugin-updater` | Downloads and installs the signed update, then relaunches. |
+| Mobile shell | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the service-worker driver only with `fallbackToWeb: true` | Same as the browser, with the fallback. |
 | Server | None; the provider binds nothing | Not available. |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `updater`. To update an installed app, register a driver for your shell's updater, as shown under [Extend](#extend).
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have updater drivers, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers only `platform` and `storage` drivers: to update an installed mobile app, register a driver for your shell's updater, as shown under [Extend](#extend).
+
+## Use it in Electron and Tauri
+
+In a desktop shell the updater replaces the installed app, not a service worker. `check()` asks the update feed, `apply()` downloads with progress and restarts into the new version, and `currentVersion()` reads the app's version. `config/updater.ts` does not change: `interval`, `auto` and `checkOnBoot` work as on the web.
+
+### Electron
+
+The driver runs [`electron-updater`](https://www.electron.build/auto-update) in the main process over the `kitr:updater:*` channels that `handleKitrIpc(ipcMain, app)` serves. Main turns off `autoDownload`, so nothing downloads until `apply()`; a download reports `download-progress` as a fraction, then main calls `quitAndInstall()`. When main finds an update on its own, `onAvailable` fires. Point the feed at your release server with a `publish` block in `electron-builder.yml`:
+
+```yaml
+# platforms/app/electron-builder.yml
+publish:
+  provider: generic
+  url: https://updates.acme.com/orders/
+```
+
+Requirements:
+
+- `electron-updater` in the app's `dependencies` (not dev), so electron-builder packs it. It is an optional peer: `kitr add desktop` and `kitr add updater` in a desktop project install it, and main imports it on first use. When it is missing, every method rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- A packaged, signed build. `electron-updater` does nothing in development (`check()` resolves to `null`), and macOS only installs updates from a signed and notarized app.
+- `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script.
+
+### Tauri
+
+The driver uses [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/): `check()` returns the signed update `tauri.conf.json` points at, `apply()` calls `downloadAndInstall()` with the content length and chunks turned into a fraction, then [`@tauri-apps/plugin-process`](https://v2.tauri.app/plugin/process/)'s `relaunch()`. The running version comes from `@tauri-apps/api/app`. Updates are signed: generate a key pair with `tauri signer generate`, put the public key and the endpoints in `tauri.conf.json`, and sign builds with the private key:
+
+```json
+{
+  "bundle": { "createUpdaterArtifacts": true },
+  "plugins": {
+    "updater": {
+      "pubkey": "<the public key from tauri signer generate>",
+      "endpoints": ["https://updates.acme.com/orders/{{target}}/{{arch}}/{{current_version}}"]
+    }
+  }
+}
+```
+
+Requirements:
+
+- `@tauri-apps/plugin-updater` and `@tauri-apps/plugin-process` in `package.json`; `kitr add tauri` and `kitr add updater` in a Tauri project install them. Each is imported on first use; when one is missing, the method that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- `tauri-plugin-updater` and `tauri-plugin-process` in `src-tauri/Cargo.toml`, and `updater:default` and `process:default` in `capabilities/default.json`. The Tauri scaffold writes them, and registers the updater plugin in `lib.rs` only once `plugins.updater` exists in `tauri.conf.json`, because the plugin refuses to start without a public key. Until then `check()` fails with a plugin error and the service sets `status: 'error'`.
 
 ## Errors
 
@@ -463,7 +507,7 @@ export default defineConfig({
 
 The banner now reads "Version 2.4.0 is ready." For an app without a service worker, this is the whole update flow.
 
-For the Electron shell, run [electron-updater](https://www.electron.build/auto-update) in the main process and reach it over the IPC bridge the desktop platform sets up. Install it with `pnpm add electron-updater`, then handle three channels in main:
+The built-in Electron driver does this for you. To see the pieces, or to reach a different updater, here is the same idea written by hand: run [electron-updater](https://www.electron.build/auto-update) in the main process and reach it over the IPC bridge the desktop platform sets up. Install it with `pnpm add electron-updater`, then handle three channels in main:
 
 ```ts
 // platforms/app/main.ts

@@ -5,10 +5,10 @@ import { createMemoryUpdaterDriver, createUpdater, selectDriver } from '../src'
 import { selectDriver as selectFromModule } from '../src/driver'
 import { createCapacitorDriver } from '../src/drivers/capacitor'
 import { createElectronDriver } from '../src/drivers/electron'
-import { createTauriDriver } from '../src/drivers/tauri'
 import { createServiceWorkerUpdaterDriver } from '../src/drivers/web'
 
-const native = ['electron', 'tauri', 'capacitor'] as const
+// The Tauri driver loads its plugins lazily and never throws up front: see tauri-driver.test.ts.
+const native = ['electron', 'capacitor'] as const
 
 /** An app whose `platform` service reports `runtime`, as the desktop, tauri and mobile providers make it. */
 function appIn(runtime: Runtime) {
@@ -62,8 +62,8 @@ describe('updater selectDriver', () => {
     expect(selectDriver(runtime, { fallbackToWeb: true }).name).toBe('service-worker')
   })
 
-  it('has a placeholder module per shell, each throwing', () => {
-    for (const make of [createElectronDriver, createTauriDriver, createCapacitorDriver])
+  it('has no driver without its shell: Electron without the bridge, Capacitor as a placeholder', () => {
+    for (const make of [createElectronDriver, createCapacitorDriver])
       expect(() => make()).toThrow(expect.objectContaining({ code: 'E_DRIVER_UNAVAILABLE' }))
   })
 

@@ -3,7 +3,9 @@ import { runtimeOf } from '@kitr/platform'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createElectronDriver as createElectronUpdaterDriver } from './drivers/electron'
 export { createMemoryUpdaterDriver } from './drivers/memory'
+export { createTauriDriver as createTauriUpdaterDriver } from './drivers/tauri'
 export { createServiceWorkerUpdaterDriver } from './drivers/web'
 
 /**

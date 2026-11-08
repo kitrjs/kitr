@@ -3,7 +3,17 @@ import { runtimeOf } from '@kitr/platform'
 import { type Driver, selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export {
+  createElectronDriver as createElectronNativeDriver,
+  type DesktopSystem,
+  type ElectronNativeDriver,
+  type PowerEvent,
+} from './drivers/electron'
 export { createMemoryNativeDrivers } from './drivers/memory'
+export {
+  createTauriDriver as createTauriNativeDriver,
+  type TauriNativeDriver,
+} from './drivers/tauri'
 export {
   webBiometrics,
   webCamera,

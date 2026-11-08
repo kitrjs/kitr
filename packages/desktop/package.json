@@ -76,13 +76,17 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "electron": ">=30.0.0"
+    "electron": ">=30.0.0",
+    "electron-updater": ">=6.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
     "electron": {
+      "optional": true
+    },
+    "electron-updater": {
       "optional": true
     }
   },

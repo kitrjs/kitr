@@ -10,7 +10,12 @@ import type { StorageDriver } from '@kitr/storage'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createElectronDriver as createElectronSecureStorageDriver } from './drivers/electron'
 export { createMemorySecureStorageDriver } from './drivers/memory'
+export {
+  createTauriDriver as createTauriSecureStorageDriver,
+  type TauriSecureStorageOptions,
+} from './drivers/tauri'
 export { createWebSecureStorageDriver } from './drivers/web'
 
 /**

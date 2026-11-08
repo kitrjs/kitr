@@ -3,7 +3,13 @@ import { runtimeOf } from '@kitr/platform'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export {
+  createElectronDriver as createElectronFilesDriver,
+  type ElectronFilesDriver,
+  type PickedFolder,
+} from './drivers/electron'
 export { createMemoryFilesDriver } from './drivers/memory'
+export { createTauriDriver as createTauriFilesDriver } from './drivers/tauri'
 export { createWebFilesDriver } from './drivers/web'
 export { acceptFor, fromFile, mimeFor, toBlob } from './helpers'
 

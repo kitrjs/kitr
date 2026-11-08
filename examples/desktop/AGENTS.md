@@ -82,6 +82,14 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`kitr/devtools`); it is null in production so the call costs nothing.
 - A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `kitr/devtools/ui`.
 
+## kitr: secure-storage
+
+- Tokens and secrets go through `kitr/secure-storage` (`app/secure.ts`), never `defineStorage` or localStorage. `useSecureItem(item)` returns `[value, set, { loading, secure }]`; the value is undefined until the vault answers.
+
+## kitr: notifications
+
+- `useNotificationPermission()` gives `{ permission, request }`; call `request` from a click. `notifications.show({ title, url })` / `schedule({ ..., at })` resolve to an id for `cancel`. Route taps once, near the router: `useNotificationTap((tap) => tap.url && navigate({ to: tap.url }))`.
+
 ## kitr: vite
 
 - `vite.config.ts` holds `kitr()` and nothing else: the plugin wires the router, React, Tailwind, `virtual:kitr/*` and the `#app`-style aliases from kitrrc.ts and the installed packages. Add a Vite plugin of your own next to `kitr()`.

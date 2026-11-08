@@ -16,9 +16,9 @@ import {
 import { selectDriver as selectFromModule } from '../src/driver'
 import { createCapacitorDriver } from '../src/drivers/capacitor'
 import { createElectronDriver } from '../src/drivers/electron'
-import { createTauriDriver } from '../src/drivers/tauri'
 
-const native = ['electron', 'tauri', 'capacitor'] as const
+// The Tauri driver loads its plugins lazily and never throws up front: see tauri-driver.test.ts.
+const native = ['electron', 'capacitor'] as const
 const capabilities: NativeCapability[] = [
   'clipboard',
   'share',
@@ -90,8 +90,8 @@ describe('native selectDriver', () => {
     expect(selectDriver(runtime, { fallbackToWeb: true }).name).toBe('web')
   })
 
-  it('has a placeholder module per shell, each throwing', () => {
-    for (const make of [createElectronDriver, createTauriDriver, createCapacitorDriver])
+  it('has no driver without its shell: Electron without the bridge, Capacitor as a placeholder', () => {
+    for (const make of [createElectronDriver, createCapacitorDriver])
       expect(() => make()).toThrow(expect.objectContaining({ code: 'E_DRIVER_UNAVAILABLE' }))
   })
 

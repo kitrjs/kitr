@@ -117,7 +117,17 @@ The matrix below is what each environment answers. `desktop()` and `tauri()` bot
 
 `detectRuntime()` reads globals only, so it is safe anywhere: Tauri by `window.__TAURI_INTERNALS__`, Capacitor by `Capacitor.isNativePlatform()`, Electron by the preload bridge (`kitrIpc`), `process.versions.electron` or an `Electron/` user agent, and everything else is `web`. The `platform` service reports the runtime its shell provider registered, and falls back to `detectRuntime()` for a driver that does not say. `isElectron()`, `isTauri()` and `isCapacitor()` in each platform's `client` entry are `detectRuntime()` comparisons.
 
-The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick their driver by `platform.runtime`: a driver in the config, else one a provider registered, else `selectDriver(runtime)`. The web runtime gets the browser driver (a memory driver on the server). A native runtime gets its own driver, and until that driver exists `selectDriver()` throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` naming the runtime and the package, instead of quietly running browser code in the webview. Set `fallbackToWeb: true` in the package's `config/<name>.ts` to keep the webview behaviour on purpose.
+The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick their driver by `platform.runtime`: a driver in the config, else one a provider registered, else `selectDriver(runtime)`. The web runtime gets the browser driver (a memory driver on the server). A native runtime gets its own driver, and where that driver is missing `selectDriver()` throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` naming the runtime and the package, instead of quietly running browser code in the webview. Electron and Tauri have all five; the matrix below says what each uses. Set `fallbackToWeb: true` in the package's `config/<name>.ts` to keep the webview behaviour on purpose.
+
+| Package | Browser | Electron (`desktop()`) | Tauri (`tauri()`) |
+| --- | --- | --- | --- |
+| `secure-storage` | AES-GCM in IndexedDB-keyed storage (`secure: false`) | `safeStorage`, ciphertext in `userData` (`secure: true`) | Stronghold snapshot, password in the OS keyring (`secure: true`) |
+| `notifications` | Notification API, timers | Electron `Notification` in main, badge, click events | `plugin-notification`; scheduling by timer; taps on mobile only |
+| `files` | File System Access or `<input type="file">` | `dialog` and `fs/promises` on dialog-chosen paths, `path` set | `plugin-dialog` and `plugin-fs`, `path` set |
+| `updater` | Service worker | `electron-updater` | `plugin-updater` and `plugin-process` |
+| `native` | Web APIs per capability | Clipboard, Touch ID, `system` (theme, power, online, `openExternal`) | Clipboard, `system` (theme, online, `openExternal`) |
+
+The Electron drivers need `handleKitrIpc()` in main and `exposeIpc()` in the preload script; the Tauri drivers need the plugin packages, crates and permissions the Tauri scaffold writes. Electron's `electron-updater` is an optional peer, and the Tauri plugins are optional peers that `kitr add tauri` installs. `kitr add <package>` installs the peers for the platforms a project has.
 
 ## Layout
 

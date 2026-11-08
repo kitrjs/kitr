@@ -472,7 +472,8 @@ The service picks a driver once, the first time it is used. The table shows what
 | --- | --- | --- | --- | --- |
 | Chrome, Edge and other Chromium browsers | `web` | File System Access picker | Save picker, writes the chosen file | no |
 | Firefox, Safari | `web` | Hidden `<input type="file">` | Download link | no |
-| Desktop shell (Electron or Tauri) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The shell's webview decides | The shell's webview decides | no |
+| Electron | `electron`: `dialog` in the main process, `fs/promises` | Native open dialog | Native save dialog | yes |
+| Tauri | `tauri`: `plugin-dialog` and `plugin-fs` | Native open dialog | Native save dialog | yes |
 | Mobile shell (Capacitor) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The system picker behind `<input type="file">` | Download link | no |
 | Server | `memory` | Resolves `[]` | Records the call, resolves `name` | no |
 
@@ -486,11 +487,45 @@ The web driver adds a hidden `<input type="file">` to the page, sets its `accept
 
 ### Desktop
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver today, so the service throws `E_DRIVER_UNAVAILABLE` there unless you set `fallbackToWeb: true`, which runs the web driver inside the shell's webview. With the fallback, Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have `files` drivers that show the operating system's dialogs and give every picked file its `path`; see [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). Set `fallbackToWeb: true` only if you want the webview's own pickers instead.
 
 ### Mobile
 
 [Mobile](/packages/mobile) doesn't register a `files` driver today either, so Capacitor needs `fallbackToWeb: true` or a driver of your own. With the fallback, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
+
+## Use it in Electron and Tauri
+
+In a desktop shell the service shows the operating system's dialogs, reads and writes real files, and every `PickedFile` has its `path`. `config/files.ts` does not change. In both shells the window reaches only paths the person chose: it cannot read `~/.ssh/id_ed25519` because a script asked.
+
+### Electron
+
+`open()` runs Electron's [`dialog.showOpenDialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process; `save()` runs `showSaveDialog` and writes the bytes with `fs/promises`. Main remembers each path a dialog returned this session and refuses `kitr:files:read`, `write`, `stat`, `list` and `reveal` for any other path, including `..` out of a picked folder. A file's content is read on demand when you call `text()`, `bytes()` or `blob()`. `reveal(path)` opens a chosen file with the default app. The driver also picks folders, which the service API has no call for, so import the driver:
+
+```ts
+// app/invoices/folder.ts
+import { createElectronFilesDriver } from 'kitr/files'
+
+/** Let Grace pick the folder the month's invoices live in, then read each file. */
+export async function readInvoiceFolder() {
+  const folder = await createElectronFilesDriver().openDirectory({ title: 'Invoices' })
+  if (!folder) return [] // cancelled
+  return Promise.all((await folder.list()).map((file) => file.text()))
+}
+```
+
+Requirements:
+
+- `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
+- Large files cross the process boundary as one `Uint8Array`, so reading a multi-gigabyte file into memory is the app's choice, not a stream.
+
+### Tauri
+
+`open()` and `save()` use [`@tauri-apps/plugin-dialog`](https://v2.tauri.app/plugin/dialog/); content is read and written with [`@tauri-apps/plugin-fs`](https://v2.tauri.app/plugin/file-system/); `reveal(path)` uses [`@tauri-apps/plugin-opener`](https://v2.tauri.app/plugin/opener/). The dialog plugin adds each chosen path to the fs scope for the session, so the window reaches only what the person picked unless your capability file grants more.
+
+Requirements:
+
+- `@tauri-apps/plugin-dialog`, `@tauri-apps/plugin-fs` and `@tauri-apps/plugin-opener` in `package.json`; `kitr add tauri` and `kitr add files` in a Tauri project install them. Each is imported on first use; when one is missing, the method that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- The matching crates in `src-tauri/Cargo.toml`, their `.plugin(...)` calls in `lib.rs`, and in `capabilities/default.json` the permissions `dialog:default`, `fs:allow-read-file`, `fs:allow-write-file`, `fs:allow-stat`, `fs:allow-read-dir` and `opener:allow-open-path` (scoped to `$HOME/**`). The Tauri scaffold writes all of them. Narrow the opener scope if the app only opens files from one folder.
 
 ## Errors
 
@@ -601,7 +636,7 @@ A driver supplies the dialogs. Write one when a platform has better ones than th
 
 ### An Electron driver
 
-This driver uses Electron's [`dialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process through [Desktop](/packages/desktop)'s typed IPC. First add three commands to the IPC contract:
+The built-in Electron driver covers the common case; the version below shows how to write one over your own IPC contract. It uses Electron's [`dialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process through [Desktop](/packages/desktop)'s typed IPC. First add three commands to the IPC contract:
 
 ```ts
 // platforms/app/ipc.ts

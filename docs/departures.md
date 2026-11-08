@@ -94,3 +94,16 @@ The desktop, tauri and mobile packages had grown three copies of the same two th
 ## A native shell without a driver is an error, not the web driver
 
 The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) shipped web drivers only, and those ran in any shell: AES-GCM secrets with their key in WebView storage on a phone, a service worker "updater" in an installed desktop app, a share sheet that was the browser's. They looked supported and were not native. Each package now picks its driver by `platform.runtime` through `selectDriver()`, and in Electron, Tauri or Capacitor, with no driver registered for the package, creating the service throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` that names the runtime and the package. An app that really wants the WebView behaviour says so with `fallbackToWeb: true` in the package's config; nothing falls back by itself. The browser and the server behave as before. Apps that registered their own driver, or set `driver` in the config, are unaffected.
+
+## Electron and Tauri drivers for the device packages
+
+`secure-storage`, `notifications`, `files`, `updater` and `native` have real Electron and Tauri drivers, and the placeholders that threw `E_DRIVER_UNAVAILABLE` are gone for those two runtimes (Capacitor still throws). A few choices differ from what you might expect:
+
+- **Secrets in Tauri use Stronghold, not the store plugin.** The store plugin writes plain JSON, so it could not honour `secure: true`. Stronghold is an encrypted snapshot opened with a random 32-byte secret that a scaffolded `kitr_vault_key` command keeps in the operating system's keyring. The Tauri platform therefore installs and registers every plugin the device packages use, whether or not the app calls them yet, so the bundler sees a literal `import()` for each.
+- **Electron refuses to store a secret when there is no vault.** `safeStorage` on Linux can fall back to a plain-text backend; the driver treats that as unavailable and the call rejects instead of writing a file anyone can read.
+- **`allowChannels()` is an exact list.** It used to let any name starting with `kitr:` through the preload bridge. It now lets through the names in `KITR_CHANNELS` (the ones `handleKitrIpc()` serves and pushes). An app that sent its own `kitr:` channel through `allowChannels()` must list it.
+- **`openExternal` is limited to `http:`, `https:`, `mailto:` and `tel:`.** Other schemes need `externalProtocols` in `handleKitrIpc()`'s options.
+- **Files are reached only through a dialog.** The Electron driver reads and writes only paths that `files.open()`, `files.save()` or a picked folder returned in this session.
+- **`electron-updater` and the Tauri plugins are optional peers**, so they are not installed until something needs them. `kitr add <package>` installs the ones a project's platforms use.
+
+The Electron scaffold also changed to make a built app start: the main bundle is `index.js`, the preload is CommonJS with kitr bundled in, and `package.json` gets a `version`.
