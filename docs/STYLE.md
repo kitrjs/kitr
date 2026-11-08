@@ -71,7 +71,7 @@ These apply to every sentence and every code block.
 
 ## Writing guides
 
-Package docs explain one package. Guides on kitr.dev/guides walk through one goal from an empty folder to a working result, across as many packages as it takes: "Build a full-stack app", "Deploy to production", "Migrate from Next.js". They live in `site/content/guides/<slug>.md`, are listed in `site/content/guides/nav.json`, and are checked by `pnpm docs:guides`.
+Package docs explain one package. Guides on kitr.dev/guides walk through one goal from an empty folder to a working result, across as many packages as it takes: "Build a full-stack app", "Deploy to production", "Migrate from Next.js". They live in `docs/guides/<slug>.md`, are listed in `docs/guides/nav.json`, and are checked by `pnpm docs:guides`.
 
 **Frontmatter.** `title` (verb first, the goal: "Add sign-in, end to end"), `description` (one sentence on what the reader ends up with), `packages` (the kitr packages the guide uses, comma-separated; each becomes a chip and a link), `platforms` (`web`, `server`, ...; the platform pages list the guides for them) and `time` ("45 min").
 

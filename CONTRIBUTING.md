@@ -1,6 +1,6 @@
 # Contributing to kitr
 
-Thanks for helping. kitr is a pnpm monorepo: the framework packages live in `packages/`, the CLI kits' output lives in `examples/`, the component registry in `registry/` and kitr.dev in `site/`.
+Thanks for helping. kitr is a pnpm monorepo: the framework packages live in `packages/`, the CLI kits' output lives in `examples/`, the component registry in `registry/`, and the docs kitr.dev publishes in `docs/` (guides in `docs/guides/`, the /docs pages in `docs/handbook/`) and each package's `docs/` folder.
 
 Bug reports and small fixes are always welcome. For a new package, a new entry point or a change to a public API, open an issue first so the design can be agreed before you write the code.
 

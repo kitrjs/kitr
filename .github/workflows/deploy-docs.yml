@@ -1,0 +1,26 @@
+name: Deploy kitr.dev
+
+# kitr.dev reads the docs and package pages from this repo at build time, so a change on main
+# asks the site's Coolify app to rebuild. Does nothing until the two secrets are set.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "packages/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the kitr.dev rebuild
+        env:
+          WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
+          TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "COOLIFY_DEPLOY_WEBHOOK is not set; skipping."
+            exit 0
+          fi
+          curl --fail --silent --show-error -H "Authorization: Bearer $TOKEN" "$WEBHOOK"

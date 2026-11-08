@@ -1,5 +1,5 @@
 // Usage: node scripts/guide-rules.mjs [--strict] [slugs...]
-// Checks every site guide (site/content/guides/<slug>.md) against the "Writing guides" rules in
+// Checks every site guide (docs/guides/<slug>.md) against the "Writing guides" rules in
 // docs/STYLE.md: frontmatter, listed in nav.json, "Before you start" first and "Next steps" last,
 // enough prose and code, no placeholder names, and links that resolve to a real package, doc or
 // guide. Prints warnings; --strict turns them into a failing exit code.
@@ -15,8 +15,8 @@ export const MIN_CODE_BLOCKS = 6
 export const PLACEHOLDERS =
   /\b(foo|baz|qux|quux|asdf|lorem ipsum|MyComponent|doSomething)\b|[`./]bar\b|\bbar[(:`]|test@test\.com/i
 
-const dir = 'site/content/guides'
-const docsDir = 'site/content/docs'
+const dir = 'docs/guides'
+const docsDir = 'docs/handbook'
 
 const frontmatter = (src) => {
   const m = src.match(/^---\n([\s\S]*?)\n---\n/)

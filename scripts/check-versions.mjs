@@ -44,7 +44,6 @@ function readManifests() {
     if (existsSync(join(root, group)))
       for (const d of readdirSync(join(root, group))) add(`${group}/${d}`, join(group, d))
   add('registry', 'registry')
-  add('site', 'site')
   return out
 }
 

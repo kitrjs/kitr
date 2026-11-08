@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "pnpm -r --filter \"@kitr/*\" --filter kitr --filter \"!@kitr/example-*\" --filter \"!@kitr/registry\" --filter \"!@kitr/site\" run build",
+    "build": "pnpm -r --filter \"@kitr/*\" --filter kitr --filter \"!@kitr/example-*\" --filter \"!@kitr/registry\" run build",
     "typecheck": "pnpm -r run typecheck",
     "test": "vitest run",
     "lint": "biome check .",
@@ -35,8 +35,7 @@
     "docs:check": "node scripts/docs-check.mjs",
     "docs:rules": "node scripts/docs-rules.mjs",
     "docs:guides": "node scripts/guide-rules.mjs",
-    "docs:api": "node scripts/api-docs.mjs",
-    "site": "pnpm -C site dev"
+    "docs:api": "node scripts/api-docs.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
