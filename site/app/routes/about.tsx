@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import mark from '#app/assets/mark.svg?url'
-import { repoUrl } from '#app/components/chrome'
+import { platonUrl, repoUrl } from '#app/components/chrome'
+import { CreatorMark } from '#app/components/creator-marks'
 import { seo } from '#app/lib/seo'
 
 export const Route = createFileRoute('/about')({
@@ -61,16 +62,30 @@ function About() {
 
       <section className="about-row">
         <div className="maker">
+          <a
+            className="maker-plate"
+            href={platonUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="platon.blue"
+          >
+            <CreatorMark name="platon" size={44} />
+          </a>
           <span className="label">Made by</span>
           <h2>Platon</h2>
           <p className="muted">
-            kitr is built and maintained by Platon. It started as the set of decisions that kept
-            being remade for every new React app, written down once so the next app could start
-            where the last one finished.
+            kitr is built and maintained by Platon Podkopov, a senior UI/UX developer in Guildford,
+            UK. It started as the set of decisions that kept being remade for every new React app,
+            written down once so the next app could start where the last one finished.
           </p>
-          <a href="https://github.com/PodkopovP" target="_blank" rel="noreferrer">
-            github.com/PodkopovP
-          </a>
+          <div className="maker-links">
+            <a href={`${platonUrl}/kitr`} target="_blank" rel="noreferrer">
+              platon.blue
+            </a>
+            <a href="https://github.com/PodkopovP" target="_blank" rel="noreferrer">
+              github.com/PodkopovP
+            </a>
+          </div>
         </div>
         <div className="brand">
           <h2>Brand</h2>

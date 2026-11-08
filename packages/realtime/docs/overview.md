@@ -6,15 +6,11 @@ order: 0
 
 # Realtime
 
-A chat, a notification bell, a project board that updates while you look at it: all of them need the server to push to screens that are already open. Raw WebSockets give you a pipe and nothing else: no typed events, no authorization per channel, no connection to the data the screens already hold, and a rewrite if you move from one transport to another.
-
-`@kitr/realtime` lets you define a typed channel once, emit on it from the server, and have every subscribed screen update its cache, on any of three transports.
-
 ## What it is
 
-`@kitr/realtime` is built around channels. `defineChannel` declares a channel's params and its events with schemas. The server half (`@kitr/realtime/server`) accepts connections, authenticates them, authorizes each subscription and emits events. The client half (`@kitr/realtime` and `@kitr/realtime/react`) subscribes with `useChannel` or through a [query](/packages/query) subscription, and each event's `effects` update the cache so components re-render with the new data. `useRealtimeStatus` drives a connection indicator.
+`@kitr/realtime` pushes events from the server to the browser over channels. `defineChannel` declares a channel's params and events with schemas. The server emits; `useChannel` subscribes; each event's `effects` update the [query](/packages/query) cache so components re-render.
 
-It runs on both sides. For one-off server calls that return a value, use [actions](/packages/actions) or [API routes](/packages/api) instead; realtime is for events the server sends when something changes.
+Runs on both sides. For one-off calls that return a value, use [actions](/packages/actions) or [API routes](/packages/api).
 
 ## Install
 
@@ -22,11 +18,11 @@ It runs on both sides. For one-off server calls that return a value, use [action
 kitr add realtime
 ```
 
-This installs `@kitr/realtime` with crossws (and partysocket in a React app), writes `config/realtime.ts`, an example channel in `app/channels/example.ts` and the client in `app/realtime.ts`, and mounts a `.ws()` route on the server route table. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/realtime/guide#install) section lists every change.
+Adds `@kitr/realtime` with crossws and partysocket, `config/realtime.ts`, an example channel, the client in `app/realtime.ts` and a `.ws()` route. Adds [server](/packages/server) first if missing. [Every change](/packages/realtime/guide#install).
 
 ## Quick start
 
-Three files make a live project name: a channel both ends import, an emit on the server, and a subscription in a component. The channel names its params, its events and what each event does to the query cache:
+A channel both ends import, an emit on the server, a subscription in a component. First the channel:
 
 ```ts
 // app/channels/projects.ts
@@ -71,7 +67,7 @@ export function ProjectTitle({ id }: { id: string }) {
 }
 ```
 
-When Grace saves "Apollo launch", the server sends one `updated` event to every connection subscribed to that project. Each client validates the payload against `projectSchema` and runs `effects`, which writes the project into the cache entry. Ada's heading re-renders with the new name. No refetch happens. The guide continues from here: [Push your first update](/packages/realtime/guide#push-your-first-update).
+When Grace saves a new name, every subscribed client validates the event and writes it into the cache. Ada's heading re-renders. No refetch. Next in the guide: [Push your first update](/packages/realtime/guide#push-your-first-update).
 
 ## Built on
 
@@ -81,21 +77,21 @@ When Grace saves "Apollo launch", the server sends one `updated` event to every 
 | Socket.IO | [Socket.IO](https://socket.io/docs/v4/) | Existing Socket.IO clients, rooms and its reconnection behavior. |
 | Server-Sent Events | The browser's `EventSource` | Hosts that block WebSockets, or one-way updates. |
 
-The channel code is the same on all three. kitr adds `defineChannel`, params and payload validation with [Standard Schema](https://standardschema.dev), authentication and per-channel authorization, the cache effects, the React hooks, [PartySocket](https://github.com/partykit/partykit/tree/main/packages/partysocket) reconnection on the WebSocket client, and a route extension so sockets sit in the same route table as pages and endpoints.
+kitr adds `defineChannel`, schema validation, authentication and authorization, cache effects, the hooks, reconnection and the route extension.
 
 ## Problems it solves
 
-- **Untyped messages.** A channel declares its events and payloads; emitting the wrong shape is a type error and a bad payload is rejected. See [Define a channel](/packages/realtime/guide#define-a-channel).
-- **Screens that do not update.** Events carry cache effects, so the query cache changes and components follow. See [Update the cache from events](/packages/realtime/guide#update-the-cache-from-events).
-- **Anyone subscribing to anything.** Authenticate the connection and authorize each subscription against the user. See [Authorize a subscription](/packages/realtime/guide#authorize-a-subscription).
-- **Connection state nobody shows.** `useRealtimeStatus` for a banner or a dot. See [Show the connection status](/packages/realtime/guide#show-the-connection-status).
-- **Changing transport later.** Swap WebSockets for Socket.IO or SSE in config; channels stay as they are. See [Transports](/packages/realtime/guide#transports).
-- **Several server instances.** Fan events out across instances. See [Run more than one server instance](/packages/realtime/guide#run-more-than-one-server-instance).
+- **Untyped messages.** [Define a channel](/packages/realtime/guide#define-a-channel).
+- **Screens that do not update.** [Update the cache from events](/packages/realtime/guide#update-the-cache-from-events).
+- **Anyone subscribing to anything.** [Authorize a subscription](/packages/realtime/guide#authorize-a-subscription).
+- **Connection state nobody shows.** [Show the connection status](/packages/realtime/guide#show-the-connection-status).
+- **Changing transport later.** [Transports](/packages/realtime/guide#transports).
+- **Several server instances.** [Run more than one server instance](/packages/realtime/guide#run-more-than-one-server-instance).
 
 ## Further reading
 
-- [Guide](/packages/realtime/guide): install, configure and every task.
-- [API reference](/packages/realtime/api): every export of the seven entry points.
-- [crossws](https://crossws.unjs.io) and [Socket.IO](https://socket.io/docs/v4/): the libraries underneath.
-- [Query](/packages/query) and [Server](/packages/server): the cache effects write to, and the server connections attach to.
-- [Getting started](/docs/getting-started): the `realtime` kit, a chat room built on these pieces.
+- [Guide](/packages/realtime/guide).
+- [API reference](/packages/realtime/api).
+- [crossws](https://crossws.unjs.io) and [Socket.IO](https://socket.io/docs/v4/).
+- [Query](/packages/query) and [Server](/packages/server).
+- [Getting started](/docs/getting-started).
