@@ -7,7 +7,6 @@ import {
   joinPath,
   type KitrRouter,
   type PlatformName,
-  type Prettify,
   type RouteEntry,
 } from '@kitr/core'
 import {
@@ -259,24 +258,22 @@ declare module '@kitr/core' {
         >,
       ): KitrRouter<
         K & ExtensionKey,
-        Prettify<
-          Omit<R, '~root' | '~parent'> & {
-            '~root': RootRoute<
-              Register,
-              TSearchValidator,
-              KitrRouterContext,
-              TRouteContextFn,
-              TBeforeLoadFn,
-              TLoaderDeps,
-              TLoaderFn,
-              unknown,
-              unknown,
-              TSSR,
-              unknown,
-              undefined
-            >
-          }
-        >
+        Omit<R, '~root' | '~parent'> & {
+          '~root': RootRoute<
+            Register,
+            TSearchValidator,
+            KitrRouterContext,
+            TRouteContextFn,
+            TBeforeLoadFn,
+            TLoaderDeps,
+            TLoaderFn,
+            unknown,
+            unknown,
+            TSSR,
+            unknown,
+            undefined
+          >
+        }
       >
       /**
        * A page at `path`, relative to the enclosing group or layout. Options are TanStack's
@@ -307,24 +304,22 @@ declare module '@kitr/core' {
         >,
       ): KitrRouter<
         K & ExtensionKey,
-        Prettify<
-          R & {
-            [N in PageName<ParentOf<R>, TPath>]: PageRouteType<
-              RouteUnder<
-                ParentOf<R>,
-                TPath,
-                string,
-                TSearchValidator,
-                TParams,
-                TRouteContextFn,
-                TBeforeLoadFn,
-                TLoaderDeps,
-                TLoaderFn,
-                TSSR
-              >
+        R & {
+          [N in PageName<ParentOf<R>, TPath>]: PageRouteType<
+            RouteUnder<
+              ParentOf<R>,
+              TPath,
+              string,
+              TSearchValidator,
+              TParams,
+              TRouteContextFn,
+              TBeforeLoadFn,
+              TLoaderDeps,
+              TLoaderFn,
+              TSSR
             >
-          }
-        >
+          >
+        }
       >
       /**
        * A pathless layout (`_app` in file routes): its component renders `<Outlet />` around
@@ -354,30 +349,8 @@ declare module '@kitr/core' {
         define: (
           r: KitrRouter<
             K & ExtensionKey,
-            Prettify<
-              Omit<R, '~parent'> & {
-                '~parent': RouteUnder<
-                  ParentOf<R>,
-                  '/',
-                  TId,
-                  TSearchValidator,
-                  {},
-                  TRouteContextFn,
-                  TBeforeLoadFn,
-                  TLoaderDeps,
-                  TLoaderFn,
-                  TSSR
-                >
-              }
-            >
-          >,
-        ) => KitrRouter<K & ExtensionKey, G> | void,
-      ): KitrRouter<
-        K & ExtensionKey,
-        Prettify<
-          R & {
-            [N in `layout ${ResolveId<ParentOf<R>, TId, '/'>}`]: PageRouteType<
-              RouteUnder<
+            Omit<R, '~parent'> & {
+              '~parent': RouteUnder<
                 ParentOf<R>,
                 '/',
                 TId,
@@ -388,11 +361,29 @@ declare module '@kitr/core' {
                 TLoaderDeps,
                 TLoaderFn,
                 TSSR
-              >,
-              'page-layout'
-            >
-          } & Omit<G, `~${string}`>
-        >
+              >
+            }
+          >,
+        ) => KitrRouter<K & ExtensionKey, G> | void,
+      ): KitrRouter<
+        K & ExtensionKey,
+        R & {
+          [N in `layout ${ResolveId<ParentOf<R>, TId, '/'>}`]: PageRouteType<
+            RouteUnder<
+              ParentOf<R>,
+              '/',
+              TId,
+              TSearchValidator,
+              {},
+              TRouteContextFn,
+              TBeforeLoadFn,
+              TLoaderDeps,
+              TLoaderFn,
+              TSSR
+            >,
+            'page-layout'
+          >
+        } & Omit<G, `~${string}`>
       >
     }
   }

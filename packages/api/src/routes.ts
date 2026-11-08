@@ -4,7 +4,6 @@ import {
   type ExtensionKey,
   type GroupOptions,
   type KitrRouter,
-  type Prettify,
   type RouteEntry as TableEntry,
   type RouteMap as TableMap,
 } from '@kitr/core'
@@ -80,10 +79,6 @@ type NameOf<Name, Method extends string, Path extends string> = Name extends str
   ? Name
   : `${Method} ${Path}`
 
-type Add<R extends TableMap, Name extends string, Route extends RouteType> = Prettify<
-  R & { [K in Name]: Route }
->
-
 export type ResourceAction = 'index' | 'store' | 'show' | 'update' | 'destroy'
 const resourceActions: Array<{ action: ResourceAction; method: HttpMethod; suffix: string }> = [
   { action: 'index', method: 'GET', suffix: '' },
@@ -124,7 +119,12 @@ export interface ResourceOptions {
   param?: string
 }
 
-/** One http method on the table: `get`, `post`, `put`, `patch`, `delete`. */
+/**
+ * One http method on the table: `get`, `post`, `put`, `patch`, `delete`. The result is written inline
+ * (`R & { [N in ...]: ... }`), not through an alias like `Add<R, N, T>`: an alias stamps each step's
+ * type with its arguments, which include the previous step's type, and TypeScript instantiates that
+ * chain recursively. At about 60 chained endpoints that is TS2589. A plain intersection is flattened.
+ */
 export type HttpMethodFn<K extends ExtensionKey, R extends TableMap, Method extends HttpMethod> = <
   Path extends string,
   H extends RouteHandler<Path, V>,
@@ -134,7 +134,7 @@ export type HttpMethodFn<K extends ExtensionKey, R extends TableMap, Method exte
   path: Path,
   handler: H,
   options?: RouteOptions<Name, V>,
-) => KitrRouter<K, Add<R, NameOf<Name, Method, Path>, RouteFor<Method, Path, H, V>>>
+) => KitrRouter<K, R & { [N in NameOf<Name, Method, Path>]: RouteFor<Method, Path, H, V> }>
 
 declare module '@kitr/core' {
   interface RouterExtensions<K extends string, R extends TableMap> {
@@ -166,7 +166,7 @@ declare module '@kitr/core' {
         name: N,
         controller: C,
         options?: ResourceOptions,
-      ): KitrRouter<K & ExtensionKey, Prettify<R & ResourceRoutes<N, C, ''>>>
+      ): KitrRouter<K & ExtensionKey, R & ResourceRoutes<N, C, ''>>
     }
   }
 }

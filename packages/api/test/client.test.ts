@@ -28,6 +28,20 @@ function client(handler: (req: Request) => Response | Promise<Response>, extra =
 }
 
 describe('createApiClient', () => {
+  it('treats a name as a group once routes registered after first access add its children', async () => {
+    const { fetch, calls } = fakeFetch(() => Response.json({}))
+    const api: any = createApiClient({ baseUrl: 'https://api.dev', fetch })
+    registerRoutes(api, [{ name: 'a.b', method: 'GET', path: '/a/b' }])
+    expect(typeof api.a.b).toBe('function')
+    registerRoutes(api, [
+      { name: 'a.b.c', method: 'GET', path: '/a/b/c' },
+      { name: 'x.y.z', method: 'GET', path: '/x/y/z' },
+    ])
+    await api.a.b.c()
+    await api.x.y.z()
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(['/a/b/c', '/x/y/z'])
+  })
+
   it('resolves nested names from the route table', async () => {
     const { api, calls } = client(() => Response.json({ ok: true }))
     await api.admin.users.index()

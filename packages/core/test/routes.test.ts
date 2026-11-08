@@ -6,6 +6,7 @@ import {
   defineRoutes,
   isRouteTable,
   joinPath,
+  KitrError,
   type RouteEntry,
 } from '../src'
 
@@ -99,12 +100,32 @@ describe('route table', () => {
     expect(inner?.state.hits).toEqual({ seen: '/admin' })
   })
 
-  it('merges another table once, by entry name', () => {
+  it('merges another table and throws a KitrError naming a duplicate route', () => {
     const server = defineRoutes([hits], (r: Any) => r.hit('/api/a').hit('/api/b'))
-    const app = defineRoutes([marks], (r: Any) => r.mark('home'))
-      .merge(server)
-      .merge(server)
+    const app = defineRoutes([marks], (r: Any) => r.mark('home')).merge(server)
     expect(app.entries.map((e) => e.name)).toEqual(['home', 'HIT /api/a', 'HIT /api/b'])
+    expect(() => app.merge(server)).toThrow(KitrError)
+    expect(() => app.merge(server)).toThrow('"HIT /api/a"')
+    // A failed merge adds nothing.
+    expect(app.entries).toHaveLength(3)
+    const clash = defineRoutes([hits], (r: Any) => r.hit('/api/c').hit('/api/b'))
+    expect(() => app.merge(clash)).toThrow('"HIT /api/b"')
+    expect(app.entries).toHaveLength(3)
+  })
+
+  it('applies use() to later entries and to groups opened after it', () => {
+    const routes = defineRoutes([hits], (r: Any) =>
+      r
+        .hit('/before')
+        .use('auth')
+        .hit('/after')
+        .group('/g', (g: Any) => g.hit('/in')),
+    )
+    expect(routes.entries.map((e) => [e.name, e.middleware])).toEqual([
+      ['HIT /before', []],
+      ['HIT /after', ['auth']],
+      ['HIT /g/in', ['auth']],
+    ])
   })
 
   it('compiles each extension with its own kinds and returns the results by key', () => {
