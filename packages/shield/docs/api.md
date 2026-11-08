@@ -18,6 +18,17 @@ function cors(options?: CorsOptions): Middleware;
 
 Middleware that answers CORS preflights with 204 and adds `Access-Control-Allow-*` headers for allowed origins. Throws at once for `origin: '*'` with credentials.
 
+### corsPolicy
+
+```ts
+function corsPolicy(options?: CorsOptions): (requestOrigin: string | null) => CorsDecision;
+```
+
+The CORS rules for `options`, independent of any framework: `@kitr/shield` wraps it as h3
+middleware and `@kitr/api` as route middleware, so both apply exactly the same policy. Throws
+at once for `origin: '*'` with credentials, which would let any site send requests with the
+user's cookies.
+
 ### createMemoryRateLimitStore
 
 ```ts
@@ -50,6 +61,26 @@ function csrf(options?: CsrfOptions): Middleware;
 
 Double-submit cookie CSRF: a readable cookie carries a token the browser must echo in a header
 (`fetch` from another origin cannot read the cookie, so it cannot forge the header).
+
+### defaultCsp
+
+```ts
+function defaultCsp(options?: {
+  strictDynamic?: boolean;
+  unsafeInline?: boolean;
+  devStyles?: boolean;
+}): string;
+```
+
+The default policy for the options: `strictDynamic` and `unsafeInline` rewrite its `script-src` and `style-src`.
+
+### getCspNonce
+
+```ts
+function getCspNonce(event: H3Event): string | undefined;
+```
+
+The current request's CSP nonce, for code that has the h3 event. Undefined when `securityHeaders()` did not run or the policy is off.
 
 ### rateLimit
 
@@ -91,13 +122,27 @@ function shieldMiddlewares(config?: ShieldConfig): Middleware[];
 
 The middlewares `config/shield.ts` asks for, in the right order.
 
+### useCspNonce
+
+```ts
+function useCspNonce(): string | undefined;
+```
+
+The CSP nonce of the request being rendered, for inline `<script>` and `<style>` tags you write
+yourself: `<script nonce={useCspNonce()}>`. Server-side it comes from the request context
+`@kitr/server` keeps for the request; in the browser, and outside a request, it is undefined
+(the browser has already checked the tag against the nonce, and hides the attribute afterwards).
+`<ThemeScript />` and TanStack Start's own scripts take the nonce without you passing it.
+
 ### DEFAULT_CSP
 
 ```ts
-const DEFAULT_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+const DEFAULT_CSP = "default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 ```
 
-The Content-Security-Policy `securityHeaders()` sends when you don't set one: same-origin everything, inline scripts and styles allowed, no framing.
+The Content-Security-Policy `securityHeaders()` sends when you don't set one, as a template:
+`{nonce}` is replaced by each request's nonce. Same-origin everything, inline scripts and style
+tags only with the nonce, inline `style=""` attributes allowed (they cannot run script), no framing.
 
 ### defineConfig
 
@@ -107,12 +152,27 @@ const defineConfig: <const C extends ShieldConfig>(config: C) => C;
 
 Type the default export of `config/shield.ts`. Returns its argument unchanged.
 
+### CorsDecision
+
+```ts
+interface CorsDecision {
+  /** Headers to set on the actual response: empty when the origin is not allowed. */
+  headers: Record<string, string>;
+  /** Whether the response varies by `Origin`, so caches keep one copy per origin. */
+  vary: boolean;
+  /** Extra headers for a preflight (`OPTIONS`) answer. */
+  preflight: Record<string, string>;
+}
+```
+
+What `corsPolicy()` decides for one request.
+
 ### CorsOptions
 
 ```ts
 interface CorsOptions {
-  /** `'*'`, a list of origins, or a predicate. Default: same-origin only (no header). */
-  origin?: '*' | string[] | ((origin: string) => boolean);
+  /** `'*'`, one origin, a list of origins, or a predicate. Default: same-origin only (no header). */
+  origin?: '*' | string | string[] | ((origin: string) => boolean);
   /** Methods a preflight allows. Default GET, POST, PUT, PATCH, DELETE, OPTIONS. */
   methods?: string[];
   /** Request headers a preflight allows. Default Content-Type, Authorization, X-CSRF-Token, X-Requested-With. */
@@ -151,8 +211,27 @@ Options for `csrf()` and the `csrf` key of `config/shield.ts`.
 
 ```ts
 interface HeadersOptions {
-  /** `Content-Security-Policy`. A string, or false to leave it out. Default: a strict policy for an SPA/SSR app. */
+  /**
+   * `Content-Security-Policy`. A string, or false to leave it out. Default: a strict policy for an
+   * SPA/SSR app (`DEFAULT_CSP`), where inline scripts and styles run only with this request's
+   * nonce. A string may contain `{nonce}`, which becomes the request's nonce, so a custom policy
+   * can allow the page's own inline tags too: `script-src 'self' 'nonce-{nonce}' https://cdn.example.com`.
+   * `strictDynamic` and `unsafeInline` shape the default policy only.
+   */
   contentSecurityPolicy?: string | false;
+  /**
+   * Add `'strict-dynamic'` to the default `script-src`: scripts the page's nonced scripts load are
+   * trusted without listing hosts, and `'self'` and host lists are ignored by browsers that know
+   * it. Suits apps that load third-party scripts from their own code. Default false.
+   */
+  strictDynamic?: boolean;
+  /**
+   * Allow every inline script and style in the default policy (`'unsafe-inline'`, no nonce), which
+   * is what the policy was before nonces. Only for pages you cannot give a nonce: a widget that
+   * injects inline `<script>` or `<style>` tags itself, or an HTML template you do not render
+   * through kitr. It lets any injected markup run script, so prefer fixing the source. Default false.
+   */
+  unsafeInline?: boolean;
   /** `Strict-Transport-Security` max-age in seconds; false to leave it out. Default one year in production. */
   hsts?: number | false;
   /** `X-Frame-Options`. Default `DENY`; false to leave it out. */

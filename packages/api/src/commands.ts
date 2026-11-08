@@ -16,7 +16,7 @@ async function loadRoutes(file?: string) {
   const path = candidates.map((c) => resolve(root(), c)).find(existsSync)
   if (!path) throw new Error(`No routes file found (${candidates.join(', ')}). Pass --file.`)
   const { createJiti } = await import('jiti')
-  const jiti = createJiti(resolve(root(), 'package.json'), { alias: readAliases() })
+  const jiti = createJiti(resolve(root(), 'package.json'), { alias: readAliases(), jsx: true })
   const mod = (await jiti.import(path)) as Record<string, unknown>
   const api = (await jiti.import('@kitr/api')) as {
     toOpenApi: (
@@ -93,6 +93,7 @@ function write(file: string, content: string) {
 }
 
 /** `kitr api:sync`: writes the OpenAPI document and the client route table from the routes file. */
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const apiSync = {
   meta: {
     name: 'api:sync',
@@ -139,6 +140,7 @@ export const apiSync = {
 }
 
 /** `kitr routes:list`: prints every route with its method, path and name. */
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const routesList = {
   meta: {
     name: 'routes:list',

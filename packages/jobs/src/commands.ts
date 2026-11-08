@@ -33,6 +33,7 @@ function aliases(root: string): Record<string, string> {
   return out
 }
 
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const list = {
   meta: {
     name: 'jobs:list',
@@ -84,6 +85,7 @@ export async function loadApp(root: string, entry: string): Promise<BootableApp>
   return app
 }
 
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const work = {
   meta: {
     name: 'jobs:work',

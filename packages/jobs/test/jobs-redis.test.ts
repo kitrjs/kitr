@@ -35,6 +35,15 @@ describe('Redis jobs driver', () => {
     expect(await workers[1]!.driver.size()).toBe(0)
   })
 
+  it('size() includes reserved jobs, so a worker that died mid-job does not read as an empty queue', async () => {
+    const driver = createRedisJobsDriver(clients[0]!, { prefix: uniquePrefix('jobs') })
+    await driver.push({ id: 'a', name: 'j', payload: null, attempt: 1, runAt: 0 })
+    const [pulled] = await driver.pull(Date.now(), 1)
+    expect(await driver.size()).toBe(1)
+    await driver.ack!(pulled!)
+    expect(await driver.size()).toBe(0)
+  })
+
   it('retries a failed job under the same id', async () => {
     const prefix = uniquePrefix('jobs')
     const attempts: number[] = []
@@ -61,15 +70,17 @@ describe('Redis jobs driver', () => {
     const prefix = uniquePrefix('jobs')
     const driver = createRedisJobsDriver(clients[0]!, { prefix, visibilityTimeout: 30 })
     const other = createRedisJobsDriver(clients[1]!, { prefix, visibilityTimeout: 30 })
-    await driver.push({ id: 'j1', name: 'report', payload: null, attempt: 1, runAt: Date.now() })
-    expect(await driver.pull(Date.now(), 5)).toHaveLength(1)
+    // The driver takes `now` as an argument, so the test moves time itself instead of sleeping:
+    // wall-clock waits made "still reserved" depend on how long the runner stalled.
+    const t0 = 1_000_000
+    await driver.push({ id: 'j1', name: 'report', payload: null, attempt: 1, runAt: t0 })
+    expect(await driver.pull(t0, 5)).toHaveLength(1)
     // Reserved: nobody else sees it while the first worker still might finish.
-    expect(await other.pull(Date.now(), 5)).toHaveLength(0)
-    await new Promise((r) => setTimeout(r, 50))
-    const again = await other.pull(Date.now(), 5)
+    expect(await other.pull(t0 + 29, 5)).toHaveLength(0)
+    const again = await other.pull(t0 + 30, 5)
     expect(again.map((j) => j.id)).toEqual(['j1'])
     await other.ack!(again[0]!)
-    expect(await other.pull(Date.now() + 1000, 5)).toHaveLength(0)
+    expect(await other.pull(t0 + 1000, 5)).toHaveLength(0)
   })
 
   it('queues an interval job once per interval however many workers poll', async () => {
@@ -83,12 +94,15 @@ describe('Redis jobs driver', () => {
         pollInterval: 10,
       }),
     )
+    const began = Date.now()
     for (const w of workers) w.start()
     await new Promise((r) => setTimeout(r, 1000))
     for (const w of workers) await w.stop()
-    // Five or six 200ms slots in a second; memory workers would have queued twice that.
-    expect(runs).toBeGreaterThanOrEqual(4)
-    expect(runs).toBeLessThanOrEqual(6)
+    // One run per 200ms slot of the epoch the test touched (a slow runner stretches the window,
+    // so count the slots from the clock); two unsynchronised workers would have queued twice that.
+    const slots = Math.floor(Date.now() / 200) - Math.floor(began / 200) + 1
+    expect(runs).toBeLessThanOrEqual(slots)
+    expect(runs).toBeGreaterThanOrEqual(slots - 1)
   })
 
   it('claim gives a lock to one caller only', async () => {

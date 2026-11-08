@@ -87,8 +87,8 @@ export interface ApplyInput {
   outletRouteId: string
 }
 
-let nextEntryId = 0
-let nextTransitionId = 0
+let nextEntryId = 0 // kitr-allow-module-state: only makes ids unique; sharing it between apps cannot collide
+let nextTransitionId = 0 // kitr-allow-module-state: only makes ids unique; sharing it between apps cannot collide
 
 const indexOf = (location: ParsedLocation): number | undefined => {
   const state = location.state as { __TSR_index?: number } | undefined

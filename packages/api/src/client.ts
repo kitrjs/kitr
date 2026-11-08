@@ -1,12 +1,12 @@
 import {
   type CacheEffect,
-  isKitrErrorShape,
   KitrError,
   type MutationContract,
   type QueryContract,
   type QueryKey,
   toKitrError,
 } from '@kitr/core'
+import { applyRequestHeaders, fromEnvelope, keyFor } from '@kitr/core/request'
 import type { RouteType } from './types'
 
 /**
@@ -28,6 +28,12 @@ export interface ApiClientOptions {
   getToken?: () => Promise<string | null | undefined> | string | null | undefined
   /** Passed to `fetch`; `'include'` sends cookies cross-origin. */
   credentials?: RequestCredentials
+  /**
+   * Echo the CSRF cookie in a header on writes, for `@kitr/shield`'s double-submit check and the
+   * cookie-session routes. On by default in a browser, with shield's names (`kitr-csrf` cookie,
+   * `x-csrf-token` header); `false` turns it off.
+   */
+  csrf?: false | { cookie?: string; header?: string }
 }
 
 type IsNever<T> = [T] extends [never] ? true : false
@@ -118,11 +124,14 @@ export function createApiClient<R extends Record<string, unknown>>(
     }
     const call = async (input: any = {}, signal?: AbortSignal) => {
       const headers = new Headers(await options.headers?.())
-      const token = await options.getToken?.()
-      if (token) headers.set('authorization', `Bearer ${token}`)
       const hasBody = input.body !== undefined && method !== 'GET' && method !== 'HEAD'
       if (hasBody) headers.set('content-type', 'application/json')
       headers.set('accept', 'application/json')
+      applyRequestHeaders(headers, {
+        method,
+        token: await options.getToken?.(),
+        csrf: options.csrf,
+      })
       const request = new Request(buildUrl(input), {
         method,
         headers,
@@ -139,22 +148,10 @@ export function createApiClient<R extends Record<string, unknown>>(
       if (response.status === 204) return undefined
       const text = await response.text()
       const data = text ? safeJson(text) : undefined
-      if (!response.ok) {
-        if (isKitrErrorShape(data))
-          throw new KitrError(data.code, data.message, {
-            status: data.status,
-            fieldErrors: data.fieldErrors,
-            data: data.data,
-          })
-        throw KitrError.fromStatus(
-          response.status,
-          typeof (data as any)?.message === 'string' ? (data as any).message : undefined,
-          data,
-        )
-      }
+      if (!response.ok) throw fromEnvelope(data, response.status)
       return data
     }
-    const key = (input: any = {}) => ['api', name, input.params ?? {}, input.query ?? {}] as const
+    const key = (input: any = {}) => keyFor('api', name, input.params ?? {}, input.query ?? {})
     const endpoint = Object.assign(call, {
       method,
       path,
@@ -175,6 +172,16 @@ export function createApiClient<R extends Record<string, unknown>>(
   }
 
   const routeTable = new Map<string, { method: string; path: string }>()
+  // Every dotted prefix of a registered name (`admin`, `admin.users` for `admin.users.index`).
+  // Built as names arrive, so deciding "group or endpoint" is one Set lookup, not a scan.
+  const groupNames = new Set<string>()
+  const register = (table: Array<{ name: string; method: string; path: string }>) => {
+    for (const r of table) {
+      routeTable.set(r.name, { method: r.method, path: r.path })
+      for (let i = r.name.indexOf('.'); i !== -1; i = r.name.indexOf('.', i + 1))
+        groupNames.add(r.name.slice(0, i))
+    }
+  }
   const parseName = (name: string): [string, string] => {
     const known = routeTable.get(name)
     if (known) return [known.method, known.path]
@@ -195,18 +202,24 @@ export function createApiClient<R extends Record<string, unknown>>(
     }
     return e
   }
-  const group = (prefix: string): any =>
+  const groups = new Map<string, any>()
+  const group = (prefix: string): any => {
+    let g = groups.get(prefix)
+    if (!g) {
+      g = makeGroup(prefix)
+      groups.set(prefix, g)
+    }
+    return g
+  }
+  const makeGroup = (prefix: string): any =>
     new Proxy(() => {}, {
       get: (_t, prop) => {
         if (typeof prop !== 'string' || nonRouteProps.has(prop)) return undefined
         const name = prefix ? `${prefix}.${prop}` : prop
         if (name === '$routes') return undefined
-        if (name === '$register')
-          return (table: Array<{ name: string; method: string; path: string }>) => {
-            for (const r of table) routeTable.set(r.name, { method: r.method, path: r.path })
-          }
+        if (name === '$register') return register
         // A group when some registered route starts with `name.`; else an endpoint.
-        for (const key of routeTable.keys()) if (key.startsWith(`${name}.`)) return group(name)
+        if (groupNames.has(name)) return group(name)
         if (routeTable.size === 0 && !/^[A-Z]+ \//.test(name) && !prefix) return group(name)
         return endpointFor(name)
       },
@@ -227,7 +240,7 @@ export function registerRoutes(
  * Properties the runtime probes on any object: `then` (await, async return), `toJSON`
  * (JSON.stringify), `$$typeof` (React), `asymmetricMatch` (test matchers). They are never routes.
  */
-const nonRouteProps = new Set(['then', 'toJSON', '$$typeof', 'asymmetricMatch', 'nodeType'])
+const nonRouteProps = new Set(['then', 'toJSON', '$$typeof', 'asymmetricMatch', 'nodeType']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 function safeJson(text: string): unknown {
   try {

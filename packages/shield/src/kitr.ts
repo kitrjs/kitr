@@ -18,7 +18,7 @@ export default definePackage({
     })
     ctx.agents.add(
       'shield',
-      `- \`shield(server)\` in \`server/main.ts\` applies \`config/shield.ts\`: security headers, CORS, rate limiting and CSRF. Rate-limited requests get 429 with RateLimit-* headers; CSRF failures get 403. Do not add helmet/cors by hand; tune the config instead.`,
+      `- \`shield(server)\` in \`server/main.ts\` applies \`config/shield.ts\`: security headers, CORS, rate limiting and CSRF. Rate-limited requests get 429 with RateLimit-* headers; CSRF failures get 403. Do not add helmet/cors by hand; tune the config instead.\n- The Content-Security-Policy allows inline scripts and styles only with the request's nonce: write \`<script nonce={useCspNonce()}>\` (from \`@kitr/shield\`) for inline tags; \`<ThemeScript />\` and Start's own scripts already carry it. Do not add \`'unsafe-inline'\` to the policy.`,
     )
   },
   remove(ctx) {

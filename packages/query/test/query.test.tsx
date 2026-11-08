@@ -1,4 +1,4 @@
-import { createApp, KitrError, operations } from '@kitr/core'
+import { createApp, type KitrApp, KitrError } from '@kitr/core'
 import { KitrProvider } from '@kitr/react'
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -300,20 +300,29 @@ describe('name and definition forms', () => {
     }),
   }
 
-  beforeEach(() => {
-    operations.reset()
-    operations.register(named)
+  let app: KitrApp
+  // Each test gets its own app, so nothing registered here can reach another test.
+  beforeEach(async () => {
+    app = await createApp({ operations: named as never }).boot()
   })
+  const appWrapper = (client: QueryClient) =>
+    function Wrapper({ children }: { children: ReactNode }) {
+      return (
+        <KitrProvider app={app}>
+          <QueryClientProvider client={client}>{children}</QueryClientProvider>
+        </KitrProvider>
+      )
+    }
 
   it('useQuery resolves a registered name and a definition to the same options', async () => {
     const client = new QueryClient()
     const byName = renderHook(() => useQuery('projects.list' as any, { owner: 'ada' }), {
-      wrapper: wrapperFor(client),
+      wrapper: appWrapper(client),
     })
     await waitFor(() => expect(byName.result.current.isSuccess).toBe(true))
     expect(byName.result.current.data).toEqual(['ada'])
     const byDefinition = renderHook(() => useQuery(named['projects.list'], { owner: 'ada' }), {
-      wrapper: wrapperFor(client),
+      wrapper: appWrapper(client),
     })
     await waitFor(() => expect(byDefinition.result.current.isSuccess).toBe(true))
     expect(client.getQueryData(['projects', 'ada'])).toEqual(['ada'])
@@ -324,24 +333,24 @@ describe('name and definition forms', () => {
     const client = new QueryClient()
     const { result } = renderHook(
       () => useQuery('projects.list' as any, undefined, { enabled: false }),
-      { wrapper: wrapperFor(client) },
+      { wrapper: appWrapper(client) },
     )
     expect(result.current.fetchStatus).toBe('idle')
     const plain = renderHook(() => useQuery({ queryKey: ['plain'], queryFn: () => 'ok' }), {
-      wrapper: wrapperFor(client),
+      wrapper: appWrapper(client),
     })
     await waitFor(() => expect(plain.result.current.data).toBe('ok'))
   })
 
   it('queryOptions works for loaders and useSuspenseQuery reads the cache it fills', async () => {
     const client = new QueryClient()
-    const opts = queryOptions('projects.list' as any, { owner: 'grace' })
+    const opts = queryOptions(app, 'projects.list' as any, { owner: 'grace' })
     expect(opts.queryKey).toEqual(['projects', 'grace'])
     await client.ensureQueryData(opts)
     const { result } = renderHook(
       () => useSuspenseQuery('projects.list' as any, { owner: 'grace' }),
       {
-        wrapper: wrapperFor(client),
+        wrapper: appWrapper(client),
       },
     )
     await waitFor(() => expect(result.current.data).toEqual(['grace']))
@@ -352,7 +361,7 @@ describe('name and definition forms', () => {
     client.setQueryData(['projects', 'all'], ['stale'])
     const onSuccess = vi.fn()
     const { result } = renderHook(() => useMutation('projects.update' as any, { onSuccess }), {
-      wrapper: wrapperFor(client),
+      wrapper: appWrapper(client),
     })
     await act(async () => {
       await result.current.mutateAsync({ id: '1' })
@@ -362,16 +371,16 @@ describe('name and definition forms', () => {
   })
 
   it('call runs a query or a mutation by name', async () => {
-    await expect(call('projects.list' as any, { owner: 'linus' })).resolves.toEqual(['linus'])
-    await expect(call('projects.update' as any, { id: '2' })).resolves.toEqual({ id: '2' })
+    await expect(call(app, 'projects.list' as any, { owner: 'linus' })).resolves.toEqual(['linus'])
+    await expect(call(app, 'projects.update' as any, { id: '2' })).resolves.toEqual({ id: '2' })
   })
 
   it('explains an unknown name or the wrong kind', () => {
-    expect(() => queryOptions('projects.missing' as any)).toThrow(/projects\.missing/)
-    expect(() => queryOptions('projects.update' as any)).toThrow(/is a mutation/)
+    expect(() => queryOptions(app, 'projects.missing' as any)).toThrow(/projects\.missing/)
+    expect(() => queryOptions(app, 'projects.update' as any)).toThrow(/is a mutation/)
     const client = new QueryClient()
     expect(() =>
-      renderHook(() => useMutation('projects.list' as any), { wrapper: wrapperFor(client) }),
+      renderHook(() => useMutation('projects.list' as any), { wrapper: appWrapper(client) }),
     ).toThrow(/is a query/)
   })
 })

@@ -9,6 +9,7 @@ const accelerate = [0.3, 0, 0.8, 0.15] as const
  * Named timings shared by the whole app, so a list, a dialog and a toast move with the same
  * rhythm. Durations are in seconds, as Motion expects.
  */
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const transitions = {
   /** Hover, press and small state changes: 0.15s. */
   fast: { duration: 0.15, ease: decelerate },
@@ -56,6 +57,7 @@ function preset(
  * `<motion.li {...presets.fadeUp} />`. Inside `<AnimatePresence>`, the `exit` half runs when the
  * element is removed.
  */
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const presets = {
   /** Opacity only. Safe under reduced motion, since nothing moves. */
   fade: preset({ opacity: 0 }, { opacity: 1 }),

@@ -632,3 +632,4 @@ In development, every store connects to the [Redux DevTools](https://github.com/
 - [Zustand persist options](https://zustand.docs.pmnd.rs/middlewares/persist): every option `persist` accepts.
 - [Query](/packages/query): where server data belongs.
 - [Forms](/packages/forms): form state, validation and server errors, without a store.
+- [Extending kitr](/docs/extending): bind a store as a service with your own provider.

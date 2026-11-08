@@ -6,7 +6,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Import framework code from the `@kitr/*` package that `kitr add` installed (`@kitr/router`, `@kitr/query`, ...). Each re-exports the upstream library unchanged plus kitr helpers. `kitr` itself is the CLI and the `kitrrc.ts` config (`kitr/app`, `kitr/env`).
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`. Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generated files are written by `kitr generate` (types under `.kitr/`, the API route table), which `kitr dev`, `kitr build` and `kitr typecheck` run first; import the types from `#kitr/*`. Run `kitr doctor` after changes.
 
 ## kitr: structure
 
@@ -78,7 +78,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: seo
 
-- `head: () => seo({ title, description })` from `@kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
+- `head: (ctx) => seo({ title, description }, ctx)` from `@kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
 - Use `...ssrRoute('data-only')` for heavy, non-SEO pages; `cacheHeaders({ sMaxAge })` for the CDN.
 
 ## kitr: api

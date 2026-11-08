@@ -17,20 +17,17 @@ export const Route = createFileRoute('/about')({
 const ideas = [
   {
     title: 're-export',
-    color: '#2D6CF0',
-    ink: '#FFFFFF',
+    color: 'var(--brand-blue)',
     text: '@kitr/router is TanStack Router. @kitr/forms is React Hook Form. Their docs still apply, and leaving is a find-and-replace.',
   },
   {
     title: 'one contract',
-    color: '#1FB25A',
-    ink: '#0B121C',
+    color: 'var(--brand-green)',
     text: 'REST, your own API, server actions and live channels all use the same queries and mutations.',
   },
   {
     title: 'no magic',
-    color: '#EC3A3A',
-    ink: '#0B121C',
+    color: 'var(--brand-red)',
     text: 'kitrrc.ts lists everything your app loads. Every command runs without prompts, for people, CI and agents alike.',
   },
 ]
@@ -53,7 +50,7 @@ function About() {
 
       <section className="idea-tiles">
         {ideas.map((i) => (
-          <div key={i.title} className="idea-tile" style={{ background: i.color, color: i.ink }}>
+          <div key={i.title} className="idea-tile" style={{ background: i.color }}>
             <span className="display idea-title">{i.title}</span>
             <p>{i.text}</p>
           </div>
@@ -93,7 +90,7 @@ function About() {
             The mark is a tile cut by the letter K. Its three pieces are the brand colours.
           </p>
           <div className="swatches">
-            {['#2D6CF0', '#1FB25A', '#EC3A3A', '#0F1B2B'].map((c) => (
+            {['#2368EE', '#208046', '#D62D2C', '#0F1B2B'].map((c) => (
               <span key={c} title={c} style={{ background: c }} />
             ))}
           </div>

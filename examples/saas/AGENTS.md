@@ -6,7 +6,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Import framework code from the `@kitr/*` package that `kitr add` installed (`@kitr/router`, `@kitr/query`, ...). Each re-exports the upstream library unchanged plus kitr helpers. `kitr` itself is the CLI and the `kitrrc.ts` config (`kitr/app`, `kitr/env`).
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`. Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generated files are written by `kitr generate` (types under `.kitr/`, the API route table), which `kitr dev`, `kitr build` and `kitr typecheck` run first; import the types from `#kitr/*`. Run `kitr doctor` after changes.
 
 ## kitr: structure
 
@@ -68,11 +68,6 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Components live in `app/components/ui/` and are owned by the app: add more with `kitr ui add <name>` (shadcn-compatible registry); toasts via `kitr ui add sonner`.
 - Icons: Hugeicons in the stroke-rounded style through `<Icon icon={Add01Icon} />` from `#components/ui/icon` (`kitr ui add icon`), icons from `@hugeicons/core-free-icons`. No other icon set, no emoji or glyphs as icons.
 
-## kitr: auth
-
-- Guard routes with `beforeLoad: requireAuth()` (from `@kitr/router`) on a layout route; permissions with `can('projects.update', { subject })` or `useCan()` in components.
-- The session is `useSession()` / `useUser()` from `@kitr/auth`. Abilities are plain functions in `app/abilities.ts`, shared with the API middleware (`@kitr/auth/server`).
-
 ## kitr: storage
 
 - Persisted values are declared once in `app/storage.ts` (`defineStorage` for local/session storage, `defineCookie` for cookies) and never read through `localStorage`/`document.cookie` directly.
@@ -86,7 +81,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: seo
 
-- `head: () => seo({ title, description })` from `@kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
+- `head: (ctx) => seo({ title, description }, ctx)` from `@kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
 - Use `...ssrRoute('data-only')` for heavy, non-SEO pages; `cacheHeaders({ sMaxAge })` for the CDN.
 
 ## kitr: api
@@ -94,6 +89,22 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Endpoints: `server/routes.ts` (`defineRoutes([api], ...)` with `.get/.post/.resource` from `@kitr/api/routes`; realtime adds `.ws` to the same table), controllers in `server/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
 - Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.
 - The client is typed from `ServerRoutes` (`typeof routes.$types`); call `registerRoutes(api, routes.toJSON())` or use `kitr api:sync` to write the route table and openapi.json.
+
+## kitr: shield
+
+- `shield(server)` in `server/main.ts` applies `config/shield.ts`: security headers, CORS, rate limiting and CSRF. Rate-limited requests get 429 with RateLimit-* headers; CSRF failures get 403. Do not add helmet/cors by hand; tune the config instead.
+- The Content-Security-Policy allows inline scripts and styles only with the request's nonce: write `<script nonce={useCspNonce()}>` (from `@kitr/shield`) for inline tags; `<ThemeScript />` and Start's own scripts already carry it. Do not add `'unsafe-inline'` to the policy.
+
+## kitr: mail
+
+- Templates are React components in `server/mail/*.tsx` (`kitr make:mail <name>`, `defineMail`). Send from a job or controller with `ctx.app.container.use('mailer').send(template, props, { to })`. Development logs messages and previews them at `/_kitr/mail`; production needs `RESEND_API_KEY` (or an SMTP transport) in `config/mail.ts`.
+
+## kitr: auth
+
+- Guard routes with `beforeLoad: requireAuth()` (from `@kitr/router`) on a layout route; permissions with `can('projects.update', { subject })` or `useCan()` in components.
+- The session is `useSession()` / `useUser()` from `@kitr/auth`. Abilities are plain functions in `app/abilities.ts`, shared with the API middleware (`@kitr/auth/server`).
+- Server-rendered guards: `beforeLoad: async (ctx) => { await ensureSession(ctx); await requireAuth()(ctx) }` (`ensureSession` is from `@kitr/auth`; drop the return value of the guard, it is not serializable), so the session is read from the request during SSR and from `GET /api/auth/session` in the browser.
+- Sessions are HttpOnly cookies: `server/auth.ts` holds the session service and the `UserProvider` (swap the in-memory users and store for your database and Redis), `server/controllers/auth-controller.ts` the routes. Pages render inside `runWithSession` (app/server.ts). Never put a token in localStorage.
 
 ## kitr: analytics
 

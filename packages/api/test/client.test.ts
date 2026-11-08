@@ -28,6 +28,20 @@ function client(handler: (req: Request) => Response | Promise<Response>, extra =
 }
 
 describe('createApiClient', () => {
+  it('treats a name as a group once routes registered after first access add its children', async () => {
+    const { fetch, calls } = fakeFetch(() => Response.json({}))
+    const api: any = createApiClient({ baseUrl: 'https://api.dev', fetch })
+    registerRoutes(api, [{ name: 'a.b', method: 'GET', path: '/a/b' }])
+    expect(typeof api.a.b).toBe('function')
+    registerRoutes(api, [
+      { name: 'a.b.c', method: 'GET', path: '/a/b/c' },
+      { name: 'x.y.z', method: 'GET', path: '/x/y/z' },
+    ])
+    await api.a.b.c()
+    await api.x.y.z()
+    expect(calls.map((c) => new URL(c.url).pathname)).toEqual(['/a/b/c', '/x/y/z'])
+  })
+
   it('resolves nested names from the route table', async () => {
     const { api, calls } = client(() => Response.json({ ok: true }))
     await api.admin.users.index()
@@ -161,5 +175,57 @@ describe('createApiClient', () => {
     expect(api.then).toBeUndefined()
     const resolved = await (async () => api)()
     expect(resolved).toBe(api)
+  })
+})
+
+describe('CSRF echo', () => {
+  const withCookie = (cookie: string, run: () => Promise<void>) => async () => {
+    vi.stubGlobal('document', { cookie })
+    try {
+      await run()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  }
+
+  it(
+    'copies the csrf cookie into x-csrf-token on writes only',
+    withCookie('theme=dark; kitr-csrf=abc%2B123', async () => {
+      const { api, calls } = client(() => Response.json({}))
+      await api.projects.store({ body: { name: 'A' } })
+      await api.projects.destroy({ params: { id: '1' } })
+      await api.projects.index()
+      expect(calls.map((c) => c.headers.get('x-csrf-token'))).toEqual(['abc+123', 'abc+123', null])
+    }),
+  )
+
+  it(
+    'uses the names it is given and can be turned off',
+    withCookie('xsrf=t0', async () => {
+      const custom = client(() => Response.json({}), { csrf: { cookie: 'xsrf', header: 'x-xsrf' } })
+      await custom.api.projects.store({ body: {} })
+      expect(custom.calls[0]!.headers.get('x-xsrf')).toBe('t0')
+      const off = client(() => Response.json({}), { csrf: false })
+      await off.api.projects.store({ body: {} })
+      expect(off.calls[0]!.headers.get('x-csrf-token')).toBeNull()
+    }),
+  )
+
+  it(
+    'sends nothing before the cookie exists, or when it is malformed',
+    withCookie('kitr-csrf=%E0%A4%A', async () => {
+      const { api, calls } = client(() => Response.json({}))
+      await api.projects.store({ body: {} })
+      expect(calls[0]!.headers.get('x-csrf-token')).toBeNull()
+      vi.stubGlobal('document', { cookie: 'other=1' })
+      await api.projects.store({ body: {} })
+      expect(calls[1]!.headers.get('x-csrf-token')).toBeNull()
+    }),
+  )
+
+  it('does nothing on the server, where there is no document', async () => {
+    const { api, calls } = client(() => Response.json({}))
+    await api.projects.store({ body: {} })
+    expect(calls[0]!.headers.get('x-csrf-token')).toBeNull()
   })
 })

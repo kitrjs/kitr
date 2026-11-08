@@ -35,7 +35,9 @@ export function kitr(cwd: string, ...args: string[]): string {
 
 export function run(cwd: string, cmd: string, args: string[], timeout = 180_000): string {
   try {
-    return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe', timeout })
+    // pnpm's Windows shims are .cmd files, which Node only runs through a shell.
+    const shell = process.platform === 'win32' && cmd.endsWith('.cmd')
+    return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe', timeout, shell })
   } catch (error: any) {
     throw new Error(
       `${cmd} ${args.join(' ')} failed:\n${error.stdout ?? ''}\n${error.stderr ?? ''}`,
@@ -44,7 +46,8 @@ export function run(cwd: string, cmd: string, args: string[], timeout = 180_000)
 }
 
 /** Binary from the workspace root node_modules/.bin (tsc, vite...). */
-export const bin = (name: string) => join(root, 'node_modules/.bin', name)
+export const bin = (name: string) =>
+  join(root, 'node_modules/.bin', process.platform === 'win32' ? `${name}.cmd` : name)
 
 /**
  * A scratch copy of an example with its installed node_modules symlinked in, so generated
@@ -56,11 +59,12 @@ export function copyExample(name: string): string {
   cpSync(source, dir, {
     recursive: true,
     filter: (src) => {
-      const rel = relative(source, src)
+      const rel = relative(source, src).split('\\').join('/')
       return !/^(node_modules|dist|\.output|\.tanstack|\.nitro)(\/|$)/.test(rel)
     },
   })
-  symlinkSync(join(source, 'node_modules'), join(dir, 'node_modules'), 'dir')
+  // 'junction' needs no privilege on Windows and means 'dir' elsewhere.
+  symlinkSync(join(source, 'node_modules'), join(dir, 'node_modules'), 'junction')
   // Examples drop the kit's biome.json (the repo root config applies); restore it so the CLI's
   // formatting pass sees the same config a fresh project has.
   const kit = mkdtempSync(join(tmpdir(), 'kitr-kit-'))
@@ -102,7 +106,8 @@ export function snapshot(dir: string): Record<string, string> {
       if (name === 'node_modules' || name === 'dist') continue
       const p = join(d, name)
       if (statSync(p).isDirectory()) walk(p)
-      else out[relative(dir, p)] = readFileSync(p, 'utf8')
+      // Forward slashes on every platform, so tests can name files the same way everywhere.
+      else out[relative(dir, p).split('\\').join('/')] = readFileSync(p, 'utf8')
     }
   }
   walk(dir)

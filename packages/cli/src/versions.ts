@@ -1,4 +1,5 @@
 /** Blessed upstream versions written by `kitr new` and `kitr add`. `kitr upgrade` bumps these together. */
+// kitr-allow-module-state: constant table of dependency versions, never mutated
 export const versions: Record<string, string> = {
   react: '^19.3.1',
   'react-dom': '^19.3.1',
@@ -59,11 +60,29 @@ export const versions: Record<string, string> = {
   '@capacitor/app': '^8.1.2',
   '@capacitor/cli': '^8.6.0',
   '@capacitor/preferences': '^8.0.0',
+  '@capacitor/clipboard': '^8.0.1',
+  '@capacitor/share': '^8.0.3',
+  '@capacitor/haptics': '^8.0.2',
+  '@capacitor/geolocation': '^8.2.4',
+  '@capacitor/local-notifications': '^8.3.1',
+  '@capacitor/push-notifications': '^8.1.3',
+  '@capacitor/filesystem': '^8.1.5',
+  '@capawesome/capacitor-file-picker': '^8.1.1',
+  '@aparajita/capacitor-secure-storage': '^8.0.1',
+  '@capawesome/capacitor-app-update': '^8.1.1',
   '@capacitor/ios': '^8.6.0',
   '@capacitor/android': '^8.6.0',
   '@tauri-apps/plugin-store': '^2.4.0',
   '@tauri-apps/plugin-opener': '^2.5.0',
   '@tauri-apps/plugin-process': '^2.3.0',
+  '@tauri-apps/plugin-stronghold': '^2.4.0',
+  '@tauri-apps/plugin-notification': '^2.8.0',
+  '@tauri-apps/plugin-dialog': '^2.8.4',
+  '@tauri-apps/plugin-fs': '^2.7.1',
+  '@tauri-apps/plugin-updater': '^2.14.1',
+  '@tauri-apps/plugin-os': '^2.4.0',
+  '@tauri-apps/plugin-clipboard-manager': '^2.5.0',
+  'electron-updater': '^6.8.11',
   wrangler: '^4.0.0',
 }
 

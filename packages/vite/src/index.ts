@@ -76,7 +76,7 @@ interface PackageNeeds {
   needs: PackageViteNeeds
 }
 
-const needsCache = new Map<string, Promise<PackageNeeds | undefined>>()
+const needsCache = new Map<string, Promise<PackageNeeds | undefined>>() // kitr-allow-module-state: cache of package metadata read from disk, keyed by project root and package; the Vite process serves one project
 
 async function loadPackageNeeds(root: string, pkg: string): Promise<PackageNeeds | undefined> {
   const key = `${root}\0${pkg}`

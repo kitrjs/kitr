@@ -2,8 +2,9 @@
 // Layout mirrors a consuming app: src/components/ui/<name>.tsx, src/routes/<file>.tsx; metadata in src/items/<name>.json.
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('.', import.meta.url).pathname
+const root = fileURLToPath(new URL('.', import.meta.url))
 const src = join(root, 'src')
 const dist = join(root, 'dist')
 rmSync(dist, { recursive: true, force: true })

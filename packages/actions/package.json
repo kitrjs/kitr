@@ -61,6 +61,7 @@
     "@kitr/query": "workspace:*"
   },
   "peerDependencies": {
+    "typescript": ">=5.0.0",
     "@tanstack/react-start": ">=1.120.0",
     "@tanstack/react-query": ">=5.80.0"
   },

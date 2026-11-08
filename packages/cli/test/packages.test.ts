@@ -245,7 +245,6 @@ describe('plan', () => {
   it('orders setup modules by requires, skipping what is installed', async () => {
     const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
     const ctx = createContext({ root: dir })
-    vi.stubEnv('KITR_PREVIEW', '1')
     const plan = await resolvePlan(ctx, ['jobs'], ['@kitr/server'], { install: false })
     expect(plan.map((s) => s.name)).toEqual(['jobs'])
     expect(plan[0]!.loaded.package).toBe('@kitr/jobs')
@@ -257,25 +256,15 @@ describe('plan', () => {
     ])
   })
 
-  it('refuses a preview package unless previews are on', async () => {
-    const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
-    const ctx = createContext({ root: dir })
-    vi.stubEnv('KITR_PREVIEW', '')
-    await expect(resolvePlan(ctx, ['jobs'], [], { install: false })).rejects.toThrow(
-      /@kitr\/jobs is a preview package.*--preview/,
-    )
-    await expect(resolvePlan(ctx, ['desktop'], [], { install: false })).rejects.toThrow(/preview/)
-    expect(knownPackageNames).not.toContain('jobs')
+  it('lists every package the CLI knows', () => {
+    expect(knownPackageNames).toContain('jobs')
+    expect(knownPackageNames).toContain('desktop')
     expect(knownPackageNames).toContain('cache')
-    vi.stubEnv('KITR_PREVIEW', '1')
-    const plan = await resolvePlan(ctx, ['jobs'], ['@kitr/server'], { install: false })
-    expect(plan.map((s) => s.name)).toEqual(['jobs'])
   })
 
   it('tells a platform package from the rest', async () => {
     const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
     const ctx = createContext({ root: dir })
-    vi.stubEnv('KITR_PREVIEW', '1')
     const plan = await resolvePlan(ctx, ['tauri'], ['@kitr/router', '@kitr/storage'], {
       install: false,
     })

@@ -3,7 +3,6 @@ import {
   defineRouteExtension,
   type ExtensionKey,
   type KitrRouter,
-  type Prettify,
   type RouteEntry,
 } from '@kitr/core'
 import type { KitrServer } from '@kitr/server'
@@ -57,14 +56,14 @@ declare module '@kitr/core' {
         options: WsRouteOptions<C>,
       ): KitrRouter<
         K & ExtensionKey,
-        Prettify<R & { [N in `WS ${Path}`]: SocketRouteType<'websocket', Path, C[number]> }>
+        R & { [N in `WS ${Path}`]: SocketRouteType<'websocket', Path, C[number]> }
       >
       sse<Path extends string, const C extends readonly ChannelDefinition<any, any>[]>(
         path: Path,
         options: SseRouteOptions<C>,
       ): KitrRouter<
         K & ExtensionKey,
-        Prettify<R & { [N in `SSE ${Path}`]: SocketRouteType<'sse', Path, C[number]> }>
+        R & { [N in `SSE ${Path}`]: SocketRouteType<'sse', Path, C[number]> }
       >
     }
   }
@@ -145,6 +144,7 @@ const ws = defineRouteExtension({
             get connections() {
               return realtime.connections
             },
+            closeSessions: (userId) => realtime.closeSessions(userId),
           }
           server.app.container.value('realtime', bound)
         }

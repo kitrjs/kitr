@@ -1,19 +1,18 @@
-import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
+import { defineConfig, sessionAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
 /**
- * Tokens come from this app's own API (server/controllers/auth-controller.ts).
- * Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}) when you have a real identity provider.
+ * The session is an HttpOnly cookie the API sets (server/controllers/auth-controller.ts), so there
+ * is no token to keep: this adapter asks `GET /api/auth/session` in the browser and reads the
+ * request's own session while a page renders on the server. Swap for betterAuthAdapter(createAuthClient())
+ * or a customAdapter({...}) if you move to another identity provider.
  */
-const adapter = tokenAdapter<User>({
+const adapter = sessionAdapter<User>({
   abilities,
-  storage: localStorageTokens(),
-  fetchUser: async (token) => {
-    const res = await fetch(api.auth.me.url(), { headers: { authorization: 'Bearer ' + token } })
-    return res.ok ? ((await res.json()) as User) : null
-  },
+  fetchSession: () => api.auth.session(),
   signIn: (credentials) => api.auth.signIn({ body: credentials }),
+  signOut: () => api.auth.signOut(),
 })
 
 export default defineConfig({ adapter, signInPath: '/sign-in' })

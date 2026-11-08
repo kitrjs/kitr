@@ -1,7 +1,6 @@
 /**
  * What `kitr add` knows, for the quick picks. `kitr info` reports what is installed, not what is
- * available, so this mirrors docs/packages.md (published packages only; previews need
- * `--preview` from a kitr checkout).
+ * available, so this mirrors docs/packages.md.
  */
 export const knownPackages: Array<{ name: string; description: string }> = [
   { name: 'router', description: 'TanStack Router, pages in app/routes.ts, guards' },
@@ -35,6 +34,15 @@ export const knownPackages: Array<{ name: string; description: string }> = [
   { name: 'shield', description: 'Security headers, CORS, rate limits, CSRF' },
   { name: 'mail', description: 'React email templates and transports' },
   { name: 'storage', description: 'Typed local storage items and cookies' },
+  { name: 'platform', description: 'Where the app runs: platform(), perPlatform(), hooks' },
+  { name: 'devtools', description: 'Development overlay with a panel per package' },
+  { name: 'jobs', description: 'Background jobs with retries and schedules' },
+  { name: 'uploads', description: 'File uploads with progress and server parsing' },
+  { name: 'secure-storage', description: 'Secrets in the OS vault' },
+  { name: 'files', description: 'Open, pick and save files with native dialogs' },
+  { name: 'notifications', description: 'Local notifications and tap routing' },
+  { name: 'native', description: 'Clipboard, share, haptics, geolocation, camera, biometrics' },
+  { name: 'updater', description: 'Check and apply app updates' },
 ]
 
 /** Platform types for `kitr add <type> <name>`, with the name a kit would give each. */

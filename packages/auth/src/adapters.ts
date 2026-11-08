@@ -1,6 +1,12 @@
 import { KitrError } from '@kitr/core'
 import type { Abilities } from './abilities'
-import { type AuthAdapter, createSession, type Session } from './session'
+import {
+  type AdapterContext,
+  type AuthAdapter,
+  createSession,
+  getServerSessionResolver,
+  type Session,
+} from './session'
 
 /** Where `tokenAdapter` keeps a token. Both methods may be async. */
 export interface TokenStorage {
@@ -170,4 +176,79 @@ export function customAdapter<TUser, TCredentials = unknown>(
   adapter: AuthAdapter<TUser, TCredentials>,
 ): AuthAdapter<TUser, TCredentials> {
   return adapter
+}
+
+/** What the session endpoint answers and what sign-in resolves with: the user (or `null`) and when the session ends. */
+export interface SessionPayload<TUser> {
+  /** The signed-in user, or `null` when anonymous. */
+  user: TUser | null
+  /** When the session ends (epoch ms). */
+  expiresAt?: number
+}
+
+/** The query key the cookie-session adapter caches the session under. Invalidate it to force a reload. */
+export const sessionQueryKey = ['auth', 'session'] as const
+
+/** Options for `sessionAdapter`. */
+export interface SessionAdapterOptions<TUser, TCredentials> {
+  /** Abilities for `session.can`. Without them `can` is true for any signed-in user. */
+  abilities?: Abilities<TUser, any>
+  /** Call `GET /auth/session`. With the typed client: `() => api.auth.session()`. The browser sends the cookie. */
+  fetchSession: () => Promise<SessionPayload<TUser>>
+  /** Call `POST /auth/sign-in`. With the typed client: `(body) => api.auth.signIn({ body })`. The response sets the cookie. */
+  signIn: (credentials: TCredentials) => Promise<SessionPayload<TUser> & { user: TUser }>
+  /** Call `POST /auth/sign-out`. The response expires the cookie. */
+  signOut?: () => Promise<unknown>
+  /** How long the cached session counts as fresh, in ms. Default 30 seconds. */
+  staleTime?: number
+}
+
+/**
+ * Cookie sessions for the browser and for server rendering: the session lives in an HttpOnly
+ * cookie (see `createCookieSession` in `@kitr/auth/server`), so the client never holds a token.
+ * In the browser the session comes from `GET /auth/session`, cached in the query client and
+ * replaced on sign-in and sign-out. During SSR it comes from the request being rendered, with no
+ * HTTP call: `runWithSession` in the server entry puts it in scope.
+ */
+export function sessionAdapter<TUser, TCredentials = { email: string; password: string }>(
+  options: SessionAdapterOptions<TUser, TCredentials>,
+): AuthAdapter<TUser, TCredentials> {
+  const toSession = (payload: SessionPayload<TUser> | null | undefined) =>
+    payload?.user
+      ? createSession(payload.user, options.abilities, { expiresAt: payload.expiresAt })
+      : null
+  return {
+    async getSession(context?: AdapterContext) {
+      // Rendering on the server: the session of this request, no HTTP call.
+      const server = getServerSessionResolver()
+      if (server) {
+        const found = await server()
+        if (found !== undefined) return toSession(found as SessionPayload<TUser> | null)
+      }
+      const cache = context?.queryClient
+      const payload = cache
+        ? await cache.fetchQuery({
+            queryKey: sessionQueryKey,
+            queryFn: options.fetchSession,
+            staleTime: options.staleTime ?? 30_000,
+          })
+        : await options.fetchSession()
+      return toSession(payload as SessionPayload<TUser>)
+    },
+    async signIn(credentials, context) {
+      const payload = await options.signIn(credentials)
+      context?.queryClient?.setQueryData(sessionQueryKey, {
+        user: payload.user,
+        expiresAt: payload.expiresAt,
+      })
+      return toSession(payload)!
+    },
+    async signOut(context) {
+      try {
+        await options.signOut?.()
+      } finally {
+        context?.queryClient?.setQueryData(sessionQueryKey, { user: null })
+      }
+    },
+  }
 }

@@ -100,6 +100,7 @@ const make = <T>(name: string, fn: (v: unknown) => T): StandardSchemaV1<unknown,
   },
 })
 
+// kitr-allow-module-state: constant helper namespace (createEnv validators), stateless
 export const env = {
   string: (opts: { optional?: boolean; default?: string } = {}) =>
     make('string', (v) => {

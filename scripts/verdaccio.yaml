@@ -1,0 +1,27 @@
+# Throwaway registry for scripts/verdaccio-smoke.mjs. The script copies this file next to a fresh
+# storage directory, so nothing here touches a real registry or a real package.
+storage: ./storage
+auth:
+  htpasswd:
+    file: ./htpasswd
+    max_users: -1
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    # A cold install of a whole app is slow on a busy runner.
+    timeout: 60s
+    max_fails: 5
+packages:
+  # Our own packages only ever come from the local storage: a name that was not published here is
+  # a 404, never a silent fall-through to a same-named package on npm.
+  "kitr":
+    access: $all
+    publish: $all
+  "@kitr/*":
+    access: $all
+    publish: $all
+  "**":
+    access: $all
+    proxy: npmjs
+log: { type: stdout, format: pretty, level: warn }
+max_body_size: 200mb

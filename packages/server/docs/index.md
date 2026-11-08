@@ -87,13 +87,13 @@ You can also pass server options in code, which overrides `config/server.ts`:
 
 ```ts
 // server/main.ts
+import { loadRc } from 'kitr/app'
 import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 
 export const server = createServer({
-  providers: rc.providers,
-  config,
+  ...loadRc(rc, config),
   server: { shutdownTimeout: 30, requestIdHeader: 'x-acme-trace' },
 })
 ```
@@ -276,16 +276,19 @@ In a React project with a web platform, the server platform also writes Start's 
 import handler, { createServerEntry } from '@tanstack/react-start/server-entry'
 import { server } from '#server/main'
 
-/** Requests for paths the kitr server has routes for (endpoints, sockets, /healthz) go to it; pages go to Start. */
+/** Every request goes through the kitr server's middleware (request context, shield's headers and CSP nonce); paths it has routes for (endpoints, sockets, /healthz) are answered there, pages are rendered by Start inside it. */
 export default createServerEntry({
   fetch(request, options) {
-    if (server.handles(request)) return server.fetch(request)
-    return handler.fetch(request, options)
+    return server.fetch(request, {
+      pages: (request) => {
+        return handler.fetch(request, options)
+      },
+    })
   },
 })
 ```
 
-`server.handles(request)` matches the paths of the table passed to `createServer({ routes })`, so adding an endpoint or a socket needs no change here. The web platform in `ssr` mode answers `/api/orders` itself, with no second process. `kitr dev api` still runs the server alone when you want it on its own port, for a mobile app or a partner integration.
+`server.fetch(request, { pages })` runs the request through the server's middleware (the request context, `shield`'s headers and its CSP nonce) and answers it there when a route of the table matches; any other path is handed to `pages`, which here is Start's handler, so pages get the same security headers and Start's inline scripts get the request's nonce. Servers whose `app/server.ts` still reads `if (server.handles(request)) return server.fetch(request)` keep working, but their pages bypass the server's middleware. `server.handles(request)` matches the paths of the table passed to `createServer({ routes })`, so adding an endpoint or a socket needs no change here. The web platform in `ssr` mode answers `/api/orders` itself, with no second process. `kitr dev api` still runs the server alone when you want it on its own port, for a mobile app or a partner integration.
 
 ## Call the server from any fetch runtime
 
@@ -630,6 +633,8 @@ export default defineConfig({
 ```
 
 Keep the timeout below your orchestrator's grace period (30 seconds by default on Kubernetes), or the process is killed before it finishes.
+
+A process has one signal handler, however many servers it runs. Every server that is listening joins a process-wide list and leaves it when its `close()` runs; the first one installs the `SIGINT` and `SIGTERM` handlers and the last one to leave removes them. On a signal, the handler logs for each server, drains all of them at once, and exits once, with the longest `shutdownTimeout` among them as the deadline. Two `listen()` calls in one process (an API and an admin server, or a test file with several servers) no longer stack handlers that each call `process.exit`.
 
 `listen()` returns a `close()` function that does steps 2 to 4 without exiting, which is what tests and scripts use:
 

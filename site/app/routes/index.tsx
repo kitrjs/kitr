@@ -175,7 +175,7 @@ function Home() {
             </Link>
           </div>
           <p className="status-strip">
-            Web and server are ready. Desktop and mobile are in preview. Not on npm yet,{' '}
+            Web, server, desktop and mobile are ready. Not on npm yet,{' '}
             <Link to="/docs/$slug" params={{ slug: 'getting-started' }}>
               here is how to try it
             </Link>

@@ -1,4 +1,5 @@
-import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
+import { definePlatform, type PlatformContext } from '@kitr/core'
+import { displayName, readPackage, shellPlatformHooks, slug } from '@kitr/platform/cli'
 
 /**
  * Options of `desktop()` in `kitrrc.ts`. Every option but `port` is written into the scaffolded
@@ -71,92 +72,70 @@ export const desktop = definePlatform<DesktopOptions>(
       },
     },
   },
-  (options) => ({
-    dependencies: [
-      { name: 'electron', dev: true },
-      { name: 'electron-vite', dev: true },
-      { name: 'electron-builder', dev: true },
-    ],
-    scaffold(ctx) {
-      scaffoldElectron(ctx, options)
-    },
-    async dev(ctx) {
-      const port = Number(ctx.flags.port ?? options.port)
-      const url = `http://localhost:${port}`
-      ctx.log.info(`${ctx.name}: dev server on ${url}, the Electron window loads it live`)
-      const vite = ctx.exec('vite', ['dev', '--port', String(port), '--strictPort'])
-      await waitForUrl(url, ctx.signal)
-      await ctx
-        .exec(
-          'electron-vite',
-          ['dev', '-c', ctx.dir('electron.vite.config.ts'), '--rendererOnly=false'],
-          { env: { ELECTRON_RENDERER_URL: url } },
-        )
-        .catch((e) => ctx.log.error(String(e)))
-      await vite
-    },
-    async build(ctx) {
-      await ctx.exec('vite', ['build'])
-      await ctx.exec('electron-vite', ['build', '-c', ctx.dir('electron.vite.config.ts')])
-      if (ctx.flags.pack === false) return
-      await ctx.exec('electron-builder', [
-        '--config',
-        ctx.dir('electron-builder.yml'),
-        ...(ctx.flags.dir ? ['--dir'] : []),
-      ])
-      ctx.log.success(`${ctx.name}: installers are in dist/${ctx.name}/release`)
-    },
-    async start(ctx) {
-      await ctx.exec('electron', [ctx.root])
-    },
-    doctor(ctx) {
-      const out: PlatformFinding[] = []
-      const pkg = readPackage(ctx)
-      const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-      for (const dep of ['electron', 'electron-vite', 'electron-builder'])
-        if (!(dep in deps))
-          out.push({
-            level: 'error',
-            message: `${ctx.name}: ${dep} is not installed`,
-            fix: `${ctx.pm} add -D ${dep}`,
-          })
-      if (!ctx.exists(`platforms/${ctx.name}/main.ts`))
-        out.push({
-          level: 'error',
-          message: `${ctx.name}: platforms/${ctx.name}/main.ts is missing`,
-          fix: `kitr platforms scaffold ${ctx.name}`,
-        })
-      if (pkg.main !== `dist/${ctx.name}/electron/main/index.js`)
-        out.push({
-          level: 'warn',
-          message: `${ctx.name}: package.json "main" should be dist/${ctx.name}/electron/main/index.js so electron and electron-builder find the built main process`,
-        })
-      return out
-    },
-    agents: `- \`kitr dev <name>\` starts Vite and Electron (main + preload rebuilt on change); \`kitr build <name>\` builds the client, main and preload into \`dist/<name>\` and packages installers with electron-builder.
+  (options) =>
+    shellPlatformHooks(options, {
+      dependencies: [
+        { name: 'electron', dev: true },
+        { name: 'electron-vite', dev: true },
+        { name: 'electron-builder', dev: true },
+        // The updater package's driver imports it in the main process; a runtime dependency so
+        // electron-builder packs it into the installer.
+        { name: 'electron-updater' },
+      ],
+      scaffold(ctx) {
+        scaffoldElectron(ctx, options)
+      },
+      dev: {
+        banner: (ctx, { url }) =>
+          `${ctx.name}: dev server on ${url}, the Electron window loads it live`,
+        launch: (ctx, { url }) =>
+          ctx.exec(
+            'electron-vite',
+            ['dev', '-c', ctx.dir('electron.vite.config.ts'), '--rendererOnly=false'],
+            { env: { ELECTRON_RENDERER_URL: url } },
+          ),
+      },
+      build: {
+        async shell(ctx) {
+          await ctx.exec('electron-vite', ['build', '-c', ctx.dir('electron.vite.config.ts')])
+          if (ctx.flags.pack === false) return
+          // `kitr build` packages; publishing is a release step, so CI detection must not trigger it.
+          await ctx.exec('electron-builder', [
+            '--config',
+            ctx.dir('electron-builder.yml'),
+            '--publish',
+            'never',
+            ...(ctx.flags.dir ? ['--dir'] : []),
+          ])
+          ctx.log.success(`${ctx.name}: installers are in dist/${ctx.name}/release`)
+        },
+      },
+      async start(ctx) {
+        await ctx.exec('electron', [ctx.root])
+      },
+      doctor: {
+        // electron-updater is only needed once the updater package is used, so doctor leaves it out.
+        dependencies: [
+          { name: 'electron', dev: true },
+          { name: 'electron-vite', dev: true },
+          { name: 'electron-builder', dev: true },
+        ],
+        files: (ctx) => [{ path: `platforms/${ctx.name}/main.ts` }],
+        extra: (ctx, pkg) =>
+          pkg.main === `dist/${ctx.name}/electron/main/index.js`
+            ? []
+            : [
+                {
+                  level: 'warn',
+                  message: `${ctx.name}: package.json "main" should be dist/${ctx.name}/electron/main/index.js so electron and electron-builder find the built main process`,
+                },
+              ],
+      },
+      agents: `- \`kitr dev <name>\` starts Vite and Electron (main + preload rebuilt on change); \`kitr build <name>\` builds the client, main and preload into \`dist/<name>\` and packages installers with electron-builder.
 - IPC is typed end to end: declare in \`platforms/<name>/ipc.ts\`, implement in \`platforms/<name>/main.ts\` (\`handleIpc\`), call from the app via \`createIpcClient\` from \`@kitr/desktop/client\`. Guard desktop-only UI with \`isElectron()\`.
 - Windows keep context isolation and the sandbox on; never enable nodeIntegration. The packaged app serves the client from \`app://-/\`; storage items from \`@kitr/storage\` persist in a JSON file in userData through \`handleKitrIpc\`.`,
-  }),
+    }),
 )
-
-function readPackage(ctx: PlatformContext): Record<string, any> {
-  try {
-    return JSON.parse(ctx.read('package.json'))
-  } catch {
-    return {}
-  }
-}
-
-function displayName(name = 'app') {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-function slug(name: string) {
-  return name.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'app'
-}
 
 function scaffoldElectron(ctx: PlatformContext, options: DesktopOptions) {
   const pkg = readPackage(ctx)
@@ -247,12 +226,22 @@ export default defineConfig({
   main: {
     root: __dirname,
     plugins: [externalizeDepsPlugin()],
-    build: { lib: { entry: 'main.ts' }, outDir: '../../dist/${ctx.name}/electron/main' },
+    build: {
+      lib: { entry: 'main.ts' },
+      outDir: '../../dist/${ctx.name}/electron/main',
+      rollupOptions: { output: { entryFileNames: 'index.js' } },
+    },
   },
   preload: {
     root: __dirname,
-    plugins: [externalizeDepsPlugin()],
-    build: { lib: { entry: 'preload.ts' }, outDir: '../../dist/${ctx.name}/electron/preload' },
+    // A sandboxed preload can only require electron, so kitr is bundled into it.
+    plugins: [externalizeDepsPlugin({ exclude: ['kitr', '@kitr/desktop'] })],
+    // A sandboxed preload script cannot be an ES module, so it is built as CommonJS.
+    build: {
+      lib: { entry: 'preload.ts' },
+      outDir: '../../dist/${ctx.name}/electron/preload',
+      rollupOptions: { output: { format: 'cjs', entryFileNames: 'index.js' } },
+    },
   },
 })
 `,
@@ -285,20 +274,9 @@ export const ipc = createIpcClient<Ipc, IpcPush>()
 `,
   )
   const main = `dist/${ctx.name}/electron/main/index.js`
-  if (pkg.main !== main) {
+  if (pkg.main !== main || !pkg.version) {
     pkg.main = main
+    pkg.version ??= '0.0.0' // electron-builder refuses a package.json without one
     ctx.write('package.json', `${JSON.stringify(pkg, null, 2)}\n`, { overwrite: true })
-  }
-}
-
-async function waitForUrl(url: string, signal?: AbortSignal) {
-  for (let i = 0; i < 100; i++) {
-    if (signal?.aborted) return
-    try {
-      await fetch(url, { method: 'HEAD' })
-      return
-    } catch {
-      await new Promise((r) => setTimeout(r, 300))
-    }
   }
 }

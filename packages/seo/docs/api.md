@@ -60,14 +60,16 @@ Still valid JSON: parsers read the escapes back as the same characters.
 ### seo
 
 ```ts
-function seo(input: SeoInput): {
+function seo(input: SeoInput, context?: SeoContext): {
   meta: Record<string, string>[];
   links: Record<string, string>[];
 };
 ```
 
-Meta tags for a route's `head()`: `head: () => seo({ title, description })`.
-Covers title, description, Open Graph, Twitter cards, canonical and robots.
+Meta tags for a route's `head()`: `head: (ctx) => seo({ title, description }, ctx)`.
+Covers title, description, Open Graph, Twitter cards, canonical and robots. Pass the `head`
+argument (or the app) as the second argument so the site name, image and origin from
+`config/seo.ts` apply; without it only `input.site` does.
 
 ### ssrRoute
 
@@ -87,11 +89,12 @@ build on the server, other web builds data-only, and native shells on the client
 ### defineConfig
 
 ```ts
-const defineConfig: typeof typed;
+const defineConfig: <const C extends SeoConfig>(config: C) => C;
 ```
 
-Types the default export of `config/seo.ts`, and makes its `site` the defaults `seo()` uses:
-the config is imported (through `config/index.ts`) before any route renders.
+Types the default export of `config/seo.ts`. The config lives on the app (`app.config.get('seo')`,
+set from the `config` that `app/app.ts` passes to `createApp`), not in this module, so two apps
+in one process keep their own site defaults and `seo()` reads them from the app it is given.
 
 ### SeoConfig
 
@@ -135,7 +138,7 @@ interface SeoInput {
   noIndex?: boolean;
   /** Joined into a `keywords` meta tag. */
   keywords?: string[];
-  /** Site defaults. Default: `site` from `config/seo.ts`. */
+  /** Site defaults. Default: `site` from the app's `config/seo.ts`, found through the context passed as `seo`'s second argument. */
   site?: SeoSite;
 }
 ```
@@ -160,6 +163,16 @@ interface SeoSite {
 ```
 
 Site-wide values for `seo()` and the build: name, canonical origin, default image, handle and locale.
+
+### SeoContext
+
+```ts
+type SeoContext = object;
+```
+
+Where `seo()` finds the app for the site defaults: the argument of a route's `head` (its
+`match.context.app`, which `createKitrRouter` puts in every route's context), a loader or
+`beforeLoad` context, or the app itself.
 
 ### SsrMode
 

@@ -112,6 +112,14 @@ const createWebSocketTransport: typeof createSocketClient;
 
 The native WebSocket transport (same as `createSocketClient`).
 
+### defaultIdentity
+
+```ts
+const defaultIdentity: ConnectionIdentity;
+```
+
+The default `identify`: `userId`, `user.id` or `id` of the connection context.
+
 ### defineConfig
 
 ```ts
@@ -119,6 +127,14 @@ const defineConfig: <const C extends RealtimeConfig>(config: C) => C;
 ```
 
 Typed identity helper for `config/realtime.ts`.
+
+### ownedBy
+
+```ts
+const ownedBy: (identify: ConnectionIdentity | undefined, ctx: unknown, userId: string | number) => boolean;
+```
+
+Whether a connection with this context belongs to `userId`.
 
 ### ChannelDefinition
 
@@ -308,6 +324,15 @@ type ClientMessage = {
 
 A frame the client sends: subscribe (`sub`), unsubscribe (`unsub`), a client event (`msg`) or a `ping`.
 The wire protocol shared by the WebSocket, Socket.IO and SSE transports.
+
+### ConnectionIdentity
+
+```ts
+type ConnectionIdentity = (ctx: unknown) => string | number | null | undefined;
+```
+
+Who a connection belongs to, for `closeSessions(userId)`. `identify` reads it from the context
+`authorize` returned; the default takes `ctx.userId`, `ctx.user.id` or `ctx.id`, as a string.
 
 ### EventData
 
@@ -684,6 +709,11 @@ interface RealtimeServer {
   attach(server: KitrServer, path?: string): RealtimeServer;
   /** Number of open connections or streams. */
   readonly connections: number;
+  /**
+   * Close every connection or stream of `userId` on this instance and return how many. Call it when
+   * the user's access ends (sign-out everywhere, password reset, a ban); see `SocketServer.closeSessions`.
+   */
+  closeSessions(userId: string | number): number;
 }
 ```
 
@@ -752,6 +782,14 @@ interface SocketServer {
   attach(server: KitrServer, path?: string): SocketServer;
   /** Number of open connections on this instance. */
   readonly connections: number;
+  /**
+   * Close every connection of `userId` on this instance (code 4401, reason `Session revoked`) and
+   * return how many. Call it when the user's access ends: sign-out everywhere, a password reset, a
+   * ban. Authorisation happens when a connection opens and when it subscribes, so without this a
+   * revoked session keeps receiving events until its socket drops. Other instances are not reached:
+   * call it on each, or from a handler every instance runs.
+   */
+  closeSessions(userId: string | number): number;
   /** The adapter emits travel through. */
   readonly adapter: RealtimeAdapter;
 }
@@ -767,6 +805,11 @@ interface SocketServerOptions {
   channels: ChannelDefinition<any, any>[];
   /** Authenticate the upgrade. Return per-connection context (e.g. the user) or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>;
+  /**
+   * Who a connection belongs to, read from the context `authorize` returned, so
+   * `closeSessions(userId)` can find it. Default: the context's `userId`, `user.id` or `id`.
+   */
+  identify?: ConnectionIdentity;
   /**
    * Carries emits between server instances. Default: the memory adapter, which only reaches
    * clients connected to this process. Use `createRedisRealtimeAdapter` when you run more than one.
@@ -866,6 +909,8 @@ interface SocketIoServer {
   use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): {
     emit(event: keyof C['events'] & string, data: unknown): void;
   };
+  /** Disconnect every socket of `userId` on this instance and return how many; see `SocketServer.closeSessions`. */
+  closeSessions(userId: string | number): number;
 }
 ```
 
@@ -879,6 +924,8 @@ interface SocketIoServerOptions {
   channels: ChannelDefinition<any, any>[];
   /** Authenticate a connection (`socket.handshake.auth`). Return context or throw. */
   authorize?: (socket: Socket) => unknown | Promise<unknown>;
+  /** Who a socket belongs to, for `closeSessions(userId)`. Default: the context's `userId`, `user.id` or `id`. */
+  identify?: ConnectionIdentity;
   /** Serve channels on this Socket.IO namespace instead of the default `/`. */
   namespace?: string;
 }
@@ -944,6 +991,8 @@ interface SseServer {
   attach(server: KitrServer, path?: string): SseServer;
   /** Number of open streams on this instance. */
   readonly connections: number;
+  /** Close every stream of `userId` on this instance and return how many; see `SocketServer.closeSessions`. A client that reconnects is authorised again. */
+  closeSessions(userId: string | number): number;
   /** The adapter emits and forwarded control messages travel through. */
   readonly adapter: RealtimeAdapter;
 }
@@ -959,6 +1008,8 @@ interface SseServerOptions {
   channels: ChannelDefinition<any, any>[];
   /** Authenticate the stream request. Return per-connection context or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>;
+  /** Who a stream belongs to, for `closeSessions(userId)`. Default: the context's `userId`, `user.id` or `id`. */
+  identify?: ConnectionIdentity;
   /** Keep-alive comment interval in ms. Default 20 000. */
   keepAlive?: number;
   /**

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createIpcClient, IPC_BRIDGE_KEY, isElectron } from '../src/client'
 import { handleIpc } from '../src/main'
-import { allowChannels, exposeIpc } from '../src/preload'
+import { allowChannels, exposeIpc, KITR_CHANNELS } from '../src/preload'
 
 type Ipc = {
   'app.version': () => string
@@ -64,6 +64,23 @@ describe('electron ipc', () => {
     expect(allow('kitr:storage:load')).toBe(true)
     expect(allow('fs.readFile')).toBe(false)
     expect(allowChannels(['a'])('b')).toBe(false)
+  })
+
+  it('lets through the device channels and refuses a kitr: name it does not know', () => {
+    const allow = allowChannels([])
+    for (const channel of [
+      'kitr:secure:get',
+      'kitr:notify:show',
+      'kitr:notify:click',
+      'kitr:files:read',
+      'kitr:updater:progress',
+      'kitr:native:power',
+      'kitr:shell:open',
+    ])
+      expect(allow(channel), channel).toBe(true)
+    expect(allow('kitr:secure:dump')).toBe(false)
+    expect(allow('kitr:files:read-anything')).toBe(false)
+    expect(KITR_CHANNELS.size).toBeGreaterThan(30)
   })
 
   it('round-trips typed commands and events through preload', async () => {

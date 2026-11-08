@@ -56,6 +56,10 @@ export default defineConfig({
 | `maxFiles` | `1` | Most files in one request. |
 | `driver` | disk, under `storage/uploads` | Where bytes go. See Drivers. |
 | `publicPath` | none | URL prefix for the `url` of each stored file, such as `/api/uploads`. Without it (and without a driver `url`), files have no `url`. |
+| `allowTypes` | `text/plain`, `text/csv`, `application/json` | Declared types served as themselves when the file's bytes carry no signature. See Serve files safely. |
+| `secret` | none | At least 16 characters; signs links from `uploads.signedUrl()`. Read it from the environment and use the same one on every instance. |
+| `authorize` | none | `(access, file) => boolean`: who may fetch a file without a signed link. |
+| `requireSigned` | `false` | Serve files only through signed links. Needs `secret`. |
 
 Uploads adds no environment variables. The disk driver's directory is relative to the process's working directory.
 
@@ -362,15 +366,23 @@ export async function archiveInvoice(app: KitrApp, pdf: Uint8Array) {
 
 ## Serve files safely
 
-`mountUploads(server)` answers `GET /api/uploads/<key>` with the stored bytes and the headers from `servedFileHeaders`. The stored type is whatever the uploader's browser declared, so the route never trusts it: images, audio, video, PDF and plain text are served inline, and everything else, SVG and HTML included, is served as a download with `application/octet-stream`. Every response carries `nosniff` and a sandboxing content security policy, so an uploaded file cannot run script as your site.
+`mountUploads(server)` answers `GET /api/uploads/<key>` with the stored bytes and the headers from `servedFileHeaders`. The stored type is whatever the uploader's browser declared, so the route never trusts it. It reads the type from the bytes:
 
-`servedFileHeaders(type, name)` from `@kitr/uploads/server` returns those headers, for routes you write yourself. For an HTML upload, they are:
+- A file whose first bytes are a known signature (PNG, JPEG, GIF, WebP, AVIF, PDF, MP4, WebM, MP3, ZIP and the like) is served as the type those bytes show, whatever was declared. Images, audio, video and PDF are shown inline; archives and other binaries are downloads.
+- A file with no signature is text or an unknown format. It is served as its declared type only if that type is in `allowTypes` (default `text/plain`, `text/csv` and `application/json`, with patterns such as `text/*` allowed), and only `text/plain` is shown inline.
+- Everything else, SVG and HTML included, is `application/octet-stream` with `Content-Disposition: attachment`.
+
+Every response carries `X-Content-Type-Options: nosniff` and a sandboxing content security policy, so an uploaded file cannot run script as your site, and a page declared as `image/png` is not an image.
+
+`servedFileHeaders(type, name, { data })` from `@kitr/uploads/server` returns those headers, for routes you write yourself. Pass the bytes in `data` so the type comes from them. For an HTML upload, they are:
 
 ```ts
 // server/check_headers.ts
 import { servedFileHeaders } from '@kitr/uploads/server'
 
-servedFileHeaders('text/html', 'page.html')
+const html = new TextEncoder().encode('<script>alert(1)</script>')
+
+servedFileHeaders('text/html', 'page.html', { data: html })
 // => {
 //   'content-type': 'application/octet-stream',
 //   'content-disposition': 'attachment; filename="page.html"',
@@ -380,13 +392,70 @@ servedFileHeaders('text/html', 'page.html')
 // }
 ```
 
-`uploads.mount(server, path)` on a service from `createUploads` registers the same two routes, with the same headers and body limit. See Use the service without the provider.
+`sniffType(bytes)` returns the type a file's signature shows, or `undefined`. `uploads.mount(server, path)` on a service from `createUploads` registers the same two routes, with the same headers and body limit. See Use the service without the provider.
 
-Every file under the route is public to anyone with its key. Keys contain a random UUID, so they cannot be guessed, but anyone you share a link with can pass it on. For private files, such as invoices, don't mount a public `GET`. Serve them from a controller that checks the user first, as below.
+Without `secret`, `authorize` or `requireSigned`, every file under the route is public to anyone with its key. Keys contain a random UUID, so they cannot be guessed, but anyone you share a link with can pass it on. The next two sections close that.
+
+## Share a file with a signed link
+
+`uploads.signedUrl(key, { expiresIn })` returns the file's URL with an expiry and an HMAC-SHA-256 signature (Web Crypto) over its path and that expiry. Set `secret` in `config/uploads.ts` first:
+
+```ts
+// config/uploads.ts
+import { defineConfig } from '@kitr/uploads'
+
+export default defineConfig({
+  accept: ['image/*', 'application/pdf'],
+  publicPath: '/api/uploads',
+  secret: process.env.UPLOADS_SECRET,
+  requireSigned: true,
+})
+```
+
+A controller then hands out five-minute links:
+
+```ts
+// server/controllers/order_invoices_controller.ts
+import type { HttpContext } from '@kitr/api'
+import { KitrError } from 'kitr/app'
+import { useUploads } from '@kitr/uploads/server'
+
+export default class OrderInvoicesController {
+  async link({ app, locals }: HttpContext) {
+    if (!locals.user) throw KitrError.unauthorized()
+    // ... look up the invoice key in your database and check the user's team
+    const key = '72eb7790-7c62-4c37-9167-d9989b7ac10f/invoice-1042.pdf'
+    return { url: await useUploads(app).signedUrl(key, { expiresIn: 300 }) }
+  }
+}
+```
+
+The link looks like `/api/uploads/72eb7790-.../invoice-1042.pdf?expires=1767225900&signature=3Qk...`. It works for that file only and until `expires`; changing either makes the signature fail. An expired or altered link gets `403`, and so does a request with no link when `requireSigned` is on. Anyone holding a link can open the file until it expires, so keep `expiresIn` short and hand it only to the person it is for. Responses reached through a link carry `Cache-Control: private`.
+
+`signedUrl(path, { expiresIn, secret })` and `verifySignedUrl(url, secret)` from `@kitr/uploads/server` do the same for any path, for routes you write yourself. For a mount path other than `/api/uploads`, pass it as `signedUrl(key, { expiresIn, path: '/files' })`.
+
+## Check who may open a file
+
+`authorize(access, file)` runs for every request without a signed link. `access` has the `event`, the `request` and the request's `app`, so it can read the session; `file` has the `key`, `name`, the `type` it will be served as and its `size`. Return `false` for `403`:
+
+```ts
+// config/uploads.ts
+import { defineConfig } from '@kitr/uploads'
+
+export default defineConfig({
+  publicPath: '/api/uploads',
+  authorize: ({ app }, file) => {
+    const session = app.container.use('auth').session
+    return !!session && file.key.startsWith(`${session.user.id}/`)
+  },
+})
+```
+
+A valid signed link skips `authorize`, so a link is how you share a file with someone who has no account. Responses for authorized files carry `Cache-Control: private`.
 
 ## Serve private files
 
-Read the file in a controller that checks access, and answer with the safe headers:
+To check access in your own route instead, read the file in a controller and answer with the safe headers:
 
 ```ts
 // server/controllers/order-invoices-controller.ts
@@ -402,7 +471,10 @@ export default class OrderInvoicesController {
     const file = await useUploads(app).read(key)
     if (!file) throw KitrError.notFound('Invoice')
     return new Response(file.data as BodyInit, {
-      headers: { ...servedFileHeaders(file.type, 'invoice-1042.pdf'), 'cache-control': 'private, no-store' },
+      headers: {
+        ...servedFileHeaders(file.type, 'invoice-1042.pdf', { data: file.data }),
+        'cache-control': 'private, no-store',
+      },
     })
   }
 }
