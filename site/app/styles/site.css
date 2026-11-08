@@ -2225,7 +2225,9 @@ a.dcard:focus-visible {
   .docs-bar {
     display: block;
     position: sticky;
-    top: 65px;
+    /* The header is 65px with its border. Tuck the bar 1px under it (the header sits above),
+       so subpixel rounding on high-density phones never leaves a sliver of page between them. */
+    top: 64px;
     z-index: 9;
     margin: 0 -16px;
     padding: 8px 16px;
@@ -2270,20 +2272,20 @@ a.dcard:focus-visible {
   .docs-bar-toc[aria-expanded="true"] {
     border-color: var(--blue);
   }
+  /* One line that ends in an ellipsis when the page name is too long for the button. A block,
+     not a flex row: text-overflow only applies to the text of a block, and a plain string
+     inside a flex row becomes an anonymous item that clips without one. */
   .docs-bar-where {
-    display: flex;
-    gap: 6px;
+    display: block;
+    flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     font-weight: 600;
   }
-  .docs-bar-where > * {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
   .docs-bar-page {
+    margin-left: 6px;
     color: var(--muted);
     font-weight: 500;
   }
