@@ -6,13 +6,14 @@ order: 1
 
 # Vite
 
-A browser app needs a dev server, a bundler and a build step, and every package you add wants a piece of that setup: a React transform, a Tailwind compiler, a route generator, a list of dependencies to pre-bundle. `@kitr/vite` is one plugin, `kitr()`, that reads `kitrrc.ts` and asks each installed package what it needs, so `vite.config.ts` stays a three-line file however much the app grows.
+A browser app needs a dev server, a bundler and a build step, and every package you add wants a piece of that setup: a React transform, a Tailwind compiler, a route generator. `@kitr/vite` is one plugin, `kitr()`, that reads `kitrrc.ts` and asks each installed package what it needs, so `vite.config.ts` stays a three-line file however much the app grows.
 
-It is built on [Vite](https://vite.dev). On top it adds the `virtual:kitr/providers` and `virtual:kitr/config` modules that `app/app.ts` imports, the `#app`, `#config`, `#components`, `#server` and `#kitr` aliases from the `directories` in `kitrrc.ts`, the active platform's port and output directory, and `kitr types` on every build and on every change to a file a type generator watches.
+> [!SUMMARY]
+> One Vite plugin that wires the dev server and build to `kitrrc.ts`. Add it with `kitr add vite`; the overview is at [/packages/vite](/packages/vite).
 
-It runs at build time only; nothing of it ships to the browser. A pure backend never installs it: the [server platform](/packages/server) runs TypeScript directly. Every browser platform (`web`, `desktop`, `tauri`, `mobile`) requires it, so `kitr add web site` brings it in.
+It is built on [Vite](https://vite.dev) and adds the `virtual:kitr/providers` and `virtual:kitr/config` modules, the `#app`, `#config`, `#components`, `#server` and `#kitr` aliases, the active platform's port and output directory, and `kitr types` on every build. It runs at build time only. Every browser platform (`web`, `desktop`, `tauri`, `mobile`) requires it, so `kitr add web site` brings it in; a pure backend never installs it.
 
-The examples on this page build Acme's order screens at `app.acme.com`.
+The examples build Acme's order screens at `app.acme.com`.
 
 ## Install
 
@@ -20,15 +21,18 @@ The examples on this page build Acme's order screens at `app.acme.com`.
 kitr add vite
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
 - Adds `@kitr/vite` and `vite` to `devDependencies` and installs them. Pass `--no-install` to skip the install.
-- Adds `'@kitr/vite'` to `packages` in `kitrrc.ts`. It registers no provider, because nothing runs at app startup.
+- Adds `'@kitr/vite'` to `packages` in `kitrrc.ts`. It registers no provider.
 - Writes `vite.config.ts` with `kitr()` as its only plugin, unless one exists.
-- Adds `vite/client` and `@kitr/vite/client` to `compilerOptions.types` in `tsconfig.json`, so `import.meta.env`, asset imports and the virtual modules type-check, and `vite.config.ts` to `include`.
-- Adds a `## kitr: vite` section to `AGENTS.md` saying that `vite.config.ts` holds `kitr()` and that the plugin wires everything else.
+- Adds `vite/client` and `@kitr/vite/client` to `compilerOptions.types` in `tsconfig.json`, and `vite.config.ts` to `include`, so `import.meta.env`, asset imports and the virtual modules type-check.
+- Adds a `## kitr: vite` section to `AGENTS.md`.
 
-You rarely run `kitr add vite` yourself: `kitr add web site`, `kitr add desktop app`, `kitr add tauri app` and `kitr add mobile phone` require it, and every kit with a browser platform includes it.
+You rarely run it yourself: `kitr add web site`, `kitr add desktop app`, `kitr add tauri app` and `kitr add mobile phone` require it, and every kit with a browser platform includes it.
+
+</details>
 
 ## Configure
 
@@ -53,7 +57,7 @@ export default defineConfig({
 | `start` | what the packages ask (`router` asks for it) | `false` keeps the plain TanStack Router plugin without Start; an object passes options to `tanstackStart()`. |
 | `plugins` | every declared plugin | `{ tailwind: false }` leaves out the plugin a package declares, by its short name. |
 | `router` | `{}` | Extra options for `@tanstack/router-plugin`. |
-| `routesDirectory` | `directories.routes` | Where route files are, for older projects that use them. |
+| `routesDirectory` | `directories.routes` | Where route files are, in projects that use file routes. |
 | `generatedRouteTree` | `<app>/routeTree.gen.ts`, or `.kitr/routeTree.gen.ts` with the table | Where TanStack's generator writes its tree. Unused by a table project; `createKitrRouter({ routes })` builds the tree. |
 | `devtools` | on, except in production builds without `enabled` in `config/devtools.ts` | `false` leaves every development-only provider out of this build too. `true` keeps them in production. |
 | `types` | `true` | Run `kitr types` on build start and on changes in dev. |
@@ -90,11 +94,11 @@ export const app = createApp({ providers, config, env })
 kitr dev site
 ```
 
-The browser opens `http://localhost:3000` with the pages from `app/routes.ts`. `virtual:kitr/providers` is the `providers` list from `kitrrc.ts` as static imports, so every provider is in the bundle and tree-shakable, and `virtual:kitr/config` is every file under `config/` keyed by name: `config/query.ts` becomes `config.query`. Change `kitrrc.ts` and both modules reload without a restart.
+The browser opens `http://localhost:3000` with the pages from `app/routes.ts`. `virtual:kitr/providers` is the `providers` list from `kitrrc.ts` as static imports, so every provider is in the bundle and tree-shakable. `virtual:kitr/config` is every file under `config/` keyed by name (`config/query.ts` becomes `config.query`). Both reload when `kitrrc.ts` changes.
 
 ## Let a package configure the build
 
-A package tells the plugin what it needs through the `vite` field of its setup module, so adding the package is the whole setup. `@kitr/tailwind` declares its plugin and the dependencies to pre-bundle; `@kitr/server` keeps `config/server.ts` out of the browser bundle; `@kitr/devtools` drops its provider from production builds unless its config enables it; `@kitr/router` turns TanStack Start on:
+A package tells the plugin what it needs through the `vite` field of its setup module, so adding the package is the whole setup. `@kitr/tailwind` declares its plugin and dependencies to pre-bundle; `@kitr/server` keeps `config/server.ts` out of the browser bundle; `@kitr/devtools` drops its provider from production builds; `@kitr/router` turns TanStack Start on:
 
 ```ts
 // packages/tailwind/src/kitr.ts (excerpt)
@@ -119,7 +123,7 @@ Your own package does the same: see [the package contract](/docs/package-contrac
 
 ## Pick the platform to build
 
-A project with two browser platforms, say a web site and a desktop shell, builds each with its own port and output directory. `kitr dev <name>` and `kitr build <name>` set `KITR_PLATFORM`, and the plugin reads that platform's options:
+A project with two browser platforms, say a web site and a desktop shell, builds each with its own port and output directory. `kitr dev <name>` and `kitr build <name>` set `KITR_PLATFORM`:
 
 ```ts
 // kitrrc.ts (excerpt)
@@ -135,11 +139,11 @@ kitr dev app         # Vite on :3100 inside the Electron window, dist/app
 kitr build           # both, one after the other
 ```
 
-Running `vite` directly picks the first web platform. To build for another one without the CLI, set the variable or the option: `KITR_PLATFORM=app vite build`, or `kitr({ platform: 'app' })` in a second config file.
+Running `vite` directly picks the first web platform. For another without the CLI, set `KITR_PLATFORM=app vite build` or `kitr({ platform: 'app' })` in a second config file.
 
 ## Import through the aliases
 
-The `directories` block in `kitrrc.ts` names where the app lives, and the plugin turns each entry into an alias, so a move of `app/` to `src/` is one edit in `kitrrc.ts` rather than a search and replace. `tsconfig.json` carries the same paths for the editor:
+The `directories` block in `kitrrc.ts` names where the app lives and the plugin turns each entry into an alias, so moving `app/` to `src/` is one edit. `tsconfig.json` carries the same paths for the editor:
 
 ```ts
 // app/pages/orders.tsx
@@ -159,18 +163,18 @@ import type { ServerRoutes } from '#server/routes'
 
 ## Change the port or the base path
 
-The platform options are the source of truth, so change them there rather than in `vite.config.ts`, where the plugin would overwrite them:
+Change platform options in `kitrrc.ts`, not in `vite.config.ts`, where the plugin would overwrite them:
 
 ```sh
 kitr config site port 4000
 kitr config site base /orders/
 ```
 
-`kitr dev site --port 4000` and `KITR_SITE_PORT=4000` override the option for one run. Vite's own `server.port` in `vite.config.ts` loses to the platform's, because `strictPort` is set from it; a port taken by another process fails fast instead of drifting to the next free one.
+`kitr dev site --port 4000` and `KITR_SITE_PORT=4000` override the option for one run. `strictPort` is set, so a port taken by another process fails fast instead of drifting.
 
 ## Prerender pages
 
-In `static` mode every route is prerendered at build time. In `ssr` mode the [seo](/packages/seo) package's `prerender` list picks the routes to prerender ahead of time while the rest render per request. The plugin reads `config/seo.ts` statically, without executing it, and passes the list to TanStack Start:
+In `static` mode every route is prerendered at build time. In `ssr` mode the [seo](/packages/seo) package's `prerender` list picks the routes to prerender while the rest render per request. The plugin reads `config/seo.ts` statically and passes the list to TanStack Start:
 
 ```ts
 // config/seo.ts
@@ -187,11 +191,11 @@ kitr build site
 # dist/site/client/index.html, pricing/index.html, docs/index.html, sitemap.xml
 ```
 
-With `site.url` set, Start writes `sitemap.xml` from the same list. A route that reads request data at render time stays out of the list and renders on the server.
+With `site.url` set, Start writes `sitemap.xml` from the same list. A route that reads request data at render time stays out of the list.
 
 ## Pass options to TanStack Start
 
-`start` takes an object when the defaults are not enough. It is spread last, so anything here wins over what the plugin set:
+`start` takes an object when the defaults are not enough, spread last so it wins:
 
 ```ts
 // vite.config.ts
@@ -208,11 +212,18 @@ export default defineConfig({
 })
 ```
 
-`router` goes to `@tanstack/router-plugin`; `start` to `tanstackStart()`. With the route table, the generator only sees a stub root in `.kitr/routes/` (written by the plugin, safe to delete) and the real tree comes from `app/routes.ts`; a project with `app/routes/__root.tsx` keeps file routes and `app/routeTree.gen.ts`. See the [TanStack Start configuration](https://tanstack.com/start/latest/docs/framework/react/guide/configuration) for the full list.
+`router` goes to `@tanstack/router-plugin`; `start` to `tanstackStart()`. See the [TanStack Start configuration](https://tanstack.com/start/latest/docs/framework/react/guide/configuration) for the full list.
+
+<details>
+<summary>Route files and the generated tree</summary>
+
+With the route table, the generator only sees a stub root in `.kitr/routes/` (written by the plugin, safe to delete) and the real tree comes from `app/routes.ts`. A project with `app/routes/__root.tsx` keeps file routes and `app/routeTree.gen.ts`.
+
+</details>
 
 ## Keep generated types current
 
-`kitr types` writes `.kitr/`: the platform types from `kitrrc.ts`, the action names from `app/actions/`, whatever each package's generator produces. The plugin runs it when a build starts, and in dev it watches the globs the generators declare and reruns only the generator whose files changed:
+`kitr types` writes `.kitr/`: platform types from `kitrrc.ts`, action names from `app/actions/`, and whatever each package's generator produces. The plugin runs it at build start, and in dev reruns only the generator whose watched files changed:
 
 ```sh
 kitr dev site
@@ -227,7 +238,7 @@ import { Orders } from '#kitr/actions'   // typed from app/actions/orders.ts, al
 export const ordersQuery = Orders.list
 ```
 
-Pass `types: false` to leave it to a `kitr types` step of your own, for example in a CI job that builds without the CLI installed.
+Pass `types: false` to run `kitr types` yourself, for example in a CI job that builds without the CLI.
 
 ## Add a Vite plugin of your own
 
@@ -248,7 +259,7 @@ To replace a plugin a package declares, leave it out by name and add your own: `
 
 ## Read the build target in app code
 
-`import.meta.env.KITR_PLATFORM` is the platform name this bundle was built for, `KITR_PLATFORM_TYPE` its type and `KITR_PACKAGES` the packages from `kitrrc.ts`, all typed by `@kitr/vite/client`:
+`import.meta.env.KITR_PLATFORM` is the platform this bundle was built for, `KITR_PLATFORM_TYPE` its type and `KITR_PACKAGES` the packages from `kitrrc.ts`, all typed by `@kitr/vite/client`:
 
 ```ts
 // app/components/shell.tsx
@@ -261,7 +272,7 @@ For runtime questions (online, foreground, the OS) use [platform](/packages/plat
 
 ## Testing
 
-Vitest runs the same plugin, so tests import `virtual:kitr/*`, `#app/*` and route files exactly as the app does. The `vitest.config.ts` that `kitr add testing` writes leaves Tailwind out, because tests check classes, not CSS:
+Vitest runs the same plugin, so tests import `virtual:kitr/*`, `#app/*` and route files as the app does. The `vitest.config.ts` from `kitr add testing` leaves Tailwind out, because tests check classes, not CSS:
 
 ```ts
 // vitest.config.ts
@@ -290,8 +301,6 @@ it('wires the providers from kitrrc.ts', async () => {
 
 ## Next steps
 
-- [API reference](/packages/vite/api)
-- [Vite documentation](https://vite.dev/guide/)
-- [The package contract](/docs/package-contract): the `vite` field a package declares
-- [Web platform](/packages/web): modes, PWA and `kitr dev site`
-- [Testing](/packages/testing): `createTestApp` and `renderWithKitr`
+- [API reference](/packages/vite/api): every export with its signature.
+- [Web platform](/packages/web): modes, PWA and `kitr dev site`.
+- [Testing](/packages/testing): `createTestApp` and `renderWithKitr`.

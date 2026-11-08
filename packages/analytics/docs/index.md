@@ -6,17 +6,25 @@ order: 1
 
 # Analytics
 
-Sooner or later someone asks how many people created a project this week. `@kitr/analytics` gives you four calls, `page`, `track`, `identify` and `reset`, and sends them to [Google Analytics](https://developers.google.com/analytics/devguides/collection/ga4), [Plausible](https://plausible.io/docs), [PostHog](https://posthog.com/docs/libraries/js) or several at once. Page views are counted for you, and calls can wait until the visitor agrees to tracking.
+Sooner or later someone asks how many people created a project this week. `@kitr/analytics` gives you four calls, `page`, `track`, `identify` and `reset`, and sends them to [Google Analytics](https://developers.google.com/analytics/devguides/collection/ga4), [Plausible](https://plausible.io/docs), [PostHog](https://posthog.com/docs/libraries/js) or several at once.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` counts how often Ada creates a project, which plan Grace's team is on, and when Linus pays an invoice.
+> [!SUMMARY]
+> Count page views and button clicks, and send them to the analytics service you choose. Add it with `kitr add analytics`; the overview is at [/packages/analytics](/packages/analytics).
 
-`@kitr/analytics` runs in the browser. On the server it binds the same service so components render, but no vendor script loads. To record events your server owns (a paid invoice, a cancelled subscription), write them to your database or send them from a [job](/packages/jobs); to report errors rather than usage, use [monitoring](/packages/monitoring).
+Page views are counted for you, and calls can wait until the visitor agrees to tracking.
+
+The examples follow Acme's app at `app.acme.com`: how often Ada creates a project, which plan Grace's team is on, and when Linus pays an invoice.
+
+It runs in the browser. For events your server owns, such as a paid invoice, write them to your database or send them from a [job](/packages/jobs). To report errors rather than usage, use [monitoring](/packages/monitoring).
 
 ## Install
 
 ```sh
 kitr add analytics
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -27,15 +35,11 @@ What `kitr add` does:
 - Writes `app/analytics.ts`, the typed list of your events, with `sign-in.completed` and `project.created` to start.
 - Adds a `## kitr: analytics` section to `AGENTS.md` telling coding agents to track through `useAnalytics<AppEvents>()`, to declare new events in `app/analytics.ts` first, and never to call gtag or posthog directly.
 
-`kitr add analytics` asks no questions. To edit `package.json` without running the package manager, pass the global flag:
+`kitr add analytics` asks no questions. Pass `--no-install` to skip the package manager. The `saas` and `site` kits include analytics. In a server-only project it prints a warning and skips.
 
-```sh
-kitr add analytics --no-install
-```
+`kitr remove analytics` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/analytics.ts`. It leaves `app/analytics.ts`, the env variable and every `track()` call, which you delete by hand.
 
-The `saas` and `site` kits include analytics. It is a client package, so in a server-only project `kitr add analytics` prints a warning and skips it.
-
-`kitr remove analytics` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/analytics.ts`. It leaves `app/analytics.ts`, the env variable and every `track()` call in your components, which you delete by hand.
+</details>
 
 ## Configure
 
@@ -64,7 +68,7 @@ export default defineConfig({
 })
 ```
 
-With `VITE_GA_MEASUREMENT_ID` empty the `adapters` list is empty, and the provider picks a default: in development it logs every call to the console, in production it sends nothing. Your buttons work before you have chosen a vendor.
+With `VITE_GA_MEASUREMENT_ID` empty, development logs every call to the console and production sends nothing, so your buttons work before you choose a vendor.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -80,7 +84,8 @@ With `VITE_GA_MEASUREMENT_ID` empty the `adapters` list is empty, and the provid
 | `VITE_GA_MEASUREMENT_ID` | Your Google Analytics 4 measurement id, such as `G-ACME12345`. When set, the generated config adds the Google Analytics adapter. |
 | `VITE_APP_NAME` | Already in your env. The generated config sends it as the `app` prop on every event. |
 
-Variables that start with `VITE_` are bundled into the browser code. Measurement ids and public project keys are meant to be public; never put a secret API key in one.
+> [!WARNING] Public variables
+> `VITE_` variables are bundled into the browser. Measurement ids and public project keys are fine; never put a secret API key in one.
 
 ## Track your first event
 
@@ -120,15 +125,15 @@ export function NewProjectButton({ onCreate }: { onCreate: () => Promise<{ id: s
 }
 ```
 
-Render it on the projects page and click it. In development, with no adapter configured, the browser console shows:
+Click it in development, with no adapter configured, and the console shows:
 
 ```
 [analytics] track project.created { app: 'acme', id: 'prj_42' }
 ```
 
-The `app` prop comes from `globalProps` in `config/analytics.ts`. The line prints once, from the console adapter the provider uses when `adapters` is empty. With [devtools](/packages/devtools) installed, the call also appears in the Analytics panel.
+The `app` prop comes from `globalProps`. With [devtools](/packages/devtools) installed, the call also appears in the Analytics panel.
 
-Set `VITE_GA_MEASUREMENT_ID=G-ACME12345` in `.env`, restart the dev server, and the same click sends a `project.created` event to Google Analytics. No component changes.
+Set `VITE_GA_MEASUREMENT_ID=G-ACME12345` in `.env`, restart, and the same click sends `project.created` to Google Analytics. No component changes.
 
 ## Declare your events
 
@@ -147,7 +152,7 @@ export interface AppEvents extends EventMap {
 }
 ```
 
-`useAnalytics<AppEvents>()` gives your editor the list of names and the props for each, so `analytics.track('inv` completes to `'invoice.paid'` and shows its props:
+`useAnalytics<AppEvents>()` gives your editor the names and props, so `analytics.track('inv` completes to `'invoice.paid'`:
 
 ```tsx
 // app/components/invoices/pay-button.tsx
@@ -167,11 +172,14 @@ export function PayButton({ invoiceId, amount }: { invoiceId: string; amount: nu
 }
 ```
 
-With an event map, `track()` accepts only its names, each with its own props: a misspelt `'invoce.paid'`, a missing prop or a prop of the wrong type is a type error. Without one (`useAnalytics()` with no type argument), it takes any name and any props.
+With an event map, a misspelt name, a missing prop or a wrong type is a type error. Without one (`useAnalytics()` with no type argument), `track()` takes anything.
 
-Name events `object.action` in the past tense (`project.created`, `invoice.paid`), the way the generated file does. Most analytics services group events by name, and one naming rule keeps their dashboards readable.
+Name events `object.action` in the past tense, like `project.created`, so dashboards stay readable.
 
-`defineEvents<AppEvents>()` ties the event map to a config object. It returns its input unchanged and exists for code that builds its own analytics instance:
+<details>
+<summary>Building your own instance</summary>
+
+`defineEvents<AppEvents>()` ties the event map to a config object for code that builds its own analytics instance:
 
 ```ts
 // app/lib/onboarding/analytics.ts
@@ -183,14 +191,11 @@ const config = defineEvents<AppEvents>()({ adapters: [consoleAdapter({ prefix: '
 export const onboardingAnalytics = createAnalytics<AppEvents>(config)
 ```
 
+</details>
+
 ## Track page views
 
-The provider sends a page view for you. It renders a small tracker after the app mounts that reads the router from the container and calls `page()`:
-
-- once for the page the visitor lands on, and
-- again after every navigation that changes the path.
-
-A change to the search or the hash alone (`/projects?sort=name`) is not a new page view. Each call carries the path and two props:
+The provider calls `page()` once for the landing page and again after every navigation that changes the path. A change to the search or hash alone is not a new page view. Each call carries the path, `url` and `title`:
 
 ```ts
 // What the tracker sends when Ada opens her projects page
@@ -198,9 +203,7 @@ analytics.page('/projects', { url: 'https://app.acme.com/projects', title: 'Proj
 // adapters receive: ('/projects', { app: 'acme', url: 'https://app.acme.com/projects', title: 'Projects · Acme' })
 ```
 
-The tracker needs the router that `createKitrRouter()` from [`@kitr/router`](/packages/router) binds into the container. Without one, it sends nothing.
-
-To send page views yourself, turn the automatic ones off:
+The tracker needs the router that `createKitrRouter()` from [`@kitr/router`](/packages/router) binds; without one, it sends nothing. To send page views yourself, turn the automatic ones off:
 
 ```ts
 // config/analytics.ts
@@ -212,7 +215,7 @@ export default defineConfig({
 })
 ```
 
-Then call `page()` where you decide a page was seen, for example when a wizard step changes but the URL does not:
+Then call `page()` where you decide a page was seen, such as a wizard step with no URL change:
 
 ```tsx
 // app/components/onboarding/step.tsx
@@ -228,11 +231,10 @@ export function OnboardingStep({ step }: { step: 'team' | 'project' | 'invite' }
 }
 ```
 
-If you build the React tree by hand instead of through the provider, render `<TrackPageViews />` from `@kitr/analytics/react` once inside it. It renders nothing and does the same work as the provider's tracker.
 
 ## Identify a signed-in user
 
-After sign-in, tell the services who the visitor is, so later events join up with their earlier ones. Pass a stable id, never an email address:
+After sign-in, tell the services who the visitor is, so later events join up. Pass a stable id, never an email address:
 
 ```tsx
 // app/components/auth/sign-in-form.tsx
@@ -248,11 +250,11 @@ export function useAfterSignIn() {
 }
 ```
 
-Call the returned function when Grace's sign-in succeeds: `afterSignIn({ id: 'usr_grace', plan: 'team' })`. Google Analytics sets `user_id` and the `plan` user property, PostHog calls `posthog.identify('usr_grace', { plan: 'team' })`, and Plausible, which has no user profiles, ignores it. `identify()` does not add `globalProps`.
+Google Analytics sets `user_id` and the `plan` user property, PostHog calls `posthog.identify`, and Plausible, which has no user profiles, ignores it. `identify()` does not add `globalProps`.
 
 ## Forget the user on sign-out
 
-Call `reset()` when the visitor signs out, so the next person on a shared computer is not counted as them:
+Call `reset()` on sign-out so the next person on a shared computer is not counted as them:
 
 ```tsx
 // app/components/auth/sign-out-button.tsx
@@ -274,11 +276,11 @@ export function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> })
 }
 ```
 
-Google Analytics clears `user_id`, PostHog calls `posthog.reset()`, and adapters without a `reset` method skip it.
+Google Analytics clears `user_id` and PostHog calls `posthog.reset()`.
 
 ## Add props to every event
 
-`globalProps` in `config/analytics.ts` are merged into every `page()` and `track()` call. Use them for facts about the build, not about the visitor:
+`globalProps` are merged into every `page()` and `track()` call. Use them for facts about the build, not the visitor:
 
 ```ts
 // config/analytics.ts
@@ -295,7 +297,7 @@ A prop on the call wins over a global prop with the same name: `track('project.c
 
 ## Track outside a component
 
-Outside React, read the service from the container. In a store, a query hook or a provider, `app.container.use('analytics')` returns the same instance the components use:
+Outside React, `app.container.use('analytics')` returns the instance the components use:
 
 ```ts
 // app/lib/projects/create-project.ts
@@ -316,11 +318,12 @@ export async function createProject(app: KitrApp, name: string) {
 }
 ```
 
-Don't import `googleAnalytics()` or `window.gtag` into feature code to send an event. Go through the service, so consent, queuing and every other adapter still apply.
+> [!WARNING]
+> Don't call `window.gtag` or an adapter from feature code. Go through the service so consent, queuing and every other adapter still apply.
 
 ## Adapters
 
-An adapter sends calls to one service. List as many as you like in `adapters`; every call goes to each of them in order. Each adapter loads its own script or client the first time tracking is enabled in the browser, never on the server.
+An adapter sends calls to one service. Every call goes to each listed adapter in order. Each loads its own script the first time tracking is enabled in the browser, never on the server.
 
 | Adapter | Sends to | Script or client |
 | --- | --- | --- |
@@ -332,7 +335,7 @@ An adapter sends calls to one service. List as many as you like in `adapters`; e
 
 ### Google Analytics
 
-Nothing to install. `googleAnalytics()` injects the `gtag.js` script once and turns off gtag's own page views, so the router decides what a page view is.
+Nothing to install. `googleAnalytics()` injects `gtag.js` once and turns off gtag's own page views, so the router decides.
 
 ```ts
 // config/analytics.ts
@@ -357,11 +360,11 @@ VITE_GA_MEASUREMENT_ID=G-ACME12345
 | `measurementId` | required | The `G-` id of your GA4 data stream. |
 | `debug` | off | Sets gtag's `debug_mode`, so events show in GA's DebugView. |
 
-`page()` becomes a `page_view` event with `page_path`, `page_location` and `page_title`. `track('project.created', { id })` becomes `gtag('event', 'project.created', { id })`. GA4 has its own rules for event names; check them in the [GA4 event reference](https://developers.google.com/analytics/devguides/collection/ga4/reference/events) before you settle on a naming scheme for an app that sends to GA.
+`page()` becomes a `page_view` event; `track('project.created', { id })` becomes `gtag('event', 'project.created', { id })`. GA4 has its own rules for event names; see the [GA4 event reference](https://developers.google.com/analytics/devguides/collection/ga4/reference/events).
 
 ### Plausible
 
-Nothing to install. `plausible()` injects Plausible's manual script (`/js/script.manual.js`) once, with `data-domain` set to your site.
+Nothing to install. `plausible()` injects Plausible's manual script once.
 
 ```ts
 // config/analytics.ts
@@ -372,7 +375,7 @@ export default defineConfig({
 })
 ```
 
-For a self-hosted Plausible, point `apiHost` at it. A trailing slash is removed:
+For a self-hosted Plausible, point `apiHost` at it:
 
 ```ts
 // config/analytics.ts
@@ -388,11 +391,11 @@ export default defineConfig({
 | `domain` | required | The site as registered in Plausible. |
 | `apiHost` | `https://plausible.io` | Where the script is loaded from. |
 
-`page()` sends a `pageview` with the full URL and your props as custom props. `track()` sends a custom event with props. Calls made before the script loads wait in Plausible's own queue. Plausible has no user profiles, so `identify()` and `reset()` do nothing. Create a goal in Plausible for each event name you want to count; see [custom event goals](https://plausible.io/docs/custom-event-goals).
+`page()` sends a `pageview`; `track()` sends a custom event with props. `identify()` and `reset()` do nothing. Create a goal in Plausible for each event name you want to count; see [custom event goals](https://plausible.io/docs/custom-event-goals).
 
 ### PostHog
 
-Install the PostHog browser client, then pass it in. `posthog-js` stays out of your bundle until you add it:
+Install the PostHog browser client, then pass it in:
 
 ```sh
 pnpm add posthog-js
@@ -445,11 +448,11 @@ VITE_POSTHOG_KEY=phc_acme
 | `apiHost` | `https://us.i.posthog.com` | Your PostHog region or proxy. |
 | `config` | none | Any other `posthog.init()` options, merged last. |
 
-The adapter calls `posthog.init(apiKey, { api_host, capture_pageview: false, ...config })`. Automatic page views are off so the router drives them; `page()` becomes a `$pageview` capture with `$current_url`. Any object with `init`, `capture`, `identify` and `reset` works as the client (the `PostHogLike` type). See the [posthog-js docs](https://posthog.com/docs/libraries/js) for `config` options.
+Automatic page views are off so the router drives them; `page()` becomes a `$pageview` capture. Any object with `init`, `capture`, `identify` and `reset` works as the client. See the [posthog-js docs](https://posthog.com/docs/libraries/js) for `config` options.
 
 ### Console
 
-`consoleAdapter()` prints each call with `console.info`. It is what the provider uses in development when `adapters` is empty. Add it yourself to see calls next to a real service, with a prefix to tell them apart:
+`consoleAdapter()` prints each call with `console.info`; it is the development default. Add it next to a real service, with a prefix:
 
 ```ts
 // config/analytics.ts
@@ -471,7 +474,7 @@ export default defineConfig({
 
 ## Wait for consent
 
-In much of the world you need permission before tracking. Set `enabled: false` and every call waits in a queue instead of going out:
+Set `enabled: false` and every call waits in a queue instead of going out:
 
 ```ts
 // config/analytics.ts
@@ -523,22 +526,20 @@ export function TrackingChoice() {
 }
 ```
 
-`analytics.enabled` is a plain property, not React state, so the component keeps its own `answered` flag to re-render. This example does not remember the answer across visits; [consent](/packages/consent) stores it in a cookie.
+`analytics.enabled` is a plain property, not React state, so the component keeps its own flag. This does not remember the answer across visits; [consent](/packages/consent) stores it in a cookie.
 
-What happens to each call:
+- Before `enable()`, calls queue (up to 100; later calls are dropped).
+- `enable()` runs every adapter's `init()`, then sends the queue. Calling it again does nothing.
+- `disable()` empties the queue and stops sending; later calls queue again.
 
-- Before `enable()`, calls queue. The queue holds 100; later calls are dropped until you enable.
-- `enable()` resolves once every adapter's `init()` has run, then the queue is sent. Calling it again does nothing.
-- `disable()` empties the queue and stops sending. Calls made after it queue again and go out if `enable()` is called later.
-- `analytics.enabled` tells you which state you are in.
+The [consent](/packages/consent) package does this for you: it calls `enable()` when the visitor grants the `analytics` category and `disable()` when they withdraw it. With consent installed, analytics starts disabled whatever `enabled` says, and no script loads before the visitor agrees.
 
-The [consent](/packages/consent) package does all of this for you: it calls `enable()` when the visitor grants the `analytics` category and `disable()` when they withdraw it. When the consent provider is in `kitrrc.ts`, the analytics provider starts disabled on its own, wherever the two providers sit in the list and whatever `enabled` says in `config/analytics.ts`. No tracker script loads and no vendor cookie is set before the visitor agrees. With consent installed, never call `enable()` yourself; let the banner decide.
-
-Set `analytics: false` in `config/consent.ts` to stop consent managing analytics; analytics then follows its own `enabled` option.
+> [!WARNING]
+> With consent installed, never call `enable()` yourself; let the banner decide. Set `analytics: false` in `config/consent.ts` to stop consent managing analytics.
 
 ## Add an adapter at run time
 
-`use()` adds an adapter after the app has started. If analytics is already enabled, the adapter's script loads at once; otherwise it loads on `enable()`. Use it for a service you only want for some visitors, such as session replay for Acme staff:
+`use()` adds an adapter after startup, for a service only some visitors need, such as session replay for Acme staff:
 
 ```tsx
 // app/components/staff/staff-tools.tsx
@@ -558,11 +559,11 @@ export function StaffTools({ email }: { email: string }) {
 }
 ```
 
-An added adapter only receives calls made after it was added. `analytics.adapters` lists every adapter by `name`; there is no way to remove one.
+An added adapter only receives later calls, and cannot be removed. `analytics.adapters` lists them by `name`.
 
 ## Survive blocked scripts
 
-Ad blockers block analytics scripts, and vendors have outages. Every adapter call runs inside a `try`, and a rejected promise from an adapter is caught, so `track()` never throws into your click handler and the other adapters still receive the call:
+Ad blockers and vendor outages cannot break your click handlers: adapter errors are caught, so `track()` never throws and the other adapters still receive the call:
 
 ```ts
 import { createAnalytics, memoryAdapter } from '@kitr/analytics'
@@ -579,17 +580,18 @@ analytics.track('project.created', { id: 'prj_42' })
 // => no error; memory.calls has the track call
 ```
 
-With `debug` on, each failure prints `[analytics] blocked Error: blocked` as a warning. In production `debug` is off and failures are silent.
+With `debug` on, each failure prints as a warning; in production failures are silent.
 
 ## Use it on the server
 
-During server rendering the provider still binds `analytics`, so components that call `useAnalytics()` render the same on both sides. Adapters never load their scripts on the server, because `init()` is skipped when there is no `window`, and the page view tracker runs in an effect, which the server never runs.
+During server rendering `useAnalytics()` renders the same, but no adapter script loads.
 
-Call `track()` from event handlers and effects, never during render or in a route loader. On the server such a call still reaches the adapters, which have no script to deliver it: the console adapter prints it to the server log, and the Google Analytics and Plausible adapters push it onto a global queue that nothing reads. To record a server event, such as a paid invoice, write it from the controller to your database or a [job](/packages/jobs).
+> [!WARNING]
+> Call `track()` from event handlers and effects, never during render or in a loader. On the server it has no script to deliver it. Record server events in your database or a [job](/packages/jobs).
 
 ## Testing
 
-Pass `memoryAdapter()` in config and assert on its `calls`. Each call is recorded as `{ type, args }`, with `globalProps` already merged in. This test renders the button from [Track your first event](#track-your-first-event) inside a test app and checks the event it sends:
+Pass `memoryAdapter()` in config and assert on its `calls`, recorded as `{ type, args }` with `globalProps` merged in:
 
 ```tsx
 // app/components/projects/new-project-button.test.tsx
@@ -654,7 +656,6 @@ The assertions you will write most:
 | `expect(memory.calls).toContainEqual({ type: 'reset', args: [] })` | Sign-out cleared the user. |
 | `expect(analytics.enabled).toBe(false)` | Nothing goes out before consent. |
 
-`createTestApp()` boots in the `test` mode, so the provider adds no console adapter and nothing is printed.
 
 ## Extend
 
@@ -672,9 +673,9 @@ export interface AnalyticsAdapter {
 }
 ```
 
-`init()` runs once, in the browser, the first time tracking is enabled. Load scripts and create clients there, not when the adapter is created, so nothing loads before consent. The other methods should be quick and must not throw; the service catches errors, but an adapter that throws on every call hides real problems.
+`init()` runs once, in the browser, the first time tracking is enabled. Load scripts there, not at creation, so nothing loads before consent. The other methods should be quick and must not throw.
 
-This adapter sends Acme's events to its own endpoint with `navigator.sendBeacon`, which survives the page closing:
+This adapter sends events to Acme's endpoint with `navigator.sendBeacon`, which survives the page closing:
 
 ```ts
 // app/analytics/acme-adapter.ts
@@ -719,12 +720,10 @@ See [`AnalyticsAdapter`](/packages/analytics/api#analyticsadapter) in the API re
 
 ## Devtools
 
-With [devtools](/packages/devtools) installed, the provider adds a devtools adapter that copies every call into the log under the `analytics` channel, and an Analytics panel. The panel shows whether tracking is enabled or still queued, the names of the active adapters, and the last 200 calls with their props. Its actions are Enable (consent given), Disable and Clear events, and each one is also in the command palette.
+With [devtools](/packages/devtools) installed, an Analytics panel shows whether tracking is enabled or queued, the active adapters and the last 200 calls. Enable, Disable and Clear events are also in the command palette.
 
 ## Next steps
 
-- [API reference](/packages/analytics/api) for every export and type.
-- [Consent](/packages/consent) to hold analytics until visitors agree.
-- [Devtools](/packages/devtools) to watch every call while you build.
-- [Monitoring](/packages/monitoring) to report errors rather than usage.
-- [Router](/packages/router) for the navigations that become page views.
+- [API reference](/packages/analytics/api): every export and type.
+- [Consent](/packages/consent): hold analytics until visitors agree.
+- [Monitoring](/packages/monitoring): report errors rather than usage.

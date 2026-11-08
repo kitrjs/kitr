@@ -6,17 +6,23 @@ order: 1
 
 # Devtools
 
-When a page shows stale data or a button does nothing, you want to see what the app is doing: which route matched, what is cached, who is signed in, which request failed. `@kitr/devtools` shows that in the page itself, on a laptop and on the phone in your hand. In development, a small round button floats in a corner; tap it and a window opens with one tab per package.
+When a page shows stale data or a button does nothing, you want to see which route matched, what is cached, who is signed in and which request failed. `@kitr/devtools` shows that in the page itself, on a laptop and on the phone in your hand: in development, a small round button floats in a corner, and a tap opens a window with one tab per package.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` has a cart for orders, and Ada wants to see what is in it, log each change, and empty it from a menu while she builds the checkout.
+> [!SUMMARY]
+> A window inside your running app that shows routes, requests, cache, session, storage and your own log lines, as a dock on a desktop and a sheet on a phone. Add it with `kitr add devtools`; the overview is at [/packages/devtools](/packages/devtools).
 
-`@kitr/devtools` runs in the browser, in development by default. It renders nothing on the server, and unless you set `enabled: true` the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users. It is a view onto kitr; for React component trees and CPU profiles, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it.
+It runs in the browser only, and the `kitr()` Vite plugin leaves it out of production builds unless you set `enabled: true`. For React component trees and CPU profiles, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools.
+
+The examples follow one scenario: Acme's app at `app.acme.com` has a cart, and Ada wants to see what is in it, log each change and empty it from a menu.
 
 ## Install
 
 ```sh
 kitr add devtools
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -25,15 +31,14 @@ What `kitr add` does:
 - Writes `config/devtools.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Adds a `## kitr: devtools` section to `AGENTS.md` telling coding agents how to open the window, to log with `getDevtools(app)?.log(...)`, and to add panels through a provider's `devtools()` method with the parts in `@kitr/devtools/ui`.
 
-`kitr add devtools` asks no questions and adds no env variables. To edit `package.json` without running the package manager, pass the global flag:
+`kitr add devtools` asks no questions and adds no env variables. The `desktop`, `mobile` and `tauri` kits include it.
 
-```sh
-kitr add devtools --no-install
-```
+`kitr remove devtools` undoes all of this and deletes `config/devtools.ts`. Calls to `getDevtools(app)?.log(...)` can stay: without the package they return `null`. Panels in your own providers stay but are never shown.
 
-Every kit except `blank` and `server` includes devtools: `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile`. It is a client package, so in a server-only project `kitr add devtools` prints a warning and skips it.
+</details>
 
-`kitr remove devtools` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/devtools.ts`. Calls to `getDevtools(app)?.log(...)` can stay: without the package they return `null` and do nothing. Panels you wrote in your own providers stay too, and are never shown.
+> [!WARNING] Client packages only
+> In a server-only project `kitr add devtools` prints a warning and skips it.
 
 ## Configure
 
@@ -376,7 +381,8 @@ export function startCheckout(app: KitrApp, orderId: string) {
 
 The Log shows a labelled line across the list, so everything under it came after the click. Marks ignore the level and channel filters.
 
-Don't log with `console.log` and leave it in. Log calls through `getDevtools(app)?.log` are skipped in production without you removing them, and they sit next to the HTTP requests and navigations that caused them.
+> [!WARNING] Prefer the hub to console.log
+> `getDevtools(app)?.log` calls are skipped in production without removal, and sit next to the requests and navigations that caused them.
 
 To check whether devtools is active, for example to skip building a costly debug summary, test the return value once:
 
@@ -874,9 +880,7 @@ See [`DevtoolsPanel`](/packages/devtools/api#devtoolspanel) and [`DevtoolsHub`](
 
 ## Next steps
 
-- [API reference](/packages/devtools/api) for every export and type.
-- [Configuration](/docs/configuration) for providers and `kitrrc.ts`, where panels are registered.
-- [Http](/packages/http), [query](/packages/query) and [router](/packages/router), whose panels you will open most.
-- [Analytics](/packages/analytics) and [monitoring](/packages/monitoring), whose panels show what would be sent.
-- [Logger](/packages/logger), whose output lands in the Log panel.
-- [TanStack Router devtools](https://tanstack.com/router/latest/docs/framework/react/devtools) and [TanStack Query devtools](https://tanstack.com/query/latest/docs/framework/react/devtools) for deeper views of each library.
+- [API reference](/packages/devtools/api): every export and type.
+- [Configuration](/docs/configuration): providers and `kitrrc.ts`, where panels are registered.
+- [Http](/packages/http), [query](/packages/query) and [router](/packages/router): the panels you will open most.
+- [Logger](/packages/logger): its output lands in the Log panel.

@@ -6,11 +6,19 @@ order: 1
 
 # Actions
 
-Rename a project, archive an invoice: a button often just needs to run a bit of server code. An action is a function you define once with `defineQuery` or `defineMutation`. The browser calls it like a local function, and kitr sends the request, checks the input and returns the result or a typed error.
+A button often just needs to run a bit of server code, like renaming a project. An action is a function you define once with `defineQuery` or `defineMutation`. The browser calls it like a local function; kitr sends the request, checks the input and returns the result or a typed error.
 
-Actions are [TanStack Start server functions](https://tanstack.com/start/latest/docs/framework/react/server-functions) with four things added: input validation with any Standard Schema, kitr's one error shape so a validation failure lands on the right form field, cache effects after a mutation, and a generated registry that lets a component say `useQuery('projects.list')` with full types.
+> [!SUMMARY]
+> Call server code straight from a component, like a form submit, without writing an API route. Add it with `kitr add actions`; the overview is at [/packages/actions](/packages/actions).
 
-Actions run on both sides: the handler on the server, the call anywhere. Use them when the only caller is your own React app. When something else calls the same code too, such as a mobile app, a partner or a webhook, use [API routes](/packages/api) instead; they give you URLs, OpenAPI and a typed client.
+Actions are [TanStack Start server functions](https://tanstack.com/start/latest/docs/framework/react/server-functions) plus:
+
+- Input validation with any Standard Schema.
+- One error shape, so a validation failure lands on the right form field.
+- Cache effects after a mutation.
+- A generated registry, so `useQuery('projects.list')` is fully typed.
+
+Use actions when the only caller is your own React app. When a mobile app, partner or webhook calls the code too, use [API routes](/packages/api): they give you URLs, OpenAPI and a typed client.
 
 ## Install
 
@@ -18,9 +26,12 @@ Actions run on both sides: the handler on the server, the call anywhere. Use the
 kitr add actions
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
-- Adds [server](/packages/server) and [query](/packages/query) first when the project does not have them, because actions require both.
+- Adds [server](/packages/server) and [query](/packages/query) first when missing; actions require both.
 - Installs `@kitr/actions` and adds it to `packages` in `kitrrc.ts`. Actions register no provider.
 - Adds `#kitr/*` to `paths` and `.kitr/**/*` to `include` in `tsconfig.json`, and `.kitr` to `.gitignore`. Projects from `kitr new` already have both.
 - Points the `typecheck` script at `kitr typecheck`, which generates the names and then runs `tsc`, and adds `#kitr/*` to the `imports` field of `package.json` when it has one.
@@ -29,11 +40,13 @@ What `kitr add` does:
 - Runs `kitr types` once dependencies are installed, which writes `.kitr/actions.ts`.
 - Appends an `actions` section to `AGENTS.md`.
 
-`kitr add actions` asks no questions. `kitr remove actions` takes `operations` out of `app/app.ts` and removes the `AGENTS.md` section, the `packages` entry and the dependency. It leaves the `tsconfig.json`, `.gitignore`, `imports` and `typecheck` changes, which other type generators use too, and your files in `app/actions/`. The `fullstack` and `saas` kits include actions.
+`kitr add actions` asks no questions. `kitr remove actions` takes `operations` out of `app/app.ts` and removes the `AGENTS.md` section, the `packages` entry and the dependency. It leaves the `tsconfig.json`, `.gitignore`, `imports` and `typecheck` changes, which other type generators use, and your files in `app/actions/`. The `fullstack` and `saas` kits include actions.
+
+</details>
 
 ## Configure
 
-This package has no config file. Everything is declared on each definition, so a reader of one file sees everything that affects it:
+This package has no config file. Everything is declared on each definition:
 
 ```ts
 // app/actions/projects/update.ts
@@ -63,7 +76,7 @@ The names you pass, `projects.update` above, go into one generated file:
 | `.kitr/actions.ts` | `kitr types` | `operations`, a flat map by name; `actions`, the same as a tree; and the `Operations` augmentation that types every name. |
 | `.kitr/platforms.d.ts` | `kitr types` | The platform names from `kitrrc.ts`, so `app.platform` is `'site' \| 'api'`. |
 
-`kitr dev` and `kitr build` run `kitr types` first, and the Vite plugin reruns it whenever a file under `app/actions/` changes, so the file is current while you work. It is generated and ignored by git. Set `directories.actions` in `kitrrc.ts` to keep actions somewhere else.
+`kitr dev` and `kitr build` run `kitr types` first, and the Vite plugin reruns it when a file under `app/actions/` changes. The file is generated and ignored by git. Set `directories.actions` in `kitrrc.ts` to keep actions elsewhere.
 
 ## Your first mutation
 
@@ -113,9 +126,9 @@ export function RenameButton({ id }: { id: string }) {
 }
 ```
 
-Clicking the button sends one request to the server, which validates the input, runs the handler and returns the project. The `set` effect writes it into the detail cache and `invalidate` refetches every project list. `rename.mutate({ id })` is a type error, because `name` is required, and `useMutation('projects.rnaem')` is one too, because the name is not in the registry.
+Clicking the button sends one request that validates the input, runs the handler and returns the project. The `set` effect writes it into the detail cache and `invalidate` refetches every project list. `rename.mutate({ id })` and `useMutation('projects.rnaem')` are type errors.
 
-`useRequestApp(app)` returns the app for the current request, or `app` itself when there is none.
+`useRequestApp(app)` returns the app for the current request, or `app` when there is none.
 
 ## Read data with a query
 
@@ -150,11 +163,11 @@ export function ProjectList() {
 }
 ```
 
-`useQuery`, `useSuspenseQuery` and `queryOptions` from `@kitr/query` all take a name as the first argument and the input as the second. When every field of the input is optional, the input can be left out: `useQuery('projects.list')`. The query key is `['action', 'projects.list', input]`, so `['action', 'projects.list']` invalidates every variant.
+`useQuery`, `useSuspenseQuery` and `queryOptions` take a name first and the input second; leave the input out when every field is optional. The query key is `['action', 'projects.list', input]`, so `['action', 'projects.list']` invalidates every variant.
 
 ## Load before the page renders
 
-In a route loader, `queryOptions` by name hands TanStack Router the same options the component uses, so the server fetches once and the browser reuses the result:
+In a route loader, `queryOptions` hands the router the options the component uses, so the server fetches once and the browser reuses the result:
 
 ```ts
 // app/routes.ts
@@ -187,9 +200,9 @@ const project = await renameProject({ id: 'prj_42', name: 'Acme site' })
 // => { id: 'prj_42', name: 'Acme site', status: 'open' }
 ```
 
-In the browser this is one request. On the server, during rendering or inside another handler, Start runs the handler in-process; there is no HTTP hop. A direct call applies no cache effects, because there is no cache in play; use `useMutation` in components for that.
+In the browser this is one request; on the server the handler runs in-process. A direct call applies no cache effects; use `useMutation` in components for that.
 
-When all you have is the name, `call` from `@kitr/query` looks it up in the app's registry (`app.operations`), so pass the app:
+When all you have is the name, `call` from `@kitr/query` looks it up in `app.operations`:
 
 ```ts
 import { call } from '@kitr/query'
@@ -198,7 +211,7 @@ await call(app, 'projects.rename', { id: 'prj_42', name: 'Acme site' })
 const open = await call(app, 'projects.list', { status: 'open' })
 ```
 
-The generated tree gives the same functions grouped by feature, which reads well in scripts:
+The generated tree groups the same functions by feature:
 
 ```ts
 import { actions } from '#kitr/actions'
@@ -208,7 +221,7 @@ await actions.projects.rename({ id: 'prj_42', name: 'Acme site' })
 
 ## Use the definition instead of the name
 
-A name resolves through the registry that `createApp({ operations })` fills. When you prefer an import to a string, every hook takes the definition too, with the same types:
+When you prefer an import to a string, every hook takes the definition too, with the same types:
 
 ```tsx
 import { useMutation, useSuspenseQuery } from '@kitr/query'
@@ -219,11 +232,11 @@ const { data } = useSuspenseQuery(listProjects, { status: 'open' })
 const rename = useMutation(renameProject)
 ```
 
-Both forms end in the same TanStack options. Plain TanStack options also work: `useQuery({ queryKey, queryFn })` passes straight through.
+Plain TanStack options also work: `useQuery({ queryKey, queryFn })` passes straight through.
 
 ## Pass your own query and mutation options
 
-The third argument of a query hook, and the second of `useMutation`, are TanStack overrides. The definition's own `queryKey`, `queryFn` and `mutationFn` cannot be replaced; everything else can:
+The third argument of a query hook, and the second of `useMutation`, are TanStack overrides. Everything but `queryKey`, `queryFn` and `mutationFn` can be replaced:
 
 ```tsx
 const { data } = useQuery('projects.list', { status: 'open' }, { refetchInterval: 10_000 })
@@ -236,7 +249,7 @@ The mutation's cache effects run first, then your `onSuccess`.
 
 ## Protect an action with middleware
 
-Start middleware runs before the handler and can add to `context`. A session middleware reads the request once and puts the session on the context; `requireSession` then rejects anonymous callers with `UNAUTHORIZED`. It expects `context.session` from an earlier middleware:
+Middleware runs before the handler and can add to `context`. A session middleware puts the session there; `requireSession` then rejects anonymous callers with `UNAUTHORIZED`:
 
 ```ts
 // app/actions/middleware/session.ts
@@ -267,9 +280,9 @@ export const archiveProject = defineMutation('projects.archive', {
 })
 ```
 
-The handler's `context` type is built from the middleware list: each middleware adds what it passes to `next({ context })`. An error thrown in middleware, like `requireSession`'s `UNAUTHORIZED`, reaches the caller as a `KitrError` exactly as a handler's would, and a server error's message is masked in production the same way. `redirect()` and `notFound()` pass through to the router.
+The handler's `context` type is built from the middleware list. An error thrown in middleware reaches the caller as a `KitrError`, like a handler's. `redirect()` and `notFound()` pass through to the router.
 
-`createMiddleware` is re-exported from `@kitr/actions` so every middleware uses the same import. Any middleware can wrap the call:
+Any middleware can wrap the call:
 
 ```ts
 // app/actions/middleware/timing.ts
@@ -311,11 +324,14 @@ try {
 }
 ```
 
-With [forms](/packages/forms), pass `rename.mutateAsync` to `<Form onSubmit>` and each message appears under its field. Anything that is not a `KitrError` becomes a 500: the real error is logged on the server, and in production the browser sees only `Internal server error`.
+With [forms](/packages/forms), pass `rename.mutateAsync` to `<Form onSubmit>` and each message appears under its field.
+
+> [!WARNING]
+> Anything that is not a `KitrError` becomes a 500. The real error is logged on the server; production browsers see only `Internal server error`.
 
 ## Organize actions by feature
 
-The generator writes one file per action under `app/actions/<feature>/`. The dotted name is yours; the registry only needs it to be unique, and `kitr types` groups the tree by the part before the first dot:
+One file per action under `app/actions/<feature>/`. The dotted name only needs to be unique; `kitr types` groups the tree by the part before the first dot:
 
 ```
 app/actions/
@@ -327,7 +343,10 @@ app/actions/
     └── send.ts      invoices.send
 ```
 
-Any file under `app/actions/` counts, at any depth, except tests and `.d.ts` files. Only `export const <id> = defineQuery('...')` and `export const <id> = defineMutation('...')` with a literal name are picked up; a name built at run time cannot be typed. `kitr types` fails when a name is used twice, is not a dotted identifier, or is both an operation and a group (`projects` and `projects.list`).
+> [!WARNING]
+> Only `export const <id> = defineQuery('...')` and `defineMutation('...')` with a literal name are picked up. `kitr types` fails when a name is used twice, is not a dotted identifier, or is both an operation and a group (`projects` and `projects.list`).
+
+Any file under `app/actions/` counts at any depth, except tests and `.d.ts` files.
 
 ## Commands
 
@@ -359,7 +378,7 @@ kitr types
 
 ## Testing
 
-`.run(input, { context })` validates the input and runs the handler in-process, skipping Start middleware and HTTP, so a test needs neither a server nor a browser:
+`.run(input, { context })` validates the input and runs the handler in-process, skipping middleware and HTTP:
 
 ```ts
 // test/actions/rename.test.ts
@@ -390,7 +409,7 @@ describe('projects.rename', () => {
 })
 ```
 
-To test a component that uses a name, register the definitions on the test app and render with [testing](/packages/testing):
+To test a component that uses a name, register the definitions on the test app with [testing](/packages/testing):
 
 ```tsx
 // test/components/rename-button.test.tsx
@@ -403,14 +422,9 @@ const app = await createTestApp({ operations })
 renderWithKitr(<RenameButton id="prj_42" />, { app })
 ```
 
-The server function itself is a TanStack Start function, so it also works with Start's own test helpers.
 
 ## Next steps
 
-- [API reference](/packages/actions/api)
-- [TanStack Start server functions](https://tanstack.com/start/latest/docs/framework/react/server-functions), including middleware and `useServerFn`.
-- [Query](/packages/query): the hooks, the cache effects and `call`.
-- [Forms](/packages/forms): field errors from a mutation.
-- [API routes](/packages/api) for the same handlers behind URLs.
-- [Type generation](/docs/cli#type-generation): the `kitr types` runner and how a package adds a generator.
-- [Choosing a data source](/docs/data-sources): when to use actions and when to use actions, API routes, HTTP or realtime.
+- [API reference](/packages/actions/api): every export of `@kitr/actions`.
+- [Query](/packages/query): the hooks, cache effects and `call`.
+- [Choosing a data source](/docs/data-sources): actions, API routes, HTTP or realtime.

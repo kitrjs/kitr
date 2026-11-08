@@ -6,17 +6,28 @@ order: 1
 
 # Consent
 
-In much of the world you need permission before you load analytics or marketing pixels. `@kitr/consent` stores what each visitor agreed to, by category, in a cookie the server can read too. Until a category is granted, [analytics](/packages/analytics) waits and [monitoring](/packages/monitoring) can hold its reports. You build the banner with `useConsent()`.
+In much of the world you need permission before you load analytics or marketing pixels. `@kitr/consent` stores what each visitor agreed to, by category, in a cookie the server can read too. You build the banner with `useConsent()`.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` asks Ada for consent on her first visit, holds Google Analytics until she agrees, loads a marketing pixel only for the `marketing` category, and lets Grace change her mind from the settings page.
+> [!SUMMARY]
+> Ask for cookie and tracking consent once, and hold analytics and error reports until people agree. Add it with `kitr add consent`; the overview is at [/packages/consent](/packages/consent).
 
-`@kitr/consent` runs in the browser: the provider only gates analytics and monitoring on the client. The record lives in a cookie made with [`@kitr/storage`](/packages/storage), so server code can read it from the request. It is not a legal template: you decide the categories and the wording, and your lawyer decides whether they are enough.
+Until a category is granted, [analytics](/packages/analytics) waits and [monitoring](/packages/monitoring) can hold its reports.
+
+The examples follow Acme's app at `app.acme.com`: Ada is asked on her first visit, and Grace changes her mind from settings.
+
+The provider gates analytics and monitoring in the browser; the record is a [`@kitr/storage`](/packages/storage) cookie that server code can read.
+
+> [!WARNING] Not legal advice
+> You decide the categories and the wording, and your lawyer decides whether they are enough.
 
 ## Install
 
 ```sh
 kitr add consent
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -26,15 +37,11 @@ What `kitr add` does:
 - Writes `app/components/consent-banner.tsx`, a banner with "Only necessary" and "Accept all" buttons, styled with Tailwind classes.
 - Adds a `## kitr: consent` section to `AGENTS.md` telling coding agents that the banner is the one place consent is asked, never to call `analytics.enable()` by hand, and to check `useConsent().has('marketing')` before loading third-party scripts.
 
-`kitr add consent` asks no questions and writes no env variables. To edit `package.json` without running the package manager, pass the global flag:
+`kitr add consent` asks no questions. Pass `--no-install` to skip the package manager. No kit includes consent. It adds [storage](/packages/storage) first when missing; `config/storage.ts` sets the cookie's prefix, `path` and `secure`.
 
-```sh
-kitr add consent --no-install
-```
+`kitr remove consent` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/consent.ts`. It leaves the banner component and where you mounted it. Visitors keep their cookie until it expires.
 
-No kit includes consent. `kitr add consent` adds [storage](/packages/storage) first when the project lacks it, so `config/storage.ts` sets the cookie's prefix, `path` and `secure`.
-
-`kitr remove consent` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/consent.ts`. It leaves `app/components/consent-banner.tsx` and the place you mounted it, which you delete by hand. Visitors keep their `consent` cookie until it expires.
+</details>
 
 ## Configure
 
@@ -61,15 +68,13 @@ export default defineConfig({
 | `analytics` | `'analytics'` | The category [analytics](/packages/analytics) waits for. `false` leaves analytics alone. |
 | `monitoring` | `false` | The category [monitoring](/packages/monitoring) waits for. `false` (or leaving it out) never holds error reports back. |
 
-The cookie is written with `SameSite=Lax`, the `maxAge` above, and the cookie defaults from `config/storage.ts` (`path` and `secure`). Its name gets the storage `prefix`, so with `prefix: 'acme-app:'` the browser stores `acme-app:consent`.
-
-The record inside it is JSON:
+The cookie uses `SameSite=Lax`, the `maxAge` above and the `config/storage.ts` defaults. Its name gets the storage `prefix`, so `prefix: 'acme-app:'` stores `acme-app:consent`. The record inside is JSON:
 
 ```json
 { "granted": ["necessary", "analytics"], "decidedAt": "2026-11-07T09:30:00.000Z", "version": 1 }
 ```
 
-With the consent provider in `kitrrc.ts`, [analytics](/packages/analytics) starts disabled while the app boots, whatever `enabled` says in `config/analytics.ts` and wherever the two providers sit in the list. No vendor script (`gtag.js`, Plausible or PostHog) loads, and no vendor cookie is set, until the visitor grants the `analytics` category. You do not need to change `config/analytics.ts`.
+With the provider in `kitrrc.ts`, [analytics](/packages/analytics) starts disabled whatever `enabled` says. No vendor script loads and no vendor cookie is set until the visitor grants `analytics`. You do not need to change `config/analytics.ts`.
 
 ## Show your first banner
 
@@ -97,7 +102,7 @@ export function ConsentBanner() {
 }
 ```
 
-Mount it once, in the document. Keep the rest of `app/document.tsx` as it is and render the banner after the `<Outlet />`:
+Mount it once, in the document, after the `<Outlet />`:
 
 ```tsx
 // app/document.tsx
@@ -122,13 +127,9 @@ export function RootDocument() {
 }
 ```
 
-Open `app.acme.com` in a private window. The banner sits at the bottom of the page. Click "Accept all" and:
+In a private window the banner sits at the bottom. Click "Accept all" and the banner disappears, a `consent` cookie records the granted categories, and the provider calls `analytics.enable()`, which sends every call queued since load, the first page view included.
 
-1. The banner disappears, because `decided` is now `true`.
-2. A `consent` cookie holds `{ granted: ['necessary', 'analytics', 'marketing'], decidedAt, version: 1 }`.
-3. The provider calls `analytics.enable()`, which loads the analytics scripts and sends every call that was queued since the page loaded, the first page view included.
-
-Reload the page and the banner stays hidden: the choice is read back from the cookie. Click "Only necessary" instead and the cookie records `['necessary']`; analytics keeps queuing and never sends.
+Reload and the banner stays hidden. "Only necessary" records `['necessary']`, and analytics never sends.
 
 ## Offer a choice per category
 
@@ -171,7 +172,7 @@ export function ConsentBanner() {
 }
 ```
 
-`categories` comes from `config/consent.ts`, so adding a category there adds a checkbox. What each action records:
+`categories` comes from `config/consent.ts`, so a new category adds a checkbox. What each action records:
 
 | Call | `granted` afterwards |
 | --- | --- |
@@ -181,11 +182,10 @@ export function ConsentBanner() {
 | `grant(['analytics', 'chat'])` | `['necessary', 'analytics']`, because `chat` is not in `categories` |
 | `grant([])` | `['necessary']`, same as `rejectAll()` |
 
-Every one of them sets `decidedAt` to the current time, writes the cookie and notifies subscribers.
 
 ## Add a category
 
-Categories are plain strings. Add one to `config/consent.ts` and it appears in `categories`, so a banner that maps over them shows it:
+Categories are plain strings. Add one to `config/consent.ts` and a banner that maps over `categories` shows it:
 
 ```ts
 // config/consent.ts
@@ -199,7 +199,7 @@ export default defineConfig({
 })
 ```
 
-Then check it where the feature lives. Here the projects list only remembers Linus's sort order when he allowed `preferences`:
+Then check it where the feature lives. Here the list remembers a sort order only when `preferences` is allowed:
 
 ```tsx
 // app/hooks/projects/use-sort-order.ts
@@ -223,11 +223,12 @@ export function useSortOrder() {
 }
 ```
 
-Bump `version` whenever you add a category, so people who already chose are asked about the new one.
+> [!WARNING]
+> Bump `version` when you add a category, so people who already chose are asked about the new one.
 
 ## Hold analytics for a different category
 
-By default analytics waits for `analytics`. Point it at another category, or turn the gate off:
+Analytics waits for `analytics` by default. Point it at another category, or turn the gate off:
 
 ```ts
 // config/consent.ts
@@ -241,11 +242,11 @@ export default defineConfig({
 })
 ```
 
-With `analytics: false`, consent never calls `analytics.enable()` or `disable()`. Use it when you run a cookieless service you are allowed to use without consent. Analytics then starts as its own `enabled` option says, `true` by default.
+With `analytics: false`, consent never calls `enable()` or `disable()`; analytics follows its own `enabled` option. Use it for a cookieless service you may run without consent.
 
 ## Load a second tracker for one category
 
-Some trackers belong to a different category from your page views, such as a marketing service that sees every event. Add its adapter only after that category is granted, with `analytics.use()`:
+A marketing tracker belongs to a different category than your page views. Add its adapter only after that category is granted, with `analytics.use()`:
 
 ```tsx
 // app/components/marketing-tracker.tsx
@@ -267,11 +268,12 @@ export function MarketingTracker() {
 }
 ```
 
-The adapter receives calls made after it was added. Withdrawing `marketing` does not remove it; if analytics itself stays enabled, the adapter keeps receiving events until the next page load. Gate such a tracker on the same category as analytics if that matters to you.
+> [!WARNING]
+> Withdrawing `marketing` does not remove the adapter; it keeps receiving events until the next page load.
 
 ## Keep the choice for less time
 
-Some regulators expect you to ask again after six months. Set `maxAge` in days, and rename the cookie if another app on the same domain already uses `consent`:
+Some regulators expect you to ask again after six months. Set `maxAge` in days, and rename the cookie if another app on the domain uses `consent`:
 
 ```ts
 // config/consent.ts
@@ -287,11 +289,11 @@ export default defineConfig({
 })
 ```
 
-When the cookie expires the browser deletes it, the record reads as undecided, and the banner shows again.
+When the cookie expires the record reads as undecided and the banner shows again.
 
 ## Show the banner without a flash
 
-On the server, the consent service has no cookie to read, so server-rendered HTML always contains the banner. `useConsent()` hydrates with that same undecided state, so React reports no mismatch, then reads the cookie: for a visitor who already chose, the banner shows for a moment and goes away. To avoid that flash, render the banner only after the component has mounted:
+Server-rendered HTML always contains the banner, so a visitor who already chose sees it flash. Render the banner only after the component has mounted:
 
 ```tsx
 // app/components/consent-banner.tsx
@@ -313,11 +315,11 @@ export function ConsentBanner() {
 }
 ```
 
-The server and the first client render both produce nothing, so nothing flashes. Right after mount, the banner appears only for visitors who have not decided. In a single-page app (web `spa` mode), there is no server HTML and the generated banner works as it is.
+In a single-page app (web `spa` mode) there is no server HTML and the generated banner works as it is.
 
 ## Check a category before loading a script
 
-For a script that is not a kitr package, such as an ad pixel or a chat widget, check its category first. `useConsent()` re-renders when the choice changes, so the script loads the moment the visitor agrees:
+For a script that is not a kitr package, such as an ad pixel, check its category first. `useConsent()` re-renders when the choice changes, so the script loads the moment the visitor agrees:
 
 ```tsx
 // app/components/marketing-pixel.tsx
@@ -341,11 +343,12 @@ export function MarketingPixel() {
 
 Mount it next to the banner. `has('necessary')` is always `true`; any other category is `true` only when granted in the current version.
 
-Don't put the vendor's `<script>` tag straight into the root layout's `head`. It would load for every visitor before they answer.
+> [!WARNING]
+> Don't put the vendor's `<script>` tag in the root layout's `head`; it would load for every visitor before they answer.
 
 ## Let visitors change their mind
 
-Visitors must be able to withdraw consent as readily as they gave it. Give your settings page a button that calls `reset()`, which deletes the cookie so the banner shows again:
+Visitors must be able to withdraw consent as readily as they gave it. A settings button can call `reset()`, which deletes the cookie so the banner shows again:
 
 ```ts
 // app/routes.ts
@@ -384,9 +387,10 @@ export default function PrivacySettings() {
 }
 ```
 
-When Grace unticks "Usage statistics", `grant()` records the remaining categories and the provider calls `analytics.disable()`. Calls stop going out and the queue is emptied. Scripts that already loaded stay in the page until the next full reload, because a browser cannot unload a script.
+When Grace unticks "Usage statistics", the provider calls `analytics.disable()`: calls stop and the queue is emptied. `reset()` does the same and sets the record back to undecided.
 
-`reset()` sets the record back to undecided, removes the cookie and notifies subscribers. The provider sees that `analytics` is no longer granted and calls `analytics.disable()`, so nothing is sent until the visitor chooses again.
+> [!WARNING]
+> Scripts that already loaded stay in the page until the next full reload; a browser cannot unload a script.
 
 ## Ask everyone again
 
@@ -404,11 +408,11 @@ export default defineConfig({
 })
 ```
 
-A stored record with `version: 1` now reads as undecided: `decided` is `false`, `has('analytics')` is `false`, and the banner shows again. The old cookie stays until the visitor chooses, then it is overwritten. A cookie whose JSON has the wrong shape (for example `granted` that is not an array) is also treated as undecided.
+A stored record with an older `version` reads as undecided, so the banner shows again until the visitor chooses. A cookie with the wrong shape is also undecided.
 
 ## Gate error reports
 
-Error reports can contain page content and who the visitor is, so some teams treat them like analytics. Name a category in `monitoring` to hold [monitoring](/packages/monitoring) back until it is granted:
+Error reports can contain page content and who the visitor is. Name a category in `monitoring` to hold [monitoring](/packages/monitoring) back until it is granted:
 
 ```ts
 // config/consent.ts
@@ -424,15 +428,15 @@ export default defineConfig({
 
 While the category is not granted:
 
-- `captureException`, `captureMessage`, `addBreadcrumb` and `setTag` are dropped, not queued. Errors from before consent are never reported.
-- `setUser(user)` is remembered but not sent. When the visitor grants the category, the remembered user is sent at once, so you never call `setUser()` twice.
-- When the visitor withdraws, monitoring receives `setUser(null)` and drops reports again.
+- `captureException`, `captureMessage`, `addBreadcrumb` and `setTag` are dropped, not queued.
+- `setUser(user)` is remembered and sent once the category is granted.
+- On withdrawal, monitoring receives `setUser(null)` and drops reports again.
 
-The default, `monitoring: false`, leaves monitoring alone: errors are reported whatever the visitor chose. Many teams treat crash reports as necessary for running the service; decide with whoever owns your privacy policy.
+The default, `monitoring: false`, reports errors whatever the visitor chose. Decide with whoever owns your privacy policy.
 
 ## Read the choice outside React
 
-Outside components, read the service from the container. It has the same actions as the hook, plus `subscribe()` for changes:
+Outside components, read the service from the container. It has the hook's actions, plus `subscribe()`:
 
 ```ts
 // app/lib/consent/track-choices.ts
@@ -461,11 +465,11 @@ export function logConsentChanges(app: KitrApp) {
 | `categories` | `ConsentCategory[]` | The configured categories. |
 | `cookie` | `CookieItem<ConsentRecord>` | The [storage](/packages/storage) cookie item that holds the record. |
 
-`@kitr/consent` also exports a `useConsent(app)` function that returns this service. Despite the name it is not a hook; in components use `useConsent()` from `@kitr/consent/react`.
+`useConsent(app)` from `@kitr/consent` returns this service and is not a hook; in components use `useConsent()` from `@kitr/consent/react`.
 
 ## Read consent on the server
 
-The record is a cookie, so a server function or loader can read it from the request with `consent.cookie.get(headers)`. Use it to leave a marketing tag out of the HTML entirely for visitors who did not agree:
+A loader can read the cookie with `consent.cookie.get(headers)`, for example to leave a marketing tag out of the HTML for visitors who did not agree:
 
 ```ts
 // app/lib/consent/read-consent.ts
@@ -485,11 +489,11 @@ export const readConsent = createServerFn({ method: 'GET' }).handler(() => {
 // => ['necessary', 'analytics'] for Ada, [] for a first visit
 ```
 
-`cookie.get()` returns the stored record as it is, so check `version` yourself, as above. The cookie name includes the storage prefix, which the [storage](/packages/storage) provider sets on the server too, so the same `config/storage.ts` applies to both sides.
+`cookie.get()` returns the record as stored, so check `version` yourself, as above.
 
 ## Testing
 
-Two things are worth testing: that your banner records the right choice, and that tracking waits for it. The test app needs `environment: 'client'`, because the provider only gates analytics in the browser. The DOM environment keeps cookies between tests, so clear them in `afterEach`.
+Test that your banner records the right choice and that tracking waits for it. The test app needs `environment: 'client'`, and cookies persist between tests, so clear them in `afterEach`.
 
 ```tsx
 // app/components/consent-banner.test.tsx
@@ -551,9 +555,7 @@ describe('ConsentBanner', () => {
 })
 ```
 
-The test uses the generated banner. If you added the mount guard from [Show the banner without a flash](#show-the-banner-without-a-flash), `renderWithKitr` runs the effect for you, so the same test passes.
-
-For logic that only needs the record, `createConsent()` builds a service with no app. It reads and writes `document.cookie`, so it behaves exactly as in the browser:
+For logic that only needs the record, `createConsent()` builds a service with no app; it reads and writes `document.cookie`:
 
 ```ts
 // app/lib/consent/consent.test.ts
@@ -571,16 +573,14 @@ it('asks again after the version is bumped', () => {
 })
 ```
 
-Run tests that touch `document` in a DOM environment (`happy-dom` or `jsdom`).
+Run these in a DOM environment (`happy-dom` or `jsdom`).
 
 ## Devtools
 
-With [devtools](/packages/devtools) installed, every choice is logged under the `consent` channel as `decided`, with the record as data. Filter the Log panel by `consent` to see what was granted and when. The Analytics panel shows whether analytics is enabled or still queued, and its Enable and Disable actions let you check both states without clearing cookies.
+With [devtools](/packages/devtools) installed, every choice is logged under the `consent` channel. The Analytics panel's Enable and Disable actions let you check both states without clearing cookies.
 
 ## Next steps
 
-- [API reference](/packages/consent/api) for every export and type.
-- [Analytics](/packages/analytics) for what is held until consent.
-- [Monitoring](/packages/monitoring) for the error reports you can gate.
-- [Storage](/packages/storage) for the cookie the record lives in.
-- [European Data Protection Board guidelines on consent](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en) for what a valid choice requires.
+- [API reference](/packages/consent/api): every export and type.
+- [Analytics](/packages/analytics): what is held until consent.
+- [Storage](/packages/storage): the cookie the record lives in.

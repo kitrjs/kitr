@@ -6,19 +6,23 @@ order: 1
 
 # Storage
 
-Every app remembers a few things between visits: a collapsed sidebar, the last orders someone searched for, the language they picked. `@kitr/storage` lets you declare each of those values once, with a type and a default, and then read and write it anywhere without touching `localStorage` or `document.cookie` yourself. Bad, old or missing values fall back to the default, other tabs stay in sync, and server rendering never breaks.
+Every app remembers a few things between visits: a collapsed sidebar, recent searches, the chosen language. `@kitr/storage` declares each value once, with a type and a default, and reads and writes it anywhere without touching `localStorage` or `document.cookie`. Bad, old or missing values fall back to the default, other tabs stay in sync, and server rendering never breaks.
 
-It is built on [Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) and [HTTP cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), and adds types, schema validation, versions with migrations, expiry, hydration-safe React hooks, and a native store on desktop and mobile. Storage items run in the browser; cookies run on both sides. For a value every request on the server shares, use [cache](/packages/cache).
+> [!SUMMARY]
+> Typed, validated values saved in the browser or in cookies, readable on the server too. Add it with `kitr add storage`; the overview is at [/packages/storage](/packages/storage).
 
-Don't use it for login tokens or other secrets: anything in Web Storage is readable by every script on the page. Use [Secure storage](/packages/secure-storage) for those.
+It builds on [Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) and [HTTP cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies). Storage items run in the browser; cookies run on both sides.
 
-This guide follows Acme's order dashboard at `app.acme.com`: Ada collapses the sidebar, searches for orders, switches the language to German, and the server shows a maintenance banner.
+> [!WARNING] Not for secrets
+> Anything in Web Storage is readable by every script on the page. Use [Secure storage](/packages/secure-storage) for login tokens and other secrets.
+
+This guide follows Acme's order dashboard at `app.acme.com`: Ada collapses the sidebar, searches for orders, and switches the language to German.
 
 ## When to use it
 
 Use storage for **small values the user's device owns**: preferences, recent searches, a dismissed notice, a draft. They survive a reload, are read synchronously, and are not shared with other devices.
 
-Use [State](/packages/state) for values that only live while the page is open, and [Query](/packages/query) for data the server owns, such as the orders themselves. Copying server data into storage means you now own keeping it fresh. To keep loaded server data on the device for offline use, use [Offline](/packages/offline), which persists the query cache for you.
+For values that live only while the page is open, use [State](/packages/state). For data the server owns, such as the orders themselves, use [Query](/packages/query), or [Offline](/packages/offline) to keep it on the device. For a value every server request shares, use [cache](/packages/cache).
 
 ## Install
 
@@ -26,18 +30,21 @@ Use [State](/packages/state) for values that only live while the page is open, a
 kitr add storage
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
-- Installs `@kitr/storage`.
-- Adds `() => import('@kitr/storage/provider')` to `providers` in `kitrrc.ts`.
-- Adds `@kitr/storage` to `packages` in `kitrrc.ts`.
-- Writes `config/storage.ts` (shown under [Configure](#configure)).
-- Writes `app/storage.ts` with three sample values: `sidebar`, `recentSearches` and `localeCookie`. In a server-only project it writes only `localeCookie`.
-- Adds a `## kitr: storage` section to `AGENTS.md`: declare every persisted value in `app/storage.ts`, never read `localStorage` or `document.cookie` directly, use `useStorage` and `useCookie` in components and `cookies(event)` on the server, and add `schema`, `version` with `migrate`, or `ttl` when needed. A server-only project gets one line about `cookies(ctx.event)` instead.
+- Installs `@kitr/storage` and adds its provider and package to `kitrrc.ts`.
+- Writes `config/storage.ts` (see [Configure](#configure)).
+- Writes `app/storage.ts` with three sample values: `sidebar`, `recentSearches` and `localeCookie`. A server-only project gets only `localeCookie`.
+- Adds a `## kitr: storage` section to `AGENTS.md`.
 
-`kitr add storage` asks no questions and adds no environment variables or scripts. It does not overwrite `config/storage.ts` or `app/storage.ts` when they exist.
+It asks no questions and adds no environment variables or scripts. It does not overwrite `config/storage.ts` or `app/storage.ts` when they exist.
 
-The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include it. The [Desktop](/packages/desktop), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) platforms require it, so adding any of them adds storage too.
+The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include it, and the [Desktop](/packages/desktop), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) platforms require it.
+
+`kitr remove storage` reverses all of it and deletes `config/storage.ts`. It leaves `app/storage.ts`, because you have probably edited it, and lists the files that still import `@kitr/storage`.
+
+</details>
 
 The generated `app/storage.ts` in a project with React:
 
@@ -61,11 +68,10 @@ export const recentSearches = defineStorage<string[]>('recent-searches', {
 export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
 ```
 
-`kitr remove storage` reverses every step above and deletes `config/storage.ts`. It leaves `app/storage.ts`, because you have probably edited it, and lists the files that still import `@kitr/storage` so you can remove them by hand.
 
 ## Configure
 
-`kitr add storage` writes this file. The prefix comes from the `name` in your `package.json`, without its scope; for a project named `acme` it is:
+`kitr add storage` writes this file. The prefix comes from the `name` in your `package.json`, without its scope:
 
 ```ts
 // config/storage.ts
@@ -92,9 +98,8 @@ export default defineConfig({
 
 `import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
 
-The provider applies this file in `register()`: it sets the prefix and the cookie defaults. It switches storage items to the platform's native store when a platform registered one, and checks again in `boot()` for a platform provider listed after it. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
-
-Changing `prefix` in a live app makes every saved value look missing, because the keys change. Users see the defaults again; nothing is migrated.
+> [!WARNING] Changing the prefix
+> Changing `prefix` in a live app makes every saved value look missing, because the keys change. Users see the defaults again; nothing is migrated.
 
 ## Save your first value
 
@@ -121,9 +126,7 @@ Put `<SidebarToggle />` in your layout and click it. The label changes to "Expan
 acme:sidebar    {"v":1,"d":{"collapsed":true}}
 ```
 
-Every storage item is saved as a small envelope: `v` is the item's version, `d` is the data, and `e` is the expiry time when the item has a `ttl`. You never read the envelope yourself; `get()` unwraps it.
-
-The setter takes a value or a function of the current value. The third element, `remove`, deletes the key so the item reads its default again.
+Each item is saved as a small envelope: `v` is the version, `d` the data, and `e` the expiry when the item has a `ttl`. `get()` unwraps it. The setter takes a value or a function of the current value; `remove` deletes the key so the item reads its default again.
 
 ## Read and write outside React
 
@@ -144,9 +147,9 @@ recentSearches.remove()
 recentSearches.get() // => []
 ```
 
-`get()` is synchronous and returns the same object for the same stored string, so you can call it in a render or a loop without parsing JSON each time. `set()` notifies every subscriber in this tab at once and the other tabs through the browser's `storage` event.
+`get()` is synchronous and returns the same object for the same stored string, so it is cheap in a render or a loop. `set()` notifies subscribers in this tab at once and other tabs through the browser's `storage` event.
 
-To react to changes without React, subscribe. The listener receives the new value and the call returns an unsubscribe function:
+Without React, subscribe. The call returns an unsubscribe function:
 
 ```ts
 // app/lib/layout/body-class.ts
@@ -162,7 +165,7 @@ stop()
 
 ## Choose local or session storage
 
-`area` picks where the value lives. `local`, the default, keeps a value until the user or your code clears it. `session` keeps it for the current tab only: closing the tab forgets it, and a second tab starts empty.
+`area` picks where the value lives. `local` (the default) keeps it until cleared. `session` keeps it for the current tab only.
 
 ```ts
 // app/storage.ts
@@ -179,11 +182,11 @@ export const recentSearches = defineStorage<string[]>('recent-searches', {
 })
 ```
 
-`ordersPageSize.area` is `'local'` and `recentSearches.area` is `'session'`. On desktop and mobile, `session` items live in memory and are gone when the app restarts, which matches what a tab does in the browser.
+On desktop and mobile, `session` items live in memory and are gone when the app restarts, like a closed tab.
 
 ## Validate stored values with a schema
 
-Anything in storage can be edited by the user, an old version of your app or a browser extension. Pass a [Standard Schema](https://standardschema.dev) such as [zod](https://zod.dev) or [valibot](https://valibot.dev) and every read is checked. A value that fails the schema reads as the default:
+Anything in storage can be edited by the user, an old app version or an extension. Pass a [Standard Schema](https://standardschema.dev) such as [zod](https://zod.dev) or [valibot](https://valibot.dev) and every read is checked. A value that fails reads as the default:
 
 ```ts
 // app/storage.ts
@@ -207,11 +210,11 @@ localStorage.setItem('acme:order-filters', '{"v":1,"d":{"status":"lost","custome
 savedFilters.get() // => { status: null, customer: '' }
 ```
 
-The schema runs on reads, not on writes, so TypeScript guards what you write and the schema guards what comes back. The schema must be synchronous. An async schema, such as zod with an async `refine`, makes every read return the default.
+The schema runs on reads, not writes, and must be synchronous: an async schema makes every read return the default.
 
 ## Change a value's shape with versions
 
-When you change the shape of a stored value, old browsers still hold the old shape. Bump `version` and give `migrate` a function that converts what it finds. It receives the old data and the version it was saved under:
+When a stored value changes shape, old browsers still hold the old one. Bump `version` and give `migrate` a function that receives the old data and its saved version:
 
 ```ts
 // app/storage.ts
@@ -234,13 +237,14 @@ localStorage.getItem('acme:sidebar') // => '{"v":1,"d":{"collapsed":true}}'
 sidebar.get() // => { collapsed: true, width: 280 }
 ```
 
-The migrated value is returned but not written back until the next `set()`. If `migrate` throws, or there is no `migrate`, a value with another version reads as the default. When both `migrate` and `schema` are set, the schema checks the migrated value.
+The migrated value is returned but not written back until the next `set()`. If `migrate` throws or is missing, a value with another version reads as the default. When both `migrate` and `schema` are set, the schema checks the migrated value.
 
-Don't change the shape of `default` without bumping `version`. The old values would still be read as the new type, and code that reads `sidebar.get().width` would get `undefined`.
+> [!WARNING] Bump the version
+> Don't change the shape of `default` without bumping `version`, or old values are read as the new type and `sidebar.get().width` is `undefined`.
 
 ## Expire a value after a time
 
-`ttl` keeps a value for that many milliseconds after each `set()`, then treats it as missing. Use it for things that go stale, such as a dismissed notice that should come back next week:
+`ttl` keeps a value for that many milliseconds after each `set()`, then treats it as missing. Use it for things that go stale, such as a dismissed notice that should return next week:
 
 ```ts
 // app/storage.ts
@@ -261,11 +265,11 @@ localStorage.getItem('acme:invoice-tip-dismissed')
 invoiceTipDismissed.get() // => true, until seven days from now; then false
 ```
 
-The expiry `e` is stored beside the value, so it holds across reloads. Every `set()` starts a new period. An expired value stays in storage until the next `set()` or `remove()`; it is never returned.
+Every `set()` starts a new period. An expired value stays in storage until the next `set()` or `remove()`, but is never returned.
 
 ## Keep tabs in sync
 
-When Ada collapses the sidebar in one tab, every other tab of `app.acme.com` updates too. `useStorage` subscribes to the browser's [`storage` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/storage_event), which fires in the other tabs on every write to `localStorage`. You don't add anything for this; it works for every `local` item.
+When Ada collapses the sidebar in one tab, every other tab of `app.acme.com` updates too. `useStorage` listens to the browser's [`storage` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/storage_event), so every `local` item syncs with no code from you.
 
 ```tsx
 // app/components/sidebar.tsx
@@ -279,11 +283,11 @@ export function Sidebar({ children }: { children: ReactNode }) {
 }
 ```
 
-`session` items don't sync, because each tab has its own session storage. On desktop and mobile the native drivers have no other tabs to hear from, so changes apply in the one window.
+`session` items don't sync, because each tab has its own session storage. Native drivers have one window, so there is nothing to sync.
 
 ## Render on the server without a hydration mismatch
 
-On the server there is no `localStorage`. `get()` returns the default and `set()` does nothing, so the same module imports safely on both sides. `useStorage` renders the default on the server **and** on the first browser render, then switches to the stored value right after hydration:
+On the server there is no `localStorage`: `get()` returns the default and `set()` does nothing, so the same module imports safely on both sides. `useStorage` renders the default on the server **and** on the first browser render, then switches to the stored value after hydration:
 
 ```ts
 // app/routes.ts
@@ -307,9 +311,10 @@ export default function OrdersPage() {
 }
 ```
 
-If Ada saved 50, the server sends HTML with 25 selected, the browser hydrates with 25, and then shows 50. The markup always matches, so React never throws a hydration error.
+If Ada saved 50, the server sends HTML with 25 selected, the browser hydrates with 25, and then shows 50. The markup always matches, so React never reports a hydration error.
 
-Don't read `ordersPageSize.get()` directly in a server-rendered component: the server returns 25 and the browser returns 50, and React reports a mismatch. Use the hook. If the first HTML must already show the saved value, store it in a cookie instead, as the next sections show.
+> [!WARNING] Use the hook in rendered components
+> Don't call `ordersPageSize.get()` in a server-rendered component: the server returns 25, the browser 50, and React reports a mismatch. If the first HTML must show the saved value, use a cookie.
 
 ## Handle missing, invalid and blocked storage
 
@@ -326,11 +331,11 @@ Storage items never throw on a read. Each case below returns the default:
 | Storage blocked (some private modes, sandboxed iframes) | the default | nothing |
 | Storage full | see below | doesn't throw |
 
-When the browser refuses a write because storage is full, `set()` catches the error and still notifies subscribers. If the key had no saved value before, `get()` returns the new value for the rest of the page's life. If it had one, `get()` keeps returning the last value that was saved.
+When the browser refuses a write because storage is full, `set()` catches the error and still notifies subscribers. `get()` returns the new value for the rest of the page's life if the key had none before; otherwise it keeps returning the last saved value.
 
 ## Declare a cookie
 
-A cookie is the one value both the browser and the server can read, so it is the right home for anything the server needs to render the first page, such as Ada's language. Declare it with `defineCookie`, next to the storage items:
+A cookie is the one value both browser and server can read, so it suits anything the server needs for the first page, such as Ada's language. Declare it with `defineCookie`, next to the storage items:
 
 ```ts
 // app/storage.ts
@@ -349,11 +354,10 @@ export const tablePrefs = defineCookie('table-prefs', {
 })
 ```
 
-A cookie with a string default is stored as plain text: `acme:locale=de`. Any other default is stored as URL-encoded JSON: `acme:table-prefs=%7B%22dense%22%3Atrue%2C...`. Pass `codec` to choose yourself. `schema` works the same as on storage items.
+A string default is stored as plain text (`acme:locale=de`); any other default as URL-encoded JSON. Pass `codec` to choose yourself; `schema` works as on storage items. Every `CookieOptions` field (`path`, `domain`, `maxAge`, `expires`, `secure`, `httpOnly`, `sameSite`) can be set on the item and wins over `cookie` in `config/storage.ts`.
 
-Every `CookieOptions` field can be set on the item: `path`, `domain`, `maxAge`, `expires`, `secure`, `httpOnly` and `sameSite`. The item's options win over `cookie` in `config/storage.ts`.
-
-Keep cookies small. The browser sends every cookie with every request to `app.acme.com`, and most browsers cap one cookie at about 4 KB. Large or private values belong in storage items or on the server.
+> [!WARNING] Keep cookies small
+> The browser sends every cookie with every request, and caps one at about 4 KB. Put large or private values in storage items or on the server.
 
 ## Read and write cookies in a component
 
@@ -394,9 +398,9 @@ localeCookie.remove()
 localeCookie.get() // => 'en'
 ```
 
-In the browser, `get()` with no argument reads `document.cookie`. `set()` always writes a script-readable cookie, even if the item says `httpOnly: true`, because the browser refuses to let scripts write `httpOnly` cookies. Cookies don't fire events across tabs; another tab sees the new value on its next read or render.
+In the browser, `get()` with no argument reads `document.cookie`. `set()` always writes a script-readable cookie, even for `httpOnly: true` items, because browsers refuse script writes of `httpOnly`. Cookies don't fire events across tabs; another tab sees the new value on its next read.
 
-If other code writes `document.cookie`, for example a consent banner from a vendor, call `notifyCookiesChanged()` so mounted `useCookie` hooks re-read:
+If other code writes `document.cookie`, such as a vendor consent banner, call `notifyCookiesChanged()` so mounted `useCookie` hooks re-read:
 
 ```ts
 // app/lib/vendor-banner.ts
@@ -407,7 +411,7 @@ window.addEventListener('vendor:consent-saved', () => notifyCookiesChanged())
 
 ## Render cookies during server rendering
 
-During server rendering there is no `document.cookie`, so `useCookie` needs the request's `Cookie` header. Wrap the tree once in `<CookieHeader>` in the root route. In a [TanStack Start](https://tanstack.com/start/latest) app, read the header in a server function and pass it down from the loader:
+During server rendering `useCookie` needs the request's `Cookie` header. Wrap the tree once in `<CookieHeader>` in the root route. In a [TanStack Start](https://tanstack.com/start/latest) app, read the header in a server function and pass it from the loader:
 
 ```ts
 // app/routes.ts
@@ -447,9 +451,9 @@ export function RootDocument() {
 }
 ```
 
-With the wrapper, `<LocaleSwitch />` renders `Deutsch` in the first HTML for Ada, and the browser hydrates with the same value. Without it, the server renders the default (`English`) and the browser corrects it after hydration, which shows as a flash.
+With the wrapper, `<LocaleSwitch />` renders `Deutsch` in the first HTML for Ada. Without it, the server renders `English` and the browser corrects it after hydration, as a flash.
 
-When you only need one cookie's value in a loader, skip the wrapper and read it from the headers directly. `get()` accepts a `Headers` object, a raw `Cookie` header string, or anything with a `cookie` field:
+For one cookie in a loader, skip the wrapper: `get()` accepts a `Headers` object, a raw `Cookie` string, or anything with a `cookie` field:
 
 ```ts
 // app/pages/orders.tsx
@@ -467,7 +471,7 @@ localeCookie.get(null) // => 'en'
 
 ## Read and set cookies on the server
 
-On the server, `cookies()` from `@kitr/storage/server` gives typed access to one request's cookies. Pass it the h3 event in a controller or middleware. Reads come from the request's `Cookie` header; writes append a `Set-Cookie` header to the response:
+On the server, `cookies()` from `@kitr/storage/server` gives typed access to one request's cookies. Pass it the h3 event. Reads come from the `Cookie` header; writes append `Set-Cookie` to the response:
 
 ```ts
 // server/controllers/settings-controller.ts
@@ -495,9 +499,9 @@ export default class SettingsController {
 Set-Cookie: acme:locale=de; Max-Age=31536000; Path=/; SameSite=Lax
 ```
 
-`jar.remove(item)` appends a header that expires the cookie (`Max-Age=0` and an `Expires` date in 1970). `jar.header` is the raw `Cookie` header, which you can pass to `<CookieHeader>`.
+`jar.remove(item)` appends a header that expires the cookie. `jar.header` is the raw `Cookie` header, which you can pass to `<CookieHeader>`.
 
-Where you only have Fetch primitives, such as a Cloudflare Worker or a plain `fetch` handler, pass the `Request` and the response `Headers`:
+With only Fetch primitives, such as a Cloudflare Worker, pass the `Request` and the response `Headers`:
 
 ```ts
 // server/edge/locale.ts
@@ -515,7 +519,7 @@ export function handleLocale(request: Request): Response {
 
 ## Set an httpOnly cookie from the server
 
-A cookie the browser's scripts must never read, such as an opaque session id, is `httpOnly` and is set only by the server. Declare it with `httpOnly: true`; the server write honours it:
+A cookie that scripts must never read, such as an opaque session id, is `httpOnly` and set only by the server. Declare it with `httpOnly: true`:
 
 ```ts
 // server/auth/session-cookie.ts
@@ -556,12 +560,12 @@ Set-Cookie: acme:sid=3f2b...; Max-Age=28800; Path=/; Secure; HttpOnly; SameSite=
 
 Options passed to `set()` win over the item's, so `jar.set(sessionCookie, id, { maxAge: 60 * 60 * 24 * 30 })` writes a "remember me" cookie from the same declaration.
 
-> **Warning**
-> A cookie value is not signed or encrypted. Anyone can edit their own cookies, so never trust a cookie as proof of who someone is: store a random id and look it up on the server. For sign-in, use [Auth](/packages/auth).
+> [!WARNING] Cookies are not signed
+> Anyone can edit their own cookies, so never trust one as proof of who someone is: store a random id and look it up on the server. For sign-in, use [Auth](/packages/auth).
 
 ## Share cookies across subdomains
 
-To read one cookie on `acme.com`, `app.acme.com` and `billing.acme.com`, set `domain` to the parent domain. Set it once in config so every cookie gets it, or on one item:
+To read one cookie on `acme.com`, `app.acme.com` and `billing.acme.com`, set `domain` to the parent domain, in config for every cookie or on one item:
 
 ```ts
 // config/storage.ts
@@ -578,11 +582,11 @@ export default defineConfig({
 })
 ```
 
-Every `Set-Cookie` now ends with `Domain=.acme.com; Path=/; ...`. A cookie set with one `domain` can only be removed with the same `domain`, so keep it in config rather than passing it to some `set()` calls and not others.
+Every `Set-Cookie` now ends with `Domain=.acme.com; Path=/; ...`. A cookie can only be removed with the `domain` it was set with, so keep it in config.
 
 ## Build and parse cookie headers by hand
 
-`parseCookies` and `serializeCookie` are the two functions every cookie item uses. Use them when you need a cookie that isn't declared, such as one a third party set:
+`parseCookies` and `serializeCookie` are what every cookie item uses. Use them for a cookie that isn't declared, such as one a third party set:
 
 ```ts
 // server/lib/referrer.ts
@@ -598,13 +602,11 @@ serializeCookie('utm_source', null)
 // => 'utm_source=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax'
 ```
 
-`parseCookies` skips parts without `=`, trims spaces and URL-decodes values; a value that fails to decode is kept as it is. `serializeCookie` URL-encodes the value and adds `Path=/` and `SameSite=Lax` unless you pass others, plus the cookie defaults from config. It does not add the config `prefix`; only items do.
-
-An item can do the same for its own value: `localeCookie.serialize('de')` returns the full `Set-Cookie` value with the prefix, and `localeCookie.decode('de')` turns one raw value into the typed value or the default.
+`parseCookies` skips parts without `=`, trims spaces and URL-decodes values. `serializeCookie` URL-encodes the value and adds `Path=/` and `SameSite=Lax` plus the config defaults, but not the `prefix`; only items add that. An item can do the same: `localeCookie.serialize('de')` and `localeCookie.decode('de')`.
 
 ## Store values natively on desktop and mobile
 
-Storage items use the platform's own store when a platform registers a driver, and Web Storage otherwise. You declare and read items the same way everywhere; only where the bytes go changes. The storage provider hydrates the native store before the first render, so `get()` stays synchronous and already holds the saved values.
+Storage items use the platform's own store when a platform registers a driver, and Web Storage otherwise. You declare and read items the same way everywhere. The provider hydrates the native store before the first render, so `get()` stays synchronous.
 
 | Where the app runs | Driver | Where `local` items are saved |
 | --- | --- | --- |
@@ -614,17 +616,17 @@ Storage items use the platform's own store when a platform registers a driver, a
 | Mobile, Capacitor | `capacitor:preferences` | Capacitor Preferences |
 | Server, or storage blocked | none | nothing; items read their defaults |
 
-The storage provider looks for a registered driver in its own `register()` step and again in `boot()`, after every provider has registered. So the platform's provider (`@kitr/desktop/provider`, `@kitr/tauri/provider` or `@kitr/mobile/provider`) can be listed before or after `@kitr/storage/provider` in `kitrrc.ts`.
+The platform's provider (`@kitr/desktop/provider`, `@kitr/tauri/provider` or `@kitr/mobile/provider`) can be listed before or after `@kitr/storage/provider` in `kitrrc.ts`.
 
-On native platforms `session` items use an in-memory driver. Writes to a native store happen in the background after the in-memory copy updates; a failed write is logged as `[@kitr/storage] <driver>: <error>` and the in-memory value stays.
+On native platforms `session` items use an in-memory driver. Native writes happen in the background; a failed write is logged as `[@kitr/storage] <driver>: <error>` and the in-memory value stays.
 
 ### Browser
 
-There is nothing to set up. Without a platform driver, `local` items use `localStorage` and `session` items use `sessionStorage`. Read what's stored in the browser devtools under Application → Local Storage. See [MDN on Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) for size limits, which are about 5 MB per origin.
+Nothing to set up: `local` items use `localStorage` and `session` items `sessionStorage`, about 5 MB per origin. Inspect them in devtools under Application → Local Storage.
 
 ### Desktop with Electron
 
-[Desktop](/packages/desktop) with the Electron shell registers `electronStorageDriver()`, which sends every write to the main process over the `kitr:storage:load`, `kitr:storage:set` and `kitr:storage:remove` IPC channels. The main process must serve them, which the desktop scaffold's `main.ts` does with one call:
+[Desktop](/packages/desktop) with Electron registers `electronStorageDriver()`, which sends writes to the main process over IPC. The desktop scaffold's `main.ts` serves them with one call:
 
 ```ts
 // platforms/app/main.ts
@@ -637,19 +639,19 @@ app.whenReady().then(() => {
 })
 ```
 
-Values land in `kitr-storage.json` in [`app.getPath('userData')`](https://www.electronjs.org/docs/latest/api/app#appgetpathname). Pass `{ storageFile }` as the third argument to choose another file. Electron is the recommended desktop shell for most apps, because it ships its own browser engine and behaves the same on every OS.
+Values land in `kitr-storage.json` in [`app.getPath('userData')`](https://www.electronjs.org/docs/latest/api/app#appgetpathname). Pass `{ storageFile }` as the third argument to choose another file.
 
 ### Desktop with Tauri
 
-Inside a [Tauri](https://v2.tauri.app) webview, the [Tauri](/packages/tauri) provider registers `tauriStoreDriver()` on the [store plugin](https://v2.tauri.app/plugin/store/), which writes `kitr.json` in the app data folder. `kitr add tauri` installs `@tauri-apps/plugin-store`, and its scaffold adds the Rust plugin and the `store:default` permission; nothing changes in your items. Tauri is the alternative to Electron: it uses the operating system's webview, so the app is smaller but renders differently per OS.
+The [Tauri](/packages/tauri) provider registers `tauriStoreDriver()` on the [store plugin](https://v2.tauri.app/plugin/store/), writing `kitr.json` in the app data folder. `kitr add tauri` sets up the plugin and permission; your items don't change.
 
 ### Mobile with Capacitor
 
-[Mobile](/packages/mobile) registers `preferencesDriver()` on [Capacitor Preferences](https://capacitorjs.com/docs/apis/preferences). iOS and Android may clear a WebView's `localStorage` when the device is low on space; Preferences is kept in the app's own data, so saved values survive.
+[Mobile](/packages/mobile) registers `preferencesDriver()` on [Capacitor Preferences](https://capacitorjs.com/docs/apis/preferences). Preferences lives in the app's own data, so saved values survive when iOS or Android clears a WebView's `localStorage`.
 
 ## Testing
 
-Storage items are module-level values, so a test reads and writes them directly. In Vitest's default Node environment there is no `localStorage`; give the items an in-memory driver with `setStorageDriver(createMemoryStorageDriver())` and they behave as they do in the browser. Cookies need no setup: pass a `Request` and a `Headers` object to `cookies()`.
+Storage items are module-level values, so a test reads and writes them directly. In Vitest's Node environment there is no `localStorage`: give items an in-memory driver with `setStorageDriver(createMemoryStorageDriver())`. Cookies need no setup; pass a `Request` and a `Headers` object to `cookies()`.
 
 ```ts
 // app/storage.test.ts
@@ -706,9 +708,9 @@ describe('app/storage', () => {
 })
 ```
 
-The prefix and cookie defaults are module state too. Reset them in `afterEach` with `setStoragePrefix('')` and `setCookieDefaults({})` when a test sets them through config, or later tests see `acme:` keys.
+The prefix and cookie defaults are module state too: reset them in `afterEach` with `setStoragePrefix('')` and `setCookieDefaults({})`, or later tests see `acme:` keys.
 
-To test components and the cross-tab behaviour, run the file in a DOM environment with `// @vitest-environment happy-dom` on its first line. Items then use the real `localStorage` and `sessionStorage`; clear them between tests and render with [Testing Library](https://testing-library.com/docs/react-testing-library/intro):
+For components and cross-tab behaviour, use a DOM environment with `// @vitest-environment happy-dom` on the first line, clear `localStorage` between tests, and render with [Testing Library](https://testing-library.com/docs/react-testing-library/intro):
 
 ```tsx
 // app/components/sidebar-toggle.test.tsx
@@ -727,11 +729,11 @@ it('collapses and remembers it', () => {
 })
 ```
 
-To check what the server renders before hydration, call `renderToString` from `react-dom/server`: a `useStorage` component renders the default, and a `useCookie` component inside `<CookieHeader value="locale=de">` renders `de`.
+To check the pre-hydration HTML, call `renderToString`: a `useStorage` component renders the default, and a `useCookie` component inside `<CookieHeader value="locale=de">` renders `de`.
 
 ## Extend
 
-One interface plugs into storage: `StorageDriver`, the synchronous store behind `defineStorage` items on a platform. Its full type is in the [API reference](/packages/storage/api). For a value every request on the server shares, use [cache](/packages/cache).
+One interface plugs into storage: `StorageDriver`, the synchronous store behind `defineStorage` items on a platform. Its full type is in the [API reference](/packages/storage/api).
 
 ### Write a storage driver
 
@@ -745,7 +747,7 @@ One interface plugs into storage: `StorageDriver`, the synchronous store behind 
 | `keys()` | Every stored key, for the devtools panel. |
 | `subscribe(listener)` | Optional. Call `listener(key)` when something outside this window changed a key (`null` for all keys); return an unsubscribe function. |
 
-Most native stores are async. `createAsyncStorageDriver` wraps one: `load` fills an in-memory cache at boot, and `write` and `erase` run in the background after each change, so reads stay synchronous. This driver keeps values in [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) through the small [idb-keyval](https://github.com/jakearchibald/idb-keyval) library:
+Most native stores are async. `createAsyncStorageDriver` wraps one: `load` fills an in-memory cache at boot, and `write` and `erase` run in the background, so reads stay synchronous. This driver uses [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) through [idb-keyval](https://github.com/jakearchibald/idb-keyval):
 
 ```ts
 // app/providers/idb-storage.ts
@@ -775,7 +777,7 @@ export default defineProvider({
 })
 ```
 
-Register it in `kitrrc.ts`. The storage provider resolves the driver again in `boot()`, so its place in the list does not matter:
+Register it in `kitrrc.ts`; its place in the list does not matter:
 
 ```ts
 // kitrrc.ts
@@ -791,18 +793,16 @@ export default defineKitrConfig({
 })
 ```
 
-The driver with the highest `priority` wins when several are registered; platform drivers default to `10`. `session` items keep an in-memory driver. To replace both areas directly, for example in a test or a script, call `setStorageDriver(driver, { session: otherDriver })`.
+When several drivers are registered, the highest `priority` wins; platform drivers default to `10`. To replace both areas directly, such as in a test, call `setStorageDriver(driver, { session: otherDriver })`.
 
 ## Devtools
 
-With [Devtools](/packages/devtools) installed, the provider adds a **Storage** panel in development. It lists every key in local storage, session storage and `document.cookie`, with the stored value pretty-printed and a **remove** button per row. The badge counts local and session keys. Two actions, **Clear localStorage** and **Clear sessionStorage**, remove every key in that area, including keys other code wrote.
+With [Devtools](/packages/devtools) installed, the provider adds a **Storage** panel in development. It lists every key in local storage, session storage and `document.cookie`, with a **remove** button per row and **Clear localStorage** and **Clear sessionStorage** actions.
 
-At boot the provider logs `driver: web:local` (or the native driver's name, or `none (server)`) to the Log panel under `storage`, and logs `<key> changed outside this context` when a driver reports a change from elsewhere. Write your own lines to the same channel with `logStorage(app, 'label', data)`.
+At boot the provider logs the active driver (`web:local`, a native driver's name, or `none (server)`) to the Log panel under `storage`. Write your own lines with `logStorage(app, 'label', data)`.
 
 ## Next steps
 
-- [API reference](/packages/storage/api)
+- [API reference](/packages/storage/api): every export with its signature.
 - [Secure storage](/packages/secure-storage): tokens and secrets in the OS vault.
 - [Offline](/packages/offline): keep loaded query data on the device.
-- [Desktop](/packages/desktop) and [Mobile](/packages/mobile): the platforms that bring native drivers.
-- [MDN: Using HTTP cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)

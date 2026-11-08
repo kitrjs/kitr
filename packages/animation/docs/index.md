@@ -6,19 +6,30 @@ order: 1
 
 # Animation
 
-A toast slides in when Ada sends an invoice, a dialog grows out of the button that opened it, and the project list fills in row by row. Small movements like these tell people what just changed. `@kitr/animation` gives every component in the app the same timings, turns movement off for visitors who ask their operating system for less of it, and animates page changes like a native app, with the back button sliding the other way.
+Small movements, like a toast sliding in or a dialog growing out of its button, tell people what just changed. `@kitr/animation` gives every component the same timings, turns movement off for visitors who ask for less of it, and animates page changes like a native app.
 
-It is [Motion](https://motion.dev/docs/react) for React, re-exported unchanged, so `motion.div`, `AnimatePresence`, `useScroll`, layout animations and gestures work exactly as Motion documents them. On top it adds a provider that applies `config/animation.ts` to the whole app, `transitions` and `presets` so durations and easings are shared instead of guessed, `<Reveal>` for content that appears as it scrolls into view, and `pageTransitions()` for animated route changes through the browser's View Transitions API.
+> [!SUMMARY]
+> Animate components and page changes, and respect the visitor's reduced-motion setting. Add it with `kitr add animation`; the overview is at [/packages/animation](/packages/animation).
 
-It runs in the browser, inside React, on every kitr platform: the web, desktop (Electron and Tauri) and mobile (Capacitor) builds all use the same code. For a spinning 3D product or a scene with a camera, use [3d](/packages/3d) instead; Motion animates DOM and SVG elements.
+It is [Motion](https://motion.dev/docs/react) for React, re-exported unchanged. kitr adds:
 
-The examples on this page animate Acme's project dashboard at `app.acme.com`: a list of projects, a dialog to create one, a toast when an invoice is sent and the page for each project.
+- A provider that applies `config/animation.ts` to the whole app.
+- `transitions` and `presets`, so durations and easings are shared.
+- `<Reveal>` for content that appears as it scrolls into view.
+- `pageTransitions()` for animated route changes through the View Transitions API.
+
+Motion animates DOM and SVG elements. For 3D scenes, use [3d](/packages/3d).
+
+The examples animate Acme's project dashboard at `app.acme.com`.
 
 ## Install
 
 ```sh
 kitr add animation
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -27,11 +38,13 @@ What `kitr add` does:
 - Writes `config/animation.ts`, shown under [Configure](#configure). An existing file is left alone.
 - Adds a `## kitr: animation` section to `AGENTS.md`: import from `@kitr/animation`, never `framer-motion` or `motion/react` directly; spread `presets` for enter and exit; use `<Reveal>` for scroll-in sections and `pageTransitions()` for page changes; leave reduced motion to the config.
 
-It adds no env variables or scripts and asks no questions. Animation needs React, so `kitr add` adds the [react](/packages/react) package first when the project has none, and refuses in a server-only project. No kit includes it; add it to any kit that has a client.
+It asks no questions. It adds the [react](/packages/react) package first when the project has none, and refuses in a server-only project.
 
 `kitr remove animation` takes the provider out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, then lists files that still import `@kitr/animation`. It leaves `config/animation.ts` in place.
 
-`kitr doctor` flags imports from `motion/react` and `framer-motion` and suggests `@kitr/animation`, so every component goes through the same provider.
+</details>
+
+`kitr doctor` flags imports from `motion/react` and `framer-motion`, so every component goes through the same provider.
 
 ## Configure
 
@@ -51,7 +64,7 @@ export default defineConfig({
 })
 ```
 
-The provider passes it to Motion's [`MotionConfig`](https://motion.dev/docs/react-motion-config) around the whole app, so every `motion` element below reads it.
+The provider passes it to Motion's [`MotionConfig`](https://motion.dev/docs/react-motion-config) around the app.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -60,11 +73,10 @@ The provider passes it to Motion's [`MotionConfig`](https://motion.dev/docs/reac
 | `skipAnimations` | `true` under Vitest, `false` elsewhere | Jump every animation straight to its final values. Exit animations still finish, so elements still leave the DOM. |
 | `nonce` | none | A Content Security Policy nonce for the `<style>` tags Motion adds for layout and exit animations. |
 
-A project without the file gets the defaults.
 
 ## Animate your first component
 
-A toast that rises in when Ada sends an invoice and falls away when it closes. Wrap the element in `AnimatePresence` so Motion can run its exit animation before React removes it:
+A toast that rises in and falls away when closed. Wrap it in `AnimatePresence` so Motion can run the exit animation before React removes it:
 
 ```tsx
 // app/components/invoice-sent-toast.tsx
@@ -86,19 +98,15 @@ export function InvoiceSentToast({ invoice, onClose }: { invoice: string | null;
 }
 ```
 
-Render it from the invoices page:
+Render it with `<InvoiceSentToast invoice={sent} onClose={() => setSent(null)} />`.
 
-```tsx
-<InvoiceSentToast invoice={sent} onClose={() => setSent(null)} />
-```
+When `invoice` is set, the toast fades in while rising 12 pixels. When it becomes `null`, it fades out and only then leaves the DOM. The `key` makes a second invoice replace the first with its own exit and entry.
 
-When `invoice` becomes `'INV-1042'`, the toast fades in while rising 12 pixels over 0.25 seconds. When it becomes `null`, it fades out while dropping back, over 0.2 seconds, and only then leaves the DOM. The `key` makes a second invoice replace the first with its own exit and entry instead of changing the text in place.
-
-`presets.fadeUp` is plain data: `{ initial, animate, exit, transition }`. Spreading it is the same as writing the four props by hand, and a prop written after the spread wins.
+`presets.fadeUp` is plain data: `{ initial, animate, exit, transition }`. A prop written after the spread wins.
 
 ## Use the shared timings
 
-Every duration in the app comes from `transitions`, so a menu, a dialog and a toast move with the same rhythm and a change of feel is one edit:
+Every duration comes from `transitions`, so a change of feel is one edit:
 
 ```tsx
 // app/components/project-card.tsx
@@ -122,13 +130,14 @@ export function ProjectCard({ name }: { name: string }) {
 | `snappy` | spring, no overshoot | Dragging, reordering, layout changes |
 | `bouncy` | spring, slight overshoot | Likes, badges and other playful confirmations |
 
-Durations are in seconds, as Motion expects. The two springs use Motion's `visualDuration`, so they feel as long as their number says whatever the distance.
+Durations are in seconds.
 
-Don't write `transition={{ duration: 0.3 }}` in a component. Pick the closest name, or add one to your own module that spreads a kitr transition, so the timings stay in one place.
+> [!WARNING]
+> Don't write `transition={{ duration: 0.3 }}` in a component. Pick the closest name so timings stay in one place.
 
 ## Enter and exit with presets
 
-`presets` covers the movements most interfaces need. Each one is a set of props to spread on a `motion` element:
+Each preset is a set of props to spread on a `motion` element:
 
 | Preset | Enters as | Use it for |
 | --- | --- | --- |
@@ -140,7 +149,7 @@ Don't write `transition={{ duration: 0.3 }}` in a component. Pick the closest na
 | `slideRight` | Slides 24px from the left | Navigation drawers |
 | `collapse` | Opens from zero height to its content's height | Accordions, expanding rows |
 
-Each exits the way it came in, with `transitions.exit`. A dialog that grows in from the centre:
+Each exits the way it came in. A dialog that grows in from the centre:
 
 ```tsx
 // app/components/new-project-dialog.tsx
@@ -168,7 +177,7 @@ export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: ()
 }
 ```
 
-To change one part of a preset, override it after the spread. A toast that waits a moment before it appears:
+Override one part after the spread. A toast that waits a moment:
 
 ```tsx
 <motion.div {...presets.fadeUp} transition={{ ...presets.fadeUp.transition, delay: 0.3 }} />
@@ -176,7 +185,7 @@ To change one part of a preset, override it after the spread. A toast that waits
 
 ## Expand and collapse a section
 
-`presets.collapse` animates `height` to `'auto'`, which CSS transitions cannot do. The invoice lines of a project open under its row:
+`presets.collapse` animates `height` to `'auto'`, which CSS transitions cannot do:
 
 ```tsx
 // app/components/project-row.tsx
@@ -204,11 +213,11 @@ export function ProjectRow({ name, invoices }: { name: string; invoices: string[
 }
 ```
 
-`initial={false}` stops rows that start open from animating on the first render. Keep padding and borders on an element inside the collapsing one; padding on the animated element itself shows at zero height.
+`initial={false}` stops rows that start open from animating on first render. Keep padding on an element inside the collapsing one; padding on the animated element shows at zero height.
 
 ## Reveal content as it scrolls into view
 
-`<Reveal>` animates its content the first time it scrolls into view. Acme's marketing page at `acme.com` brings each section in as the reader reaches it:
+`<Reveal>` animates its content the first time it scrolls into view:
 
 ```tsx
 // app/pages/home.tsx
@@ -224,7 +233,7 @@ export function Features() {
 }
 ```
 
-To bring a list in one item after another, set `stagger` to the seconds between items and wrap each item in `<RevealItem>`:
+To bring items in one after another, set `stagger` (seconds between items) and wrap each in `<RevealItem>`:
 
 ```tsx
 // app/components/project-grid.tsx
@@ -243,7 +252,7 @@ export function ProjectGrid({ projects }: { projects: Array<{ id: string; name: 
 }
 ```
 
-With `stagger`, the container stays still and each item plays the preset in turn, 0.05 seconds apart. A `<RevealItem>` outside a staggered `<Reveal>` renders its element and does not animate.
+With `stagger`, the container stays still and each item plays the preset in turn. A `<RevealItem>` outside a staggered `<Reveal>` does not animate.
 
 | Prop | Default | Description |
 | --- | --- | --- |
@@ -254,13 +263,14 @@ With `stagger`, the container stays still and each item plays the preset in turn
 | `delay` | `0` | Seconds to wait once it is in view; with `stagger`, the wait before the first item |
 | `stagger` | none | Seconds between `<RevealItem>` children |
 
-`<Reveal>` uses Motion's `whileInView`, which runs on one shared `IntersectionObserver`, so a page with fifty revealed sections costs nothing while they are off screen. Every other `motion.div` prop, such as `className` or `onAnimationComplete`, passes through.
+Every other `motion.div` prop, such as `className`, passes through.
 
-Content inside `<Reveal>` starts hidden in the server-rendered HTML and appears once the page's JavaScript runs. Don't wrap the first screen of a page, its main heading or anything a search engine must see without JavaScript in `<Reveal>`.
+> [!WARNING] Hidden until JavaScript runs
+> `<Reveal>` content starts hidden in the server HTML. Don't wrap the first screen, the main heading or anything a search engine must see without JavaScript.
 
 ## Animate page changes
 
-`pageTransitions()` animates route changes with the browser's [View Transitions API](https://developer.mozilla.org/docs/Web/API/View_Transition_API): the old page slides out as the new one slides in, and the back button slides the other way. Pass it to the router as `defaultViewTransition` and import the stylesheet once:
+`pageTransitions()` animates route changes with the browser's [View Transitions API](https://developer.mozilla.org/docs/Web/API/View_Transition_API); the back button slides the other way. Pass it to the router as `defaultViewTransition` and import the stylesheet once:
 
 ```tsx
 // app/router.tsx
@@ -279,7 +289,7 @@ export function getRouter() {
 }
 ```
 
-On every navigation the router calls `document.startViewTransition` with two types: `kitr-slide` (or `kitr-fade`) and `kitr-forward` or `kitr-back`. The direction comes from the router's history index, so Ada opening `/projects/42` from the list slides forward, and her back button, a swipe back on a phone or `history.back()` slides back. The stylesheet animates each type.
+The direction comes from the router's history index, so opening `/projects/42` slides forward and the back button, a swipe back or `history.back()` slides back.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -287,13 +297,11 @@ On every navigation the router calls `document.startViewTransition` with two typ
 | `reducedMotion` | `'user'` | `'user'` changes pages instantly for visitors who ask for less motion. `'always'` turns page animations off; `'never'` keeps them |
 | `onSearchChange` | `false` | Also animate when only the search or hash changes, such as the next page of a table |
 
-Browsers without view transitions change pages instantly. Chromium-based browsers, Electron, Android WebView and Safari 18 support them, which covers the desktop and mobile builds. Browsers with view transitions but without transition types get a short cross-fade.
-
-To animate a single link differently, pass `viewTransition` to it. A link that should never animate, such as switching tabs inside a page, takes `viewTransition={false}`.
+Browsers without view transitions change pages instantly. Chromium, Electron, Android WebView and Safari 18 support them. Pass `viewTransition` to a single link to animate it differently, or `viewTransition={false}` for one that should never animate.
 
 ## Keep the header still during page changes
 
-By default the whole page slides. To keep the app's header and navigation in place, give them their own `view-transition-name`; the browser then animates them separately, and with no animation for that name they simply stay:
+By default the whole page slides. Give the header and navigation their own `view-transition-name` and they stay in place:
 
 ```tsx
 // app/pages/app-layout.tsx
@@ -312,11 +320,12 @@ export default function AppLayout() {
 }
 ```
 
-Each `view-transition-name` must be unique on the page at any moment. Two elements with the same name abort the transition and the page changes without animating.
+> [!WARNING]
+> Each `view-transition-name` must be unique on the page. Two elements with the same name abort the transition.
 
 ## Morph a card into its page
 
-The same mechanism animates one element between two pages. Give the project's cover image in the list and on the project page the same name, and the browser moves and resizes it from one to the other:
+Give the same name to an element on two pages and the browser moves and resizes it between them:
 
 ```tsx
 // app/components/project-cover.tsx
@@ -325,11 +334,11 @@ export function ProjectCover({ id, src }: { id: string; src: string }) {
 }
 ```
 
-Use `<ProjectCover>` in both the list and the project page. Only one element per name may be on screen, which is why the id is part of it.
+Use `<ProjectCover>` in both the list and the project page. The id is part of the name because only one element per name may be on screen.
 
 ## Animate layout changes
 
-When the project list is re-sorted, filtered or an item is removed, `layout` animates every item to its new position instead of jumping. This is Motion's own feature, imported from `@kitr/animation`:
+When a list is re-sorted, filtered or loses an item, `layout` animates every item to its new position:
 
 ```tsx
 // app/components/sorted-projects.tsx
@@ -350,11 +359,11 @@ export function SortedProjects({ projects }: { projects: Array<{ id: string; nam
 }
 ```
 
-Put `layout` after the spread when you also pass a preset, and use `transitions.snappy` for layout so items settle without bouncing. Under reduced motion, Motion skips layout movement and the list updates in place.
+Use `transitions.snappy` for layout so items settle without bouncing. Under reduced motion the list updates in place.
 
 ## Respect reduced motion in your own code
 
-The provider handles `motion` elements. For anything else that moves, such as a video that autoplays or a parallax effect you calculate yourself, read the same setting with Motion's `useReducedMotionConfig()`, which follows `config/animation.ts` rather than only the operating system:
+The provider handles `motion` elements. For anything else that moves, such as an autoplaying video, read the setting with `useReducedMotionConfig()`, which follows `config/animation.ts`:
 
 ```tsx
 // app/components/hero-video.tsx
@@ -366,11 +375,11 @@ export function HeroVideo() {
 }
 ```
 
-`useReducedMotionConfig()` returns `true` when movement should stop: with `reducedMotion: 'user'` when the visitor has the setting on, with `'always'` for everyone and with `'never'` for nobody. Outside the provider, `prefersReducedMotion()` reads the operating system setting directly.
+It returns `true` when movement should stop. Outside the provider, `prefersReducedMotion()` reads the operating system setting directly.
 
 ## Testing
 
-Under Vitest the provider sets `skipAnimations`, so every animation jumps to its end and every exit removes its element straight away. Tests assert the final state without timers. Render inside the app with `createTestApp` and `renderWithKitr` from [testing](/packages/testing):
+Under Vitest every animation jumps to its end and exits remove their element at once, so tests need no timers. Render with `createTestApp` and `renderWithKitr` from [testing](/packages/testing):
 
 ```tsx
 // app/components/invoice-sent-toast.test.tsx
@@ -397,7 +406,7 @@ describe('invoice sent toast', () => {
 })
 ```
 
-`<Reveal>` needs an `IntersectionObserver`. happy-dom has none that ever fires, so stub one that reports every element as visible:
+`<Reveal>` needs an `IntersectionObserver`; happy-dom's never fires, so stub one that reports every element as visible:
 
 ```ts
 // tests/setup.ts
@@ -416,7 +425,7 @@ vi.stubGlobal(
 )
 ```
 
-For page transitions, test the types your router will ask for by calling the function with two history indexes; the browser does the rest:
+For page transitions, call the function with two history indexes:
 
 ```ts
 // app/router.test.ts
@@ -433,12 +442,10 @@ it('slides back on the back button', () => {
 })
 ```
 
-In Playwright, pass `reducedMotion: 'reduce'` to the browser context to check the reduced-motion path, and set `skipAnimations: true` in a test build's `config/animation.ts` for stable screenshots.
+In Playwright, pass `reducedMotion: 'reduce'` to the browser context to check that path, and set `skipAnimations: true` for stable screenshots.
 
 ## Next steps
 
-- [API reference](/packages/animation/api): every export kitr adds to `@kitr/animation`.
-- [Motion for React](https://motion.dev/docs/react): gestures, scroll-linked animation, layout animation and everything else re-exported from `@kitr/animation`.
+- [API reference](/packages/animation/api): every export of `@kitr/animation`.
+- [Motion for React](https://motion.dev/docs/react): gestures, scroll-linked and layout animation.
 - [Router](/packages/router): `createKitrRouter` and the `viewTransition` option on links.
-- [3D](/packages/3d): scenes and models, with the same reduced-motion rules.
-- [Testing](/packages/testing): `createTestApp` and `renderWithKitr`.

@@ -11,11 +11,9 @@ Every app has pages: a dashboard, a list of projects, one project, a sign-in scr
 > [!SUMMARY]
 > Pages on one route table, with typed links, loaders and guards. Add it with `kitr add router`; the overview is at [/packages/router](/packages/router).
 
-`@kitr/router` is [TanStack Router](https://tanstack.com/router/latest), re-exported unchanged, rendered by [TanStack Start](https://tanstack.com/start/latest). On top it adds the `router` extension for kitr's route table (`.root`, `.page`, `.layout`), `createKitrRouter` (the router built from that table, with kitr's defaults and the app in context), default loading, error and not-found screens, and three `beforeLoad` guards: `requireAuth`, `can` and `guards`.
+`@kitr/router` is [TanStack Router](https://tanstack.com/router/latest), re-exported unchanged, rendered by [TanStack Start](https://tanstack.com/start/latest). On top it adds the `router` route-table extension (`.root`, `.page`, `.layout`), `createKitrRouter`, default loading, error and not-found screens, and the `beforeLoad` guards `requireAuth`, `can` and `guards`.
 
-The route table itself comes from the core (`defineRoutes` in `kitr/app`). It only has the methods of the extensions you list: pages from `@kitr/router/routes`, endpoints from `@kitr/api/routes`, sockets from `@kitr/realtime/routes`. In a server-only project the table has no `.page`; its HTTP routes come from [api](/packages/api).
-
-It runs in the browser, and on the server when the web platform renders pages there.
+The route table only has the methods of the extensions you list: pages from `@kitr/router/routes`, endpoints from `@kitr/api/routes`, sockets from `@kitr/realtime/routes`. It runs in the browser, and on the server when the web platform renders pages.
 
 This guide follows Acme's project tracker at `app.acme.com`: a projects list, one page per project, a signed-in area for Ada's team, and a settings page only admins can open.
 
@@ -77,7 +75,7 @@ declare module '@tanstack/react-router' {
 }
 ```
 
-TanStack Start calls `getRouter()` once in the browser and once per request on the server. `createKitrRouter` compiles the table into a TanStack route tree, so the `Register` block is what makes every `<Link to>`, `useParams` and `useSearch` in the app type-checked against your pages. Nothing is generated: the tree's type comes from `typeof routes`.
+TanStack Start calls `getRouter()` once in the browser and once per request on the server. The `Register` block type-checks every `<Link to>`, `useParams` and `useSearch` against your pages; nothing is generated.
 
 `createKitrRouter` accepts every [`createRouter` option](https://tanstack.com/router/latest/docs/framework/react/api/router/RouterOptionsType) except `context` and `routeTree`, and sets different defaults for some of them:
 
@@ -151,9 +149,7 @@ export default function ProjectsPage() {
 
 Run `kitr dev` and open `/projects`. You see the two projects as links (the `/projects/$id` link is a type error until the next section adds that page).
 
-`lazy` loads the page module on first visit, so each page has its own bundle. Its default export is the component, or `definePage({ component, pendingComponent, errorComponent })` for its own loading and error screens. Loaders, `beforeLoad` and `head` stay in `app/routes.ts`. To put a page in the first bundle, pass `component` instead of `lazy`.
-
-`routes.$types` names every page by its link (`'page /projects'`) and carries TanStack's route type for it. The table is the one place that lists what the app renders; `kitr routes:list` (from [api](/packages/api)) prints it.
+`lazy` loads the page module on first visit, so each page has its own bundle. Its default export is the component, or `definePage({ component, pendingComponent, errorComponent })` for its own loading and error screens. Loaders, `beforeLoad` and `head` stay in `app/routes.ts`. Pass `component` instead of `lazy` to put a page in the first bundle.
 
 ## Map links to URLs
 
@@ -169,7 +165,7 @@ Run `kitr dev` and open `/projects`. You see the two projects as links (the `/pr
 | `.page('/files/$')` | `/files/*`, the rest of the path in `params._splat` |
 | `.root({ head, component })` | The HTML document around every page |
 
-`.group(prefix, callback)` comes from the core table, so it prefixes endpoints and sockets too; `.layout(id, options, callback)` is the router's. Route ids follow TanStack's rules, with layouts in them: the dashboard above is `/_app/dashboard`, which is what `getRouteApi('/_app/dashboard')` takes. Path syntax (`$id`, `$`, optional segments) is TanStack's, documented in its [routing guide](https://tanstack.com/router/latest/docs/framework/react/routing/routing-concepts).
+Route ids include layouts: the dashboard above is `/_app/dashboard`, which is what `getRouteApi('/_app/dashboard')` takes. Path syntax is TanStack's, in its [routing guide](https://tanstack.com/router/latest/docs/framework/react/routing/routing-concepts).
 
 ## Read path params
 
@@ -197,7 +193,7 @@ export default function ProjectPage() {
 }
 ```
 
-`<Link to="/projects/$id">` without `params` is a type error, and so is a `to` that matches no page. That is the `Register` block in `app/router.tsx` at work; `getRouteApi` is typed by it too, so a wrong id is an error as well.
+`<Link to="/projects/$id">` without `params` is a type error, and so is a `to` that matches no page or a wrong `getRouteApi` id.
 
 ## Read and write search params
 
@@ -235,7 +231,7 @@ export default function ProjectsPage() {
 }
 ```
 
-A schema library works too: pass a [Zod](https://zod.dev) schema's `parse` as `validateSearch`. For tables bound to the URL, [table](/packages/table) reads and writes these params for you.
+A [Zod](https://zod.dev) schema's `parse` works as `validateSearch` too.
 
 ## Navigate from code
 
@@ -259,7 +255,7 @@ export function ArchiveButton({ id }: { id: string }) {
 }
 ```
 
-`navigate` takes the same typed `to`, `params` and `search` as `<Link>`. Use `<Link>` for anything the user clicks to move; it preloads on hover, renders a real `<a>` and works with a middle click. Keep `navigate` for moves that follow an action.
+`navigate` takes the same typed `to`, `params` and `search` as `<Link>`. Use `<Link>` for anything the user clicks (it preloads and renders a real `<a>`); keep `navigate` for moves that follow an action.
 
 ## Load data before the page renders
 
@@ -319,9 +315,9 @@ export default function ProjectPage() {
 }
 ```
 
-`context.queryClient` comes from `createKitrRouter`. It is the container's `queryClient`, and on the server it belongs to this request alone. Because links preload on intent, hovering the "Apollo" link already runs this loader.
+`context.queryClient` comes from `createKitrRouter`; on the server it belongs to this request alone. Links preload on intent, so hovering "Apollo" already runs this loader.
 
-Without query, return data from the loader and read it with `route.useLoaderData()`, typed from what the loader returned. Prefer the query version: the cache is shared with every other component that shows the project, and mutations can refresh it.
+Without query, return data from the loader and read it with `route.useLoaderData()`. Prefer the query version: the cache is shared and mutations can refresh it.
 
 ## Use services in loaders
 
@@ -355,10 +351,8 @@ export default function TeamPage() {
 // /teams/platform → "Platform: Ada, Grace, Linus"
 ```
 
-The router boots the app before the first loader runs, so every service is ready.
-
 > [!WARNING]
-> Don't import `app` from `#app/app` in a loader. On the server, `context.app` is a per-request fork of it, and the shared app would leak one visitor's request-scoped services into another's page.
+> Don't import `app` from `#app/app` in a loader. On the server `context.app` is a per-request fork; the shared app would leak one visitor's services into another's page.
 
 ## Add a layout
 
@@ -390,7 +384,7 @@ export default function AppLayout() {
 }
 ```
 
-`/dashboard` and `/projects` now render inside this layout. Navigating between them keeps the layout mounted and replaces only the outlet. A layout takes the same options as a page except `validateSearch` is per page; a `beforeLoad` on it runs for every page inside (see Protect pages behind sign-in).
+`/dashboard` and `/projects` now render inside this layout. Navigating between them keeps the layout mounted and replaces only the outlet. A `beforeLoad` on a layout runs for every page inside it.
 
 ## Show loading, error and not-found states
 
@@ -402,7 +396,7 @@ export default function AppLayout() {
 | `DefaultError` | The error's title and message, a "Try again" button and a "Go home" link. | `role="alert"`, `data-kitr="error"`, `data-code` set to the error code |
 | `DefaultNotFound` | "Page not found" and a "Go home" link. | `data-kitr="not-found"` |
 
-They are styled by `@kitr/theme/styles.css`, which `app/document.tsx` links, through the `.kitr-pending`, `.kitr-error` and `.kitr-not-found` classes. TanStack shows the pending screen only when a loader takes longer than `defaultPendingMs` (one second by default), so fast pages never flash it.
+`@kitr/theme/styles.css` styles them through `.kitr-pending`, `.kitr-error` and `.kitr-not-found`. The pending screen shows only after `defaultPendingMs` (one second), so fast pages never flash it.
 
 Override one page by exporting `definePage` from its module:
 
@@ -475,7 +469,7 @@ r.page('/projects/$id/archive', {
 | A `KitrError` with code `FORBIDDEN` | The error's message | "You don't have access to this page." |
 | Anything else | "Something went wrong" | The error's message |
 
-"Try again" invalidates the router and resets the error boundary, so the loader runs again. Errors from [http](/packages/http), [actions](/packages/actions) and [query](/packages/query) are already `KitrError`s.
+"Try again" reruns the loader. Errors from [http](/packages/http), [actions](/packages/actions) and [query](/packages/query) are already `KitrError`s.
 
 For a missing record, throw TanStack's `notFound()` instead. The page's not-found screen renders, not the error screen:
 
@@ -509,7 +503,7 @@ r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./layouts/app'
 )
 ```
 
-The guard reads `context.session`. When `session?.user` is missing, it throws a redirect to `/sign-in` with the page the visitor wanted in the `redirect` search param: Linus, signed out, opening `/projects/apollo?tab=tasks` lands on `/sign-in` with `redirect` set to `/projects/apollo?tab=tasks`. When there is a user, it returns `{ session }`, which TanStack merges into the context of every page inside the layout.
+The guard reads `context.session`. Without `session?.user` it redirects to `/sign-in`, carrying the wanted page in `redirect`: Linus, signed out, opening `/projects/apollo?tab=tasks` lands on `/sign-in` with `redirect=/projects/apollo?tab=tasks`. Otherwise it returns `{ session }` into the context of every page inside the layout.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -557,10 +551,10 @@ export default function SignInPage() {
 }
 ```
 
-The guard only sees a session if you put one in the router context, through `createKitrRouter`'s `context` option. The session can come from [auth](/packages/auth) or from your own provider; see "Add fields to the router context" below.
+The guard only sees a session you put in the router context (see "Add fields to the router context").
 
-> [!WARNING]
-> Route guards decide what the browser shows. They do not protect data: anyone can call your API without loading the page. Check the session again on the server, in the API route or action that returns the data.
+> [!WARNING] Guards are not security
+> Guards decide what the browser shows; anyone can call your API without loading the page. Check the session again in the API route or action that returns the data.
 
 ## Check a permission
 
@@ -594,7 +588,7 @@ app.page('/projects/$id/edit', {
 })
 ```
 
-A session without a `can` function, or no session at all, fails every check. The guards type-check against `context.session`, so declare `session` on `KitrRouterContext` (see "Add fields to the router context"). Inside components, [auth](/packages/auth)'s `useCan()` hides buttons the user cannot use; the guard stops the page.
+A session without a `can` function, or no session, fails every check. Declare `session` on `KitrRouterContext` so the guards type-check. In components, [auth](/packages/auth)'s `useCan()` hides buttons; the guard stops the page.
 
 ## Combine guards
 
@@ -610,7 +604,7 @@ app.page('/admin', {
 })
 ```
 
-Your own guards fit in the same list. Return an object to add it to the route context. When a guard needs the page's params, build the list inside `beforeLoad`:
+Your own guards fit in the list; return an object to add it to the route context. When a guard needs the page's params, build the list inside `beforeLoad`:
 
 ```ts
 // app/routes.ts
@@ -641,7 +635,7 @@ When two guards return the same key, the later one wins.
 
 ## Add fields to the router context
 
-Pass extra context with `context` and declare its type once, so every `beforeLoad` and loader sees it. This is how a session reaches the guards. With `@kitr/auth` installed, `createKitrRouter` already puts the live session in `context.session` (and the platform service in `context.platform` with `@kitr/platform`), read from the container when a guard asks; the example below is for a session service of your own named `session`:
+Pass extra context with `context` and declare its type once, so every `beforeLoad` and loader sees it. With `@kitr/auth` installed, `createKitrRouter` already puts the live session in `context.session`; the example below is for a session service of your own:
 
 ```tsx
 // app/router.tsx
@@ -710,13 +704,14 @@ declare module '@kitr/router' {
 }
 ```
 
-`KitrRouterContext` starts with `app` and `queryClient`. The root route is created with it as its context type, so what you declare here is typed in every route. Augment `'@kitr/router'`, the module that declares the interface.
+`KitrRouterContext` starts with `app` and `queryClient`; augment `'@kitr/router'` to add fields.
 
-Use a getter when the value changes after the router is created. TanStack Start builds the router before the app boots, so a plain `session: app.container.use('session')` would read it too early and throw `No binding named "session"`.
+> [!WARNING] Use a getter
+> TanStack Start builds the router before the app boots, so a plain `session: app.container.use('session')` reads too early and throws `No binding named "session"`.
 
 ## Stack pages like a native app
 
-In a phone app a tap on a list row pushes the detail over the list; the list stays where it was, scrolled to the same row, and swiping back reveals it. The browser's model is different: the list unmounts, the detail mounts, back mounts the list again from scratch. `<StackOutlet>` from `@kitr/router/stack` gives the router the native model. Put it where a layout renders its children instead of `<Outlet>`:
+In a phone app a tap on a list row pushes the detail over the list, which stays mounted and scrolled. A browser unmounts the list instead. `<StackOutlet>` from `@kitr/router/stack` gives the router the native model; put it where a layout renders its children instead of `<Outlet>`:
 
 ```ts
 // app/routes.ts
@@ -738,7 +733,7 @@ export default function AppLayout() {
 }
 ```
 
-Every page inside the `_app` layout is now a page in the stack. Navigating deeper pushes; the page beneath stays mounted with its state, scroll position and playing media; history back pops it with the matching animation. Links, loaders, search params and guards work unchanged, and the same route tree renders as plain pages on the server, during hydration and in a static build.
+Every page inside the `_app` layout is now a page in the stack. Navigating deeper pushes; the page beneath keeps its state and scroll; history back pops it. Links, loaders and guards work unchanged, and the server renders plain pages.
 
 ```ts
 // app/routes.ts (inside the _app layout)
@@ -768,7 +763,7 @@ export default function ChatsPage() {
 }
 ```
 
-Opening `/chats/7` from that list pushes the chat over it; opening `/chats/9` from inside chat 7 pushes a second chat page, and each keeps its own params and data. Back pops to chat 7, back again to the list, still scrolled to where it was.
+Opening `/chats/9` from inside chat 7 pushes a second chat page with its own params and data; back pops to chat 7, then the list, still scrolled.
 
 | Prop | What it does |
 | --- | --- |
@@ -777,7 +772,7 @@ Opening `/chats/7` from that list pushes the chat over it; opening `/chats/9` fr
 | `gestures` | Edge swipe back and drag to dismiss. Default: on for touch devices. Pass `{ edge, commitAt, velocity }` to tune. |
 | `onRootBack` | Back pressed with nothing to pop. Default: Android exits the app. |
 
-The stack renders inside a `position: relative` box that fills its parent. Give the parent a height (`100dvh` for a full-screen app) and the pages fill it. Pages are plain `<div data-kitr-stack-page>` elements with `data-presentation` and `data-active` attributes, so CSS can style them; `--kitr-stack-page-bg` sets their background.
+The stack fills its parent: give the parent a height (`100dvh` for a full-screen app). Pages are `<div data-kitr-stack-page>` elements with `data-presentation` and `data-active` attributes; `--kitr-stack-page-bg` sets their background.
 
 ## Choose how a page arrives
 
@@ -799,9 +794,9 @@ r.page('/compose', {
 | `sheet` | Rises over the dimmed page beneath, which stays visible. For a picker, a menu, a share sheet. | Drag down, tap the scrim, back. |
 | `fullscreen` | Like `push`, with no swipe gesture. For a video, a camera, a map. | Back button, `pop()`. |
 
-`keepAlive: false` on a route tells the stack to unmount that page as soon as it is covered: a camera or a heavy map should not keep running under the next page.
+`keepAlive: false` unmounts a page as soon as it is covered, so a camera or heavy map stops running.
 
-`stackParent` is for cold starts. When a notification opens `/chats/7` directly, there is no list beneath it; with `stackParent: '/chats'`, the stack puts the list under the chat on first render (the history gets both entries), so swipe back and the back button have somewhere to go. It applies only when the app started on that page; a push from inside the app already has its parent.
+`stackParent` is for cold starts: when a notification opens `/chats/7` directly, `stackParent: '/chats'` puts the list under the chat so back has somewhere to go. It applies only when the app started on that page.
 
 ```ts
 // app/routes.ts (inside the _app layout)
@@ -855,7 +850,7 @@ export function PageHeader({ title }: { title: string }) {
 | `presentation` | How the current page arrived. |
 | `entry` | The current page's stack entry (id, href, route ids). |
 
-The back button needs the `platform` service from [`@kitr/platform`](/packages/platform): the stack subscribes to `platform.onBackButton()` when the service is in the app's container. Without it the gestures and `useStack()` still work; only the hardware button has no listener.
+The hardware back button needs the `platform` service from [`@kitr/platform`](/packages/platform); gestures and `useStack()` work without it.
 
 ## Tabs that keep their stacks
 
@@ -893,7 +888,7 @@ export default function AppLayout() {
 }
 ```
 
-`select(tab)` opens the tab's last page, or its `to` the first time; selecting the current tab pops it to its root. `match` lists the paths a tab owns (a path and everything under it); by default a tab owns `to`. Pages of other tabs stay mounted and hidden, within the `keepAlive` limit per tab. The render prop draws the bar, so a phone gets a bottom bar and a desktop gets a sidebar from the same component.
+`select(tab)` opens the tab's last page, or its `to` the first time; selecting the current tab pops it to its root. `match` lists the paths a tab owns (default: `to`). The render prop draws the bar, so a phone gets a bottom bar and a desktop a sidebar.
 
 ## Show a list beside the detail
 
@@ -935,11 +930,11 @@ export default function ChatsPage() {
 }
 ```
 
-`useSplitPane()` is `false` on the server and in the first client render, so the server output is the phone layout and the panes appear once the viewport is measured; nothing shifts for phones, which never split.
+`useSplitPane()` is `false` on the server and in the first client render, so phones never see a shift.
 
 ## Limit a route to some platforms
 
-An app that ships as a marketing site, an authed web app and a phone app shares one route tree, but not every route belongs everywhere: the pricing page exists on `www` only, the account pages on the authed builds. `onlyPlatform()` is a `beforeLoad` guard that renders not-found (or redirects) on the other platforms:
+Apps that share one route tree across a marketing site, a web app and a phone app need some routes on one platform only. `onlyPlatform()` is a `beforeLoad` guard that renders not-found (or redirects) elsewhere:
 
 ```ts
 // app/routes.ts
@@ -957,7 +952,7 @@ r.page('/billing', {
 })
 ```
 
-Keys are platform names (`www`, `phone`), platform types (`web`, `mobile`), OS names (`ios`) or `native`. It works with or without the platform package. Code that branches on `import.meta.env.KITR_PLATFORM` is dropped from builds where it never runs.
+Keys are platform names (`www`, `phone`), types (`web`, `mobile`), OS names (`ios`) or `native`.
 
 | Guard | Where the route exists |
 | --- | --- |
@@ -965,7 +960,7 @@ Keys are platform names (`www`, `phone`), platform types (`web`, `mobile`), OS n
 | `onlyPlatform(['web', 'desktop'])` | Every web and desktop build; a 404 on phones. |
 | `onlyPlatform('native', { to: '/download' })` | Native shells; the web redirects to the download page. |
 
-To render a route on the server on one platform and in the browser on another, see `ssrRoute()` with a per-platform table in [`@kitr/seo`](/packages/seo).
+
 
 ## Set the page title and meta tags
 
@@ -1007,7 +1002,7 @@ r.page('/scan', {
 })
 ```
 
-`<Link to="/scan">` stays type-checked everywhere, because the type of the table is the same on every platform; only the compiled tree differs.
+`<Link to="/scan">` stays type-checked on every platform; only the compiled tree differs.
 
 ## Render on the server
 
@@ -1051,13 +1046,16 @@ export function RootDocument() {
 r.root({ head, component: RootDocument })
 ```
 
-`.root` takes TanStack's root route options (`head`, `component`, `beforeLoad`, `loader`, `errorComponent`...) and may be called once per table, before any page. Without it, kitr renders a default document. [theme](/packages/theme) and [tailwind](/packages/tailwind) edit `app/document.tsx` when you add them.
+`.root` takes TanStack's root route options (`head`, `component`, `beforeLoad`, `loader`, `errorComponent`) and may be called once per table, before any page. Without it, kitr renders a default document.
 
-On the web platform, [`mode`](/docs/platforms) decides what happens with the document: `ssr` streams it from the server on every request, `static` prerenders it at build time, and `spa` ships one shell that renders in the browser. Desktop and mobile apps always use the shell. Write the document once and it works in all of them; don't branch on the platform inside it.
+On the web platform, [`mode`](/docs/platforms) decides what happens with the document: `ssr` streams it on every request, `static` prerenders it at build time, and `spa` ships one browser shell. Write the document once; don't branch on the platform inside it.
 
-On the server, each request gets its own router and its own fork of the app (`app.fork()`), so request-scoped services such as the query cache never leak between visitors. The router also boots the app before its first `load()`, so a loader never sees a provider that has not registered yet.
+<details>
+<summary>Requests and the server platform</summary>
 
-When the same app has a [server](/packages/server) platform, `app/server.ts` is Start's server entry: a request for a path the kitr server has routes for (endpoints, sockets, the health check) goes to that server, everything else renders a page. One process in development and in `ssr` builds, two tables.
+Each server request gets its own router and fork of the app (`app.fork()`), so request-scoped services such as the query cache never leak between visitors. With a [server](/packages/server) platform, `app/server.ts` is Start's server entry: paths the kitr server has routes for (endpoints, sockets, the health check) go to it, everything else renders a page.
+
+</details>
 
 ## Reach the router from a service
 
@@ -1073,11 +1071,11 @@ export function openProject(id: string) {
 }
 ```
 
-The binding is typed as TanStack's `AnyRouter`, so `to` is not checked here. Inside components, prefer `useNavigate()`, which is.
+`to` is not type-checked here; inside components prefer `useNavigate()`, which is.
 
 ## Keep file routes
 
-A project can use TanStack's file routes instead of the table. With `app/routes/__root.tsx` present, `@kitr/vite` lets TanStack's route generator build `app/routeTree.gen.ts`, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line, and `kitr doctor` allows exactly that import. A project uses the table or file routes, not both.
+To use TanStack's file routes instead of the table, add `app/routes/__root.tsx`; `@kitr/vite` then builds `app/routeTree.gen.ts`, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, which `kitr doctor` allows. Use the table or file routes, not both.
 
 ## Commands
 
@@ -1106,9 +1104,10 @@ export default function ProjectsIdPage() {
 }
 ```
 
-`projects/:id` is accepted for `projects/$id`. `--force` overwrites an existing page file. `kitr eject stub page` copies the template to `stubs/page.ts` so you can change what every new page looks like. Quote the argument in shells that expand `$`. When `app/routes.ts` is not one method chain (a callback with a block body), the command writes the page and prints the link to add by hand.
+`projects/:id` is accepted for `projects/$id`; quote the argument in shells that expand `$`. `--force` overwrites an existing page, and `kitr eject stub page` copies the template to `stubs/page.ts`.
 
-`kitr doctor` reports a router with no pages (`app/routes.ts` missing) and warns about imports from `@tanstack/react-router` in app code; everything it exports comes from `@kitr/router`.
+> [!WARNING]
+> Import from `@kitr/router`, not `@tanstack/react-router`; `kitr doctor` warns about the latter in app code.
 
 ## Errors
 
@@ -1170,8 +1169,6 @@ describe('project page', () => {
 })
 ```
 
-Testing with the app's own table from `app/routes.ts` works the same way; build the small table above when you want a test that does not depend on every page. Without a `.root`, kitr renders a default document around the page.
-
 Guards are plain functions, so test them without rendering. A redirect is thrown, and `isRedirect` recognises it:
 
 ```ts
@@ -1207,16 +1204,14 @@ describe('guards', () => {
 })
 ```
 
-To render one component that uses `Link` or `getRouteApi` without the whole app, put it on a page in a small table like the one above. Links need a router around them.
+A component that uses `Link` or `getRouteApi` needs a router around it: put it on a page in a small table like the one above.
 
 ## Devtools
 
-With [devtools](/packages/devtools) installed, every resolved navigation is logged to the overlay's log under the `router` source: `navigated /projects/apollo` when the path changed, `resolved /projects/apollo` when only the search did. Each entry carries the previous path and the new search params.
+With [devtools](/packages/devtools) installed, each resolved navigation is logged under the `router` source: `navigated /projects/apollo` when the path changed, `resolved /projects/apollo` when only the search did.
 
 ## Next steps
 
-- [API reference](/packages/router/api): `createKitrRouter`, the `router` extension, the guards and the default screens with their signatures.
-- [TanStack Router documentation](https://tanstack.com/router/latest/docs/framework/react/overview): routing, search params, loaders and everything re-exported here.
+- [API reference](/packages/router/api): `createKitrRouter`, the guards and the default screens.
 - [Query](/packages/query): the cache that loaders fill and components read.
-- [Auth](/packages/auth): the session the guards read, and `useCan()` for components.
-- [Platforms](/docs/platforms): `ssr`, `static` and `spa` modes, and the desktop and mobile shells.
+- [Auth](/packages/auth): the session the guards read.

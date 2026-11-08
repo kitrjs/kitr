@@ -6,17 +6,21 @@ order: 1
 
 # Error monitoring
 
-When something breaks in production, you want to know before a user writes in, and you want enough context to fix it: who it happened to, which page they were on and what they did beforehand. `@kitr/monitoring` catches render errors, uncaught errors and failed server requests, adds the signed-in user, tags and breadcrumbs, and sends each report to [Sentry](https://docs.sentry.io/platforms/javascript/), [Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) or any other service through one small API.
+When something breaks in production, you want to know before a user writes in, with enough context to fix it. `@kitr/monitoring` catches render errors, uncaught errors and failed server requests, adds the signed-in user, tags and breadcrumbs, and sends each report to [Sentry](https://docs.sentry.io/platforms/javascript/), [Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) or any other service.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com`, where Ada imports projects from a CSV file, Grace manages her team's invoices, and Linus is on call when a report comes in.
+> [!SUMMARY]
+> Catches errors in the browser and on the server and reports them, with the user and what they did first, to Sentry, Better Stack or your own service. Add it with `kitr add monitoring`; the overview is at [/packages/monitoring](/packages/monitoring).
 
-`@kitr/monitoring` runs in the browser and on the server. The provider and its error boundary need React; a server-only project uses the same API without the provider. It is for failures someone should fix. For lines a developer reads while debugging, use the [logger](/packages/logger); for counting what users do, use [analytics](/packages/analytics).
+It runs in the browser and on the server; the provider and its error boundary need React, and a server-only project uses the same API without the provider. For lines you read while debugging, use the [logger](/packages/logger); for counting what users do, use [analytics](/packages/analytics). The examples follow Acme's app at `app.acme.com`.
 
 ## Install
 
 ```sh
 kitr add monitoring
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does depends on whether the project has React. In a project with React (every kit with a web platform):
 
@@ -34,15 +38,17 @@ In a server-only project (the `server` kit, or any project with the server packa
 - Writes `config/monitoring.ts` for the server and regenerates `config/index.ts`.
 - Adds a `## kitr: monitoring` section to `AGENTS.md` about the server middleware and `captureException`.
 
-To edit `package.json` without running the package manager, pass the global flag:
+`kitr remove monitoring` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/monitoring.ts`. The env variable and its `app/env.ts` entry stay.
+
+</details>
+
+To edit `package.json` without running the package manager, pass `--no-install`:
 
 ```sh
 kitr add monitoring --no-install
 ```
 
 The `saas` kit includes monitoring.
-
-`kitr remove monitoring` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/monitoring.ts`. The env variable and its `app/env.ts` entry stay.
 
 ## Configure
 
@@ -98,7 +104,7 @@ export default defineConfig({
 | `VITE_SENTRY_DSN` | The Sentry DSN in a project with React. Public, because the browser sends reports. |
 | `SENTRY_DSN` | The Sentry DSN in a server-only project. |
 
-Neither variable does anything until you uncomment the reporter line. Until then, development prints errors to the console and [devtools](/packages/devtools), and production sends them nowhere.
+Neither variable does anything until you uncomment the reporter line.
 
 ## Report your first error
 
@@ -129,13 +135,13 @@ export function ImportProjectsButton({ file }: { file: File }) {
 }
 ```
 
-Make the import fail in development and the console reporter prints the report:
+Make the import fail in development and the console reporter prints it:
 
 ```
 [monitoring] error Error: Import failed with 500 { fileName: 'projects.csv', size: 18234 }
 ```
 
-With [devtools](/packages/devtools) open, the report also appears in the Errors panel with its stack and extra data. Add a reporter, as in the next section, and the same call sends it to Sentry in production.
+With [devtools](/packages/devtools) open it also appears in the Errors panel. Add a reporter, as below, and the same call sends it to Sentry in production.
 
 ## What is reported for you
 
@@ -148,13 +154,11 @@ You do not need `try`/`catch` for these:
 | A rejected promise nobody handled | Browser | A `window` `unhandledrejection` listener, unless `globalHandlers: false`. | `window` |
 | An error thrown by a server route | Server | The `reportErrors` middleware, once you add it. | `server` |
 
-Every report goes through `shouldReport` first. Expected failures are not incidents: a `KitrError` with a status below 500 (not found, validation, unauthorized) and an aborted `fetch` are dropped by default.
-
-React retries a failed render, and StrictMode renders twice, so one render error can throw several times. The boundary reports it once.
+Every report goes through `shouldReport` first. A `KitrError` with a status below 500 (not found, validation, unauthorized) and an aborted `fetch` are dropped by default. The boundary reports a render error once, even when React retries.
 
 ## Reporters
 
-A reporter sends reports to one destination. List any number in `reporters`; each report goes to all of them. A reporter that throws is ignored, so a broken one never breaks your app.
+A reporter sends reports to one destination. List any number in `reporters`; each report goes to all of them, and a reporter that throws is ignored.
 
 ### Sentry in the browser
 
@@ -184,7 +188,7 @@ In `.env`:
 VITE_SENTRY_DSN=https://<key>@o123.ingest.sentry.io/456
 ```
 
-You pass the Sentry module yourself, so the bundle contains `@sentry/react` in the browser and nothing kitr chose for you. Every option you pass to `sentry()` (`dsn`, `environment`, `release`, `tracesSampleRate` and any other) goes to [`Sentry.init`](https://docs.sentry.io/platforms/javascript/guides/react/configuration/options/), which the reporter calls when the monitoring service is created.
+You pass the Sentry module yourself. Every option you give `sentry()` goes to [`Sentry.init`](https://docs.sentry.io/platforms/javascript/guides/react/configuration/options/), which the reporter calls when the service is created.
 
 ### Sentry on the server
 
@@ -209,13 +213,14 @@ In `.env`:
 SENTRY_DSN=https://<key>@o123.ingest.sentry.io/789
 ```
 
-See [Sentry for Node.js](https://docs.sentry.io/platforms/javascript/guides/node/). In a project with both a web and a server platform, `config/monitoring.ts` is shared, so pick the SDK per side or keep one config per platform.
+See [Sentry for Node.js](https://docs.sentry.io/platforms/javascript/guides/node/).
 
-The reporter maps each call to the SDK: `captureException` and `captureMessage` with your `tags`, `extra` and `level` (messages default to `info`), `setUser`, `addBreadcrumb`, `setTag` and `flush`.
+> [!WARNING] One config for web and server
+> `config/monitoring.ts` is shared, so in a project with both platforms pick the SDK per side or keep one config per platform.
 
 ### Better Stack
 
-[Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) takes reports from the Sentry SDK, so you install the same SDK and give it Better Stack's DSN. Find the DSN in Better Stack under Errors, your application, Ingest.
+[Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) takes reports from the Sentry SDK: install it and give it Better Stack's DSN (Errors, your application, Ingest).
 
 ```sh
 pnpm add @sentry/react
@@ -238,7 +243,7 @@ In `.env`:
 VITE_SENTRY_DSN=https://<token>@<ingesting-host>/<application-id>
 ```
 
-`betterStack()` works like `sentry()`: the same options and the same calls. On the server, use `@sentry/node` and `SENTRY_DSN`.
+`betterStack()` takes the same options as `sentry()`. On the server, use `@sentry/node` and `SENTRY_DSN`.
 
 ### Console
 
@@ -249,11 +254,14 @@ import { consoleReporter, defineConfig } from '@kitr/monitoring'
 export default defineConfig({ reporters: [consoleReporter()], debug: false })
 ```
 
-Prints exceptions with `console.error('[monitoring]', source, error, extra)` and messages with `console.info`. Breadcrumbs and users are ignored. No env variables. The provider adds it in development when `reporters` is empty, and leaves `debug` off then. When you list it yourself in development, set `debug: false` next to it, or each report prints twice.
+Prints exceptions with `console.error` and messages with `console.info`; breadcrumbs and users are ignored. The provider adds it in development when `reporters` is empty.
+
+> [!WARNING] Duplicate console lines
+> If you list it yourself in development, set `debug: false` next to it, or each report prints twice.
 
 ### Devtools
 
-`devtoolsReporter(hub)` sends exceptions and messages to the devtools `errors` channel and breadcrumbs to `breadcrumbs`. The provider adds it for you whenever [devtools](/packages/devtools) is active; you never list it yourself.
+The provider adds `devtoolsReporter` whenever [devtools](/packages/devtools) is active; you never list it yourself.
 
 ### Memory
 
@@ -291,7 +299,10 @@ export async function downloadInvoice(app: KitrApp, invoiceNumber: string) {
 }
 ```
 
-Outside React, the service is `app.container.use('monitoring')`. Don't report an error and then rethrow it to a place that reports it again, such as the error boundary or the server middleware: you get two reports for one failure. Either handle and report, or let it propagate.
+Outside React, the service is `app.container.use('monitoring')`.
+
+> [!WARNING] Report once
+> Don't report an error and then rethrow it to the error boundary or server middleware: you get two reports. Either handle and report, or let it propagate.
 
 ## Send a message
 
@@ -314,7 +325,7 @@ Messages skip `shouldReport`; every call is sent.
 
 ## Identify the user
 
-`setUser(user)` attaches the signed-in user to every report that follows, so Linus can see that Ada hit the error and contact her. Call it after sign-in and pass `null` on sign-out:
+`setUser(user)` attaches the signed-in user to every report that follows. Call it after sign-in and pass `null` on sign-out:
 
 ```ts
 // app/lib/auth/session.ts
@@ -329,11 +340,11 @@ export function onSignedOut(app: KitrApp) {
 }
 ```
 
-The user needs an `id`; `email`, `username` and any other field are optional. Only send what your privacy policy allows. An id alone is often enough to look the person up.
+The user needs an `id`; other fields are optional. Only send what your privacy policy allows; an id alone is often enough.
 
 ## Leave breadcrumbs
 
-A breadcrumb is a step on the way to a possible error. Reporters that support them, such as Sentry, attach the most recent ones to the next report:
+A breadcrumb is a step on the way to a possible error. Reporters such as Sentry attach the most recent ones to the next report:
 
 ```ts
 // app/lib/projects/import-projects.ts
@@ -356,7 +367,6 @@ export async function importProjects(app: KitrApp, file: File) {
 | `data` | Extra data. |
 | `timestamp` | Milliseconds since the epoch. Set to `Date.now()` when left out. |
 
-The console and memory reporters ignore breadcrumbs; devtools lists them under Breadcrumbs.
 
 ## Tag reports
 
@@ -377,7 +387,7 @@ export function onTeamSelected(app: KitrApp, team: { id: string; plan: 'free' | 
 }
 ```
 
-`setTag` is passed to reporters that keep their own scope, such as Sentry. The config tags and per-call tags are merged into each report by `@kitr/monitoring` itself, with per-call tags winning.
+Per-call tags win over config tags.
 
 ## Wrap a function
 
@@ -405,11 +415,11 @@ export async function sendInvoice(monitoring: Monitoring, invoiceNumber: string)
 }
 ```
 
-Use it for work that runs outside a request or render, such as a timer or a queue consumer, where nothing else would see the error.
+Use it for work outside a request or render, such as a timer or queue consumer.
 
 ## Ignore expected errors
 
-`shouldReport(error, context)` decides whether `captureException` sends anything. The default is `defaultShouldReport`, which you can extend instead of replacing:
+`shouldReport(error, context)` decides whether `captureException` sends anything. Extend `defaultShouldReport` instead of replacing it:
 
 ```ts
 // config/monitoring.ts
@@ -441,7 +451,7 @@ defaultShouldReport(new Error('Import failed with 500')) // => true
 
 ## Show a fallback for a render error
 
-The provider's boundary rethrows so the router's error component renders. To keep the rest of a page working when one widget fails, put your own `MonitoringErrorBoundary` around it with a `fallback`:
+To keep the rest of a page working when one widget fails, put your own `MonitoringErrorBoundary` around it with a `fallback`:
 
 ```tsx
 // app/components/invoices/invoice-chart-section.tsx
@@ -475,7 +485,6 @@ export function InvoiceChartSection() {
 | `fallback` | A node, or `(error, reset) => node`. `reset()` clears the error and renders the children again. Left out, the boundary rethrows after reporting. |
 | `children` | What it guards. |
 
-The report carries `source: 'error-boundary'` and the React component stack in `extra.componentStack`.
 
 ## Report server errors
 
@@ -529,7 +538,7 @@ A route that throws `new Error('db down')` while handling `GET /api/projects` is
 // }
 ```
 
-The client still gets kitr's normal 500 response. A route that throws `KitrError.notFound()` answers 404 and is not reported. `createMonitoring` used directly does not add the console reporter or the `environment` tag; add them in the config if you want them.
+The client still gets kitr's normal 500 response; a route that throws `KitrError.notFound()` answers 404 and is not reported.
 
 ## Flush before the process exits
 
@@ -550,7 +559,7 @@ try {
 }
 ```
 
-`flush` waits for every reporter that has a `flush` method, up to the timeout (2 seconds by default), and never throws.
+`flush` waits up to the timeout (2 seconds by default) and never throws.
 
 ## Testing
 
@@ -595,9 +604,7 @@ describe('downloadInvoice', () => {
 | `messages` | The text of each `captureMessage`. |
 | `user` | The last value passed to `setUser`. |
 
-Breadcrumbs and tags set with `setTag` are not kept. To check that an expected error is dropped, assert `expect(reporter.exceptions).toHaveLength(0)`.
-
-Without the provider, `createMonitoring({ reporters: [reporter] })` gives you the same service with no `environment` tag. Use it to test the server middleware without a server:
+Breadcrumbs and `setTag` values are not kept. Without the provider, `createMonitoring({ reporters: [reporter] })` gives the same service with no `environment` tag; use it to test the server middleware:
 
 ```ts
 // test/report-errors.test.ts
@@ -684,22 +691,17 @@ export default defineConfig({
 })
 ```
 
-`captureException` must not throw or block: return at once and send in the background. The service calls each reporter inside `try`/`catch` and ignores rejected promises, so a failing endpoint loses its reports silently. `init` runs once, when the service is created. Breadcrumbs reach you without the merged tags; exceptions and messages arrive with them.
+`captureException` must not throw or block: send in the background. A failing endpoint loses its reports silently.
 
 ## Devtools
 
 With [devtools](/packages/devtools) installed, the provider registers an Errors panel and a devtools reporter in development.
 
-- The panel lists captured exceptions, messages and `setUser` calls, newest first, with the time, the `source` as a badge, the stack and the `extra` data. The latest one is expanded.
-- Its tab shows a badge with the number of exceptions.
-- Below the list, the last 20 breadcrumbs.
-- The Clear errors action empties the list. Throw a test error throws an uncaught error, so you can check the global handler without writing code.
+- The panel lists exceptions, messages and `setUser` calls, newest first, with source, stack and `extra` data, and the last 20 breadcrumbs below.
+- Clear errors empties the list; Throw a test error checks the global handler without writing code.
 
 ## Next steps
 
 - [Monitoring API reference](/packages/monitoring/api): every export with its signature.
-- [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/): the SDK behind the `sentry()` and `betterStack()` reporters.
 - [Logger](/packages/logger): lines for debugging, next to reports for fixing.
-- [Server](/packages/server): request ids and kitr's error responses.
-- [Devtools](/packages/devtools): the Errors panel in development.
 - [Auth](/packages/auth): where to call `setUser` after sign-in.

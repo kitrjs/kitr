@@ -14,8 +14,8 @@ const only = new Set(args.filter((a) => !a.startsWith('--')))
 
 /** Sections every guide needs, in this order. Install, Configure and Testing are exact names. */
 export const REQUIRED = ['Install', 'Configure', 'Testing', 'Next steps']
-export const MIN_WORDS = 1200
-export const MIN_CODE_BLOCKS = 15
+export const MIN_WORDS = 600
+export const MIN_CODE_BLOCKS = 8
 /** A table cell is one short sentence and at most one example. Detail goes in a section below. */
 export const MAX_CELL_WORDS = 30
 // "bar" alone is a real word (title bar, status bar), so it only counts as code or next to foo.

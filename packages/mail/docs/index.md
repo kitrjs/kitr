@@ -6,17 +6,23 @@ order: 1
 
 # Mail
 
-Order confirmations, password resets, invoices, team invites: almost every app sends email, and most end up with a folder of HTML strings nobody wants to touch. In kitr an email is a React component with a subject. `@kitr/mail` renders it to HTML and plain text, checks every address and header, sends it through [Resend](https://resend.com/docs), SMTP or your own transport, and shows you a live preview of every template while you work.
+Order confirmations, password resets, invoices, team invites: almost every app sends email, and most end up with a folder of HTML strings nobody wants to touch. In kitr an email is a React component with a subject. `@kitr/mail` renders it to HTML and plain text, checks every address and header, and sends it through [Resend](https://resend.com/docs), SMTP or your own transport.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` emails Ada Lovelace when her order ships, sends Grace an invoice as a PDF, and copies Linus on the ones he cares about.
+> [!SUMMARY]
+> Write emails as React components, send them through Resend or SMTP, and preview them in development. Add it with `kitr add mail`; the overview is at [/packages/mail](/packages/mail).
 
-`@kitr/mail` runs on the server only. The provider binds nothing in the browser. To send without making a request wait for the mail provider, send from a [job](/packages/jobs).
+It runs on the server only. To send without making a request wait for the mail provider, send from a [job](/packages/jobs).
+
+The examples follow Acme's app at `app.acme.com`, which emails Ada Lovelace when her order ships, sends Grace an invoice as a PDF, and copies Linus.
 
 ## Install
 
 ```sh
 kitr add mail
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -28,15 +34,11 @@ What `kitr add` does:
 - Adds `mailPreview(server, [welcomeMail])` to `server/main.ts`, inside `if (server.app.isDevelopment)`, with its imports. This step is skipped when the project has no `server/main.ts`.
 - Adds a `## kitr: mail` section to `AGENTS.md` telling coding agents where templates live and how to send them.
 
-To edit `package.json` without running the package manager, pass the global flag:
+No kit includes mail; add it to any kit with a server platform.
 
-```sh
-kitr add mail --no-install
-```
+`kitr remove mail` reverses these steps and deletes `config/mail.ts`. It leaves your templates, the env variables and the `mailPreview` lines in `server/main.ts` for you to delete.
 
-No kit includes mail; add it to any kit with a server platform (`fullstack`, `server`, `saas`, `site`, `realtime`).
-
-`kitr remove mail` reverses the provider, `packages` entry, dependency and `AGENTS.md` steps, and deletes `config/mail.ts`. It leaves your templates in `server/mail/`, the env variables, and the `mailPreview` lines in `server/main.ts`, which you delete by hand.
+</details>
 
 ## Configure
 
@@ -59,7 +61,7 @@ export default defineConfig({
 })
 ```
 
-With `RESEND_API_KEY` set, messages go to Resend. Without it `transport` is unset: in development the provider uses the log transport, which prints each message to the console and keeps it in memory, and in production the provider refuses to boot. The comment's `createSmtpTransport({ host, auth })` is shorthand: the real call takes the nodemailer module first, as shown in [SMTP](#smtp).
+With `RESEND_API_KEY` set, messages go to Resend. Without it, development prints each message to the console and production refuses to boot. For SMTP, see [SMTP](#smtp).
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -72,7 +74,8 @@ With `RESEND_API_KEY` set, messages go to Resend. Without it `transport` is unse
 | `RESEND_API_KEY` | The Resend API key. When set, the generated config sends through Resend. |
 | `MAIL_FROM` | The default sender, such as `Acme <orders@acme.com>`. |
 
-Set `MAIL_FROM` to an address on a domain you have verified with your provider. Resend and most SMTP services reject a sender on an unverified domain.
+> [!WARNING] Verify your sending domain
+> Set `MAIL_FROM` to an address on a domain you have verified; Resend and most SMTP services reject others.
 
 ## Send your first email
 
@@ -82,7 +85,7 @@ Generate a template:
 kitr make:mail order-shipped
 ```
 
-That writes `server/mail/order-shipped.tsx`. Edit it to describe the email Ada gets when her order leaves the warehouse:
+That writes `server/mail/order-shipped.tsx`. Edit it into the email Ada gets when her order ships:
 
 ```tsx
 // server/mail/order-shipped.tsx
@@ -108,7 +111,7 @@ export const orderShippedMail = defineMail<OrderShippedProps>('order_shipped', {
 })
 ```
 
-Send it from a controller. `ctx.app` is the request's app, and `useMailer(app)` returns the mailer the provider bound:
+Send it from a controller with `useMailer(app)`:
 
 ```ts
 // server/controllers/orders-controller.ts
@@ -129,7 +132,7 @@ export default class OrdersController {
 }
 ```
 
-Register the route with `api.post('/orders/:id/ship', [OrdersController, 'ship'])` in `server/routes.ts` and call it. In development, with no `RESEND_API_KEY`, the server prints the message instead of sending it:
+Register the route with `api.post('/orders/:id/ship', [OrdersController, 'ship'])` and call it. In development, with no `RESEND_API_KEY`, the server prints the message instead:
 
 ```
 [@kitr/mail] to Ada Lovelace <ada@acme.com>: Order 1042 has shipped
@@ -138,7 +141,7 @@ Hi Ada, order 1042 left our warehouse today.
 Track your order (https://app.acme.com/orders/1042)
 ```
 
-The props are typed from the template, so leaving out `orderId` is a type error. `send()` renders the component, builds the text version, checks every address and header, hands the message to the transport and resolves with `{ id, transport }`. Set `RESEND_API_KEY` and the same call sends a real email.
+Props are typed from the template, so leaving out `orderId` is a type error. Set `RESEND_API_KEY` and the same call sends a real email.
 
 ## Write a template
 
@@ -151,7 +154,7 @@ The props are typed from the template, so leaving out `orderId` is a type error.
 | `text(props)` | no | The plain-text version. Left out, it is derived from the HTML. See [Write the plain-text version](#write-the-plain-text-version). |
 | `preview` | no | Props the development preview renders with. |
 
-Templates are plain React with no hooks or state: they render once, on the server, to a string. Put shared layout in a component and reuse it across templates:
+Templates are plain React with no hooks or state; they render once on the server. Put shared layout in a component:
 
 ```tsx
 // server/mail/layout.tsx
@@ -205,11 +208,14 @@ export const invoiceReadyMail = defineMail<InvoiceReadyProps>('invoice_ready', {
 })
 ```
 
-Props are escaped like any React text, so a project name of `<script>` arrives as `&lt;script&gt;`. Mail clients do not load your stylesheets, so use inline `style` props. Images must be absolute URLs (`https://app.acme.com/logo.png`); `@kitr/mail` has no inline (CID) attachments. When the rendered HTML does not start with `<!doctype` or `<html`, `@kitr/mail` prepends `<!DOCTYPE html>`.
+Props are escaped like any React text.
+
+> [!WARNING] Mail clients ignore your stylesheets
+> Use inline `style` props, and absolute image URLs such as `https://app.acme.com/logo.png`; there are no inline (CID) attachments.
 
 ## Use React Email components
 
-[React Email](https://react.email/docs/introduction) publishes components such as `<Html>`, `<Button>`, `<Container>` and `<Text>` that render to markup mail clients handle well. They are React components, so they work inside `render`:
+[React Email](https://react.email/docs/introduction) components such as `<Html>`, `<Button>` and `<Container>` work inside `render`:
 
 ```sh
 pnpm add @react-email/components
@@ -244,11 +250,11 @@ export const teamInviteMail = defineMail<TeamInviteProps>('team_invite', {
 })
 ```
 
-`@kitr/mail` renders with `renderToStaticMarkup` from `react-dom/server`, not React Email's own `render()`. A component that only works through React Email's async `render()` needs a mailer you create yourself with `createMailer({ renderHtml })`; see [Create a mailer without the provider](#create-a-mailer-without-the-provider).
+`@kitr/mail` renders with `renderToStaticMarkup`, not React Email's async `render()`. For components that need it, see [Create a mailer without the provider](#create-a-mailer-without-the-provider).
 
 ## Write the plain-text version
 
-Every message has a text part, for clients that show no HTML and for spam filters that score its absence. Left out, `@kitr/mail` derives it from the HTML with `htmlToText()`:
+Every message has a text part, for clients that show no HTML and for spam filters. Left out, it is derived from the HTML with `htmlToText()`:
 
 ```ts
 // scripts/text_preview.ts
@@ -260,12 +266,7 @@ htmlToText(
 // => 'Invoice INV-7\nTotal: $40 & tax\nHosting\nSupport\nView invoice (https://app.acme.com/invoices/7)'
 ```
 
-- `<head>`, `<style>` and `<script>` are dropped with their contents.
-- Links become `text (url)`.
-- Closing `p`, `div`, `h1`–`h6`, `li`, `tr` and `br` become line breaks; three or more in a row collapse to one blank line.
-- `&nbsp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;` and `&amp;` are decoded. Other named entities (`&pound;`) stay as written.
-
-When the derived text reads badly, usually because of layout tables, write it yourself:
+Links become `text (url)`, block elements become line breaks, and `<head>`, `<style>` and `<script>` are dropped. When the derived text reads badly, usually because of layout tables, write it yourself:
 
 ```tsx
 // server/mail/order-shipped.tsx
@@ -305,7 +306,7 @@ A `Recipient` is `'ada@acme.com'`, `'Ada Lovelace <ada@acme.com>'` or `{ email: 
 | `id` | The id the transport returned (Resend's email id, SMTP's `messageId`, `log-<n>` for the log transport), or a random UUID when it returned none. |
 | `transport` | The transport's name: `log`, `resend`, `smtp` or yours. |
 
-Store `id` next to the order when you want to match it against the provider's delivery webhooks later.
+Store `id` next to the order to match the provider's delivery webhooks later.
 
 ## Address several recipients
 
@@ -344,13 +345,14 @@ formatAddress({ name: 'Lovelace, Ada', email: 'ada@acme.com' })
 // => '"Lovelace, Ada" <ada@acme.com>'
 ```
 
-`formatAddress()` quotes display names that contain commas or quotes. Without the quotes, `Lovelace, Ada <ada@acme.com>` reads as two recipients. The check rejects whitespace, `<`, `>`, `,`, `;` and `"` in the address part and requires an `@`. It does not check that the domain exists: `ada@acme` passes, and your provider bounces it later.
+`formatAddress()` quotes display names that contain commas, so `Lovelace, Ada` stays one recipient. The check requires an `@` and rejects whitespace and `<>,;"` in the address; it does not check that the domain exists.
 
-Don't join several people into one string (`'ada@acme.com, grace@acme.com'`); it throws `is not an email address`. Pass an array.
+> [!WARNING] One address per entry
+> `'ada@acme.com, grace@acme.com'` throws `is not an email address`. Pass an array.
 
 ## Set the sender and reply-to
 
-The sender comes from `from` in `config/mail.ts`. Override it per message, and point replies at a person or a support inbox:
+The sender comes from `from` in `config/mail.ts`. Override it per message and point replies at a person or inbox:
 
 ```ts
 // server/services/support-service.ts
@@ -371,11 +373,10 @@ export async function sendFromSupport(app: KitrApp) {
 }
 ```
 
-Without a `from` anywhere, `send()` and `render()` throw ``[@kitr/mail] No sender: set `from` in config/mail.ts or in send().``
 
 ## Add headers
 
-Pass custom headers in `headers`. The common one is `List-Unsubscribe`, which Gmail and Yahoo require for bulk mail:
+Pass custom headers in `headers`, such as `List-Unsubscribe`, which Gmail and Yahoo require for bulk mail:
 
 ```ts
 // server/services/digest-service.ts
@@ -399,11 +400,11 @@ export async function sendWithUnsubscribe(app: KitrApp, token: string) {
 }
 ```
 
-Header names must be tokens (letters, digits and ``!#$%&'*+.^_`|~-``), so `X Acme` throws `Bad header name "X Acme"`.
+Header names with a space, such as `X Acme`, throw `Bad header name`.
 
 ### Header injection
 
-A line break in an address, a display name, the subject or a header value would let a value start a new header (`Bcc: someone@else.com`) at the SMTP layer. `@kitr/mail` throws before sending instead, including when the subject is built from props a user typed:
+A line break in an address, subject or header value would let it start a new header (`Bcc: someone@else.com`). `@kitr/mail` throws before sending, even when the subject is built from props a user typed:
 
 ```ts
 // scripts/injection.ts
@@ -415,8 +416,6 @@ const mailer = createMailer({ from: 'orders@acme.com', transport: createLogTrans
 await mailer.send(orderShippedMail, { firstName: 'Ada', orderId: '1042\r\nBcc: someone@else.com' }, { to: 'ada@acme.com' })
 // throws Error: [@kitr/mail] Line break in the subject.
 ```
-
-Nothing reaches the transport when a check fails.
 
 ## Attach a file
 
@@ -445,11 +444,11 @@ export async function sendInvoicePdf(app: KitrApp, invoiceNumber: string) {
 }
 ```
 
-The Resend transport base64-encodes each attachment, encoding string content as UTF-8 first; large files are encoded in chunks. The SMTP transport passes attachments to nodemailer unchanged. Providers cap message size, so link to large files instead of attaching them.
+Providers cap message size, so link to large files instead of attaching them.
 
 ## Send from a job
 
-Sending inside a request makes the response wait for the mail provider, and a provider outage fails the request. Dispatch a [job](/packages/jobs) instead. The request returns at once, and the job retries with backoff when the provider is down:
+Sending inside a request makes the response wait for the provider, and an outage fails the request. Dispatch a [job](/packages/jobs) instead; it retries with backoff:
 
 ```ts
 // server/jobs/send-order-shipped.ts
@@ -489,11 +488,11 @@ export default class OrdersController {
 }
 ```
 
-Pass ids and plain values in the payload, not rendered HTML: the job renders the template when it runs. A message that fails a check (a bad address, a line break) throws on every attempt, so validate addresses in the job's schema, where a bad payload is rejected at dispatch.
+Pass ids and plain values, not rendered HTML. A message that fails a check throws on every attempt, so validate addresses in the job's schema.
 
 ## Render without sending
 
-`mailer.render(template, props, options?)` builds the finished `Message` and sends nothing. Use it for snapshot tests, for storing a copy of what you sent, or to hand the message to code outside kitr:
+`mailer.render(template, props, options?)` builds the finished `Message` and sends nothing, for snapshot tests or storing a copy:
 
 ```ts
 // server/services/archive-service.ts
@@ -519,11 +518,11 @@ export async function renderShipped(app: KitrApp) {
 }
 ```
 
-`render()` runs the sender, subject, header and address checks too, but does not require a recipient: without `to` it returns `to: []`.
+`render()` runs the same checks but does not require a recipient.
 
 ## Preview templates in development
 
-`mailPreview(server, templates, options?)` serves every template in the list as a web page. The recipe adds it to `server/main.ts` for the example template. Add each new template to the list:
+`mailPreview(server, templates, options?)` serves every template in the list as a web page. Add each new template to the list in `server/main.ts`:
 
 ```ts
 // server/main.ts
@@ -551,18 +550,19 @@ if (server.app.isDevelopment) mailPreview(server, [welcomeMail, orderShippedMail
 | `/_kitr/mail/order_shipped?text` | The plain-text version. |
 | `/_kitr/mail/missing` | `404 No such template`. |
 
-Query values are always strings, so a template whose props are numbers or arrays only gets the right types from `preview`. Query values are escaped like any other prop.
+Query values are always strings, so numbers and arrays only get the right types from `preview`.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `path` | `/_kitr/mail` | Where the pages are served. |
 | `mailer` | a mailer with the log transport, sender `preview@localhost` | The mailer used to render. Pass `useMailer(server.app)` to render with your real `from`. |
 
-Keep the `isDevelopment` guard. Previews render any template with any props a visitor types into the URL.
+> [!WARNING] Keep the isDevelopment guard
+> Previews render any template with any props a visitor types into the URL.
 
 ## Use the mailer outside a request
 
-The provider binds the mailer as `mailer` in the container, so anything with the app can reach it:
+The provider binds the mailer as `mailer` in the container:
 
 | Where | How |
 | --- | --- |
@@ -571,15 +571,15 @@ The provider binds the mailer as `mailer` in the container, so anything with the
 | An action or service during a request | `useMailer(useRequestApp())`, with `useRequestApp` from `@kitr/server` |
 | A script or the server file | `useMailer(server.app)` after `await server.boot()` |
 
-`useMailer(app)` is `app.container.use('mailer')`. Called in the browser, or before the app has booted, it throws because nothing is bound.
+`useMailer(app)` is `app.container.use('mailer')`. It throws in the browser or before boot, where nothing is bound.
 
 ## Transports
 
-A transport takes a finished message and delivers it. Three are built in; each follows the same setup.
+A transport takes a finished message and delivers it. Three are built in.
 
 ### Log
 
-The default outside production. It prints each message's recipients, subject and text with `console.info` and keeps the message in memory, where `mailer.sent` reads it.
+The default outside production. It prints each message and keeps it in memory, where `mailer.sent` reads it.
 
 ```ts
 // config/mail.ts
@@ -595,11 +595,11 @@ export default defineConfig({
 | --- | --- | --- |
 | `print` | `true` | `false` keeps messages without printing them. |
 
-No env variables. The kept messages are never cleared, so the list grows for as long as the process runs. The provider refuses to boot in production with the log transport, set or defaulted, so emails never land in production logs.
+Kept messages are never cleared. The provider refuses to boot in production with the log transport, so emails never land in production logs.
 
 ### Resend
 
-Sends through [Resend's HTTP API](https://resend.com/docs/api-reference/emails/send-email) with `fetch`. No package to install.
+Sends through [Resend's HTTP API](https://resend.com/docs/api-reference/emails/send-email) with `fetch`; no package to install.
 
 ```ts
 // config/mail.ts
@@ -622,11 +622,11 @@ RESEND_API_KEY=re_...
 | `apiKey` | required | Your Resend API key. |
 | `fetch` | global `fetch` | The fetch to call, for proxies or tests. |
 
-A response that is not 2xx throws `[@kitr/mail] Resend <status>: <body>`, such as `Resend 403: The acme.com domain is not verified`. The id Resend returns becomes `SentMail.id`.
+A non-2xx response throws `[@kitr/mail] Resend <status>: <body>`.
 
 ### SMTP
 
-Sends through [nodemailer](https://nodemailer.com/smtp/) to any SMTP server: Postmark, Amazon SES, Mailgun, Gmail or your own. Install nodemailer and pass the module in, so the bundler sees a real import:
+Sends through [nodemailer](https://nodemailer.com/smtp/) to any SMTP server. Install nodemailer and pass the module in:
 
 ```sh
 pnpm add nodemailer
@@ -662,11 +662,11 @@ SMTP_PASS=...
 | `secure` | nodemailer's default | `true` for implicit TLS, usually on port 465. |
 | `auth.user`, `auth.pass` | none | Credentials. |
 
-The connection is created on the first `send()`, not at boot, so a wrong password shows up as an error from the first email. `SentMail.id` is nodemailer's `messageId`. These env names are yours to choose; `kitr add` does not write them.
+The connection opens on the first `send()`, so a wrong password shows up there. These env names are yours to choose.
 
 ### Pick a transport per environment
 
-Choose in `config/mail.ts` with plain conditions. This one sends through Resend when its key is set, SMTP when a host is set, and leaves `transport` unset otherwise, so development logs and production refuses to boot:
+Choose with plain conditions in `config/mail.ts`: Resend when its key is set, SMTP when a host is set, otherwise unset:
 
 ```ts
 // config/mail.ts
@@ -682,11 +682,11 @@ const transport = process.env.RESEND_API_KEY
 export default defineConfig({ from: 'Acme <orders@acme.com>', transport })
 ```
 
-Point `SMTP_HOST` at [Mailpit](https://mailpit.axllent.org/) or a similar local inbox to see real rendered emails without sending any.
+Point `SMTP_HOST` at [Mailpit](https://mailpit.axllent.org/) to see rendered emails without sending any.
 
 ## Send in production
 
-The provider checks `transport` at boot when the app runs in production. With `transport` unset it throws `[@kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).`; with the log transport it throws `[@kitr/mail] The log transport prints every email (reset links included) and is not allowed in production; set Resend, SMTP or your own transport in config/mail.ts.` The generated config leaves `transport` unset when `RESEND_API_KEY` is empty, so a deploy with a missing key fails at boot:
+In production the provider refuses to boot with `transport` unset or set to the log transport. The generated config leaves it unset when `RESEND_API_KEY` is empty, so a deploy with a missing key fails at boot:
 
 ```sh
 RESEND_API_KEY= NODE_ENV=production kitr start
@@ -702,7 +702,7 @@ Set the key on the host and the same deploy boots and sends. Before you go live:
 
 ## Create a mailer without the provider
 
-`createMailer(options)` returns a mailer with no app or container. Use it in scripts, in tests of a single template, or to change how React is rendered:
+`createMailer(options)` returns a mailer with no app or container, for scripts, single-template tests or a custom renderer:
 
 ```ts
 // scripts/send_digest.ts
@@ -719,7 +719,7 @@ const mailer = createMailer({
 await mailer.send(teamInviteMail, { inviter: 'Grace', teamName: 'Analytical Engines', token: 'tok_1' }, { to: 'linus@acme.com' })
 ```
 
-`createMailer` takes the same `from` and `transport` as `config/mail.ts`, plus `renderHtml(element)`, which returns HTML or a promise of it. The default is `renderToStaticMarkup` from `react-dom/server`. Without a `transport`, it uses the log transport.
+It takes the same `from` and `transport` as `config/mail.ts`, plus `renderHtml(element)`, which defaults to `renderToStaticMarkup`. Without a `transport` it uses the log transport.
 
 ## Commands
 
@@ -753,7 +753,7 @@ export const orderShippedMail = defineMail<OrderShippedProps>('order_shipped', {
 })
 ```
 
-The generator does not add the template to `mailPreview()`; add it to the list in `server/main.ts`.
+The generator does not add the template to `mailPreview()`; do that in `server/main.ts`.
 
 ## Errors
 
@@ -776,7 +776,7 @@ SMTP errors come from nodemailer unchanged.
 
 ## Testing
 
-Outside production the provider uses the log transport, which keeps every message. In a test, boot an app with the mail provider and a quiet log transport, run the code that sends, and read `mailer.sent`:
+In a test, boot an app with the mail provider and a quiet log transport, run the code that sends, and read `mailer.sent`:
 
 ```ts
 // test/order-shipped.test.ts
@@ -813,20 +813,7 @@ describe('order shipped email', () => {
 })
 ```
 
-`mailer.sent` is a list of `Message` objects, newest last, so the assertions you write are on plain fields:
-
-| Field | Example assertion |
-| --- | --- |
-| `to`, `cc`, `bcc` | `expect(message.cc).toEqual([{ email: 'linus@acme.com' }])` |
-| `from`, `replyTo` | `expect(message.from.email).toBe('orders@acme.com')` |
-| `subject` | `expect(message.subject).toMatch(/1042/)` |
-| `html`, `text` | `expect(message.text).toContain('https://app.acme.com/orders/1042')` |
-| `headers` | `expect(message.headers?.['List-Unsubscribe']).toBeDefined()` |
-| `attachments` | `expect(message.attachments?.[0]?.filename).toBe('INV-2026-007.pdf')` |
-
-To test that nothing was sent, assert `expect(mailer.sent).toHaveLength(0)`. Each `createTestApp()` gets its own mailer, so messages do not leak between tests that boot their own app.
-
-To test through an HTTP route, send the request with `createTestClient(server)` from `@kitr/testing` and read `useMailer(server.app).sent` afterwards. The server uses your `config/mail.ts`, so its log transport prints unless you pass `print: false`.
+`mailer.sent` is a list of plain `Message` objects, newest last, with `to`, `cc`, `bcc`, `from`, `replyTo`, `subject`, `html`, `text`, `headers` and `attachments`. Each `createTestApp()` gets its own mailer. To test through an HTTP route, use `createTestClient(server)` from `@kitr/testing` and read `useMailer(server.app).sent` afterwards.
 
 To check a template's markup without a container, use `createMailer()` and `render()`, and snapshot the result:
 
@@ -870,7 +857,7 @@ it('surfaces a provider outage', async () => {
 
 ## Extend
 
-A transport is an object with a `name` and a `send(message)` method that resolves with `{ id? }`. The `Message` it receives is final: addresses are parsed and checked, the HTML and text are rendered. See [`MailTransport`](/packages/mail/api#mailtransport) and [`Message`](/packages/mail/api#message).
+A transport is an object with a `name` and a `send(message)` method that resolves with `{ id? }`. The `Message` it receives is final. See [`MailTransport`](/packages/mail/api#mailtransport) and [`Message`](/packages/mail/api#message).
 
 ```ts
 // server/mail/postmark-transport.ts
@@ -921,9 +908,12 @@ export default defineConfig({
 })
 ```
 
-Use `formatAddress()` whenever your transport writes an address into a string, so display names with commas stay one recipient. Throw on failure: the error reaches the caller of `send()`, and a job retries it.
+Use `formatAddress()` when writing an address into a string. Throw on failure: the error reaches the caller of `send()`, and a job retries it.
 
-Transports compose. This one falls back to a second provider when the first throws:
+<details>
+<summary>Fall back to a second provider</summary>
+
+Transports compose. This one tries a backup when the first throws:
 
 ```ts
 // server/mail/fallback-transport.ts
@@ -943,11 +933,10 @@ export function withFallback(primary: MailTransport, backup: MailTransport): Mai
 }
 ```
 
+</details>
+
 ## Next steps
 
 - [Mail API reference](/packages/mail/api): every export with its signature.
 - [Jobs](/packages/jobs): send email in the background, with retries.
-- [Server](/packages/server): the server the mailer runs in.
-- [React Email](https://react.email/docs/introduction): components for email layouts.
-- [Resend](https://resend.com/docs) and [nodemailer](https://nodemailer.com/): the providers behind the built-in transports.
-- [Build a full-stack app](/guides/fullstack-app): the guide to the server half of a kitr app.
+- [Build a full-stack app](/guides/fullstack-app): the server half of a kitr app.

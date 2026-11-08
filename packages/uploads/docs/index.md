@@ -8,7 +8,10 @@ order: 1
 
 Avatars, signed invoices, CSV imports: sooner or later an app takes files from people. `@kitr/uploads` does the whole round trip. The browser checks size and type before sending and shows progress. The server checks again, stores the bytes through a driver (disk by default, or your own for S3 and R2) and answers with a file record you save in your database.
 
-It runs on both sides: `@kitr/uploads` and `@kitr/uploads/react` in the browser, `@kitr/uploads/server` on the [server](/packages/server). It handles files people send to your app. To read and write files on the user's own device, use [files](/packages/files) instead.
+> [!SUMMARY]
+> File uploads with size and type limits, disk or cloud storage and browser progress. Add it with `kitr add uploads`; the overview is at [/packages/uploads](/packages/uploads).
+
+It runs on both sides: `@kitr/uploads` and `@kitr/uploads/react` in the browser, `@kitr/uploads/server` on the [server](/packages/server). It handles files people send to your app; for files on the user's own device, use [files](/packages/files).
 
 This guide follows Acme's order screen at `app.acme.com`, where Grace attaches the signed invoice PDF to order `ord_1042`.
 
@@ -18,20 +21,21 @@ This guide follows Acme's order screen at `app.acme.com`, where Grace attaches t
 kitr add uploads
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
-- Adds the [server](/packages/server) package first if the project does not have it yet.
-- Installs `@kitr/uploads` (you use it through `@kitr/uploads`, `@kitr/uploads/react` and `@kitr/uploads/server`).
-- Adds `() => import('@kitr/uploads/provider')` to `providers` in `kitrrc.ts`.
-- Adds `'@kitr/uploads'` to `packages` in `kitrrc.ts`.
-- Writes `config/uploads.ts` (shown under Configure). An existing file is left alone.
-- Adds `import { mountUploads } from '@kitr/uploads/server'` and `mountUploads(server)` to `server/main.ts` when that file exists. This registers `POST /api/uploads` to receive files and `GET /api/uploads/**` to serve them, and raises the server's body limit on that path to match `maxSize`.
+- Adds the [server](/packages/server) package first if the project does not have it.
+- Installs `@kitr/uploads` and adds it and its provider to `kitrrc.ts`.
+- Writes `config/uploads.ts` (see Configure); an existing file is left alone.
+- Adds `mountUploads(server)` to `server/main.ts` when that file exists. It registers `POST /api/uploads` to receive files and `GET /api/uploads/**` to serve them, and raises the server's body limit on that path to match `maxSize`.
 - Regenerates `config/index.ts`, the config list the standalone server imports.
-- Adds a `## kitr: uploads` section to `AGENTS.md`. In a React app it says to upload with `useUpload()` and check files with `checkFile(file, rules)`; in a server-only app it says to call `ctx.app.container.use('uploads').receive(event)` in a controller.
+- Adds a `## kitr: uploads` section to `AGENTS.md`.
 
-`kitr add uploads` asks no questions. Pass `--dry-run` to print the changes first, or `--no-install` to skip the package manager run. No kit includes uploads.
+It asks no questions. Pass `--dry-run` to print the changes first, or `--no-install` to skip the package manager. No kit includes uploads.
 
 `kitr remove uploads` removes the provider, the package entry, the dependency, `config/uploads.ts` and the `AGENTS.md` section. It leaves the `mountUploads` line in `server/main.ts` and the files under `storage/uploads`.
+
+</details>
 
 ## Configure
 
@@ -65,9 +69,9 @@ Uploads adds no environment variables. The disk driver's directory is relative t
 
 ### Raise the server's body limit
 
-The [server](/packages/server) refuses any request body over its limit, 1 MiB by default, before uploads sees it. `mountUploads(server)` raises the limit for its own path: it adds `maxSize × maxFiles`, plus 64 KiB per file for the multipart framing, to the server's `bodyLimits` under `/api/uploads`. With the generated config, a 3 MB invoice posted to `/api/uploads` reaches the upload rules, and an 11 MB one gets the uploads size message.
+The [server](/packages/server) refuses any body over its limit (1 MiB by default) before uploads sees it. `mountUploads(server)` raises the limit for its own path by `maxSize × maxFiles` plus 64 KiB per file for multipart framing. With the generated config, a 3 MB invoice posted to `/api/uploads` reaches the upload rules, and an 11 MB one gets the uploads size message.
 
-Your own upload routes, such as a controller at `/api/orders/:orderId/invoice`, keep the server's 1 MiB limit, and a larger file gets `413 PAYLOAD_TOO_LARGE`. Raise the limit for that path prefix in `config/server.ts`. The longest matching prefix wins:
+Your own upload routes, such as `/api/orders/:orderId/invoice`, keep the 1 MiB limit and a larger file gets `413 PAYLOAD_TOO_LARGE`. Raise it for that prefix in `config/server.ts`; the longest matching prefix wins:
 
 ```ts
 // config/server.ts
@@ -81,7 +85,7 @@ export default defineConfig({
 
 ## Upload your first file
 
-With `kitr add uploads` done, the server already accepts files at `POST /api/uploads`. Set `publicPath: '/api/uploads'` as shown under Configure, so the returned `url` works. Then add a component that sends a file:
+The server already accepts files at `POST /api/uploads`. With `publicPath` set as under Configure, add a component that sends a file:
 
 ```tsx
 // app/components/orders/invoice-upload.tsx
@@ -103,7 +107,7 @@ export function InvoiceUpload() {
 }
 ```
 
-Grace picks `invoice-1042.pdf`. The hook checks it against the rules, posts it as `multipart/form-data` to `/api/uploads`, and updates `progress` from 0 to 100 as the bytes go out. The server checks the rules again, writes the file to `storage/uploads/<id>/invoice-1042.pdf`, and answers:
+Grace picks `invoice-1042.pdf`. The hook checks it, posts it as `multipart/form-data`, and updates `progress` from 0 to 100. The server checks the rules again, writes `storage/uploads/<id>/invoice-1042.pdf`, and answers:
 
 ```json
 {
@@ -120,11 +124,11 @@ Grace picks `invoice-1042.pdf`. The hook checks it against the rules, posts it a
 }
 ```
 
-`files` in the hook holds that array, so the link appears. `send` also returns it. It rethrows failures, which is why the `onChange` above ends with `.catch(() => {})`: the hook already shows the error in `error`.
+`files` in the hook holds that array, so the link appears; `send` returns it too. `send` rethrows failures, which is why `onChange` ends with `.catch(() => {})`: the hook already shows the error in `error`.
 
 ## Track progress and cancel
 
-In a component, `useUpload(options)` returns the state and three functions:
+`useUpload(options)` returns the state and three functions:
 
 | Field | Description |
 | --- | --- |
@@ -163,11 +167,11 @@ export function AttachmentUpload() {
 }
 ```
 
-Calling `send` again while an upload runs aborts the first one. `maxFiles` in the hook's options is sent nowhere and checked nowhere in the browser; the server enforces it.
+Calling `send` again while an upload runs aborts the first one. The server enforces `maxFiles`; the browser does not check it.
 
 ## Upload without React
 
-`upload(files, options)` from `@kitr/uploads` is the same request without the hook. Use it in a store, an action or plain script code:
+`upload(files, options)` from `@kitr/uploads` is the same request without the hook, for a store, an action or plain script code:
 
 ```ts
 // app/lib/orders/attach-invoice.ts
@@ -202,7 +206,7 @@ export async function attachInvoice(orderId: string, file: File) {
 | `signal` | none | An `AbortSignal` that cancels the upload. |
 | `credentials` | `true` | Send cookies with the request. `false` omits them. |
 
-In a browser, `upload` uses `XMLHttpRequest`, the only browser API that reports upload progress. Where there is no `XMLHttpRequest` (Node, a test), it uses `fetch` and `onProgress` is not called. It resolves with the response's `files` array, or with the body itself wrapped in an array when the endpoint returns one file record.
+In a browser, `upload` uses `XMLHttpRequest`, the only API that reports upload progress. Without it (Node, a test) it uses `fetch` and `onProgress` is not called. It resolves with the response's `files` array, or the body wrapped in an array when the endpoint returns one file record.
 
 ## Check a file before sending
 
@@ -222,7 +226,7 @@ checkFile(new File(['%PDF-1.7'], 'invoice-1042.pdf', { type: 'application/pdf' }
 // => null
 ```
 
-`checkFile` uses a 10 MiB `maxSize` when you pass none, like the server. It does not check `maxFiles`. Import the rules from one place so both sides agree, as shown in Share rules between client and server.
+`checkFile` uses a 10 MiB `maxSize` when you pass none, like the server, and does not check `maxFiles`.
 
 `accepts(type, name, accept)` is the type test on its own, and `formatBytes(bytes)` formats sizes for hints:
 
@@ -244,7 +248,7 @@ formatBytes(10 * 1024 * 1024)
 
 ## Share rules between client and server
 
-The browser check is for people; the server check is for safety. Keep both from drifting by putting the rules in one module that a component and a controller both import:
+The browser check is for people; the server check is for safety. Put the rules in one module that a component and a controller both import:
 
 ```ts
 // app/lib/orders/invoice-rules.ts
@@ -276,12 +280,12 @@ export function InvoiceField({ orderId }: { orderId: string }) {
 
 The controller that receives it is in the next section.
 
-> **Warning**
-> Never rely on the browser check alone. Anyone can post to the endpoint directly, with any size and any declared type. The server's `receive` is the check that counts.
+> [!WARNING] Server checks are the ones that count
+> Never rely on the browser check alone: anyone can post to the endpoint directly, with any size and declared type.
 
 ## Receive files in a controller
 
-`mountUploads` gives you one general endpoint. For files that belong to something, such as an order's invoice, receive them in your own [api](/packages/api) controller. On the server, `useUploads(ctx.app)` returns the service the provider bound, and `receive(event, rules)` reads the multipart body, applies the rules and stores the files:
+`mountUploads` gives you one general endpoint. For files that belong to something, such as an order's invoice, receive them in your own [api](/packages/api) controller. `useUploads(ctx.app)` returns the service, and `receive(event, rules)` reads the multipart body, applies the rules and stores the files:
 
 ```ts
 // server/controllers/order-invoices-controller.ts
@@ -308,7 +312,7 @@ export const routes = defineRoutes((router) =>
 )
 ```
 
-Rules passed to `receive` replace the config's rules one by one: `maxSize`, `accept`, `maxFiles`, and `field` (default `'file'`). Anything you leave out comes from `config/uploads.ts`. Every file is checked before the next is stored, so a batch can be partly stored when its second file breaks a rule; check sizes and types in the browser to make that rare.
+Rules passed to `receive` replace the config's one by one (`maxSize`, `accept`, `maxFiles`, `field` defaulting to `'file'`); the rest come from `config/uploads.ts`. Files are checked one at a time, so a batch can be partly stored when its second file breaks a rule.
 
 When a rule fails, `receive` throws a `VALIDATION` error, and the response is:
 
@@ -321,11 +325,11 @@ When a rule fails, `receive` throws a `VALIDATION` error, and the response is:
 }
 ```
 
-The `fieldErrors` key is the field name, so a [form](/packages/forms) can show it under the input with that name. Don't give the route a body schema in `static validation`: that reads the body as JSON or form data before `receive` can.
+The `fieldErrors` key is the field name, so a [form](/packages/forms) can show it under that input. Don't give the route a body schema in `static validation`: that reads the body before `receive` can.
 
 ## Store the record in your database
 
-`receive` and `store` return an `UploadedFile`. Save `key`, which is how you read or delete the file later, and `name` for display. Don't save `url`; build it from `key` when you render, so a later change of `publicPath` or driver does not break old rows.
+`receive` and `store` return an `UploadedFile`. Save `key` (how you read or delete the file later) and `name` for display. Don't save `url`; build it from `key` when you render, so a change of `publicPath` or driver does not break old rows.
 
 | Field | Example | Description |
 | --- | --- | --- |
@@ -336,11 +340,11 @@ The `fieldErrors` key is the field name, so a [form](/packages/forms) can show i
 | `type` | `'application/pdf'` | The type the browser declared. Not checked against the bytes. |
 | `url` | `'/api/uploads/72eb.../invoice-1042.pdf'` | From the driver's `url(key)`, else `publicPath + key`, else absent. |
 
-The safe name keeps letters, digits, `.`, `_` and `-`, turns slashes into `_` and anything else into `-`, and is cut to 120 characters. `../../etc/passwd` becomes `.._.._etc_passwd`, inside its own id folder.
+The safe name keeps letters, digits, `.`, `_` and `-`, turns slashes into `_` and anything else into `-`, and is cut to 120 characters: `../../etc/passwd` becomes `.._.._etc_passwd`, inside its own id folder.
 
 ## Store and read files from server code
 
-On the server, `store` writes bytes you already have, such as a generated PDF or an import from another system. `read` and `remove` complete the set:
+`store` writes bytes you already have, such as a generated PDF; `read` and `remove` complete the set:
 
 ```ts
 // server/jobs/archive-invoice.ts
@@ -362,19 +366,19 @@ export async function archiveInvoice(app: KitrApp, pdf: Uint8Array) {
 }
 ```
 
-`store` does not check the rules; they are for files people send. The provider binds `uploads` on the server only, so `useUploads` in browser code throws `[kitr] No binding named "uploads"`. In a controller, `ctx.app.container.use('uploads')` returns the same service.
+`store` does not check the rules; they are for files people send. The provider binds `uploads` on the server only, so `useUploads` in browser code throws `[kitr] No binding named "uploads"`.
 
 ## Serve files safely
 
-`mountUploads(server)` answers `GET /api/uploads/<key>` with the stored bytes and the headers from `servedFileHeaders`. The stored type is whatever the uploader's browser declared, so the route never trusts it. It reads the type from the bytes:
+`mountUploads(server)` answers `GET /api/uploads/<key>` with the stored bytes and the headers from `servedFileHeaders`. The stored type is whatever the uploader's browser declared, so the route reads the type from the bytes instead:
 
-- A file whose first bytes are a known signature (PNG, JPEG, GIF, WebP, AVIF, PDF, MP4, WebM, MP3, ZIP and the like) is served as the type those bytes show, whatever was declared. Images, audio, video and PDF are shown inline; archives and other binaries are downloads.
-- A file with no signature is text or an unknown format. It is served as its declared type only if that type is in `allowTypes` (default `text/plain`, `text/csv` and `application/json`, with patterns such as `text/*` allowed), and only `text/plain` is shown inline.
+- A known signature (PNG, JPEG, GIF, WebP, AVIF, PDF, MP4, WebM, MP3, ZIP and the like) is served as the type the bytes show. Images, audio, video and PDF are inline; archives and other binaries download.
+- No signature means text or an unknown format. It is served as its declared type only if that type is in `allowTypes` (default `text/plain`, `text/csv`, `application/json`), and only `text/plain` is inline.
 - Everything else, SVG and HTML included, is `application/octet-stream` with `Content-Disposition: attachment`.
 
-Every response carries `X-Content-Type-Options: nosniff` and a sandboxing content security policy, so an uploaded file cannot run script as your site, and a page declared as `image/png` is not an image.
+Every response also carries `X-Content-Type-Options: nosniff` and a sandboxing content security policy, so an uploaded file cannot run script as your site.
 
-`servedFileHeaders(type, name, { data })` from `@kitr/uploads/server` returns those headers, for routes you write yourself. Pass the bytes in `data` so the type comes from them. For an HTML upload, they are:
+`servedFileHeaders(type, name, { data })` from `@kitr/uploads/server` returns those headers for routes you write yourself. Pass the bytes in `data` so the type comes from them. For an HTML upload:
 
 ```ts
 // server/check_headers.ts
@@ -392,13 +396,14 @@ servedFileHeaders('text/html', 'page.html', { data: html })
 // }
 ```
 
-`sniffType(bytes)` returns the type a file's signature shows, or `undefined`. `uploads.mount(server, path)` on a service from `createUploads` registers the same two routes, with the same headers and body limit. See Use the service without the provider.
+`sniffType(bytes)` returns the type a file's signature shows, or `undefined`. `uploads.mount(server, path)` registers the same two routes with the same headers and body limit (see Use the service without the provider).
 
-Without `secret`, `authorize` or `requireSigned`, every file under the route is public to anyone with its key. Keys contain a random UUID, so they cannot be guessed, but anyone you share a link with can pass it on. The next two sections close that.
+> [!WARNING] Files are public by default
+> Without `secret`, `authorize` or `requireSigned`, every file is public to anyone with its key. Keys contain a random UUID, so they cannot be guessed, but links can be passed on. The next two sections close that.
 
 ## Share a file with a signed link
 
-`uploads.signedUrl(key, { expiresIn })` returns the file's URL with an expiry and an HMAC-SHA-256 signature (Web Crypto) over its path and that expiry. Set `secret` in `config/uploads.ts` first:
+`uploads.signedUrl(key, { expiresIn })` returns the file's URL with an expiry and an HMAC-SHA-256 signature over its path and expiry. Set `secret` in `config/uploads.ts` first:
 
 ```ts
 // config/uploads.ts
@@ -430,13 +435,13 @@ export default class OrderInvoicesController {
 }
 ```
 
-The link looks like `/api/uploads/72eb7790-.../invoice-1042.pdf?expires=1767225900&signature=3Qk...`. It works for that file only and until `expires`; changing either makes the signature fail. An expired or altered link gets `403`, and so does a request with no link when `requireSigned` is on. Anyone holding a link can open the file until it expires, so keep `expiresIn` short and hand it only to the person it is for. Responses reached through a link carry `Cache-Control: private`.
+The link looks like `/api/uploads/72eb7790-.../invoice-1042.pdf?expires=1767225900&signature=3Qk...`. It works for that file until `expires`; changing either makes the signature fail. An expired or altered link gets `403`, and so does a request with no link when `requireSigned` is on. Anyone holding a link can open the file until it expires, so keep `expiresIn` short. Responses reached through a link carry `Cache-Control: private`.
 
-`signedUrl(path, { expiresIn, secret })` and `verifySignedUrl(url, secret)` from `@kitr/uploads/server` do the same for any path, for routes you write yourself. For a mount path other than `/api/uploads`, pass it as `signedUrl(key, { expiresIn, path: '/files' })`.
+`signedUrl(path, { expiresIn, secret })` and `verifySignedUrl(url, secret)` from `@kitr/uploads/server` do the same for any path. For a mount path other than `/api/uploads`, pass `path: '/files'`.
 
 ## Check who may open a file
 
-`authorize(access, file)` runs for every request without a signed link. `access` has the `event`, the `request` and the request's `app`, so it can read the session; `file` has the `key`, `name`, the `type` it will be served as and its `size`. Return `false` for `403`:
+`authorize(access, file)` runs for every request without a signed link. `access` has the `event`, `request` and `app`, so it can read the session; `file` has `key`, `name`, the served `type` and `size`. Return `false` for `403`:
 
 ```ts
 // config/uploads.ts
@@ -451,11 +456,11 @@ export default defineConfig({
 })
 ```
 
-A valid signed link skips `authorize`, so a link is how you share a file with someone who has no account. Responses for authorized files carry `Cache-Control: private`.
+A valid signed link skips `authorize`, so a link is how you share a file with someone who has no account. Authorized responses carry `Cache-Control: private`.
 
 ## Serve private files
 
-To check access in your own route instead, read the file in a controller and answer with the safe headers:
+To check access in your own route, read the file in a controller and answer with the safe headers:
 
 ```ts
 // server/controllers/order-invoices-controller.ts
@@ -480,11 +485,11 @@ export default class OrderInvoicesController {
 }
 ```
 
-`locals.user` is set by the [auth](/packages/auth) middleware. Override `cache-control`, because the default lets shared caches keep the file for a year.
+`locals.user` is set by the [auth](/packages/auth) middleware. Override `cache-control`: the default lets shared caches keep the file for a year.
 
 ## Show field errors in a form
 
-A server rejection reaches the browser as an `UploadError`. Its `status` is the HTTP status and its `body` is the parsed response, so field messages are at `body.fieldErrors`:
+A server rejection reaches the browser as an `UploadError`, with `status` and the parsed `body`, so field messages are at `body.fieldErrors`:
 
 ```tsx
 // app/components/orders/invoice-error.tsx
@@ -501,11 +506,11 @@ export function InvoiceError({ error }: { error: Error | null }) {
 }
 ```
 
-A failure of the browser check in `useUpload` is a plain `Error` with the `checkFile` message, not an `UploadError`, and no request is sent.
+A failed browser check in `useUpload` is a plain `Error` with the `checkFile` message, and no request is sent.
 
 ## Drivers
 
-A driver decides where bytes live. Two ship with kitr; any other storage is a driver you write (see Extend).
+A driver decides where bytes live. Two ship with kitr; for other storage, write one (see Extend).
 
 | Driver | Import | Use it for |
 | --- | --- | --- |
@@ -516,7 +521,7 @@ A driver decides where bytes live. Two ship with kitr; any other storage is a dr
 
 ### Disk
 
-The default when `driver` is not set. Nothing to install.
+The default when `driver` is not set; nothing to install.
 
 ```ts
 // config/uploads.ts
@@ -535,17 +540,17 @@ export default defineConfig({
 | `dir` | `'storage/uploads'` | Directory, relative to the working directory or absolute. Created on first write. |
 | `publicPath` | none | Gives the driver a `url(key)` that returns `publicPath/key`. |
 
-Each file is written next to a `<file>.meta.json` sidecar that keeps its type and name. Keys that resolve outside `dir`, or that name a sidecar, throw `FORBIDDEN` (`Bad upload key`). A file without a sidecar is read back as `application/octet-stream`. The disk driver loads `node:fs` only when it runs, so importing it in `config/uploads.ts` keeps it out of the browser bundle.
+Each file is written next to a `<file>.meta.json` sidecar with its type and name. Keys that resolve outside `dir`, or name a sidecar, throw `FORBIDDEN` (`Bad upload key`). A file without a sidecar is read as `application/octet-stream`.
 
-> **Warning**
-> On hosts with an ephemeral filesystem (most containers, serverless platforms), files under `storage/uploads` are lost on every deploy or restart. Mount a persistent volume at `dir`, or use an object storage driver.
+> [!WARNING] Ephemeral disks
+> On hosts with an ephemeral filesystem (most containers and serverless platforms), files under `storage/uploads` are lost on every deploy or restart. Mount a persistent volume at `dir`, or use object storage.
 
-> **Warning**
-> With more than one server instance, each instance has its own disk: a file Ada uploads through instance A is a 404 when Grace's request reaches instance B. Use one shared volume for every instance, or the [unstorage](#unstorage) driver with object storage.
+> [!WARNING] One disk per instance
+> With more than one instance, each has its own disk: a file uploaded through instance A is a 404 on instance B. Use one shared volume, or the [unstorage](#unstorage) driver.
 
 ### unstorage
 
-`createUnstorageUploadsDriver` stores files through any [unstorage](https://unstorage.unjs.io) instance, so every server instance reads and writes the same bucket. Install unstorage and the client its driver needs. For S3 or Cloudflare R2, the `s3` driver needs no extra package:
+`createUnstorageUploadsDriver` stores files through any [unstorage](https://unstorage.unjs.io) instance, so every instance reads and writes the same bucket. Install unstorage; for S3 or Cloudflare R2 the `s3` driver needs no extra package:
 
 ```sh
 pnpm add unstorage
@@ -588,7 +593,7 @@ S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
 | `base` | `'uploads'` | Second argument, `{ base }`. Files live under `<base>:files:`, their type and name under `<base>:meta:`. |
 | `publicPath` | none | Gives the driver a `url(key)` that returns `publicPath/key`. |
 
-Files are read back through the kitr route (`GET /api/uploads/:key`), so the bucket can stay private. Keys with an empty segment or `..` throw `FORBIDDEN` (`Bad upload key`). See the [unstorage S3 driver docs](https://unstorage.unjs.io/drivers/s3) for its options.
+Files are read back through the kitr route (`GET /api/uploads/:key`), so the bucket can stay private. Keys with an empty segment or `..` throw `FORBIDDEN`. See the [unstorage S3 driver docs](https://unstorage.unjs.io/drivers/s3) for its options.
 
 ### Memory
 
@@ -603,11 +608,11 @@ export default defineConfig({
 })
 ```
 
-The memory driver has no `url`, so `publicPath` builds the URLs. Use it in tests (see Testing).
+The memory driver has no `url`, so `publicPath` builds the URLs. Use it in tests.
 
 ## Use the service without the provider
 
-`createUploads(config)` builds the service on its own. Use it when a driver imports a server-only SDK you don't want in `config/uploads.ts` (which a React app bundles for the browser too), or for a second set of rules with its own route:
+`createUploads(config)` builds the service on its own, for a driver that imports a server-only SDK you don't want in `config/uploads.ts` (React apps bundle it for the browser too), or for a second set of rules with its own route:
 
 ```ts
 // server/avatars.ts
@@ -636,7 +641,7 @@ avatars.mount(server, '/api/avatars')
 
 ## Errors
 
-The server throws kitr errors, so they reach the browser in the usual JSON shape. `upload()` and `useUpload` turn any non-2xx response into an `UploadError`.
+The server throws kitr errors in the usual JSON shape. `upload()` and `useUpload` turn any non-2xx response into an `UploadError`.
 
 | Code / message | When | What to do |
 | --- | --- | --- |
@@ -654,7 +659,7 @@ The server throws kitr errors, so they reach the browser in the usual JSON shape
 
 ## Testing
 
-Use the memory driver and call the server directly with `server.fetch`; no port, no disk. This test posts Grace's invoice through the real route and checks the rules:
+Use the memory driver and call the server with `server.fetch`; no port, no disk. This test posts Grace's invoice through the real route and checks the rules:
 
 ```ts
 // test/uploads.test.ts
@@ -734,11 +739,11 @@ it('stores the generated report', async () => {
 })
 ```
 
-On the client, `upload()` falls back to `fetch` when there is no `XMLHttpRequest`, so a Node test can replace `globalThis.fetch` with `(url, init) => server.fetch(new Request('http://acme.test' + url, init))` and call `upload()` against the same server.
+On the client, `upload()` falls back to `fetch` without `XMLHttpRequest`, so a Node test can replace `globalThis.fetch` with `(url, init) => server.fetch(new Request('http://acme.test' + url, init))`.
 
 ## Extend
 
-Any storage is a driver: an object with `put`, `get`, `delete` and, optionally, `url`. Keys are relative paths such as `72eb.../invoice-1042.pdf` that the driver owns.
+Any storage is a driver: an object with `put`, `get`, `delete` and optionally `url`. Keys are relative paths such as `72eb.../invoice-1042.pdf` that the driver owns.
 
 ```ts
 // node_modules/@kitr/uploads/dist/server.d.ts (excerpt)
@@ -751,7 +756,7 @@ export interface UploadsDriver {
 }
 ```
 
-An S3 driver with the [AWS SDK](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3/). It also works with Cloudflare R2 and other S3-compatible stores through `endpoint`:
+An S3 driver with the [AWS SDK](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3/); `endpoint` makes it work with Cloudflare R2 and other S3-compatible stores:
 
 ```sh
 pnpm add @aws-sdk/client-s3
@@ -805,13 +810,10 @@ export const uploads = createUploads({
 })
 ```
 
-Then call `uploads.mount(server)` in `server/main.ts` in place of `mountUploads(server)`. With `url` set, stored files link straight to the bucket's public domain, and the `GET` route is only a fallback. For a server-only app, you can pass the driver in `config/uploads.ts` instead and keep the provider. See [`UploadsDriver`](/packages/uploads/api) in the API reference.
+Then call `uploads.mount(server)` in `server/main.ts` instead of `mountUploads(server)`. With `url` set, stored files link straight to the bucket's public domain and the `GET` route is only a fallback. See [`UploadsDriver`](/packages/uploads/api) in the API reference.
 
 ## Next steps
 
-- [API reference](/packages/uploads/api): every export of `@kitr/uploads`, `@kitr/uploads/react`, `@kitr/uploads/server` and `@kitr/uploads/provider`.
-- [server](/packages/server): `createServer`, `bodyLimit`, `bodyLimits` and the error shape.
-- [api](/packages/api): controllers and routes for files that belong to a record.
-- [forms](/packages/forms): show `fieldErrors` under the file input.
-- [MDN on FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData): what `upload()` sends.
-- [Run on more than one instance](/guides/scale-out): shared files, cache, queue and sockets.
+- [API reference](/packages/uploads/api): every export with its signature.
+- [Server](/packages/server): `createServer`, `bodyLimits` and the error shape.
+- [Forms](/packages/forms): show `fieldErrors` under the file input.
