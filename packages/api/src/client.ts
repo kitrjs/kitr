@@ -28,6 +28,33 @@ export interface ApiClientOptions {
   getToken?: () => Promise<string | null | undefined> | string | null | undefined
   /** Passed to `fetch`; `'include'` sends cookies cross-origin. */
   credentials?: RequestCredentials
+  /**
+   * Echo the CSRF cookie in a header on writes, for `@kitr/shield`'s double-submit check and the
+   * cookie-session routes. On by default in a browser, with shield's names (`kitr-csrf` cookie,
+   * `x-csrf-token` header); `false` turns it off.
+   */
+  csrf?: false | { cookie?: string; header?: string }
+}
+
+/** The CSRF header for a write, read from `document.cookie`; undefined on the server, for reads and when there is no cookie yet. */
+function csrfHeader(
+  option: ApiClientOptions['csrf'],
+  method: string,
+): [name: string, value: string] | undefined {
+  if (option === false || typeof document === 'undefined') return undefined
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return undefined
+  const name = option?.cookie ?? 'kitr-csrf'
+  for (const part of document.cookie.split(';')) {
+    const i = part.indexOf('=')
+    if (i > 0 && part.slice(0, i).trim() === name) {
+      try {
+        return [option?.header ?? 'x-csrf-token', decodeURIComponent(part.slice(i + 1).trim())]
+      } catch {
+        return undefined
+      }
+    }
+  }
+  return undefined
 }
 
 type IsNever<T> = [T] extends [never] ? true : false
@@ -123,6 +150,8 @@ export function createApiClient<R extends Record<string, unknown>>(
       const hasBody = input.body !== undefined && method !== 'GET' && method !== 'HEAD'
       if (hasBody) headers.set('content-type', 'application/json')
       headers.set('accept', 'application/json')
+      const csrf = csrfHeader(options.csrf, method)
+      if (csrf) headers.set(csrf[0], csrf[1])
       const request = new Request(buildUrl(input), {
         method,
         headers,

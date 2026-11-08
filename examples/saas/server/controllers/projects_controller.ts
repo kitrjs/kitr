@@ -1,5 +1,7 @@
 import type { HttpContext } from 'kitr/api'
 import { KitrError } from 'kitr/app'
+import { requireUser } from 'kitr/auth/server'
+import type { User } from '#app/abilities'
 import {
   type CreateProject,
   type Project,
@@ -39,12 +41,14 @@ export default class ProjectsController {
     return project
   }
 
-  async store({ body, response }: Ctx<CreateProject>) {
+  async store({ body, response, locals }: Ctx<CreateProject>) {
+    // The routes sit behind sessionMiddleware, so there is always a signed-in user here.
+    const user = requireUser<User>({ locals })
     const project: Project = {
       id: crypto.randomUUID(),
       name: body.name,
       status: body.status,
-      owner: 'you@example.com',
+      owner: user.email,
       updatedAt: new Date().toISOString(),
     }
     projects.set(project.id, project)

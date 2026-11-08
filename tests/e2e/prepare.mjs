@@ -88,7 +88,7 @@ if (existsSync(appRoutes) && existsSync(join(target, 'app/pages/e2e'))) {
 // Fixture API route: lets a test push an event down a socket channel through the realtime
 // server the table's `.ws` link binds in the container.
 const routesFile = join(target, 'server/routes.ts')
-if (existsSync(routesFile)) {
+if (existsSync(routesFile) && existsSync(fixtures)) {
   let src = readFileSync(routesFile, 'utf8')
   const anchor = "r.get('/health'"
   if (!src.includes(anchor))
