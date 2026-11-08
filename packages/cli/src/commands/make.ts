@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs'
 import { type Generator, type GeneratorVars, naming } from '@kitr/core/package'
 import { type CommandDef, defineCommand } from 'citty'
-import { createProjectInfo } from '../add-context'
+import { createAddContext, createProjectInfo } from '../add-context'
+import { Codemods } from '../codemods'
 import { createContext } from '../context'
 import { installedPackages } from '../packages'
 
@@ -143,6 +144,11 @@ export function generatorCommand(
       const written = ctx.write(file, body, { overwrite: args.force })
       if (!written) ctx.log.warn(`${file} exists (use --force)`)
       else ctx.log.success(`${kind}: ${file}`)
+      if (written && generator.after)
+        await generator.after(createAddContext(ctx, new Codemods(ctx), {}), {
+          file,
+          vars: { name: args.name, ...vars },
+        })
     },
   })
 }

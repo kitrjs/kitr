@@ -19,7 +19,7 @@ export default defineKitrConfig({
     () => import('@kitr/http/provider'),
     () => import('@kitr/auth/provider'),
   ],
-  directories: { app: 'app', routes: 'app/routes', config: 'config' },
+  directories: { app: 'app', routeTable: 'app/routes.ts', config: 'config' },
 })
 ```
 

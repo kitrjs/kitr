@@ -1,15 +1,10 @@
-import { mountRoutes } from 'kitr/api'
 import { createServer } from 'kitr/server'
+import { routes } from '#server/routes'
 import { config } from '../config'
 import rc from '../kitrrc'
-import { realtime } from '#server/realtime'
-import { routes } from '#server/routes'
 
-/** The kitr server: providers from kitrrc.ts, config from config/. What `kitr dev api` runs, what the web platform's /api route delegates to, what tests call. */
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-// Realtime on /api/ws (config/realtime.ts), next to the routes.
-realtime.attach(server)
+/** The kitr server: providers from kitrrc.ts, config from config/, routes from server/routes.ts. What `kitr dev api` runs, what app/server.ts hands the app's own requests to, what tests call with `server.fetch(new Request(...))`. */
+export const server = createServer({ providers: rc.providers, config, routes })
 
 /** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
 export default server

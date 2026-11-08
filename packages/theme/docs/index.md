@@ -25,8 +25,8 @@ What `kitr add` does:
 - Adds `'@kitr/theme'` to `packages` and `() => import('@kitr/theme/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/theme.ts` (shown under Configure).
 - Writes `app/styles/tokens.css`, an empty `:root` block for your token overrides.
-- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import 'kitr/theme/styles.css';`. Without it, it links `#app/styles/tokens.css?url` in `app/routes/__root.tsx`, after `kitr/theme/styles.css`.
-- Edits `app/routes/__root.tsx` to apply the saved theme before first paint: imports `ThemeScript` from `kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A root route that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
+- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import 'kitr/theme/styles.css';`. Without it, it links `#app/styles/tokens.css?url` from `head()` in `app/document.tsx`, after `kitr/theme/styles.css`.
+- Edits `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes) to apply the saved theme before first paint: imports `ThemeScript` from `kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A document that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
 - Adds a `theme` section to `AGENTS.md`: use `useTheme()`, put `<ThemeScript />` in the document head, take colours and radii from the `--kitr-*` variables, keep components in `app/components/ui/` and add them with `kitr ui add`, and use Hugeicons through `<Icon />`.
 - Adds no environment variables and no scripts. When it finishes it prints `Pull components with kitr ui add button input form`.
 
@@ -38,9 +38,9 @@ kitr add theme --dry-run
 
 The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include theme, and copy in a starter set of components with it (`icon`, `button`, `input`, `card`, `theme-toggle` and more). The `blank` kit does not.
 
-The base stylesheet, `kitr/theme/styles.css`, is linked by the root route that [router](/packages/router) writes, so it is in place before you add theme. With [tailwind](/packages/tailwind), `app/styles/app.css` imports it instead.
+The base stylesheet, `kitr/theme/styles.css`, is linked from the `app/document.tsx` that [router](/packages/router) writes, so it is in place before you add theme. With [tailwind](/packages/tailwind), `app/styles/app.css` imports it instead.
 
-`kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning` from the root route, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and the components in `app/components/ui/` stay, because they are yours.
+`kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning` from `app/document.tsx`, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and the components in `app/components/ui/` stay, because they are yours.
 
 ## Configure
 
@@ -97,22 +97,29 @@ export function ThemeButton() {
 }
 ```
 
-Put it in the root layout:
+Put it in the document:
 
 ```tsx
-// app/routes/__root.tsx
+// app/document.tsx
 // ...
 import { ThemeButton } from '#app/components/theme-button'
 
-function RootLayout() {
+export function RootDocument() {
   return (
-    <RootDocument>
-      <nav style={{ display: 'flex', gap: 12, padding: 12 }}>
-        <Link to="/">Home</Link>
-        <ThemeButton />
-      </nav>
-      <Outlet />
-    </RootDocument>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+        <HeadContent />
+      </head>
+      <body>
+        <nav style={{ display: 'flex', gap: 12, padding: 12 }}>
+          <Link to="/">Home</Link>
+          <ThemeButton />
+        </nav>
+        <Outlet />
+        <Scripts />
+      </body>
+    </html>
   )
 }
 ```
@@ -158,26 +165,19 @@ With `system` saved, `resolved` follows the OS: when Linus's laptop switches to 
 React applies the theme after it hydrates, a moment after the first paint. Without help, a dark-mode user sees a white page flash first. `<ThemeScript />` is a tiny inline script that reads the saved choice and sets `data-theme` before anything paints. Put it first in the document head:
 
 ```tsx
-// app/routes/__root.tsx
-import type { KitrRouterContext } from 'kitr/router'
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { ThemeScript } from 'kitr/theme'
-import type { ReactNode } from 'react'
 import css0 from 'kitr/theme/styles.css?url'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+export function head() {
+  return {
     meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }],
     links: [{ rel: 'stylesheet', href: css0 }],
-  }),
-  component: () => (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
-  ),
-})
+  }
+}
 
-function RootDocument({ children }: { children: ReactNode }) {
+export function RootDocument() {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -185,7 +185,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <Outlet />
         <Scripts />
       </body>
     </html>
@@ -195,7 +195,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 
 The script changes `<html>` before React hydrates it, so React would warn that the attribute differs from the server's HTML; `suppressHydrationWarning` on `<html>` tells it this one difference is expected.
 
-`kitr add theme` adds `<ThemeScript />` and `suppressHydrationWarning` to the root route `kitr add router` writes, and the kits include them. It works the same in `ssr`, `static` and `spa` modes and in desktop and mobile shells, because it only reads `localStorage`.
+`kitr add theme` adds `<ThemeScript />` and `suppressHydrationWarning` to the `app/document.tsx` `kitr add router` writes, and the kits include them. It works the same in `ssr`, `static` and `spa` modes and in desktop and mobile shells, because it only reads `localStorage`.
 
 If you changed `storageKey` or `attribute` in `config/theme.ts`, pass the same values: `<ThemeScript storageKey="acme-theme" attribute="data-mode" />`. The script reads its props, not the config. It escapes both values, so a key containing `</script>` cannot break out of the tag.
 
@@ -215,18 +215,23 @@ export const readTheme = createServerFn({ method: 'GET' }).handler(
 )
 ```
 
-```tsx
-// app/routes/__root.tsx
-// ...
+```ts
+// app/routes.ts
+import { head, RootDocument } from './document'
 import { readTheme } from '#app/features/theme/read-theme'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  loader: () => readTheme(),
-  component: RootLayout,
-})
+r.root({ head, loader: () => readTheme(), component: RootDocument })
+```
 
-function RootDocument({ children }: { children: ReactNode }) {
-  const theme = Route.useLoaderData()
+```tsx
+// app/document.tsx
+// ...
+import { getRouteApi } from 'kitr/router'
+
+const root = getRouteApi('__root__')
+
+export function RootDocument() {
+  const theme = root.useLoaderData()
   return (
     <html lang="en" data-theme={theme ?? undefined} suppressHydrationWarning>
       <head>
@@ -234,7 +239,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <Outlet />
         <Scripts />
       </body>
     </html>
@@ -337,22 +342,21 @@ To change a token for the whole app, override its variable in `app/styles/tokens
 }
 ```
 
-`kitr add theme` loads this file for you: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise with an import in the root route. If you move it, keep it after `kitr/theme/styles.css`, so your values come later in the cascade and win:
+`kitr add theme` loads this file for you: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise with an import in `app/document.tsx`. If you move it, keep it after `kitr/theme/styles.css`, so your values come later in the cascade and win:
 
 ```tsx
-// app/routes/__root.tsx
+// app/document.tsx
 import css0 from 'kitr/theme/styles.css?url'
 import tokens from '#app/styles/tokens.css?url'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+export function head() {
+  return {
     links: [
       { rel: 'stylesheet', href: css0 },
       { rel: 'stylesheet', href: tokens },
     ],
-  }),
-  // ...
-})
+  }
+}
 ```
 
 With [tailwind](/packages/tailwind), import it in `app/styles/app.css` after `kitr/theme/styles.css` instead: `@import './tokens.css';`.
@@ -399,7 +403,7 @@ export function InvoiceStatus({ status }: { status: 'paid' | 'overdue' }) {
 ```
 
 ```tsx
-// app/routes/__root.tsx
+// app/document.tsx
 import { acme } from '#app/styles/acme-tokens'
 
 // inside <head>, after <HeadContent />:
@@ -708,7 +712,7 @@ export default defineConfig({
 ```
 
 ```tsx
-// app/routes/__root.tsx (inside <head>)
+// app/document.tsx (inside <head>)
 <ThemeScript storageKey="acme-admin-theme" attribute="data-mode" />
 ```
 
@@ -888,6 +892,6 @@ it('shows the error message from a failed payment', () => {
 
 - [API reference](/packages/theme/api): every export of `kitr/theme`, `kitr/theme/provider` and `kitr/theme/server`.
 - [Tailwind](/packages/tailwind): the same tokens as utility classes, and `cn()`.
-- [Router](/packages/router): the root route where `<ThemeScript />` and the stylesheet go.
+- [Router](/packages/router): writes the `app/document.tsx` where `<ThemeScript />` and the stylesheet go.
 - [sonner](https://sonner.emilkowal.ski): toast options such as `description`, `action` and `duration`.
 - [shadcn/ui](https://ui.shadcn.com/docs/registry): the registry format `kitr ui add` reads.

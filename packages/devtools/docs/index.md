@@ -465,21 +465,24 @@ export function ordersLog(app: KitrApp) {
 
 Use `register()` for a panel that only makes sense while a page is open:
 
+```ts
+// app/routes.ts
+app.page('/orders/$orderId', { lazy: () => import('./pages/orders/orderId') })
+```
+
 ```tsx
-// app/routes/_app/orders/$orderId.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders/orderId.tsx
 import { getDevtools } from 'kitr/devtools'
 import { KeyValue } from 'kitr/devtools/ui'
 import { useApp } from 'kitr/react'
 import { useEffect } from 'react'
+import { getRouteApi } from 'kitr/router'
 
-export const Route = createFileRoute('/_app/orders/$orderId')({
-  component: OrderPage,
-})
+const route = getRouteApi('/_app/orders/$orderId')
 
-function OrderPage() {
+export default function OrderPage() {
   const app = useApp()
-  const { orderId } = Route.useParams()
+  const { orderId } = route.useParams()
   useEffect(() => {
     const hub = getDevtools(app)
     return hub?.register({

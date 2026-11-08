@@ -3,7 +3,7 @@ import {
   definePackage,
   displayName,
   removeFiles as remove,
-  startRoot,
+  startDocument,
   writeTemplate as write,
 } from '@kitr/core/package'
 
@@ -15,11 +15,11 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
   )} as const\n`
 
 const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
-/** Typed, no codegen: route names, params, bodies and outputs come from the router. */
-export const api = createApiClient<AppRoutes>({
+/** Typed, no codegen: route names, params, bodies and outputs come from the server table. */
+export const api = createApiClient<ServerRoutes>({
   baseUrl: typeof window === 'undefined' ? 'http://localhost:' + (process.env.PORT ?? 3000) : '',
 })
 registerRoutes(api, [...routeTable])
@@ -27,7 +27,7 @@ registerRoutes(api, [...routeTable])
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
-  remove(ctx, 'app/routes/index.tsx', 'app/routes/about.tsx')
+  remove(ctx, 'app/pages/home.tsx', 'app/pages/about.tsx')
   ctx.scripts.add('api:sync', 'kitr api:sync')
 
   write(
@@ -181,14 +181,16 @@ export default class AuthController {
   write(
     ctx,
     'server/routes.ts',
-    `import { defineRoutes } from 'kitr/api'
+    `import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import AuthController from '#server/controllers/auth_controller'
 import HealthController from '#server/controllers/health_controller'
 import ProjectsController from '#server/controllers/projects_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+/** Endpoints of this app, served by \`createServer({ routes })\` in server/main.ts. */
+export const routes = defineRoutes([api], (root) =>
+  root.group('/api', (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .post('/auth/sign-in', [AuthController, 'signIn'], { name: 'auth.signIn' })
       .post('/auth/sign-out', [AuthController, 'signOut'], { name: 'auth.signOut' })
@@ -197,8 +199,8 @@ export const routes = defineRoutes((router) =>
   ),
 )
 
-/** Pass to createApiClient<AppRoutes>() on the client. */
-export type AppRoutes = typeof routes.$types
+/** Pass to createApiClient<ServerRoutes>() on the client. */
+export type ServerRoutes = typeof routes.$types
 `,
   )
   write(
@@ -262,11 +264,11 @@ export default defineConfig({
 import { createKitrRouter } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
   return createKitrRouter({
-    routeTree,
+    routes,
     app,
     context: {
       // A live getter, so \`requireAuth()\` sees the session the auth provider restores during boot.
@@ -312,8 +314,8 @@ export const deleteProject = mutationFrom(
 
   write(
     ctx,
-    'app/routes/__root.tsx',
-    startRoot({
+    'app/document.tsx',
+    startDocument({
       imports: '',
       head: `    meta: [
       { charSet: 'utf-8' },
@@ -326,12 +328,70 @@ export const deleteProject = mutationFrom(
 
   write(
     ctx,
-    'app/routes/sign-in.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { useAnalytics } from 'kitr/analytics/react'
+    'app/routes.ts',
+    `import { defineRoutes } from 'kitr/app'
+import type { Session } from 'kitr/auth'
+import { requireAuth } from 'kitr/router'
+import router from 'kitr/router/routes'
+import { ssrRoute } from 'kitr/seo'
+import { parseTableSearch } from 'kitr/table'
+import type { User } from '#app/abilities'
+import { projectsQuery } from '#app/features/projects/queries'
+import { head, RootDocument } from './document'
+
+/**
+ * Every page of the app. Route options (loaders, guards, search params) live here; the components
+ * live in app/pages and load on first visit. \`kitr make:page <path>\` appends to the chain.
+ */
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ head, component: RootDocument })
+    .page('/sign-in', {
+      validateSearch: (search: Record<string, unknown>) => ({
+        redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+      }),
+      lazy: () => import('./pages/sign-in'),
+    })
+    // Pathless layout: everything under it needs a session. The guard runs on the client only
+    // (the token lives in localStorage), so the layout opts out of SSR.
+    .layout(
+      '_app',
+      {
+        ...ssrRoute(false),
+        beforeLoad: async ({ context, location }) => {
+          // Read the live session from the container: the router copies its context object,
+          // so a value captured at creation time would be stale after sign-in.
+          await context.app.boot()
+          const session = context.app.container.use('auth').session as Session<User>
+          return requireAuth()({ context: { session }, location })
+        },
+        lazy: () => import('./pages/app-layout'),
+      },
+      (app) =>
+        app
+          .page('/', {
+            loader: ({ context }) => context.queryClient.ensureQueryData(projectsQuery.options({})),
+            lazy: () => import('./pages/overview'),
+          })
+          .page('/projects', {
+            validateSearch: parseTableSearch,
+            loader: ({ context }) => context.queryClient.ensureQueryData(projectsQuery.options({})),
+            lazy: () => import('./pages/projects'),
+          }),
+    ),
+)
+
+export type AppRoutes = typeof routes.$types
+`,
+  )
+
+  write(
+    ctx,
+    'app/pages/sign-in.tsx',
+    `import { useAnalytics } from 'kitr/analytics/react'
 import { useAuth } from 'kitr/auth'
 import { useSchemaForm } from 'kitr/forms'
-import { useNavigate } from 'kitr/router'
+import { getRouteApi, useNavigate } from 'kitr/router'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
 import type { AppEvents } from '#app/analytics'
@@ -343,15 +403,10 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
-export const Route = createFileRoute('/sign-in')({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-  }),
-  component: SignInPage,
-})
+const route = getRouteApi('/sign-in')
 
-function SignInPage() {
-  const { redirect } = Route.useSearch()
+export default function SignInPage() {
+  const { redirect } = route.useSearch()
   const navigate = useNavigate()
   const auth = useAuth<User, z.infer<typeof signInSchema>>()
   const analytics = useAnalytics<AppEvents>()
@@ -393,34 +448,17 @@ function SignInPage() {
 
   write(
     ctx,
-    'app/routes/_app.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { type Session, useAuth, useUser } from 'kitr/auth'
-import { Outlet, requireAuth, useNavigate } from 'kitr/router'
-import { ssrRoute } from 'kitr/seo'
-import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
+    'app/pages/app-layout.tsx',
+    `import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
+import { useAuth, useUser } from 'kitr/auth'
+import { Outlet, useNavigate } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'
 import { Icon } from '#components/ui/icon'
 
-/**
- * Pathless layout: everything under it needs a session. The guard runs on the client only
- * (the token lives in localStorage), so the layout opts out of SSR.
- */
-export const Route = createFileRoute('/_app')({
-  ...ssrRoute(false),
-  beforeLoad: async ({ context, location }) => {
-    // Read the live session from the container: the router copies its context object,
-    // so a value captured at creation time would be stale after sign-in.
-    await context.app.boot()
-    const session = context.app.container.use('auth').session as Session<User>
-    return requireAuth()({ context: { session, app: context.app }, location })
-  },
-  component: AppLayout,
-})
-
-function AppLayout() {
+/** The signed-in shell around every page of the \`_app\` layout (the guard is in app/routes.ts). */
+export default function AppLayout() {
   const auth = useAuth<User>()
   const user = useUser<User>()
   const navigate = useNavigate()
@@ -457,9 +495,8 @@ function AppLayout() {
 
   write(
     ctx,
-    'app/routes/_app/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { useUser } from 'kitr/auth'
+    'app/pages/overview.tsx',
+    `import { useUser } from 'kitr/auth'
 import { useSuspenseQuery } from 'kitr/query'
 import { Link } from 'kitr/router'
 import type { User } from '#app/abilities'
@@ -468,12 +505,7 @@ import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
 
-export const Route = createFileRoute('/_app/')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(projectsQuery.options({})),
-  component: OverviewPage,
-})
-
-function OverviewPage() {
+export default function OverviewPage() {
   const user = useUser<User>()
   const { data: projects } = useSuspenseQuery(projectsQuery.options({}))
   const active = projects.filter((p) => p.status === 'active')
@@ -529,17 +561,12 @@ function OverviewPage() {
 
   write(
     ctx,
-    'app/routes/_app/projects.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { useAnalytics } from 'kitr/analytics/react'
+    'app/pages/projects.tsx',
+    `import { useAnalytics } from 'kitr/analytics/react'
 import { useSchemaForm } from 'kitr/forms'
 import { useMutation, useSuspenseQuery } from 'kitr/query'
-import {
-  type ColumnDef,
-  type DataTableFeatures,
-  parseTableSearch,
-  useUrlTableState,
-} from 'kitr/table'
+import { getRouteApi } from 'kitr/router'
+import { type ColumnDef, type DataTableFeatures, useUrlTableState } from 'kitr/table'
 import { useState } from 'react'
 import type { AppEvents } from '#app/analytics'
 import { createProject, deleteProject, projectsQuery } from '#app/features/projects/queries'
@@ -557,15 +584,11 @@ import {
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 import { PageHeader } from '#components/ui/page-header'
 
-export const Route = createFileRoute('/_app/projects')({
-  validateSearch: parseTableSearch,
-  loader: ({ context }) => context.queryClient.ensureQueryData(projectsQuery.options({})),
-  component: ProjectsPage,
-})
+const route = getRouteApi('/_app/projects')
 
-function ProjectsPage() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+export default function ProjectsPage() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
   const tableState = useUrlTableState({
     search,
     setSearch: (patch) => navigate({ search: (prev: typeof search) => ({ ...prev, ...patch }) }),

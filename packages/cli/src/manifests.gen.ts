@@ -451,7 +451,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "package": "@kitr/router",
     "name": "router",
     "title": "Router",
-    "summary": "Turn files in app/routes into pages, with links, loaders and guards. Web, desktop and mobile apps get it automatically.",
+    "summary": "Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free.",
     "category": "pages",
     "runsOn": "client",
     "builtOn": [

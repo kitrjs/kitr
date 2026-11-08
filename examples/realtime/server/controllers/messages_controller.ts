@@ -1,5 +1,4 @@
 import type { HttpContext } from 'kitr/api'
-import { realtime } from '#server/realtime'
 import { chatChannel } from '#app/channels/chat'
 import {
   type Message,
@@ -40,7 +39,7 @@ export default class MessagesController {
     return history(query.room)
   }
 
-  async store({ body, response }: Ctx<Record<string, string | string[]>, SendMessage>) {
+  async store({ app, body, response }: Ctx<Record<string, string | string[]>, SendMessage>) {
     const message: Message = {
       id: crypto.randomUUID(),
       room: body.room,
@@ -51,7 +50,8 @@ export default class MessagesController {
     const list = history(body.room)
     list.push(message)
     if (list.length > 100) list.shift()
-    realtime.use(chatChannel, { room: body.room }).emit('message', message)
+    // The socket server mounted by `.ws()` in server/routes.ts; everyone in the room gets the event.
+    app.container.use('realtime').use(chatChannel, { room: body.room }).emit('message', message)
     response.status(201)
     return message
   }

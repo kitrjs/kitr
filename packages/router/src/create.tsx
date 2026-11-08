@@ -10,16 +10,42 @@ import {
 } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { DefaultError, DefaultNotFound, DefaultPending } from './defaults'
+import type { CompileTreeOptions, RouteTreeOf } from './routes'
+
+/** A route table with pages (`defineRoutes([pages], ...)`): what `createKitrRouter({ routes })` compiles. */
+export interface PageRoutes<R = any> {
+  $types: R
+  compile(target: 'tanstack', options?: CompileTreeOptions): Record<string, unknown>
+}
 
 /** Options of `createKitrRouter`: TanStack's router options without `context`, plus the kitr app and extra context. */
-export interface CreateKitrRouterOptions<TRouteTree extends AnyRoute>
-  extends Omit<RouterOptions<TRouteTree, 'never', false, any, any>, 'context'> {
+export interface CreateKitrRouterBaseOptions<TRouteTree extends AnyRoute>
+  extends Omit<RouterOptions<TRouteTree, 'never', false, any, any>, 'context' | 'routeTree'> {
   /** The app from `app/app.ts`. Put in every route's context as `context.app`; forked per request on the server. */
   app: KitrApp
   /** Defaults to the container's `queryClient` (from @kitr/query). */
   queryClient?: QueryClient
   /** Extra context merged into every route (e.g. `session`). */
   context?: Record<string, unknown>
+  /** The platform this router is built for. Default `import.meta.env.KITR_PLATFORM`. */
+  platform?: string
+}
+
+/** `createKitrRouter({ routeTree })`: a TanStack route tree, from `createRootRoute().addChildren` or file-based routes. */
+export interface CreateKitrRouterOptions<TRouteTree extends AnyRoute>
+  extends CreateKitrRouterBaseOptions<TRouteTree> {
+  routeTree: TRouteTree
+  routes?: never
+}
+
+/** The TanStack route tree of a table's `$types`, as a route (never `unknown`, so the router stays typed). */
+export type TreeOf<R> = RouteTreeOf<R> extends infer T extends AnyRoute ? T : never
+
+/** `createKitrRouter({ routes })`: the kitr route table from `app/routes.ts`, compiled to a route tree. */
+export interface CreateKitrRouterFromRoutesOptions<R>
+  extends CreateKitrRouterBaseOptions<TreeOf<R>> {
+  routes: PageRoutes<R>
+  routeTree?: never
 }
 
 declare module '@kitr/core' {
@@ -37,8 +63,28 @@ declare module '@kitr/core' {
  */
 export function createKitrRouter<TRouteTree extends AnyRoute>(
   options: CreateKitrRouterOptions<TRouteTree>,
-): Router<TRouteTree, 'never', true> {
-  const { app: rootApp, queryClient, context, ...rest } = options
+): Router<TRouteTree, 'never', true>
+export function createKitrRouter<R>(
+  options: CreateKitrRouterFromRoutesOptions<R>,
+): Router<TreeOf<R>, 'never', true>
+export function createKitrRouter(
+  options: CreateKitrRouterBaseOptions<any> & { routes?: PageRoutes; routeTree?: AnyRoute },
+): Router<any, 'never', true> {
+  const {
+    app: rootApp,
+    queryClient,
+    context,
+    routes,
+    routeTree: givenTree,
+    platform,
+    ...rest
+  } = options
+  // The route table compiles to a TanStack tree once per router; the platform drops the pages
+  // that do not ship on it.
+  const routeTree: AnyRoute =
+    givenTree ??
+    (routes!.compile('tanstack', { platform: platform ?? (import.meta as any).env?.KITR_PLATFORM })
+      .pages as AnyRoute)
   // On the server the router is built once per request (TanStack Start calls getRouter() each
   // time) while the app is a module singleton. Fork it so request-scoped services, like the
   // query cache, and the `router` binding below belong to this request only.
@@ -79,7 +125,8 @@ export function createKitrRouter<TRouteTree extends AnyRoute>(
     defaultErrorComponent: DefaultError,
     defaultNotFoundComponent: DefaultNotFound,
     defaultStructuralSharing: true,
-    ...rest,
+    ...(rest as Omit<RouterOptions<AnyRoute, 'never', false, any, any>, 'context' | 'routeTree'>),
+    routeTree,
     context: routerContext as any,
     Wrap: ({ children }: { children: ReactNode }) => (
       <KitrProvider app={app}>{children}</KitrProvider>
@@ -109,5 +156,5 @@ export function createKitrRouter<TRouteTree extends AnyRoute>(
         search: e.toLocation.search,
       }),
     )
-  return router as unknown as Router<TRouteTree, 'never', true>
+  return router as unknown as Router<any, 'never', true>
 }

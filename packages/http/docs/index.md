@@ -129,18 +129,22 @@ export const ordersQuery = queryFrom(
 
 Then show it on a page:
 
+```ts
+// app/routes.ts
+import { ordersQuery } from '#app/features/orders/queries'
+
+r.page('/orders', {
+  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
+  lazy: () => import('./pages/orders'),
+})
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { useSuspenseQuery } from 'kitr/query'
 import { ordersQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const { data: orders } = useSuspenseQuery(ordersQuery.options())
   return (
     <ul>

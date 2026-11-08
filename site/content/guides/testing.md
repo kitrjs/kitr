@@ -323,16 +323,16 @@ The schema rejects the name in the browser, so the action is never called and th
 
 ## Test a page
 
-A page test renders the real route tree at a URL, runs its loader and checks the result. The `/projects` loader calls a server action through a TanStack Start server function, which needs the Start runtime, so seed the data the loader asks for before the router loads. `ensureQueryData` then finds it in the cache and the page renders without a request:
+A page test renders the real route table at a URL, runs its loader and checks the result. The `/projects` loader calls a server action through a TanStack Start server function, which needs the Start runtime, so seed the data the loader asks for before the router loads. `ensureQueryData` then finds it in the cache and the page renders without a request:
 
 ```tsx
-// app/routes/projects/index.test.tsx
+// app/pages/projects/index.test.tsx
 import { act, render, screen } from '@testing-library/react'
 import queryProvider from 'kitr/query/provider'
 import { createKitrRouter, createMemoryHistory, RouterProvider } from 'kitr/router'
 import { createTestApp } from 'kitr/testing'
 import { expect, it } from 'vitest'
-import { routeTree } from '#app/routeTree.gen'
+import { routes } from '#app/routes'
 
 it('renders the projects page from its URL', async () => {
   const app = await createTestApp({ providers: [queryProvider] })
@@ -343,7 +343,7 @@ it('renders the projects page from its URL', async () => {
       [{ id: 'prj_1', teamId: 'team_acme', name: 'Apollo launch', createdAt: new Date() }],
     )
   const router = createKitrRouter({
-    routeTree,
+    routes,
     app,
     history: createMemoryHistory({ initialEntries: ['/projects'] }),
   })

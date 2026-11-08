@@ -157,16 +157,21 @@ export function ProjectList() {
 In a route loader, `queryOptions` by name hands TanStack Router the same options the component uses, so the server fetches once and the browser reuses the result:
 
 ```ts
-// app/routes/projects/index.tsx
-import { createFileRoute } from 'kitr/router'
+// app/routes.ts
 import { queryOptions } from 'kitr/query'
-import { ProjectList } from '#components/project-list'
 
-export const Route = createFileRoute('/projects/')({
+r.page('/projects/', {
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(queryOptions('projects.list', { status: 'open' })),
-  component: ProjectList,
+  lazy: () => import('./pages/projects/index'),
 })
+```
+
+```ts
+// app/pages/projects/index.tsx
+import { ProjectList } from '#components/project-list'
+
+export default ProjectList
 ```
 
 ## Call an action outside a component

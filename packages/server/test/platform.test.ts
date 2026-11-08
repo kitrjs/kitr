@@ -88,15 +88,17 @@ describe('server()', () => {
       api.scaffold!(f.ctx)
       const entry = f.files.get('server/main.ts')!
       expect(entry).toContain("import rc from '../kitrrc'")
-      expect(entry).toContain('createServer({ providers: rc.providers, config })')
-      expect(entry).toContain('mountRoutes(server, routes)')
+      expect(entry).toContain("import { routes } from './routes'")
+      expect(entry).toContain('createServer({ providers: rc.providers, config, routes })')
       expect(entry).toContain('Number(process.env.PORT) || 4000')
       expect(entry).not.toMatch(/react/i)
-      expect(f.files.get('server/routes.ts')).toContain("api.get('/health'")
-      expect(f.files.has('app/routes/api.$.ts')).toBe(false)
+      // An empty table: `kitr add api` / `kitr add realtime` extend it with their methods.
+      expect(f.files.get('server/routes.ts')).toContain('defineRoutes([], (r) => r)')
+      expect(f.files.get('server/routes.ts')).toContain('export type ServerRoutes')
+      expect(f.files.has('app/server.ts')).toBe(false)
     })
 
-    it('in a React app with a web platform, writes the /api route that delegates to the server', () => {
+    it("in a React app with a web platform, writes Start's server entry that asks the kitr server first", () => {
       const api = server()
       const f = fakePlatformContext(api, {
         files: {
@@ -108,27 +110,30 @@ describe('server()', () => {
       })
       api.scaffold!(f.ctx)
       expect(f.files.get('server/main.ts')).toContain("import { config } from '../config'")
+      expect(f.files.get('server/main.ts')).toContain("import { routes } from '#server/routes'")
       expect(f.files.get('server/main.ts')).toContain(
-        'createServer({ providers: rc.providers, config })',
+        'createServer({ providers: rc.providers, config, routes })',
       )
-      expect(f.files.get('server/main.ts')).not.toContain('mountRoutes')
-      expect(f.files.get('app/routes/api.$.ts')).toContain(
-        'ANY: ({ request }) => server.fetch(request)',
-      )
+      const entry = f.files.get('app/server.ts')!
+      expect(entry).toContain("from '@tanstack/react-start/server-entry'")
+      expect(entry).toContain('if (server.handles(request)) return server.fetch(request)')
+      expect(entry).toContain('return handler.fetch(request, options)')
     })
 
-    it('attaches realtime on the configured path when the app has it', () => {
+    it('leaves sockets to the route table: the entry never changes shape for realtime', () => {
       const api = server()
       const f = fakePlatformContext(api, {
         files: {
           'package.json': '{"name":"svc"}',
           'kitrrc.ts': rc(['@kitr/server', '@kitr/realtime']),
-          'server/realtime.ts': '',
           'config/realtime.ts': "export default { path: '/live' }",
         },
       })
       api.scaffold!(f.ctx)
-      expect(f.files.get('server/main.ts')).toContain('realtime.attach(server)')
+      expect(f.files.get('server/main.ts')).not.toMatch(/realtime|attach/)
+      expect(f.files.get('server/main.ts')).toContain(
+        'createServer({ providers: rc.providers, config, routes })',
+      )
     })
 
     it('writes wrangler.toml for workers, named after the package', () => {

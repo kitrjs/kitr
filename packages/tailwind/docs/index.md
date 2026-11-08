@@ -25,12 +25,12 @@ What `kitr add` does:
 - Adds `@kitr/tailwind` to `packages` in `kitrrc.ts`. The `kitr()` Vite plugin sees it there and loads `@tailwindcss/vite`.
 - Writes `config/tailwind.ts` (shown under [Configure](#configure)).
 - Writes `app/styles/app.css`, the stylesheet Tailwind starts from. When `app/styles/tokens.css` exists (the [theme](/packages/theme) package writes it), the stylesheet imports it last, so your token values win over kitr's.
-- In `app/routes/__root.tsx`, swaps the linked `kitr/theme/styles.css?url` for `#app/styles/app.css?url` (or an `import 'kitr/theme/styles.css'` for `import '#app/styles/app.css'`), so the theme stylesheet loads once, through `app.css`. A root route with neither gets the new sheet added.
+- In `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes), swaps the linked `kitr/theme/styles.css?url` for `#app/styles/app.css?url` (or an `import 'kitr/theme/styles.css'` for `import '#app/styles/app.css'`), so the theme stylesheet loads once, through `app.css`. A document with neither gets the new sheet added.
 - Adds a `## kitr: tailwind` section to `AGENTS.md`: utilities map to kitr tokens, merge classes with `cn()`, dark mode is `data-theme="dark"` on `<html>`.
 
 It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits include tailwind, and so do the preset kits built on them.
 
-`kitr remove tailwind` takes `@kitr/tailwind` out of `kitrrc.ts`, uninstalls `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite` and `tailwind-merge`, deletes `config/tailwind.ts` and removes the `AGENTS.md` section. It leaves `app/styles/app.css`, the import in `__root.tsx`, `clsx` and `class-variance-authority`, because your components may still use them.
+`kitr remove tailwind` takes `@kitr/tailwind` out of `kitrrc.ts`, uninstalls `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite` and `tailwind-merge`, deletes `config/tailwind.ts` and removes the `AGENTS.md` section. It leaves `app/styles/app.css`, the import in `app/document.tsx`, `clsx` and `class-variance-authority`, because your components may still use them.
 
 ## Configure
 
@@ -51,7 +51,7 @@ export default defineConfig({
 | `entry` | `'app/styles/app.css'` | The stylesheet Tailwind starts from, relative to the project root. |
 | `preset` | `true` | Whether the app uses kitr's preset (`kitr/tailwind/preset.css`). |
 
-Tailwind v4 is configured in CSS, so the stylesheet decides what the build does, and these two options describe it. `kitr doctor` checks they agree: it reports an error when `entry` does not exist, and a warning when the entry does not import Tailwind, or imports kitr's preset while `preset` is false (or leaves it out while `preset` is true). To change the entry, import a different file from `__root.tsx` and set `entry`. To drop the preset, remove its `@import` line and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` also warns when `config/tailwind.ts` is missing, so keep the file.
+Tailwind v4 is configured in CSS, so the stylesheet decides what the build does, and these two options describe it. `kitr doctor` checks they agree: it reports an error when `entry` does not exist, and a warning when the entry does not import Tailwind, or imports kitr's preset while `preset` is false (or leaves it out while `preset` is true). To change the entry, link a different file from `head()` in `app/document.tsx` and set `entry`. To drop the preset, remove its `@import` line and set `preset: false` ([Use plain Tailwind colours](#use-plain-tailwind-colours)). `kitr doctor` also warns when `config/tailwind.ts` is missing, so keep the file.
 
 The stylesheet `kitr add` writes is the real configuration:
 
@@ -96,13 +96,11 @@ export function OrderStatusBadge({ status }: { status: 'paid' | 'pending' | 'ref
 
 Use it anywhere:
 
-```tsx
-// app/routes/orders/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { OrderStatusBadge } from '#app/features/orders/order-status-badge'
 
-export const Route = createFileRoute('/orders/')({
-  component: () => (
+r.page('/orders/', {
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-semibold text-foreground">Orders</h1>
       <p className="mt-2 text-muted-foreground">
@@ -110,7 +108,13 @@ export const Route = createFileRoute('/orders/')({
       </p>
     </main>
   ),
+  lazy: () => import('./pages/orders/index'),
 })
+```
+
+```tsx
+// app/pages/orders/index.tsx
+export default () => (
 ```
 
 Run `npm run dev` and open `/orders`. The heading uses the theme's foreground colour, the badge sits on the muted surface with the theme's border and radius. Switch the theme to dark and both follow without a `dark:` class, because the tokens change under them.
@@ -455,7 +459,7 @@ Most Tailwind problems in a kitr app come from one of a few causes. Check them i
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| No Tailwind styles at all | `app/styles/app.css` is not imported, or `@kitr/tailwind` is missing from `packages` in `kitrrc.ts` so the Vite plugin is not loaded. | Import `#app/styles/app.css` in `app/routes/__root.tsx`; run `kitr doctor`. |
+| No Tailwind styles at all | `app/styles/app.css` is not imported, or `@kitr/tailwind` is missing from `packages` in `kitrrc.ts` so the Vite plugin is not loaded. | Import `#app/styles/app.css` in `app/document.tsx`; run `kitr doctor`. |
 | `bg-primary` and other theme classes do nothing | The preset import is missing from `app/styles/app.css`. | Add `@import 'kitr/tailwind/preset.css';` after `@import 'tailwindcss';`. |
 | Theme classes resolve but have no colour | `kitr/theme/styles.css` is not imported, so the `--kitr-*` variables are undefined. | Add `@import 'kitr/theme/styles.css';`. |
 | `dark:` classes never apply | Nothing sets `data-theme="dark"` on `<html>`. | Mount the [theme](/packages/theme) provider and switch with `useTheme()`. |

@@ -170,7 +170,7 @@ export function createSseServer(options: SseServerOptions): SseServer {
         // Send the params back as the schema output them: the server publishes under those.
         send(conn, { t: 'ok', id: msg.id, p: params ?? null })
       } else if (msg.t === 'msg') {
-        await channel.onMessage?.(msg.ev, msg.d, params, conn.ctx)
+        await channel.onMessage?.(msg.ev, msg.d, params, conn.ctx, sse)
       }
     } catch (error) {
       fail(conn, error, msgId)

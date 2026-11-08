@@ -84,17 +84,20 @@ export function CopyInvoiceLink({ invoiceId }: { invoiceId: string }) {
 
 Render it on the invoice page:
 
+```ts
+// app/routes.ts
+r.page('/invoices/$invoiceId', { lazy: () => import('./pages/invoices/invoiceId') })
+```
+
 ```tsx
-// app/routes/invoices/$invoiceId.tsx
-import { createFileRoute } from 'kitr/router'
+// app/pages/invoices/invoiceId.tsx
 import { CopyInvoiceLink } from '#app/features/invoices/copy-invoice-link'
+import { getRouteApi } from 'kitr/router'
 
-export const Route = createFileRoute('/invoices/$invoiceId')({
-  component: InvoicePage,
-})
+const route = getRouteApi('/invoices/$invoiceId')
 
-function InvoicePage() {
-  const { invoiceId } = Route.useParams()
+export default function InvoicePage() {
+  const { invoiceId } = route.useParams()
   return (
     <main>
       <h1>Invoice {invoiceId}</h1>

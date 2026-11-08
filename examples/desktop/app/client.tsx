@@ -3,7 +3,7 @@ import { StrictMode, startTransition } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { app } from './app'
 
-/** Start's client entry, with the kitr app booted first so providers are ready when the tree hydrates. */
+/** Boot providers before hydrating, so the first client render matches the server's HTML. */
 app.boot().then(() => {
   startTransition(() => {
     hydrateRoot(

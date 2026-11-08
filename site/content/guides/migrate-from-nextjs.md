@@ -22,12 +22,12 @@ Decide what you are migrating for before you start. kitr fits when you want type
 
 | Next.js | kitr | Notes |
 | --- | --- | --- |
-| `app/page.tsx` | `app/routes/index.tsx` | Each route file exports `Route = createFileRoute(path)({...})`. |
-| `app/projects/page.tsx` | `app/routes/projects/index.tsx` | |
-| `app/projects/[id]/page.tsx` | `app/routes/projects/$id.tsx` | `$id` is the param; `Route.useParams()` reads it, typed. |
-| `app/[...slug]/page.tsx` | `app/routes/$.tsx` | The splat param is `_splat`. |
-| `app/layout.tsx` | `app/routes/__root.tsx` | The HTML document and providers' outlet. |
-| `app/(app)/layout.tsx` | `app/routes/_app.tsx` | A pathless layout: the `_` prefix adds no URL segment. |
+| `app/page.tsx` | `.page('/', { lazy: () => import('./pages/home') })` in `app/routes.ts` | Every page is a link on the route table; the component lives in `app/pages/`. |
+| `app/projects/page.tsx` | `.page('/projects', ...)` + `app/pages/projects/index.tsx` | |
+| `app/projects/[id]/page.tsx` | `.page('/projects/$id', ...)` + `app/pages/projects/id.tsx` | `$id` is the param; `getRouteApi('/projects/$id').useParams()` reads it, typed. |
+| `app/[...slug]/page.tsx` | `.page('/$', ...)` | The splat param is `_splat`. |
+| `app/layout.tsx` | `app/document.tsx` | The HTML document; `.root({ head, component: RootDocument })` mounts it. |
+| `app/(app)/layout.tsx` | `.layout('_app', options, (app) => ...)` | A pathless layout: it adds no URL segment. |
 | `loading.tsx` | `pendingComponent` on the route | |
 | `error.tsx` | `errorComponent` on the route | |
 | `not-found.tsx` | `notFoundComponent` on the root route | |
@@ -39,7 +39,7 @@ Decide what you are migrating for before you start. kitr fits when you want type
 | `generateStaticParams` | `web({ mode: 'static' })` with prerendering | Every linked route is rendered at build time. |
 | `next/link` | `Link` from `kitr/router` | `href` becomes `to` plus `params`. |
 | `useRouter().push` | `useNavigate()` from `kitr/router` | |
-| `useSearchParams` | `validateSearch` plus `Route.useSearch()` | Search params are parsed and typed. |
+| `useSearchParams` | `validateSearch` on the page link plus `getRouteApi(path).useSearch()` | Search params are parsed and typed. |
 | `NEXT_PUBLIC_*` | `VITE_*`, declared in `app/env.ts` | |
 | `next.config.js` | `kitrrc.ts`, `vite.config.ts` and `config/*.ts` | |
 | `next dev`, `next build`, `next start` | `kitr dev`, `kitr build`, `kitr start` | |
@@ -66,49 +66,50 @@ Then replace `@/components/` with `#components/` across the copied files with yo
 
 ## Move the root layout
 
-`app/layout.tsx` in Next.js renders `<html>`, `<body>` and the children. In kitr that is the root route. The kit already wrote one; move your fonts, global CSS and site chrome into it:
+`app/layout.tsx` in Next.js renders `<html>`, `<body>` and the children. In kitr that is `app/document.tsx`, mounted by `.root()` at the top of the route table. The kit already wrote both; move your fonts, global CSS and site chrome into the document:
 
 ```tsx
-// app/routes/__root.tsx
-import type { KitrRouterContext } from 'kitr/router'
-import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts } from 'kitr/router'
-import type { ReactNode } from 'react'
+// app/document.tsx
+import { HeadContent, Link, Outlet, Scripts } from 'kitr/router'
 import appCss from '#app/styles/app.css?url'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+export function head() {
+  return {
     meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }],
     links: [{ rel: 'stylesheet', href: appCss }],
-  }),
-  notFoundComponent: () => <p>We could not find that page.</p>,
-  component: RootLayout,
-})
-
-function RootLayout() {
-  return (
-    <RootDocument>
-      <header className="flex gap-4 p-4">
-        <Link to="/">Acme</Link>
-        <Link to="/projects">Projects</Link>
-      </header>
-      <Outlet />
-    </RootDocument>
-  )
+  }
 }
 
-function RootDocument({ children }: { children: ReactNode }) {
+export function RootDocument() {
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
+        <header className="flex gap-4 p-4">
+          <Link to="/">Acme</Link>
+          <Link to="/projects">Projects</Link>
+        </header>
+        <Outlet />
         <Scripts />
       </body>
     </html>
   )
 }
+```
+
+```ts
+// app/routes.ts
+import { defineRoutes } from 'kitr/app'
+import router from 'kitr/router/routes'
+import { head, RootDocument } from './document'
+
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ head, component: RootDocument, notFoundComponent: () => <p>We could not find that page.</p> })
+    .page('/', { lazy: () => import('./pages/home') }),
+)
 ```
 
 `<Outlet />` is where Next.js put `{children}`. `<HeadContent />` renders the `head` of every matched route, and `<Scripts />` loads the client bundle. Leave both in place.
@@ -141,19 +142,23 @@ export const listProjects = defineQuery('projects.list', {
 })
 ```
 
-```tsx
-// app/routes/projects/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { queryOptions, useSuspenseQuery } from 'kitr/query'
+```ts
+// app/routes.ts
+import { queryOptions } from 'kitr/query'
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/projects/')({
+r.page('/projects', {
   loader: ({ context }) => context.queryClient.ensureQueryData(queryOptions('projects.list')),
   head: () => seo({ title: 'Projects · Acme' }),
-  component: ProjectsPage,
+  lazy: () => import('./pages/projects/index'),
 })
+```
 
-function ProjectsPage() {
+```tsx
+// app/pages/projects/index.tsx
+import { useSuspenseQuery } from 'kitr/query'
+
+export default function ProjectsPage() {
   const { data: projects } = useSuspenseQuery('projects.list')
   return <ul>{projects.map((p) => <li key={p.id}>{p.name}</li>)}</ul>
 }
@@ -169,27 +174,34 @@ Keep the database client you had: Prisma, Drizzle, a plain driver. Move `lib/db.
 
 ## Move a dynamic route
 
-`app/projects/[id]/page.tsx` becomes `app/routes/projects/$id.tsx`. The param is typed, and a missing project becomes a 404 with `notFound()`:
+`app/projects/[id]/page.tsx` becomes a `.page('/projects/$id', ...)` link and `app/pages/projects/id.tsx`. The param is typed, and a missing project becomes a 404 with `notFound()`:
 
-```tsx
-// app/routes/projects/$id.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { queryOptions, useSuspenseQuery } from 'kitr/query'
+```ts
+// app/routes.ts
+import { queryOptions } from 'kitr/query'
 import { notFound } from 'kitr/router'
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/projects/$id')({
+r.page('/projects/$id', {
   loader: async ({ context, params }) => {
     const project = await context.queryClient.ensureQueryData(queryOptions('projects.show', { id: params.id }))
     if (!project) throw notFound()
     return { name: project.name }
   },
   head: ({ loaderData }) => seo({ title: `${loaderData?.name} · Acme` }),
-  component: ProjectPage,
+  lazy: () => import('./pages/projects/id'),
 })
+```
 
-function ProjectPage() {
-  const { id } = Route.useParams()
+```tsx
+// app/pages/projects/id.tsx
+import { useSuspenseQuery } from 'kitr/query'
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/projects/$id')
+
+export default function ProjectPage() {
+  const { id } = route.useParams()
   const { data: project } = useSuspenseQuery('projects.show', { id })
   return <h1>{project?.name}</h1>
 }
@@ -309,14 +321,15 @@ export default class ProjectsController {
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import ProjectsController from '#server/controllers/projects_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) => api.resource('projects', ProjectsController, { only: ['index'] })),
+export const routes = defineRoutes([api], (router) =>
+  router.group('/api', (r) => api.resource('projects', ProjectsController, { only: ['index'] })),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 `GET /api/projects` answers the same JSON as before, so the mobile app does not change. `kitr api:sync` writes an OpenAPI document for it. Keep both kinds: actions for your own pages, API routes for everyone else.
@@ -327,18 +340,16 @@ Next.js runs one `middleware.ts` for every request. kitr splits it by what it pr
 
 Pages: guard a layout route in `beforeLoad`. Every route under it inherits the guard:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { requireAuth } from 'kitr/router'
 
-export const Route = createFileRoute('/_app')({
+r.layout('_app', {
   beforeLoad: requireAuth(),
-  component: () => <Outlet />,
-})
+}, (app) => app.page('/projects', { lazy: () => import('./pages/projects') }))
 ```
 
-Move the guarded pages under `app/routes/_app/`: `app/routes/_app/projects/index.tsx` still answers `/projects`, because `_app` adds no URL segment. An anonymous visitor goes to `/sign-in?redirect=/projects`.
+Move the guarded `.page()` links inside the layout's callback: `app.page('/projects', ...)` still answers `/projects`, because `_app` adds no URL segment. An anonymous visitor goes to `/sign-in?redirect=/projects`.
 
 The API and actions: use server middleware. `authMiddleware` from `kitr/auth/server` on API route groups, and `requireSession` from `kitr/actions` on actions. [Add sign-in, end to end](/guides/authentication) wires both to one session.
 
@@ -374,7 +385,7 @@ Some Next.js features have no kitr counterpart. Plan for them:
 | Incremental static regeneration (`revalidate`) | Render with `ssr` and set `Cache-Control` headers so your CDN caches pages, or rebuild a `static` site when content changes. |
 | React Server Components | Components render on the server and hydrate. Keep server-only code in actions and controllers; the loader replaces fetching in the component. |
 | `next/image` | Use `<img>` with `width`, `height` and `loading="lazy"`, and resize at your CDN or image host. |
-| `next/font` | Self-host with [Fontsource](https://fontsource.org) and import the CSS in `__root.tsx`. |
+| `next/font` | Self-host with [Fontsource](https://fontsource.org) and link the CSS from `head()` in `app/document.tsx`. |
 | Edge runtime per route | Run the `api` platform on Cloudflare Workers; pages run on Node. |
 | Parallel and intercepting routes | Render the modal as a child route, or keep its open state in a search param with `validateSearch`. |
 

@@ -101,6 +101,28 @@ export {
   type KitrWorkspace,
 } from './rc'
 export {
+  type AnyRouteTable,
+  createRouteTable,
+  defineRouteExtension,
+  defineRoutes,
+  type ExtensionKey,
+  type GroupChildMap,
+  type Grouped,
+  type GroupOptions,
+  isRouteTable,
+  type JoinPaths,
+  joinPath,
+  type KitrRouter,
+  type RouteEntry,
+  type RouteExtension,
+  type RouteGroupChild,
+  type RouteMap,
+  type RouterExtensions,
+  RouteTable,
+  type RouteTableBase,
+  type RouteType,
+} from './routes'
+export {
   type AnySchema,
   anySchema,
   type InferInput,
