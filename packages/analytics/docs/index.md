@@ -392,7 +392,7 @@ export default defineConfig({
 
 ### PostHog
 
-Install the PostHog browser client, then pass it in. kitr does not import `posthog-js` itself, so it stays out of your bundle until you add it:
+Install the PostHog browser client, then pass it in. `posthog-js` stays out of your bundle until you add it:
 
 ```sh
 pnpm add posthog-js
@@ -534,7 +534,7 @@ What happens to each call:
 
 The [consent](/packages/consent) package does all of this for you: it calls `enable()` when the visitor grants the `analytics` category and `disable()` when they withdraw it. When the consent provider is in `kitrrc.ts`, the analytics provider starts disabled on its own, wherever the two providers sit in the list and whatever `enabled` says in `config/analytics.ts`. No tracker script loads and no vendor cookie is set before the visitor agrees. With consent installed, never call `enable()` yourself; let the banner decide.
 
-The one exception is `analytics: false` in `config/consent.ts`, which tells consent not to manage analytics. Analytics then follows its own `enabled` option again.
+Set `analytics: false` in `config/consent.ts` to stop consent managing analytics; analytics then follows its own `enabled` option.
 
 ## Add an adapter at run time
 

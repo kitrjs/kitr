@@ -30,7 +30,7 @@ It writes no config file, adds no env variables or scripts and asks no questions
 
 `kitr remove 3d` takes `'@kitr/3d'` out of `kitrrc.ts`, removes the four dependencies and the `AGENTS.md` section, then lists files that still import `@kitr/3d`. It leaves `public/draco/` and your models in place.
 
-`kitr doctor` flags imports from `@react-three/fiber` and `@react-three/drei` and suggests `@kitr/3d` and `@kitr/3d/drei`. `three` itself is imported directly, as `import { Color } from 'three'`, because its examples live under deep paths that no single entry can cover.
+`kitr doctor` flags imports from `@react-three/fiber` and `@react-three/drei` and suggests `@kitr/3d` and `@kitr/3d/drei`. Import `three` itself directly, as `import { Color } from 'three'`.
 
 ## Configure
 
@@ -70,7 +70,7 @@ export function HeadsetViewer() {
 | `onError` | logs to the console | Called with the error when the scene fails and `fallback` is shown |
 | `className`, `style` | `width: 100%`, `height: 100%` | Applied to the element around the canvas. The canvas fills it, so size the scene here |
 
-Every other prop goes to React Three Fiber's [`<Canvas>`](https://r3f.docs.pmnd.rs/api/canvas): `camera`, `shadows`, `gl`, `scene`, `orthographic`, `flat`, `linear`, `events` and `onCreated`. There are no env variables.
+Every other prop goes to React Three Fiber's [`<Canvas>`](https://r3f.docs.pmnd.rs/api/canvas): `camera`, `shadows`, `gl`, `scene`, `orthographic`, `flat`, `linear`, `events` and `onCreated`.
 
 ## Show your first scene
 

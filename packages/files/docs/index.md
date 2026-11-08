@@ -59,8 +59,6 @@ export default defineConfig({
 | `driver` | the platform's driver, else the driver for the runtime | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
 | `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no files driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-`@kitr/files` adds no environment variables.
-
 The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then `selectDriver(runtime)`: the web driver in a browser, an in-memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
 Acme's app has its own project export format, so every dialog offers it:
@@ -789,7 +787,7 @@ export default defineProvider({
 })
 ```
 
-Add `() => import('#app/providers/electron-files')` to `providers` in `kitrrc.ts`. The files service resolves its driver on first use, after every provider has registered, so the order in the list doesn't matter. In a plain browser `ipc.available` is `false`, nothing is registered, and the web driver runs as before. Picked files now have a `path`, and `reveal(path)` opens them in the default app.
+Add `() => import('#app/providers/electron-files')` to `providers` in `kitrrc.ts`. The files service resolves its driver on first use, after every provider has registered, so the order in the list doesn't matter. In a plain browser `ipc.available` is `false`, nothing is registered, and the web driver runs. Picked files now have a `path`, and `reveal(path)` opens them in the default app.
 
 The same shape works for any shell: [Tauri's dialog plugin](https://v2.tauri.app/plugin/dialog/) with its fs plugin, or a Capacitor file picker plugin on mobile.
 

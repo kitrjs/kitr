@@ -5,11 +5,14 @@ description: Why kitr suits coding agents, how to install the Claude Code plugin
 
 # Built for agents
 
-kitr makes the choices up front and writes them down. Every kind of file has one home, every package has one way in, and every command runs from flags. That gives a coding agent one right answer to find, and the project tells it what that answer is.
+> [!SUMMARY]
+> kitr writes its choices down: `kitrrc.ts` lists the wiring, `AGENTS.md` lists the conventions, and every command runs from flags. An agent reads those files instead of guessing.
+
+kitr makes the choices up front and writes them down. Every kind of file has one home, every package has one way in, and every command runs from flags. You spend your time on the code, not on deciding where it goes or which library to use. The same clarity is what makes a coding agent reliable: it has one right answer to find, and the project tells it what that answer is.
 
 ## Why it works
 
-An agent goes wrong when a project leaves room for guesses. kitr leaves little. The wiring is listed in `kitrrc.ts`, each package's options are in `config/<package>.ts`, and the folder for each kind of file is fixed and listed by `kitr make`. Because every provider is in one file, an agent can read the whole setup in two places instead of guessing what a plugin did.
+An agent goes wrong when a project leaves room for guesses. kitr leaves little. The wiring is listed in `kitrrc.ts`, each package's options are in `config/<package>.ts`, and the folder for each kind of file is fixed and listed by `kitr make`. Because every provider is listed in one file, an agent reads the whole setup in two places.
 
 ## Install the Claude Code plugin
 
@@ -27,7 +30,7 @@ npx skills add kitrjs/kitr
 
 ## The VS Code extension
 
-A kitr extension for VS Code shows the project's platforms, packages, routes and generators in a sidebar, and runs `kitr make`, `kitr add` and `kitr doctor` from the command palette. It is coming to the Marketplace. Once it is there, [open it in VS Code](vscode:extension/kitrjs.kitr) to install it, and projects made by `kitr new` will recommend it when you open them.
+A kitr extension for VS Code shows the project's platforms, packages, routes and generators in a sidebar, and runs `kitr make`, `kitr add` and `kitr doctor` from the command palette. [Install it in VS Code](vscode:extension/kitrjs.kitr); projects made by `kitr new` recommend it when you open them.
 
 ## What the agent gets
 

@@ -52,6 +52,77 @@ export const guideLinks = (markdown) =>
 
 const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 
+const calloutKinds = {
+  NOTE: 'Note',
+  TIP: 'Tip',
+  WARNING: 'Warning',
+  SUMMARY: 'The short version',
+}
+
+/**
+ * GitHub alert syntax: `> [!NOTE]` (or TIP, WARNING, SUMMARY) turns a blockquote into
+ * <aside class="callout callout-note" role="note"> with a title line. Text after the marker on
+ * the same line is the title; otherwise the kind's default title is used.
+ */
+function remarkCallouts() {
+  return (tree) => {
+    visit(tree, 'blockquote', (node) => {
+      const first = node.children[0]
+      const lead = first?.type === 'paragraph' ? first.children[0] : undefined
+      const m = lead?.type === 'text' && lead.value.match(/^\[!(NOTE|TIP|WARNING|SUMMARY)\][ \t]*/)
+      if (!m) return
+      const kind = m[1]
+      const rest = first.children.slice(1)
+      let title = []
+      let body = rest
+      const afterMarker = lead.value.slice(m[0].length)
+      const nl = afterMarker.indexOf('\n')
+      const sameLine = nl === -1 ? afterMarker : afterMarker.slice(0, nl)
+      if (nl !== -1) {
+        // Title is the rest of the marker's line; the remainder starts the body.
+        if (sameLine.trim()) title.push({ type: 'text', value: sameLine.trim() })
+        const tail = afterMarker.slice(nl + 1)
+        body = tail ? [{ type: 'text', value: tail }, ...rest] : rest
+      } else {
+        // The marker's line runs on through inline nodes up to the next text with a newline.
+        if (sameLine) title.push({ type: 'text', value: sameLine })
+        let i = 0
+        for (; i < rest.length; i++) {
+          const n = rest[i]
+          if (n.type === 'text' && n.value.includes('\n')) {
+            const at = n.value.indexOf('\n')
+            if (n.value.slice(0, at)) title.push({ type: 'text', value: n.value.slice(0, at) })
+            const tail = n.value.slice(at + 1)
+            body = tail ? [{ type: 'text', value: tail }, ...rest.slice(i + 1)] : rest.slice(i + 1)
+            break
+          }
+          if (n.type === 'break') {
+            body = rest.slice(i + 1)
+            break
+          }
+          title.push(n)
+          body = []
+        }
+      }
+      if (!title.length) title = [{ type: 'text', value: calloutKinds[kind] }]
+      const children = [
+        {
+          type: 'paragraph',
+          data: { hProperties: { className: ['callout-title'] } },
+          children: title,
+        },
+      ]
+      if (body.length) children.push({ type: 'paragraph', children: body })
+      children.push(...node.children.slice(1))
+      node.children = children
+      node.data = {
+        hName: 'aside',
+        hProperties: { className: ['callout', `callout-${kind.toLowerCase()}`], role: 'note' },
+      }
+    })
+  }
+}
+
 /** Code blocks: shiki with both themes; `kitr ...` shell blocks become package-manager pickers. */
 function remarkCode() {
   return (tree) => {
@@ -80,19 +151,97 @@ function remarkCode() {
 }
 
 /** Collect h2/h3 for the table of contents, and the plain text for search. */
+const nextHeading = /^(next steps|what next|where next)$/i
+const isBlank = (n) => n.type === 'text' && !n.value.trim()
+const elementText = (node) =>
+  node.type === 'text' ? node.value : (node.children ?? []).map(elementText).join('')
+
+/** A list whose every item starts with a link, as card data; null if it is anything else. */
+function cardItems(list) {
+  const cards = []
+  for (const li of list.children.filter((n) => n.type === 'element')) {
+    let kids = li.children.filter((n) => !isBlank(n))
+    // A loose list wraps the item in a paragraph.
+    if (kids[0]?.type === 'element' && kids[0].tagName === 'p') kids = kids[0].children
+    const [link, ...tail] = kids
+    if (link?.type !== 'element' || link.tagName !== 'a') return null
+    const rest = tail.map((n) => structuredClone(n))
+    const lead = rest[0]
+    if (lead?.type === 'text') lead.value = lead.value.replace(/^\s*[:\u2013\u2014-]?\s*/, '')
+    cards.push({ link, rest: rest.filter((n) => !(n.type === 'text' && !n.value)) })
+  }
+  return cards.length ? cards : null
+}
+
+/** The last section, when it is "Next steps" and one list of links, becomes a row of cards. */
+function nextCards(tree) {
+  const nodes = tree.children
+  let at = -1
+  for (let i = nodes.length - 1; i >= 0; i--)
+    if (nodes[i].type === 'element' && nodes[i].tagName === 'h2') {
+      at = i
+      break
+    }
+  if (at === -1 || !nextHeading.test(elementText(nodes[at]).trim())) return
+  const body = nodes.slice(at + 1).filter((n) => !isBlank(n))
+  const list = body[0]
+  if (body.length !== 1 || list.type !== 'element' || list.tagName !== 'ul') return
+  const cards = cardItems(list)
+  if (!cards) return
+  const nav = {
+    type: 'element',
+    tagName: 'nav',
+    properties: { className: ['next-cards'], ariaLabel: 'Next steps' },
+    children: cards.map(({ link, rest }) => ({
+      type: 'element',
+      tagName: 'a',
+      properties: { className: ['next-card'], href: link.properties.href },
+      children: [
+        {
+          type: 'element',
+          tagName: 'strong',
+          properties: { className: ['next-card-title'] },
+          children: link.children,
+        },
+        ...(rest.length
+          ? [{ type: 'element', tagName: 'span', properties: {}, children: rest }]
+          : []),
+      ],
+    })),
+  }
+  nodes.splice(at + 1, nodes.length - at - 1, nav)
+}
+
 function rehypeCollect(state) {
   return () => (tree) => {
-    const text = (node) =>
-      node.type === 'text' ? node.value : (node.children ?? []).map(text).join('')
+    const text = elementText
     visit(tree, 'element', (node) => {
       if ((node.tagName === 'h2' || node.tagName === 'h3') && node.properties?.id) {
-        state.toc.push({ depth: Number(node.tagName[1]), id: node.properties.id, text: text(node) })
-        state.sections.push({ id: node.properties.id, heading: text(node), text: '' })
+        let heading = text(node)
+        // "1. Install the CLI": the number becomes a marker; the id stays the one slug made from the full text.
+        const step = node.tagName === 'h2' && heading.match(/^(\d+)\.\s+/)
+        if (step && node.children[0]?.type === 'text') {
+          heading = heading.slice(step[0].length)
+          node.children[0].value = node.children[0].value.replace(/^\d+\.\s+/, '')
+          node.children.unshift({
+            type: 'element',
+            tagName: 'span',
+            properties: { className: ['step-marker'], ariaHidden: 'true' },
+            children: [{ type: 'text', value: step[1] }],
+          })
+          node.properties.className = [...(node.properties.className ?? []), 'step-heading']
+          state.steps = true
+        }
+        state.toc.push({ depth: Number(node.tagName[1]), id: node.properties.id, text: heading })
+        state.sections.push({ id: node.properties.id, heading, text: '' })
       } else if (node.tagName === 'p' || node.tagName === 'li' || node.tagName === 'td') {
+        // The callout's title line is a label, not content.
+        if (node.properties?.className?.includes('callout-title')) return
         const current = state.sections.at(-1) ?? state.intro
         current.text += ` ${text(node)}`
       }
     })
+    nextCards(tree)
     // Wide tables scroll inside a focusable region so keyboard users can scroll them too.
     visit(tree, 'element', (node, index, parent) => {
       if (
@@ -119,12 +268,13 @@ function rehypeCollect(state) {
 }
 
 async function render(markdown) {
-  const state = { toc: [], sections: [], intro: { id: '', heading: '', text: '' } }
+  const state = { toc: [], sections: [], steps: false, intro: { id: '', heading: '', text: '' } }
   // Drop the leading H1: pages render their title from frontmatter.
   const body = markdown.replace(/^\s*# .*\n/, '')
   const file = await unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkCallouts)
     .use(remarkCode)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeSlug)
@@ -147,7 +297,13 @@ async function render(markdown) {
     last = m.index + m[0].length
   }
   if (last < html.length) blocks.push({ type: 'html', html: html.slice(last) })
-  return { blocks, toc: state.toc, intro: state.intro.text.trim(), sections: state.sections }
+  return {
+    blocks,
+    steps: state.steps,
+    toc: state.toc,
+    intro: state.intro.text.trim(),
+    sections: state.sections,
+  }
 }
 
 // ---------------------------------------------------------------- packages
@@ -278,6 +434,7 @@ for (const { dir, docsDir, entry } of packages) {
       title,
       description: data.description,
       blocks: rendered.blocks,
+      steps: rendered.steps,
       toc: rendered.toc,
       editUrl: `${repoUrl}/edit/main/${relative(repo, join(docsDir, f))}`,
     })
@@ -359,6 +516,7 @@ for (const group of nav) {
       description,
       section: group.title,
       blocks: rendered.blocks,
+      steps: rendered.steps,
       toc: rendered.toc,
       editUrl: `${repoUrl}/edit/main/${relative(repo, path)}`,
     })
@@ -406,6 +564,7 @@ for (const group of guidesNavFile) {
       platforms,
       time: data.time,
       blocks: rendered.blocks,
+      steps: rendered.steps,
       toc: rendered.toc,
       editUrl: `${repoUrl}/edit/main/${relative(repo, path)}`,
     })

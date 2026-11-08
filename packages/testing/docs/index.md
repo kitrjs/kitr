@@ -10,7 +10,7 @@ The hard part of testing an app is rarely the assertion. It is the setup: the pr
 
 It is built on [Vitest](https://vitest.dev) and [Testing Library](https://testing-library.com/docs/react-testing-library/intro/). It adds three helpers on top: `createTestApp()` boots an app with your providers and config, `createTestClient()` sends JSON requests to anything with a `fetch(request)` method, and `renderWithKitr()` from `@kitr/testing/react` renders a component inside that app with the query cache already filled.
 
-It runs in your test process only, never in the app bundle. `@kitr/testing` has no React in it, so a backend without React uses it as is; `@kitr/testing/react` adds the component half. To fake an API your frontend calls, rather than test your own, use [mocks](/packages/mocks) alongside it.
+It runs in your test process only, never in the app bundle. A backend without React uses `@kitr/testing` as is; `@kitr/testing/react` adds the component half. To fake an API your frontend calls, rather than test your own, use [mocks](/packages/mocks) alongside it.
 
 The examples on this page test Acme's order screens at `app.acme.com`: an `/api/orders` API that Ada, Grace and Linus use to create and list orders, and an order list component that shows them.
 

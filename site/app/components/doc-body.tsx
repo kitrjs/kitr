@@ -1,3 +1,4 @@
+import { useRouter } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import type { Page } from '#app/lib/content'
 import { Command } from './command'
@@ -6,6 +7,7 @@ import { Icon, icons } from './icons'
 /** Rendered markdown: HTML blocks from the build, with live package-manager pickers in between. */
 export function DocBody({ page }: { page: Page }) {
   const ref = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the page changes
   useEffect(() => {
     // Copy buttons on code blocks.
@@ -33,7 +35,29 @@ export function DocBody({ page }: { page: Page }) {
     }
   }, [page])
   return (
-    <div className="prose" ref={ref}>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: delegates clicks on real links, which handle the keyboard themselves
+    // biome-ignore lint/a11y/noStaticElementInteractions: see above
+    <div
+      className={page.steps ? 'prose steps' : 'prose'}
+      ref={ref}
+      onClick={(e) => {
+        // Next-step cards are plain links in the built HTML; keep internal ones in the router.
+        const card = (e.target as HTMLElement).closest<HTMLAnchorElement>('a.next-card')
+        const href = card?.getAttribute('href')
+        if (!card || !href?.startsWith('/') || href.endsWith('.md')) return
+        if (
+          e.defaultPrevented ||
+          e.button !== 0 ||
+          e.metaKey ||
+          e.ctrlKey ||
+          e.shiftKey ||
+          e.altKey
+        )
+          return
+        e.preventDefault()
+        router.history.push(href)
+      }}
+    >
       {page.blocks.map((block, i) =>
         block.type === 'cmd' ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: blocks are static per page

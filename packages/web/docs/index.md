@@ -8,6 +8,9 @@ order: 1
 
 A marketing page that must load fast from a CDN, a dashboard behind a login, a store that needs every product page indexed: each one ships to the browser in a different way. `@kitr/web` is the web platform. One line in `kitrrc.ts` says whether your `app/` builds to prerendered HTML, a single-page app or a server-rendered app, and whether people can install it to their home screen.
 
+> [!SUMMARY]
+> The web platform: static, single-page or server-rendered, installable if you want. Add it with `kitr add web site`; the overview is at [/packages/web](/packages/web).
+
 It is built on [Vite](https://vite.dev) and [TanStack Start](https://tanstack.com/start/latest), with [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for installable apps. kitr adds the platform contract on top: `kitr dev`, `kitr build` and `kitr start` know how to run each mode, `kitr config` edits the options, and `kitr doctor` checks the setup.
 
 The platform options run in the CLI and the Vite plugin; the hooks in `@kitr/web/client` run in the browser. To ship the same app as a native iOS or Android app, add the [Mobile](/packages/mobile) platform next to this one. For a desktop window, use [Desktop](/packages/desktop), which ships the app in Electron; [Tauri](/packages/tauri) is the lighter alternative that uses the operating system's webview. For an API with no UI, use the [Server](/packages/server) platform.
@@ -24,6 +27,9 @@ kitr add web site
 
 `web` is the platform type and `site` is the name you address it by (`kitr dev site`). `kitr add web` with no name uses the usual name for the type and prints `No name given: calling the web platform "site".`
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add web site` does, in order:
 
 - Adds `@kitr/web` to `packages` in `kitrrc.ts` and installs it. The web package requires [Router](/packages/router), which requires [React](/packages/react), so `kitr add` runs their setup first when they are missing. Together they write `app/app.ts`, `app/client.tsx`, `app/router.tsx` and the starter routes.
@@ -33,6 +39,8 @@ What `kitr add web site` does, in order:
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
 - With `--pwa`, writes `public/icons/README.md`, a note naming the two icons the manifest points at. `--no-scaffold` skips this step.
 - Adds a `## kitr: platform site` section to `AGENTS.md`. It tells agents how `kitr dev`, `kitr build` and `kitr start` behave for the chosen mode, and with `pwa` to render an update banner once.
+
+</details>
 
 `@kitr/web` writes no `config/*.ts` file and adds no env variables.
 
@@ -639,7 +647,7 @@ For `spa`, tell the host to answer unknown paths with `index.html` (on Netlify, 
 
 ## Commands
 
-`@kitr/web` adds no generators. The web platform answers these commands:
+The web platform answers these commands:
 
 | Command | What it does |
 | --- | --- |

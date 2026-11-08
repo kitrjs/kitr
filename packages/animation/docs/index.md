@@ -60,7 +60,7 @@ The provider passes it to Motion's [`MotionConfig`](https://motion.dev/docs/reac
 | `skipAnimations` | `true` under Vitest, `false` elsewhere | Jump every animation straight to its final values. Exit animations still finish, so elements still leave the DOM. |
 | `nonce` | none | A Content Security Policy nonce for the `<style>` tags Motion adds for layout and exit animations. |
 
-There are no env variables. A project without the file gets the same defaults.
+A project without the file gets the defaults.
 
 ## Animate your first component
 
@@ -287,7 +287,7 @@ On every navigation the router calls `document.startViewTransition` with two typ
 | `reducedMotion` | `'user'` | `'user'` changes pages instantly for visitors who ask for less motion. `'always'` turns page animations off; `'never'` keeps them |
 | `onSearchChange` | `false` | Also animate when only the search or hash changes, such as the next page of a table |
 
-Browsers without view transitions change pages instantly, as before. Chromium-based browsers, Electron, Android WebView and Safari 18 support them, which covers the desktop and mobile builds. Browsers with view transitions but without transition types get a short cross-fade.
+Browsers without view transitions change pages instantly. Chromium-based browsers, Electron, Android WebView and Safari 18 support them, which covers the desktop and mobile builds. Browsers with view transitions but without transition types get a short cross-fade.
 
 To animate a single link differently, pass `viewTransition` to it. A link that should never animate, such as switching tabs inside a page, takes `viewTransition={false}`.
 

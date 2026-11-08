@@ -5,7 +5,19 @@ description: How kitrrc.ts, config files, providers and environment variables fi
 
 # Configuration
 
-kitr follows one rule for setup: **everything is written down where you can read it.** There's no hidden plugin discovery and no config buried in node_modules.
+kitr follows one rule for setup: **everything is written down where you can read it.**
+
+## Configure a package in three steps
+
+To change how a package behaves, find its options and edit one file.
+
+1. Open the package's page under [Packages](/packages) and go to its Configure section, where every option is listed with its default.
+2. Open `config/<name>.ts`, or run `kitr config` to edit a value with validation.
+3. Save. The dev server picks up the change.
+
+```sh
+kitr config query staleTime 60000
+```
 
 ## kitrrc.ts
 

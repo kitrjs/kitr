@@ -77,7 +77,7 @@ pnpm add drizzle-orm postgres
 pnpm add -D drizzle-kit
 ```
 
-Describe the tables. The schema is plain Drizzle; kitr does not read it.
+Describe the tables. The schema is plain Drizzle.
 
 ```ts
 // server/db/schema.ts

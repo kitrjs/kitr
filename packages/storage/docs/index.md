@@ -90,7 +90,7 @@ export default defineConfig({
 | `cookie.httpOnly` | `false` | Hide the cookie from browser scripts. Only cookies set by the server can be `httpOnly`. |
 | `cookie.sameSite` | `'lax'` | `'lax'`, `'strict'` or `'none'`. |
 
-`@kitr/storage` adds no environment variables. `import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
+`import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
 
 The provider applies this file in `register()`: it sets the prefix and the cookie defaults. It switches storage items to the platform's native store when a platform registered one, and checks again in `boot()` for a platform provider listed after it. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
 

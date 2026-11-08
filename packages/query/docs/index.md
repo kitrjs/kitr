@@ -8,6 +8,9 @@ order: 1
 
 Most screens show data that lives on a server: Acme's list of orders, one invoice, the projects a team owns. `@kitr/query` loads that data, keeps a cached copy so going back to a page is instant, and refreshes it when it changes, whether because you saved something, another tab did, or a live update arrived.
 
+> [!SUMMARY]
+> Loads server data, caches it and refreshes it when something changes. Add it with `kitr add query`; the overview is at [/packages/query](/packages/query).
+
 It is [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), re-exported unchanged, plus a small **data contract**: you describe each piece of data once with `queryFrom`, `mutationFrom` and `subscriptionFrom`, and every source (a REST API, your own API routes, server actions, realtime channels) plugs into it the same way. Every failure from every source arrives as one error type, `KitrError`.
 
 It runs in the browser, and on the server while a page renders. For values only the browser owns, such as a cart or a sidebar toggle, use [State](/packages/state) instead.
@@ -26,6 +29,9 @@ Use [State](/packages/state) for **client state**: values that exist only in the
 kitr add query
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
 - Installs `@kitr/query` and `@tanstack/react-query`, and `@tanstack/react-query-devtools` as a dev dependency.
@@ -33,13 +39,20 @@ What `kitr add` does:
 - Writes `config/query.ts` (shown under [Configure](#configure)).
 - Adds a `## kitr: query` section to `AGENTS.md` with four rules: import from `@kitr/query`, keep each feature's queries in `app/queries/<name>.ts`, load data in route loaders with `ensureQueryData`, and declare cache `effects` on mutations instead of calling `invalidateQueries` in components.
 
-`kitr add query` asks no questions. Every UI kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
+</details>
+
+Every UI kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
 
 ```sh
 kitr add query --dry-run
 ```
 
+<details>
+<summary>What kitr remove does</summary>
+
 `kitr remove query` reverses every step above and deletes `config/query.ts`. It then lists the files that still import `@kitr/query`, which you remove by hand.
+
+</details>
 
 ## Configure
 
@@ -61,8 +74,6 @@ export default defineConfig({
 | `defaultOptions` | `{}` | Passed to `new QueryClient({ defaultOptions })`. Keys under `defaultOptions.queries` win over `staleTime` and the retry rule. |
 | `defaultOptions.queries.retry` | no retry on 4xx, two retries otherwise | When a failed query retries. kitr's rule reads `error.status`: a status from 400 to 499 never retries; anything else retries up to twice. |
 | `createClient` | | A function that returns your own `QueryClient`. When set, every other option is ignored. |
-
-`@kitr/query` adds no environment variables.
 
 The provider reads this file at boot, builds the client with `createQueryClient(config)`, binds it in the container as `queryClient`, wraps the React tree in `QueryClientProvider` and hands the same client to the router as `context.queryClient`.
 
@@ -458,7 +469,8 @@ export const deleteInvoice = mutationFrom({
 })
 ```
 
-Don't call `queryClient.invalidateQueries` in the component after `mutate`. The next component that runs the same mutation forgets to, and its screen shows stale data. Declare the effect on the mutation once.
+> [!WARNING]
+> Don't call `queryClient.invalidateQueries` in the component after `mutate`. The next component that runs the same mutation forgets to, and its screen shows stale data. Declare the effect on the mutation once.
 
 `effectsFor(result, input)` returns the effects a result would produce, which helps when you test them:
 
@@ -602,7 +614,7 @@ const open = await call(app, 'orders.list', { status: 'open' })
 await call(app, 'orders.ship', { id: 'ord_2', carrier: 'UPS' })
 ```
 
-Every hook also accepts the imported definition in place of the name, `useQuery(listOrders, input)`, and plain TanStack options as before. The three forms produce the same query options, so a component and a loader using different forms share one cache entry.
+Every hook also accepts the imported definition in place of the name, `useQuery(listOrders, input)`, and plain TanStack options. The three forms produce the same query options, so a component and a loader using different forms share one cache entry.
 
 ## Call a source without the cache
 
@@ -761,7 +773,10 @@ export function TeamPicker() {
 
 On the server, every request gets its own `QueryClient`. The provider binds `queryClient` as a scoped binding, so each forked app that renders a request builds a fresh cache, and one customer's orders can never render into another customer's page. In the browser there is one app, so there is one client for the whole session.
 
-Nothing in your code changes for this. Read the client through `context.queryClient` in loaders and `useQueryClient()` in components, and you always get the one for the current request. Don't import `app` and call `app.container.use('queryClient')` from code that runs during a server render: it reads the root app's client, not the request's.
+Nothing in your code changes for this. Read the client through `context.queryClient` in loaders and `useQueryClient()` in components, and you always get the one for the current request.
+
+> [!WARNING]
+> Don't import `app` and call `app.container.use('queryClient')` from code that runs during a server render. It reads the root app's client, not the request's, so one visitor's cached data can reach another.
 
 ## Testing
 

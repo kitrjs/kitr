@@ -8,7 +8,7 @@ order: 1
 
 Most React apps style with utility classes now, and most of them spend their first afternoon wiring Tailwind to the design system: which blue is "primary", what dark mode keys off, how a component lets callers override its padding. `kitr add tailwind` does that wiring. `bg-background`, `text-primary` and `rounded-md` use the same colours and radii as the rest of the app, dark mode follows the [theme](/packages/theme) toggle, and `cn()` merges class names so the last one wins.
 
-It is [Tailwind CSS v4](https://tailwindcss.com/docs) and its Vite plugin, unchanged, plus a preset stylesheet that maps kitr's design tokens onto Tailwind's theme, and `cn()` built on [clsx](https://github.com/lukeed/clsx) and [tailwind-merge](https://github.com/dcastil/tailwind-merge). It runs at build time and in the browser; there is nothing to call on the server. If you prefer plain CSS or CSS Modules, skip this package and use the helpers in [theme](/packages/theme) instead.
+It is [Tailwind CSS v4](https://tailwindcss.com/docs) and its Vite plugin, unchanged, plus a preset stylesheet that maps kitr's design tokens onto Tailwind's theme, and `cn()` built on [clsx](https://github.com/lukeed/clsx) and [tailwind-merge](https://github.com/dcastil/tailwind-merge). It runs at build time and in the browser. If you prefer plain CSS or CSS Modules, skip this package and use the helpers in [theme](/packages/theme) instead.
 
 The examples style one screen through the page: the orders list in Acme's dashboard at `app.acme.com`, with a status badge, an order card and a dark mode.
 

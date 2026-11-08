@@ -8,6 +8,9 @@ order: 1
 
 Some values belong to the whole app rather than one component: the order Ada is putting together before she submits it, whether the sidebar is open, which currency Linus prefers. `@kitr/state` gives you a small store for those values that any component can read and update, and that can remember them across page reloads.
 
+> [!SUMMARY]
+> A small store for app-wide values that live in the browser. Add it with `kitr add state`; the overview is at [/packages/state](/packages/state).
+
 It is [Zustand](https://zustand.docs.pmnd.rs), re-exported, plus one helper, `createKitrStore`, that makes a store safe for server rendering, saves it in the browser when you ask, and connects it to the Redux DevTools in development.
 
 It runs in the browser, and on the server while a page renders. For data a server owns, such as the list of orders or the signed-in user, use [Query](/packages/query) instead.
@@ -23,13 +26,17 @@ Use a store for **client state**: values that live in the browser and that no se
 - A multi-step wizard's progress.
 - A selection shared by distant components, such as the invoices ticked in a table and the bulk-action bar above it.
 
-Don't use a store for **server data** such as Acme's orders, invoices or projects. That belongs in a query (see [Query](/packages/query)), which caches it, refetches it and updates it after a save. A copy in a store goes stale the moment someone else changes the record.
+> [!WARNING]
+> Don't use a store for **server data** such as Acme's orders, invoices or projects. That belongs in a query (see [Query](/packages/query)), which caches it, refetches it and updates it after a save. A copy in a store goes stale the moment someone else changes the record.
 
 ## Install
 
 ```sh
 kitr add state
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -38,13 +45,20 @@ What `kitr add` does:
 - Writes an empty `app/stores/.gitkeep`, so the folder for your stores exists.
 - Adds a `## kitr: state` section to `AGENTS.md`: client state only, `kitr make:store <name>` writes `app/stores/<name>.ts` with `createKitrStore`, and server data belongs in queries.
 
-`kitr add state` asks no questions. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it. To preview the changes without writing them:
+</details>
+
+`kitr add state` asks no questions. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it. To see the changes without writing them:
 
 ```sh
 kitr add state --dry-run
 ```
 
+<details>
+<summary>What kitr remove does</summary>
+
 `kitr remove state` removes the `packages` entry, both dependencies and the `AGENTS.md` section. It leaves `app/stores/` and your stores in place, and lists the files that still import `@kitr/state`.
+
+</details>
 
 ## Configure
 
@@ -265,7 +279,8 @@ export const [useInvoiceSelection, InvoiceSelectionProvider, invoiceSelectionSto
 
 `get()` reads the current state inside an action. Keep the logic in actions rather than in components, so every caller changes the state the same way.
 
-Don't mutate the state in place (`s.selected.push(id)`). `set` compares by reference, so a mutated array looks unchanged and nothing re-renders. Return a new array or object.
+> [!WARNING]
+> Don't mutate the state in place (`s.selected.push(id)`). `set` compares by reference, so a mutated array looks unchanged and nothing re-renders. Return a new array or object.
 
 ## Read and change state outside React
 
@@ -350,7 +365,7 @@ export const [useOrderDraft, OrderDraftProvider, orderDraftStore] =
   )
 ```
 
-> **Warning**
+> [!WARNING]
 > `localStorage` is readable by any script on the page and stays on the device after sign-out. Never persist tokens, passwords or personal data in a store. Use [Secure storage](/packages/secure-storage) for secrets.
 
 ## Change the saved shape

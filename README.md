@@ -6,16 +6,16 @@
 
 kitr is one TypeScript framework for the web, servers, desktop, Tauri, phones and platforms of your own. The tools are chosen and wired together behind one CLI, so you spend your time building instead of choosing, and coding agents follow the same written-down conventions you do.
 
-Every `kitr` and `@kitr/*` package shares one version. The web (`web()`), server (`server()`), desktop (Electron and Tauri) and mobile (Capacitor) platforms all work, and CI builds each of them.
+Every `kitr` and `@kitr/*` package shares one version. The platforms are web (`web()`), server (`server()`), desktop (Electron and Tauri) and mobile (Capacitor).
 
-Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
+Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI.
 
 ## Get started
 
 Creating a project is one command:
 
 ```sh
-pnpm dlx kitr new my-app                # the blank kit: the wiring files and nothing else; kitr add brings the rest
+pnpm dlx kitr new my-app                # the blank kit: the wiring files; kitr add brings the rest
 pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API
 pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and realtime channels
 pnpm dlx kitr new my-api --kit server   # a pure backend. No React anywhere in the dependency graph.
@@ -34,23 +34,23 @@ For Claude Code, the kitr plugin adds skills that know the conventions, the `kit
 **One data contract.**
 Server actions, API routes, external HTTP APIs and realtime channels all produce the same `QueryContract` / `MutationContract` / `SubscriptionContract`. Mutations declare cache `effects` (`invalidate`, `set`, `remove`) instead of components calling `queryClient.invalidateQueries` inline. A channel event is just a subscription whose events carry effects.
 
-**Nothing you did not add.**
-The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform contracts and the CLI that runs them. It has no dev server, no bundler, no runtime and no React: `kitr new` writes seven files, and `kitr add web site` is what brings Vite, React and the router, through the same `kitr add` that brings `auth` or `mail`. Each package owns its setup end to end: its dependencies, its config file, its codemods, its questions, its scripts, its generators, its `AGENTS.md` lines and what it asks of the Vite build. The `kitr` package is the CLI plus `kitr`, `kitr/app` and `kitr/env`; every other package is imported by its own name (`@kitr/query`, `@kitr/router/routes`) once it is added.
+**Add only what you need.**
+The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform contracts and the CLI that runs them. `kitr new` writes seven files, and `kitr add web site` is what brings Vite, React and the router, through the same `kitr add` that brings `auth` or `mail`. Each package owns its setup end to end: its dependencies, its config file, its codemods, its questions, its scripts, its generators, its `AGENTS.md` lines and what it asks of the Vite build. The `kitr` package is the CLI plus `kitr`, `kitr/app` and `kitr/env`; every other package is imported by its own name (`@kitr/query`, `@kitr/router/routes`) once it is added.
 
 **Explicit wiring, the Adonis way.**
-`kitrrc.ts` lists every provider as a lazy import. `config/<package>.ts` holds that package's options, typed by its `defineConfig`. Providers have `register → boot → ready → shutdown`, a typed container (`app.container.use('http')`), and a `wrap()` hook so React packages can wrap the tree without the core knowing React exists.
+`kitrrc.ts` lists every provider as a lazy import. `config/<package>.ts` holds that package's options, typed by its `defineConfig`. Providers have `register → boot → ready → shutdown`, a typed container (`app.container.use('http')`), and a `wrap()` hook so React packages can wrap the tree.
 
 **Where the app runs is a platform, and platforms are packages.**
-`kitrrc.ts` names them: `platforms: { site: web({ mode: 'ssr' }), api: server({ runtime: 'node' }), app: desktop(), phone: mobile() }`. `kitr dev site api` runs two of them, `kitr build` builds them all into `dist/<name>/`, `kitr config site port 4000` edits an option with validation, `KITR_SITE_PORT=4000` overrides it at run time. The core knows only the `definePlatform` contract; `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` own their options, scaffold and tooling (TanStack Start, srvx and wrangler, electron-vite, Tauri, Capacitor), and native projects live in `platforms/<name>/`. One `app/` ships everywhere; `@kitr/platform` answers `usePlatform()`, `useBackButton()` and `useSafeArea()` the same way in a browser and a shell.
+`kitrrc.ts` names them: `platforms: { site: web({ mode: 'ssr' }), api: server({ runtime: 'node' }), app: desktop(), phone: mobile() }`. `kitr dev site api` runs two of them, `kitr build` builds them all into `dist/<name>/`, `kitr config site port 4000` edits an option with validation, `KITR_SITE_PORT=4000` overrides it at run time. Platforms follow the `definePlatform` contract; `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` own their options, scaffold and tooling (TanStack Start, srvx and wrangler, electron-vite, Tauri, Capacitor), and native projects live in `platforms/<name>/`. One `app/` ships everywhere; `@kitr/platform` answers `usePlatform()`, `useBackButton()` and `useSafeArea()` the same way in a browser and a shell.
 
 **Pure backend is a first-class target.**
 `@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
 
 **Debuggable by default.**
-`kitr add devtools` (not in the kits) adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
+`kitr add devtools` adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
 
 **Components you own.**
-`kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and the tokens from `@kitr/theme`; there is no component library in `node_modules` to fight.
+`kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and the tokens from `@kitr/theme`.
 
 ## Compared to Next.js, Expo and others
 
@@ -179,7 +179,7 @@ packages/
   analytics, monitoring, platform, storage, devtools,
   web, desktop, tauri, mobile  # platform packages (server's platform lives in packages/server)
   kit-app, kit-server, kit-fullstack, kit-saas, kit-site, kit-realtime, kit-desktop, kit-tauri, kit-mobile  # kits
-  vite, cli, kitr            # `kitr` is the umbrella package users install
+  vite, cli, kitr            # `kitr` is the package users install
 registry/                    # shadcn-compatible component registry (built to registry/dist)
 examples/
   blank, dashboard, fullstack, backend,        # kitr new --kit blank | app | fullstack | server
@@ -205,7 +205,7 @@ The examples are exactly what the CLI generates (with workspace links instead of
 - [docs/platforms.md](docs/platforms.md): web, server, desktop, tauri and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
 - [site/content/guides](site/content/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](site/content/guides/api-server.md)
-- [docs/design.md](docs/design.md): the main design choices, and why
+- [docs/design.md](docs/design.md): the rules behind the architecture
 
 ## Contributing
 

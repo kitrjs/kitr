@@ -9,9 +9,6 @@
         "slug": "getting-started"
       },
       {
-        "slug": "compare"
-      },
-      {
         "slug": "project-structure"
       },
       {
@@ -27,11 +24,14 @@
       },
       {
         "slug": "agents"
+      },
+      {
+        "slug": "compare"
       }
     ]
   },
   {
-    "title": "Extending kitr",
+    "title": "Extend",
     "pages": [
       {
         "slug": "extending"
@@ -90,7 +90,10 @@
         "slug": "design",
         "source": "../../../docs/design.md",
         "title": "Design decisions",
-        "description": "Where kitr deliberately differs from the obvious approach, and why."
+        "description": "The rules behind kitr's architecture and what each one means for your code."
+      },
+      {
+        "slug": "glossary"
       }
     ]
   }

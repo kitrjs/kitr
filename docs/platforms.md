@@ -1,6 +1,6 @@
 # Platforms
 
-Where an app runs is a **platform**: a named entry in `kitrrc.ts` built by a factory from a platform package. The core knows only the contract (`definePlatform` in `@kitr/core`); each package owns its options, its scaffold, its dev server and its build.
+Where an app runs is a **platform**: a named entry in `kitrrc.ts` built by a factory from a platform package. The contract is `definePlatform` in `@kitr/core`; each package owns its options, its scaffold, its dev server and its build.
 
 ```ts
 // kitrrc.ts

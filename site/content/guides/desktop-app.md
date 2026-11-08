@@ -168,7 +168,7 @@ export const channels = {
 } satisfies Record<keyof Ipc | keyof IpcPush, true>
 ```
 
-`channels` is the same list at run time. The preload script forwards only these names to the page, and the `satisfies` makes a channel missing from it a type error. The kit's `dialog.openFile` example command is gone; delete its handler in `main.ts` too.
+`channels` is the same list at run time. The preload script forwards only these names to the page, and the `satisfies` makes a channel missing from it a type error. Delete the kit's `dialog.openFile` example command here and its handler in `main.ts`.
 
 ## Implement it in the main process
 

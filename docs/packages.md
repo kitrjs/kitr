@@ -85,7 +85,3 @@ The full walkthrough of every kit is in [Kits](kits.md).
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform; installable PWA and the Capacitor shell |
 
 Every kit but `blank` is a package, such as `@kitr/kit-saas`. It runs once when the project is created and is not a dependency afterwards. `kitr new my-app --kit @acme/starter` runs a kit from any npm package.
-
-## Roadmap
-
-Planned packages: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce.

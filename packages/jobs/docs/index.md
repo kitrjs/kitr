@@ -10,7 +10,7 @@ Some work should not keep a request waiting: emailing an invoice, generating a P
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` generates a monthly invoice for each team, emails it to the team owner, and cleans up old data every night.
 
-`@kitr/jobs` runs on the server only, with no dependencies beyond kitr. The built-in queue lives in the server's memory, which suits one process. For several servers, or for jobs that must survive a restart, give it a shared driver ([Extend](#extend)). For work that must finish before the response (charging a card), call the code directly instead of dispatching a job.
+`@kitr/jobs` runs on the server only. The built-in queue lives in the server's memory, which suits one process. For several servers, or for jobs that must survive a restart, give it a shared driver ([Extend](#extend)). For work that must finish before the response (charging a card), call the code directly instead of dispatching a job.
 
 ## Install
 
@@ -37,7 +37,7 @@ What `kitr add` does, in order:
 kitr add jobs --no-worker
 ```
 
-With `--no-worker`, `config/jobs.ts` gets `worker: false` and the worker runs in its own process, as in [Run the worker in its own process](#run-the-worker-in-its-own-process). `kitr add jobs` adds no env variables. To edit `package.json` without running the package manager, pass `--no-install`.
+With `--no-worker`, `config/jobs.ts` gets `worker: false` and the worker runs in its own process, as in [Run the worker in its own process](#run-the-worker-in-its-own-process). To edit `package.json` without running the package manager, pass `--no-install`.
 
 No kit includes jobs; add it to any kit with a server platform.
 

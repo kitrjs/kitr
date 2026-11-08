@@ -61,7 +61,7 @@ export const routes = defineRoutes([api], (root) =>
 export type ServerRoutes = typeof routes.$types
 ```
 
-`defineRoutes` is the core's route table (`kitr/app`); the `api` extension from `@kitr/api/routes` gives it `.get`, `.post`, `.resource` and friends. [realtime](/packages/realtime) adds `.ws` and `.sse` to the same table, and a React app keeps its pages on a second table in `app/routes.ts`, so `server/routes.ts` never imports React.
+`defineRoutes` is the core's route table (`kitr/app`); the `api` extension from `@kitr/api/routes` gives it `.get`, `.post`, `.resource` and friends. [realtime](/packages/realtime) adds `.ws` and `.sse` to the same table, and a React app keeps its pages on a second table in `app/routes.ts`.
 
 The generated controller:
 
@@ -103,7 +103,7 @@ export default defineConfig({
 | `openapi.description` | none | `info.description` in the document. |
 | `client.path` | `'app/api/client.ts'` | The typed client's file. `kitr api:sync` writes `routes.gen.ts` next to it. |
 
-`kitr api:sync` loads `config/api.ts` the way the app does, so the values can come from variables or imports. API routes add no environment variables.
+`kitr api:sync` loads `config/api.ts` the way the app does, so the values can come from variables or imports.
 
 ## Build your first endpoint
 
@@ -931,7 +931,7 @@ import rc from '../kitrrc'
 export const server = createServer({ providers: rc.providers, config, routes })
 ```
 
-`server.handles(request)` then says whether a path belongs to the table, which is how `app/server.ts` splits requests between the kitr server and TanStack Start in a React app. To mount a second table, or one under a base path, `mountRoutes(server, partnerRoutes, '/partners')` is still there; to serve the endpoints from an h3 app you build yourself, call `toH3(routes, app)` with a kitr app; it returns the h3 app.
+`server.handles(request)` then says whether a path belongs to the table, which is how `app/server.ts` splits requests between the kitr server and TanStack Start in a React app. To mount a second table, or one under a base path, use `mountRoutes(server, partnerRoutes, '/partners')`; to serve the endpoints from an h3 app you build yourself, call `toH3(routes, app)` with a kitr app; it returns the h3 app.
 
 ## Build URLs for named routes
 

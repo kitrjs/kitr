@@ -34,7 +34,7 @@ In a server-only project (the `server` kit, or any project with the server packa
 - Writes `config/monitoring.ts` for the server and regenerates `config/index.ts`.
 - Adds a `## kitr: monitoring` section to `AGENTS.md` about the server middleware and `captureException`.
 
-`kitr add monitoring` asks no questions. To edit `package.json` without running the package manager, pass the global flag:
+To edit `package.json` without running the package manager, pass the global flag:
 
 ```sh
 kitr add monitoring --no-install

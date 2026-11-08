@@ -27,8 +27,6 @@ What `kitr add platform` does, in order:
 - Writes `config/platform.ts` (shown under Configure) and regenerates `config/index.ts`.
 - Adds a `## kitr: platform` section to `AGENTS.md`: use the hooks from `@kitr/platform/react` instead of user agents or `window.__TAURI__`, `platform.is()` to match a type or an OS, and the web, desktop, tauri and mobile providers register the drivers.
 
-`kitr add platform` asks no questions and adds no env variables.
-
 You rarely run it by hand. `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it for you, because those platforms need it, and the `mobile` and `desktop` kits include it.
 
 `kitr remove platform` reverses every step above: it removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/platform.ts`, then lists the files that still import `@kitr/platform`.
@@ -53,7 +51,7 @@ export default defineConfig({
 
 `useDeepLink()` and `platform.linkPath(url)` apply `deepLinkPrefixes` for you. `deepLinkPath(url, prefixes)` is the same function without the config, for tests and code outside the app.
 
-The `platform` service has no other options. Which driver it wraps depends on the platform providers listed in `kitrrc.ts`:
+Which driver it wraps depends on the platform providers listed in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts

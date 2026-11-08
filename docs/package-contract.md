@@ -75,11 +75,11 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `confirm` | `--worker` / `--no-worker` | boolean |
 | `text` | `--port 4000` | string |
 
-`when(answers, project)` skips a question (and its answer) when it returns false; `validate(value)` rejects a prompt or a flag with a message. `kitr add <pkg> --help` prints the questions as flags, read from the module, so the help is never stale.
+`when(answers, project)` skips a question (and its answer) when it returns false; `validate(value)` rejects a prompt or a flag with a message. `kitr add <pkg> --help` prints the questions as flags, read from the module.
 
 ### What `ctx` can do
 
-`ctx` owns the wiring files and nothing else. Every call is idempotent.
+`ctx` edits the wiring files. Every call is idempotent.
 
 | | |
 | --- | --- |
@@ -139,4 +139,4 @@ A kit package (`kind: 'kit'`) adds a `kit` block and runs on `kitr new --kit <na
 
 ## Where the official setups are
 
-Every official package keeps its setup in `packages/<name>/src/kitr.ts`, and every kit in `packages/kit-<name>/src/kitr.ts`. The CLI has no package-specific code.
+Every official package keeps its setup in `packages/<name>/src/kitr.ts`, and every kit in `packages/kit-<name>/src/kitr.ts`.

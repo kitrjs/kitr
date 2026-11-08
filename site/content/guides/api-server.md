@@ -27,7 +27,7 @@ kitr new acme-billing --kit server
 cd acme-billing
 ```
 
-The `server` kit is a backend whose dependency graph has no React, no TanStack and no Vite. It installs [Server](/packages/server), [API routes](/packages/api), [Logger](/packages/logger), [DB](/packages/db), [Realtime](/packages/realtime) and [Testing](/packages/testing):
+The `server` kit is a backend-only project. It installs [Server](/packages/server), [API routes](/packages/api), [Logger](/packages/logger), [DB](/packages/db), [Realtime](/packages/realtime) and [Testing](/packages/testing):
 
 ```
 acme-billing/
