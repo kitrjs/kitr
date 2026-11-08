@@ -1,0 +1,121 @@
+[
+  {
+    "kind": "query",
+    "owner": "@kitr/actions",
+    "pattern": "app/actions/<feature>/<name>.ts",
+    "description": "Create a server query in app/actions/<feature>/<name>.ts (defineQuery)",
+    "definition": "A server function the client reads by name: useQuery('projects.list')."
+  },
+  {
+    "kind": "mutation",
+    "owner": "@kitr/actions",
+    "pattern": "app/actions/<feature>/<name>.ts",
+    "description": "Create a server mutation in app/actions/<feature>/<name>.ts (defineMutation)",
+    "definition": "A server function the client calls by name to change data: useMutation('projects.update')."
+  },
+  {
+    "kind": "channel",
+    "owner": "@kitr/realtime",
+    "pattern": "app/channels/<name>.ts",
+    "description": "Create a socket channel in app/channels",
+    "definition": "A realtime channel: params, events with cache effects, and who may join."
+  },
+  {
+    "kind": "component",
+    "owner": "@kitr/react",
+    "pattern": "app/components/<name>.tsx",
+    "description": "Create a React component in app/components",
+    "definition": "A reusable piece of UI with no route of its own."
+  },
+  {
+    "kind": "form",
+    "owner": "@kitr/forms",
+    "pattern": "app/components/forms/<name>-form.tsx",
+    "description": "Create a form component in app/components/forms",
+    "definition": "A component that owns one schema-validated form and its submit."
+  },
+  {
+    "kind": "exception",
+    "owner": "kitr",
+    "pattern": "app/exceptions/<name>-error.ts",
+    "description": "Create a typed error class in app/exceptions",
+    "definition": "A KitrError subclass with a code, turned into a typed error on every transport."
+  },
+  {
+    "kind": "hook",
+    "owner": "@kitr/react",
+    "pattern": "app/hooks/use-<name>.ts",
+    "description": "Create a React hook in app/hooks",
+    "definition": "A use* function that packages React state or effects for reuse."
+  },
+  {
+    "kind": "layout",
+    "owner": "@kitr/router",
+    "pattern": "app/layouts/<name>.tsx",
+    "description": "Create a pathless layout in app/layouts and add it to app/routes.ts",
+    "definition": "A component that wraps a group of pages through <Outlet />; guards go on its route."
+  },
+  {
+    "kind": "page",
+    "owner": "@kitr/router",
+    "pattern": "app/pages/<path>.tsx",
+    "description": "Create a page in app/pages and add it to app/routes.ts",
+    "definition": "The component a route renders; the file path is the URL path."
+  },
+  {
+    "kind": "provider",
+    "owner": "kitr",
+    "pattern": "app/providers/<name>-provider.ts",
+    "description": "Create a kitr provider in app/providers and list it in kitrrc.ts",
+    "definition": "A lifecycle object: register container bindings, boot, and wrap the React tree."
+  },
+  {
+    "kind": "queries",
+    "owner": "@kitr/http",
+    "pattern": "app/queries/<name>.ts",
+    "description": "Create the typed queries and mutations of one HTTP resource in app/queries",
+    "definition": "Typed query and mutation contracts for an external HTTP API, one file per resource."
+  },
+  {
+    "kind": "store",
+    "owner": "@kitr/state",
+    "pattern": "app/stores/<name>.ts",
+    "description": "Create a Zustand store in app/stores",
+    "definition": "Client-only state; server data belongs in queries, not here."
+  },
+  {
+    "kind": "validator",
+    "owner": "@kitr/api",
+    "pattern": "app/validators/<name>.ts",
+    "description": "Create a shared zod schema in app/validators",
+    "definition": "A zod schema and its type, shared by forms, actions and controllers."
+  },
+  {
+    "kind": "controller",
+    "owner": "@kitr/api",
+    "pattern": "server/controllers/<name>-controller.ts",
+    "description": "Create a controller in server/controllers",
+    "definition": "A class whose methods answer routes; validation goes in static validation."
+  },
+  {
+    "kind": "middleware",
+    "owner": "@kitr/api",
+    "pattern": "server/middleware/<name>.ts",
+    "description": "Create an API middleware in server/middleware",
+    "definition": "A function that runs before and after a controller (auth, audit, rate limits)."
+  },
+  {
+    "kind": "service",
+    "owner": "kitr",
+    "pattern": "server/services/<name>-service.ts",
+    "description": "Create a service class in server/services",
+    "definition": "A plain class holding business logic, bound in the container by a provider."
+  },
+  {
+    "kind": "test",
+    "owner": "@kitr/testing",
+    "pattern": "test/<name>.test.ts",
+    "description": "Create a vitest file in test/",
+    "definition": "An app-level Vitest file; unit tests may also sit beside their file as *.test.ts."
+  }
+]

@@ -8,7 +8,7 @@ import { Codemods } from '../codemods'
 import { configurePackages } from '../configure'
 import { createContext, detectPackageManager, log, type PackageManager } from '../context'
 import { kitAnswers, kitNames, kitPackageNames, loadKit } from '../kits'
-import { base, writeReadme } from '../kits-base'
+import { base, writeReadme, writeVscode } from '../kits-base'
 import { cliResolve } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { enablePreviews, isPreview, isPreviewKit } from '../preview'
@@ -42,6 +42,11 @@ export const newCommand = defineCommand({
     pm: { type: 'string', description: 'pnpm | npm | yarn | bun (default: detected)' },
     install: { type: 'boolean', description: 'Install dependencies', default: true },
     git: { type: 'boolean', description: 'git init', default: true },
+    vscode: {
+      type: 'boolean',
+      description: 'Write .vscode/extensions.json recommending the kitr VS Code extension',
+      default: true,
+    },
     registry: {
       type: 'string',
       description: 'Component registry URL or local path for the kit components',
@@ -129,6 +134,7 @@ export const newCommand = defineCommand({
       codemods.removePackages([kit.package])
     await codemods.flush({ install: false })
     writeReadme(ctx, projectName, args.kit)
+    if (args.vscode) writeVscode(ctx)
     if (args.git && !existsSync(ctx.path('.git'))) {
       try {
         execSync('git init -q', { cwd: dir })
