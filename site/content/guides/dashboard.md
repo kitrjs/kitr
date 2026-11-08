@@ -25,10 +25,10 @@ You need [Node.js](https://nodejs.org) 22 or newer and the kitr CLI (`npm instal
 
 ## Create the project
 
-The `app` kit is made for exactly this: a single-page web app that talks to an API someone else runs.
+The `dashboard` kit is made for exactly this: a single-page web app that talks to an API someone else runs.
 
 ```sh
-kitr new acme-admin --kit app
+kitr new acme-admin --kit dashboard
 ```
 
 It installs and wires [Router](/packages/router), [Query](/packages/query), [HTTP](/packages/http), [Forms](/packages/forms), [Table](/packages/table), [State](/packages/state), [Tailwind](/packages/tailwind), [Theme](/packages/theme), [Auth](/packages/auth), [Storage](/packages/storage), [Mocks](/packages/mocks) and [Testing](/packages/testing), and copies a set of UI components into `app/components/ui/`. The parts this guide touches:

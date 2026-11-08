@@ -365,8 +365,12 @@ export interface PackageViteNeeds {
   plugin?: string
   /** Render routes through TanStack Start (SSR, prerender, server functions). Declared by `router`. */
   start?: boolean
-  /** `production: false`: the package's provider is dropped from production builds (devtools). */
-  provider?: { production?: boolean }
+  /**
+   * `production: false`: the package's provider is dropped from production builds (devtools).
+   * `client: false`: the provider does nothing in a browser (`if (app.isClient) return`), so it is
+   * left out of the browser bundle and kept for the server build (mail, jobs, cache, shield, uploads).
+   */
+  provider?: { production?: boolean; client?: boolean }
 }
 
 export interface PlatformPackage {

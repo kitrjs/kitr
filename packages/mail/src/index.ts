@@ -216,6 +216,29 @@ export function createLogTransport(options: { print?: boolean } = {}): MailTrans
   }
 }
 
+/**
+ * Accepts every message and sends nothing, printing only the recipients and subject (never the
+ * body, so reset links stay out of logs). Allowed in production: for a preview deployment or a
+ * demo that has no mail provider yet. Set `MAIL_TRANSPORT=discard` in the generated config to use it.
+ */
+export function createDiscardTransport(options: { print?: boolean } = {}): MailTransport & {
+  count: number
+} {
+  const transport = {
+    name: 'discard',
+    count: 0,
+    async send(message: Message) {
+      transport.count += 1
+      if (options.print !== false)
+        console.info(
+          `[@kitr/mail] discarded mail to ${message.to.map(formatAddress).join(', ')}: ${message.subject}`,
+        )
+      return { id: `discard-${transport.count}` }
+    },
+  }
+  return transport
+}
+
 // Chunked: spreading a large attachment into fromCharCode overflows the call stack.
 function base64(bytes: Uint8Array): string {
   let text = ''

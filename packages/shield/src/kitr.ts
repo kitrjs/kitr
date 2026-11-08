@@ -25,5 +25,5 @@ export default definePackage({
     ctx.provider.remove('@kitr/shield/provider')
     ctx.agents.remove('shield')
   },
-  vite: { serverOnlyConfig: true },
+  vite: { serverOnlyConfig: true, provider: { client: false } },
 })

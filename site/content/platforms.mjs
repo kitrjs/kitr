@@ -101,7 +101,7 @@ export default defineKitrConfig({
         text: "`runtime: 'bun'`, `'deno'` or `'workers'` changes how `kitr dev` and `kitr build` run the same `server/main.ts`. Workers deploy through `wrangler.toml`.",
       },
       {
-        title: 'A typed client, no codegen',
+        title: 'A client typed from your routes',
         text: 'Routes and controllers live in `server/routes.ts`. The client your pages call is typed from that table, so a renamed field is a type error, not a bug report.',
       },
       {

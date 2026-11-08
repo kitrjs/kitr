@@ -145,7 +145,7 @@ declare module '@kitr/core' {
   interface RouterExtensions<K extends string, R extends TableMap> {
     /**
      * `@kitr/api/routes`: Adonis-style endpoints. Types accumulate as you chain, so the
-     * client knows every route's params, body and output with no codegen:
+     * client knows every route's params, body and output from the table's types:
      *
      *   r.group({ prefix: '/api', middleware: [auth()] }, (api) =>
      *     api.resource('projects', ProjectsController)

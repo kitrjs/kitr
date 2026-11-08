@@ -19,5 +19,5 @@ export default definePackage({
     ctx.provider.remove('@kitr/cache/provider')
     ctx.agents.remove('cache')
   },
-  vite: { serverOnlyConfig: true },
+  vite: { serverOnlyConfig: true, provider: { client: false } },
 })

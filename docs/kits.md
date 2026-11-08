@@ -7,6 +7,7 @@ A kit runs once. After that the project is ordinary, and `kitr add` and `kitr re
 ```sh
 kitr new my-app                      # blank
 kitr new my-app --kit app
+kitr new my-admin --kit dashboard
 kitr new my-api --kit server
 kitr new my-saas --kit saas --platform site=web,api=server --mode ssr --runtime bun
 ```
@@ -18,8 +19,9 @@ Every flag is listed under [Create a project](cli.md#create-a-project).
 | Kit | Platforms | Packages | Components |
 | --- | --- | --- | --- |
 | `blank` | none | none | none |
-| `app` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing, devtools | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
-| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit without mocks, plus seo, actions, api, realtime | the app kit's eleven |
+| `app` | `site: web({ mode: 'spa' })` | query, tailwind, theme, testing | none |
+| `dashboard` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing, devtools | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
+| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the dashboard kit without mocks, plus seo, actions, api, realtime | the dashboard kit's eleven |
 | `server` | `api: server()` | logger, api, db, realtime, testing. No React. | none |
 
 ### blank
@@ -30,11 +32,15 @@ The usual next step is `kitr add web site` for a UI or `kitr add server api` for
 
 ### app
 
-A single-page app for an API you already have. Data comes through `http`, pointed at `VITE_API_URL`. Sign-in uses tokens. Set `VITE_MOCKS=true` to fake the API while you build. The [dashboard guide](/guides/dashboard) builds on this kit.
+The smallest app that runs, and the kit to start with: two pages on the route table, Query for data, Tailwind and the theme tokens, one test. Twenty-five files. Add sign-in, forms, a table or an API with `kitr add` when the app needs them; each package writes its own config and conventions.
+
+### dashboard
+
+A single-page app for an API you already have. Data comes through `http`, pointed at `VITE_API_URL`. Sign-in uses tokens. Set `VITE_MOCKS=true` to fake the API while you build. Eleven UI components are copied into `app/components/ui`. The [dashboard guide](/guides/dashboard) builds on this kit.
 
 ### fullstack
 
-The app kit, rendered on the server, with an API server beside it. The UI calls its server through `actions` in `app/actions/`, and `api` routes in `server/routes.ts` serve other clients. `kitr dev` runs both. The [full-stack guide](/guides/fullstack-app) walks through it.
+The dashboard kit, rendered on the server, with an API server beside it. The UI calls its server through `actions` in `app/actions/`, and `api` routes in `server/routes.ts` serve other clients. `kitr dev` runs both. The [full-stack guide](/guides/fullstack-app) walks through it.
 
 ### server
 
@@ -49,9 +55,9 @@ The presets are a base kit plus a small working app. Each one is also in [`examp
 | `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, analytics, monitoring | sign-in, a guarded app shell, a projects page, an API test |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools | a prerendered site: home, pricing, a blog, a newsletter form, a test |
 | `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing, devtools | a chat room with rooms in the URL, a test |
-| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform | the app kit in Electron, with native dialogs |
-| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform | the app kit in Tauri, with typed Rust commands |
-| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform | the app kit as an installable PWA and a Capacitor app |
+| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform | the dashboard kit in Electron, with native dialogs |
+| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform | the dashboard kit in Tauri, with typed Rust commands |
+| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform | the dashboard kit as an installable PWA and a Capacitor app |
 
 ### saas
 
@@ -79,7 +85,7 @@ A chat room. `app/channels/chat.ts` defines the channel, `app/pages/chat.tsx` is
 
 ### desktop, tauri and mobile
 
-The app kit in a native shell, with a home page that uses it. The shell's project lives in `platforms/<name>/`. The web platform stays, so `kitr dev site` still runs the app in a browser.
+The dashboard kit in a native shell, with a home page that uses it. The shell's project lives in `platforms/<name>/`. The web platform stays, so `kitr dev site` still runs the app in a browser.
 
 Pick `desktop` (Electron) unless download size matters most. Electron ships its own browser, so every user sees what you tested. Tauri is much smaller but uses the system webview, which can render differently between machines.
 

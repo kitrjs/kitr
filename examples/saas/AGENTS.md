@@ -101,7 +101,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: mail
 
-- Templates are React components in `server/mail/*.tsx` (`kitr make:mail <name>`, `defineMail`). Send from a job or controller with `ctx.app.container.use('mailer').send(template, props, { to })`. Development logs messages and previews them at `/_kitr/mail`; production needs `RESEND_API_KEY` (or an SMTP transport) in `config/mail.ts`.
+- Templates are React components in `server/mail/*.tsx` (`kitr make:mail <name>`, `defineMail`). Send from a job or controller with `ctx.app.container.use('mailer').send(template, props, { to })`. Development logs messages and previews them at `/_kitr/mail`; production needs `RESEND_API_KEY` (or an SMTP transport) in `config/mail.ts`, or `MAIL_TRANSPORT=discard` for a deployment that sends no mail yet.
 
 ## kitr: auth
 

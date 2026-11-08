@@ -30,7 +30,7 @@ jobs:
       - run: pnpm -C registry build
       - name: Build the examples' web platforms (also regenerates route trees)
         run: |
-          for app in dashboard fullstack saas site realtime desktop tauri mobile; do
+          for app in app dashboard fullstack saas site realtime desktop tauri mobile; do
             pnpm -C examples/$app exec kitr build site
           done
           pnpm -C examples/backend exec kitr build api

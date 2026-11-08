@@ -95,6 +95,7 @@
     "@kitr/native": "workspace:*",
     "@kitr/updater": "workspace:*",
     "@kitr/kit-app": "workspace:*",
+    "@kitr/kit-dashboard": "workspace:*",
     "@kitr/kit-server": "workspace:*",
     "@kitr/kit-fullstack": "workspace:*",
     "@kitr/kit-saas": "workspace:*",

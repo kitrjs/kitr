@@ -5,6 +5,9 @@ import { createAnalytics } from './analytics'
 import { devtoolsAdapter } from './devtools-adapter'
 import type { AnalyticsConfig } from './types'
 
+/** Set by @kitr/vite: `false` in a production build without the devtools overlay, so the panel chunk is never emitted. */
+declare const __KITR_DEVTOOLS__: boolean | undefined
+
 const PageViews = lazy(() => import('./react').then((m) => ({ default: m.TrackPageViews })))
 
 /** Loads the tracker after hydration, so no Suspense boundary exists while React matches server markup. */
@@ -53,7 +56,10 @@ export const analyticsProvider = defineProvider({
       })
     })
   },
-  devtools: (app, ui) => import('./devtools').then((m) => m.panels(app, ui)),
+  devtools:
+    typeof __KITR_DEVTOOLS__ === 'boolean' && __KITR_DEVTOOLS__ === false
+      ? undefined
+      : (app, ui) => import('./devtools').then((m) => m.panels(app, ui)),
   wrap(children, app) {
     const config = app.config.get('analytics', {} as AnalyticsConfig)
     if (config.pageViews === false) return children

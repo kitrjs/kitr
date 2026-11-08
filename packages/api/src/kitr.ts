@@ -2,7 +2,7 @@ import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /**
  * `kitr add api`: Adonis-style router, controllers, validators and middleware on the server,
- * a typed client with no codegen, OpenAPI through `kitr api:sync`.
+ * a client typed from the route table, with the route paths and OpenAPI written by `kitr api:sync`.
  */
 export default definePackage({
   name: 'api',

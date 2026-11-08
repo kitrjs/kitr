@@ -32,7 +32,8 @@ A **kit** is a starting set of platforms, packages and files. Pick the one close
 
 | Kit | For |
 | --- | --- |
-| `app` (start here) | A logged-in app that talks to an existing API |
+| `app` (start here) | The smallest app that runs: pages, data loading and styling |
+| `dashboard` | A logged-in app that talks to an existing API: forms, tables, auth, mocks |
 | `fullstack` | An app with its own backend, server rendering and realtime |
 | `server` | An API with no React at all |
 | `blank` | Starting from nothing: seven wiring files |

@@ -712,6 +712,16 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "package": "@kitr/kit-app",
     "name": "app",
     "title": "App kit",
+    "summary": "Start with pages, data loading and styling, and add sign-in, forms or an API when you need them.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr"
+  },
+  "dashboard": {
+    "package": "@kitr/kit-dashboard",
+    "name": "dashboard",
+    "title": "Dashboard kit",
     "summary": "Start a logged-in app on an external API: forms, tables, state, theme, auth, mocks and tests.",
     "category": "kits",
     "runsOn": "both",

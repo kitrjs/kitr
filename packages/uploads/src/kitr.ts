@@ -27,5 +27,5 @@ export default definePackage({
     ctx.provider.remove('@kitr/uploads/provider')
     ctx.agents.remove('uploads')
   },
-  vite: { serverOnlyConfig: true },
+  vite: { serverOnlyConfig: true, provider: { client: false } },
 })

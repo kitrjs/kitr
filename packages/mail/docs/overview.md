@@ -78,7 +78,7 @@ The props are typed from the template, so leaving out `orderId` is a type error.
 | [Resend](https://resend.com/docs) | The built-in API transport. |
 | [Nodemailer](https://nodemailer.com/) | The built-in SMTP transport. |
 
-kitr adds `defineMail`, address validation, plain-text rendering, attachments, a log transport for development and tests, the preview page and a `MailTransport` interface.
+kitr adds `defineMail`, address validation, plain-text rendering, attachments, a log transport for development and tests, a discard transport for deployments without a provider, the preview page and a `MailTransport` interface.
 
 ## Problems it solves
 

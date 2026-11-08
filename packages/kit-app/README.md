@@ -1,6 +1,6 @@
 # @kitr/kit-app
 
-**App kit.** Start a logged-in app on an external API: forms, tables, state, theme, auth, mocks and tests.
+**App kit.** Start with pages, data loading and styling, and add sign-in, forms or an API when you need them.
 
 ```sh
 pnpm dlx kitr new my-app --kit app

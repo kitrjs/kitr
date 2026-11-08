@@ -88,5 +88,5 @@ export const ${camel(name)} = defineJob('${snake(name)}', {
       ]
     return []
   },
-  vite: { serverOnlyConfig: true },
+  vite: { serverOnlyConfig: true, provider: { client: false } },
 })

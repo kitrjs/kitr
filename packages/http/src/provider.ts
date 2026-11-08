@@ -2,6 +2,9 @@ import { type Container, createDefineConfig, defineProvider, getDevtools } from 
 import type { KyInstance } from 'ky'
 import { createHttpClient, type HttpClientOptions } from './client'
 
+/** Set by @kitr/vite: `false` in a production build without the devtools overlay, so the panel chunk is never emitted. */
+declare const __KITR_DEVTOOLS__: boolean | undefined
+
 /**
  * The shape of `config/http.ts`: the options `createHttpClient` takes, except that `getToken` and
  * `refresh` receive the container of the request (or the app, in the browser), so a token read
@@ -64,7 +67,10 @@ export const defineConfig = createDefineConfig<HttpConfig>()
 /** Binds `http` (the ky client) into the container from `config/http.ts`. */
 export const httpProvider = defineProvider({
   name: 'http',
-  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
+  devtools:
+    typeof __KITR_DEVTOOLS__ === 'boolean' && __KITR_DEVTOOLS__ === false
+      ? undefined
+      : (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
   register(app) {
     // Scoped: on the server every request builds its own client, so one user's token never
     // reaches another's request. In the browser there is one container, so one client.

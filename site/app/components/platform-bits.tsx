@@ -35,7 +35,6 @@ export function PlatformTile({
       params={{ type: platform.type }}
       className={`platform-tile platform-tile-${size}`}
       style={{ background: platform.color }}
-      aria-label={`${platform.name}: ${platform.targets.join(', ')}`}
     >
       <span className="platform-tile-top">
         <span className="platform-tile-icon">

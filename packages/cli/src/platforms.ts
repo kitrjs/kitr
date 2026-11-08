@@ -519,9 +519,10 @@ export async function addPlatform(
 async function generateAll(ctx: ProjectContext) {
   const { runGenerate } = await import('./generate')
   const result = await runGenerate(ctx, { quiet: !ctx.verbose, strict: false })
+  // Say what was written and why, so the first `kitr dev` is not a mystery line before Vite's banner.
   if (result.types.written.length)
     log.step(
-      `kitr generate: ${result.types.written.length} type file(s) written (${result.types.generators.join(', ')})`,
+      `generated ${result.types.written.join(', ')} (types for ${result.types.generators.join(', ')}; kitr dev and build keep them current)`,
     )
 }
 
