@@ -1,5 +1,5 @@
-import type { StandardSchemaV1 } from '@kitr/core'
-import type { Router } from './router'
+import type { StandardSchemaV1, RouteEntry as TableEntry } from '@kitr/core'
+import { httpEntries } from './routes'
 
 /** Options for `toOpenApi()`: document info and schema conversion. */
 export interface OpenApiOptions {
@@ -18,10 +18,13 @@ export interface OpenApiOptions {
 }
 
 /** Emit an OpenAPI 3.1 document from a router. Validators become request schemas where convertible. */
-export async function toOpenApi(router: Router<any>, options: OpenApiOptions = {}) {
+export async function toOpenApi(
+  router: { entries: Array<{ kind: string }> },
+  options: OpenApiOptions = {},
+) {
   const convert = options.schemaToJson ?? defaultSchemaToJson
   const paths: Record<string, Record<string, unknown>> = {}
-  for (const route of router.routes) {
+  for (const route of httpEntries(router as unknown as { entries: TableEntry[] })) {
     const path = route.path.replace(/:(\w+)/g, '{$1}')
     const params = [...route.path.matchAll(/:(\w+)/g)].map((m) => m[1]!)
     const op: Record<string, unknown> = {

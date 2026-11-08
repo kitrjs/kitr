@@ -1,15 +1,10 @@
 import { createServer } from 'kitr/server'
-import { mountRoutes } from 'kitr/api'
+import { routes } from './routes'
 import { config } from '../config'
 import rc from '../kitrrc'
-import { realtime } from './realtime'
-import { routes } from './routes'
 
-/** The kitr server: providers from kitrrc.ts, config from config/. Tests import `server` and call `server.fetch()`. */
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-// WebSocket upgrades on /ws, next to the routes.
-realtime.attach(server, '/ws')
+/** The kitr server: providers from kitrrc.ts, config from config/, routes from server/routes.ts. What `kitr dev api` runs, what tests call with `server.fetch(new Request(...))`. */
+export const server = createServer({ providers: rc.providers, config, routes })
 
 /** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
 export default server

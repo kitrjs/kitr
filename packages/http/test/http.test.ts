@@ -177,6 +177,25 @@ describe('contracts', () => {
     expect(f.calls[0]!.url).toBe('https://api.dev/teams/core/members?limit=10')
   })
 
+  it('takes a function for a client that is not bound yet', async () => {
+    const f = fake(() => Response.json({ id: 1 }))
+    let bound: ReturnType<typeof createHttpClient> | undefined
+    // The shape of `const http = () => app.container.use('http')` in a module loaded before boot.
+    const http = () => {
+      if (!bound) throw new Error('No binding named "http"')
+      return bound
+    }
+    const one = httpQuery<string, { id: number }>(http, {
+      path: (id) => `items/${id}`,
+      key: (id) => ['items', id],
+    })
+    const save = httpMutation<{ id: number }, { id: number }>(http, { path: 'items' })
+    bound = createHttpClient({ baseUrl: 'https://api.dev', fetch: f.fetch })
+    expect(await one.fetch('1', {})).toEqual({ id: 1 })
+    expect(await save.mutate({ id: 1 })).toEqual({ id: 1 })
+    expect(f.calls.map((c) => c.url)).toEqual(['https://api.dev/items/1', 'https://api.dev/items'])
+  })
+
   it('httpQuery rejects responses that fail the schema', async () => {
     const f = fake(() => Response.json({ wrong: true }))
     const http = createHttpClient({ fetch: f.fetch })
@@ -248,5 +267,55 @@ describe('httpProvider', () => {
       ['http', 'GET /ok → 200 (ms)', 'info'],
       ['http', 'GET /bad → 404 (ms)', 'warn'],
     ])
+  })
+})
+
+describe('ky v2 failures', () => {
+  // Regression: ky v2 throws TimeoutError and NetworkError, which became INTERNAL 500.
+  it('maps timeouts and network failures to TIMEOUT and NETWORK', async () => {
+    const hang = createHttpClient({
+      retry: 0,
+      timeout: 20,
+      fetch: (_input, init) =>
+        new Promise((_resolve, reject) =>
+          (init as RequestInit | undefined)?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          ),
+        ),
+    })
+    await expect(hang.get('http://api.test/x').json()).rejects.toMatchObject({ code: 'TIMEOUT' })
+    const down = createHttpClient({
+      retry: 0,
+      fetch: () => Promise.reject(new TypeError('fetch failed')),
+    })
+    await expect(down.get('http://api.test/x').json()).rejects.toMatchObject({ code: 'NETWORK' })
+  })
+})
+
+describe('http provider on the server', () => {
+  // Regression: one client for the whole process, so getToken could not tell requests apart.
+  it('builds a client per request and gives getToken that request', async () => {
+    const seen: string[] = []
+    const fetch = vi.fn(async (input: Request | URL | string, init?: RequestInit) => {
+      const req = input instanceof Request ? input : new Request(input, init)
+      seen.push(req.headers.get('authorization') ?? '')
+      return Response.json({ ok: true })
+    })
+    const app = createApp({
+      environment: 'server',
+      providers: [httpProvider],
+      config: {
+        http: { fetch, retry: 0, getToken: (c) => (c.has('user') ? c.use('user' as never) : null) },
+      },
+    })
+    await app.boot()
+    const a = app.fork()
+    a.container.value('user' as never, 'token-a' as never)
+    const b = app.fork()
+    b.container.value('user' as never, 'token-b' as never)
+    expect(a.container.use('http')).not.toBe(b.container.use('http'))
+    await a.container.use('http').get('http://api.test/me').json()
+    await b.container.use('http').get('http://api.test/me').json()
+    expect(seen).toEqual(['Bearer token-a', 'Bearer token-b'])
   })
 })

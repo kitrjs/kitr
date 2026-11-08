@@ -1,6 +1,6 @@
-import { isRedirect } from '@tanstack/react-router'
+import { isNotFound, isRedirect } from '@tanstack/react-router'
 import { describe, expect, it } from 'vitest'
-import { can, guards, requireAuth } from '../src/guards'
+import { can, guards, onlyPlatform, requireAuth } from '../src/guards'
 
 const caught = (fn: () => unknown) => {
   try {
@@ -35,6 +35,24 @@ describe('requireAuth', () => {
       requireAuth({ redirectParam: false })({ context: { session: { user: null } }, location }),
     )
     expect(none.options.search).toBeUndefined()
+  })
+
+  // Regression: `signInPath` in config/auth.ts was read by nothing, so a guard still sent
+  // anonymous visitors to /sign-in, a page the app did not have.
+  it('defaults to signInPath from config/auth.ts', async () => {
+    const { createApp } = await import('@kitr/core')
+    const app = createApp({ environment: 'test', config: { auth: { signInPath: '/login' } } })
+    const r = caught(() => requireAuth()({ context: { session: null, app }, location }))
+    expect(r.options.to).toBe('/login')
+    const explicit = caught(() =>
+      requireAuth({ to: '/elsewhere' })({ context: { session: null, app }, location }),
+    )
+    expect(explicit.options.to).toBe('/elsewhere')
+    const noAuthConfig = createApp({ environment: 'test' })
+    const fallback = caught(() =>
+      requireAuth()({ context: { session: null, app: noAuthConfig }, location }),
+    )
+    expect(fallback.options.to).toBe('/sign-in')
   })
 })
 
@@ -85,5 +103,37 @@ describe('guards', () => {
     )
     await expect(failing({})).rejects.toThrow('stop')
     expect(order).not.toContain('never')
+  })
+})
+
+describe('onlyPlatform', () => {
+  it('passes on a matching name, type, OS or native, from the platform service in context', () => {
+    const platform = { name: 'phone', type: 'mobile', os: 'ios', native: true }
+    expect(onlyPlatform('phone')({ context: { platform } })).toBeUndefined()
+    expect(onlyPlatform(['www', 'mobile'])({ context: { platform } })).toBeUndefined()
+    expect(onlyPlatform('ios')({ context: { platform } })).toBeUndefined()
+    expect(onlyPlatform('native')({ context: { platform } })).toBeUndefined()
+  })
+
+  it('renders not-found elsewhere, or redirects with `to`', () => {
+    const platform = { name: 'www', type: 'web', os: 'macos', native: false }
+    const nf = caught(() => onlyPlatform('phone')({ context: { platform } }))
+    expect(isNotFound(nf)).toBe(true)
+    const r = caught(() => onlyPlatform('native', { to: '/download' })({ context: { platform } }))
+    expect(isRedirect(r)).toBe(true)
+    expect(r.options.to).toBe('/download')
+  })
+
+  it('falls back to the build platform when no service is in context', () => {
+    process.env.KITR_PLATFORM = 'admin'
+    process.env.KITR_PLATFORM_TYPE = 'web'
+    try {
+      expect(onlyPlatform('admin')({ context: {} })).toBeUndefined()
+      expect(onlyPlatform('web')({ context: {} })).toBeUndefined()
+      expect(isNotFound(caught(() => onlyPlatform('phone')({ context: {} })))).toBe(true)
+    } finally {
+      delete process.env.KITR_PLATFORM
+      delete process.env.KITR_PLATFORM_TYPE
+    }
   })
 })

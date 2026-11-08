@@ -7,7 +7,9 @@ import { createI18n } from './index'
 export const i18nProvider: KitrProvider = defineProvider({
   name: 'i18n',
   register(app) {
-    app.container.singleton('i18n', () =>
+    // Scoped: each server request (the router forks the app per request) gets its own instance,
+    // so changeLanguage() while rendering one request never switches another's language.
+    app.container.scoped('i18n', () =>
       createI18n(app.config.get('i18n'), app.env.locale as string | undefined),
     )
   },

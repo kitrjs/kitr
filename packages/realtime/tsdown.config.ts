@@ -11,6 +11,7 @@ export default defineConfig({
     'src/sse-server.ts',
     'src/react.ts',
     'src/kitr.ts',
+    'src/routes.ts',
   ],
   format: ['esm'],
   dts: { resolve: false },

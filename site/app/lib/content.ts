@@ -1,4 +1,5 @@
 import docsNavJson from '#app/generated/docs-nav.json'
+import guidesNavJson from '#app/generated/guides-nav.json'
 
 export type Block = { type: 'html'; html: string } | { type: 'cmd'; cmd: string }
 
@@ -7,6 +8,12 @@ export interface Page {
   title: string
   description?: string
   section?: string
+  /** Guides only: the packages the guide uses, by short name. */
+  packages?: string[]
+  /** Guides only: roughly how long the guide takes, such as `30 min`. */
+  time?: string
+  /** Guides only: built on packages that are not published yet. */
+  preview?: boolean
   blocks: Block[]
   toc: Array<{ depth: number; id: string; text: string }>
   editUrl: string
@@ -23,6 +30,24 @@ export interface SearchEntry {
 export const docsNav = docsNavJson as Array<{
   title: string
   items: Array<{ slug: string; title: string }>
+}>
+
+export interface GuideItem {
+  slug: string
+  title: string
+  description: string
+  packages: string[]
+  /** Platform types the guide ships to: web, server, desktop, tauri, mobile. */
+  platforms: string[]
+  time?: string
+  /** Built on packages that are not published yet. */
+  preview?: boolean
+}
+
+export const guidesNav = guidesNavJson as Array<{
+  title: string
+  description?: string
+  items: GuideItem[]
 }>
 
 const pages = import.meta.glob<Page>('../generated/pages/*.json', { import: 'default' })

@@ -70,6 +70,7 @@ export interface RouteType<
   Body = any,
   Output = unknown,
 > {
+  kind: 'http'
   /** The route's HTTP method. */
   method: Method
   /** The full path, prefixes included. */
@@ -89,6 +90,7 @@ export type RouteMap = Record<string, RouteType>
 
 /** Runtime route entry. */
 export interface RouteEntry {
+  kind: 'http'
   /** HTTP method. */
   method: HttpMethod
   /** Full path, prefixes included. */

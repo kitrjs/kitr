@@ -1,5 +1,6 @@
+import { createApp } from '@kitr/core'
 import { describe, expect, it } from 'vitest'
-import { deepLinkPath, osFromUserAgent, perPlatform } from '../src'
+import { createPlatform, deepLinkPath, osFromUserAgent, perPlatform } from '../src'
 
 describe('perPlatform', () => {
   const impls = {
@@ -20,6 +21,24 @@ describe('deepLinkPath', () => {
   it('strips schemes and configured prefixes', () => {
     expect(deepLinkPath('myapp://projects/1')).toBe('/projects/1')
     expect(deepLinkPath('https://example.com/app/projects/1', ['/app'])).toBe('/projects/1')
+  })
+})
+
+// Regression: `deepLinkPrefixes` in config/platform.ts was read by nothing; every app had to
+// thread it through to deepLinkPath() by hand.
+describe('platform.linkPath', () => {
+  it('strips the deepLinkPrefixes from config/platform.ts', () => {
+    const app = createApp({
+      environment: 'test',
+      config: { platform: { deepLinkPrefixes: ['/open'] } },
+    })
+    const platform = createPlatform(app)
+    expect(platform.linkPath('acme://open/orders/1042')).toBe('/orders/1042')
+    expect(platform.linkPath('acme://orders/7')).toBe('/orders/7')
+  })
+
+  it('works without config/platform.ts', () => {
+    expect(createPlatform(createApp({ environment: 'test' })).linkPath('acme://a/b')).toBe('/a/b')
   })
 })
 

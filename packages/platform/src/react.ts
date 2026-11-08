@@ -31,10 +31,18 @@ export function useBackButton(handler: (info: { canGoBack: boolean }) => void) {
   useEffect(() => platform.onBackButton(handler), [platform, handler])
 }
 
-/** Deep links opened while the app runs. Pair with `deepLinkPath()` to hand them to the router. */
-export function useDeepLink(handler: (url: string) => void) {
+/**
+ * Deep links opened while the app runs. The handler gets the URL and the router path for it, with
+ * the scheme, host and `deepLinkPrefixes` from `config/platform.ts` removed:
+ *
+ *   useDeepLink(useCallback((_url, path) => void navigate({ to: path }), [navigate]))
+ */
+export function useDeepLink(handler: (url: string, path: string) => void) {
   const platform = usePlatform()
-  useEffect(() => platform.onDeepLink(handler), [platform, handler])
+  useEffect(
+    () => platform.onDeepLink((url) => handler(url, platform.linkPath(url))),
+    [platform, handler],
+  )
 }
 
 /** Safe-area insets (notch, home indicator). Zero on the server and first render. */
@@ -49,3 +57,6 @@ export function useSafeArea(): SafeArea {
   }, [platform])
   return area
 }
+
+export { Except, Only, type OnlyProps, type PlatformMatch, usePlatformMatch } from './components'
+export { useFormFactor } from './form-factor'

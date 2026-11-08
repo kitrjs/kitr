@@ -1,12 +1,18 @@
-import { mountRoutes } from 'kitr/api'
 import { createServer } from 'kitr/server'
+import { routes } from '#server/routes'
 import { config } from '../config'
 import rc from '../kitrrc'
-import { routes } from '#server/routes'
-import { realtime } from '#server/realtime'
 
-/** The kitr server behind Start's /api/* catch-all route; also what tests call. Providers from kitrrc.ts, config from config/. */
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
-// WebSocket upgrades on /api/ws, next to the REST routes.
-realtime.attach(server, '/api/ws')
+/** The kitr server: providers from kitrrc.ts, config from config/, routes from server/routes.ts. What `kitr dev api` runs, what app/server.ts hands the app's own requests to, what tests call with `server.fetch(new Request(...))`. */
+export const server = createServer({ providers: rc.providers, config, routes })
+
+/** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
+export default server
+
+const isMain = (import.meta as { main?: boolean }).main ?? process.argv[1]?.endsWith("main.ts")
+if (isMain) {
+  server.listen({
+    port: Number(process.env.PORT) || 3001,
+    host: process.env.HOST,
+  })
+}

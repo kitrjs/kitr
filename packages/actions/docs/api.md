@@ -15,7 +15,8 @@ Re-exports `@tanstack/start-client-core` unchanged, plus the following.
 ### defineMutation
 
 ```ts
-function defineMutation<S extends StandardSchemaV1 | undefined = undefined, TOutput = unknown, TContext = {}>(name: string, options: DefineMutationOptions<S, TOutput, TContext>): ServerMutation<InputOf<S>, TOutput, TContext>;
+function defineMutation<S extends StandardSchemaV1 | undefined = undefined, TOutput = unknown, const M extends ReadonlyArray<unknown> = [
+], TContext = MiddlewareContext<M>>(name: string, options: DefineMutationOptions<S, TOutput, TContext, M>): ServerMutation<InputOf<S>, TOutput, TContext>;
 ```
 
 Define a mutation whose handler runs on the server, with the cache effects it has on success.
@@ -31,7 +32,8 @@ export const updateProject = defineMutation('projects.update', {
 ### defineQuery
 
 ```ts
-function defineQuery<S extends StandardSchemaV1 | undefined = undefined, TOutput = unknown, TContext = {}>(name: string, options: DefineQueryOptions<S, TOutput, TContext>): ServerQuery<InputOf<S>, TOutput, TContext>;
+function defineQuery<S extends StandardSchemaV1 | undefined = undefined, TOutput = unknown, const M extends ReadonlyArray<unknown> = [
+], TContext = MiddlewareContext<M>>(name: string, options: DefineQueryOptions<S, TOutput, TContext, M>): ServerQuery<InputOf<S>, TOutput, TContext>;
 ```
 
 Define a query whose handler runs on the server. The name is the registry key `kitr types`
@@ -67,7 +69,7 @@ Options for a direct call or `.run()`.
 ### DefineMutationOptions
 
 ```ts
-interface DefineMutationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext> extends DefineOperationOptions<S, TOutput, TContext> {
+interface DefineMutationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext, M extends ReadonlyArray<unknown> = ReadonlyArray<unknown>> extends DefineOperationOptions<S, TOutput, TContext, M> {
   /** Cache effects applied on the client after success. A function gets the result and the input. */
   effects?: CacheEffect | ((result: TOutput, input: InputOf<S>) => CacheEffect);
 }
@@ -78,11 +80,15 @@ The second argument of `defineMutation`: the shared options plus cache `effects`
 ### DefineOperationOptions
 
 ```ts
-interface DefineOperationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext> {
+interface DefineOperationOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext, M extends ReadonlyArray<unknown> = ReadonlyArray<unknown>> {
   /** Any Standard Schema. Validated on the server; a failure reaches the caller as a VALIDATION error with field errors. */
   input?: S;
-  /** TanStack Start function middleware (`createMiddleware({ type: 'function' })`). */
-  middleware?: ReadonlyArray<any>;
+  /**
+   * TanStack Start function middleware (`createMiddleware({ type: 'function' })`). What each one
+   * passes to `next({ context })` is typed on the handler's `context`. An error thrown here reaches
+   * the caller the same way a handler error does, masked in production when it is a server error.
+   */
+  middleware?: M;
   /** Runs on the server only. Its code, and anything it imports, never reaches the browser bundle. */
   handler: (ctx: HandlerContext<InputOf<S>, TContext>) => TOutput | Promise<TOutput>;
 }
@@ -93,7 +99,7 @@ Options shared by `defineQuery` and `defineMutation`.
 ### DefineQueryOptions
 
 ```ts
-interface DefineQueryOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext> extends DefineOperationOptions<S, TOutput, TContext> {
+interface DefineQueryOptions<S extends StandardSchemaV1 | undefined, TOutput, TContext, M extends ReadonlyArray<unknown> = ReadonlyArray<unknown>> extends DefineOperationOptions<S, TOutput, TContext, M> {
   /** How long a result counts as fresh, in milliseconds. Carried into the query options. */
   staleTime?: number;
 }
@@ -148,6 +154,18 @@ interface ServerQuery<TInput, TOutput, TContext = unknown> extends QueryDefiniti
 A server query: a `QueryDefinition` from `kitr/query` that is also a function. Call it to fetch,
 pass `.options(input)` to any TanStack hook or loader, or use it by name once `kitr types` has
 registered it.
+
+### MiddlewareContext
+
+```ts
+type MiddlewareContext<M extends ReadonlyArray<unknown>> = [
+  M[number]
+] extends [
+  never
+] ? {} : UnionToIntersection<ServerContextOf<M[number]>> & {};
+```
+
+The context a list of Start function middleware gives the handler: every middleware's `next({ context })`, merged.
 
 ### ServerFn
 

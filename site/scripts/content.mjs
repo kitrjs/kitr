@@ -343,6 +343,60 @@ for (const group of nav) {
   docsNav.push({ title: group.title, items })
 }
 writeFileSync(join(out, 'docs-nav.json'), JSON.stringify(docsNav, null, 2))
+
+// ---------------------------------------------------------------- guides
+
+// Task walkthroughs that span several packages: site/content/guides/<slug>.md, grouped by nav.json.
+const guidesNavFile = JSON.parse(readFileSync(join(site, 'content/guides/nav.json'), 'utf8'))
+const guidesNav = []
+for (const group of guidesNavFile) {
+  const items = []
+  for (const slug of group.pages) {
+    const path = join(site, 'content/guides', `${slug}.md`)
+    const { data, body } = parseFrontmatter(readFileSync(path, 'utf8'))
+    if (!data.title || !data.description)
+      throw new Error(`${path}: frontmatter needs title and description`)
+    const url = `/guides/${slug}`
+    const list = (value) =>
+      (value ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    const usesPackages = list(data.packages)
+    // The platform types the guide ships to (web, server, desktop, tauri, mobile), for platform pages.
+    const platforms = list(data.platforms)
+    for (const name of usesPackages)
+      if (!packages.some((p) => p.entry.name === name))
+        throw new Error(`${path}: "packages" names ${name}, which is not a package`)
+    const rendered = await render(body)
+    writePage(`guides__${slug}`, {
+      url,
+      title: data.title,
+      description: data.description,
+      section: group.title,
+      packages: usesPackages,
+      platforms,
+      time: data.time,
+      preview: data.preview === 'true',
+      blocks: rendered.blocks,
+      toc: rendered.toc,
+      editUrl: `${repoUrl}/edit/main/${relative(repo, path)}`,
+    })
+    items.push({
+      slug,
+      title: data.title,
+      description: data.description,
+      packages: usesPackages,
+      platforms,
+      time: data.time,
+      preview: data.preview === 'true',
+    })
+    addSearch(url, data.title, 'Guides', rendered, data.description)
+    llms.push({ url, title: data.title, description: data.description, body })
+  }
+  guidesNav.push({ title: group.title, description: group.description, items })
+}
+writeFileSync(join(out, 'guides-nav.json'), JSON.stringify(guidesNav, null, 2))
 writeFileSync(join(out, 'search.json'), JSON.stringify(search))
 
 // ---------------------------------------------------------------- home page code
@@ -412,6 +466,13 @@ const seoPages = [
     description: `${packages.length} packages and platforms, each a single kitr add away.`,
   },
   {
+    path: '/guides',
+    title: 'Guides',
+    description:
+      'Step-by-step walkthroughs: build an app, add sign-in and live updates, test and deploy it, write a package, and move to kitr.',
+    kind: 'Guides',
+  },
+  {
     path: '/platforms',
     title: 'Platforms',
     description: 'Web, server, desktop and mobile from one app. Mix them in one project.',
@@ -459,6 +520,14 @@ for (const group of docsNav)
       kind: `Docs · ${group.title}`,
     })
   }
+for (const group of guidesNav)
+  for (const item of group.items)
+    seoPages.push({
+      path: `/guides/${item.slug}`,
+      title: item.title,
+      description: item.description,
+      kind: `Guide · ${group.title}`,
+    })
 
 mkdirSync(join(site, 'public/og'), { recursive: true })
 const ogId = (path) => (path === '/' ? 'home' : path.slice(1).replace(/\//g, '-'))
@@ -499,6 +568,12 @@ const index = [
   '',
   ...llms
     .filter((p) => p.url.startsWith('/docs'))
+    .map((p) => `- [${p.title}](${base}${p.url}.md): ${p.description ?? ''}`),
+  '',
+  '## Guides',
+  '',
+  ...llms
+    .filter((p) => p.url.startsWith('/guides'))
     .map((p) => `- [${p.title}](${base}${p.url}.md): ${p.description ?? ''}`),
   '',
   '## Packages',

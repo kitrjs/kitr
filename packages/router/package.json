@@ -1,15 +1,18 @@
 {
   "name": "@kitr/router",
   "version": "0.1.0",
-  "description": "kitr/router: TanStack Router re-exported, plus guards, default pending/error components and createKitrRouter.",
+  "description": "kitr/router: TanStack Router re-exported, plus the pages extension for the route table (kitr/router/routes), guards, default pending/error components, createKitrRouter and the stack outlet (kitr/router/stack).",
   "kitr": {
     "name": "router",
     "title": "Router",
-    "summary": "Turn files in app/routes into pages, with links, loaders and guards. Web, desktop and mobile apps get it automatically.",
+    "summary": "Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free.",
     "category": "pages",
     "runsOn": "client",
     "builtOn": [
       "@tanstack/react-router"
+    ],
+    "requires": [
+      "react"
     ],
     "client": true,
     "docs": "docs",
@@ -36,6 +39,14 @@
     "./kitr": {
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
+    },
+    "./stack": {
+      "types": "./dist/stack.d.ts",
+      "default": "./dist/stack.js"
     },
     "./package.json": "./package.json"
   },

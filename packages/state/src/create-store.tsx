@@ -47,6 +47,13 @@ export function createKitrStore<T extends object>(
   const isClient = typeof window !== 'undefined'
   const singleton: StoreApi<T> | null = isClient ? build() : null
   const Context = createContext<StoreApi<T> | null>(null)
+  // What the server rendered for a persisted store: its initial state plus any <StoreProvider
+  // initialState>, never the saved state only the browser can read. The hydrating render uses it,
+  // then the saved state follows, so React sees no mismatch.
+  let seeded: Partial<T> | undefined
+  let serverState: T | undefined
+  const renderedOnServer = (store: StoreApi<T>): T =>
+    (serverState ??= { ...store.getInitialState(), ...seeded } as T)
 
   function StoreProvider({
     children,
@@ -59,7 +66,11 @@ export function createKitrStore<T extends object>(
     if (!ref.current) {
       // On the server the initial state is baked into a fresh store, so SSR renders it.
       ref.current = singleton ?? build(initialState)
-      if (singleton && initialState) singleton.setState(initialState as T)
+      if (singleton && initialState) {
+        singleton.setState(initialState as T)
+        seeded = { ...seeded, ...initialState }
+        serverState = undefined
+      }
     }
     return <Context.Provider value={ref.current}>{children}</Context.Provider>
   }
@@ -78,7 +89,9 @@ export function createKitrStore<T extends object>(
     // The server snapshot is the current state (not zustand's initial state), so a store
     // seeded through <StoreProvider initialState> renders the same on server and client.
     const snapshot = () => select(store.getState())
-    return useSyncExternalStore(store.subscribe, snapshot, snapshot)
+    const serverSnapshot =
+      options.persist && store === singleton ? () => select(renderedOnServer(store)) : snapshot
+    return useSyncExternalStore(store.subscribe, snapshot, serverSnapshot)
   }
 
   /** The client singleton, for use outside React (actions, loaders). Null on the server. */

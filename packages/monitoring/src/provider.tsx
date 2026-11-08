@@ -84,7 +84,8 @@ export const monitoringProvider = defineProvider({
           : []
       const reporters = hub ? [...base, devtoolsReporter(hub)] : base
       return createMonitoring({
-        debug: app.isDevelopment,
+        // The default console reporter already prints every report: debug would print it twice.
+        debug: app.isDevelopment && !!config.reporters?.length,
         ...config,
         reporters,
         tags: { environment: app.mode, ...config.tags },

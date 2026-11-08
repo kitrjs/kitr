@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { cacheHeaders, seo, ssrRoute } from '../src'
 
 describe('seo', () => {
@@ -60,6 +60,16 @@ describe('seo', () => {
 describe('route helpers', () => {
   it('ssrRoute and cacheHeaders', () => {
     expect(ssrRoute('data-only')).toEqual({ ssr: 'data-only' })
+    process.env.KITR_PLATFORM = 'www'
+    process.env.KITR_PLATFORM_TYPE = 'web'
+    try {
+      expect(ssrRoute({ www: true, default: false })).toEqual({ ssr: true })
+      expect(ssrRoute({ web: 'data-only', default: false })).toEqual({ ssr: 'data-only' })
+      expect(ssrRoute({ phone: false, default: true })).toEqual({ ssr: true })
+    } finally {
+      delete process.env.KITR_PLATFORM
+      delete process.env.KITR_PLATFORM_TYPE
+    }
     expect(cacheHeaders()).toEqual({ 'cache-control': 'public' })
     expect(
       cacheHeaders({ maxAge: 0, sMaxAge: 60, staleWhileRevalidate: 30, private: true }),
@@ -80,5 +90,22 @@ describe('jsonLd escaping', () => {
     // As it lands in the page: still exactly one closing tag.
     const html = `<script type="${script.type}">${script.children}</script>`
     expect(html.match(/<\/script>/gi)).toHaveLength(1)
+  })
+})
+
+// Regression: `seo()` never read config/seo.ts, so every page lost the site name, image and
+// canonical origin unless it passed `site` itself.
+describe('seo() reads config/seo.ts', () => {
+  it('uses the site from defineConfig, and an explicit site still wins', async () => {
+    vi.resetModules()
+    const mod = await import('../src')
+    expect(mod.seo({ title: 'Pricing' }).meta).toContainEqual({ title: 'Pricing' })
+    mod.defineConfig({ site: { name: 'Acme', url: 'https://acme.dev' } })
+    const head = mod.seo({ title: 'Pricing' })
+    expect(head.meta).toContainEqual({ title: 'Pricing · Acme' })
+    expect(head.links).toEqual([{ rel: 'canonical', href: 'https://acme.dev' }])
+    expect(mod.seo({ title: 'Pricing', site: { name: 'Other' } }).meta).toContainEqual({
+      title: 'Pricing · Other',
+    })
   })
 })

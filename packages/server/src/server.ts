@@ -5,10 +5,25 @@ import type { ServerConfig } from './config'
 import { type RequestContext, runWithRequest } from './context'
 import { errorToResponse } from './errors'
 
+/**
+ * The route table `createServer({ routes })` compiles: `defineRoutes([api, realtime], ...)` from
+ * `@kitr/core`. Each extension with an `h3` target mounts its own entries (endpoints, sockets).
+ */
+export interface ServerRoutes {
+  readonly entries: ReadonlyArray<{ kind: string; path: string; [field: string]: unknown }>
+  readonly extensions: ReadonlyArray<{
+    kinds: readonly string[]
+    targets?: Record<string, unknown>
+  }>
+  compile(target: 'h3', server: KitrServer): Record<string, unknown>
+}
+
 /** Options for `createServer()`: the app options (providers, config, mode) plus server overrides. */
 export interface CreateServerOptions extends CreateAppOptions {
   /** Reuse an existing app (e.g. shared with an SSR entry). */
   app?: KitrApp
+  /** The route table: its endpoints and sockets are mounted on this server. */
+  routes?: ServerRoutes
   /** Server options; override the `server` key of `config`. */
   server?: ServerConfig
   /** Logger to use instead of the container's `logger` binding (`silentLogger` in tests). */
@@ -29,6 +44,8 @@ export interface KitrServer {
   app: KitrApp
   /** The underlying h3 app, for registering routes directly. */
   h3: H3
+  /** The route table given to `createServer({ routes })`, if any. */
+  routes?: ServerRoutes
   /** The server logger: the container's `logger` after boot, or a built-in one. */
   logger: Logger
   /** The resolved server options, defaults filled in. */
@@ -43,6 +60,12 @@ export interface KitrServer {
   boot(): Promise<KitrServer>
   /** Web-standard fetch handler: use inside TanStack Start, Nitro, Cloudflare, Bun, Deno. */
   fetch(request: Request): Promise<Response>
+  /**
+   * Whether this server answers the request's path: a route of the table, the health path, or
+   * anything under a top-level segment one of its routes lives in (`/api/*` once `/api/health`
+   * exists), so Start's entry hands it over and an unknown endpoint gets a JSON 404.
+   */
+  handles(request: Request | URL | string): boolean
   /** Mount an h3 app or any fetch handler under a base path. */
   mount(
     base: string,
@@ -64,7 +87,13 @@ export interface KitrServer {
  * so a pure backend built on kitr ships none.
  */
 export function createServer(options: CreateServerOptions = {}): KitrServer {
-  const { app: givenApp, server: serverConfig, logger: givenLogger, ...appOptions } = options
+  const {
+    app: givenApp,
+    server: serverConfig,
+    logger: givenLogger,
+    routes,
+    ...appOptions
+  } = options
   const app = givenApp ?? createApp({ environment: 'server', ...appOptions })
   if (serverConfig) app.config.set('server', serverConfig)
   const config = {
@@ -110,6 +139,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     h3,
     logger: logger ?? (null as unknown as Logger),
     config,
+    routes,
     boot() {
       booted ??= (async () => {
         await app.boot()
@@ -126,6 +156,16 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       // (job workers, schedulers) runs once here as it does on listen(). Tests stay quiet.
       if (app.environment !== 'test') await app.ready()
       return h3.fetch(request)
+    },
+    handles(request) {
+      const pathname =
+        typeof request === 'string'
+          ? new URL(request, 'http://localhost').pathname
+          : request instanceof URL
+            ? request.pathname
+            : new URL(request.url).pathname
+      if (config.healthPath && pathname === config.healthPath) return true
+      return served().some((match) => match(pathname))
     },
     mount(base, handler) {
       h3.mount(base, handler as any)
@@ -238,6 +278,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       logger: requestLogger,
       startedAt: performance.now(),
       locals: {},
+      ip: clientIp(event, config.trustProxy),
     }
     event.context.kitr = ctx
     event.res.headers.set(config.requestIdHeader, requestId)
@@ -245,18 +286,75 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       const result = await next()
       requestLogger.debug(`${event.req.method} ${event.url.pathname}`, {
         status: event.res.status ?? 200,
-        ip: safeIp(event),
+        ip: ctx.ip,
         durationMs: Math.round(performance.now() - ctx.startedAt),
       })
       return result
     })
   })
   if (config.healthPath) h3.get(config.healthPath, () => ({ ok: true }))
+  // Endpoints and sockets from the route table: each extension mounts its own kind.
+  if (routes) routes.compile('h3', server)
+  // The paths this server answers, for `handles()`: every entry of an extension with an h3 target,
+  // and everything under the first segment of such an entry (`/api/health` claims `/api/*`), so an
+  // unknown path next to the endpoints gets this server's JSON 404 rather than the app's HTML one.
+  let matchers: Array<(pathname: string) => boolean> | undefined
+  const served = () => {
+    if (matchers) return matchers
+    const paths = (routes?.entries ?? [])
+      .filter((entry) =>
+        routes!.extensions.some((ext) => ext.kinds.includes(entry.kind) && ext.targets?.h3),
+      )
+      .map((entry) => entry.path)
+    const prefixes = new Set(
+      paths
+        .map((path) => path.split('/')[1])
+        .filter((segment) => segment && !/^[:$*]/.test(segment)),
+    )
+    matchers = [
+      ...paths.map(pathMatcher),
+      ...[...prefixes].map(
+        (segment) => (pathname: string) =>
+          pathname === `/${segment}` || pathname.startsWith(`/${segment}/`),
+      ),
+    ]
+    return matchers
+  }
 
   return server
 }
 
-function safeIp(event: H3Event): string | undefined {
+/** `/api/projects/:id` and `/files/*` (or `$id`, `$`) as a test on a request pathname. */
+function pathMatcher(path: string): (pathname: string) => boolean {
+  const pattern = path
+    .split('/')
+    .map((segment) =>
+      segment === '*' || segment === '**' || segment === '$'
+        ? '.*'
+        : segment.startsWith(':') || segment.startsWith('$')
+          ? '[^/]+'
+          : segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    )
+    .join('/')
+  const regex = new RegExp(`^${pattern}/?$`)
+  return (pathname) => regex.test(pathname)
+}
+
+/**
+ * The client's address. With `trustProxy` (true = one proxy, or a count), each trusted proxy
+ * appended the address it saw to `X-Forwarded-For`, so the entry that many places from the end is
+ * the client as the outermost trusted proxy saw it. Entries before that were sent by the client
+ * and are ignored. Without it, the socket's address.
+ */
+export function clientIp(event: H3Event, trustProxy: boolean | number = false): string | undefined {
+  const hops = trustProxy === true ? 1 : typeof trustProxy === 'number' ? trustProxy : 0
+  if (hops > 0) {
+    const chain = (event.req.headers.get('x-forwarded-for') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (chain.length) return chain[Math.max(0, chain.length - hops)]
+  }
   try {
     return getRequestIP(event)
   } catch {

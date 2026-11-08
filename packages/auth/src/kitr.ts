@@ -1,9 +1,12 @@
 import { definePackage } from '@kitr/core/package'
 
-/** The router call `kitr add router` writes, and the one `kitr add auth` turns it into. */
-const PLAIN_ROUTER_CALL = 'return createKitrRouter({ routeTree, app })'
-const SESSION_ROUTER_CALL = `return createKitrRouter({
-    routeTree,
+/**
+ * The router call `kitr add router` writes (`routes`, the table; `routeTree` in a project on file
+ * routes), and the one `kitr add auth` turns it into.
+ */
+const PLAIN_ROUTER_CALL = /return createKitrRouter\(\{ (routes|routeTree), app \}\)/
+const sessionRouterCall = (tree: string) => `return createKitrRouter({
+    ${tree},
     app,
     context: {
       // A live getter, so requireAuth() sees the session the auth provider restores during boot.
@@ -42,32 +45,36 @@ export default definePackage({
       'http://localhost:3333',
     )
     // requireAuth() reads the session from the router context: wire it into the default router.
-    ctx.edit('app/router.tsx', (_mod, src) =>
-      src.includes(PLAIN_ROUTER_CALL) && !src.includes('KitrRouterContext')
+    ctx.edit('app/router.tsx', (_mod, src) => {
+      const plain = src.match(PLAIN_ROUTER_CALL)
+      return plain && !src.includes('KitrRouterContext')
         ? src
             .replace(
               "import { createKitrRouter } from 'kitr/router'\n",
               "import type { Session } from 'kitr/auth'\nimport { createKitrRouter } from 'kitr/router'\nimport type { User } from '#app/abilities'\n",
             )
-            .replace(PLAIN_ROUTER_CALL, SESSION_ROUTER_CALL)
+            .replace(plain[0], sessionRouterCall(plain[1]!))
             .concat(SESSION_CONTEXT_TYPE)
-        : src,
-    )
+        : src
+    })
     ctx.agents.add(
       'auth',
       `- Guard routes with \`beforeLoad: requireAuth()\` (from \`kitr/router\`) on a layout route; permissions with \`can('projects.update', { subject })\` or \`useCan()\` in components.\n- The session is \`useSession()\` / \`useUser()\` from \`kitr/auth\`. Abilities are plain functions in \`app/abilities.ts\`, shared with the API middleware (\`kitr/auth/server\`).`,
     )
   },
   remove(ctx) {
-    ctx.edit('app/router.tsx', (_mod, src) =>
-      src.includes(SESSION_ROUTER_CALL)
+    ctx.edit('app/router.tsx', (_mod, src) => {
+      const tree = (['routes', 'routeTree'] as const).find((t) =>
+        src.includes(sessionRouterCall(t)),
+      )
+      return tree
         ? src
             .replace("import type { Session } from 'kitr/auth'\n", '')
             .replace("import type { User } from '#app/abilities'\n", '')
-            .replace(SESSION_ROUTER_CALL, PLAIN_ROUTER_CALL)
+            .replace(sessionRouterCall(tree), `return createKitrRouter({ ${tree}, app })`)
             .replace(SESSION_CONTEXT_TYPE, '')
-        : src,
-    )
+        : src
+    })
     ctx.provider.remove('@kitr/auth/provider')
     ctx.agents.remove('auth')
   },

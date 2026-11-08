@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -331,20 +331,31 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   // Every UI platform renders through TanStack Start: `ssr` streams on the server, `static`
   // prerenders every page, `spa` (and desktop/mobile shells) ship one prerendered shell. The
   // router package asks for it; `start: false` keeps the plain router plugin.
-  const routesDirectory = options.routesDirectory ?? rc.directories.routes ?? 'app/routes'
-  const generatedRouteTree =
-    options.generatedRouteTree ?? join(rc.directories.app ?? 'app', 'routeTree.gen.ts')
   plugins.push(
     needs.then(async (declared) => {
       const wantsStart = declared.some((n) => n.needs.start)
       const useStart = options.start ?? wantsStart
+      // Pages defined in the route table (`defineRoutes([router], ...)`) leave no app/routes
+      // folder. TanStack's generator still has to crawl one, so it gets a stub root under .kitr.
+      const fileRoutes = options.routesDirectory ?? rc.directories.routes ?? 'app/routes'
+      // A root file route marks a file-routes project; an empty or missing directory does not.
+      const codeRoutes =
+        !options.routesDirectory && !existsSync(resolve(root, fileRoutes, '__root.tsx'))
+      const routesDirectory = codeRoutes ? routeShim(root) : fileRoutes
+      const generatedRouteTree =
+        options.generatedRouteTree ??
+        (codeRoutes
+          ? '.kitr/routeTree.gen.ts'
+          : join(rc.directories.app ?? 'app', 'routeTree.gen.ts'))
       if (useStart) {
         const { tanstackStart } = await import('@tanstack/react-start/plugin/vite')
         const startOptions = typeof useStart === 'object' ? useStart : {}
         // Start resolves router paths relative to srcDirectory; the router plugin resolves them from the project root.
         const srcDirectory = rc.directories.app ?? 'app'
         const rel = (p: string) =>
-          p.startsWith(`${srcDirectory}/`) ? p.slice(srcDirectory.length + 1) : p
+          p.startsWith(`${srcDirectory}/`)
+            ? p.slice(srcDirectory.length + 1)
+            : `${'../'.repeat(srcDirectory.split('/').filter(Boolean).length)}${p}`
         const seo = readPrerender(root, rc.directories.config ?? 'config')
         const mode = platform?.mode ?? 'ssr'
         const modeOptions =
@@ -410,6 +421,26 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       return out
     }),
   )
+  // robots.txt from `robots` in config/seo.ts, for web builds that ship no public/robots.txt.
+  plugins.push({
+    name: 'kitr:robots',
+    apply: 'build',
+    async generateBundle() {
+      const env = (
+        this as { environment?: { name: string; config?: { publicDir?: string | false } } }
+      ).environment
+      if (env && env.name !== 'client') return
+      if (platform && platform.type !== 'web') return
+      const publicDir = env?.config?.publicDir ?? resolve(root, 'public')
+      if (publicDir && existsSync(resolve(publicDir, 'robots.txt'))) return
+      const text = await robotsFor(root, rc.directories.config ?? 'config').catch((error) => {
+        this.warn(`config/seo.ts: robots.txt not written (${(error as Error).message})`)
+        return null
+      })
+      if (text) this.emitFile({ type: 'asset', fileName: 'robots.txt', source: text })
+    },
+  })
+
   if (platform?.type === 'web' && platform.options.pwa) {
     const active = platform
     plugins.push(
@@ -590,6 +621,22 @@ function arrayBlock(src: string, key: string): string {
 }
 
 /**
+ * The robots.txt for a project: `robotsTxt()` from kitr/seo over `config/seo.ts`, or null when
+ * there is no config/seo.ts or it sets `robots: false`.
+ */
+export async function robotsFor(root: string, configDir = 'config'): Promise<string | null> {
+  const path = resolve(root, configDir, 'seo.ts')
+  if (!existsSync(path)) return null
+  const { createJiti } = await import('jiti')
+  const jiti = createJiti(resolve(root, 'package.json'))
+  const config = await jiti.import<Record<string, unknown>>(path, { default: true })
+  const seo = await jiti
+    .import<{ robotsTxt: (c: unknown) => string | null }>('kitr/seo')
+    .catch(() => jiti.import<{ robotsTxt: (c: unknown) => string | null }>('@kitr/seo'))
+  return seo.robotsTxt(config ?? {})
+}
+
+/**
  * Static read of `config/seo.ts`: `prerender: ['/a']` or `{ routes: [...], crawlLinks }` becomes
  * Start's `pages` + `prerender`, and `site.url` turns on the sitemap. No execution needed.
  */
@@ -620,4 +667,22 @@ export function readPrerender(
     prerender: { enabled: true, crawlLinks, autoSubfolderIndex: true },
     ...(host ? { sitemap: { enabled: true, host } } : {}),
   }
+}
+
+/**
+ * `.kitr/routes/__root.tsx`: the one file route a code-defined table needs, so TanStack's route
+ * generator (which Start always runs) has a tree to crawl. The router itself builds the real
+ * tree from `app/routes.ts`; nothing imports this stub. Returns the directory, project-relative.
+ */
+function routeShim(root: string): string {
+  const dir = '.kitr/routes'
+  const file = resolve(root, dir, '__root.tsx')
+  if (!existsSync(file)) {
+    mkdirSync(dirname(file), { recursive: true })
+    writeFileSync(
+      file,
+      "// Generated by kitr/vite: TanStack's route generator needs a root file route to crawl. The\n// real tree comes from app/routes.ts. Do not edit; safe to delete.\nimport { createRootRoute } from '@tanstack/react-router'\n\nexport const Route = createRootRoute()\n",
+    )
+  }
+  return dir
 }

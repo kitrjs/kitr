@@ -31,7 +31,7 @@ GET, PUT, HEAD, DELETE, OPTIONS and TRACE requests retry up to twice when ky's d
 
 ```ts
 function httpQuery<TInput = void, TOutput = unknown>(
-  client: KyInstance,
+  client: KyInstance | (() => KyInstance),
   options: {
     path: string | ((input: TInput) => string)
     key: (input: TInput) => QueryKey
@@ -43,13 +43,13 @@ function httpQuery<TInput = void, TOutput = unknown>(
 ): QueryContract<TInput, TOutput>
 ```
 
-A `GET` endpoint as a query contract. Pass it to `queryFrom`. `undefined` search params are dropped.
+A `GET` endpoint as a query contract. Pass it to `queryFrom`. `undefined` search params are dropped. Pass `client` as a function, such as `() => app.container.use('http')`, when the module loads before the app boots: it is called on each request.
 
 ## httpMutation
 
 ```ts
 function httpMutation<TInput = void, TOutput = unknown>(
-  client: KyInstance,
+  client: KyInstance | (() => KyInstance),
   options: {
     method?: 'get' | 'post' | 'put' | 'patch' | 'delete' // default 'post'
     path: string | ((input: TInput) => string)

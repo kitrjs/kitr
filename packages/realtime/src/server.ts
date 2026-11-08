@@ -9,6 +9,7 @@ import {
 import type { KitrServer } from '@kitr/server'
 import type { Peer } from 'crossws'
 import { defineWebSocketHandler } from 'h3'
+import type { RealtimeConfig, RealtimeTransport } from './config'
 import {
   type ChannelDefinition,
   type ChannelParams,
@@ -17,6 +18,7 @@ import {
   type ServerMessage,
   topicFor,
 } from './protocol'
+import { createSseServer } from './sse-server'
 
 /** Options for `createSocketServer`: the channels it serves and how it authenticates connections. */
 export interface SocketServerOptions {
@@ -144,7 +146,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
           set.add(peer)
           send(peer, { t: 'ok', id: msg.id, p: params ?? null })
         } else if (msg.t === 'msg') {
-          await channel.onMessage?.(msg.ev, msg.d, params, state.ctx)
+          await channel.onMessage?.(msg.ev, msg.d, params, state.ctx, socketServer)
         }
       } catch (error) {
         fail(peer, error, 'id' in msg ? msg.id : undefined)
@@ -194,26 +196,87 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
   return socketServer
 }
 
+/** Options for `createRealtimeServer`: the channels, plus the transport and path from `config/realtime.ts`. */
+export interface RealtimeServerOptions extends SocketServerOptions, RealtimeConfig {
+  /** SSE only: keep-alive comment interval in ms. Default 20 000. */
+  keepAlive?: number
+}
+
+/** The realtime server for whichever transport `config/realtime.ts` names: websocket or sse. */
+export interface RealtimeServer {
+  /** Which transport this server speaks. */
+  readonly transport: Exclude<RealtimeTransport, 'socket.io'>
+  /** Publish on a channel from an action, controller or job. */
+  use<C extends ChannelDefinition<any, any>>(
+    channel: C,
+    params: ChannelParams<C>,
+  ): ChannelEmitter<C>
+  /** Register the route on a kitr server: at `path`, else the `path` option, else `/ws` (websocket) or `/events` (sse). */
+  attach(server: KitrServer, path?: string): RealtimeServer
+  /** Number of open connections or streams. */
+  readonly connections: number
+}
+
+/**
+ * Creates the realtime server for the transport in `config/realtime.ts`, so switching transports
+ * there changes both ends. Pass the config straight in:
+ *
+ *   import realtimeConfig from '../config/realtime'
+ *   export const realtime = createRealtimeServer({ ...realtimeConfig, channels: [chatChannel] })
+ *   realtime.attach(server) // at realtimeConfig.path
+ *
+ * Socket.IO needs a Socket.IO `Server`, so it throws here: use `attachSocketIo` from
+ * `kitr/realtime/socket.io/server` instead.
+ */
+export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServer {
+  const transport = options.transport ?? 'websocket'
+  if (transport === 'socket.io')
+    throw new Error(
+      '[kitr/realtime] transport "socket.io": serve channels with attachSocketIo(io, { channels }) from kitr/realtime/socket.io/server',
+    )
+  const inner =
+    transport === 'sse'
+      ? createSseServer({
+          channels: options.channels,
+          authorize: options.authorize,
+          keepAlive: options.keepAlive,
+        })
+      : createSocketServer({ channels: options.channels, authorize: options.authorize })
+  const realtime: RealtimeServer = {
+    transport,
+    use: (channel, params) => inner.use(channel, params),
+    attach(server, path) {
+      inner.attach(server, path ?? options.path)
+      return realtime
+    },
+    get connections() {
+      return inner.connections
+    },
+  }
+  return realtime
+}
+
 declare module '@kitr/core' {
   interface ContainerBindings {
-    realtime: SocketServer
+    realtime: RealtimeServer
   }
 }
 
 /**
- * A provider that binds a WebSocket server as `realtime` in the container. It does not attach the
- * route: call `attach()` on the bound server yourself. `path` is accepted but not used.
+ * A provider that binds the realtime server as `realtime` in the container, for the transport and
+ * path in `config/realtime.ts` (options given here win). It does not register the route, because
+ * the provider has no server: call `app.container.use('realtime').attach(server)` after boot.
  */
-export function realtimeProvider(options: SocketServerOptions & { path?: string }): KitrProvider {
+export function realtimeProvider(options: RealtimeServerOptions): KitrProvider {
   return defineProvider({
     name: 'realtime',
     register(app) {
-      app.container.singleton('realtime', () => createSocketServer(options))
+      app.container.singleton('realtime', () =>
+        createRealtimeServer({
+          ...(app.config.has('realtime') ? app.config.get('realtime') : {}),
+          ...options,
+        }),
+      )
     },
   })
 }
-
-/** The WebSocket server factory under its transport-neutral name; same as `createSocketServer`. */
-export const createRealtimeServer = createSocketServer
-/** Alias of `SocketServer`. */
-export type RealtimeServer = SocketServer

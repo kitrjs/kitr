@@ -62,8 +62,10 @@ export default defineConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `baseUrl` | none | Prefix for every relative path. `http.get('orders')` with `baseUrl: 'https://api.acme.com/v1'` requests `https://api.acme.com/v1/orders`. |
-| `getToken` | none | Called before every request. Return a token (or a promise of one) to send it; return `null` or `undefined` to send none. |
-| `refresh` | none | Called once when a response is `401`. Return `true` when a new token is ready; the request then retries once with it. |
+| `getToken` | none | Called before every request with the container. Return a token (or a promise of one) to send it; return `null` or `undefined` to send none. |
+| `refresh` | none | Called once when a response is `401`, with the container. Return `true` when a new token is ready; the request then retries once with it. |
+
+In `config/http.ts`, `getToken` and `refresh` receive the container the client belongs to. On a server that is the request's own container, because the provider builds one `http` client per request, so `getToken: (container) => container.use('auth').getToken()` sends the token of the user being served and never another's. In the browser it is the app's container. `createHttpClient()` called directly takes the same options without the container.
 | `onUnauthorized` | none | Called with the `KitrError` whenever a request finally fails with `401`, for example to send the user to sign in. |
 | `authHeader` | `'Authorization'` | Header that carries the token. With the default the value is `Bearer <token>`; any other header gets the raw token. |
 | `retry` | `{ limit: 2, methods: ['get', 'put', 'head', 'delete', 'options', 'trace'] }` | ky's retry rule. `POST` and `PATCH` are never retried, so a write is never sent twice. |
@@ -114,7 +116,7 @@ export interface Order {
   status: 'open' | 'paid' | 'shipped'
 }
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const orderKeys = createKeys('orders')
 
 export const ordersQuery = queryFrom(
@@ -125,20 +127,26 @@ export const ordersQuery = queryFrom(
 )
 ```
 
+`http` is a function that returns the client, not the client itself. `app/routes.ts` imports this file for its loader, and the route table loads before the app boots, when the container has no `http` binding yet. `httpQuery` and `httpMutation` take either form and call the function on each request. Pass the client directly only from code that runs after boot, such as an event handler.
+
 Then show it on a page:
 
+```ts
+// app/routes.ts
+import { ordersQuery } from '#app/features/orders/queries'
+
+r.page('/orders', {
+  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
+  lazy: () => import('./pages/orders'),
+})
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { useSuspenseQuery } from 'kitr/query'
 import { ordersQuery } from '#app/features/orders/queries'
 
-export const Route = createFileRoute('/orders')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQuery.options()),
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const { data: orders } = useSuspenseQuery(ordersQuery.options())
   return (
     <ul>
@@ -239,7 +247,7 @@ import { httpQuery } from 'kitr/http'
 import { queryFrom } from 'kitr/query'
 import type { Order } from './types'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const orderKeys = createKeys('orders')
 
 export const orderQuery = queryFrom(
@@ -282,7 +290,7 @@ import { httpQuery } from 'kitr/http'
 import { queryFrom } from 'kitr/query'
 import { z } from 'zod'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const invoiceKeys = createKeys('invoices')
 
 const invoice = z.object({
@@ -321,7 +329,7 @@ import { mutationFrom } from 'kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 
 export const createOrder = mutationFrom(
   httpMutation<{ customer: string; total: number }, Order>(http, {
@@ -378,7 +386,7 @@ import { createKeys } from 'kitr/app'
 import { httpMutation } from 'kitr/http'
 import { mutationFrom } from 'kitr/query'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const projectKeys = createKeys('projects')
 
 export const deleteProject = mutationFrom(
@@ -541,7 +549,7 @@ import { app } from '#app/app'
 import { httpQuery } from 'kitr/http'
 import { queryFrom } from 'kitr/query'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 
 export const yearlyReportQuery = queryFrom(
   httpQuery<number, { year: number; revenue: number }>(http, {
@@ -664,7 +672,7 @@ import { mutationFrom, queryFrom } from 'kitr/query'
 import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const ordersKeys = createKeys('orders')
 
 export interface Orders {

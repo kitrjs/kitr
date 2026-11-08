@@ -11,16 +11,20 @@ Every `kitr/*` import maps to one `@kitr/*` package. The umbrella `kitr` package
 5. **Platforms are packages.** `kitr/web`, `kitr/server`, `kitr/desktop`, `kitr/tauri` and `kitr/mobile` each export a factory built with `definePlatform` from `@kitr/core`. The core knows the contract, never a platform.
 6. **Optional peers.** `kitr` lists every `@kitr/*` package as an optional peer. `kitr add <name>` installs the ones you use; importing an entry whose package is missing fails at build time with a clear module-not-found, not at runtime.
 
-## One exception you will hit
+## Route-table extensions are subpaths
 
-In route files, import `createFileRoute`, `createLazyFileRoute` and the root-route creators from `@tanstack/react-router` directly:
+`kitr/router/routes`, `kitr/api/routes` and `kitr/realtime/routes` each export one extension as `default`, for the list in `defineRoutes([...])`. Importing `kitr/api/routes` into `server/routes.ts` never pulls React in; importing `kitr/router/routes` into `app/routes.ts` never pulls h3 in. A package that adds route methods ships them this way and names the module in its `routes` field, so `kitr add` can keep the list current.
+
+## One exception, for projects still on file routes
+
+A project that kept `app/routes/__root.tsx` imports `createFileRoute`, `createLazyFileRoute` and the root-route creators from `@tanstack/react-router` directly:
 
 ```ts
 import { createFileRoute } from '@tanstack/react-router'
 import { Link, Outlet } from 'kitr/router'
 ```
 
-TanStack's route generator rewrites that specific import in every route file and only recognises `@tanstack/react-router` as its source. Everything else in the file comes from `kitr/router`. `kitr doctor` knows about this exception and does not flag it.
+TanStack's route generator rewrites that specific import in every route file and only recognises `@tanstack/react-router` as its source. Everything else in the file comes from `kitr/router`. `kitr doctor` knows about this exception and does not flag it. A table project has no route files, so nothing in it imports `@tanstack/react-router`.
 
 ## Reading the map
 
@@ -29,7 +33,7 @@ TanStack's route generator rewrites that specific import in every route file and
 | `kitr`, `kitr/app` | `@kitr/core` | no |
 | `kitr/env` | `@kitr/core` | no |
 | `kitr/react` | `@kitr/react` | yes |
-| `kitr/router` | `@kitr/router` | yes |
+| `kitr/router`, `kitr/router/stack` | `@kitr/router` | yes |
 | `kitr/query`, `kitr/query/provider` | `@kitr/query` | yes |
 | `kitr/http`, `kitr/http/provider` | `@kitr/http` | no (provider is framework-neutral) |
 | `kitr/forms` | `@kitr/forms` | yes |

@@ -145,3 +145,22 @@ describe('monitoringProvider', () => {
     expect(reporter.exceptions[0]?.context?.tags).toMatchObject({ environment: 'production' })
   })
 })
+
+// Regression: in development the default console reporter and `debug` both printed each report.
+describe('development console output', () => {
+  it('prints a captured error once', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const app = createApp({
+      environment: 'server',
+      mode: 'development',
+      providers: [monitoringProvider],
+      config: { monitoring: { globalHandlers: false } },
+    })
+    await app.boot()
+    app.container.use('monitoring').captureException(new Error('once'))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(
+      error.mock.calls.filter((c) => c.some((a) => (a as Error)?.message === 'once')),
+    ).toHaveLength(1)
+  })
+})

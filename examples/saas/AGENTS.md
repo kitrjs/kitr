@@ -10,9 +10,10 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: router
 
-- Routes are files in `app/routes` (TanStack Router file routes). `app/routeTree.gen.ts` is generated; never edit it.
-- In route files, import `createFileRoute` / `createLazyFileRoute` from `@tanstack/react-router` (the route generator owns that import). Everything else comes from `kitr/router`.
-- The root route (`app/routes/__root.tsx`) renders the HTML document: TanStack Start streams it on the server (web `ssr`), prerenders it (`static`) or ships one shell (`spa`, desktop, mobile). Keep it platform-neutral.
+- Routes are code: `app/routes.ts` is one `defineRoutes([router], (r) => r.root(...).page(...))` chain. `.page(path, { lazy })` adds a page, `.group(prefix, ...)` nests paths, `.layout(id, options, ...)` wraps pages without a path segment. `kitr make:page <path>` writes the page file and appends the link.
+- Page components live in `app/pages/` and export a default component (or `definePage({ component, pendingComponent })`). Loaders, `beforeLoad` and `head` go on the route options in `app/routes.ts`; read loader data with `getRouteApi('<path>')` from `kitr/router`.
+- `app/document.tsx` renders the HTML document: TanStack Start streams it on the server (web `ssr`), prerenders it (`static`) or ships one shell (`spa`, desktop, mobile). Keep it platform-neutral.
+- There is no `app/routes/` directory and no `routeTree.gen.ts`; `kitr/vite` tells Start the tree comes from `app/routes.ts`.
 
 ## kitr: logger
 
@@ -21,7 +22,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: server
 
 - Server code lives under `server/` and never imports React. Services come from the request-scoped container (`useRequestApp()`), logs from `ctx.logger`.
-- `server/main.ts` (written by the server platform) exports `server`; providers' `ready`/`shutdown` run on `server.listen()`. A web platform in `ssr` mode answers `/api/*` through the same object via `app/routes/api.$.ts`.
+- `server/main.ts` (written by the server platform) exports `server`; providers' `ready`/`shutdown` run on `server.listen()`. Endpoints and sockets come from the route table in `server/routes.ts` (`createServer({ routes })`). A web platform in the same app answers those paths through the same object via `app/server.ts` (Start's server entry asks `server.handles(request)` first).
 
 ## kitr: query
 
@@ -82,9 +83,9 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: api
 
-- Routes: `server/routes.ts` (`defineRoutes`), controllers in `server/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
+- Endpoints: `server/routes.ts` (`defineRoutes([api], ...)` with `.get/.post/.resource` from `kitr/api/routes`; realtime adds `.ws` to the same table), controllers in `server/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
 - Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.
-- The client is typed from `typeof routes.$types`; call `registerRoutes(api, routes.toJSON())` or use `kitr api:sync` to write the route table and openapi.json.
+- The client is typed from `ServerRoutes` (`typeof routes.$types`); call `registerRoutes(api, routes.toJSON())` or use `kitr api:sync` to write the route table and openapi.json.
 
 ## kitr: analytics
 
@@ -110,5 +111,5 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: platform api
 
 - `kitr dev <name>` runs server/main.ts with tsx watch; `kitr start <name>` runs the production server; tests import `server` from it and call `server.fetch(new Request(...))`, no port needed.
-- Routes live in `server/routes.ts` (`defineRoutes`), controllers in `server/controllers/`. Config comes from `config/server.ts`; the port comes from the platform options in kitrrc.ts, `PORT` or `kitr dev <name> --port`.
+- Endpoints and sockets live in `server/routes.ts` (`defineRoutes([api, realtime], ...)`), passed to `createServer({ routes })`; controllers in `server/controllers/`. Config comes from `config/server.ts`; the port comes from the platform options in kitrrc.ts, `PORT` or `kitr dev <name> --port`.
 - Never import React or browser APIs under `server/`; this entry must stay runnable without a DOM.

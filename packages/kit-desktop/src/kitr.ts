@@ -1,25 +1,14 @@
-import { type AddContext, definePackage } from '@kitr/core/package'
+import { type AddContext, definePackage, displayName } from '@kitr/core/package'
 
 const write = (ctx: AddContext, path: string, content: string) =>
   ctx.write(path, content, { overwrite: true })
-
-function displayName(name: string) {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/^example-/, '')
-    .split(/[-_.\s]+/)
-    .filter(Boolean)
-    .map((w) => w[0]!.toUpperCase() + w.slice(1))
-    .join(' ')
-}
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
   write(
     ctx,
-    'app/routes/index.tsx',
-    `import { createFileRoute } from '@tanstack/react-router'
-import { isElectron } from 'kitr/desktop/client'
+    'app/pages/home.tsx',
+    `import { isElectron } from 'kitr/desktop/client'
 import { useEffect, useState } from 'react'
 import { ipc } from '#app/ipc'
 import { Badge } from '#components/ui/badge'
@@ -27,15 +16,11 @@ import { Button } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { PageHeader } from '#components/ui/page-header'
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
-})
-
 /**
  * The same page runs in the browser (\`kitr dev site\`) and in Electron (\`kitr dev app\`).
  * \`ipc.available\` tells them apart; every call goes through the typed contract in platforms/app/ipc.ts.
  */
-function HomePage() {
+export default function HomePage() {
   const [version, setVersion] = useState<string>()
   const [file, setFile] = useState<string | null>(null)
   const [focused, setFocused] = useState(true)

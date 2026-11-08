@@ -14,6 +14,8 @@ import { Route as R404RouteImport } from './routes/404'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as DocsSlugRouteImport } from './routes/docs/$slug'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as GuidesSlugRouteImport } from './routes/guides/$slug'
 import { Route as PackagesIndexRouteImport } from './routes/packages/index'
 import { Route as PackagesNameRouteImport } from './routes/packages/$name'
 import { Route as PlatformsIndexRouteImport } from './routes/platforms/index'
@@ -44,6 +46,16 @@ const DocsIndexRoute = DocsIndexRouteImport.update({
 const DocsSlugRoute = DocsSlugRouteImport.update({
   id: '/docs/$slug',
   path: '/docs/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PackagesIndexRoute = PackagesIndexRouteImport.update({
@@ -82,9 +94,11 @@ export interface FileRoutesByFullPath {
   '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/docs/$slug': typeof DocsSlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/packages/$name': typeof PackagesNameRoute
   '/platforms/$type': typeof PlatformsTypeRoute
   '/docs/': typeof DocsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/packages/': typeof PackagesIndexRoute
   '/platforms/': typeof PlatformsIndexRoute
   '/packages/$name/$page': typeof PackagesNamePageRoute
@@ -95,9 +109,11 @@ export interface FileRoutesByTo {
   '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/docs/$slug': typeof DocsSlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/packages/$name': typeof PackagesNameRoute
   '/platforms/$type': typeof PlatformsTypeRoute
   '/docs': typeof DocsIndexRoute
+  '/guides': typeof GuidesIndexRoute
   '/packages': typeof PackagesIndexRoute
   '/platforms': typeof PlatformsIndexRoute
   '/packages/$name/$page': typeof PackagesNamePageRoute
@@ -109,9 +125,11 @@ export interface FileRoutesById {
   '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/docs/$slug': typeof DocsSlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/packages/$name': typeof PackagesNameRoute
   '/platforms/$type': typeof PlatformsTypeRoute
   '/docs/': typeof DocsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/packages/': typeof PackagesIndexRoute
   '/platforms/': typeof PlatformsIndexRoute
   '/packages/$name_/$page': typeof PackagesNamePageRoute
@@ -124,9 +142,11 @@ export interface FileRouteTypes {
     | '/404'
     | '/about'
     | '/docs/$slug'
+    | '/guides/$slug'
     | '/packages/$name'
     | '/platforms/$type'
     | '/docs/'
+    | '/guides/'
     | '/packages/'
     | '/platforms/'
     | '/packages/$name/$page'
@@ -137,9 +157,11 @@ export interface FileRouteTypes {
     | '/404'
     | '/about'
     | '/docs/$slug'
+    | '/guides/$slug'
     | '/packages/$name'
     | '/platforms/$type'
     | '/docs'
+    | '/guides'
     | '/packages'
     | '/platforms'
     | '/packages/$name/$page'
@@ -150,9 +172,11 @@ export interface FileRouteTypes {
     | '/404'
     | '/about'
     | '/docs/$slug'
+    | '/guides/$slug'
     | '/packages/$name'
     | '/platforms/$type'
     | '/docs/'
+    | '/guides/'
     | '/packages/'
     | '/platforms/'
     | '/packages/$name_/$page'
@@ -164,9 +188,11 @@ export interface RootRouteChildren {
   R404Route: typeof R404Route
   AboutRoute: typeof AboutRoute
   DocsSlugRoute: typeof DocsSlugRoute
+  GuidesSlugRoute: typeof GuidesSlugRoute
   PackagesNameRoute: typeof PackagesNameRoute
   PlatformsTypeRoute: typeof PlatformsTypeRoute
   DocsIndexRoute: typeof DocsIndexRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
   PackagesIndexRoute: typeof PackagesIndexRoute
   PlatformsIndexRoute: typeof PlatformsIndexRoute
   PackagesNamePageRoute: typeof PackagesNamePageRoute
@@ -208,6 +234,20 @@ declare module '@tanstack/react-router' {
       path: '/docs/$slug'
       fullPath: '/docs/$slug'
       preLoaderRoute: typeof DocsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/guides/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/packages/': {
@@ -260,9 +300,11 @@ const rootRouteChildren: RootRouteChildren = {
   R404Route: R404Route,
   AboutRoute: AboutRoute,
   DocsSlugRoute: DocsSlugRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
   PackagesNameRoute: PackagesNameRoute,
   PlatformsTypeRoute: PlatformsTypeRoute,
   DocsIndexRoute: DocsIndexRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
   PackagesIndexRoute: PackagesIndexRoute,
   PlatformsIndexRoute: PlatformsIndexRoute,
   PackagesNamePageRoute: PackagesNamePageRoute,

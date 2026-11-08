@@ -1,6 +1,6 @@
 # @kitr/router
 
-**Router.** Turn files in app/routes into pages, with links, loaders and guards. Web, desktop and mobile apps get it automatically.
+**Router.** Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free.
 
 ```sh
 pnpm kitr add router

@@ -166,7 +166,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
 
   const generators: Array<[string, string, string]> = [
-    ['make:route', 'reports', 'app/routes/reports.tsx'],
+    ['make:page', 'reports', 'app/pages/reports.tsx'],
     ['make:query', 'projects/list', 'app/actions/projects/list.ts'],
     ['make:mutation', 'projects/archive', 'app/actions/projects/archive.ts'],
     ['make:controller', 'invoices', 'server/controllers/invoices_controller.ts'],
@@ -331,7 +331,7 @@ describe('kitr add / remove', () => {
     expect(router()).toContain('get session()')
     kitr(dir, 'remove', 'auth', '--no-install')
     expect(router()).not.toContain('session')
-    expect(router()).toContain('createKitrRouter({ routeTree, app })')
+    expect(router()).toContain('createKitrRouter({ routes, app })')
     kitr(dir, 'add', 'auth', '--no-install')
     expect(router()).toBe(before['app/router.tsx'])
     expect(readFileSync(join(dir, 'app/env.ts'), 'utf8')).toMatch(/VITE_API_URL:/)
@@ -366,6 +366,27 @@ describe('kitr add / remove', () => {
     kitr(dir, 'platforms', 'remove', 'admin')
     expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).not.toContain('admin')
   })
+
+  // Regression: `kitr remove desktop` left the provider, the platforms entry and the import.
+  it.each([
+    ['desktop', 'desktop'],
+    ['tauri', 'tauri'],
+  ])(
+    'remove %s takes the platform, its import and its provider out of kitrrc.ts',
+    (example, pkg) => {
+      const project = copyExample(example)
+      try {
+        expect(readFileSync(join(project, 'kitrrc.ts'), 'utf8')).toContain(`@kitr/${pkg}/provider`)
+        kitr(project, 'remove', pkg, '--no-install')
+        const rc = readFileSync(join(project, 'kitrrc.ts'), 'utf8')
+        expect(rc).not.toContain(`@kitr/${pkg}/provider`)
+        expect(rc).not.toContain(`kitr/${pkg}'`)
+        expect(rc).not.toMatch(new RegExp(`\\b${pkg}\\(`))
+      } finally {
+        remove(project)
+      }
+    },
+  )
 
   // Regression: the platform name was required, so `kitr add server` alone threw.
   it('add <type> without a name uses the usual name for that type', () => {

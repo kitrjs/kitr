@@ -168,7 +168,10 @@ interface FlagsConfig {
   definitions?: FlagDefinitions;
   /** First provider with an answer wins. */
   providers?: FlagsProvider[];
-  /** Seconds a resolved snapshot stays fresh in the browser. Declared for a coming refresh; not read yet. */
+  /**
+   * Seconds a resolved snapshot stays fresh in the browser. After that the client resolves again,
+   * with the context of its last `resolve()`, so a flag turned off reaches open tabs. Default: never.
+   */
   ttl?: number;
 }
 ```

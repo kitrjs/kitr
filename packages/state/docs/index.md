@@ -140,14 +140,14 @@ export const [useOrderDraft, OrderDraftProvider, orderDraftStore] =
 
 Then use it from any two components, however far apart:
 
-```tsx
-// app/routes/orders/new.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { useOrderDraft } from '#app/stores/order-draft'
+```ts
+// app/routes.ts
+r.page('/orders/new', { lazy: () => import('./pages/orders/new') })
+```
 
-export const Route = createFileRoute('/orders/new')({
-  component: NewOrderPage,
-})
+```tsx
+// app/pages/orders/new.tsx
+import { useOrderDraft } from '#app/stores/order-draft'
 
 function AddLicense() {
   const addLine = useOrderDraft((s) => s.addLine)
@@ -163,7 +163,7 @@ function DraftCount() {
   return <p>{count} items in this order</p>
 }
 
-function NewOrderPage() {
+export default function NewOrderPage() {
   return (
     <main>
       <DraftCount />
@@ -421,20 +421,26 @@ export const [useImportWizard, ImportWizardProvider, importWizardStore] =
 
 `StoreProvider` takes `initialState`, which is merged over the creator's state when the provider first mounts. Use it to start a store from data a loader fetched, such as the customer of the order Linus is editing:
 
-```tsx
-// app/routes/orders/$orderId.edit.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { OrderDraftProvider } from '#app/stores/order-draft'
+```ts
+// app/routes.ts
 import { orderQuery } from '#app/features/orders/queries'
-import { DraftEditor } from '#app/features/orders/draft-editor'
 
-export const Route = createFileRoute('/orders/$orderId/edit')({
+r.page('/orders/$orderId/edit', {
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderQuery.options(params.orderId)),
-  component: EditOrderPage,
+  lazy: () => import('./pages/orders/orderId/edit'),
 })
+```
 
-function EditOrderPage() {
-  const order = Route.useLoaderData()
+```tsx
+// app/pages/orders/orderId/edit.tsx
+import { OrderDraftProvider } from '#app/stores/order-draft'
+import { DraftEditor } from '#app/features/orders/draft-editor'
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/$orderId/edit')
+
+export default function EditOrderPage() {
+  const order = route.useLoaderData()
   return (
     <OrderDraftProvider initialState={{ customer: order.customer }}>
       <DraftEditor />
@@ -455,17 +461,25 @@ On the server, one process renders pages for many users at once. A store created
 If a page renders on the server (a `web` platform in `ssr` or `static` mode), wrap the part of the tree that reads the store:
 
 ```tsx
-// app/routes/__root.tsx
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { OrderDraftProvider } from '#app/stores/order-draft'
 
-export const Route = createRootRoute({
-  component: () => (
-    <OrderDraftProvider>
-      <Outlet />
-    </OrderDraftProvider>
-  ),
-})
+export function RootDocument() {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <OrderDraftProvider>
+          <Outlet />
+        </OrderDraftProvider>
+        <Scripts />
+      </body>
+    </html>
+  )
+}
 ```
 
 Without a provider, a server render fails with:
@@ -476,20 +490,7 @@ Without a provider, a server render fails with:
 
 In a client-only app (`spa` mode, desktop, mobile) you can skip the provider entirely.
 
-A saved store renders its initial state on the server, because the server cannot read the browser's storage, and its saved state in the browser. React reports a hydration mismatch for the elements that differ. Render saved values only after the component mounts:
-
-```tsx
-// app/features/orders/draft-badge.tsx
-import { useEffect, useState } from 'react'
-import { useOrderDraft } from '#app/stores/order-draft'
-
-export function DraftBadge() {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  const count = useOrderDraft((s) => s.lines.length)
-  return <span>{mounted && count > 0 ? `${count} in draft` : null}</span>
-}
-```
+A saved store renders its initial state on the server, because the server cannot read the browser's storage. The browser's first render, the one React hydrates, uses that same state (plus any `<StoreProvider initialState>`), so React sees no mismatch. The saved state follows straight after, in a second render, with no extra code from you.
 
 ## Use plain Zustand
 

@@ -352,6 +352,16 @@ export default defineKitrConfig({
     expect(read()).toMatch(/api: server\(\)/)
   })
 
+  it('drops the factory import with the last platform that calls it', () => {
+    const { ctx, read } = rcProject()
+    writeRcPlatform(ctx, 'site', web, {})
+    writeRcPlatform(ctx, 'admin', web, {})
+    expect(removeRcPlatform(ctx, 'site')).toBeUndefined()
+    expect(read()).toMatch(/import \{ web \} from 'kitr\/web'/)
+    expect(removeRcPlatform(ctx, 'admin')).toBe('web')
+    expect(read()).not.toMatch(/kitr\/web/)
+  })
+
   it('creates kitrrc.ts when there is none', () => {
     const dir = mkdtempSync(join(tmpdir(), 'kitr-platforms-'))
     dirs.push(dir)

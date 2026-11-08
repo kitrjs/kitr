@@ -67,6 +67,25 @@ describe('createKitrRouter', () => {
     expect(router.options.defaultPreload).toBe('intent')
   })
 
+  // Regression: `ssr` in config/seo.ts was read by nothing.
+  it('applies ssr from config/seo.ts to routes that set none', () => {
+    const root = createRootRouteWithContext<KitrRouterContext>()({ component: () => <Outlet /> })
+    const plain = createRoute({ getParentRoute: () => root, path: '/', component: () => null })
+    const own = createRoute({
+      getParentRoute: () => root,
+      path: '/own',
+      ssr: true,
+      component: () => null,
+    })
+    const app = createApp({ config: { seo: { ssr: 'data-only' } } })
+    createKitrRouter({ routeTree: root.addChildren([plain, own]), app })
+    expect(plain.options.ssr).toBe('data-only')
+    expect(own.options.ssr).toBe(true)
+    const untouched = createRoute({ getParentRoute: () => root, path: '/x', component: () => null })
+    createKitrRouter({ routeTree: root.addChildren([untouched]), app: createApp() })
+    expect(untouched.options.ssr).toBeUndefined()
+  })
+
   it('renders the default not-found page', async () => {
     await mount('/nowhere')
     expect(await screen.findByText('Page not found')).toBeTruthy()
@@ -132,5 +151,48 @@ describe('createKitrRouter', () => {
       await router.load()
     })
     expect(hub.log).toHaveBeenCalledWith('router', expect.stringMatching(/\/$/), expect.any(Object))
+  })
+})
+
+describe('router context bindings', () => {
+  it('exposes the auth session and the platform service lazily from the container', async () => {
+    const app = createApp()
+    let session: { user: unknown } | null = null
+    app.container.value('auth', {
+      get session() {
+        return session
+      },
+    } as any)
+    app.container.value('platform', { name: 'site', type: 'web' } as any)
+    await app.boot()
+    const router = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const ctx = router.options.context as any
+    expect(ctx.session).toBeNull()
+    session = { user: { id: 1 } }
+    expect(ctx.session).toEqual({ user: { id: 1 } })
+    expect(ctx.platform).toEqual({ name: 'site', type: 'web' })
+  })
+
+  it('leaves session and platform undefined without those packages, and keeps an explicit session', async () => {
+    const app = createApp()
+    await app.boot()
+    const plain = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    expect((plain.options.context as any).session).toBeUndefined()
+    expect((plain.options.context as any).platform).toBeUndefined()
+    const explicit = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+      context: { session: { user: 'me' } },
+    })
+    expect((explicit.options.context as any).session).toEqual({ user: 'me' })
   })
 })

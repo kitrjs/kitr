@@ -28,15 +28,15 @@ Seven files: `package.json` (`typecheck`, `lint` and `kitr` scripts; `kitr` and 
 
 ### app
 
-A single-page app against an API you already have. `app/routes/__root.tsx` renders the theme and the app shell, `app/routes/index.tsx` is the home page, `config/http.ts` points at `VITE_API_URL`, `config/auth.ts` uses the token adapter, and `mocks` answers requests in development when `VITE_MOCKS=true`. The components come from kitr's registry and live in `app/components/ui`, yours to edit. The [dashboard guide](https://kitr.dev/docs/dashboard) builds on this kit.
+A single-page app against an API you already have. `app/document.tsx` renders the theme and the app shell, `app/routes.ts` lists the pages and `app/pages/home.tsx` is the home page, `config/http.ts` points at `VITE_API_URL`, `config/auth.ts` uses the token adapter, and `mocks` answers requests in development when `VITE_MOCKS=true`. The components come from kitr's registry and live in `app/components/ui`, yours to edit. The [dashboard guide](https://kitr.dev/guides/dashboard) builds on this kit.
 
 ### fullstack
 
-The app kit rendered through TanStack Start, with an API server beside it: `server/main.ts`, `server/routes.ts` and a health controller from `api`, `app/actions/` from `actions`, `app/channels/` from `realtime`, and `config/seo.ts` for heads and the prerender list. `kitr dev` runs both platforms; `kitr dev site` runs the UI alone. The [full-stack guide](https://kitr.dev/docs/fullstack) walks through it.
+The app kit rendered through TanStack Start, with an API server beside it: `server/main.ts`, `server/routes.ts` and a health controller from `api`, `app/actions/` from `actions`, `app/channels/` from `realtime`, and `config/seo.ts` for heads and the prerender list. `kitr dev` runs both platforms; `kitr dev site` runs the UI alone. The [full-stack guide](https://kitr.dev/guides/fullstack-app) walks through it.
 
 ### server
 
-A backend with no React anywhere in the dependency graph: an h3 server with the kitr lifecycle, Adonis-style routes and controllers, `config/db.ts` for whichever ORM you connect, typed channels and a Vitest setup with `createTestClient`. See [pure-backend.md](pure-backend.md).
+A backend with no React anywhere in the dependency graph: an h3 server with the kitr lifecycle, Adonis-style routes and controllers, `config/db.ts` for whichever ORM you connect, typed channels and a Vitest setup with `createTestClient`. The [API server guide](https://kitr.dev/guides/api-server) walks through it.
 
 ## Preset kits
 
@@ -53,15 +53,15 @@ The presets are the base kits plus a small, real application. `examples/` in the
 
 ### saas
 
-`app/routes/__root.tsx` carries the theme script and the providers; `app/routes/_app.tsx` is the layout `requireAuth()` guards, with `_app/index.tsx` (the dashboard) and `_app/projects.tsx` (a `DataTable` over `projects.list`, a create form over `projects.create`). `server/controllers/auth_controller.ts` signs users in and out against an in-memory session store; `server/controllers/projects_controller.ts` is a resource controller with `static validation`. `app/features/projects/schema.ts` is the one zod schema the form, the controller and the test share. `app/api/client.ts` is the typed client with its route table; `kitr api:sync` rewrites the table and `openapi.json`. `test/api.test.ts` boots the server and calls it through `createTestClient`.
+`app/document.tsx` carries the theme script and the providers; `app/routes.ts` declares `/sign-in` and the `_app` layout `requireAuth()` guards, with `app/pages/overview.tsx` (the dashboard) and `app/pages/projects.tsx` (a `DataTable` over `projects.list`, a create form over `projects.create`). `server/routes.ts` is the server table (`defineRoutes([api], ...)`). `server/controllers/auth_controller.ts` signs users in and out against an in-memory session store; `server/controllers/projects_controller.ts` is a resource controller with `static validation`. `app/features/projects/schema.ts` is the one zod schema the form, the controller and the test share. `app/api/client.ts` is the typed client with its route table; `kitr api:sync` rewrites the table and `openapi.json`. `test/api.test.ts` boots the server and calls it through `createTestClient`.
 
 ### site
 
-`config/seo.ts` lists the prerendered paths and the sitemap; `app/routes/index.tsx`, `pricing.tsx` and `blog/index.tsx` render on the server with `seo()` heads. `app/locales/en.ts` and `de.ts` hold the strings, `app/locale.tsx` switches them and stores the choice through `app/storage.ts`. `server/controllers/newsletter_controller.ts` takes the sign-up form, validated by `app/features/newsletter/schema.ts`, and `test/newsletter.test.ts` covers it.
+`config/seo.ts` lists the prerendered paths and the sitemap; `app/routes.ts` declares `/`, `/pricing` and the `/blog` group with `seo()` heads, and `app/pages/` holds their components. `app/locales/en.ts` and `de.ts` hold the strings, `app/locale.tsx` switches them and stores the choice through `app/storage.ts`. `server/controllers/newsletter_controller.ts` takes the sign-up form, validated by `app/features/newsletter/schema.ts`, and `test/newsletter.test.ts` covers it.
 
 ### realtime
 
-`app/channels/chat.ts` defines the channel and its events with cache effects; `server/realtime.ts` publishes to it from `server/controllers/messages_controller.ts`, and `server/main.ts` mounts both. `app/features/chat/queries.ts` lists and sends messages; `app/routes/index.tsx` is the room, with the room name in the URL and the display name kept in `app/storage.ts`. `config/realtime.ts` picks the transport (`ws` by default; `socket.io` and `sse` are one option away). `test/messages.test.ts` posts a message through the API and reads it back.
+`app/channels/chat.ts` defines the channel and its events with cache effects; `server/routes.ts` serves it with `.ws('/ws', { channels: [chatChannel] })` beside the endpoints, and `server/controllers/messages_controller.ts` emits through `app.container.use('realtime')`. `app/features/chat/queries.ts` lists and sends messages; `app/pages/chat.tsx` is the room, with the room name in the URL and the display name kept in `app/storage.ts`. `config/realtime.ts` picks the transport (`ws` by default; `socket.io` and `sse` are one option away). `test/messages.test.ts` posts a message through the API and reads it back.
 
 ### desktop, tauri and mobile
 
@@ -86,7 +86,7 @@ export default definePackage({
     packages: ['http', 'forms', 'tailwind', 'theme', 'auth', { name: '@acme/stripe', answers: { mode: 'hosted' } }],
     components: ['button', 'form', 'app-shell'],
     files(ctx, projectName) {
-      ctx.write('app/routes/index.tsx', `export default () => <h1>${projectName}</h1>\n`, { overwrite: true })
+      ctx.write('app/pages/home.tsx', `export default () => <h1>${projectName}</h1>\n`, { overwrite: true })
       ctx.scripts.add('deploy', 'acme deploy')
     },
   },

@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/realtime`, `kitr/realtime/client`, `kitr/realtime/server`, `kitr/realtime/socket.io`, `kitr/realtime/socket.io/server`, `kitr/realtime/sse`, `kitr/realtime/sse/server`, `kitr/realtime/react`, read from the published type definitions. The [guide](/packages/realtime) shows them in use.
+Every export of `kitr/realtime`, `kitr/realtime/client`, `kitr/realtime/routes`, `kitr/realtime/server`, `kitr/realtime/socket.io`, `kitr/realtime/socket.io/server`, `kitr/realtime/sse`, `kitr/realtime/sse/server`, `kitr/realtime/react`, read from the published type definitions. The [guide](/packages/realtime) shows them in use.
 
 ## kitr/realtime
 
@@ -132,8 +132,11 @@ interface ChannelDefinition<TParams = void, TEvents extends Record<string, Chann
   events: TEvents;
   /** Server side: may this connection subscribe? `ctx` is what `authorize` on the server returned. */
   authorize?: (params: TParams, ctx: unknown) => boolean | Promise<boolean>;
-  /** Server side: handle a client-sent message on this channel. */
-  onMessage?: (event: string, data: unknown, params: TParams, ctx: unknown) => void | Promise<void>;
+  /**
+   * Server side: handle a client-sent message on this channel. `realtime` is the server that
+   * received it, to emit back: `realtime.use(channel, params).emit('typing', data)`.
+   */
+  onMessage?: (event: string, data: unknown, params: TParams, ctx: unknown, realtime: RealtimeEmitter) => void | Promise<void>;
 }
 ```
 
@@ -175,17 +178,29 @@ A channel bound to a transport, as `channel()` returns it.
 ```ts
 interface RealtimeConfig {
   /** `websocket` (default, crossws/partysocket), `socket.io` (rooms, adapters) or `sse` (one-way events over HTTP, any host). */
-  transport?: RealtimeTransport$1;
+  transport?: RealtimeTransport;
   /** Client URL. Default: same origin at `path`. */
   url?: string;
-  /** Server path of the upgrade route (websocket), the SSE stream, or the Socket.IO path. Default `/ws`, `/events` for sse. */
+  /** Server path of the upgrade route (websocket), the SSE stream, or the Socket.IO path. Default `/ws`, `/events` for sse. Read by both `createRealtimeClient` and `createRealtimeServer`. */
   path?: string;
-  /** Heartbeat interval in ms (client pings). Default 25 000; 0 disables. Not read by the built-in clients yet. */
+  /** WebSocket only: client ping interval in ms; a ping left unanswered by the next one reconnects. Default 25 000; 0 disables. */
   heartbeat?: number;
 }
 ```
 
-The shape of `config/realtime.ts`: which transport the client uses and where it connects.
+The shape of `config/realtime.ts`: which transport both ends use and where they meet.
+
+### RealtimeEmitter
+
+```ts
+interface RealtimeEmitter {
+  use(channel: ChannelDefinition<any, any>, params: any): {
+    emit(event: any, data?: any): void;
+  };
+}
+```
+
+The least every realtime server (WebSocket, SSE, Socket.IO) offers a channel's `onMessage`.
 
 ### SocketClientOptions
 
@@ -203,6 +218,11 @@ interface SocketClientOptions {
   };
   /** Called for every server error that isn't tied to a subscription. */
   onError?: (error: KitrErrorShape) => void;
+  /**
+   * Ping interval in ms while open. A connection that has not answered the previous ping by the
+   * next one is treated as dead and reconnected. Default 25 000; 0 disables.
+   */
+  heartbeat?: number;
 }
 ```
 
@@ -316,7 +336,7 @@ Alias: the transport interface every realtime client implements.
 ### RealtimeTransportName
 
 ```ts
-type RealtimeTransport$1 = 'websocket' | 'socket.io' | 'sse';
+type RealtimeTransportName = 'websocket' | 'socket.io' | 'sse';
 ```
 
 Which transport carries channel traffic: native WebSocket, Socket.IO, or Server-Sent Events.
@@ -414,6 +434,11 @@ interface SocketClientOptions {
   };
   /** Called for every server error that isn't tied to a subscription. */
   onError?: (error: KitrErrorShape) => void;
+  /**
+   * Ping interval in ms while open. A connection that has not answered the previous ping by the
+   * next one is treated as dead and reconnected. Default 25 000; 0 disables.
+   */
+  heartbeat?: number;
 }
 ```
 
@@ -463,7 +488,95 @@ type SocketStatus = 'connecting' | 'open' | 'closed';
 
 The connection state a transport reports: connecting, open or closed.
 
+## kitr/realtime/routes
+
+### ws
+
+```ts
+const ws: {
+  readonly key: "ws";
+  readonly kinds: readonly [
+    "ws"
+  ];
+  readonly methods: {
+    readonly ws: (this: AnyRouteTable, path: string, options: SocketServerOptions) => AnyRouteTable;
+    readonly sse: (this: AnyRouteTable, path: string, options: SseServerOptions) => AnyRouteTable;
+  };
+  readonly targets: {
+    readonly h3: (entries: RouteEntry[], server: KitrServer) => MountedSockets;
+  };
+};
+```
+
+The realtime extension: `.ws` and `.sse` on the route table, mounted by
+`createServer({ routes })`. No React: safe in a pure backend.
+
+```ts
+import { defineRoutes } from 'kitr/app'
+import ws from 'kitr/realtime/routes'
+export const routes = defineRoutes([ws], (r) => r.ws('/ws', { channels: [chatChannel] }))
+```
+
+### SocketRouteType
+
+```ts
+interface SocketRouteType<Transport extends 'websocket' | 'sse' = 'websocket' | 'sse', Path extends string = string, C extends ChannelDefinition<any, any> = ChannelDefinition<any, any>> {
+  kind: 'ws';
+  transport: Transport;
+  path: Path;
+  /** The union of channel definitions served on this path. */
+  channels: C;
+}
+```
+
+The type carried per socket route into `$types`.
+
+### SseRouteOptions
+
+```ts
+interface SseRouteOptions<C extends readonly ChannelDefinition<any, any>[]> extends Omit<SseServerOptions, 'channels'> {
+  channels: C;
+}
+```
+
+Options for `.sse(path, options)`: the channels, the stream authorizer and the keep-alive.
+
+### WsRouteOptions
+
+```ts
+interface WsRouteOptions<C extends readonly ChannelDefinition<any, any>[]> extends Omit<SocketServerOptions, 'channels'> {
+  channels: C;
+}
+```
+
+Options for `.ws(path, options)`: the channels and the upgrade authorizer.
+
+### MountedSockets
+
+```ts
+type MountedSockets = Record<string, SocketServer | SseServer>;
+```
+
+What the `h3` target returns: the realtime servers by path.
+
 ## kitr/realtime/server
+
+### createRealtimeServer
+
+```ts
+function createRealtimeServer(options: RealtimeServerOptions): RealtimeServer;
+```
+
+Creates the realtime server for the transport in `config/realtime.ts`, so switching transports
+there changes both ends. Pass the config straight in:
+
+```ts
+import realtimeConfig from '../config/realtime'
+export const realtime = createRealtimeServer({ ...realtimeConfig, channels: [chatChannel] })
+realtime.attach(server) // at realtimeConfig.path
+```
+Socket.IO needs a Socket.IO `Server`, so it throws here: use `attachSocketIo` from
+`kitr/realtime/socket.io/server` instead.
 
 ### createSocketServer
 
@@ -477,21 +590,12 @@ Attach it to a kitr server with `attach(server, path)`; emit with `use(channel, 
 ### realtimeProvider
 
 ```ts
-function realtimeProvider(options: SocketServerOptions & {
-  path?: string;
-}): KitrProvider;
+function realtimeProvider(options: RealtimeServerOptions): KitrProvider;
 ```
 
-A provider that binds a WebSocket server as `realtime` in the container. It does not attach the
-route: call `attach()` on the bound server yourself. `path` is accepted but not used.
-
-### createRealtimeServer
-
-```ts
-const createRealtimeServer: typeof createSocketServer;
-```
-
-The WebSocket server factory under its transport-neutral name; same as `createSocketServer`.
+A provider that binds the realtime server as `realtime` in the container, for the transport and
+path in `config/realtime.ts` (options given here win). It does not register the route, because
+the provider has no server: call `app.container.use('realtime').attach(server)` after boot.
 
 ### ChannelEmitter
 
@@ -513,6 +617,34 @@ interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
 ```
 
 Publishes events to every subscriber of one channel topic, as `server.use(channel, params)` returns it.
+
+### RealtimeServer
+
+```ts
+interface RealtimeServer {
+  /** Which transport this server speaks. */
+  readonly transport: Exclude<RealtimeTransport, 'socket.io'>;
+  /** Publish on a channel from an action, controller or job. */
+  use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): ChannelEmitter<C>;
+  /** Register the route on a kitr server: at `path`, else the `path` option, else `/ws` (websocket) or `/events` (sse). */
+  attach(server: KitrServer, path?: string): RealtimeServer;
+  /** Number of open connections or streams. */
+  readonly connections: number;
+}
+```
+
+The realtime server for whichever transport `config/realtime.ts` names: websocket or sse.
+
+### RealtimeServerOptions
+
+```ts
+interface RealtimeServerOptions extends SocketServerOptions, RealtimeConfig {
+  /** SSE only: keep-alive comment interval in ms. Default 20 000. */
+  keepAlive?: number;
+}
+```
+
+Options for `createRealtimeServer`: the channels, plus the transport and path from `config/realtime.ts`.
 
 ### SocketServer
 
@@ -543,14 +675,6 @@ interface SocketServerOptions {
 ```
 
 Options for `createSocketServer`: the channels it serves and how it authenticates connections.
-
-### RealtimeServer
-
-```ts
-type RealtimeServer = SocketServer;
-```
-
-Alias of `SocketServer`.
 
 ## kitr/realtime/socket.io
 
@@ -706,7 +830,7 @@ over POST. Runs anywhere h3 runs, including hosts without WebSocket upgrades.
 function sseProvider(options: SseServerOptions): KitrProvider;
 ```
 
-A provider that binds an SSE server as `realtime` in the container. It does not attach the route.
+A provider that binds an SSE realtime server as `realtime` in the container. It does not attach the route.
 
 ### SseServer
 

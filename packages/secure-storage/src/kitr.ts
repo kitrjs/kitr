@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add secure-storage`: tokens and secrets in the OS vault on mobile and desktop, AES-GCM in the browser. */
 export default definePackage({
   name: 'secure-storage',
+  requires: ['storage'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/secure-storage/provider')
     ctx.config(

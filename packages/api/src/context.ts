@@ -97,6 +97,8 @@ export async function createHttpContext(
     headers: event.req.headers,
     header: (name) => event.req.headers.get(name),
     ip: () => {
+      // The kitr server works it out once per request, honouring `trustProxy`.
+      if (kitr && 'ip' in kitr) return kitr.ip
       try {
         return getRequestIP(event)
       } catch {

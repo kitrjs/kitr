@@ -82,7 +82,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 | Option | Default | Description |
 | --- | --- | --- |
 | `adapter` | required | Where sessions come from: `tokenAdapter`, `betterAuthAdapter` or `customAdapter`. See "Adapters". |
-| `signInPath` | `'/sign-in'` | Documents your sign-in page. The router guard does not read it; pass the path to `requireAuth({ to })` when it differs from `/sign-in`. |
+| `signInPath` | `'/sign-in'` | Your sign-in page. `requireAuth()` sends anonymous visitors here, unless you pass it its own `to`. |
 | `eager` | `true` | Restore the session while the app boots, before the first render. `false` waits until you call `auth.load()`. |
 
 | Variable | Used for |
@@ -126,23 +126,27 @@ Render `<AccountMenu />` in your layout. Before sign-in it shows "Sign in"; afte
 
 Call `auth.signIn(credentials)` with whatever your adapter expects. It resolves with the new session and throws when the credentials are wrong:
 
-```tsx
-// app/routes/sign-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { useAuth } from 'kitr/auth'
-import { useNavigate } from 'kitr/router'
-import { type FormEvent, useState } from 'react'
-import type { User } from '#app/abilities'
-
-export const Route = createFileRoute('/sign-in')({
+```ts
+// app/routes.ts
+r.page('/sign-in', {
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
-  component: SignInPage,
+  lazy: () => import('./pages/sign-in'),
 })
+```
 
-function SignInPage() {
-  const { redirect } = Route.useSearch()
+```tsx
+// app/pages/sign-in.tsx
+import { useAuth } from 'kitr/auth'
+import { getRouteApi, useNavigate } from 'kitr/router'
+import { type FormEvent, useState } from 'react'
+import type { User } from '#app/abilities'
+
+const route = getRouteApi('/sign-in')
+
+export default function SignInPage() {
+  const { redirect } = route.useSearch()
   const navigate = useNavigate()
   const auth = useAuth<User, { email: string; password: string }>()
   const [error, setError] = useState<string | null>(null)
@@ -443,11 +447,11 @@ import type { Session } from 'kitr/auth'
 import { createKitrRouter } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
   return createKitrRouter({
-    routeTree,
+    routes,
     app,
     context: {
       // A live getter, so requireAuth() sees the session the auth provider restores during boot.
@@ -474,39 +478,111 @@ declare module '@kitr/router' {
 
 Then guard a layout route. Every page under `_app` needs a signed-in user:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { requireAuth } from 'kitr/router'
 
-export const Route = createFileRoute('/_app')({
+r.layout('_app', {
   beforeLoad: requireAuth(),
-  component: () => <Outlet />,
-})
+}, (app) => app.page('/projects', { lazy: () => import('./pages/projects') }))
 ```
 
 An anonymous visitor to `/projects` goes to `/sign-in`, with the `redirect` search parameter set to `/projects`. The sign-in page above sends them back after they sign in. `requireAuth({ to: '/login', redirectParam: 'next' })` changes the path and the parameter name; `redirectParam: false` leaves the parameter off.
 
 The router may copy its context object when it is created, which reads the getter once. When the session changes after the router exists, read it from the container in the guard so it is always current:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import type { Session } from 'kitr/auth'
 import { requireAuth } from 'kitr/router'
 import type { User } from '#app/abilities'
 
-export const Route = createFileRoute('/_app')({
+r.layout('_app', {
   beforeLoad: async ({ context, location }) => {
     await context.app.boot()
     const session = context.app.container.use('auth').session as Session<User>
     return requireAuth()({ context: { session }, location })
   },
-  component: () => <Outlet />,
-})
+}, (app) => app.page('/projects', { lazy: () => import('./pages/projects') }))
 ```
 
 The `saas` kit uses this form. With tokens in `localStorage` the server can't see the session, so run guarded routes on the client only, for example with `ssrRoute(false)` from [SEO](/packages/seo).
+
+## Render by auth state on one URL
+
+Some pages exist for everyone but look different signed in: the home page is a landing for guests and a feed for members. A redirect to `/sign-in` is the wrong tool there; `<Authed>`, `<Guest>` and `authBranch()` render by the live session instead, on the same URL, so deep links, the back button and crawlers see one route:
+
+```ts
+// app/routes.ts
+r.page('/', { lazy: () => import('./pages/home') })
+```
+
+```tsx
+// app/pages/home.tsx
+import { authBranch } from 'kitr/auth'
+import { Feed } from '#app/components/feed'
+import { Landing } from '#app/components/landing'
+
+export default authBranch({ authed: Feed, guest: Landing })
+```
+
+```tsx
+// app/components/comment-box.tsx
+import { Authed, Guest } from 'kitr/auth'
+import { Link } from '@tanstack/react-router'
+
+export function CommentBox() {
+  return (
+    <>
+      <Authed>
+        <textarea placeholder="Write a comment" />
+      </Authed>
+      <Guest>
+        <Link to="/sign-in">Sign in to comment</Link>
+      </Guest>
+    </>
+  )
+}
+```
+
+Both components take a `fallback` for the other state. They re-render on sign-in and sign-out, so a guest who signs in from a sheet sees the member view behind it at once. Keep `requireAuth()` for pages that must not render at all without a user; use these for pages that serve both.
+
+## Cookies on the web, tokens in native shells
+
+An SSR web app wants a cookie session: the server reads it on the first request and the page renders signed in. A phone or desktop shell has no cookie jar worth trusting across restarts and wants a bearer token in secure storage. One config serves both by picking the adapter per platform at build time:
+
+```ts
+// config/auth.ts
+import { betterAuthAdapter, defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { forPlatform } from 'kitr/platform'
+import { authClient } from '#app/auth-client'
+
+export default defineConfig({
+  adapter: forPlatform({
+    // Web builds: the Better Auth cookie session, read on the server too.
+    web: betterAuthAdapter(authClient),
+    // Native shells: a bearer token the API issues, kept across restarts.
+    default: tokenAdapter({
+      storage: localStorageTokens('acme:token'),
+      fetchUser: async (token) => {
+        const response = await fetch('https://api.acme.com/me', {
+          headers: { authorization: `Bearer ${token}` },
+        })
+        return response.ok ? response.json() : null
+      },
+      signIn: async (credentials) => {
+        const response = await fetch('https://api.acme.com/sign-in', {
+          method: 'POST',
+          body: JSON.stringify(credentials),
+        })
+        return response.json()
+      },
+    }),
+  }),
+})
+```
+
+`forPlatform()` resolves from `KITR_PLATFORM_TYPE` when the bundle is built, so the phone bundle never contains the cookie adapter and the web bundle never contains the token one. On the server side, `kitr/auth/server` middleware accepts both a cookie and a bearer header, so the same API serves every build. Swap `localStorageTokens()` for a storage backed by `kitr/secure-storage` to keep the token in the OS keychain.
 
 ## Define permissions
 
@@ -590,15 +666,19 @@ Grace sees "Edit project" on her own projects only; Ada sees both buttons everyw
 
 `can()` from [Router](/packages/router) blocks a page for users without an ability. It reads `context.session` like `requireAuth()`:
 
-```tsx
-// app/routes/_app/invoices.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { can } from 'kitr/router'
 
-export const Route = createFileRoute('/_app/invoices')({
+app.page('/invoices', {
   beforeLoad: can('invoices.view'),
-  component: () => <h1>Invoices</h1>,
+  lazy: () => import('./pages/invoices'),
 })
+```
+
+```tsx
+// app/pages/invoices.tsx
+export default () => <h1>Invoices</h1>
 ```
 
 Grace gets the route's error screen with a `FORBIDDEN` error, `Missing permission "invoices.view"`. Pass `{ to: '/' }` to redirect instead, or `{ subject }` to check against one record. Don't confuse it with `can` from `kitr/auth/server`, which is API middleware.
@@ -971,4 +1051,4 @@ With [Devtools](/packages/devtools) installed, the Auth panel shows the session 
 - [API routes](/packages/api): the routes `authMiddleware` protects
 - [HTTP](/packages/http): sending the token and refreshing on `401`
 - [Better Auth documentation](https://www.better-auth.com/docs)
-- [Building a full-stack app](/docs/fullstack)
+- [Build a full-stack app](/guides/fullstack-app)

@@ -26,7 +26,7 @@ What `kitr add` does:
 - Adds `() => import('@kitr/native/provider')` to `providers` in `kitrrc.ts`.
 - Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
 
-It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It needs no other kitr package: the web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
+It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It adds [platform](/packages/platform) first when the project lacks it. The web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
 
 ```sh
 kitr add native --dry-run
@@ -84,17 +84,20 @@ export function CopyInvoiceLink({ invoiceId }: { invoiceId: string }) {
 
 Render it on the invoice page:
 
+```ts
+// app/routes.ts
+r.page('/invoices/$invoiceId', { lazy: () => import('./pages/invoices/invoiceId') })
+```
+
 ```tsx
-// app/routes/invoices/$invoiceId.tsx
-import { createFileRoute } from 'kitr/router'
+// app/pages/invoices/invoiceId.tsx
 import { CopyInvoiceLink } from '#app/features/invoices/copy-invoice-link'
+import { getRouteApi } from 'kitr/router'
 
-export const Route = createFileRoute('/invoices/$invoiceId')({
-  component: InvoicePage,
-})
+const route = getRouteApi('/invoices/$invoiceId')
 
-function InvoicePage() {
-  const { invoiceId } = Route.useParams()
+export default function InvoicePage() {
+  const { invoiceId } = route.useParams()
   return (
     <main>
       <h1>Invoice {invoiceId}</h1>

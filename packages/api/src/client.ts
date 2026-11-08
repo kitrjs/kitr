@@ -7,7 +7,7 @@ import {
   type QueryKey,
   toKitrError,
 } from '@kitr/core'
-import type { RouteMap, RouteType } from './types'
+import type { RouteType } from './types'
 
 /**
  * Options for `createApiClient()`. The client is typed from `typeof routes.$types`, with no codegen:
@@ -68,23 +68,30 @@ export interface Endpoint<R extends RouteType> {
   readonly path: R['path']
 }
 
+/** Only the http entries of a table: pages and sockets share `$types` but are not endpoints. */
+export type HttpRoutes<R> = {
+  [K in keyof R as R[K] extends { kind: 'http' } ? K : never]: R[K]
+}
+
 type Head<K> = K extends `${infer H}.${string}` ? H : K
 type Children<R, H extends string> = {
   [K in keyof R as K extends `${H}.${infer N}` ? N : never]: R[K]
 }
 
 /** Dotted route names as nested properties, any depth: `admin.users.index` → `api.admin.users.index()`. */
-export type ApiClient<R> = {
+export type ApiClient<R> = ApiClientOf<HttpRoutes<R>>
+
+type ApiClientOf<R> = {
   [H in Head<keyof R & string>]: (H extends keyof R
     ? R[H] extends RouteType
       ? Endpoint<R[H]>
       : unknown
     : unknown) &
-    ApiClient<Children<R, H>>
+    ApiClientOf<Children<R, H>>
 }
 
 /** Create the typed client from `typeof routes.$types`. Register the runtime route table with `registerRoutes` before calling named routes. */
-export function createApiClient<R extends RouteMap>(
+export function createApiClient<R extends Record<string, unknown>>(
   options: ApiClientOptions,
 ): ApiClient<R> & { $routes: R } {
   const doFetch = options.fetch ?? ((req: Request) => fetch(req))

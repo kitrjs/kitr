@@ -2,11 +2,11 @@ import type { Session } from 'kitr/auth'
 import { createKitrRouter } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
   return createKitrRouter({
-    routeTree,
+    routes,
     app,
     context: {
       // A live getter, so requireAuth() sees the session the auth provider restores during boot.

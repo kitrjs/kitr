@@ -65,7 +65,7 @@ export default defineConfig({
 | --- | --- | --- |
 | `definitions` | `{}` | The flags from `app/flags.ts`. A flag not listed here has no value. |
 | `providers` | `[]` | Asked in order for each flag; the first with an answer wins. With none, every flag is its default. |
-| `ttl` | `300` | Declared for a future browser refresh. This version does not read it. |
+| `ttl` | none | Seconds a snapshot stays fresh in the browser. After that the client resolves every flag again, with the context of its last `resolve()`, so a flag you turn off reaches tabs that are already open. Without it the browser resolves once per page load. |
 
 For each flag, the providers are asked in order. The first that answers with a value of the right type wins. If none does, the flag's `default` from `app/flags.ts` answers. A provider that throws is skipped with a `console.warn`, so a flag service outage falls back to defaults instead of breaking pages.
 
@@ -261,20 +261,23 @@ export const loadFlags = createServerFn({ method: 'GET' }).handler(async () => {
 })
 ```
 
-```tsx
-// app/routes/__root.tsx
-import { FlagsScript } from 'kitr/flags/react'
-import type { KitrRouterContext } from 'kitr/router'
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from 'kitr/router'
+```ts
+// app/routes.ts
+import { head, RootDocument } from './document'
 import { loadFlags } from '#app/server/load_flags'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  loader: () => loadFlags(),
-  component: RootDocument,
-})
+r.root({ head, loader: () => loadFlags(), component: RootDocument })
+```
 
-function RootDocument() {
-  const flags = Route.useLoaderData()
+```tsx
+// app/document.tsx
+import { FlagsScript } from 'kitr/flags/react'
+import { getRouteApi, HeadContent, Outlet, Scripts } from 'kitr/router'
+
+const root = getRouteApi('__root__')
+
+export function RootDocument() {
+  const flags = root.useLoaderData()
   return (
     <html lang="en">
       <head>

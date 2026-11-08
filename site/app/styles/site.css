@@ -184,8 +184,17 @@ pre,
 .nav-links {
   display: flex;
   gap: 24px;
+  /* On a phone the links scroll sideways inside the header instead of widening the page. */
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-links::-webkit-scrollbar {
+  display: none;
 }
 .nav-links a {
+  flex: none;
+  white-space: nowrap;
   color: var(--ink);
   text-decoration: none;
   font-weight: 500;
@@ -755,18 +764,14 @@ a.built-on-link:hover {
   margin: 0;
 }
 
-/* ------------------------------------------------------------- packages grid */
+/* ------------------------------------------------------------- package directory */
 
 .packages-page {
   padding-top: 48px;
+  padding-bottom: 48px;
 }
 .page-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 .page-head h1 {
   margin: 0 0 8px;
@@ -776,45 +781,98 @@ a.built-on-link:hover {
   margin: 0;
   max-width: 640px;
 }
-.filter-input input {
-  min-height: 44px;
-  min-width: 320px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+
+/* Sidebar of categories on the left; search, status line and results on the right. */
+.dir {
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+  grid-template-areas:
+    "cats search"
+    "cats results";
+  grid-template-rows: auto 1fr;
+  column-gap: 40px;
+  align-items: start;
+}
+.dir-search {
+  grid-area: search;
+  position: sticky;
+  top: 65px;
+  z-index: 5;
+  padding: 12px 0;
   background: var(--bg);
+}
+.dir-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.dir-search-box:focus-within {
+  border-color: var(--link);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--link) 18%, transparent);
+}
+.dir-search-box input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 46px;
+  border: 0;
+  outline: 0;
+  background: transparent;
   color: var(--ink);
   font: inherit;
+  font-size: 16px;
+}
+.dir-kbd {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--muted);
+}
+.dir-search-box:focus-within .dir-kbd {
+  display: none;
 }
 
-.packages-layout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 40px;
-}
-.filters {
-  flex: 1 1 200px;
-  max-width: 240px;
+.dir-cats {
+  grid-area: cats;
+  position: sticky;
+  top: 77px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  padding: 12px 0 24px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
+  scrollbar-width: thin;
 }
-.filters fieldset {
-  border: 0;
-  margin: 0;
-  padding: 0;
+.dir-cats-label {
+  display: block;
+  margin: 0 0 8px 12px;
+}
+.dir-cats-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-.filters legend {
-  margin-bottom: 8px;
 }
 .filter {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 12px;
   border: 0;
   border-radius: 6px;
@@ -822,8 +880,10 @@ a.built-on-link:hover {
   color: var(--ink);
   font: inherit;
   font-size: 15px;
+  line-height: 20px;
   cursor: pointer;
   text-align: left;
+  white-space: nowrap;
 }
 .filter:hover {
   background: var(--raised);
@@ -832,8 +892,19 @@ a.built-on-link:hover {
   background: var(--raised);
   font-weight: 600;
 }
+.filter:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.filter:disabled:hover {
+  background: transparent;
+}
 .filter-label {
   flex: 1 1 0;
+}
+.filter-count {
+  font-size: 13px;
+  color: var(--muted);
 }
 .filter-dot {
   display: inline-block;
@@ -855,85 +926,187 @@ a.built-on-link:hover {
   line-height: 21px;
 }
 
-.card-grid {
-  flex: 999 1 600px;
+.dir-results {
+  grid-area: results;
   min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  align-content: start;
 }
-.card {
-  min-height: 210px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--bg);
-  padding: 20px;
+.build-card.dir-build {
+  display: none;
+  margin-top: 40px;
+}
+.dir-status {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  text-decoration: none;
-  color: var(--ink);
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 4px 0 20px;
 }
-.card:hover {
-  color: var(--ink);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+.dir-count {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--muted);
 }
-.card-head {
+.dir-count strong {
+  color: var(--ink);
+}
+.dir-clear {
+  margin-left: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dir-empty .dir-clear {
+  margin: 0;
+}
+.dir-runs {
+  display: inline-flex;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  gap: 2px;
+}
+.dir-runs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.dir-runs button .mono {
+  font-size: 12px;
+}
+.dir-runs button:hover {
+  color: var(--ink);
+}
+.dir-runs button[aria-pressed="true"] {
+  background: var(--raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.dir-group + .dir-group {
+  margin-top: 40px;
+}
+.dir-group-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  scroll-margin-top: 150px;
 }
-.card-name {
-  font-size: 17px;
-  font-weight: 500;
+.dir-group-head .mono {
+  font-size: 13px;
+  font-weight: 400;
 }
-.card-summary {
-  flex: 1 1 auto;
+.dir-group-note {
+  margin: -8px 0 16px;
   font-size: 15px;
   line-height: 22px;
 }
+.dir-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
 
-.package-sections {
-  flex: 999 1 600px;
+.dcard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+a.dcard:hover,
+a.dcard:focus-visible {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+.dcard-body {
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 48px;
+  gap: 6px;
 }
-.package-sections .card-grid {
+.dcard-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+.dcard-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dcard-credit {
   flex: none;
+  display: inline-flex;
+  gap: 6px;
+  color: var(--ink);
+  opacity: 0.55;
 }
-.planned-section h2 {
-  margin: 0 0 4px;
-  font-size: 22px;
-  line-height: 28px;
+.dcard-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-size: 14.5px;
+  line-height: 21px;
+  color: var(--muted);
 }
-.planned-section > p {
-  margin: 0 0 20px;
+.dcard .badges {
+  margin-top: 4px;
 }
-.card-planned {
+.dcard .badge {
+  height: 22px;
+  font-size: 11.5px;
+}
+.dcard-note {
+  font-size: 13.5px;
+  line-height: 20px;
+}
+.dcard-planned {
   border-style: dashed;
   background: var(--raised);
-  scroll-margin-top: 80px;
+  scroll-margin-top: 150px;
 }
-.card-planned:hover {
-  transform: none;
-  box-shadow: none;
-}
-.card-planned .tile {
+.dcard-planned .tile {
   opacity: 0.75;
-}
-.card-planned .badge-status {
-  margin-left: auto;
-}
-.card-note {
-  font-size: 14px;
-  line-height: 20px;
 }
 .badge-status {
   background: transparent;
@@ -943,6 +1116,93 @@ a.built-on-link:hover {
 .status-building {
   border-color: var(--link);
   color: var(--link);
+}
+
+.dir-empty {
+  padding: 32px 24px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  text-align: center;
+}
+.dir-empty p {
+  margin: 0;
+}
+.dir-empty p + p {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 22px;
+}
+/* ------------------------------------------------------------- guides */
+
+.guides-page {
+  padding-top: 48px;
+  padding-bottom: 64px;
+}
+.guide-group {
+  margin-top: 40px;
+}
+.guide-group h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  line-height: 28px;
+}
+.guide-group > p {
+  margin: 0 0 20px;
+  max-width: 640px;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.guide-card {
+  min-height: 190px;
+  gap: 10px;
+}
+.guide-card-title {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.guide-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.guide-tiles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.guide-preview {
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+.guide-meta .guide-preview {
+  margin-left: 0;
+}
+.guide-more,
+.guide-time {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.guide-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.guide-meta .kit-chips {
+  margin: 0;
+}
+.guide-meta .kit-chip {
+  gap: 6px;
+  padding-left: 5px;
+}
+.sidebar a.sidebar-home {
+  color: var(--muted);
 }
 
 /* ------------------------------------------------------------- docs layout */
@@ -1573,6 +1833,84 @@ a.built-on-link:hover {
 
 /* ------------------------------------------------------------- responsive */
 
+/* Phones and narrow tablets: search first, categories as one scrolling row of chips, and
+   results straight after, so typing never hides behind the filters. */
+@media (max-width: 900px) {
+  .dir {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "search"
+      "cats"
+      "results";
+    grid-template-rows: auto;
+  }
+  .dir-search {
+    padding: 8px 0;
+  }
+  .dir-kbd {
+    display: none;
+  }
+  .dir-cats {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 4px 0 14px;
+  }
+  .dir-cats-label,
+  .dir-cats .build-card {
+    display: none;
+  }
+  .dir-cats-list {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin: 0 -24px;
+    padding: 2px 24px;
+  }
+  .dir-cats-list::-webkit-scrollbar {
+    display: none;
+  }
+  .filter {
+    flex: none;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 14px;
+  }
+  .filter:hover {
+    background: transparent;
+  }
+  .filter[aria-pressed="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--bg);
+  }
+  .filter[aria-pressed="true"] .filter-count {
+    color: inherit;
+  }
+  .filter:disabled {
+    display: none;
+  }
+  .filter-dot {
+    width: 10px;
+    height: 10px;
+  }
+  .dir-group-head {
+    scroll-margin-top: 130px;
+  }
+  /* Room to lift the search box to the top even when only a match or two is left. */
+  .dir-results {
+    min-height: 100vh;
+  }
+  .build-card.dir-build {
+    display: flex;
+  }
+}
+
 @media (max-width: 1100px) {
   .feature,
   .platforms-layout,
@@ -1656,15 +1994,29 @@ a.built-on-link:hover {
   .docs-layout .sidebar {
     display: none;
   }
-  .filters {
-    max-width: none;
+  .packages-page {
+    padding-top: 28px;
   }
-  .filter-input input {
-    min-width: 0;
-    width: 100%;
+  .page-head {
+    margin-bottom: 12px;
   }
-  .filter-input {
-    width: 100%;
+  .page-head p {
+    font-size: 15px;
+    line-height: 23px;
+  }
+  .dir-cats-list {
+    margin: 0 -16px;
+    padding: 2px 16px;
+  }
+  .dir-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .dcard {
+    padding: 14px;
+  }
+  .dir-status {
+    margin-bottom: 14px;
   }
   .example-body {
     grid-template-columns: 1fr;
@@ -1700,6 +2052,18 @@ a.built-on-link:hover {
     font-size: 34px;
     line-height: 40px;
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ------------------------------------------------------------- platforms */
@@ -2445,8 +2809,18 @@ a.built-on-link:hover {
     display: none;
   }
 }
+@media (max-width: 480px) {
+  /* Platforms is linked from the home page and the footer; a phone header keeps docs, packages and guides. */
+  .nav-links a[href="/platforms"] {
+    display: none;
+  }
+}
 @media (max-width: 400px) {
+  .nav {
+    gap: 8px;
+  }
   .nav-links {
-    gap: 12px;
+    gap: 10px;
+    font-size: 14px;
   }
 }

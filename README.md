@@ -1,5 +1,7 @@
 # kitr
 
+[![CI](https://github.com/kitrjs/kitr/actions/workflows/ci.yml/badge.svg)](https://github.com/kitrjs/kitr/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **One way to build everything.**
 
 kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform. Everything is an add-on.
@@ -182,11 +184,17 @@ The examples are exactly what the CLI generates (with workspace links instead of
 - [docs/packages.md](docs/packages.md): what each package provides and when to add it
 - [docs/platforms.md](docs/platforms.md): web, server, desktop, tauri and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
-- [docs/pure-backend.md](docs/pure-backend.md): kitr without React
+- [site/content/guides](site/content/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](site/content/guides/api-server.md)
 - [docs/departures.md](docs/departures.md): where the implementation improved on the design plan, and why
 
 ## Status
 
 Pre-release. The API is settling and the version is `0.1.0` across every package (they release in lockstep). Not yet published to npm.
 
-MIT.
+## Contributing
+
+Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the setup, the checks CI runs and how changes are made; everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE) © 2026 Platon Podkopov

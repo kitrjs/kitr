@@ -67,7 +67,7 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 | `runtime` | `node` | `node`, `bun`, `deno` or `workers` (Cloudflare, via `wrangler.toml`). |
 | `port` | `3001` | |
 | `host` | | |
-| `entry` | `server/main.ts` | `createServer({...})` plus routes and realtime. A React project with a web platform also gets `app/routes/api.$.ts`, which mounts the same server inside TanStack Start. |
+| `entry` | `server/main.ts` | `createServer({ providers, config, routes })` with the table from `server/routes.ts`. A React project with a web platform also gets `app/server.ts`, Start's server entry, which hands the table's paths to the same server inside the Start process. |
 
 **desktop** (`@kitr/desktop`, Electron)
 
@@ -111,6 +111,22 @@ platforms/
 dist/<name>/         # build output per platform
 kitrrc.ts
 ```
+
+## One route table, many apps
+
+A product that ships as a marketing site, an authed web app, a phone app and a desktop app shares one route table and one set of components. kitr keeps the differences at the edges:
+
+| Need | Tool |
+| --- | --- |
+| A route that exists on some platforms only | `onlyPlatform('www')` guard in `kitr/router` |
+| Server rendering on the site, client rendering in the shells | `ssrRoute({ www: true, default: false })` in `kitr/seo` |
+| A guest landing and a member feed on the same URL | `authBranch()`, `<Authed>`, `<Guest>` in `kitr/auth` |
+| A different adapter, implementation or layout per platform | `forPlatform()` (build time) and `perPlatform()` (run time) in `kitr/platform` |
+| A piece of UI on some platforms or form factors | `<Only>`, `<Except>`, `useFormFactor()` in `kitr/platform/react` |
+| Native stack navigation: push, swipe back, tabs, sheets | `<StackOutlet>`, `<StackTabs>`, `<SplitStack>` in `kitr/router/stack` |
+| Compile-time branches on the build | `import.meta.env.KITR_PLATFORM`, typed after `kitr types` |
+
+When the apps are separate projects in one repository, `kitr.workspace.ts` names them and the CLI fans out from the root; see [Workspaces](cli.md#workspaces).
 
 ## Writing a platform package
 

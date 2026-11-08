@@ -164,10 +164,10 @@ export const web = definePlatform<WebOptions>(
           message: `${ctx.name}: pwa is on but vite-plugin-pwa is not installed`,
           fix: `${ctx.pm} add -D vite-plugin-pwa`,
         })
-      if (!ctx.exists('app/routes/__root.tsx'))
+      if (!ctx.exists('app/routes.ts') && !ctx.exists('app/routes/__root.tsx'))
         out.push({
           level: 'warn',
-          message: `${ctx.name}: app/routes/__root.tsx is missing`,
+          message: `${ctx.name}: app/routes.ts is missing (no pages to render)`,
           fix: 'kitr add router',
         })
       return out

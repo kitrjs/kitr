@@ -36,11 +36,12 @@ test('open state and tab persist across reloads', async ({ page }) => {
   await page.goto('/')
   await page.locator('.kitr-dt-trigger').click()
   const second = page.locator('.kitr-dt-tab').nth(1)
-  const label = await second.textContent()
+  // The label alone: a tab's badge (the router's pending `…`) comes and goes with navigation.
+  const label = await second.locator('.kitr-dt-tab-label').textContent()
   await second.click()
   await page.reload()
   await expect(page.locator('.kitr-dt-panel')).toBeVisible()
-  await expect(page.locator('.kitr-dt-tab-active')).toHaveText(label!)
+  await expect(page.locator('.kitr-dt-tab-active .kitr-dt-tab-label')).toHaveText(label!)
 })
 
 test('the command palette filters and runs actions', async ({ page }) => {

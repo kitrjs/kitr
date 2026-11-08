@@ -3,6 +3,8 @@ import { definePackage } from '@kitr/core/package'
 /** `kitr add files`: open, save and pick files on any platform, with a download fallback in older browsers. */
 export default definePackage({
   name: 'files',
+  requires: ['platform'],
+  client: true,
   add(ctx) {
     ctx.provider.add('@kitr/files/provider')
     ctx.config(

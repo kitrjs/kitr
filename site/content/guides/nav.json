@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Build an app",
+    "description": "Start from an empty folder and finish with a working app, its data, its sign-in and its updates.",
+    "pages": ["dashboard", "fullstack-app", "api-server", "authentication", "live-updates"]
+  },
+  {
+    "title": "Organise, test and deploy",
+    "description": "Keep the app tested, put it in production, and grow from one app to several.",
+    "pages": ["testing", "deploy", "monorepo"]
+  },
+  {
+    "title": "Ship to phones and desktops",
+    "description": "Previews: the same app as an iPhone and Android app, a desktop app, or all of them from one project.",
+    "pages": ["mobile-app", "desktop-app", "one-codebase"]
+  },
+  {
+    "title": "Extend and migrate",
+    "description": "Write your own kitr package, or bring an existing app over.",
+    "pages": ["create-a-package", "migrate-from-nextjs"]
+  }
+]

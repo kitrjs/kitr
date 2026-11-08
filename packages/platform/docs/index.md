@@ -49,9 +49,9 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links before routing, such as `'/open'` for `acme://open/orders/1042`. The scheme and host are always dropped first. Pass them to `deepLinkPath()`, as shown in "Route deep links". |
+| `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links before routing, such as `'/open'` for `acme://open/orders/1042`. The scheme and host are always dropped first. `useDeepLink()` and `platform.linkPath()` apply them, as shown in "Route deep links". |
 
-The provider does not read `deepLinkPrefixes` on its own. Read it with `useConfig('platform')` and hand it to `deepLinkPath()` where you route links.
+`useDeepLink()` and `platform.linkPath(url)` apply `deepLinkPrefixes` for you. `deepLinkPath(url, prefixes)` is the same function without the config, for tests and code outside the app.
 
 The `platform` service has no other options. Which driver it wraps depends on the platform providers listed in `kitrrc.ts`:
 
@@ -240,6 +240,108 @@ The most specific key wins: the OS first, then the type, then `native`, then `de
 
 `perPlatform()` takes anything with `type`, `os` and `native`, so you can pass a plain object in tests.
 
+## Adapt to the form factor
+
+Phones, tablets and desktop windows differ in more than the OS: how wide the viewport is, whether the user touches or points, and which way the device is held. `useFormFactor()` reads those three axes and re-renders when they change, so a layout can switch between a list and a grid or between a bottom bar and a sidebar without media queries scattered through the code:
+
+```tsx
+// app/components/inbox.tsx
+import { useFormFactor } from 'kitr/platform/react'
+
+export function Inbox() {
+  const { width, input, orientation, ready } = useFormFactor()
+  if (!ready) return <InboxList />
+  return (
+    <div data-width={width} data-input={input} data-orientation={orientation}>
+      {width === 'compact' ? <InboxList /> : <InboxGrid columns={width === 'expanded' ? 3 : 2} />}
+      {input === 'touch' ? <SwipeHint /> : null}
+    </div>
+  )
+}
+```
+
+| Axis | Values | Read from |
+| --- | --- | --- |
+| `width` | `compact` (< 768px), `medium`, `expanded` (≥ 1024px) | `window.innerWidth`, on resize |
+| `input` | `touch`, `pointer` | `(pointer: coarse)` and `(hover: hover)` |
+| `orientation` | `portrait`, `landscape` | `window.innerHeight` against `innerWidth` |
+| `ready` | `false` until the window has been measured | |
+
+Before the first measurement (the server, the first client render) the hook returns a guess from the platform: desktop and Tauri shells are `expanded`, `pointer`, `landscape`; everything else is `compact`, `touch`, `portrait`. The guess keeps the server output and the first client paint identical. Change the breakpoints or the guess in `config/platform.ts`:
+
+```ts
+// config/platform.ts
+import { defineConfig } from 'kitr/platform'
+
+export default defineConfig({
+  formFactor: {
+    breakpoints: { medium: 600, expanded: 960 },
+    fallback: { width: 'medium' },
+  },
+})
+```
+
+`useFormFactor({ breakpoints })` takes the same options per call.
+
+## Show a piece on some platforms only
+
+`<Only>` renders its children where its props match, and `fallback` elsewhere. Props are the same axes `platform.is()` and `useFormFactor()` know, and several props must all match:
+
+```tsx
+// app/components/install-hint.tsx
+import { Except, Only } from 'kitr/platform/react'
+
+export function InstallHint() {
+  return (
+    <>
+      <Only type="web" fallback={null}>
+        <p>Install the app for notifications.</p>
+      </Only>
+      <Only native os="ios">
+        <p>Shake to report a problem.</p>
+      </Only>
+      <Only width="expanded" input="pointer">
+        <KeyboardShortcuts />
+      </Only>
+      <Except type="server">
+        <AnalyticsBeacon />
+      </Except>
+    </>
+  )
+}
+```
+
+| Prop | Matches |
+| --- | --- |
+| `platform` | A platform name from `kitrrc.ts` (`'phone'`), typed after `kitr types`. |
+| `type` | A platform type: `web`, `mobile`, `desktop`, `server`. |
+| `os` | `ios`, `android`, `macos`, `windows`, `linux`. |
+| `native` | Inside a native shell. |
+| `width`, `input`, `orientation` | The form factor axes. |
+
+`<Except>` is the inverse. `usePlatformMatch(props)` returns the same boolean for code that is not JSX.
+
+## Type the platform names
+
+`kitr types` writes `.kitr/platforms.d.ts` from `kitrrc.ts`, and from then on the platform names are a union type everywhere they appear: `platform.name` is `'www' | 'app' | 'phone'`, `platform.is('tablet')` is a compile error in a project without a `tablet` platform, and so is a misspelt key in `perPlatform()` or `<Only platform>`. `import.meta.env.KITR_PLATFORM` is typed the same way, so a branch on it is checked by the compiler and dropped by the bundler in the builds where it is false:
+
+```ts
+// app/features/share.ts
+import { forPlatform } from 'kitr/platform'
+
+// Resolved at build time: the phone build contains only the share-sheet branch.
+export const share = forPlatform({
+  phone: (url: string) => navigator.share({ url }),
+  default: (url: string) => navigator.clipboard.writeText(url),
+})
+
+export function isPhoneBuild() {
+  return import.meta.env.KITR_PLATFORM === 'phone'
+}
+```
+
+`forPlatform()` reads the build's platform name, then its type, then `default`, and needs no app instance, so it also works at module scope and in route definitions. `perPlatform(platform, table)` is its run-time twin and knows the OS as well.
+
 ## Show an offline banner
 
 `useOnline()` is `true` while the device reports a connection, and re-renders when it changes:
@@ -308,30 +410,23 @@ Wrap the handler in `useCallback`: the hook subscribes again whenever the functi
 
 ## Route deep links
 
-`useDeepLink()` receives URLs the OS hands the app while it runs: custom schemes (`acme://orders/1042`) and app links (`https://app.acme.com/orders/1042`). `deepLinkPath()` turns them into a router path:
+`useDeepLink()` receives URLs the OS hands the app while it runs: custom schemes (`acme://orders/1042`) and app links (`https://app.acme.com/orders/1042`). The handler gets the URL and its router path:
 
 ```tsx
 // app/components/deep-links.tsx
 import { useNavigate } from '@tanstack/react-router'
-import { useConfig } from 'kitr/react'
-import { deepLinkPath } from 'kitr/platform'
 import { useDeepLink } from 'kitr/platform/react'
 import { useCallback } from 'react'
 
 export function DeepLinks() {
   const navigate = useNavigate()
-  const { deepLinkPrefixes } = useConfig('platform')
-  useDeepLink(
-    useCallback(
-      (url) => void navigate({ to: deepLinkPath(url, deepLinkPrefixes) }),
-      [navigate, deepLinkPrefixes],
-    ),
-  )
+  // `path` is the URL with the scheme, host and deepLinkPrefixes removed.
+  useDeepLink(useCallback((_url, path) => void navigate({ to: path }), [navigate]))
   return null
 }
 ```
 
-Render `<DeepLinks />` once in the root route. `deepLinkPath()` drops the scheme and host, keeps the query and hash, then strips the first prefix that matches:
+Render `<DeepLinks />` once in the root route. Outside React, `app.container.use('platform').linkPath(url)` gives the same path. Both call `deepLinkPath(url, deepLinkPrefixes)`, which drops the scheme and host, keeps the query and hash, then strips the first prefix that matches:
 
 ```ts
 // app/features/links.ts

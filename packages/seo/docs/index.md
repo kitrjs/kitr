@@ -79,29 +79,31 @@ export default defineConfig({
 | `prerender` | `[]` | Routes the build renders to HTML files. An array of paths, or `{ routes, crawlLinks }`. |
 | `prerender.routes` | `[]` | The paths to prerender, such as `['/', '/pricing']`. |
 | `prerender.crawlLinks` | `false` | Also prerender every page linked from those routes. |
-| `robots` | `{}` | Rules for `robotsTxt()`. `false` makes it return `null`. |
+| `robots` | `{}` | Rules for the `robots.txt` the build writes (see [Write robots.txt](#write-robotstxt)). `false` writes none. |
 | `robots.allow` | `['/']` | `Allow:` lines. |
 | `robots.disallow` | `[]` | `Disallow:` lines. |
 | `robots.sitemap` | `true` | Add `Sitemap: <site.url>/sitemap.xml` when `site.url` is set. |
-| `ssr` | none | Declared in `SeoConfig`, but nothing reads it today. Set rendering per route with [`ssrRoute()`](#choose-how-a-route-renders). |
+| `ssr` | `true` | How routes without their own `ssr` render: `true`, `'data-only'` or `false`. [`ssrRoute()`](#choose-how-a-route-renders) on a route overrides it. |
 
-`seo()` does not read this file by itself. Pass `site` to it, as [Use your site defaults on every page](#use-your-site-defaults-on-every-page) shows. The build reads `prerender` and `site.url` from the file's source text, without running it, so both must be written out as literals.
+`seo()` uses `site` from this file as its defaults: `defineConfig` records it when the app's config is imported, before any route renders. The build reads `prerender` and `site.url` from the file's source text, without running it, so both must be written out as literals.
 
 ## Give a page its title
 
 Set `head` on a route and return `seo()` from it:
 
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/pricing')({
+r.page('/pricing', {
   head: () => seo({ title: 'Pricing', description: 'Plans for every team size.' }),
-  component: PricingPage,
+  lazy: () => import('./pages/pricing'),
 })
+```
 
-function PricingPage() {
+```tsx
+// app/pages/pricing.tsx
+export default function PricingPage() {
   return <h1>Pricing</h1>
 }
 ```
@@ -123,37 +125,26 @@ Open `/pricing` and view the page source. The root route's `<HeadContent />` ren
 
 ## Use your site defaults on every page
 
-To get the site name in every title and a default share image, pass `site`. Import it from `config/seo.ts` once, in a small helper:
+`seo()` takes the site name, default share image, handle and locale from `site` in `config/seo.ts`, so every title gets the site name with nothing to pass. Give each page its own URL:
 
 ```ts
-// app/seo.ts
-import { type SeoInput, seo } from 'kitr/seo'
-import seoConfig from '#config/seo'
+// app/routes.ts
+import { seo } from 'kitr/seo'
 
-/** seo() with the site defaults from config/seo.ts. */
-export function pageSeo(input: SeoInput) {
-  return seo({ site: seoConfig.site, ...input })
-}
-```
-
-Use it in routes, with the page's own URL:
-
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { pageSeo } from '#app/seo'
-
-export const Route = createFileRoute('/pricing')({
+r.page('/pricing', {
   head: () =>
-    pageSeo({
+    seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
     }),
-  component: PricingPage,
+  lazy: () => import('./pages/pricing'),
 })
+```
 
-function PricingPage() {
+```tsx
+// app/pages/pricing.tsx
+export default function PricingPage() {
   return <h1>Pricing</h1>
 }
 ```
@@ -180,7 +171,7 @@ With the config from [Configure](#configure), the call returns:
 // { rel: 'canonical', href: 'https://acme.com/pricing' }
 ```
 
-How the values combine:
+A `site` passed to `seo()` replaces the one from the config, for a page that belongs to another brand. How the values combine:
 
 | Tag | Comes from |
 | --- | --- |
@@ -199,23 +190,22 @@ Always pass `url` for a page when `site` has a `url`. Without it, `og:url` and t
 Tags from the root route apply to every page. A child route's `<title>` and its tags with the same `name` or `property` replace the root's, so put the site-wide description in the root and let pages override it:
 
 ```tsx
-// app/routes/__root.tsx
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from 'kitr/router'
-import type { KitrRouterContext } from 'kitr/router'
-import { pageSeo } from '#app/seo'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { seo } from 'kitr/seo'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+/** `app/routes.ts` passes this to `.root({ head, component: RootDocument })`. */
+export function head() {
+  return {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      ...pageSeo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }).meta,
+      ...seo({ description: 'Acme keeps your team’s projects, orders and invoices in one place.' }).meta,
     ],
-  }),
-  component: RootDocument,
-})
+  }
+}
 
-function RootDocument() {
+export function RootDocument() {
   return (
     <html lang="en">
       <head>
@@ -236,21 +226,25 @@ Spread only `.meta` in the root. TanStack Router merges `links` from every match
 
 Chat apps and social networks show `og:image` as a large card. Pass an absolute URL; most crawlers do not resolve `/og/pricing.png` against your domain:
 
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { pageSeo } from '#app/seo'
+```ts
+// app/routes.ts
+import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/pricing')({
+r.page('/pricing', {
   head: () =>
-    pageSeo({
+    seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
       image: 'https://acme.com/og/pricing.png',
     }),
-  component: () => <h1>Pricing</h1>,
+  lazy: () => import('./pages/pricing'),
 })
+```
+
+```tsx
+// app/pages/pricing.tsx
+export default () => <h1>Pricing</h1>
 ```
 
 The page image replaces `site.image` in `og:image` and `twitter:image`, and `twitter:card` becomes `summary_large_image`. A 1200 × 630 PNG or JPEG works everywhere. Check the result with a preview tool such as [opengraph.xyz](https://www.opengraph.xyz) after you deploy.
@@ -259,32 +253,38 @@ The page image replaces `site.image` in `og:image` and `twitter:image`, and `twi
 
 For a blog post, read the post in the loader and build the tags from `loaderData`. Set `type: 'article'`:
 
-```tsx
-// app/routes/blog/$slug.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { notFound } from 'kitr/router'
 import { getPost } from '#app/content/posts'
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/blog/$slug')({
+r.page('/blog/$slug', {
   loader: ({ params }) => {
     const post = getPost(params.slug)
     if (!post) throw notFound()
     return post
   },
   head: ({ loaderData, params }) =>
-    pageSeo({
+    seo({
       title: loaderData?.title,
       description: loaderData?.excerpt,
       url: `https://acme.com/blog/${params.slug}`,
       type: 'article',
       keywords: loaderData?.tags,
     }),
-  component: PostPage,
+  lazy: () => import('./pages/blog/slug'),
 })
+```
 
-function PostPage() {
-  const post = Route.useLoaderData()
+```tsx
+// app/pages/blog/slug.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/blog/$slug')
+
+export default function PostPage() {
+  const post = route.useLoaderData()
   return <h1>{post.title}</h1>
 }
 ```
@@ -295,15 +295,19 @@ For Grace's post "Invoices in one click", the page gets `<title>Invoices in one 
 
 Sign-in pages, drafts and anything behind a login should not show up in search. Pass `noIndex: true`:
 
-```tsx
-// app/routes/sign-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { pageSeo } from '#app/seo'
+```ts
+// app/routes.ts
+import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/sign-in')({
-  head: () => pageSeo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }),
-  component: () => <h1>Sign in to Acme</h1>,
+r.page('/sign-in', {
+  head: () => seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true }),
+  lazy: () => import('./pages/sign-in'),
 })
+```
+
+```tsx
+// app/pages/sign-in.tsx
+export default () => <h1>Sign in to Acme</h1>
 ```
 
 The page gets `<meta name="robots" content="noindex, nofollow">`. Crawlers must be able to load the page to see that tag, so don't also block it in `robots.txt`. To keep a whole area out, such as `/app`, set `noIndex` in its layout route's `head`; its pages inherit the tag unless they set their own `robots` meta.
@@ -312,15 +316,13 @@ The page gets `<meta name="robots" content="noindex, nofollow">`. Crawlers must 
 
 Structured data tells search engines what a page is about: an organization, an article, a product with a price. `jsonLd()` turns a [schema.org](https://schema.org) object into a `<script type="application/ld+json">` for `head().scripts`, and adds `@context` for you:
 
-```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { jsonLd } from 'kitr/seo'
-import { pageSeo } from '#app/seo'
+```ts
+// app/routes.ts
+import { jsonLd, seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/')({
+r.page('/', {
   head: () => ({
-    ...pageSeo({ title: 'Acme', url: 'https://acme.com' }),
+    ...seo({ title: 'Acme', url: 'https://acme.com' }),
     scripts: [
       jsonLd({
         '@type': 'Organization',
@@ -330,8 +332,13 @@ export const Route = createFileRoute('/')({
       }),
     ],
   }),
-  component: () => <h1>Acme</h1>,
+  lazy: () => import('./pages/index'),
 })
+```
+
+```tsx
+// app/pages/index.tsx
+export default () => <h1>Acme</h1>
 ```
 
 `jsonLd()` returns:
@@ -415,79 +422,81 @@ robotsTxt({ site: { url: 'https://acme.com' }, robots: { disallow: ['/app', '/ap
 // => 'User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /api\n\nSitemap: https://acme.com/sitemap.xml\n'
 ```
 
-kitr does not write the file for you today. Add a small Vite plugin that writes it to `public/` when the build starts, so Vite copies it into the output with your other static files:
-
-```ts
-// vite.config.ts
-import { writeFileSync } from 'node:fs'
-import { kitr } from 'kitr/vite'
-import { robotsTxt } from 'kitr/seo'
-import { defineConfig } from 'vite'
-import seoConfig from './config/seo'
-
-export default defineConfig({
-  plugins: [
-    kitr(),
-    {
-      name: 'acme-robots',
-      buildStart() {
-        const text = robotsTxt(seoConfig)
-        if (text) writeFileSync('public/robots.txt', text)
-      },
-    },
-  ],
-})
-```
-
-With `robots: false`, `robotsTxt()` returns `null` and the plugin writes nothing. Add `public/robots.txt` to `.gitignore` if you only want the generated copy.
+The build of a web platform writes this text to `robots.txt` in the client output, from `config/seo.ts`. It writes nothing when `robots` is `false`, and leaves the file alone when you keep your own `public/robots.txt`, which Vite copies as it is.
 
 ## Choose how a route renders
 
-In a web platform in `ssr` mode, every route renders on the server by default. `ssrRoute()` returns the route option that changes that. Spread it into the route:
+In a web platform in `ssr` mode, every route renders on the server by default, or as `ssr` in `config/seo.ts` says. `ssrRoute()` returns the route option that changes it for one route. Spread it into the route:
 
-```tsx
-// app/routes/_app/reports.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { ssrRoute } from 'kitr/seo'
 
-export const Route = createFileRoute('/_app/reports')({
+app.page('/reports', {
   ...ssrRoute('data-only'),
   loader: async () => {
     const response = await fetch('https://app.acme.com/api/reports/invoices')
     return (await response.json()) as Array<{ month: string; total: number }>
   },
-  component: ReportsPage,
+  lazy: () => import('./pages/reports'),
 })
+```
 
-function ReportsPage() {
-  const rows = Route.useLoaderData()
+```tsx
+// app/pages/reports.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/_app/reports')
+
+export default function ReportsPage() {
+  const rows = route.useLoaderData()
   return <p>{rows.length} months of invoices</p>
 }
 ```
 
 | Call | Returns | The route |
 | --- | --- | --- |
-| `ssrRoute(true)` | `{ ssr: true }` | Renders on the server. The default. |
+| `ssrRoute(true)` | `{ ssr: true }` | Renders on the server. The default unless `config/seo.ts` sets `ssr`. |
 | `ssrRoute('data-only')` | `{ ssr: 'data-only' }` | Runs the loader on the server, renders in the browser. For heavy charts that crawlers don't need. |
 | `ssrRoute(false)` | `{ ssr: false }` | Loads and renders in the browser only. For pages that need `window`. |
 
 A route that does not render on the server sends no page content to crawlers. Keep `ssr: true` on anything you want found. See TanStack Start's [selective SSR](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr) for how it combines with parent routes.
 
+When one route table serves several platforms, the mode can differ per platform. A table resolves at build time by platform name from `kitrrc.ts`, then platform type, then `default`:
+
+```ts
+// app/routes.ts
+import { ssrRoute } from 'kitr/seo'
+
+r.page('/', {
+  // The marketing build renders on the server for crawlers; the authed web app runs the loader
+  // on the server and renders in the browser; native shells have no server at all.
+  ...ssrRoute({ www: true, web: 'data-only', default: false }),
+  lazy: () => import('./pages/home'),
+})
+```
+
+The `www` build gets `{ ssr: true }`, every other web build `{ ssr: 'data-only' }`, and the phone and desktop builds `{ ssr: false }`. The value is a constant in each bundle, so there is no run-time check.
+
 ## Cache pages at the CDN
 
 `cacheHeaders()` builds a `cache-control` header for TanStack Start's `headers` route option:
 
-```tsx
-// app/routes/blog/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { cacheHeaders } from 'kitr/seo'
-import { pageSeo } from '#app/seo'
+import { seo } from 'kitr/seo'
 
-export const Route = createFileRoute('/blog/')({
+r.page('/blog/', {
   headers: () => cacheHeaders({ sMaxAge: 60, staleWhileRevalidate: 300 }),
-  head: () => pageSeo({ title: 'Blog', url: 'https://acme.com/blog' }),
-  component: () => <h1>Blog</h1>,
+  head: () => seo({ title: 'Blog', url: 'https://acme.com/blog' }),
+  lazy: () => import('./pages/blog/index'),
 })
+```
+
+```tsx
+// app/pages/blog/index.tsx
+export default () => <h1>Blog</h1>
 ```
 
 ```ts
@@ -505,18 +514,17 @@ With no options it returns `{ 'cache-control': 'public' }`. For a page that show
 
 ## Testing
 
-`seo()` is a plain function, so test what your pages put in `head` without rendering anything. Test the `pageSeo()` helper once, and assert on the tags your pages depend on:
+`seo()` is a plain function, so test what your pages put in `head` without rendering anything. Import `config/seo.ts` first, so `seo()` has the site defaults, and assert on the tags your pages depend on:
 
 ```ts
 // app/seo.test.ts
-import { robotsTxt } from 'kitr/seo'
+import { robotsTxt, seo } from 'kitr/seo'
 import { describe, expect, it } from 'vitest'
 import seoConfig from '#config/seo'
-import { pageSeo } from './seo'
 
-describe('pageSeo', () => {
+describe('seo', () => {
   it('adds the site name and the canonical URL', () => {
-    const { meta, links } = pageSeo({
+    const { meta, links } = seo({
       title: 'Pricing',
       description: 'Plans for every team size.',
       url: 'https://acme.com/pricing',
@@ -528,7 +536,7 @@ describe('pageSeo', () => {
   })
 
   it('keeps the sign-in page out of search results', () => {
-    const { meta } = pageSeo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true })
+    const { meta } = seo({ title: 'Sign in', url: 'https://acme.com/sign-in', noIndex: true })
     expect(meta).toContainEqual({ name: 'robots', content: 'noindex, nofollow' })
   })
 
@@ -538,7 +546,7 @@ describe('pageSeo', () => {
 })
 ```
 
-The test runs in Node; there is no app to boot and nothing to fake. The `#config` and `#app` aliases come from the `kitr()` Vite plugin, which your `vitest.config.ts` uses. To check the final HTML of a prerendered page, run `kitr build site` and read `/pricing/index.html` from the build output in an end-to-end test.
+The test runs in Node; there is no app to boot and nothing to fake. The `#config` alias comes from the `kitr()` Vite plugin, which your `vitest.config.ts` uses. To check the final HTML of a prerendered page, run `kitr build site` and read `/pricing/index.html` from the build output in an end-to-end test.
 
 ## Next steps
 

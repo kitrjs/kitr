@@ -51,6 +51,7 @@ const browserEntries = new Set([
   '@kitr/query',
   '@kitr/query/provider',
   '@kitr/router',
+  '@kitr/router/stack',
   '@kitr/forms',
   '@kitr/theme',
   '@kitr/state',
@@ -102,7 +103,13 @@ const browserEntries = new Set([
 const skipNodeImport = new Set(['@kitr/desktop/main', '@kitr/desktop/preload', '@kitr/kitr'])
 /** Gzip budget per entry file, bytes. Generous; the point is catching a dependency bundled in. */
 /** Does this entry hold code templates (import lines inside strings), so import scans would misread it? */
-const isCodegen = (name, spec) => codegen.has(name) || spec === `${name}/kitr`
+const isCodegen = (name, spec) =>
+  codegen.has(name) || codegenEntries.has(spec) || spec === `${name}/kitr`
+/** Subpath entries that hold templates while the rest of their package is plain code. */
+const codegenEntries = new Set([
+  // startRoot(): the generated app/routes/__root.tsx the kits share.
+  '@kitr/core/package',
+])
 /** Packages whose dist contains code templates: skip import scans. A package's `./kitr` setup module always is. */
 const codegen = new Set([
   '@kitr/cli',
@@ -136,8 +143,11 @@ const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]))
 const importRe =
   /(?:^|[\s;}])(?:import|export)\s*(?:[^'"`;]*?\sfrom\s*)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/gm
 
+/** Block comments go: doc comments show `import x from 'kitr/...'` examples, which are not imports. */
+const stripBlockComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '')
+
 function specifiers(file) {
-  const src = readFileSync(file, 'utf8')
+  const src = stripBlockComments(readFileSync(file, 'utf8'))
   return [...src.matchAll(importRe)].map((m) => m[1] ?? m[2])
 }
 const packageName = (spec) =>

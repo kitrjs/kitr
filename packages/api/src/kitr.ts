@@ -7,27 +7,25 @@ import { definePackage, naming } from '@kitr/core/package'
 export default definePackage({
   name: 'api',
   requires: ['server'],
+  routes: 'kitr/api/routes',
   add(ctx) {
     const serverOnly = !(ctx.has('react') || ctx.hasPackage('react'))
     ctx.config(
       'api',
       `import { defineConfig } from 'kitr/api'\n\nexport default defineConfig({\n  prefix: '/api',\n  openapi: { path: 'openapi.json', title: '${ctx.pkg.name ?? 'app'} API', version: '0.1.0' },\n})\n`,
     )
+    // The server table: endpoints, and sockets when realtime is added. Skipped when it exists.
     ctx.write(
       'server/routes.ts',
-      `import { defineRoutes } from 'kitr/api'\nimport HealthController from '#server/controllers/health_controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api' }, (api) =>\n    api.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // api.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<AppRoutes>() on the client. */\nexport type AppRoutes = typeof routes.$types\n`,
+      `import { defineRoutes } from 'kitr/app'\nimport api from 'kitr/api/routes'\nimport HealthController from '#server/controllers/health_controller'\n\n/**\n * Endpoints and sockets of this app. \`kitr add\` keeps the extension list current; \`createServer({ routes })\`\n * in server/main.ts serves it.\n */\nexport const routes = defineRoutes([api], (root) =>\n  root.group('/api', (r) =>\n    r.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // r.resource('projects', () => import('#server/controllers/projects_controller'))\n  ),\n)\n\n/** Pass to createApiClient<ServerRoutes>() on the client. */\nexport type ServerRoutes = typeof routes.$types\n`,
     )
+    // Idempotent: adds the http methods to a table another package created, and hands the
+    // table to `createServer()` in a server/main.ts written before it existed.
+    ctx.routes.extend('kitr/api/routes', { table: 'server' })
     ctx.write(
       'server/controllers/health_controller.ts',
       `import type { HttpContext } from 'kitr/api'\n\nexport default class HealthController {\n  async show({ requestId }: HttpContext) {\n    return { ok: true, requestId }\n  }\n}\n`,
     )
-    // A server platform added earlier wrote server/main.ts without the router; mount it now.
-    ctx.server.attach({
-      marker: 'mountRoutes',
-      import: "import { mountRoutes } from 'kitr/api'\nimport { routes } from './routes'",
-      line: 'mountRoutes(server, routes)',
-      first: true,
-    })
     if (!serverOnly) {
       // The client resolves route names through this table: without it every call throws
       // "Unknown route". `kitr api:sync` rewrites it from server/routes.ts.
@@ -37,16 +35,17 @@ export default definePackage({
       )
       ctx.write(
         'app/api/client.ts',
-        `import { createApiClient, registerRoutes } from 'kitr/api/client'\nimport type { AppRoutes } from '#server/routes'\nimport { routeTable } from './routes.gen'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the router. */\nexport const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\nregisterRoutes(api, [...routeTable])\n`,
+        `import { createApiClient, registerRoutes } from 'kitr/api/client'\nimport type { ServerRoutes } from '#server/routes'\nimport { routeTable } from './routes.gen'\n\n/** Typed, no codegen: route names, params, bodies and outputs come from the server table. */\nexport const api = createApiClient<ServerRoutes>({ baseUrl: typeof window === 'undefined' ? \`http://localhost:\${process.env.PORT ?? 3000}\` : '' })\nregisterRoutes(api, [...routeTable])\n`,
       )
     }
     ctx.scripts.add('api:sync', 'kitr api:sync')
     ctx.agents.add(
       'api',
-      `- Routes: \`server/routes.ts\` (\`defineRoutes\`), controllers in \`server/controllers/<name>_controller.ts\` (\`kitr make:controller <name> --resource\`). Validators go in \`static validation = { store: { body: schema } }\`.\n- Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.\n- The client is typed from \`typeof routes.$types\`; call \`registerRoutes(api, routes.toJSON())\` or use \`kitr api:sync\` to write the route table and openapi.json.`,
+      `- Endpoints: \`server/routes.ts\` (\`defineRoutes([api], ...)\` with \`.get/.post/.resource\` from \`kitr/api/routes\`; realtime adds \`.ws\` to the same table), controllers in \`server/controllers/<name>_controller.ts\` (\`kitr make:controller <name> --resource\`). Validators go in \`static validation = { store: { body: schema } }\`.\n- Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.\n- The client is typed from \`ServerRoutes\` (\`typeof routes.$types\`); call \`registerRoutes(api, routes.toJSON())\` or use \`kitr api:sync\` to write the route table and openapi.json.`,
     )
   },
   remove(ctx) {
+    ctx.routes.remove('kitr/api/routes', { table: 'server' })
     ctx.scripts.remove('api:sync', 'kitr api:sync')
     ctx.agents.remove('api')
   },

@@ -31,9 +31,9 @@ What `kitr add api` does:
 - Adds the [Server](/packages/server) package first if it is missing, which also adds [Logger](/packages/logger).
 - Installs `@kitr/api` and adds it to `packages` in `kitrrc.ts`. API routes register no provider.
 - Writes `config/api.ts` (shown under Configure) and adds it to `config/index.ts`.
-- Writes `server/routes.ts`, with one `GET /api/health` route.
+- Writes `server/routes.ts`, the server route table, with `api` from `kitr/api/routes` in its extension list and one `GET /api/health` route. When another package created the table first, it only adds `api` to the list.
 - Writes `server/controllers/health_controller.ts`, the controller that route calls.
-- When `server/main.ts` exists and does not mount routes yet, adds `import { mountRoutes } from 'kitr/api'`, `import { routes } from './routes'` and `mountRoutes(server, routes)` right after `createServer()`.
+- When `server/main.ts` exists and does not pass the table to `createServer()` yet, adds `import { routes } from './routes'` and the `routes` option.
 - In a React project, writes `app/api/routes.gen.ts`, the route table with the `health` route, and `app/api/client.ts`, the typed client that registers it. Without the table every named call throws `Unknown route`.
 - Adds an `api:sync` script (`kitr api:sync`) to `package.json`, which regenerates the route table and `openapi.json` from `server/routes.ts`.
 - Adds a `kitr: api` section to `AGENTS.md`: where routes, controllers and validators go, when to use API routes instead of [actions](/packages/actions), and how the client gets its route table.
@@ -42,19 +42,26 @@ The generated routes file:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import HealthController from '#server/controllers/health_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api.get('/health', [HealthController, 'show'], { name: 'health' }),
-    // api.resource('projects', () => import('#server/controllers/projects_controller'))
+/**
+ * Endpoints and sockets of this app. `kitr add` keeps the extension list current; `createServer({ routes })`
+ * in server/main.ts serves it.
+ */
+export const routes = defineRoutes([api], (root) =>
+  root.group('/api', (r) =>
+    r.get('/health', [HealthController, 'show'], { name: 'health' }),
+    // r.resource('projects', () => import('#server/controllers/projects_controller'))
   ),
 )
 
-/** Pass to createApiClient<AppRoutes>() on the client. */
-export type AppRoutes = typeof routes.$types
+/** Pass to createApiClient<ServerRoutes>() on the client. */
+export type ServerRoutes = typeof routes.$types
 ```
+
+`defineRoutes` is the core's route table (`kitr/app`); the `api` extension from `kitr/api/routes` gives it `.get`, `.post`, `.resource` and friends. [realtime](/packages/realtime) adds `.ws` and `.sse` to the same table, and a React app keeps its pages on a second table in `app/routes.ts`, so `server/routes.ts` never imports React.
 
 The generated controller:
 
@@ -89,14 +96,14 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `prefix` | none | Documents the prefix your routes share. The router does not read it: set the prefix with `router.group({ prefix: '/api' })` in `server/routes.ts`. |
+| `prefix` | none | The prefix every route shares, the part the web app forwards to the server. Set it on the routes with `router.group({ prefix: '/api' })` in `server/routes.ts`; `kitr api:sync` warns about any route outside it, because requests to it never reach the server. |
 | `openapi.path` | `'openapi.json'` | Where `kitr api:sync` writes the OpenAPI document. |
 | `openapi.title` | `'<package name> API'` | `info.title` in the document. |
 | `openapi.version` | `package.json` version | `info.version` in the document. |
-| `openapi.description` | none | Declared for `info.description`. `kitr api:sync` does not read it yet; pass `description` to `toOpenApi()` instead. |
-| `client.path` | `'app/api/client.ts'` | Declared for the client file. `kitr api:sync` does not read it yet. |
+| `openapi.description` | none | `info.description` in the document. |
+| `client.path` | `'app/api/client.ts'` | The typed client's file. `kitr api:sync` writes the route table, `routes.gen.ts`, next to it. Without it the table goes to `app/api/`, or `server/` in a project without one. |
 
-`kitr api:sync` reads `openapi.path`, `openapi.title` and `openapi.version` from the file's text, so keep them as plain string literals. API routes add no environment variables.
+`kitr api:sync` loads `config/api.ts` the way the app does, so the values can come from variables or imports. API routes add no environment variables.
 
 ## Build your first endpoint
 
@@ -135,19 +142,20 @@ Register it in the routes file:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import HealthController from '#server/controllers/health_controller'
 import OrdersController from '#server/controllers/orders_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+export const routes = defineRoutes([api], (router) =>
+  router.group({ prefix: '/api' }, (r) =>
+    r
       .get('/health', [HealthController, 'show'], { name: 'health' })
       .resource('orders', OrdersController),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 Start the server with `kitr dev api` (or `kitr dev` in a React app) and ask for an order:
@@ -168,10 +176,11 @@ The router has one method per HTTP verb. Each takes a path, a handler and option
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import InvoicesController from '#server/controllers/invoices_controller'
 
-export const routes = defineRoutes((router) =>
+export const routes = defineRoutes([api], (router) =>
   router
     .get('/api/invoices', [InvoicesController, 'index'], { name: 'invoices.index' })
     .post('/api/invoices', [InvoicesController, 'store'], { name: 'invoices.store' })
@@ -181,7 +190,7 @@ export const routes = defineRoutes((router) =>
     .get('/api/ping', () => ({ pong: true }), { name: 'ping' }),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 A handler is either a `[Controller, 'method']` pair or a function that takes the context. TypeScript checks that the method exists on the controller.
@@ -203,14 +212,15 @@ Give every route you call from the client a `name`. Names are stable when paths 
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import OrdersController from '#server/controllers/orders_controller'
 import TeamsController from '#server/controllers/teams_controller'
 import { audit } from '#app/middleware/audit'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api' }, (api) =>
-    api
+export const routes = defineRoutes([api], (router) =>
+  router.group({ prefix: '/api' }, (r) =>
+    r
       .resource('orders', OrdersController)
       .group({ prefix: '/admin', middleware: [audit], as: 'admin' }, (admin) =>
         admin.resource('teams', TeamsController),
@@ -218,7 +228,7 @@ export const routes = defineRoutes((router) =>
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 | Group option | Effect |
@@ -245,14 +255,15 @@ Narrow it with options:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import InvoicesController from '#server/controllers/invoices_controller'
 import ProjectsController from '#server/controllers/projects_controller'
 import { audit } from '#app/middleware/audit'
 
-export const routes = defineRoutes((router) =>
-  router.group('/api', (api) =>
-    api
+export const routes = defineRoutes([api], (router) =>
+  router.group('/api', (r) =>
+    r
       .resource('invoices', InvoicesController, { only: ['index', 'show'] })
       .resource('projects', ProjectsController, {
         except: ['destroy'],
@@ -262,7 +273,7 @@ export const routes = defineRoutes((router) =>
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 `param: 'projectId'` makes the paths `/api/projects/:projectId`, so the controller reads `params.projectId`.
@@ -273,11 +284,12 @@ Pass a function that imports the controller instead of the class. The file loads
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 
-export const routes = defineRoutes((router) =>
-  router.group('/api', (api) =>
-    api
+export const routes = defineRoutes([api], (router) =>
+  router.group('/api', (r) =>
+    r
       .resource('orders', () => import('#server/controllers/orders_controller'))
       .get('/orders/:id/receipt', [() => import('#server/controllers/receipts_controller'), 'show'], {
         name: 'orders.receipt',
@@ -285,7 +297,7 @@ export const routes = defineRoutes((router) =>
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 A lazy controller can't be inspected when routes are defined, so `resource()` registers all five routes. Calling a method the controller doesn't have answers `404` with `Controller method OrdersController.update not found`.
@@ -416,19 +428,20 @@ For function handlers, pass `validate` in the route options. Schemas for `params
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import { z } from 'zod'
 
 const invoicePage = z.object({ page: z.coerce.number().int().min(1).default(1) })
 
-export const routes = defineRoutes((router) =>
+export const routes = defineRoutes([api], (router) =>
   router.get('/api/invoices', ({ query }) => ({ page: query.page }), {
     name: 'invoices.index',
     validate: { query: invoicePage },
   }),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 `GET /api/invoices?page=2` answers `{ "page": 2 }`; `?page=0` answers `422` with `{ "page": ["Too small: expected number to be >=1"] }`.
@@ -573,21 +586,22 @@ export const audit = defineMiddleware(async (ctx, next) => {
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import InvitesController from '#server/controllers/invites_controller'
 import { audit } from '#app/middleware/audit'
 import { requireTeam } from '#app/middleware/require_team'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [audit] }, (api) =>
-    api.post('/teams/:teamId/invites', [InvitesController, 'store'], {
+export const routes = defineRoutes([api], (router) =>
+  router.group({ prefix: '/api', middleware: [audit] }, (r) =>
+    r.post('/teams/:teamId/invites', [InvitesController, 'store'], {
       name: 'invites.store',
       middleware: [requireTeam],
     }),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 Pass data to the handler through `ctx.locals`, and stop a request by throwing a `KitrError`:
@@ -613,20 +627,22 @@ Middleware runs outer to inner: group middleware first, then route middleware, t
 
 ```ts
 // server/routes.ts
-import { cors, defineRoutes } from 'kitr/api'
+import { cors } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import OrdersController from '#server/controllers/orders_controller'
 
-export const routes = defineRoutes((router) =>
+export const routes = defineRoutes([api], (router) =>
   router.group(
     {
       prefix: '/api',
       middleware: [cors({ origin: ['https://app.acme.com', 'https://admin.acme.com'], credentials: true })],
     },
-    (api) => api.resource('orders', OrdersController),
+    (r) => api.resource('orders', OrdersController),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 | Option | Default | Description |
@@ -648,10 +664,12 @@ A preflight `OPTIONS /api/orders` answers `204` with the allow headers. kitr reg
 
 ```ts
 // server/routes.ts
-import { defineRoutes, rateLimit } from 'kitr/api'
+import { rateLimit } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import InvitesController from '#server/controllers/invites_controller'
 
-export const routes = defineRoutes((router) =>
+export const routes = defineRoutes([api], (router) =>
   router.post('/api/invites', [InvitesController, 'store'], {
     name: 'invites.store',
     middleware: [
@@ -660,7 +678,7 @@ export const routes = defineRoutes((router) =>
   }),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 | Option | Default | Description |
@@ -679,16 +697,18 @@ The counters live in the process's memory. With several server instances behind 
 
 ```ts
 // server/routes.ts
-import { defineRoutes, requireJson } from 'kitr/api'
+import { requireJson } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import OrdersController from '#server/controllers/orders_controller'
 
-export const routes = defineRoutes((router) =>
-  router.group({ prefix: '/api', middleware: [requireJson()] }, (api) =>
-    api.resource('orders', OrdersController),
+export const routes = defineRoutes([api], (router) =>
+  router.group({ prefix: '/api', middleware: [requireJson()] }, (r) =>
+    r.resource('orders', OrdersController),
   ),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 ## Call the API from the browser
@@ -698,11 +718,11 @@ In a React project, `kitr add api` writes the client and the runtime route table
 ```ts
 // app/api/client.ts
 import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
 /** Typed, no codegen: route names, params, bodies and outputs come from the router. */
-export const api = createApiClient<AppRoutes>({ baseUrl: typeof window === 'undefined' ? `http://localhost:${process.env.PORT ?? 3000}` : '' })
+export const api = createApiClient<ServerRoutes>({ baseUrl: typeof window === 'undefined' ? `http://localhost:${process.env.PORT ?? 3000}` : '' })
 registerRoutes(api, [...routeTable])
 ```
 
@@ -828,11 +848,11 @@ Give the client a token source and every request carries it:
 ```ts
 // app/api/client.ts
 import { createApiClient, registerRoutes } from 'kitr/api/client'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 import { app } from '#app/app'
 import { routeTable } from './routes.gen'
 
-export const api = createApiClient<AppRoutes>({
+export const api = createApiClient<ServerRoutes>({
   baseUrl: 'https://app.acme.com',
   getToken: () => app.container.use('auth').getToken(),
   headers: () => ({ 'x-acme-team': 'team_7' }),
@@ -850,9 +870,9 @@ On the server, or in tests, pass the server's `fetch` so calls skip the network:
 // server/jobs/nightly_report.ts
 import { createApiClient, registerRoutes } from 'kitr/api/client'
 import { server } from '#server/main'
-import { type AppRoutes, routes } from '#server/routes'
+import { type ServerRoutes, routes } from '#server/routes'
 
-const api = createApiClient<AppRoutes>({ baseUrl: 'http://internal', fetch: (request) => server.fetch(request) })
+const api = createApiClient<ServerRoutes>({ baseUrl: 'http://internal', fetch: (request) => server.fetch(request) })
 registerRoutes(api, routes.toJSON())
 
 export async function nightlyReport() {
@@ -863,21 +883,19 @@ export async function nightlyReport() {
 
 ## Mount routes on a server
 
-`mountRoutes(server, routes)` turns the router into an h3 app and mounts it at `/`. `server/main.ts` does this for you:
+`createServer({ routes })` compiles the table for h3: every extension with an `h3` target mounts its entries, so endpoints and sockets go live together. `server/main.ts` does this for you:
 
 ```ts
 // server/main.ts
 import { createServer } from 'kitr/server'
-import { mountRoutes } from 'kitr/api'
+import { routes } from './routes'
 import { config } from '../config'
 import rc from '../kitrrc'
-import { routes } from './routes'
 
-export const server = createServer({ providers: rc.providers, config })
-mountRoutes(server, routes)
+export const server = createServer({ providers: rc.providers, config, routes })
 ```
 
-Pass a third argument to mount under a base path: `mountRoutes(server, partnerRoutes, '/partners')`. To serve the router from an h3 app you build yourself, call `toH3(routes, app)` with a kitr app; it returns the h3 app.
+`server.handles(request)` then says whether a path belongs to the table, which is how `app/server.ts` splits requests between the kitr server and TanStack Start in a React app. To mount a second table, or one under a base path, `mountRoutes(server, partnerRoutes, '/partners')` is still there; to serve the endpoints from an h3 app you build yourself, call `toH3(routes, app)` with a kitr app; it returns the h3 app.
 
 ## Build URLs for named routes
 
@@ -910,17 +928,18 @@ Describe operations with `meta`:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from 'kitr/app'
+import api from 'kitr/api/routes'
 import OrdersController from '#server/controllers/orders_controller'
 
-export const routes = defineRoutes((router) =>
+export const routes = defineRoutes([api], (router) =>
   router.post('/api/orders/:id/refund', [OrdersController, 'refund'], {
     name: 'orders.refund',
     meta: { summary: 'Refund an order', tags: ['billing'], description: 'Refunds the full total to the card on file.' },
   }),
 )
 
-export type AppRoutes = typeof routes.$types
+export type ServerRoutes = typeof routes.$types
 ```
 
 Build the document in code with `toOpenApi()`, for example to serve it from a route:
@@ -1067,9 +1086,9 @@ import { createApiClient, registerRoutes } from 'kitr/api/client'
 import { createTestClient } from 'kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { server } from '#server/main'
-import { type AppRoutes, routes } from '#server/routes'
+import { type ServerRoutes, routes } from '#server/routes'
 
-const api = createApiClient<AppRoutes>({ baseUrl: 'http://test', fetch: (request) => server.fetch(request) })
+const api = createApiClient<ServerRoutes>({ baseUrl: 'http://test', fetch: (request) => server.fetch(request) })
 registerRoutes(api, routes.toJSON())
 
 describe('orders API', () => {
@@ -1109,11 +1128,11 @@ To test client code without a server, pass a fake `fetch` and assert on the requ
 // test/order_client.test.ts
 import { createApiClient, registerRoutes } from 'kitr/api/client'
 import { expect, it, vi } from 'vitest'
-import type { AppRoutes } from '#server/routes'
+import type { ServerRoutes } from '#server/routes'
 
 it('sends the token and the JSON body', async () => {
   const fetch = vi.fn(async (_request: Request) => Response.json({ id: 'ord_1043' }, { status: 201 }))
-  const api = createApiClient<AppRoutes>({ baseUrl: 'https://app.acme.com', fetch, getToken: () => 'tok_ada' })
+  const api = createApiClient<ServerRoutes>({ baseUrl: 'https://app.acme.com', fetch, getToken: () => 'tok_ada' })
   registerRoutes(api, [{ name: 'orders.store', method: 'POST', path: '/api/orders' }])
 
   await api.orders.store({ body: { customer: 'Ada', total: 129 } })
@@ -1134,4 +1153,4 @@ To test one middleware, call it with a minimal context and a `next` function. Ea
 - [Auth](/packages/auth): `authMiddleware` and permissions for these routes
 - [Query](/packages/query): the contracts the client produces
 - [Forms](/packages/forms): showing `fieldErrors` on fields
-- [A backend without React](/docs/pure-backend)
+- [Build an API server without React](/guides/api-server)

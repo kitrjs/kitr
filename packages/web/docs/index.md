@@ -129,22 +129,16 @@ The other platform types each have their own guide and options table: [Server](/
 
 ## Ship your first page
 
-Start from a project with a web platform (`kitr new acme-orders`, or `kitr add web site`). Replace the home route with the order list:
+Start from a project with a web platform (`kitr new acme-orders`, or `kitr add web site`). Replace the home page with the order list:
 
 ```tsx
-// app/routes/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
-
+// app/pages/home.tsx
 const orders = [
   { id: 'ord_1042', customer: 'Ada', total: 129 },
   { id: 'ord_1043', customer: 'Grace', total: 84 },
 ]
 
-export const Route = createFileRoute('/')({
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   return (
     <main>
       <h1>Acme orders</h1>
@@ -166,7 +160,7 @@ Run it:
 kitr dev site
 ```
 
-Vite starts on `http://localhost:3000/` and you see the two orders. Edits to the file reload the page. `kitr dev` with no name starts every platform in `kitrrc.ts` at once.
+Vite starts on `http://localhost:3000/` and you see the two orders. Edits to the file reload the page. The page is on the route table in `app/routes.ts` as `.page('/', { lazy: () => import('./pages/home') })`; see [Router](/packages/router) for links, loaders and layouts. `kitr dev` with no name starts every platform in `kitrrc.ts` at once.
 
 When it looks right, build it and serve the build:
 
@@ -199,25 +193,28 @@ Loaders run where the page renders. In `spa` mode they run in the browser. In `s
 
 ## Render on the server
 
-In `ssr` mode every route renders on the server by default. To keep one route client-only, spread `ssrRoute(false)` from [SEO](/packages/seo) into it:
+In `ssr` mode every page renders on the server by default. To keep one page client-only, spread `ssrRoute(false)` from [SEO](/packages/seo) into its link:
 
-```tsx
-// app/routes/orders.$orderId.edit.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { ssrRoute } from 'kitr/seo'
 
-export const Route = createFileRoute('/orders/$orderId/edit')({
-  ...ssrRoute(false),
-  component: EditOrder,
-})
+r.page('/orders/$orderId/edit', { ...ssrRoute(false), lazy: () => import('./pages/edit-order') })
+```
 
-function EditOrder() {
-  const { orderId } = Route.useParams()
+```tsx
+// app/pages/edit-order.tsx
+import { getRouteApi } from 'kitr/router'
+
+const route = getRouteApi('/orders/$orderId/edit')
+
+export default function EditOrder() {
+  const { orderId } = route.useParams()
   return <h1>Edit {orderId}</h1>
 }
 ```
 
-`ssrRoute('data-only')` runs the loader on the server and renders the component in the browser. With the [Server](/packages/server) platform in the same project, an `ssr` web platform also answers `/api/*` through `app/routes/api.$.ts`, so one process serves pages and the API.
+`ssrRoute('data-only')` runs the loader on the server and renders the component in the browser. With the [Server](/packages/server) platform in the same project, an `ssr` web platform also answers the server's routes through `app/server.ts`, so one process serves pages and the API.
 
 ## Prerender pages
 
@@ -440,23 +437,21 @@ export function PwaUpdate() {
 ```
 
 ```tsx
-// app/routes/__root.tsx
-import type { KitrRouterContext } from 'kitr/router'
-import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from 'kitr/router'
+// app/document.tsx
+import { HeadContent, Outlet, Scripts } from 'kitr/router'
 import { PwaUpdate } from '#app/components/pwa-update'
 
-export const Route = createRootRouteWithContext<KitrRouterContext>()({
-  head: () => ({
+export function head() {
+  return {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
     ],
     links: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
-  }),
-  component: RootLayout,
-})
+  }
+}
 
-function RootLayout() {
+export function RootDocument() {
   return (
     <html lang="en">
       <head>
@@ -664,7 +659,7 @@ For `spa`, tell the host to answer unknown paths with `index.html` (on Netlify, 
 - an error when `vite` is not installed. Fix: `pnpm add -D vite`.
 - an error when `@tanstack/react-start` is not installed.
 - an error when `pwa` is on but `vite-plugin-pwa` is not installed.
-- a warning when `app/routes/__root.tsx` is missing. Fix: `kitr add router`.
+- a warning when `app/routes.ts` is missing (no pages to render). Fix: `kitr add router`.
 - a warning when React is installed but `kitrrc.ts` lists no UI platform. Fix: `kitr add web site`.
 
 ## Errors

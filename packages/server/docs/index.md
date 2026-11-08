@@ -34,7 +34,8 @@ What `kitr add server api` does:
 - Adds `dev`, `build` and `start` scripts to `package.json` (`kitr dev`, `kitr build`, `kitr start`) when they are missing.
 - Writes `server/main.ts`, the server entry (shown in the first example).
 - With API routes installed, writes `server/routes.ts` if it is missing and mounts it in `server/main.ts`.
-- In a React project with a web platform, writes `app/routes/api.$.ts`, which sends every `/api/*` request to the same server inside TanStack Start.
+- Writes `server/routes.ts` with an empty route table when no package created one yet, and passes it to `createServer({ routes })`, so `kitr add api` and `kitr add realtime` only extend the table.
+- In a React project with a web platform, writes `app/server.ts`, TanStack Start's server entry, which hands requests for the table's paths to the same server inside the Start process.
 - On the `workers` runtime, writes `platforms/api/wrangler.toml`.
 - Adds a `kitr: server` section and a `kitr: platform api` section to `AGENTS.md`.
 
@@ -52,7 +53,7 @@ kitr add server api --runtime bun --port 4000
 | `--entry` | `server/main.ts` | The entry file the platform runs. |
 | `--no-scaffold` | | Register the platform without writing files. |
 
-The `fullstack`, `server`, `saas`, `site` and `realtime` kits already include a server platform named `api`. `kitr platforms remove api` takes the platform out of `kitrrc.ts`; `kitr remove server` reverses the package steps: it removes `@kitr/server`, `h3` and `srvx` from `package.json` and `kitrrc.ts`, deletes `config/server.ts` and drops the `AGENTS.md` section. It leaves `server/main.ts` and `app/routes/api.$.ts` in place, because you have likely edited them, and lists the files that still import `kitr/server`.
+The `fullstack`, `server`, `saas`, `site` and `realtime` kits already include a server platform named `api`. `kitr platforms remove api` takes the platform out of `kitrrc.ts`; `kitr remove server` reverses the package steps: it removes `@kitr/server`, `h3` and `srvx` from `package.json` and `kitrrc.ts`, deletes `config/server.ts` and drops the `AGENTS.md` section. It leaves `server/main.ts`, `server/routes.ts` and `app/server.ts` in place, because you have likely edited them, and lists the files that still import `kitr/server`.
 
 ## Configure
 
@@ -77,7 +78,7 @@ export default defineConfig({
 | `healthPath` | `'/healthz'` | Path of a route that answers `{ ok: true }` for load balancers. `false` removes the route. |
 | `bodyLimit` | `1048576` (1 MiB) | Largest request body in bytes. Larger requests get a `413`. |
 | `bodyLimits` | `{}` | A different limit under a path prefix, such as `{ '/api/uploads': 10 * 1024 * 1024 }`. The longest matching prefix wins; other paths keep `bodyLimit`. |
-| `trustProxy` | `false` | Declared for proxies that set `X-Forwarded-*`. This release does not read it yet. |
+| `trustProxy` | `false` | How many proxies in front of the server append to `X-Forwarded-For`: `true` for one (a load balancer), or a number. The client IP in `ctx.request.ip()`, rate limits and request logs is then the address the outermost trusted proxy saw; addresses a client puts in the header itself are ignored. With `false`, the socket's address. |
 | `requestIdHeader` | `'x-request-id'` | Header the request id is read from and echoed in. |
 | `shutdownTimeout` | `10` | Seconds to wait for in-flight requests after `SIGINT` or `SIGTERM` before the process exits with code `1`. |
 | `websocket` | `false` | Accept WebSocket upgrades through `crossws`. [Realtime](/packages/realtime) sets it for you. |
@@ -268,24 +269,23 @@ Workers call the default export's `fetch`, which `server/main.ts` already export
 
 ## Serve the API inside TanStack Start
 
-In a React project with a web platform, `kitr add server api` also writes a catch-all route. Every `/api/*` request in the Start process goes to the same `server` object:
+In a React project with a web platform, the server platform also writes Start's server entry. A request for a path the kitr server has a route for (an endpoint, a socket, the health check) goes to the same `server` object; everything else renders a page:
 
 ```ts
-// app/routes/api.$.ts
-import { createFileRoute } from '@tanstack/react-router'
+// app/server.ts
+import handler, { createServerEntry } from '@tanstack/react-start/server-entry'
 import { server } from '#server/main'
 
-/** Every /api/* request goes to the kitr server (server/main.ts), in the Start process. */
-export const Route = createFileRoute('/api/$')({
-  server: {
-    handlers: {
-      ANY: ({ request }) => server.fetch(request),
-    },
+/** Requests for paths the kitr server has routes for (endpoints, sockets, /healthz) go to it; pages go to Start. */
+export default createServerEntry({
+  fetch(request, options) {
+    if (server.handles(request)) return server.fetch(request)
+    return handler.fetch(request, options)
   },
 })
 ```
 
-The web platform in `ssr` mode answers `/api/orders` itself, with no second process. `kitr dev api` still runs the server alone when you want it on its own port, for a mobile app or a partner integration.
+`server.handles(request)` matches the paths of the table passed to `createServer({ routes })`, so adding an endpoint or a socket needs no change here. The web platform in `ssr` mode answers `/api/orders` itself, with no second process. `kitr dev api` still runs the server alone when you want it on its own port, for a mobile app or a partner integration.
 
 ## Call the server from any fetch runtime
 
@@ -344,7 +344,7 @@ server.mount('/billing', billing)
 server.mount('/legacy', { fetch: (request) => fetch(`https://legacy.acme.com${new URL(request.url).pathname}`) })
 ```
 
-`GET /billing/invoices` now answers from the billing app. `mount`, `use` and `mountRoutes` from [API routes](/packages/api) all return the server, so you can chain them.
+`GET /billing/invoices` now answers from the billing app. `mount` and `use` return the server, so you can chain them; the table from `createServer({ routes })` is mounted first.
 
 ## Read the current request anywhere
 
@@ -648,7 +648,7 @@ Port `0` picks a free port; `url` tells you which one.
 
 ## Accept WebSocket connections
 
-Set `websocket: true` to accept WebSocket upgrades through [crossws](https://crossws.h3.dev). [Realtime](/packages/realtime) sets this for you and attaches its channels with `realtime.attach(server, '/ws')` in `server/main.ts`.
+Set `websocket: true` to accept WebSocket upgrades through [crossws](https://crossws.h3.dev). [Realtime](/packages/realtime) sets this for you when the route table has a `.ws()` link.
 
 ```ts
 // server/main.ts
@@ -670,7 +670,7 @@ Without the `crossws` package installed, `listen()` throws `[kitr/server] websoc
 | `kitr start <name>` | Runs the production server. `kitr serve` does the same. |
 | `kitr config <name> [option] [value]` | Reads or sets a platform option in `kitrrc.ts`. `--unset` removes one. |
 | `kitr platforms` | Lists platforms and their options. |
-| `kitr platforms scaffold <name>` | Rewrites the platform's files (`server/main.ts`, `app/routes/api.$.ts`, `wrangler.toml`). |
+| `kitr platforms scaffold <name>` | Rewrites the platform's files (`server/main.ts`, `app/server.ts`, `wrangler.toml`; `server/routes.ts` only when missing). |
 | `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`. |
 
 `kitr add server api` prints `api: kitr dev api · kitr build api · kitr config api` when it finishes.
@@ -776,5 +776,5 @@ Under Vitest the app environment is `test`, so `fetch()` boots providers but doe
 - [API routes](/packages/api): routes, controllers, validation and a typed client on this server
 - [Logger](/packages/logger): levels, formats and the request-scoped logger
 - [Realtime](/packages/realtime): WebSocket channels attached to this server
-- [A backend without React](/docs/pure-backend)
+- [Build an API server without React](/guides/api-server)
 - [h3 documentation](https://h3.dev)

@@ -180,9 +180,32 @@ export interface AddContext extends ProjectInfo {
     addPlugin(importName: string, spec: string, call?: string): void
   }
   routes: {
-    /** Add a route-table extension to the project's `defineRoutes([...])` call (see `directories.routeTable`). */
-    extend(spec: string): void
-    remove(spec: string): void
+    /**
+     * Add a route-table extension to the project's `defineRoutes([...])` call. Pages extend the
+     * app table (`directories.routeTable`); endpoints and sockets the server table
+     * (`directories.serverRouteTable`, `{ table: 'server' }`), which never imports React. A
+     * server-only project has one table.
+     */
+    extend(spec: string, options?: { table?: 'app' | 'server' }): void
+    remove(spec: string, options?: { table?: 'app' | 'server' }): void
+    /**
+     * Append `.page(path, { lazy: () => import(module) })` to the app table. False when the
+     * table is not a method chain, so the caller can print the line to add by hand.
+     */
+    addPage(path: string, module: string): boolean
+    /**
+     * Append one link (`.ws('/ws', { channels: [chat] })`) to a table's method chain, adding the
+     * imports it needs. False when the table is not a chain. `skipIf` matching the file means
+     * the link is already there.
+     */
+    append(
+      link: string,
+      options?: {
+        table?: 'app' | 'server'
+        imports?: Array<{ from: string; local: string; imported?: string }>
+        skipIf?: RegExp
+      },
+    ): boolean
   }
   types: {
     /**
@@ -255,6 +278,8 @@ export interface Generator {
   ): { file: string; vars?: Record<string, string> }
   /** The file's source. */
   stub(vars: GeneratorVars): string
+  /** Runs after the file is written: register it where it belongs (`make:page` adds the route). */
+  after?(ctx: AddContext, written: { file: string; vars: GeneratorVars }): MaybePromise<void>
 }
 
 /** The least a CLI command must look like (citty's `CommandDef` satisfies it). Core does not import citty. */
@@ -371,4 +396,84 @@ export function resolvePackageName(name: string): string {
 /** `@kitr/jobs` → `jobs`; `@acme/thing` → `@acme/thing`. */
 export function shortPackageName(name: string): string {
   return name.startsWith('@kitr/') ? name.slice('@kitr/'.length) : name
+}
+
+/**
+ * The file that renders the HTML document: `app/document.tsx` with code-defined routes, or the
+ * root route file of a project still on file routes. Packages that touch the document (theme,
+ * tailwind, seo) edit whichever exists.
+ */
+export function documentFile(project: {
+  rc: { directories: { app?: string; routes?: string } }
+  exists(path: string): boolean
+}): string {
+  const app = project.rc.directories.app ?? 'app'
+  const document = `${app}/document.tsx`
+  if (project.exists(document)) return document
+  const root = `${project.rc.directories.routes ?? `${app}/routes`}/__root.tsx`
+  return project.exists(root) ? root : document
+}
+
+// ---------------------------------------------------------------- kit helpers
+
+/** Options for `startDocument()`: the pieces a kit puts into the generated `app/document.tsx`. */
+export interface StartDocumentOptions {
+  imports: string
+  head: string
+  body: string
+  extra?: string
+  /** Statements at the top of RootDocument. */
+  prelude?: string
+  /** Opening and closing JSX around the body. */
+  wrap?: [open: string, close: string]
+}
+
+/**
+ * The `app/document.tsx` every TanStack Start kit writes: `head()` with the stylesheet link and
+ * `RootDocument` with `ThemeScript`, `HeadContent`, `Outlet` and `Scripts`, with the kit's imports,
+ * providers and chrome spliced in. `app/routes.ts` mounts both with `.root({ head, component })`.
+ * Shared so the saas, site and realtime kits stay identical where they agree.
+ */
+export const startDocument = (options: StartDocumentOptions): string =>
+  `import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { ThemeScript } from 'kitr/theme'
+import css from '#app/styles/app.css?url'
+${options.imports}
+/** Head tags for every page. Pages add their own with \`head\` on their route in app/routes.ts. */
+export function head() {
+  return {
+${options.head}
+    links: [{ rel: 'stylesheet', href: css }],
+  }
+}
+
+/** The HTML shell. Start streams it on the server and hydrates it on the client. */
+export function RootDocument() {
+${options.prelude ?? ''}  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+        <HeadContent />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+${options.wrap ? `  ${options.wrap[0]}\n` : ''}${options.body.replace(/^/gm, '  ')}
+${options.wrap ? `  ${options.wrap[1]}\n` : ''}        <Scripts />
+      </body>
+    </html>
+  )
+}
+${options.extra ?? ''}`
+
+/**
+ * A human name for a scaffolded app from its package name: `@acme/example-order-desk` becomes
+ * `Order Desk`. Kits use it for page titles and window titles.
+ */
+export function displayName(name: string) {
+  return name
+    .replace(/^@[^/]+\//, '')
+    .replace(/^example-/, '')
+    .split(/[-_.\s]+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .join(' ')
 }

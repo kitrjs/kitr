@@ -172,8 +172,8 @@ function scaffoldElectron(ctx: PlatformContext, options: DesktopOptions) {
   ctx.write(
     `${base}/ipc.ts`,
     `/**
- * The IPC contract shared by main, preload and the renderer. Add a command here, implement it
- * in main.ts, call it from the app with \`ipc.invoke('...')\`.
+ * The IPC contract shared by main, preload and the renderer. Add a command here and to
+ * \`channels\`, implement it in main.ts, call it from the app with \`ipc.invoke('...')\`.
  */
 export type Ipc = {
   'app.version': () => string
@@ -184,6 +184,13 @@ export type Ipc = {
 export type IpcPush = {
   'app.focus': (focused: boolean) => void
 }
+
+/** Every channel above, at run time: preload lets only these (and kitr:*) through. */
+export const channels = {
+  'app.version': true,
+  'dialog.openFile': true,
+  'app.focus': true,
+} satisfies Record<keyof Ipc | keyof IpcPush, true>
 `,
   )
   ctx.write(
@@ -224,10 +231,11 @@ app.on('window-all-closed', () => {
   ctx.write(
     `${base}/preload.ts`,
     `import { contextBridge, ipcRenderer } from 'electron'
-import { exposeIpc } from 'kitr/desktop/preload'
+import { allowChannels, exposeIpc } from 'kitr/desktop/preload'
+import { channels } from './ipc'
 
 // Only the channels declared in ipc.ts (and kitr's own kitr:* channels) reach the renderer.
-exposeIpc(contextBridge, ipcRenderer)
+exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
 `,
   )
   ctx.write(

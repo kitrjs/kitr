@@ -33,14 +33,14 @@ Types `config/tailwind.ts` against `TailwindConfig` and returns the object uncha
 
 ```ts
 interface TailwindConfig {
-  /** Entry stylesheet relative to the project root. Default `app/styles/app.css`. */
+  /** Entry stylesheet relative to the project root. Default `app/styles/app.css`. `kitr doctor` checks it exists and imports Tailwind. */
   entry?: string;
-  /** Use kitr's preset (`@kitr/tailwind/preset.css`). Default true. */
+  /** Use kitr's preset (`kitr/tailwind/preset.css`). Default true. `kitr doctor` checks the entry imports it exactly when this is on. */
   preset?: boolean;
 }
 ```
 
-Options of `config/tailwind.ts`. They record how the project's stylesheet is set up; the build reads the CSS itself.
+Options of `config/tailwind.ts`: how the project's stylesheet is set up. The build reads the CSS itself; `kitr doctor` checks the two agree.
 
 ## kitr/tailwind/vite
 

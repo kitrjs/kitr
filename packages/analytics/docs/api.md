@@ -106,13 +106,11 @@ interface Analytics<E extends EventMap = EventMap> {
     url?: string;
     title?: string;
   }): void;
-  /** Record an event from the app's event map, with its props. */
-  track<K extends keyof E & string>(event: K, ...props: E[K] extends undefined ? [
-  ] : [
-    E[K]
-  ]): void;
-  /** Record any event by name. Accepts names outside the event map. */
-  track(event: string, props?: EventProps): void;
+  /**
+   * Record an event. With an event map (`useAnalytics<AppEvents>()`), only its names are accepted,
+   * each with its own props; without one, any name and props.
+   */
+  track: Track<E>;
   /** Attach later events to a user id, after sign-in. `globalProps` are not added. */
   identify(userId: string, traits?: EventProps): void;
   /** Forget the identified user, on sign-out. */
@@ -210,6 +208,17 @@ type EventProps = Record<string, unknown>;
 ```
 
 Props sent with an event, a page view or an identify call. Adapters pass them to the vendor as they are.
+
+### Track
+
+```ts
+type Track<E extends EventMap> = string extends keyof E ? (event: string, props?: EventProps) => void : <K extends keyof E & string>(event: K, ...props: E[K] extends undefined ? [
+] : [
+  E[K]
+]) => void;
+```
+
+`track()`'s signature: checked against the event map when there is one.
 
 ## kitr/analytics/provider
 

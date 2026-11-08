@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/kitrjs/kitr/security/advisories/new
+    about: Report vulnerabilities privately, never in a public issue.
+  - name: Documentation
+    url: https://kitr.dev
+    about: Guides and API reference for every package.

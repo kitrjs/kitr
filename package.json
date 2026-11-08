@@ -1,6 +1,7 @@
 {
   "name": "kitr-monorepo",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22"
@@ -28,6 +29,7 @@
     "readmes:check": "node scripts/package-readmes.mjs --check",
     "docs:check": "node scripts/docs-check.mjs",
     "docs:rules": "node scripts/docs-rules.mjs",
+    "docs:guides": "node scripts/guide-rules.mjs",
     "docs:api": "node scripts/api-docs.mjs",
     "site": "pnpm -C site dev"
   },

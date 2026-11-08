@@ -36,11 +36,7 @@ What `kitr add` does:
 
 `kitr add offline` asks no questions and adds no scripts. No kit includes it.
 
-The provider reads the `queryClient` that [Query](/packages/query) binds, and the snapshot goes through [Storage](/packages/storage). `kitr add offline` does not add either package, so add them in the same command when the project lacks them:
-
-```sh
-kitr add query storage offline
-```
+The provider reads the `queryClient` that [Query](/packages/query) binds, and the snapshot goes through [Storage](/packages/storage). `kitr add offline` adds both first when the project lacks them. Like every package that runs in the browser, it is refused in a server-only project.
 
 `kitr remove offline` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, deletes `config/offline.ts`, and lists the files that still import `kitr/offline`. It leaves `VITE_APP_VERSION` in `app/env.ts` and `.env.example`, and leaves Query and Storage installed.
 
@@ -101,9 +97,13 @@ export default defineConfig({
 
 Nothing changes in your queries. A query that loaded once is saved, and the next time the app starts it is in the cache before the page renders:
 
+```ts
+// app/routes.ts
+r.page('/orders', { lazy: () => import('./pages/orders') })
+```
+
 ```tsx
-// app/routes/orders.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/orders.tsx
 import { queryFrom, useQuery } from 'kitr/query'
 
 interface Order {
@@ -120,11 +120,7 @@ export const ordersQuery = queryFrom({
   },
 })
 
-export const Route = createFileRoute('/orders')({
-  component: OrdersPage,
-})
-
-function OrdersPage() {
+export default function OrdersPage() {
   const { data: orders, isPending, fetchStatus } = useQuery(ordersQuery.options())
   if (isPending) return <p>Loading orders…</p>
   return (
