@@ -133,12 +133,6 @@ pre,
   color: var(--muted);
   margin: 0;
 }
-.hero-sub {
-  font-size: 16px;
-  line-height: 26px;
-  margin: 0;
-  max-width: 52ch;
-}
 
 .visually-hidden {
   position: absolute;

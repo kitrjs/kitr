@@ -535,7 +535,7 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. In a Capacitor shell the [Capacitor drivers](#capacitor) answer. Today [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) register only `platform` and `storage` drivers, none of these six, so creating the service in those shells throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use the native clipboard, Face ID or real haptics, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
+Desktop and mobile shells run the app in a webview, but the web drivers never answer there by accident. In a Capacitor shell the [Capacitor drivers](#capacitor) answer, and in Electron and Tauri the drivers under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri) answer. To keep the webview behaviour on purpose, set `fallbackToWeb: true`.
 
 ### Capacitor
 
@@ -571,8 +571,6 @@ export function CopyInvoiceLink({ url }: { url: string }) {
 }
 // without @capacitor/clipboard => "@kitr/native has no capacitor driver: install @capacitor/clipboard. ..."
 ```
-
-Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have drivers for the capabilities a desktop has, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers none of these six, so creating the service in a Capacitor shell throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use Face ID or real haptics there, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
 
 ## Use it in Electron and Tauri
 

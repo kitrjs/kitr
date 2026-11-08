@@ -13,8 +13,8 @@ afterEach(() => {
   }
 })
 
-// Regression: the server always rendered the banner, a returning visitor's browser rendered
-// nothing on its first pass, and React reported a hydration mismatch.
+// The server and the browser's first pass both render the undecided state, so hydration matches;
+// the banner hides for a returning visitor after that.
 describe('consent banner hydration', () => {
   it('hydrates as undecided, then hides the banner for a returning visitor', async () => {
     const first = createApp({ environment: 'client', providers: [consentProvider] })

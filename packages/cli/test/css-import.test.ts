@@ -14,7 +14,7 @@ export const Route = createRootRouteWithContext<KitrRouterContext>()({
 `
 
 describe('cssImportEdit', () => {
-  // Regression: tailwind added app.css next to the linked theme sheet, so the theme loaded twice.
+  // The theme sheet is replaced, not joined, so it never loads twice.
   it('swaps a ?url stylesheet link instead of adding a second sheet', () => {
     const out = cssImportEdit(root, '@kitr/theme/styles.css', '#app/styles/app.css')
     expect(out).toContain("import css0 from '#app/styles/app.css?url'")

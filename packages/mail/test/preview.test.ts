@@ -64,7 +64,6 @@ describe('mail preview', () => {
     expect(html).toContain('&lt;script&gt;')
   })
 
-  // Regression: `previewPath` in config/mail.ts was read by nothing.
   it('serves at previewPath from config/mail.ts, and not at all when it is false', async () => {
     const moved = createServer({
       logger: silentLogger,

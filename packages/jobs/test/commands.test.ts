@@ -20,7 +20,7 @@ function project(main: string) {
 const app = "{ name: 'the-app', boot: async () => {}, container: { use: () => null } }"
 
 describe('jobs:work entry', () => {
-  // Regression: the generated server/main.ts exports `server`, and jobs:work only took `app`.
+  // The generated server/main.ts exports `server`, so jobs:work takes a server as well as an app.
   it('boots the app behind an exported server', async () => {
     const dir = project(`export const server = { app: ${app} }\nexport default server\n`)
     expect(((await loadApp(dir, 'server/main.ts')) as any).name).toBe('the-app')

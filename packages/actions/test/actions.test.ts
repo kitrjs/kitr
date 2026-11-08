@@ -233,8 +233,8 @@ describe('defineQuery and defineMutation', () => {
   })
 })
 
-// Regression: an error thrown by middleware skipped the envelope, so Start sent it raw: the
-// client got no KitrError and a production server error leaked its message.
+// An error thrown by middleware goes through the envelope too, so the client gets a KitrError
+// and a production server error does not leak its message.
 describe('middleware errors', () => {
   const guardOf = () => {
     defineMutation('guarded', { middleware: [{ fn: () => {} }], handler: () => 1 })

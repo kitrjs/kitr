@@ -120,8 +120,7 @@ describe('dataTableFeatures', () => {
   })
 })
 
-// Regression: the saas kit's projects page spread useUrlTableState (manual: server sorts and
-// pages) over data it already had in full, so clicking a header or Next changed nothing.
+// Data the page already has in full sorts, filters and pages in the browser, not on the server.
 describe('client-side tables', () => {
   it('sort, filter and page in the browser with clientTableFeatures and manual: false', () => {
     const rows = [

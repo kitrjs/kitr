@@ -5,8 +5,7 @@ import { describe, expect, it } from 'vitest'
 import updaterProvider from '../src/provider'
 import { useUpdate } from '../src/react'
 
-// Regression: the provider binds `updater` in the browser only, so useUpdate() threw while
-// server rendering any page that showed an update banner.
+// The provider binds `updater` in the browser only; useUpdate() must still render on the server.
 describe('useUpdate during server rendering', () => {
   it('renders idle instead of throwing', async () => {
     const app = createApp({ environment: 'server', providers: [updaterProvider] })

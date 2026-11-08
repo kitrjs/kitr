@@ -3,8 +3,8 @@ import { hydrateRoot } from 'react-dom/client'
 import { describe, expect, it } from 'vitest'
 import { createKitrStore } from '../src'
 
-// Regression: the server rendered a persisted store's initial state, the browser's first render
-// read the saved state, and React reported a hydration mismatch for returning visitors.
+// The browser's first render uses the server state, then the saved state, so returning
+// visitors get no hydration mismatch.
 describe('persisted store hydration', () => {
   it('hydrates with the server state, then shows the saved state', async () => {
     localStorage.setItem(

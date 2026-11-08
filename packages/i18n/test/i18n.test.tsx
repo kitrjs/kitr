@@ -79,8 +79,8 @@ describe('i18nProvider', () => {
   })
 })
 
-// Regression: one i18next instance for the whole server, so changeLanguage() while rendering one
-// request switched the language of every request rendering at the same time.
+// One i18next instance per request, so changeLanguage() while rendering one request never
+// switches the language of another.
 describe('i18n per request', () => {
   it('gives each forked app (one per server request) its own instance', async () => {
     const app = createApp({

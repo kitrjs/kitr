@@ -15,16 +15,6 @@ You need [Node.js](https://nodejs.org) 22 or newer.
 npm install -g kitr
 ```
 
-> **Pre-release.** kitr is version 0.1 and is not on npm yet, so `npm install -g kitr` fails today, and a project made by `kitr new` cannot install its dependencies until the first release. To see kitr running now, clone the repository and start one of the examples, which are the exact output of `kitr new`:
->
-> ```sh
-> git clone https://github.com/kitrjs/kitr && cd kitr
-> pnpm install && pnpm build
-> cd examples/dashboard && pnpm dev     # the app kit; see examples/README.md for the others
-> ```
->
-> Everything below describes how it works once published.
-
 Now `kitr` works in any folder. Inside a project, the global command hands off to the project's own version of kitr, so everyone on the team runs the same one.
 
 Prefer not to install globally? Every command on this site has a picker to switch to `pnpm`, `npx`, `yarn` or `bunx`, and remembers your choice.

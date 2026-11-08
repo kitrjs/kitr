@@ -39,7 +39,7 @@ describe('backend example over the network', () => {
   })
 
   it('does not open the api to other origins by default', async () => {
-    // The generated routes used to put cors() (any origin) on /api, overriding shield.
+    // The generated routes leave CORS to shield: no cors() (any origin) on /api.
     const res = await fetch(`${base}/api/health`, { headers: { origin: 'http://evil.example' } })
     expect(res.status).toBe(200)
     expect(res.headers.get('access-control-allow-origin')).toBeNull()

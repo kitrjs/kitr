@@ -212,8 +212,8 @@ describe('createCache', () => {
   })
 })
 
-// Regression: keys were prefixed but tags were not, so two apps sharing one driver (one Redis)
-// cleared each other's tagged entries.
+// Tags are prefixed like keys, so two apps sharing one driver (one Redis) never clear each
+// other's tagged entries.
 describe('prefix and tags', () => {
   it('keeps tags apart between apps sharing a driver', async () => {
     const driver = createMemoryCacheDriver()

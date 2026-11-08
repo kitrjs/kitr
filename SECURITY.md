@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-kitr is pre-release. Security fixes go into the latest release only; every `kitr` and `@kitr/*` package shares one version.
+Security fixes go into the latest release only. Every `kitr` and `@kitr/*` package shares one version.
 
 ## Reporting a vulnerability
 

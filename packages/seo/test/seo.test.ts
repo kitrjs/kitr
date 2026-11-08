@@ -94,8 +94,6 @@ describe('jsonLd escaping', () => {
   })
 })
 
-// Regression: `seo()` never read config/seo.ts, so every page lost the site name, image and
-// canonical origin unless it passed `site` itself. The config now lives on the app.
 describe('seo() reads config/seo.ts from the app', () => {
   const app = createApp({ config: { seo: { site: { name: 'Acme', url: 'https://acme.dev' } } } })
 

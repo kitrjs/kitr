@@ -24,8 +24,6 @@ describe('deepLinkPath', () => {
   })
 })
 
-// Regression: `deepLinkPrefixes` in config/platform.ts was read by nothing; every app had to
-// thread it through to deepLinkPath() by hand.
 describe('platform.linkPath', () => {
   it('strips the deepLinkPrefixes from config/platform.ts', () => {
     const app = createApp({

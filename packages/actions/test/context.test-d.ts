@@ -9,7 +9,6 @@ const withTenant = createMiddleware({ type: 'function' }).server(({ next }) =>
   next({ context: { tenant: 'acme' as const } }),
 )
 
-// Regression: `context` was `{}` in every handler whatever the middleware added.
 describe('handler context from middleware', () => {
   it('types what each middleware passes to next()', () => {
     defineQuery('a', {
