@@ -1674,6 +1674,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../http
+      '@kitr/server':
+        specifier: workspace:*
+        version: link:../server
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5

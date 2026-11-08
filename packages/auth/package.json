@@ -1,7 +1,7 @@
 {
   "name": "@kitr/auth",
   "version": "0.1.0",
-  "description": "kitr/auth: one session interface, adapters (token, Better Auth, custom), route guards and API middleware.",
+  "description": "kitr/auth: one session interface, cookie sessions with stores and password hashing, bearer-token and Better Auth adapters, route guards and API middleware.",
   "kitr": {
     "name": "auth",
     "title": "Auth",
@@ -60,7 +60,8 @@
     "react": ">=18.0.0",
     "@kitr/api": "workspace:*",
     "@kitr/http": "workspace:*",
-    "ky": ">=1.7.0"
+    "ky": ">=1.7.0",
+    "@kitr/server": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@kitr/api": {
@@ -70,6 +71,9 @@
       "optional": true
     },
     "ky": {
+      "optional": true
+    },
+    "@kitr/server": {
       "optional": true
     }
   },
@@ -84,7 +88,8 @@
     "h3": "^2.0.8",
     "@types/node": "^22.19.0",
     "@kitr/react": "workspace:*",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "@kitr/server": "workspace:*"
   },
   "keywords": [
     "kitr",

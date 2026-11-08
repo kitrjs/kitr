@@ -2,6 +2,13 @@ import { KitrError } from '@kitr/core'
 import type { Abilities } from './abilities'
 
 export * from './abilities'
+export * from './controller'
+export * from './cookie-session'
+export * from './password'
+export * from './request'
+export * from './store'
+export * from './tokens'
+export * from './users'
 
 /** The minimal context the auth middleware needs; matches @kitr/api's HttpContext. */
 interface AuthContextLike {

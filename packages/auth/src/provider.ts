@@ -1,5 +1,5 @@
 import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } from '@kitr/core'
-import type { AuthAdapter, Session } from './session'
+import type { AdapterContext, AuthAdapter, Session, SessionQueryCache } from './session'
 import { anonymousSession } from './session'
 
 /** Options in `config/auth.ts`. */
@@ -51,7 +51,14 @@ export const defineConfig = createDefineConfig<AuthConfig<any, any>>()
 /** Build the `auth` service around an adapter. The provider does this from `config/auth.ts`; call it directly in tests. */
 export function createAuth<TUser, TCredentials>(
   adapter: AuthAdapter<TUser, TCredentials>,
+  options: {
+    /** Services passed to the adapter on every call (the provider supplies the query cache). */
+    context?: () => AdapterContext
+    /** Listen to `adapter.onChange`. Default true; the provider turns it off on the server, where every request builds its own service. */
+    listen?: boolean
+  } = {},
 ): Auth<TUser, TCredentials> {
+  const context = () => options.context?.() ?? {}
   let session: Session<TUser> = anonymousSession as Session<TUser>
   const listeners = new Set<(s: Session<TUser>) => void>()
   const set = (next: Session<TUser> | null) => {
@@ -61,7 +68,7 @@ export function createAuth<TUser, TCredentials>(
     session = next ?? (anonymousSession as Session<TUser>)
     for (const l of listeners) l(session)
   }
-  adapter.onChange?.(set)
+  if (options.listen !== false) adapter.onChange?.(set)
   const auth: Auth<TUser, TCredentials> = {
     adapter,
     get session() {
@@ -71,16 +78,16 @@ export function createAuth<TUser, TCredentials>(
       return session.user
     },
     async load() {
-      set(await adapter.getSession().catch(() => null))
+      set(await adapter.getSession(context()).catch(() => null))
       return session
     },
     async signIn(credentials) {
       if (!adapter.signIn) throw new Error('[kitr/auth] adapter has no signIn')
-      set(await adapter.signIn(credentials))
+      set(await adapter.signIn(credentials, context()))
       return session
     },
     async signOut() {
-      await adapter.signOut?.()
+      await adapter.signOut?.(context())
       set(null)
     },
     async refresh() {
@@ -108,7 +115,17 @@ export function createAuth<TUser, TCredentials>(
 export const authProvider: KitrProvider = defineProvider({
   name: 'auth',
   register(app) {
-    app.container.singleton('auth', () => createAuth(app.config.get('auth').adapter))
+    // Scoped: the browser has one app and so one service; on the server every request is a fork
+    // and gets its own, so one visitor's session is never another's.
+    app.container.scoped('auth', (container) =>
+      createAuth(app.config.get('auth').adapter, {
+        listen: !app.isServer,
+        // This request's (or this tab's) query cache, never another scope's.
+        context: () => ({
+          queryClient: container.has('queryClient') ? (container.use('queryClient') as SessionQueryCache) : undefined,
+        }),
+      }),
+    )
   },
   async boot(app) {
     const config = app.config.get('auth')
@@ -120,7 +137,8 @@ export const authProvider: KitrProvider = defineProvider({
         hub.notify()
       })
     }
-    if (config.eager !== false) await auth.load()
+    // On the server the session belongs to a request: guards load it per request (`ensureSession`).
+    if (config.eager !== false && !app.isServer) await auth.load()
   },
   devtools: () => import('./devtools').then((m) => m.panels()),
 })
