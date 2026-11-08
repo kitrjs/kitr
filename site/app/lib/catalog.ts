@@ -12,7 +12,6 @@ import {
   CloudSyncIcon,
   CodeSquareIcon,
   ColorsIcon,
-  ComputerIcon,
   ComputerPhoneSyncIcon,
   CreditCardIcon,
   CubeIcon,
@@ -45,7 +44,6 @@ import {
   SearchList01Icon,
   SecurityLockIcon,
   ServerStack02Icon,
-  ServerStack03Icon,
   Shield01Icon,
   SmartPhone01Icon,
   SmartPhone02Icon,
@@ -160,18 +158,11 @@ export const categories: Record<Category, { label: string; color: string }> = {
   kits: { label: 'Kits', color: '#C4B5FD' },
 }
 
-export const runsOn: Record<RunsOn, { label: string; background: string; icon: IconSvgElement }> = {
-  client: { label: 'Client', background: '#BFDBFE', icon: ComputerIcon },
-  server: {
-    label: 'Server',
-    background: '#FDE68A',
-    icon: ServerStack03Icon,
-  },
-  both: {
-    label: 'Client Server',
-    background: 'linear-gradient(135deg, #BFDBFE 50%, #FDE68A 50%)',
-    icon: ComputerIcon,
-  },
+/** Where a package runs. Badge colours are theme tokens (--client-*, --server-*) in site.css. */
+export const runsOn: Record<RunsOn, { label: string }> = {
+  client: { label: 'Client' },
+  server: { label: 'Server' },
+  both: { label: 'Client / Server' },
 }
 
 /** One Hugeicon per package, stroke-rounded like the rest of the site. */
