@@ -332,7 +332,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "category": "insights",
     "runsOn": "both",
     "builtOn": [
-      "Sentry"
+      "Sentry",
+      "Better Stack"
     ],
     "docs": "docs",
     "setup": "./kitr"

@@ -59,19 +59,20 @@ Make the import fail in development and the console reporter prints the report:
 [monitoring] error Error: Import failed with 500 { fileName: 'projects.csv', size: 18234 }
 ```
 
-With [devtools](/packages/devtools) open, the report also appears in the Errors panel with its stack and extra data. Set `VITE_SENTRY_DSN` and the same call sends it to Sentry in production. The guide continues from here: [Report your first error](/packages/monitoring/guide#report-your-first-error).
+With [devtools](/packages/devtools) open, the report also appears in the Errors panel with its stack and extra data. Set `VITE_SENTRY_DSN` and the same call sends it to Sentry or Better Stack in production. The guide continues from here: [Report your first error](/packages/monitoring/guide#report-your-first-error).
 
 ## Built on
 
-Reports go through a `Reporter`. Three are built in:
+Reports go through a `Reporter`. These are built in:
 
 | Reporter | Built on | Use it for |
 | --- | --- | --- |
-| `sentry()` | [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/) | Production. |
+| `sentry()` | [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/) | Production, with Sentry. |
+| `betterStack()` | The same Sentry SDK, with a [Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) DSN | Production, with Better Stack. |
 | `devtoolsReporter` | The devtools hub | Development. |
 | `memoryReporter` | An array | Tests. |
 
-kitr adds the global handlers, the React error boundary, user and breadcrumb context shared across packages, `defaultShouldReport` for ignoring expected errors, server middleware, and the `Reporter` interface so any other service plugs in with one function.
+kitr adds the global handlers, the React error boundary, user and breadcrumb context shared across packages, `defaultShouldReport` for ignoring expected errors, server middleware, and the `Reporter` interface so any other service plugs in with one function. See [Extend](/packages/monitoring/guide#extend).
 
 ## Problems it solves
 
@@ -86,5 +87,5 @@ kitr adds the global handlers, the React error boundary, user and breadcrumb con
 
 - [Guide](/packages/monitoring/guide): install, configure and every task.
 - [API reference](/packages/monitoring/api): every export with its signature.
-- [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/): the SDK behind the `sentry()` reporter.
+- [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/): the SDK behind the `sentry()` and `betterStack()` reporters.
 - [Logger](/packages/logger), [Devtools](/packages/devtools) and [Auth](/packages/auth): debugging lines, the Errors panel, and where to call `setUser`.

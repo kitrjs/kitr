@@ -58,6 +58,7 @@ const upstreams: Record<string, Upstream> = {
   'React Email': { name: 'React Email', url: 'https://react.email' },
   msw: { name: 'Mock Service Worker', url: 'https://mswjs.io', mark: 'mockserviceworker' },
   Sentry: { name: 'Sentry', url: 'https://sentry.io', mark: 'sentry' },
+  'Better Stack': { name: 'Better Stack', url: 'https://betterstack.com' },
   react: { name: 'React', url: 'https://react.dev', mark: 'react' },
   zustand: { name: 'Zustand', url: 'https://zustand.docs.pmnd.rs' },
   tailwindcss: { name: 'Tailwind CSS', url: 'https://tailwindcss.com', mark: 'tailwindcss' },

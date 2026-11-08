@@ -2,7 +2,7 @@ import { createApp } from '@kitr/core'
 import { KitrProvider } from '@kitr/react'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { installGlobalHandlers, memoryReporter, sentry } from '../src'
+import { betterStack, installGlobalHandlers, memoryReporter, sentry } from '../src'
 import monitoringProvider, { MonitoringErrorBoundary } from '../src/provider'
 
 afterEach(() => vi.restoreAllMocks())
@@ -124,6 +124,30 @@ describe('sentry reporter', () => {
       level: 'info',
     })
     expect(await r.flush?.(10)).toBe(true)
+  })
+})
+
+describe('betterStack reporter', () => {
+  it('sends through the Sentry SDK with the Better Stack DSN', () => {
+    const sdk = {
+      init: vi.fn(),
+      captureException: vi.fn(),
+      captureMessage: vi.fn(),
+      setUser: vi.fn(),
+      addBreadcrumb: vi.fn(),
+      setTag: vi.fn(),
+    }
+    const dsn = 'https://token@s1.eu.betterstackdata.com/1'
+    const r = betterStack(sdk, { dsn })
+    expect(r.name).toBe('better-stack')
+    r.init?.()
+    r.captureException(new Error('x'), { level: 'error' })
+    expect(sdk.init).toHaveBeenCalledWith({ dsn })
+    expect(sdk.captureException).toHaveBeenCalledWith(expect.any(Error), {
+      tags: undefined,
+      extra: undefined,
+      level: 'error',
+    })
   })
 })
 

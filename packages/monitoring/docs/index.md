@@ -6,7 +6,7 @@ order: 1
 
 # Error monitoring
 
-When something breaks in production, you want to know before a user writes in, and you want enough context to fix it: who it happened to, which page they were on and what they did beforehand. `@kitr/monitoring` catches render errors, uncaught errors and failed server requests, adds the signed-in user, tags and breadcrumbs, and sends each report to [Sentry](https://docs.sentry.io/platforms/javascript/) or any other service through one small API.
+When something breaks in production, you want to know before a user writes in, and you want enough context to fix it: who it happened to, which page they were on and what they did beforehand. `@kitr/monitoring` catches render errors, uncaught errors and failed server requests, adds the signed-in user, tags and breadcrumbs, and sends each report to [Sentry](https://docs.sentry.io/platforms/javascript/), [Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) or any other service through one small API.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com`, where Ada imports projects from a CSV file, Grace manages her team's invoices, and Linus is on call when a report comes in.
 
@@ -61,6 +61,7 @@ export default defineConfig({
   reporters: [
     // import * as Sentry from '@sentry/react'  (pnpm add @sentry/react)
     // ...(env.VITE_SENTRY_DSN ? [sentry(Sentry, { dsn: env.VITE_SENTRY_DSN })] : []),
+    // Better Stack takes the same SDK: betterStack(Sentry, { dsn }) with its DSN.
   ],
   // shouldReport: (error) => !(error instanceof KitrError && error.status < 500),
   tags: { app: env.VITE_APP_NAME },
@@ -78,6 +79,7 @@ export default defineConfig({
   reporters: [
     // import * as Sentry from '@sentry/node'  (pnpm add @sentry/node)
     // ...(process.env.SENTRY_DSN ? [sentry(Sentry, { dsn: process.env.SENTRY_DSN })] : []),
+    // Better Stack takes the same SDK: betterStack(Sentry, { dsn }) with its DSN.
   ],
   tags: { service: 'acme-api' },
 })
@@ -210,6 +212,33 @@ SENTRY_DSN=https://<key>@o123.ingest.sentry.io/789
 See [Sentry for Node.js](https://docs.sentry.io/platforms/javascript/guides/node/). In a project with both a web and a server platform, `config/monitoring.ts` is shared, so pick the SDK per side or keep one config per platform.
 
 The reporter maps each call to the SDK: `captureException` and `captureMessage` with your `tags`, `extra` and `level` (messages default to `info`), `setUser`, `addBreadcrumb`, `setTag` and `flush`.
+
+### Better Stack
+
+[Better Stack](https://betterstack.com/docs/errors/collecting-errors/sentry-sdk/) takes reports from the Sentry SDK, so you install the same SDK and give it Better Stack's DSN. Find the DSN in Better Stack under Errors, your application, Ingest.
+
+```sh
+pnpm add @sentry/react
+```
+
+```ts
+// config/monitoring.ts
+import * as Sentry from '@sentry/react'
+import { betterStack, defineConfig } from '@kitr/monitoring'
+import { env } from '#app/env'
+
+export default defineConfig({
+  reporters: [...(env.VITE_SENTRY_DSN ? [betterStack(Sentry, { dsn: env.VITE_SENTRY_DSN })] : [])],
+})
+```
+
+In `.env`:
+
+```sh
+VITE_SENTRY_DSN=https://<token>@<ingesting-host>/<application-id>
+```
+
+`betterStack()` works like `sentry()`: the same options and the same calls. On the server, use `@sentry/node` and `SENTRY_DSN`.
 
 ### Console
 
@@ -599,7 +628,7 @@ it('reports a failed route with its request id', async () => {
 
 ## Extend
 
-A reporter is an object with a `name` and a `captureException` method. Every other method is optional: `init`, `captureMessage`, `setUser`, `addBreadcrumb`, `setTag` and `flush`. See [`Reporter`](/packages/monitoring/api#reporter).
+To send reports to a service kitr has no reporter for, write your own. A reporter is an object with a `name` and a `captureException` method. Every other method is optional: `init`, `captureMessage`, `setUser`, `addBreadcrumb`, `setTag` and `flush`. See [`Reporter`](/packages/monitoring/api#reporter).
 
 This one posts each exception to an internal endpoint, with the user and the last ten breadcrumbs:
 
@@ -669,7 +698,7 @@ With [devtools](/packages/devtools) installed, the provider registers an Errors 
 ## Next steps
 
 - [Monitoring API reference](/packages/monitoring/api): every export with its signature.
-- [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/): the SDK behind the `sentry()` reporter.
+- [Sentry for JavaScript](https://docs.sentry.io/platforms/javascript/): the SDK behind the `sentry()` and `betterStack()` reporters.
 - [Logger](/packages/logger): lines for debugging, next to reports for fixing.
 - [Server](/packages/server): request ids and kitr's error responses.
 - [Devtools](/packages/devtools): the Errors panel in development.
