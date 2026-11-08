@@ -341,7 +341,7 @@ One project is right while the three apps are the same product. When they grow a
 
 ```ts
 // kitr.workspace.ts
-import { defineWorkspace } from 'kitr'
+import { defineWorkspace } from '@kitr/kitr'
 
 export default defineWorkspace({
   apps: { web: 'apps/web', phone: 'apps/phone', desk: 'apps/desk' },

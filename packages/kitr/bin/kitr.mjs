@@ -12,7 +12,7 @@ let cli
 if (!process.env.KITR_NO_LOCAL) {
   try {
     const fromProject = createRequire(join(process.cwd(), 'noop.js'))
-    const local = realpathSync(dirname(fromProject.resolve('kitr/package.json')))
+    const local = realpathSync(dirname(fromProject.resolve('@kitr/kitr/package.json')))
     if (local !== here) {
       const fromLocal = createRequire(join(local, 'package.json'))
       cli = await import(pathToFileURL(fromLocal.resolve('@kitr/cli')).href)

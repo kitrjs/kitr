@@ -466,7 +466,7 @@ The provider binds the instance as `i18n` in the container. Read it where there 
 
 ```ts
 // app/lib/orders/notify.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function orderSavedMessage(app: KitrApp, orderId: string) {
   const i18n = app.container.use('i18n')
@@ -500,7 +500,7 @@ Every bundle in `resources` ships in the main JavaScript bundle. Load rarely use
 
 ```ts
 // app/lib/settings/load-language.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function useFrench(app: KitrApp) {
   const i18n = app.container.use('i18n')
@@ -534,7 +534,7 @@ A key missing in German shows the English string. A key that exists nowhere show
 
 ```ts
 // app/lib/orders/missing.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function demo(app: KitrApp) {
   const i18n = app.container.use('i18n')

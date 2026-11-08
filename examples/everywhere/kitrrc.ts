@@ -1,4 +1,4 @@
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 import { desktop } from '@kitr/desktop'
 import { mobile } from '@kitr/mobile'

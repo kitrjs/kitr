@@ -32,7 +32,7 @@ The same `app/` can run in more than one place. This `kitrrc.ts` has a website a
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { server } from '@kitr/server'
 import { web } from '@kitr/web'
 

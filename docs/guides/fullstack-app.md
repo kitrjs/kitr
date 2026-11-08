@@ -14,7 +14,7 @@ You will build `acme-projects`: a server-rendered list of a team's projects, rea
 
 ## Before you start
 
-You need [Node.js](https://nodejs.org) 22 or newer, the kitr CLI (`npm install -g kitr`) and a Postgres database. If you have Docker, this starts one:
+You need [Node.js](https://nodejs.org) 22 or newer, the kitr CLI (`npm install -g @kitr/kitr`) and a Postgres database. If you have Docker, this starts one:
 
 ```sh
 docker run -d --name acme-db -e POSTGRES_PASSWORD=acme -e POSTGRES_DB=acme -p 5432:5432 postgres:17
@@ -33,7 +33,7 @@ The `fullstack` kit adds two [platforms](/docs/platforms) to `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { server } from '@kitr/server'
 import { web } from '@kitr/web'
 
@@ -228,7 +228,7 @@ kitr make:mutation projects/create
 // app/actions/projects/create.ts
 import { and, eq } from 'drizzle-orm'
 import { defineMutation } from '@kitr/actions'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { app } from '#app/app'
@@ -293,7 +293,7 @@ kitr make:controller projects
 // server/controllers/projects-controller.ts
 import { desc, eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
@@ -317,7 +317,7 @@ export default class ProjectsController {
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import HealthController from '#server/controllers/health-controller'

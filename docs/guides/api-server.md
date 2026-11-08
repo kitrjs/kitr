@@ -14,7 +14,7 @@ You will build `acme-billing`, Acme's invoices API: REST routes for invoices wit
 
 ## Before you start
 
-You need [Node.js](https://nodejs.org) 22 or newer (or Bun or Deno; see "Pick a runtime" below), the kitr CLI (`npm install -g kitr`) and a Postgres database for the database step. This starts one with Docker:
+You need [Node.js](https://nodejs.org) 22 or newer (or Bun or Deno; see "Pick a runtime" below), the kitr CLI (`npm install -g @kitr/kitr`) and a Postgres database for the database step. This starts one with Docker:
 
 ```sh
 docker run -d --name acme-billing-db -e POSTGRES_PASSWORD=acme -e POSTGRES_DB=billing -p 5432:5432 postgres:17
@@ -75,7 +75,7 @@ Replace the generated body with Acme's invoices. They live in memory for now; th
 ```ts
 // server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { z } from 'zod'
 
 export const createInvoice = z.object({
@@ -121,7 +121,7 @@ Register it. `resource()` adds a route for each REST method the controller has, 
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import HealthController from '#server/controllers/health-controller'
@@ -223,7 +223,7 @@ Set `DATABASE_URL=postgres://postgres:acme@localhost:5432/billing` in `.env`, th
 // server/controllers/invoices-controller.ts
 import { desc, eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import { z } from 'zod'
 import type { AppDb } from '#config/db'
@@ -292,7 +292,7 @@ Put it on the group, so every invoice route needs a user:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { auth } from '#server/auth'
@@ -319,7 +319,7 @@ When the API and the web app live on different origins (`api.acme.com` and `app.
 ```ts
 // server/routes.ts
 import { cors, rateLimit } from '@kitr/api'
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { auth } from '#server/auth'

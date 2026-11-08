@@ -75,7 +75,7 @@ kitr new acme-orders --kit mobile --targets ios
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { mobile } from '@kitr/mobile'
 import { web } from '@kitr/web'
 
@@ -280,7 +280,7 @@ Plugin settings go in the `capacitor` option, merged last into `capacitor.config
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { mobile } from '@kitr/mobile'
 
 export default defineKitrConfig({

@@ -436,7 +436,7 @@ Tests should not send real emails or charge real cards. Bind a fake under the sa
 
 ```ts
 // test/order-confirmation.test.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createTestApp } from '@kitr/testing'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
@@ -575,7 +575,7 @@ A component that calls `useService('clock')` gets what the app's container holds
 ```tsx
 // app/components/orders/due-badge.test.tsx
 import { screen } from '@testing-library/react'
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createTestApp } from '@kitr/testing'
 import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'

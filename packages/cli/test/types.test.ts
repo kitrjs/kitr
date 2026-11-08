@@ -24,7 +24,7 @@ beforeEach(() => {
   )
   writeFileSync(
     join(dir, 'kitrrc.ts'),
-    `import { defineKitrConfig } from 'kitr/app'
+    `import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 import { server } from '@kitr/server'
 export default defineKitrConfig({
@@ -178,7 +178,7 @@ describe('kitr add actions codemods', () => {
     mkdirSync(join(dir, 'app'))
     writeFileSync(
       join(dir, 'app/app.ts'),
-      `import { createApp } from 'kitr/app'\nimport { env } from './env'\n\nexport const app = createApp({ providers, config, env })\n`,
+      `import { createApp } from '@kitr/kitr/app'\nimport { env } from './env'\n\nexport const app = createApp({ providers, config, env })\n`,
     )
     const ctx = silent()
     const c = new Codemods(ctx)
@@ -195,11 +195,11 @@ describe('kitr add actions codemods', () => {
     c.registerAppOption('operations', '#kitr/actions')
     const app = readFileSync(join(dir, 'app/app.ts'), 'utf8')
     expect(app).toBe(
-      `import { createApp } from 'kitr/app'\nimport { env } from './env'\nimport { operations } from '#kitr/actions'\n\nexport const app = createApp({ operations, providers, config, env })\n`,
+      `import { createApp } from '@kitr/kitr/app'\nimport { env } from './env'\nimport { operations } from '#kitr/actions'\n\nexport const app = createApp({ operations, providers, config, env })\n`,
     )
     c.unregisterAppOption('operations', '#kitr/actions')
     expect(readFileSync(join(dir, 'app/app.ts'), 'utf8')).toBe(
-      `import { createApp } from 'kitr/app'\nimport { env } from './env'\n\nexport const app = createApp({ providers, config, env })\n`,
+      `import { createApp } from '@kitr/kitr/app'\nimport { env } from './env'\n\nexport const app = createApp({ providers, config, env })\n`,
     )
   })
 })

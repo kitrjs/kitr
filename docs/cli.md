@@ -1,8 +1,8 @@
 # CLI
 
-Run `kitr` with `pnpm kitr <command>`, or `pnpm dlx kitr <command>` without installing. Every command runs from flags alone; nothing prompts.
+Run `kitr` with `pnpm kitr <command>`, or `pnpm dlx @kitr/kitr <command>` without installing. Every command runs from flags alone; nothing prompts.
 
-A global install (`pnpm add -g kitr`) lets you type `kitr` directly. Inside a project it hands over to the project's own copy, so the version in `package.json` is the one that edits your files. `KITR_GLOBAL=1` skips the handover.
+A global install (`pnpm add -g @kitr/kitr`) lets you type `kitr` directly. Inside a project it hands over to the project's own copy, so the version in `package.json` is the one that edits your files. `KITR_GLOBAL=1` skips the handover.
 
 ## Project commands
 
@@ -67,7 +67,7 @@ A repository with several kitr apps lists them in `kitr.workspace.ts` at its roo
 
 ```ts
 // kitr.workspace.ts
-import { defineWorkspace } from 'kitr'
+import { defineWorkspace } from '@kitr/kitr'
 
 export default defineWorkspace({
   apps: { www: 'apps/www', app: 'apps/app', phone: 'apps/phone' },

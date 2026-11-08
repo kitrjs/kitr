@@ -14,9 +14,6 @@ uplinks:
 packages:
   # Our own packages only ever come from the local storage: a name that was not published here is
   # a 404, never a silent fall-through to a same-named package on npm.
-  "kitr":
-    access: $all
-    publish: $all
   "@kitr/*":
     access: $all
     publish: $all

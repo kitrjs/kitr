@@ -1,4 +1,4 @@
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 
 /** Options for `config/flags.ts`. */
 export interface FlagsConfig {

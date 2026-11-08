@@ -57,7 +57,7 @@ Which driver it wraps depends on the platform providers listed in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { mobile } from '@kitr/mobile'
 import { web } from '@kitr/web'
 
@@ -603,7 +603,7 @@ Tests replace the driver. Register a fake one from a small provider, then render
 ```tsx
 // test/order-sheet.test.tsx
 import { act, screen } from '@testing-library/react'
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import type { PlatformDriver } from '@kitr/platform'
 import { platformProvider } from '@kitr/platform/provider'
 import { usePlatform, useBackButton } from '@kitr/platform/react'
@@ -691,7 +691,7 @@ A new place to run (a kiosk browser, a TV) gets its own driver. Implement `Platf
 
 ```ts
 // app/providers/kiosk-platform.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import type { PlatformDriver } from '@kitr/platform'
 
 /** Order-pickup kiosks run the web build in a locked-down browser. */
@@ -727,7 +727,7 @@ List it in `kitrrc.ts` next to the other providers:
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({

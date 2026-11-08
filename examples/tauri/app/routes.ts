@@ -1,4 +1,4 @@
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 

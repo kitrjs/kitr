@@ -14,7 +14,7 @@ You will build `acme-admin`, a single-page app where Ada signs in, sees every or
 
 ## Before you start
 
-You need [Node.js](https://nodejs.org) 22 or newer and the kitr CLI (`npm install -g kitr`, see [Getting started](/docs/getting-started)). The guide assumes your API exposes these endpoints. Adjust the paths as you go if yours differ:
+You need [Node.js](https://nodejs.org) 22 or newer and the kitr CLI (`npm install -g @kitr/kitr`, see [Getting started](/docs/getting-started)). The guide assumes your API exposes these endpoints. Adjust the paths as you go if yours differ:
 
 | Endpoint | Returns |
 | --- | --- |
@@ -90,7 +90,7 @@ With `VITE_MOCKS=true`, [MSW](https://mswjs.io) answers requests in the browser 
 
 ```ts
 // app/mocks/handlers.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { HttpResponse, http, kitrErrorResponse } from '@kitr/mocks'
 
 const orders = [
@@ -317,7 +317,7 @@ It writes `app/queries/orders.ts` with a list query, a detail query and an updat
 
 ```ts
 // app/queries/orders.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import type { TableSearch } from '@kitr/table'

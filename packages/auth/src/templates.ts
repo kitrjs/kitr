@@ -70,7 +70,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
 `
 
 /** `server/auth.ts`: the session service and the users it signs in. */
-export const serverAuth = `import { inProduction } from 'kitr/app'
+export const serverAuth = `import { inProduction } from '@kitr/kitr/app'
 import { createCookieSession, createMemorySessionStore, createMemoryUserProvider } from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import { env } from '#app/env'
@@ -202,7 +202,7 @@ export default function SignInPage() {
 `
 
 /** `server/better_auth.ts`: the Better Auth server as a provider, so it lives in the container like everything else. */
-export const betterAuthProvider = `import { defineProvider } from 'kitr/app'
+export const betterAuthProvider = `import { defineProvider } from '@kitr/kitr/app'
 import type { betterAuth } from 'better-auth'
 
 declare module '@kitr/core' {

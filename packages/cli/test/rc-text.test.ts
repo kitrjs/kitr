@@ -118,20 +118,20 @@ describe('imports', () => {
   })
 
   it('removes one specifier, or the whole statement when it was the only one', () => {
-    const two = "import { server, web } from 'kitr/x'\nexport {}\n"
-    expect(removeNamedImport(two, 'web')).toBe("import { server } from 'kitr/x'\nexport {}\n")
+    const two = "import { server, web } from '@kitr/kitr/x'\nexport {}\n"
+    expect(removeNamedImport(two, 'web')).toBe("import { server } from '@kitr/kitr/x'\nexport {}\n")
     expect(removeNamedImport("import { web } from '@kitr/web'\nexport {}\n", 'web')).toBe(
       'export {}\n',
     )
-    expect(removeNamedImport("import {web as site, server} from 'kitr/x'\n", 'site')).toBe(
-      "import {server} from 'kitr/x'\n",
+    expect(removeNamedImport("import {web as site, server} from '@kitr/kitr/x'\n", 'site')).toBe(
+      "import {server} from '@kitr/kitr/x'\n",
     )
     expect(removeNamedImport("import { a } from 'a'\n", 'web')).toBe("import { a } from 'a'\n")
   })
 })
 
 describe('platform entries in a file the user edited', () => {
-  const rc = `import { defineKitrConfig } from "kitr/app";
+  const rc = `import { defineKitrConfig } from "@kitr/kitr/app";
 import { web as webPlatform } from "@kitr/web";
 import { server } from "@kitr/server";
 
@@ -184,11 +184,11 @@ export default defineKitrConfig({
 
   it('adds a platform in the file style and replaces a second add of the same name', () => {
     const { ctx, read } = project(rc)
-    writeRcPlatform(ctx, 'tv', { entry: 'kitr/tv', factory: 'tv' }, { port: 1 })
+    writeRcPlatform(ctx, 'tv', { entry: '@kitr/kitr/tv', factory: 'tv' }, { port: 1 })
     expect(read()).toContain('\t\ttv: tv({ port: 1 }),\n')
-    expect(read()).toContain('import { tv } from "kitr/tv";')
+    expect(read()).toContain('import { tv } from "@kitr/kitr/tv";')
     const once = read()
-    writeRcPlatform(ctx, 'tv', { entry: 'kitr/tv', factory: 'tv' }, { port: 2 })
+    writeRcPlatform(ctx, 'tv', { entry: '@kitr/kitr/tv', factory: 'tv' }, { port: 2 })
     expect(read()).toBe(once.replace('port: 1', 'port: 2'))
   })
 

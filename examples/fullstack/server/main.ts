@@ -1,4 +1,4 @@
-import { loadRc } from 'kitr/app'
+import { loadRc } from '@kitr/kitr/app'
 import { createServer } from '@kitr/server'
 import { routes } from '#server/routes'
 import { config } from '../config'

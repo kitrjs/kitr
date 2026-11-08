@@ -103,7 +103,7 @@ Every page is a link on the chain in `app/routes.ts`. `kitr add router` writes t
 
 ```ts
 // app/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 
@@ -263,7 +263,7 @@ A loader runs before the page renders, on the server during server rendering and
 
 ```ts
 // app/queries/projects.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { queryFrom } from '@kitr/query'
 
 export interface Project {
@@ -402,7 +402,7 @@ Override one page by exporting `definePage` from its module:
 
 ```tsx
 // app/pages/project.tsx
-import { toKitrError } from 'kitr/app'
+import { toKitrError } from '@kitr/kitr/app'
 import { definePage, type ErrorComponentProps, Link } from '@kitr/router'
 
 export default definePage({
@@ -450,7 +450,7 @@ Throw a `KitrError` from a loader and `DefaultError` shows its message as the ti
 
 ```ts
 // app/routes.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 
 r.page('/projects/$id/archive', {
   loader: ({ params }) => {
@@ -1126,7 +1126,7 @@ Build a small table in a test, create the router from it with a test app and a m
 
 ```tsx
 // app/pages/project.test.tsx
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { createKitrRouter, createMemoryHistory, getRouteApi, RouterProvider } from '@kitr/router'
 import pages from '@kitr/router/routes'
 import { createTestApp } from '@kitr/testing'

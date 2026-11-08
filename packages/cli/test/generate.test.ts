@@ -25,7 +25,7 @@ function project(command: string, body: string) {
   dirs.push(dir)
   const files: Record<string, string> = {
     'package.json': JSON.stringify({ name: 'demo', type: 'module' }),
-    'kitrrc.ts': `import { defineKitrConfig } from 'kitr/app'\nexport default defineKitrConfig({ packages: ['@acme/sync'], providers: [] })\n`,
+    'kitrrc.ts': `import { defineKitrConfig } from '@kitr/kitr/app'\nexport default defineKitrConfig({ packages: ['@acme/sync'], providers: [] })\n`,
     'node_modules/@acme/sync/package.json': JSON.stringify({
       name: '@acme/sync',
       type: 'module',

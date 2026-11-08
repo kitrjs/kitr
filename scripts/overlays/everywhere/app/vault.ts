@@ -1,5 +1,5 @@
+import { defineProvider } from '@kitr/kitr/app'
 import type { SecureStorageDriver } from '@kitr/secure-storage'
-import { defineProvider } from 'kitr/app'
 
 /** A secure-storage driver is four functions. This one keeps values in a Map (tests, previews). */
 export function createMapVault(): SecureStorageDriver {

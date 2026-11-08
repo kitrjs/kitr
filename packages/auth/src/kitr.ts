@@ -233,7 +233,7 @@ export default definePackage({
       return src
         .replace(
           "import { createKitrRouter } from '@kitr/router'\n",
-          `${cookies ? "import type { KitrApp } from 'kitr/app'\n" : ''}import type { Session } from '@kitr/auth'\nimport { createKitrRouter } from '@kitr/router'\nimport type { User } from '#app/abilities'\n`,
+          `${cookies ? "import type { KitrApp } from '@kitr/kitr/app'\n" : ''}import type { Session } from '@kitr/auth'\nimport { createKitrRouter } from '@kitr/router'\nimport type { User } from '#app/abilities'\n`,
         )
         .replace(plain[0], cookies ? cookieRouterCall(plain[1]!) : sessionRouterCall(plain[1]!))
         .concat(SESSION_CONTEXT_TYPE)
@@ -246,7 +246,7 @@ export default definePackage({
         for (const call of [sessionRouterCall(tree), cookieRouterCall(tree)]) {
           if (!src.includes(call)) continue
           return src
-            .replace("import type { KitrApp } from 'kitr/app'\n", '')
+            .replace("import type { KitrApp } from '@kitr/kitr/app'\n", '')
             .replace("import type { Session } from '@kitr/auth'\n", '')
             .replace("import type { User } from '#app/abilities'\n", '')
             .replace(call, `return createKitrRouter({ ${tree}, app })`)

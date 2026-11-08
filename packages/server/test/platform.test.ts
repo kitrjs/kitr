@@ -111,7 +111,7 @@ describe('server()', () => {
       api.scaffold!(f.ctx)
       expect(f.files.get('server/main.ts')).toContain("import { config } from '../config'")
       expect(f.files.get('server/main.ts')).toContain("import { routes } from '#server/routes'")
-      expect(f.files.get('server/main.ts')).toContain("import { loadRc } from 'kitr/app'")
+      expect(f.files.get('server/main.ts')).toContain("import { loadRc } from '@kitr/kitr/app'")
       expect(f.files.get('server/main.ts')).toContain(
         'createServer({ ...loadRc(rc, config), routes })',
       )
@@ -133,7 +133,7 @@ describe('server()', () => {
       })
       api.scaffold!(f.ctx)
       expect(f.files.get('server/main.ts')).not.toMatch(/realtime|attach/)
-      expect(f.files.get('server/main.ts')).toContain("import { loadRc } from 'kitr/app'")
+      expect(f.files.get('server/main.ts')).toContain("import { loadRc } from '@kitr/kitr/app'")
       expect(f.files.get('server/main.ts')).toContain(
         'createServer({ ...loadRc(rc, config), routes })',
       )

@@ -38,7 +38,7 @@ It reads `kitrrc.ts` and serves two virtual modules, which `app/app.ts` imports:
 
 ```ts
 // app/app.ts
-import { createApp } from 'kitr/app'
+import { createApp } from '@kitr/kitr/app'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { env } from './env'

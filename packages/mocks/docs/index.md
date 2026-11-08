@@ -234,7 +234,7 @@ With the [API](/packages/api) package, every route has a name. `mockRoutes` buil
 
 ```ts
 // app/mocks/handlers.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { HttpResponse, mockRoutes } from '@kitr/mocks'
 import { routeTable } from '#app/api/routes.gen'
 import { type Invoice, invoices } from './data'
@@ -282,7 +282,7 @@ A resolver function receives `params`, `request` and `body()`, which reads the J
 
 ```ts
 // app/mocks/handlers.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { http, kitrErrorResponse } from '@kitr/mocks'
 
 export const handlers = [
@@ -409,7 +409,7 @@ To render a component against these mocks, combine them with `renderWithKitr` fr
 
 ```ts
 // app/lib/invoices/invoices.test.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { HttpResponse, http, kitrErrorResponse, setupNodeMocks } from '@kitr/mocks'
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'
 import { handlers } from '#app/mocks/handlers'

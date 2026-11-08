@@ -93,7 +93,7 @@ export class Codemods {
     if (!existsSync(rcPath)) {
       this.ctx.write(
         'kitrrc.ts',
-        `import { defineKitrConfig } from 'kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n})\n`,
+        `import { defineKitrConfig } from '@kitr/kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n})\n`,
       )
       this.ctx.rcPath = rcPath
     }
@@ -138,7 +138,7 @@ export class Codemods {
     if (!existsSync(rcPath)) {
       this.ctx.write(
         'kitrrc.ts',
-        `import { defineKitrConfig } from 'kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n})\n`,
+        `import { defineKitrConfig } from '@kitr/kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n})\n`,
       )
       this.ctx.rcPath = rcPath
     }
@@ -503,7 +503,7 @@ export class Codemods {
       return
     }
     const imports = [
-      "import { forBuildPlatform } from 'kitr/app'",
+      "import { forBuildPlatform } from '@kitr/kitr/app'",
       ...names.map((n) => `import ${ident(n)} from './${n}'`),
     ]
     const objects = [`const shared = {\n${names.map((n) => entry(n, ident(n))).join('\n')}\n}`]
@@ -608,7 +608,7 @@ export class Codemods {
       const what = server ? 'endpoints and sockets' : 'routes'
       this.ctx.write(
         file,
-        `import { defineRoutes } from 'kitr/app'\n\n/** The ${what} of this app. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type ${server ? 'ServerRoutes' : 'AppRoutes'} = typeof routes.$types\n`,
+        `import { defineRoutes } from '@kitr/kitr/app'\n\n/** The ${what} of this app. Packages add their methods here (\`kitr add\` maintains the list). */\nexport const routes = defineRoutes([], (r) => r)\n\nexport type ${server ? 'ServerRoutes' : 'AppRoutes'} = typeof routes.$types\n`,
       )
     }
     if (this.ctx.dryRun) return

@@ -213,7 +213,7 @@ An item is a function that binds it to a `SecureStorage` service. Get the servic
 
 ```ts
 // app/lib/account/session.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useSecureStorage } from '@kitr/secure-storage'
 import { sessionItem } from '#app/secure'
 
@@ -411,7 +411,7 @@ The Tauri driver uses [`@tauri-apps/plugin-stronghold`](https://v2.tauri.app/plu
 
 ```ts
 // app/providers/vault.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createTauriSecureStorageDriver } from '@kitr/secure-storage'
 
 /** Supply your own password source, such as a prompt, instead of the keyring secret. */
@@ -566,7 +566,7 @@ handleIpc<{
 
 ```ts
 // app/providers/vault-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createIpcClient } from '@kitr/desktop/client'
 import type { SecureStorageDriver } from '@kitr/secure-storage'
 

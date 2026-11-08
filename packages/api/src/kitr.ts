@@ -17,7 +17,7 @@ export default definePackage({
     // The server table: endpoints, and sockets when realtime is added. Skipped when it exists.
     ctx.write(
       'server/routes.ts',
-      `import { defineRoutes } from 'kitr/app'\nimport api from '@kitr/api/routes'\nimport HealthController from '#server/controllers/health-controller'\n\n/**\n * Endpoints and sockets of this app. \`kitr add\` keeps the extension list current; \`createServer({ routes })\`\n * in server/main.ts serves it.\n */\nexport const routes = defineRoutes([api], (root) =>\n  root.group('/api', (r) =>\n    r.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // r.resource('projects', () => import('#server/controllers/projects-controller'))\n  ),\n)\n\n/** Pass to createApiClient<ServerRoutes>() on the client. */\nexport type ServerRoutes = typeof routes.$types\n`,
+      `import { defineRoutes } from '@kitr/kitr/app'\nimport api from '@kitr/api/routes'\nimport HealthController from '#server/controllers/health-controller'\n\n/**\n * Endpoints and sockets of this app. \`kitr add\` keeps the extension list current; \`createServer({ routes })\`\n * in server/main.ts serves it.\n */\nexport const routes = defineRoutes([api], (root) =>\n  root.group('/api', (r) =>\n    r.get('/health', [HealthController, 'show'], { name: 'health' }),\n    // r.resource('projects', () => import('#server/controllers/projects-controller'))\n  ),\n)\n\n/** Pass to createApiClient<ServerRoutes>() on the client. */\nexport type ServerRoutes = typeof routes.$types\n`,
     )
     // Idempotent: adds the http methods to a table another package created, and hands the
     // table to `createServer()` in a server/main.ts written before it existed.
@@ -83,7 +83,7 @@ export default definePackage({
       stub: ({ name, resource }) =>
         resource === 'true'
           ? `import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { z } from 'zod'
 
 const create${naming.pascal(name)} = z.object({ name: z.string().min(2) })

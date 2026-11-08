@@ -1,4 +1,4 @@
-import { inProduction } from 'kitr/app'
+import { inProduction } from '@kitr/kitr/app'
 import {
   createCookieSession,
   createMemorySessionStore,

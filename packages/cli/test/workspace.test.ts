@@ -18,7 +18,7 @@ function workspace() {
   const root = mkdtempSync(join(tmpdir(), 'kitr-ws-'))
   writeFileSync(
     join(root, 'kitr.workspace.ts'),
-    `import { defineWorkspace } from 'kitr'
+    `import { defineWorkspace } from '@kitr/kitr'
 // the apps
 export default defineWorkspace({
   apps: {

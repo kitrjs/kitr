@@ -104,7 +104,7 @@ export type MountedSockets = Record<string, SocketServer | SseServer>
  * The realtime extension: `.ws` and `.sse` on the route table, mounted by
  * `createServer({ routes })`. No React: safe in a pure backend.
  *
- *   import { defineRoutes } from 'kitr/app'
+ *   import { defineRoutes } from '@kitr/kitr/app'
  *   import ws from '@kitr/realtime/routes'
  *   export const routes = defineRoutes([ws], (r) => r.ws('/ws', { channels: [chatChannel] }))
  */

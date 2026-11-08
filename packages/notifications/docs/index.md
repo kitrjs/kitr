@@ -330,7 +330,7 @@ Chrome on Android does not let a page construct a `Notification`, so the web dri
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -349,7 +349,7 @@ Read the service from the app's container:
 
 ```ts
 // app/lib/orders/on-shipped.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useNotifications } from '@kitr/notifications'
 
 export async function onOrderShipped(app: KitrApp, orderId: string) {
@@ -583,7 +583,7 @@ This driver hands notifications to iOS and Android through [`@capacitor/local-no
 // app/providers/notifications-driver-provider.ts
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import type { NotificationPermission, NotificationsDriver } from '@kitr/notifications'
 
 const numeric = (id: string) => {

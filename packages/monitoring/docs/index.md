@@ -280,7 +280,7 @@ The provider adds `devtoolsReporter` whenever [devtools](/packages/devtools) is 
 
 ```ts
 // app/lib/invoices/download-invoice.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function downloadInvoice(app: KitrApp, invoiceNumber: string) {
   const monitoring = app.container.use('monitoring')
@@ -310,7 +310,7 @@ Outside React, the service is `app.container.use('monitoring')`.
 
 ```ts
 // app/lib/projects/import-limit.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function warnImportLimit(app: KitrApp, teamId: string, rows: number) {
   app.container.use('monitoring').captureMessage('project import over the row limit', {
@@ -329,7 +329,7 @@ Messages skip `shouldReport`; every call is sent.
 
 ```ts
 // app/lib/auth/session.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function onSignedIn(app: KitrApp, user: { id: string; email: string; teamId: string }) {
   app.container.use('monitoring').setUser({ id: user.id, email: user.email, teamId: user.teamId })
@@ -348,7 +348,7 @@ A breadcrumb is a step on the way to a possible error. Reporters such as Sentry 
 
 ```ts
 // app/lib/projects/import-projects.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function importProjects(app: KitrApp, file: File) {
   const monitoring = app.container.use('monitoring')
@@ -378,7 +378,7 @@ Tags are short strings you filter by. Set them in three places, from widest to n
 
 ```ts
 // app/lib/teams/team-context.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function onTeamSelected(app: KitrApp, team: { id: string; plan: 'free' | 'pro' }) {
   const monitoring = app.container.use('monitoring')
@@ -440,7 +440,7 @@ export default defineConfig({
 
 ```ts
 // scripts/should_report.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { defaultShouldReport } from '@kitr/monitoring'
 
 defaultShouldReport(KitrError.notFound('Project')) // => false

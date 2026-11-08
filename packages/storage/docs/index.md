@@ -751,7 +751,7 @@ Most native stores are async. `createAsyncStorageDriver` wraps one: `load` fills
 
 ```ts
 // app/providers/idb-storage.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createAsyncStorageDriver } from '@kitr/storage'
 import { createStore, del, entries, set } from 'idb-keyval'
 
@@ -781,7 +781,7 @@ Register it in `kitrrc.ts`; its place in the list does not matter:
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 
 export default defineKitrConfig({
   providers: [

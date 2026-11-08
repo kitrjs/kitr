@@ -1,4 +1,4 @@
-# kitr
+# @kitr/kitr
 
 kitr: the CLI and the kitrrc.ts config for apps built from @kitr/* packages. Each package is installed with `kitr add <name>` and imported from `@kitr/<name>`.
 

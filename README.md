@@ -28,7 +28,7 @@ kitr is one TypeScript framework for the web, servers, desktop and phones. It wi
 You need Node.js 22 or newer.
 
 ```sh
-npm install -g kitr
+npm install -g @kitr/kitr
 kitr new my-app --kit app
 cd my-app
 npm run dev

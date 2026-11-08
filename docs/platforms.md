@@ -4,7 +4,7 @@ Where an app runs is a **platform**: a named entry in `kitrrc.ts` built by a fac
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 import { server } from '@kitr/server'
 import { desktop } from '@kitr/desktop'
@@ -286,7 +286,7 @@ The rest of the toolbox works per platform too: `ssrRoute({ www: true, default: 
 ## Writing a platform package
 
 ```ts
-import { definePlatform } from 'kitr/app'
+import { definePlatform } from '@kitr/kitr/app'
 
 export const kiosk = definePlatform<{ port?: number }>(
   {

@@ -78,7 +78,7 @@ export interface Project {
     ctx,
     'server/controllers/projects-controller.ts',
     `import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { requireUser } from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import {
@@ -156,7 +156,7 @@ export default class ProjectsController {
   write(
     ctx,
     'server/auth.ts',
-    `import { inProduction } from 'kitr/app'
+    `import { inProduction } from '@kitr/kitr/app'
 import {
   createCookieSession,
   createMemorySessionStore,
@@ -241,7 +241,7 @@ export const auth = { sessions, users }
   write(
     ctx,
     'server/routes.ts',
-    `import { defineRoutes } from 'kitr/app'
+    `import { defineRoutes } from '@kitr/kitr/app'
 import { sessionMiddleware } from '@kitr/auth/server'
 import api from '@kitr/api/routes'
 import { auth } from '#server/auth'
@@ -342,7 +342,7 @@ export default defineConfig({
     'app/router.tsx',
     `import type { Session } from '@kitr/auth'
 import { dehydrate, hydrate, type DehydratedState } from '@kitr/query'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
@@ -426,7 +426,7 @@ export const deleteProject = mutationFrom(
   write(
     ctx,
     'app/routes.ts',
-    `import { defineRoutes } from 'kitr/app'
+    `import { defineRoutes } from '@kitr/kitr/app'
 import { ensureSession } from '@kitr/auth'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
