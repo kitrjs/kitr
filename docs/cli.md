@@ -22,8 +22,10 @@
 | `kitr dev [names...]` | Runs every platform in `kitrrc.ts`, or the named ones, in development: `kitr dev`, `kitr dev site api`, `kitr dev site --port 4000`. With more than one platform, each line is prefixed with the platform's name (`[site]`, `[api]`). |
 | `kitr build [names...]` | Production builds into `dist/<name>/`. |
 | `kitr start [names...]` | Serves the builds (`kitr serve` is an alias). |
-| `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms and their effective options; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
-| `kitr config <name> [option] [value] [--unset]` | Reads or sets one platform option in `kitrrc.ts`, validated against the platform's schema: `kitr config site port 4000`. `KITR_<NAME>_<OPTION>` overrides any option at run time. |
+| `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms, their effective options and the config files each build uses; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
+| `kitr config <name> [option] [value] [--unset]` | Reads or sets one platform option in `kitrrc.ts`, validated against the platform's schema: `kitr config site port 4000`, `kitr config admin without analytics,consent`. `KITR_<NAME>_<OPTION>` overrides any option at run time. |
+
+The server without Vite imports `config/index.ts`, which `kitr add` regenerates. When a platform has a `config/<platform>/` folder or a `without` list, the file switches on the build's platform with `forBuildPlatform()`; see [Config per platform](platforms.md#config-per-platform).
 
 ## Workspaces
 
