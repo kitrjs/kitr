@@ -60,7 +60,7 @@ interface DevtoolsAction {
 
 The devtools contract. Core only defines the shape; `@kitr/devtools` renders it.
 Any provider can contribute by adding a `devtools(app)` method that returns panels.
-Nothing here runs in production: the hub is only bound in development on the client.
+The hub is bound on the client only when devtools is enabled (development by default).
 
 ### DevtoolsConfig
 
