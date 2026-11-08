@@ -8,5 +8,7 @@ export const env = createEnv({
     VITE_GA_MEASUREMENT_ID: e.string({ optional: true }),
     VITE_SENTRY_DSN: e.string({ optional: true }),
   },
-  server: {},
+  server: {
+    SESSION_SECRET: e.string({ optional: true }),
+  },
 })

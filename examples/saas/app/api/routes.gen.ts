@@ -6,9 +6,19 @@ export const routeTable = [
     "path": "/api/health"
   },
   {
+    "name": "auth.session",
+    "method": "GET",
+    "path": "/api/auth/session"
+  },
+  {
     "name": "auth.signIn",
     "method": "POST",
     "path": "/api/auth/sign-in"
+  },
+  {
+    "name": "auth.signUp",
+    "method": "POST",
+    "path": "/api/auth/sign-up"
   },
   {
     "name": "auth.signOut",
@@ -16,9 +26,29 @@ export const routeTable = [
     "path": "/api/auth/sign-out"
   },
   {
-    "name": "auth.me",
-    "method": "GET",
-    "path": "/api/auth/me"
+    "name": "auth.signOutAll",
+    "method": "POST",
+    "path": "/api/auth/sign-out-all"
+  },
+  {
+    "name": "auth.requestVerification",
+    "method": "POST",
+    "path": "/api/auth/verify-email/request"
+  },
+  {
+    "name": "auth.verifyEmail",
+    "method": "POST",
+    "path": "/api/auth/verify-email"
+  },
+  {
+    "name": "auth.requestPasswordReset",
+    "method": "POST",
+    "path": "/api/auth/password/forgot"
+  },
+  {
+    "name": "auth.resetPassword",
+    "method": "POST",
+    "path": "/api/auth/password/reset"
   },
   {
     "name": "projects.index",

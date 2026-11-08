@@ -124,7 +124,12 @@ export async function verifyPassword(password: string, stored: string): Promise<
     if (parts[0] === 'pbkdf2-sha256' && parts.length === 4) {
       const [, iterations, salt, hash] = parts as [string, string, string, string]
       const expected = fromBase64Url(hash)
-      const actual = await pbkdf2(password, fromBase64Url(salt), Number(iterations), expected.length)
+      const actual = await pbkdf2(
+        password,
+        fromBase64Url(salt),
+        Number(iterations),
+        expected.length,
+      )
       return timingSafeEqual(actual, expected)
     }
   } catch {

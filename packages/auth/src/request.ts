@@ -140,7 +140,9 @@ export interface SessionMiddlewareOptions<TUser extends AuthUser> extends Sessio
  *
  *   router.group({ prefix: '/api', middleware: [sessionMiddleware({ sessions, users })] }, ...)
  */
-export function sessionMiddleware<TUser extends AuthUser>(options: SessionMiddlewareOptions<TUser>) {
+export function sessionMiddleware<TUser extends AuthUser>(
+  options: SessionMiddlewareOptions<TUser>,
+) {
   return async (ctx: MiddlewareContext, next: () => Promise<unknown>) => {
     setServerSessionResolver(async () => {
       const found = await getRequestSession()

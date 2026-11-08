@@ -11,6 +11,7 @@ import {
   sessionQueryKey,
   setServerSessionResolver,
 } from '../src'
+import authProvider from '../src/provider'
 import {
   createCookieSession,
   createMemorySessionStore,
@@ -22,7 +23,6 @@ import {
   SESSION_LOCALS_KEY,
   sessionMiddleware,
 } from '../src/server'
-import authProvider from '../src/provider'
 
 interface User extends AuthUser {
   role: 'admin' | 'member'
@@ -62,7 +62,7 @@ describe('runWithSession', () => {
     await expect(getRequestUser()).rejects.toThrow(/needs a request/)
   })
 
-  it('gives anything running inside it the request\'s user, and resolves once per request', async () => {
+  it("gives anything running inside it the request's user, and resolves once per request", async () => {
     const { auth, signedIn, anonymous } = await world()
     const find = vi.spyOn(auth.users, 'findById')
     await runWithSession(auth, signedIn, async () => {
@@ -95,7 +95,7 @@ describe('runWithSession', () => {
     expect(getServerSessionResolver()).toBeUndefined()
     await runWithSession(auth, signedIn, async () => {
       const found = await getServerSessionResolver()!()
-      expect((found?.user as User).id).toBe('ada')
+      expect((found?.user as User | undefined)?.id).toBe('ada')
       expect(found?.expiresAt).toBeGreaterThan(Date.now())
     })
     // Outside the scope the reader says "no request", not "anonymous".
@@ -113,13 +113,20 @@ describe('runWithSession', () => {
     vi.useFakeTimers()
     try {
       const store = createMemorySessionStore()
-      const sessions = createCookieSession({ secret: SECRET, store, maxAge: 1000, absoluteMaxAge: 100_000 })
+      const sessions = createCookieSession({
+        secret: SECRET,
+        store,
+        maxAge: 1000,
+        absoluteMaxAge: 100_000,
+      })
       const users = createMemoryUserProvider<User>({
         seed: [{ user: { id: 'ada', email: 'a@b.co', role: 'member' }, passwordHash: 'x' }],
       })
       const h = new Headers()
       await sessions.create('ada', h)
-      const request = new Request('http://app/', { headers: { cookie: h.get('set-cookie')!.split(';')[0]! } })
+      const request = new Request('http://app/', {
+        headers: { cookie: h.get('set-cookie')!.split(';')[0]! },
+      })
       vi.advanceTimersByTime(500_000)
       const response = await runWithSession({ sessions, users }, request, async () => {
         await getRequestUser()
@@ -162,7 +169,9 @@ describe('sessionMiddleware', () => {
 
   it('answers 401 to anonymous requests unless optional', async () => {
     const { auth, anonymous } = await world()
-    await expect(sessionMiddleware(auth)(ctxFor(anonymous), async () => null)).rejects.toBeInstanceOf(KitrError)
+    await expect(
+      sessionMiddleware(auth)(ctxFor(anonymous), async () => null),
+    ).rejects.toBeInstanceOf(KitrError)
     const ctx = ctxFor(anonymous)
     await sessionMiddleware({ ...auth, optional: true })(ctx, async () => null)
     expect(ctx.locals.user).toBeNull()
@@ -179,13 +188,19 @@ describe('sessionMiddleware', () => {
   it('refreshes the cookie on the response through the event', async () => {
     vi.useFakeTimers()
     try {
-      const sessions = createCookieSession({ secret: SECRET, store: createMemorySessionStore(), maxAge: 1000 })
+      const sessions = createCookieSession({
+        secret: SECRET,
+        store: createMemorySessionStore(),
+        maxAge: 1000,
+      })
       const users = createMemoryUserProvider<User>({
         seed: [{ user: { id: 'ada', email: 'a@b.co', role: 'member' }, passwordHash: 'x' }],
       })
       const h = new Headers()
       await sessions.create('ada', h)
-      const ctx = ctxFor(new Request('http://app/', { headers: { cookie: h.get('set-cookie')!.split(';')[0]! } }))
+      const ctx = ctxFor(
+        new Request('http://app/', { headers: { cookie: h.get('set-cookie')!.split(';')[0]! } }),
+      )
       vi.advanceTimersByTime(500_000)
       await sessionMiddleware({ sessions, users })(ctx, async () => null)
       expect(ctx.event.res.headers.get('set-cookie')).toMatch(/^kitr-session=/)
@@ -204,17 +219,23 @@ describe('cookie-session adapter', () => {
     const key = (k: readonly unknown[]) => JSON.stringify(k)
     return {
       data,
-      fetchQuery: vi.fn(async (o: { queryKey: readonly unknown[]; queryFn: () => Promise<unknown> }) => {
-        if (!data.has(key(o.queryKey))) data.set(key(o.queryKey), await o.queryFn())
-        return data.get(key(o.queryKey))
-      }),
+      fetchQuery: vi.fn(
+        async (o: { queryKey: readonly unknown[]; queryFn: () => Promise<unknown> }) => {
+          if (!data.has(key(o.queryKey))) data.set(key(o.queryKey), await o.queryFn())
+          return data.get(key(o.queryKey))
+        },
+      ),
       setQueryData: vi.fn((k: readonly unknown[], v: unknown) => void data.set(key(k), v)),
     }
   }
 
   it('loads the session over HTTP in the browser, through the query cache', async () => {
     const fetchSession = vi.fn(async () => ({ user, expiresAt: 123 }))
-    const adapter = sessionAdapter<User>({ abilities, fetchSession, signIn: async () => ({ user }) })
+    const adapter = sessionAdapter<User>({
+      abilities,
+      fetchSession,
+      signIn: async () => ({ user }),
+    })
     const cache = queryCache()
     const auth = createAuth(adapter, { context: () => ({ queryClient: cache }) })
     const session = await auth.load()
@@ -223,7 +244,10 @@ describe('cookie-session adapter', () => {
     expect(session.can('users.ban')).toBe(true)
     await auth.load()
     expect(fetchSession).toHaveBeenCalledTimes(1)
-    expect(cache.fetchQuery.mock.calls[0]![0]).toMatchObject({ queryKey: sessionQueryKey, staleTime: 30_000 })
+    expect(cache.fetchQuery.mock.calls[0]![0]).toMatchObject({
+      queryKey: sessionQueryKey,
+      staleTime: 30_000,
+    })
   })
 
   it('reads anonymous when the endpoint says so, and without a query cache calls it every time', async () => {
@@ -271,7 +295,10 @@ describe('cookie-session adapter', () => {
   })
 
   it('works with no sign-out function and no context', async () => {
-    const adapter = sessionAdapter<User>({ fetchSession: async () => ({ user }), signIn: async () => ({ user }) })
+    const adapter = sessionAdapter<User>({
+      fetchSession: async () => ({ user }),
+      signIn: async () => ({ user }),
+    })
     await expect(adapter.signOut!()).resolves.toBeUndefined()
     expect((await adapter.signIn!({ email: 'a', password: 'b' })).user?.id).toBe('ada')
   })
@@ -279,8 +306,14 @@ describe('cookie-session adapter', () => {
   it('takes the session of the request being rendered, with no HTTP call', async () => {
     const { auth: serverAuth, signedIn, anonymous } = await world()
     const fetchSession = vi.fn(async () => ({ user: null }))
-    const adapter = sessionAdapter<User>({ abilities, fetchSession, signIn: async () => ({ user }) })
-    const signedInSession = await runWithSession(serverAuth, signedIn, () => createAuth(adapter).load())
+    const adapter = sessionAdapter<User>({
+      abilities,
+      fetchSession,
+      signIn: async () => ({ user }),
+    })
+    const signedInSession = await runWithSession(serverAuth, signedIn, () =>
+      createAuth(adapter).load(),
+    )
     expect(signedInSession.user?.id).toBe('ada')
     expect(signedInSession.can('users.ban')).toBe(true)
     const anon = await runWithSession(serverAuth, anonymous, () => createAuth(adapter).load())
@@ -305,7 +338,7 @@ describe('auth provider and ensureSession', () => {
     },
   })
 
-  it('binds one auth service per scope, so a server request never sees another request\'s session', async () => {
+  it("binds one auth service per scope, so a server request never sees another request's session", async () => {
     const app = createApp({ providers: [authProvider], config: config(), environment: 'server' })
     await app.boot()
     const a = app.fork()
@@ -321,14 +354,22 @@ describe('auth provider and ensureSession', () => {
 
   it('does not load a session during server boot, which belongs to no request', async () => {
     const fetchSession = vi.fn(async () => ({ user }))
-    const app = createApp({ providers: [authProvider], config: config(fetchSession), environment: 'server' })
+    const app = createApp({
+      providers: [authProvider],
+      config: config(fetchSession),
+      environment: 'server',
+    })
     await app.boot()
     expect(fetchSession).not.toHaveBeenCalled()
   })
 
-  it('ensureSession loads the session into the request\'s own service', async () => {
+  it("ensureSession loads the session into the request's own service", async () => {
     const fetchSession = vi.fn(async () => ({ user }))
-    const app = createApp({ providers: [authProvider], config: config(fetchSession), environment: 'server' })
+    const app = createApp({
+      providers: [authProvider],
+      config: config(fetchSession),
+      environment: 'server',
+    })
     const fork = app.fork()
     await ensureSession({ context: { app: fork } })
     expect(fork.container.use('auth').session.user?.id).toBe('ada')
@@ -340,14 +381,18 @@ describe('auth provider and ensureSession', () => {
     await expect(ensureSession({ context: { app: bare } })).resolves.toBeUndefined()
 
     const fetchSession = vi.fn(async () => ({ user }))
-    const client = createApp({ providers: [authProvider], config: config(fetchSession), environment: 'client' })
+    const client = createApp({
+      providers: [authProvider],
+      config: config(fetchSession),
+      environment: 'client',
+    })
     await client.boot()
     expect(fetchSession).toHaveBeenCalledTimes(1)
     await ensureSession({ context: { app: client } })
     expect(fetchSession).toHaveBeenCalledTimes(1)
   })
 
-  it('hands the adapter the app\'s query client when @kitr/query is installed', async () => {
+  it("hands the adapter the app's query client when @kitr/query is installed", async () => {
     const calls: unknown[] = []
     const cache = {
       fetchQuery: async (o: { queryFn: () => Promise<unknown> }) => {

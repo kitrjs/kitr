@@ -1,8 +1,8 @@
 import { KitrError, type StandardSchemaV1 } from '@kitr/core'
+import type { SessionPayload } from './adapters'
 import { type CookieSessions, readCookie, safeEqual } from './cookie-session'
 import { hashPassword, needsRehash, verifyPassword } from './password'
 import { type ResolvedSession, resolveSession } from './request'
-import type { SessionPayload } from './adapters'
 import { createToken, fingerprint, readToken } from './tokens'
 import type { AuthUser, UserProvider } from './users'
 
@@ -95,7 +95,8 @@ const schema = <T>(
 
 const text = (input: Record<string, unknown>, field: string) =>
   typeof input[field] === 'string' ? (input[field] as string) : ''
-const looksLikeEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254
+const looksLikeEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254
 const MAX_PASSWORD = 256
 
 /** A throwaway hash, verified against when the email is unknown so a miss takes as long as a hit. */
@@ -122,7 +123,10 @@ export function createSessionController<TUser extends AuthUser>(
   const csrfNames =
     options.csrf === false
       ? null
-      : { cookie: options.csrf?.cookie ?? 'kitr-csrf', header: options.csrf?.header ?? 'x-csrf-token' }
+      : {
+          cookie: options.csrf?.cookie ?? 'kitr-csrf',
+          header: options.csrf?.header ?? 'x-csrf-token',
+        }
   const ttl = {
     verifyEmail: options.tokenTtl?.verifyEmail ?? 60 * 60 * 24,
     resetPassword: options.tokenTtl?.resetPassword ?? 60 * 60,
@@ -193,7 +197,10 @@ export function createSessionController<TUser extends AuthUser>(
     }
   }
 
-  const signedIn = async (ctx: ControllerContext<any>, user: TUser): Promise<SessionPayload<TUser>> => {
+  const signedIn = async (
+    ctx: ControllerContext<any>,
+    user: TUser,
+  ): Promise<SessionPayload<TUser>> => {
     const record = await sessions.create(user.id, ctx.event.res.headers, {
       request: ctx.request.headers,
     })
@@ -201,8 +208,7 @@ export function createSessionController<TUser extends AuthUser>(
   }
 
   const checkPassword = (password: string, field = 'password'): Array<[string, string]> => {
-    if (password.length < minPassword)
-      return [[field, `Use at least ${minPassword} characters`]]
+    if (password.length < minPassword) return [[field, `Use at least ${minPassword} characters`]]
     if (password.length > MAX_PASSWORD) return [[field, `Use at most ${MAX_PASSWORD} characters`]]
     return []
   }
@@ -213,7 +219,8 @@ export function createSessionController<TUser extends AuthUser>(
     const password = text(input, 'password')
     const issues: Array<[string, string]> = []
     if (!looksLikeEmail(email)) issues.push(['email', 'Enter a valid email'])
-    if (!password || password.length > MAX_PASSWORD) issues.push(['password', 'Password is required'])
+    if (!password || password.length > MAX_PASSWORD)
+      issues.push(['password', 'Password is required'])
     return issues.length ? issues : { email, password }
   })
   type SignUp = Credentials & { name?: string }
@@ -353,7 +360,9 @@ export function createSessionController<TUser extends AuthUser>(
     }
 
     /** `POST` `{ token, password }`: set a new password, and end every session the old one had. */
-    async resetPassword(ctx: ControllerContext<{ token: string; password: string }>): Promise<void> {
+    async resetPassword(
+      ctx: ControllerContext<{ token: string; password: string }>,
+    ): Promise<void> {
       checkCsrf(ctx)
       if (!users.setPasswordHash) throw KitrError.notFound('Password reset')
       const id = await readToken(sessions, 'reset-password', ctx.body.token, async (subject) => {

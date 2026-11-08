@@ -30,9 +30,9 @@ const browser = (response: Headers) => {
 
 describe('createCookieSession', () => {
   it('refuses a short secret', () => {
-    expect(() => createCookieSession({ secret: 'short', store: createMemorySessionStore() })).toThrow(
-      /at least 32/,
-    )
+    expect(() =>
+      createCookieSession({ secret: 'short', store: createMemorySessionStore() }),
+    ).toThrow(/at least 32/)
     expect(() => createCookieSession({ secret: [], store: createMemorySessionStore() })).toThrow(
       /at least 32/,
     )
@@ -54,7 +54,13 @@ describe('createCookieSession', () => {
 
   it('adds Secure in production and honours cookie options', async () => {
     const { sessions } = make({
-      cookie: { production: true, name: 'sid', domain: '.acme.com', path: '/app', sameSite: 'strict' },
+      cookie: {
+        production: true,
+        name: 'sid',
+        domain: '.acme.com',
+        path: '/app',
+        sameSite: 'strict',
+      },
     })
     const res = new Headers()
     await sessions.create('u1', res)
@@ -120,7 +126,10 @@ describe('createCookieSession', () => {
     const first = new Headers()
     const a = await sessions.create('u1', first)
     const second = new Headers()
-    const b = await sessions.create('u1', second, { request: browser(first), data: { via: 'password' } })
+    const b = await sessions.create('u1', second, {
+      request: browser(first),
+      data: { via: 'password' },
+    })
     expect(b.id).not.toBe(a.id)
     expect(b.data).toEqual({ via: 'password' })
     expect(await store.get(a.id)).toBeNull()
@@ -272,7 +281,9 @@ describe('email-link tokens', () => {
       const token = await createToken(sessions, 'reset-password', 'u1', 60)
       expect(await readToken(sessions, 'reset-password', `${token}x`)).toBeNull()
       expect(await readToken(sessions, 'reset-password', 'garbage')).toBeNull()
-      expect(await readToken(sessions, 'reset-password', await sessions.sign('not-json'))).toBeNull()
+      expect(
+        await readToken(sessions, 'reset-password', await sessions.sign('not-json')),
+      ).toBeNull()
       vi.advanceTimersByTime(61_000)
       expect(await readToken(sessions, 'reset-password', token)).toBeNull()
     } finally {
@@ -281,9 +292,19 @@ describe('email-link tokens', () => {
   })
 
   it('stops working when what it was bound to changes', async () => {
-    const token = await createToken(sessions, 'reset-password', 'u1', 60, await fingerprint('hash-1'))
-    expect(await readToken(sessions, 'reset-password', token, async () => fingerprint('hash-1'))).toBe('u1')
-    expect(await readToken(sessions, 'reset-password', token, async () => fingerprint('hash-2'))).toBeNull()
+    const token = await createToken(
+      sessions,
+      'reset-password',
+      'u1',
+      60,
+      await fingerprint('hash-1'),
+    )
+    expect(
+      await readToken(sessions, 'reset-password', token, async () => fingerprint('hash-1')),
+    ).toBe('u1')
+    expect(
+      await readToken(sessions, 'reset-password', token, async () => fingerprint('hash-2')),
+    ).toBeNull()
     expect(await fingerprint('a')).toBe(await fingerprint('a'))
     expect(await fingerprint('a')).not.toBe(await fingerprint('b'))
   })

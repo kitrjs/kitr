@@ -83,5 +83,7 @@ export function setServerSessionResolver(resolver: ServerSessionResolver | undef
 
 /** The installed server-side session reader, or `undefined` (always, in a browser). */
 export function getServerSessionResolver(): ServerSessionResolver | undefined {
-  return (globalThis as Record<symbol, unknown>)[SERVER_SESSION] as ServerSessionResolver | undefined
+  return (globalThis as Record<symbol, unknown>)[SERVER_SESSION] as
+    | ServerSessionResolver
+    | undefined
 }

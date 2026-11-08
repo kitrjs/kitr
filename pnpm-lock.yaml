@@ -1020,6 +1020,9 @@ importers:
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@kitr/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
       '@kitr/monitoring':
         specifier: workspace:*
         version: link:../../packages/monitoring
@@ -1038,6 +1041,9 @@ importers:
       '@kitr/server':
         specifier: workspace:*
         version: link:../../packages/server
+      '@kitr/shield':
+        specifier: workspace:*
+        version: link:../../packages/shield
       '@kitr/state':
         specifier: workspace:*
         version: link:../../packages/state

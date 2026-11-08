@@ -122,7 +122,9 @@ export const authProvider: KitrProvider = defineProvider({
         listen: !app.isServer,
         // This request's (or this tab's) query cache, never another scope's.
         context: () => ({
-          queryClient: container.has('queryClient') ? (container.use('queryClient') as SessionQueryCache) : undefined,
+          queryClient: container.has('queryClient')
+            ? (container.use('queryClient') as SessionQueryCache)
+            : undefined,
         }),
       }),
     )

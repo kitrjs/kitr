@@ -1,5 +1,6 @@
 import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
 import { useAuth, useUser } from 'kitr/auth'
+import { useQueryClient } from 'kitr/query'
 import { Outlet, useNavigate } from 'kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
@@ -11,6 +12,7 @@ export default function AppLayout() {
   const auth = useAuth<User>()
   const user = useUser<User>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   return (
     <AppShell
       brand="Saas"
@@ -26,6 +28,8 @@ export default function AppLayout() {
             size="sm"
             onClick={async () => {
               await auth.signOut()
+              // The next person on this browser must not see this user's cached data.
+              queryClient.removeQueries({ queryKey: ['api'] })
               await navigate({ to: '/sign-in', search: { redirect: undefined } })
             }}
           >

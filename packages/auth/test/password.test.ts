@@ -40,7 +40,14 @@ describe('password hashing', () => {
   })
 
   it('answers false, never throws, for malformed hashes', async () => {
-    for (const bad of ['', 'plain', 'scrypt$1$2', 'scrypt$x$y$z$!!$!!', 'pbkdf2-sha256$1$a', 'bcrypt$10$abc']) {
+    for (const bad of [
+      '',
+      'plain',
+      'scrypt$1$2',
+      'scrypt$x$y$z$!!$!!',
+      'pbkdf2-sha256$1$a',
+      'bcrypt$10$abc',
+    ]) {
       expect(await verifyPassword('pw', bad)).toBe(false)
     }
   })

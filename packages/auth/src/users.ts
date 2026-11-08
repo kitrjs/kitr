@@ -75,7 +75,11 @@ export function createMemoryUserProvider<TUser extends AuthUser = AuthUser>(
       const id = crypto.randomUUID()
       const user =
         options.build?.(input, id) ??
-        ({ id, email: input.email, ...(input.name ? { name: input.name } : {}) } as unknown as TUser)
+        ({
+          id,
+          email: input.email,
+          ...(input.name ? { name: input.name } : {}),
+        } as unknown as TUser)
       byId.set(id, { user, passwordHash: input.passwordHash, emailVerified: false })
       return user
     },

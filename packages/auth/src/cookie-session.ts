@@ -56,11 +56,7 @@ export interface CookieSessions {
    */
   resolve(request: RequestLike, response?: Headers): Promise<SessionRecord | null>
   /** Start a session for a user: a new random id, a signed `Set-Cookie` on `response`. Replaces the request's current session. */
-  create(
-    userId: string,
-    response: Headers,
-    options?: CreateSessionOptions,
-  ): Promise<SessionRecord>
+  create(userId: string, response: Headers, options?: CreateSessionOptions): Promise<SessionRecord>
   /** Replace the request's session id with a new one (same user, same absolute lifetime). Call after a privilege change. */
   rotate(request: RequestLike, response: Headers): Promise<SessionRecord | null>
   /** End the request's session and expire the cookie. */
@@ -83,10 +79,13 @@ const keyCache = new Map<string, Promise<CryptoKey>>()
 function hmacKey(secret: string): Promise<CryptoKey> {
   let key = keyCache.get(secret)
   if (!key) {
-    key = crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [
-      'sign',
-      'verify',
-    ])
+    key = crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign', 'verify'],
+    )
     keyCache.set(secret, key)
   }
   return key
@@ -161,7 +160,10 @@ export function createCookieSession(options: CookieSessionOptions): CookieSessio
   const secure = options.cookie?.secure ?? options.cookie?.production ?? inProduction()
 
   const attributes = (seconds: number) => {
-    const parts = [`Max-Age=${Math.max(0, Math.floor(seconds))}`, `Path=${options.cookie?.path ?? '/'}`]
+    const parts = [
+      `Max-Age=${Math.max(0, Math.floor(seconds))}`,
+      `Path=${options.cookie?.path ?? '/'}`,
+    ]
     if (options.cookie?.domain) parts.push(`Domain=${options.cookie.domain}`)
     parts.push('HttpOnly')
     if (secure) parts.push('Secure')
@@ -174,7 +176,10 @@ export function createCookieSession(options: CookieSessionOptions): CookieSessio
       `${name}=${await signValue(record.id, secrets[0]!)}; ${attributes((record.expiresAt - Date.now()) / 1000)}`,
     )
   const expire = (response: Headers) =>
-    response.append('set-cookie', `${name}=; ${attributes(0)}; Expires=Thu, 01 Jan 1970 00:00:00 GMT`)
+    response.append(
+      'set-cookie',
+      `${name}=; ${attributes(0)}; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+    )
   const idOf = async (request: RequestLike) => {
     const raw = readCookie(request, name)
     return raw ? unsignValue(raw, secrets) : null

@@ -214,7 +214,9 @@ export function sessionAdapter<TUser, TCredentials = { email: string; password: 
   options: SessionAdapterOptions<TUser, TCredentials>,
 ): AuthAdapter<TUser, TCredentials> {
   const toSession = (payload: SessionPayload<TUser> | null | undefined) =>
-    payload?.user ? createSession(payload.user, options.abilities, { expiresAt: payload.expiresAt }) : null
+    payload?.user
+      ? createSession(payload.user, options.abilities, { expiresAt: payload.expiresAt })
+      : null
   return {
     async getSession(context?: AdapterContext) {
       // Rendering on the server: the session of this request, no HTTP call.
