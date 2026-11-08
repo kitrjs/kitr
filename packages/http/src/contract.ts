@@ -10,6 +10,17 @@ import type { KyInstance, Options } from 'ky'
 
 type Method = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
+/**
+ * The client, or a function that returns it. Pass the function when the module loads before the
+ * app boots, such as a `queries.ts` that `app/routes.ts` imports for its loaders:
+ * `const http = () => app.container.use('http')`. It is called on each request.
+ */
+export type HttpClientSource = KyInstance | (() => KyInstance)
+
+// A ky instance is itself a function, so tell the two apart by its methods.
+const resolve = (client: HttpClientSource): KyInstance =>
+  'extend' in client ? client : (client as () => KyInstance)()
+
 /** Options for `httpQuery`: how one GET endpoint maps to a cached query. */
 export interface HttpQueryOptions<TInput, TOutput> {
   /** Path relative to the client's base URL, or a function of the input. */
@@ -28,7 +39,7 @@ export interface HttpQueryOptions<TInput, TOutput> {
 
 /** External HTTP API as a query contract. Use with `queryFrom` from kitr/query. */
 export function httpQuery<TInput = void, TOutput = unknown>(
-  client: KyInstance,
+  client: HttpClientSource,
   opts: HttpQueryOptions<TInput, TOutput>,
 ): Omit<QueryContract<TInput, TOutput>, 'kind'> {
   return {
@@ -38,7 +49,7 @@ export function httpQuery<TInput = void, TOutput = unknown>(
     fetch: async (input, { signal }) => {
       const path = typeof opts.path === 'function' ? opts.path(input) : opts.path
       const searchParams = clean(opts.searchParams?.(input))
-      const data = await client
+      const data = await resolve(client)
         .get(path, {
           ...opts.options,
           signal: signal ?? opts.options?.signal,
@@ -68,7 +79,7 @@ export interface HttpMutationOptions<TInput, TOutput> {
 
 /** External HTTP API as a mutation contract. Use with `mutationFrom` from kitr/query. */
 export function httpMutation<TInput = void, TOutput = unknown>(
-  client: KyInstance,
+  client: HttpClientSource,
   opts: HttpMutationOptions<TInput, TOutput>,
 ): Omit<MutationContract<TInput, TOutput>, 'kind'> {
   const method = opts.method ?? 'post'
@@ -82,7 +93,7 @@ export function httpMutation<TInput = void, TOutput = unknown>(
         : method === 'get' || method === 'delete'
           ? undefined
           : input
-      const response = await client[method](path, {
+      const response = await resolve(client)[method](path, {
         ...opts.options,
         ...(body !== undefined ? { json: body } : {}),
       })

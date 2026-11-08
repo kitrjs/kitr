@@ -116,7 +116,7 @@ export interface Order {
   status: 'open' | 'paid' | 'shipped'
 }
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const orderKeys = createKeys('orders')
 
 export const ordersQuery = queryFrom(
@@ -126,6 +126,8 @@ export const ordersQuery = queryFrom(
   }),
 )
 ```
+
+`http` is a function that returns the client, not the client itself. `app/routes.ts` imports this file for its loader, and the route table loads before the app boots, when the container has no `http` binding yet. `httpQuery` and `httpMutation` take either form and call the function on each request. Pass the client directly only from code that runs after boot, such as an event handler.
 
 Then show it on a page:
 
@@ -245,7 +247,7 @@ import { httpQuery } from 'kitr/http'
 import { queryFrom } from 'kitr/query'
 import type { Order } from './types'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const orderKeys = createKeys('orders')
 
 export const orderQuery = queryFrom(
@@ -288,7 +290,7 @@ import { httpQuery } from 'kitr/http'
 import { queryFrom } from 'kitr/query'
 import { z } from 'zod'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const invoiceKeys = createKeys('invoices')
 
 const invoice = z.object({
@@ -327,7 +329,7 @@ import { mutationFrom } from 'kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 
 export const createOrder = mutationFrom(
   httpMutation<{ customer: string; total: number }, Order>(http, {
@@ -384,7 +386,7 @@ import { createKeys } from 'kitr/app'
 import { httpMutation } from 'kitr/http'
 import { mutationFrom } from 'kitr/query'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const projectKeys = createKeys('projects')
 
 export const deleteProject = mutationFrom(
@@ -547,7 +549,7 @@ import { app } from '#app/app'
 import { httpQuery } from 'kitr/http'
 import { queryFrom } from 'kitr/query'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 
 export const yearlyReportQuery = queryFrom(
   httpQuery<number, { year: number; revenue: number }>(http, {
@@ -670,7 +672,7 @@ import { mutationFrom, queryFrom } from 'kitr/query'
 import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const ordersKeys = createKeys('orders')
 
 export interface Orders {

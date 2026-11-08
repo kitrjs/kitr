@@ -39,7 +39,8 @@ import { mutationFrom, queryFrom } from 'kitr/query'
 import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 
-const http = app.container.use('http')
+// A function: this file loads with the route table, before the app has booted.
+const http = () => app.container.use('http')
 export const ${naming.camel(name)}Keys = createKeys('${naming.snake(name)}')
 
 export interface ${naming.pascal(name)} {

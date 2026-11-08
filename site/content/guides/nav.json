@@ -10,6 +10,11 @@
     "pages": ["testing", "deploy", "monorepo"]
   },
   {
+    "title": "Ship to phones and desktops",
+    "description": "Previews: the same app as an iPhone and Android app, a desktop app, or all of them from one project.",
+    "pages": ["mobile-app", "desktop-app", "one-codebase"]
+  },
+  {
     "title": "Extend and migrate",
     "description": "Write your own kitr package, or bring an existing app over.",
     "pages": ["create-a-package", "migrate-from-nextjs"]

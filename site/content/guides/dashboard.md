@@ -322,7 +322,7 @@ import { mutationFrom, queryFrom } from 'kitr/query'
 import type { TableSearch } from 'kitr/table'
 import { app } from '#app/app'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const orderKeys = createKeys('orders')
 
 export interface Order {

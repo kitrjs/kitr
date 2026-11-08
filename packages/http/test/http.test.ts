@@ -177,6 +177,25 @@ describe('contracts', () => {
     expect(f.calls[0]!.url).toBe('https://api.dev/teams/core/members?limit=10')
   })
 
+  it('takes a function for a client that is not bound yet', async () => {
+    const f = fake(() => Response.json({ id: 1 }))
+    let bound: ReturnType<typeof createHttpClient> | undefined
+    // The shape of `const http = () => app.container.use('http')` in a module loaded before boot.
+    const http = () => {
+      if (!bound) throw new Error('No binding named "http"')
+      return bound
+    }
+    const one = httpQuery<string, { id: number }>(http, {
+      path: (id) => `items/${id}`,
+      key: (id) => ['items', id],
+    })
+    const save = httpMutation<{ id: number }, { id: number }>(http, { path: 'items' })
+    bound = createHttpClient({ baseUrl: 'https://api.dev', fetch: f.fetch })
+    expect(await one.fetch('1', {})).toEqual({ id: 1 })
+    expect(await save.mutate({ id: 1 })).toEqual({ id: 1 })
+    expect(f.calls.map((c) => c.url)).toEqual(['https://api.dev/items/1', 'https://api.dev/items'])
+  })
+
   it('httpQuery rejects responses that fail the schema', async () => {
     const f = fake(() => Response.json({ wrong: true }))
     const http = createHttpClient({ fetch: f.fetch })
