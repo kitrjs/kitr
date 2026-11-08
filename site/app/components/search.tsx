@@ -47,7 +47,12 @@ export function Search() {
 
   return (
     <>
-      <button type="button" className="search-button" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="search-button"
+        aria-label="Search docs"
+        onClick={() => setOpen(true)}
+      >
         <Icon icon={icons.search} size={16} />
         <span className="search-label">Search docs</span>
         <kbd className="mono">⌘K</kbd>

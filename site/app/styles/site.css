@@ -1594,6 +1594,19 @@ a.dcard:focus-visible {
   align-items: center;
   margin-bottom: 28px;
 }
+@media (max-width: 760px) {
+  .package-head {
+    gap: 16px;
+  }
+  .package-head > .tile {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .package-head > .tile svg {
+    width: 30px;
+    height: 30px;
+  }
+}
 .package-head-compact {
   gap: 16px;
   margin-bottom: 20px;
