@@ -1245,17 +1245,45 @@ a.dcard:focus-visible {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
+/* Same family as the package cards (.dcard): hairline border, 12px corners, a lift on hover. */
 .guide-card {
-  min-height: 190px;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+.guide-card:hover,
+.guide-card:focus-visible {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 .guide-card-title {
-  font-size: 18px;
+  display: block;
+  font-size: 17px;
   line-height: 24px;
   font-weight: 600;
 }
+.guide-card-summary {
+  flex: 1 1 auto;
+  font-size: 14.5px;
+  line-height: 21px;
+  color: var(--muted);
+}
 .guide-card-foot {
   display: flex;
+  margin-top: 6px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;

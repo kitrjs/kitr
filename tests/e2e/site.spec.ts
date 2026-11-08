@@ -300,6 +300,25 @@ test.describe('in the browser', () => {
     await expect(page.locator('.docs-bar-section')).toHaveText('Testing')
   })
 
+  test('guide cards are styled like the package cards', async ({ page }) => {
+    await isolate(page)
+    await page.goto('/guides')
+    await page.waitForLoadState('networkidle')
+    const card = page.locator('.guide-card').first()
+    const style = await card.evaluate((el) => {
+      const s = getComputedStyle(el)
+      const title = el.querySelector('.guide-card-title')?.getBoundingClientRect()
+      const summary = el.querySelector('.guide-card-summary')?.getBoundingClientRect()
+      return {
+        border: s.borderTopWidth,
+        radius: s.borderTopLeftRadius,
+        underline: s.textDecorationLine,
+        stacked: (summary?.top ?? 0) >= (title?.bottom ?? 0),
+      }
+    })
+    expect(style).toEqual({ border: '1px', radius: '12px', underline: 'none', stacked: true })
+  })
+
   test('on a phone, the package search stays flush under a header that stays put', async ({
     page,
   }) => {
