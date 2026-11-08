@@ -1,5 +1,5 @@
+import { createApp } from '@kitr/kitr/app'
 import { createSecureStorage } from '@kitr/secure-storage'
-import { createApp } from 'kitr/app'
 import { expect, it } from 'vitest'
 import flagsProvider from '#app/providers/flags-provider'
 import vaultProvider from '#app/vault'

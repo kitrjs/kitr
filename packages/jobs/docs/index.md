@@ -213,7 +213,7 @@ Pass `delay` in milliseconds, or `at` for a fixed time:
 
 ```ts
 // server/services/trial-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useJobs } from '@kitr/jobs'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 

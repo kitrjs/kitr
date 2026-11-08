@@ -119,7 +119,7 @@ Describe the endpoint once in the feature's `queries.ts`: `httpQuery` makes a qu
 ```ts
 // app/queries/orders.ts
 import { app } from '#app/app'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpQuery } from '@kitr/http'
 import { queryFrom } from '@kitr/query'
 
@@ -252,7 +252,7 @@ export const billing = app.container.use('http').extend({
 ```ts
 // app/queries/orders.ts
 import { app } from '#app/app'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpQuery } from '@kitr/http'
 import { queryFrom } from '@kitr/query'
 import type { Order } from './types'
@@ -295,7 +295,7 @@ An API you don't control can change shape. Give `httpQuery` or `httpMutation` a 
 ```ts
 // app/queries/invoices.ts
 import { app } from '#app/app'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpQuery } from '@kitr/http'
 import { queryFrom } from '@kitr/query'
 import { z } from 'zod'
@@ -392,7 +392,7 @@ export function ShipButton({ id }: { id: string }) {
 ```ts
 // app/queries/projects.ts
 import { app } from '#app/app'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpMutation } from '@kitr/http'
 import { mutationFrom } from '@kitr/query'
 
@@ -599,7 +599,7 @@ Every failure becomes a `KitrError` with `code`, `status`, `message` and, when t
 ```ts
 // app/lib/orders/place-order.ts
 import { app } from '#app/app'
-import { isKitrError } from 'kitr/app'
+import { isKitrError } from '@kitr/kitr/app'
 
 const http = app.container.use('http')
 
@@ -643,7 +643,7 @@ It writes `app/queries/orders.ts`:
 
 ```ts
 // app/queries/orders.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { app } from '#app/app'
@@ -710,7 +710,7 @@ export async function describeError(error: unknown) {
 
 ```ts
 // app/queries/orders.test.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { createHttpClient, httpMutation, httpQuery } from '@kitr/http'
 import { describe, expect, it, vi } from 'vitest'
 

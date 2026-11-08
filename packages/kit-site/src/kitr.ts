@@ -291,7 +291,7 @@ export default class NewsletterController {
   write(
     ctx,
     'server/routes.ts',
-    `import { defineRoutes } from 'kitr/app'
+    `import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import HealthController from '#server/controllers/health-controller'
 import NewsletterController from '#server/controllers/newsletter-controller'
@@ -408,7 +408,7 @@ function SiteFooter() {
   write(
     ctx,
     'app/routes.ts',
-    `import { defineRoutes } from 'kitr/app'
+    `import { defineRoutes } from '@kitr/kitr/app'
 import { notFound } from '@kitr/router'
 import router from '@kitr/router/routes'
 import { seo } from '@kitr/seo'

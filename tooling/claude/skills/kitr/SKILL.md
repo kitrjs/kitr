@@ -13,7 +13,7 @@ kitr fixes the conventions and writes them down. Every kind of file has one home
 - Read `kitrrc.ts`. It lists every package, provider and platform the app loads. Options live in `config/<package>.ts`.
 - Run `kitr info` for a JSON summary: kitr version, package manager, `serverOnly`, platforms, packages, providers, directories.
 
-Run the CLI through the project's package manager (`pnpm kitr ...`, `npx kitr ...`) so the project's own version answers.
+Run the CLI through the project's package manager (`pnpm kitr ...`, `npx @kitr/kitr ...`) so the project's own version answers.
 
 ## 2. Create files with `kitr make`
 

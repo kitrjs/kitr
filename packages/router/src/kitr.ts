@@ -37,7 +37,7 @@ export function RootDocument() {
 }
 
 /** `app/routes.ts`: the route table with the first pages. */
-const routesFile = `import { defineRoutes } from 'kitr/app'
+const routesFile = `import { defineRoutes } from '@kitr/kitr/app'
 import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 

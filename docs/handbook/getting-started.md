@@ -8,14 +8,14 @@ description: Install kitr, create your first app and add a package, in about fiv
 kitr is a framework made of small packages you add as you need them. A new project starts as the wiring files; `kitr add web site` brings Vite, React and a router, and `kitr add forms` or `kitr add auth` come when your app needs forms or sign-in. Each package is a popular library you may already know (TanStack Query, React Hook Form, Zustand...) with the setup done for you.
 
 > [!SUMMARY]
-> Two commands get you a running app: `npm install -g kitr`, then `kitr new my-app --kit app`. Run `npm run dev` inside the folder and open the URL it prints.
+> Two commands get you a running app: `npm install -g @kitr/kitr`, then `kitr new my-app --kit app`. Run `npm run dev` inside the folder and open the URL it prints.
 
 You need [Node.js](https://nodejs.org) 22 or newer.
 
 ## 1. Install the CLI once
 
 ```sh
-npm install -g kitr
+npm install -g @kitr/kitr
 ```
 
 Now `kitr` works in any folder. Inside a project, the global command hands off to the project's own version of kitr, so everyone on the team runs the same one.

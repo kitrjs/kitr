@@ -314,7 +314,7 @@ Every address field takes one recipient or a list, in any of the three forms:
 
 ```ts
 // server/services/invoice-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
@@ -356,7 +356,7 @@ The sender comes from `from` in `config/mail.ts`. Override it per message and po
 
 ```ts
 // server/services/support-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
@@ -380,7 +380,7 @@ Pass custom headers in `headers`, such as `List-Unsubscribe`, which Gmail and Ya
 
 ```ts
 // server/services/digest-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
@@ -424,7 +424,7 @@ Attachments are `{ filename, content, contentType? }`. `content` is a string or 
 ```ts
 // server/services/invoice-service.ts
 import { readFile } from 'node:fs/promises'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
@@ -496,7 +496,7 @@ Pass ids and plain values, not rendered HTML. A message that fails a check throw
 
 ```ts
 // server/services/archive-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
 

@@ -228,7 +228,7 @@ When a release changes the shape of your data, `buster` stops old snapshots reac
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 export const env = createEnv({
   public: {
@@ -335,7 +335,7 @@ For an unnamed mutation, register its function for the `mutationKey` with TanSta
 
 ```ts
 // app/providers/offline-mutations.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createOrder } from '#app/hooks/orders/use-create-order'
 
 export default defineProvider({
@@ -356,7 +356,7 @@ List it after the offline provider, so its `boot()` runs once the snapshot is re
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 
 export default defineKitrConfig({
   providers: [
@@ -542,7 +542,7 @@ Nothing calls `hydrate()` on a config driver, so do it in a provider listed **be
 
 ```ts
 // app/providers/idb-snapshot.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { idbSnapshotStorage } from '#app/lib/idb-snapshot'
 
 export default defineProvider({

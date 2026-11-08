@@ -1,5 +1,5 @@
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { requireUser } from '@kitr/auth/server'
 import type { User } from '#app/abilities'
 import {

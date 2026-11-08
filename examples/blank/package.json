@@ -8,7 +8,7 @@
     "kitr": "kitr"
   },
   "dependencies": {
-    "kitr": "workspace:*",
+    "@kitr/kitr": "workspace:*",
     "@kitr/core": "workspace:*"
   },
   "devDependencies": {

@@ -74,7 +74,7 @@ kitr new acme-orders --kit app --mode ssr --pwa --port 3000
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -246,7 +246,7 @@ One project can hold several web platforms, each with its own port, mode and `di
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -313,7 +313,7 @@ When the app lives at `acme.com/orders/` instead of its own domain, set `base`:
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -340,7 +340,7 @@ pnpm add -D vite-plugin-pwa
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -504,7 +504,7 @@ The worker is off under `kitr dev` so stale caches never hide your edits. To deb
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -524,7 +524,7 @@ Anything kitr does not expose goes in `pwa.plugin`, merged last into the [vite-p
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({

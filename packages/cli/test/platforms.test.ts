@@ -298,7 +298,7 @@ describe('runPlatforms', () => {
 })
 
 describe('kitrrc.ts edits', () => {
-  const base = `import { defineKitrConfig } from 'kitr/app'
+  const base = `import { defineKitrConfig } from '@kitr/kitr/app'
 
 export default defineKitrConfig({
   packages: ['@kitr/react'],

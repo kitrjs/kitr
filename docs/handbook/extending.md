@@ -36,7 +36,7 @@ This writes `app/providers/flags-provider.ts` and lists it in `kitrrc.ts`.
 
 ```ts
 // app/providers/flags-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 
 export interface FlagsConfig {
   flags: Record<string, boolean>
@@ -133,7 +133,7 @@ A secure-storage driver is four functions.
 ```ts
 // app/vault.ts
 import type { SecureStorageDriver } from '@kitr/secure-storage'
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 
 export function createMapVault(): SecureStorageDriver {
   const values = new Map<string, string>()

@@ -31,7 +31,7 @@ export const coreGenerators: Record<string, Generator> = {
     definition: 'A lifecycle object: register container bindings, boot, and wrap the React tree.',
     target: (name, project) =>
       generatorFile(project, 'app', 'providers', name, { suffix: '-provider' }),
-    stub: ({ name }) => `import { defineProvider } from 'kitr/app'
+    stub: ({ name }) => `import { defineProvider } from '@kitr/kitr/app'
 
 export default defineProvider({
   name: '${naming.snake(name)}',
@@ -61,7 +61,7 @@ export default defineProvider({
     definition: 'A plain class holding business logic, bound in the container by a provider.',
     target: (name, project) =>
       generatorFile(project, 'server', 'services', name, { suffix: '-service' }),
-    stub: ({ name }) => `import type { KitrApp } from 'kitr/app'
+    stub: ({ name }) => `import type { KitrApp } from '@kitr/kitr/app'
 
 /**
  * Plain class with the business logic for ${naming.snake(name)}; bind it in a provider:
@@ -89,7 +89,7 @@ declare module '@kitr/core' {
     definition: 'A KitrError subclass with a code, turned into a typed error on every transport.',
     target: (name, project) =>
       generatorFile(project, 'app', 'exceptions', name, { suffix: '-error' }),
-    stub: ({ name }) => `import { KitrError } from 'kitr/app'
+    stub: ({ name }) => `import { KitrError } from '@kitr/kitr/app'
 
 /**
  * Thrown from actions and controllers; the API layer turns it into a JSON error with the

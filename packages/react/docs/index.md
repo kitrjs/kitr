@@ -47,7 +47,7 @@ kitr add react --dry-run
 
 ```ts
 // app/app.ts
-import { createApp, loadRc } from 'kitr/app'
+import { createApp, loadRc } from '@kitr/kitr/app'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { env } from './env'
@@ -60,7 +60,7 @@ export const app = createApp({ ...loadRc({ providers }, config), env })
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 /** Validated at startup. Public vars (VITE_*) ship to the browser; server vars throw if read there. */
 export const env = createEnv({
@@ -79,7 +79,7 @@ You hand the app to React through the props of `KitrProvider` or `KitrBoot`:
 | `children` | required | The tree that can call `useApp`, `useService` and `useConfig`. |
 | `fallback` | `null` | `KitrBoot` only. What renders while the app boots. |
 
-`createApp` from `kitr/app` (also re-exported from `@kitr/react`) takes these options:
+`createApp` from `@kitr/kitr/app` (also re-exported from `@kitr/react`) takes these options:
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -334,7 +334,7 @@ A provider binds it during `register`:
 
 ```ts
 // app/providers/billing-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { BillingClient } from '#app/billing/client'
 
 declare module '@kitr/core' {
@@ -358,7 +358,7 @@ The `ConfigRegistry` entry types `config/billing.ts` for `useConfig('billing')`.
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -402,7 +402,7 @@ export function OpenInvoices({ team }: { team: string }) {
 `kitr make:provider billing` writes the provider file and lists it in `kitrrc.ts`.
 
 > [!WARNING] Augment @kitr/core
-> Augment `'@kitr/core'`, not `'kitr/app'`: TypeScript does not merge an interface through a re-export, so `useService('billing')` would stay `unknown`.
+> Augment `'@kitr/core'`, not `'@kitr/kitr/app'`: TypeScript does not merge an interface through a re-export, so `useService('billing')` would stay `unknown`.
 
 ## Bind async services
 
@@ -411,7 +411,7 @@ export function OpenInvoices({ team }: { team: string }) {
 
 ```ts
 // app/providers/billing-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { BillingClient } from '#app/billing/client'
 
 export default defineProvider({
@@ -435,7 +435,7 @@ A provider can put its own React context around the whole app with `wrap()`. `Ki
 
 ```tsx
 // app/providers/team-provider.tsx
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createContext, type ReactNode, useContext } from 'react'
 
 const TeamContext = createContext<{ team: string }>({ team: 'acme' })
@@ -454,7 +454,7 @@ export default defineProvider({
 
 ```tsx
 // app/providers/team-provider.tsx
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createContext, type ReactNode, useContext } from 'react'
 
 const TeamContext = createContext<{ team: string }>({ team: 'acme' })
@@ -572,7 +572,7 @@ These are thrown during render, so the nearest error boundary (with the router, 
 
 ```tsx
 // app/components/invoices/open-invoices.test.tsx
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createTestApp, renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
 import type { BillingClient } from '#app/billing/client'

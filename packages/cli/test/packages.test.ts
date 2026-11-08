@@ -28,7 +28,7 @@ const quiet = () => {
   vi.spyOn(console, 'log').mockImplementation(() => {})
 }
 
-const rc = `import { defineKitrConfig } from 'kitr/app'
+const rc = `import { defineKitrConfig } from '@kitr/kitr/app'
 
 export default defineKitrConfig({
   packages: ['@kitr/server'],
@@ -39,7 +39,7 @@ export default defineKitrConfig({
 const pkg = JSON.stringify({
   name: 'demo',
   type: 'module',
-  dependencies: { kitr: '^0.1.0', '@kitr/core': '^0.1.0', '@kitr/server': '^0.1.0' },
+  dependencies: { '@kitr/kitr': '^0.1.0', '@kitr/core': '^0.1.0', '@kitr/server': '^0.1.0' },
 })
 
 describe('questions', () => {
@@ -148,7 +148,7 @@ describe('add context', () => {
     expect(add.hasPackage('server')).toBe(true)
     expect(add.hasPackage('@kitr/server')).toBe(true)
     expect(add.hasPackage('jobs')).toBe(false)
-    expect(add.has('kitr')).toBe(true)
+    expect(add.has('@kitr/kitr')).toBe(true)
     add.deps.add('ioredis')
     expect(add.has('ioredis')).toBe(true)
     for (let i = 0; i < 2; i++) {
@@ -213,7 +213,7 @@ describe('add context', () => {
         "server: 'server'",
         "server: 'server', serverRouteTable: 'server/table.ts'",
       ),
-      'server/table.ts': `import { defineRoutes } from 'kitr/app'\n\nexport const routes = defineRoutes([], (r) => r.group('/api', (api) => api))\n`,
+      'server/table.ts': `import { defineRoutes } from '@kitr/kitr/app'\n\nexport const routes = defineRoutes([], (r) => r.group('/api', (api) => api))\n`,
     })
     const ctx = createContext({ root: dir })
     createAddContext(ctx, new Codemods(ctx), {}).routes.extend('@acme/sockets/routes')

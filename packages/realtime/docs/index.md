@@ -103,7 +103,7 @@ Serve the channel from the server route table, then emit from the controller tha
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
@@ -436,7 +436,7 @@ export function CommentBox({ projectId }: { projectId: string }) {
 
 ```ts
 // server/routes.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { projectChannel } from '#app/channels/projects'
 import { userFromSession } from '#server/auth'
 
@@ -620,7 +620,7 @@ The default, set up by `kitr add realtime`: `crossws` on the server, `partysocke
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
 import realtimeConfig from '../config/realtime'
@@ -670,7 +670,7 @@ On the server, create a Socket.IO server and serve your channels on it with `att
 
 ```ts
 // server/realtime.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { attachSocketIo } from '@kitr/realtime/socket.io/server'
 import { Server } from 'socket.io'
 import { projectChannel } from '#app/channels/projects'
@@ -801,7 +801,7 @@ export const realtimeAdapter = createRedisRealtimeAdapter(
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
 import { realtimeAdapter } from './realtime_adapter'
@@ -918,7 +918,7 @@ Server and client both run in Node, so a test can start the real server on a fre
 
 ```ts
 // test/project-channel.test.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { silentLogger } from '@kitr/logger'
 import { channel, createSocketClient, type SocketTransport } from '@kitr/realtime'
 import ws from '@kitr/realtime/routes'

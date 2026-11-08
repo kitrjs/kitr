@@ -6,7 +6,7 @@ import type { Prettify } from './types'
  * the shape of an entry, how to prefix and nest them (`group`), how to attach middleware (`use`)
  * and how to combine tables (`merge`). Every method that adds a route comes from a package:
  *
- *   import { defineRoutes } from 'kitr/app'
+ *   import { defineRoutes } from '@kitr/kitr/app'
  *   import pages from '@kitr/router/routes'     // .page, .layout, .root, .notFound
  *   import http from '@kitr/api/routes'         // .get, .post, .put, .patch, .delete, .resource
  *   import ws from '@kitr/realtime/routes'      // .ws, .sse

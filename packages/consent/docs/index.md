@@ -440,7 +440,7 @@ Outside components, read the service from the container. It has the hook's actio
 
 ```ts
 // app/lib/consent/track-choices.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function logConsentChanges(app: KitrApp) {
   const consent = app.container.use('consent')

@@ -34,7 +34,7 @@ import type { KitrRouterContext } from './context'
  * The pages extension: `.root`, `.layout` and `.page` on the route table, compiled to a
  * TanStack Router route tree by `createKitrRouter({ routes, app })` (the `tanstack` target).
  *
- *   import { defineRoutes } from 'kitr/app'
+ *   import { defineRoutes } from '@kitr/kitr/app'
  *   import pages from '@kitr/router/routes'
  *
  *   export const routes = defineRoutes([pages], (r) =>

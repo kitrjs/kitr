@@ -88,7 +88,7 @@ export const server = definePlatform<ServerPlatformOptions>(
       if (!ctx.exists(table))
         ctx.write(
           table,
-          `import { defineRoutes } from 'kitr/app'
+          `import { defineRoutes } from '@kitr/kitr/app'
 
 /** Endpoints and sockets of this app. \`kitr add api\` / \`kitr add realtime\` add their methods here. */
 export const routes = defineRoutes([], (r) => r)
@@ -99,7 +99,7 @@ export type ServerRoutes = typeof routes.$types
       const routesSpec = react ? '#server/routes' : relativeImport(options.entry, table)
       ctx.write(
         options.entry,
-        `import { loadRc } from 'kitr/app'
+        `import { loadRc } from '@kitr/kitr/app'
 import { createServer } from '@kitr/server'
 import { routes } from '${routesSpec}'
 import { config } from '../config'

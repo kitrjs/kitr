@@ -108,7 +108,7 @@ A query needs two things: a **key**, its name in the cache, and a **fetch** func
 
 ```ts
 // app/queries/orders.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { queryFrom } from '@kitr/query'
 
 export interface Order {
@@ -162,11 +162,11 @@ Open `/orders` and you see `Ada: $120 (paid)` and `Grace: $80 (open)`. Leave and
 
 ## Name cache entries with keys
 
-A key is an array that names a piece of data in the cache; equal keys share one entry and one request. `createKeys` from `kitr/app` builds keys in one shape per resource:
+A key is an array that names a piece of data in the cache; equal keys share one entry and one request. `createKeys` from `@kitr/kitr/app` builds keys in one shape per resource:
 
 ```ts
 // app/lib/orders/keys.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 
 export const orderKeys = createKeys('orders')
 
@@ -179,10 +179,10 @@ orderKeys.detail('ord_1') // => ['orders', 'detail', 'ord_1']
 orderKeys.custom('by-customer', 'ada') // => ['orders', 'by-customer', 'ada']
 ```
 
-Invalidating a key also invalidates every key that starts with it: `orderKeys.lists()` covers every filtered list, `orderKeys.all` everything about orders. `keyMatches(prefix, key)` from `kitr/app` applies the same rule in your own code:
+Invalidating a key also invalidates every key that starts with it: `orderKeys.lists()` covers every filtered list, `orderKeys.all` everything about orders. `keyMatches(prefix, key)` from `@kitr/kitr/app` applies the same rule in your own code:
 
 ```ts
-import { keyMatches } from 'kitr/app'
+import { keyMatches } from '@kitr/kitr/app'
 
 keyMatches(['orders', 'list'], ['orders', 'list', { status: 'open' }]) // => true
 keyMatches(['orders', 'detail'], ['orders', 'list']) // => false
@@ -197,7 +197,7 @@ The first argument of `key` and `fetch` is the query's input. Type it once on `k
 
 ```ts
 // app/queries/orders.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { queryFrom } from '@kitr/query'
 import type { Order } from './types'
 
@@ -449,7 +449,7 @@ They run in that order: `set`, `remove`, `invalidate`. `ship.isPending` stays `t
 
 ```ts
 // app/queries/invoices.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { mutationFrom } from '@kitr/query'
 
 export const invoiceKeys = createKeys('invoices')
@@ -482,11 +482,11 @@ shipOrder.effectsFor(
 
 ## Combine effects from several resources
 
-Shipping an order also changes the customer's open invoice. `mergeEffects` from `kitr/app` joins effects, concatenating each list (it skips `undefined`):
+Shipping an order also changes the customer's open invoice. `mergeEffects` from `@kitr/kitr/app` joins effects, concatenating each list (it skips `undefined`):
 
 ```ts
 // app/queries/orders.ts
-import { mergeEffects } from 'kitr/app'
+import { mergeEffects } from '@kitr/kitr/app'
 import { mutationFrom } from '@kitr/query'
 import { invoiceKeys } from '#app/queries/invoices'
 import { orderKeys } from './keys'
@@ -683,11 +683,11 @@ The hook returns `{ status, lastEvent, error }`, where `status` is `'idle'`, `'o
 
 ## Handle errors
 
-Every failure from `options()` and `useMutation`, whatever its source, reaches you as a `KitrError` from `kitr/app` with a `code`, `status`, `message` and, for validation failures, `fieldErrors`:
+Every failure from `options()` and `useMutation`, whatever its source, reaches you as a `KitrError` from `@kitr/kitr/app` with a `code`, `status`, `message` and, for validation failures, `fieldErrors`:
 
 ```tsx
 // app/components/orders/order-error.tsx
-import { isKitrError } from 'kitr/app'
+import { isKitrError } from '@kitr/kitr/app'
 
 export function OrderError({ error }: { error: Error }) {
   if (isKitrError(error) && error.code === 'NOT_FOUND') return <p>This order no longer exists.</p>
@@ -720,7 +720,7 @@ Queries retry only failures that might pass on a second try; a 4xx fails at once
 
 ```ts
 // app/queries/teams.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { queryFrom } from '@kitr/query'
 
 export const teamKeys = createKeys('teams')
@@ -772,7 +772,7 @@ In a test, seed the cache with the data the component needs. `createTestApp` fro
 ```tsx
 // app/components/orders/orders.test.tsx
 import { act, renderHook, screen } from '@testing-library/react'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import {
   mutationFrom,
   queryFrom,
@@ -883,7 +883,7 @@ To fake the network itself, use [Mocks](/packages/mocks).
 
 ## Extend
 
-To add a source kitr does not ship, such as GraphQL or a vendor SDK, write one function per kind returning a `QueryContract`, `MutationContract` or `SubscriptionContract` (from `kitr/app`, see the [API reference](/packages/query/api)) and pass it to `queryFrom`, `mutationFrom` or `subscriptionFrom`:
+To add a source kitr does not ship, such as GraphQL or a vendor SDK, write one function per kind returning a `QueryContract`, `MutationContract` or `SubscriptionContract` (from `@kitr/kitr/app`, see the [API reference](/packages/query/api)) and pass it to `queryFrom`, `mutationFrom` or `subscriptionFrom`:
 
 | Member | Kind | Description |
 | --- | --- | --- |
@@ -899,7 +899,7 @@ This source turns a GraphQL operation into a query contract:
 
 ```ts
 // app/lib/graphql.ts
-import { KitrError, type QueryContract, type QueryKey } from 'kitr/app'
+import { KitrError, type QueryContract, type QueryKey } from '@kitr/kitr/app'
 
 interface GraphqlQueryOptions<TInput> {
   document: string
@@ -933,7 +933,7 @@ export function graphqlQuery<TInput = void, TOutput = unknown>(
 
 ```ts
 // app/queries/projects.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { queryFrom } from '@kitr/query'
 import { graphqlQuery } from '#app/lib/graphql'
 

@@ -26,7 +26,7 @@ export type Router<R extends TableMap = {}> = KitrRouter<'http', R>
  *   )
  *   export type AppRoutes = typeof routes.$types
  *
- * For a table that also holds pages or sockets, use `defineRoutes([http, pages], ...)` from `kitr/app`.
+ * For a table that also holds pages or sockets, use `defineRoutes([http, pages], ...)` from `@kitr/kitr/app`.
  */
 export function defineRoutes<R extends TableMap>(
   define: (router: Router<{}>) => Router<R> | void,

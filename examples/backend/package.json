@@ -16,12 +16,12 @@
     "@kitr/api": "workspace:*",
     "@kitr/core": "workspace:*",
     "@kitr/db": "workspace:*",
+    "@kitr/kitr": "workspace:*",
     "@kitr/logger": "workspace:*",
     "@kitr/realtime": "workspace:*",
     "@kitr/server": "workspace:*",
     "crossws": "^0.4.17",
     "h3": "^2.0.8",
-    "kitr": "workspace:*",
     "srvx": "^1.0.8"
   },
   "devDependencies": {

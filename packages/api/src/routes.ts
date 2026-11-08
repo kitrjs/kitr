@@ -211,7 +211,7 @@ function definesAction(controller: ControllerClass | LazyController, action: str
  * The http extension: `.get`, `.post`, `.put`, `.patch`, `.delete`, `.any` and `.resource` on
  * the route table, compiled to h3 by `createServer({ routes })` (the `h3` target).
  *
- *   import { defineRoutes } from 'kitr/app'
+ *   import { defineRoutes } from '@kitr/kitr/app'
  *   import http from '@kitr/api/routes'
  *   export const routes = defineRoutes([http], (r) => r.group('/api', (api) => api.resource('projects', ProjectsController)))
  */

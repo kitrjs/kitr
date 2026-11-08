@@ -779,7 +779,7 @@ Import the same `abilities` from `app/abilities.ts` on both sides so they agree 
 ```ts
 // server/controllers/projects-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { currentUser, requireUser } from '@kitr/auth/server'
 import { abilities, type Project, type User } from '#app/abilities'
 
@@ -958,7 +958,7 @@ On the server, `ensureSession` reads the rendered request's session; in the brow
 | `UNAUTHORIZED` (401) | `betterAuthAdapter` signed in but Better Auth has no session. Message: `Sign-in failed`. | Check Better Auth's cookie settings and base URL. |
 | `INTERNAL` (500) | `signIn()` on a `tokenAdapter` without `signIn` (`tokenAdapter: signIn not configured`), or a `betterAuthAdapter` with no email sign-in (`betterAuthAdapter: no signIn configured`). | Configure `signIn` on the adapter. |
 
-`auth.signIn()` on a custom adapter without `signIn` throws `[@kitr/auth] adapter has no signIn`. Errors your own `signIn` throws reach the caller unchanged; throw `KitrError.unauthorized('Wrong email or password')` from `kitr/app` to get a `401` kitr error.
+`auth.signIn()` on a custom adapter without `signIn` throws `[@kitr/auth] adapter has no signIn`. Errors your own `signIn` throws reach the caller unchanged; throw `KitrError.unauthorized('Wrong email or password')` from `@kitr/kitr/app` to get a `401` kitr error.
 
 ## Testing
 

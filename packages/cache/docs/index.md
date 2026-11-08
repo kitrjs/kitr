@@ -245,7 +245,7 @@ Every entry expires. `ttl` is in seconds; without one the entry gets `defaultTtl
 ```ts
 // server/rates/refresh.ts
 import { useCache } from '@kitr/cache'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { fetchRate } from '#server/rates/client'
 
 export async function refreshRates(app: KitrApp) {
@@ -346,7 +346,7 @@ The cache is also a typed key-value store:
 ```ts
 // server/teams/budget.ts
 import { useCache } from '@kitr/cache'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function budgetExample(app: KitrApp) {
   const cache = useCache(app)
@@ -383,7 +383,7 @@ Values pass through JSON. Plain objects, arrays, strings, numbers, booleans and 
 ```ts
 // server/orders/last_order.ts
 import { useCache } from '@kitr/cache'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function lastOrderExample(app: KitrApp) {
   const cache = useCache(app)

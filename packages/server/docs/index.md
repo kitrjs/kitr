@@ -100,7 +100,7 @@ Options passed in code override `config/server.ts`:
 
 ```ts
 // server/main.ts
-import { loadRc } from 'kitr/app'
+import { loadRc } from '@kitr/kitr/app'
 import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
@@ -124,7 +124,7 @@ The platform lives in `kitrrc.ts`; its options decide how the CLI runs the entry
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { server } from '@kitr/server'
 
 export default defineKitrConfig({
@@ -477,7 +477,7 @@ Anything thrown in a handler becomes JSON in kitr's error shape with the matchin
 
 ```ts
 // server/main.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 // ...
 server.h3.post('/api/invoices/:id/pay', () => {
   throw new KitrError('CONFLICT', 'Invoice INV-1042 is already paid')
@@ -510,7 +510,7 @@ A plain `Error` becomes `INTERNAL` with status `500`; its message comes through 
 
 ```ts
 // server/main.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { errorToResponse } from '@kitr/server'
 // ...
 server.use((event) => {
@@ -579,7 +579,7 @@ Providers in `kitrrc.ts` run `register` and `boot` before the first request, `re
 
 ```ts
 // app/providers/orders-db-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createPool } from '#server/db/pool'
 
 export default defineProvider({
@@ -729,7 +729,7 @@ To test in isolation, build a server in the test, with `silentLogger` and `serve
 
 ```ts
 // test/server.test.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { silentLogger } from '@kitr/logger'
 import { createServer, useRequest } from '@kitr/server'
 import { createTestClient } from '@kitr/testing'

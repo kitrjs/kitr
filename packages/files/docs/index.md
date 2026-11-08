@@ -760,7 +760,7 @@ In the renderer, turn the IPC calls into a `FilesDriver` and register it under t
 
 ```ts
 // app/providers/electron-files.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { createIpcClient } from '@kitr/desktop/client'
 import { type FileData, type FilesDriver, mimeFor, type PickedFile, toBlob } from '@kitr/files'
 import type { Ipc } from '../../platforms/app/ipc'

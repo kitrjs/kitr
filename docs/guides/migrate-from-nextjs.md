@@ -14,7 +14,7 @@ This guide moves `acme-projects`, a Next.js App Router app with a home page, a p
 
 ## Before you start
 
-You need the Next.js project, [Node.js](https://nodejs.org) 22 or newer and the kitr CLI (`npm install -g kitr`). The guide assumes the App Router; for the Pages Router, `getServerSideProps` maps to a route `loader` the same way server components do below.
+You need the Next.js project, [Node.js](https://nodejs.org) 22 or newer and the kitr CLI (`npm install -g @kitr/kitr`). The guide assumes the App Router; for the Pages Router, `getServerSideProps` maps to a route `loader` the same way server components do below.
 
 Decide what you are migrating for before you start. kitr fits when you want typed routes and search params, server actions you can test without a server, an API with OpenAPI for other clients, and an app you can run on any Node host. If the app depends on Next.js-only features, such as incremental static regeneration on Vercel or React Server Components streaming data into the page, read "What has no equivalent" first.
 
@@ -101,7 +101,7 @@ export function RootDocument() {
 
 ```ts
 // app/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 
@@ -321,7 +321,7 @@ export default class ProjectsController {
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import ProjectsController from '#server/controllers/projects-controller'
 
@@ -361,7 +361,7 @@ Rename `NEXT_PUBLIC_` variables to `VITE_`, and declare every variable in `app/e
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 export const env = createEnv({
   public: {

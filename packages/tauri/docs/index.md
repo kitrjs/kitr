@@ -78,7 +78,7 @@ kitr new acme-orders --kit tauri
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { tauri } from '@kitr/tauri'
 import { web } from '@kitr/web'
 
@@ -636,7 +636,7 @@ On macOS, with `identifier: 'com.acme.orders'`, the file is `~/Library/Applicati
 
 ```ts
 // app/providers/orders-store.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { isTauri } from '@kitr/tauri/client'
 import { tauriStoreDriver } from '@kitr/tauri/provider'
 

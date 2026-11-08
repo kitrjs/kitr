@@ -185,7 +185,7 @@ export default createServerEntry({
     await auth.add!(cookies.ctx as never)
     const cookieRouter = cookies.rec.edits['app/router.tsx'] as string
     expect(cookieRouter).toContain('new Proxy')
-    expect(cookieRouter).toContain("import type { KitrApp } from 'kitr/app'")
+    expect(cookieRouter).toContain("import type { KitrApp } from '@kitr/kitr/app'")
     expect(cookieRouter).toContain('KitrRouterContext')
 
     const tokens = fakeCtx({}, { files: { 'app/router.tsx': PLAIN_ROUTER } })

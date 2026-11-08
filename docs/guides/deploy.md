@@ -65,7 +65,7 @@ Declare each one in `app/env.ts`, so a missing value fails the start instead of 
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 export const env = createEnv({
   public: {
@@ -191,7 +191,7 @@ The API runs on other runtimes without code changes. Set the runtime in `kitrrc.
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { server } from '@kitr/server'
 
 export default defineKitrConfig({

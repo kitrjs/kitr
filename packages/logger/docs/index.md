@@ -113,7 +113,7 @@ Each level has a method. Lines below the configured `level` are dropped before f
 
 ```ts
 // server/services/project-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function syncProject(app: KitrApp, projectId: string) {
   const logger = app.container.use('logger')
@@ -129,7 +129,7 @@ Pass the `Error` itself to `error()` or `fatal()`. Its message becomes `msg`, an
 
 ```ts
 // server/services/invoice-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function generateInvoice(app: KitrApp, invoiceNumber: string) {
   const logger = app.container.use('logger')
@@ -159,7 +159,7 @@ The server already logs every 5xx response at `error` level, so log only errors 
 
 ```ts
 // server/services/order-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function shipOrder(app: KitrApp, orderId: string) {
   const logger = app.container.use('logger').child({ orderId }, 'orders')
@@ -267,7 +267,7 @@ Browser lines go to the matching console method with the fields as an expandable
 
 ```ts
 // server/services/invoice-service.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function renderInvoicePdf(app: KitrApp, invoiceNumber: string) {
   const logger = app.container.use('logger').child({ invoiceNumber }, 'billing')

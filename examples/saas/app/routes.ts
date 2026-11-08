@@ -1,4 +1,4 @@
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { ensureSession } from '@kitr/auth'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'

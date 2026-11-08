@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "kitr": "workspace:*",
+    "@kitr/kitr": "workspace:*",
     "@kitr/forms": "workspace:*",
     "@kitr/table": "workspace:*",
     "@kitr/tailwind": "workspace:*",

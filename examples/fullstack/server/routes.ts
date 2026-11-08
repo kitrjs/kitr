@@ -1,4 +1,4 @@
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import HealthController from '#server/controllers/health-controller'

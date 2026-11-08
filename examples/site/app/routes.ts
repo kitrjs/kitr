@@ -1,4 +1,4 @@
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { notFound } from '@kitr/router'
 import router from '@kitr/router/routes'
 import { seo } from '@kitr/seo'

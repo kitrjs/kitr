@@ -1,6 +1,6 @@
 # Entry points
 
-Apps import each package by its own name: `@kitr/query`, `@kitr/router/routes`, `@kitr/theme/styles.css`. The `kitr` package is the CLI plus the `kitrrc.ts` config (`kitr/app`, `kitr/env`, both from `@kitr/core`).
+Apps import each package by its own name: `@kitr/query`, `@kitr/router/routes`, `@kitr/theme/styles.css`. The `@kitr/kitr` package is the CLI plus the `kitrrc.ts` config (`@kitr/kitr/app`, `@kitr/kitr/env`, both from `@kitr/core`).
 
 ## The rules
 
@@ -19,8 +19,8 @@ Apps import each package by its own name: `@kitr/query`, `@kitr/router/routes`, 
 
 | Entry | React |
 | --- | --- |
-| `kitr`, `kitr/app` (from `@kitr/core`) | no |
-| `kitr/env` (from `@kitr/core`) | no |
+| `kitr`, `@kitr/kitr/app` (from `@kitr/core`) | no |
+| `@kitr/kitr/env` (from `@kitr/core`) | no |
 | `@kitr/react` | yes |
 | `@kitr/router`, `@kitr/router/stack` | yes |
 | `@kitr/query`, `@kitr/query/provider` | yes |

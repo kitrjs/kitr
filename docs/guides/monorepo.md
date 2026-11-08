@@ -14,7 +14,7 @@ kitr does not need a special monorepo mode. Each app is an ordinary kitr project
 
 ## Before you start
 
-You need [Node.js](https://nodejs.org) 22 or newer, [pnpm](https://pnpm.io/installation) 10 and the kitr CLI (`npm install -g kitr`). The guide uses pnpm because its workspaces link packages without copying them; npm, Yarn and Bun workspaces work the same way with their own commands.
+You need [Node.js](https://nodejs.org) 22 or newer, [pnpm](https://pnpm.io/installation) 10 and the kitr CLI (`npm install -g @kitr/kitr`). The guide uses pnpm because its workspaces link packages without copying them; npm, Yarn and Bun workspaces work the same way with their own commands.
 
 ## Create the workspace
 
@@ -90,7 +90,7 @@ pnpm's filters run package scripts. For kitr's own commands, a `kitr.workspace.t
 
 ```ts
 // kitr.workspace.ts
-import { defineWorkspace } from 'kitr'
+import { defineWorkspace } from '@kitr/kitr'
 
 export default defineWorkspace({
   apps: { web: 'apps/web', api: 'apps/api' },
@@ -213,7 +213,7 @@ The browser runs on another origin in development (`localhost:3000` calling `loc
 ```ts
 // apps/api/server/routes.ts
 import { cors } from '@kitr/api'
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import OrdersController from '#server/controllers/orders-controller'
 
@@ -240,7 +240,7 @@ VITE_API_URL=http://localhost:3001/api
 ```ts
 // apps/web/app/queries/orders.ts
 import type { NewOrder, Order, OrdersPage } from '@acme/contracts/orders'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { app } from '#app/app'

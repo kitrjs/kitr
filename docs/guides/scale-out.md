@@ -70,7 +70,7 @@ Close the connection when the server stops, so a deploy does not cut a command i
 
 ```ts
 // server/providers/redis-provider.ts
-import { defineProvider } from 'kitr'
+import { defineProvider } from '@kitr/kitr'
 import { redis } from '#server/redis'
 import { realtimeAdapter } from '#server/realtime_adapter'
 

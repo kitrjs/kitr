@@ -276,7 +276,7 @@ The toaster follows `data-theme` on `<html>`, which [theme](/packages/theme) set
 
 ```ts
 // app/providers/notify-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { setToastImplementation } from '@kitr/toast'
 import { notify } from '#app/components/notify'
 

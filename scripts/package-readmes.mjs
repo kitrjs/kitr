@@ -18,7 +18,7 @@ for (const dir of readdirSync('packages').sort()) {
   const isKit = k.kind === 'kit'
   const isPlatform = k.kind === 'platform'
   const install =
-    pkg.name === 'kitr' || pkg.name === '@kitr/cli'
+    pkg.name === '@kitr/kitr' || pkg.name === '@kitr/cli'
       ? 'pnpm dlx kitr new my-app'
       : !k.name
         ? `pnpm add ${pkg.name}`

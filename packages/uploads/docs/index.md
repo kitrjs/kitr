@@ -348,7 +348,7 @@ The safe name keeps letters, digits, `.`, `_` and `-`, turns slashes into `_` an
 
 ```ts
 // server/jobs/archive-invoice.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useUploads } from '@kitr/uploads/server'
 
 export async function archiveInvoice(app: KitrApp, pdf: Uint8Array) {
@@ -422,7 +422,7 @@ A controller then hands out five-minute links:
 ```ts
 // server/controllers/order_invoices_controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { useUploads } from '@kitr/uploads/server'
 
 export default class OrderInvoicesController {
@@ -465,7 +465,7 @@ To check access in your own route, read the file in a controller and answer with
 ```ts
 // server/controllers/order-invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { servedFileHeaders, useUploads } from '@kitr/uploads/server'
 
 export default class OrderInvoicesController {

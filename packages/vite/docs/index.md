@@ -66,7 +66,7 @@ The platform in `kitrrc.ts` sets the rest. `web({ port: 3000 })` becomes `server
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -82,7 +82,7 @@ With `kitr add web site` done, the app object imports its providers and config f
 
 ```ts
 // app/app.ts
-import { createApp } from 'kitr/app'
+import { createApp } from '@kitr/kitr/app'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { env } from './env'

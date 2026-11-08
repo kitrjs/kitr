@@ -272,7 +272,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
     // make:service registers its binding: the container hands back the class, not `unknown`.
     writeFileSync(
       join(dir, 'server/services/billing-usage.ts'),
-      "import type { KitrApp } from 'kitr/app'\n\nexport const countInvoices = async (app: KitrApp) =>\n  (await app.container.use('billing').list()).length\n",
+      "import type { KitrApp } from '@kitr/kitr/app'\n\nexport const countInvoices = async (app: KitrApp) =>\n  (await app.container.use('billing').list()).length\n",
     )
     kitr(dir, 'build', 'site')
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])

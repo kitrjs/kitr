@@ -370,7 +370,7 @@ function editRcText(ctx: ProjectContext, edit: (src: string) => string) {
   if (!existsSync(rcPath)) {
     ctx.write(
       'kitrrc.ts',
-      `import { defineKitrConfig } from 'kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n  platforms: {},\n})\n`,
+      `import { defineKitrConfig } from '@kitr/kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n  platforms: {},\n})\n`,
     )
     ctx.rcPath = rcPath
   }

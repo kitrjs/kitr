@@ -34,7 +34,7 @@ export default definePackage({
       definition:
         'Typed query and mutation contracts for an external HTTP API, one file per resource.',
       target: (name, project) => generatorFile(project, 'app', 'queries', name),
-      stub: ({ name }) => `import { createKeys } from 'kitr/app'
+      stub: ({ name }) => `import { createKeys } from '@kitr/kitr/app'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { app } from '#app/app'
