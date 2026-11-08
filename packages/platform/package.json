@@ -1,6 +1,6 @@
 {
   "name": "@kitr/platform",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "@kitr/platform: one API for where the app runs. platform(), isNative(), app state, online status, back button, deep links, safe areas, and the driver registry devtools panel.",
   "kitr": {
     "name": "platform",
