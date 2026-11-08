@@ -219,7 +219,7 @@ pre,
 }
 
 /* The phone menu: every header link, behind one button. */
-.nav-menu-button {
+.nav .nav-menu-button {
   display: none;
 }
 .nav-menu {
@@ -2174,7 +2174,7 @@ a.dcard:focus-visible {
   .nav-links {
     display: none;
   }
-  .nav-menu-button {
+  .nav .nav-menu-button {
     display: inline-flex;
   }
   .search-button {

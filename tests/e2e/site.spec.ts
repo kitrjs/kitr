@@ -251,6 +251,9 @@ test.describe('in the browser', () => {
     await expect(sidebar.locator('a[href="/packages/query"]')).toHaveCount(0)
     await expect(sidebar.locator('a[href="#install"]')).toBeVisible()
     await expect(sidebar.locator('a[href="/packages/mail/api"]')).toBeVisible()
+    // On a wide screen the header shows its links, not the phone menu button.
+    await expect(page.locator('.nav-links')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden()
 
     // On the API page only "API reference" is marked current, not the guide as well.
     await sidebar.locator('a[href="/packages/mail/api"]').click()
