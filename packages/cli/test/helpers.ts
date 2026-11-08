@@ -56,7 +56,12 @@ export async function kitr(cwd: string, ...argv: string[]): Promise<Run> {
   const previous = process.cwd()
   const stdout: string[] = []
   const stderr: string[] = []
-  const text = (args: unknown[]) => args.map(String).join(' ')
+  // CI sets `CI`, which turns colours on; the assertions read plain text.
+  const text = (args: unknown[]) =>
+    args
+      .map(String)
+      .join(' ')
+      .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g'), '')
   const logs = [
     vi.spyOn(console, 'log').mockImplementation((...a) => void stdout.push(text(a))),
     vi.spyOn(console, 'info').mockImplementation((...a) => void stdout.push(text(a))),

@@ -99,9 +99,12 @@ export const desktop = definePlatform<DesktopOptions>(
         async shell(ctx) {
           await ctx.exec('electron-vite', ['build', '-c', ctx.dir('electron.vite.config.ts')])
           if (ctx.flags.pack === false) return
+          // `kitr build` packages; publishing is a release step, so CI detection must not trigger it.
           await ctx.exec('electron-builder', [
             '--config',
             ctx.dir('electron-builder.yml'),
+            '--publish',
+            'never',
             ...(ctx.flags.dir ? ['--dir'] : []),
           ])
           ctx.log.success(`${ctx.name}: installers are in dist/${ctx.name}/release`)

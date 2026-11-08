@@ -204,7 +204,7 @@ export default defineKitrConfig({
 })
 
 describe('vite.config.ts edits', () => {
-  const vite = `import { kitr } from "kitr/vite";
+  const vite = `import { kitr } from "@kitr/vite";
 import { defineConfig } from "vite";
 
 // my own plugin

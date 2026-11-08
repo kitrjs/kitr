@@ -180,9 +180,24 @@ function packAndPublish() {
       continue
     }
     try {
-      sh('npm', ['publish', file, '--userconfig', npmrc, '--tag', 'smoke', '--access', 'public'], {
-        capture: true,
-      })
+      sh(
+        'npm',
+        [
+          'publish',
+          file,
+          '--registry',
+          registryUrl,
+          '--userconfig',
+          npmrc,
+          '--tag',
+          'smoke',
+          '--access',
+          'public',
+        ],
+        {
+          capture: true,
+        },
+      )
     } catch (error) {
       failures.push(`publish ${p.json.name}: ${tail(error, 3)}`)
     }

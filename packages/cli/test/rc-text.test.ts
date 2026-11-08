@@ -95,32 +95,32 @@ describe('imports', () => {
     expect(fileQuote('import a from "a";\n')).toBe('"')
     expect(fileQuote("import a from 'a'\n")).toBe("'")
     expect(fileQuote('const x = 1\n')).toBe("'")
-    const out = addNamedImport('import { a } from "a";\n\nexport {}\n', 'web', 'kitr/web')
-    expect(out).toBe('import { a } from "a";\nimport { web } from "kitr/web";\n\nexport {}\n')
+    const out = addNamedImport('import { a } from "a";\n\nexport {}\n', 'web', '@kitr/web')
+    expect(out).toBe('import { a } from "a";\nimport { web } from "@kitr/web";\n\nexport {}\n')
   })
 
   it('adds after a multi-line import, and at the top of a file without imports', () => {
     const multi = "import {\n  a,\n  b,\n} from 'x'\n\nexport {}\n"
-    expect(addNamedImport(multi, 'web', 'kitr/web')).toBe(
-      "import {\n  a,\n  b,\n} from 'x'\nimport { web } from 'kitr/web'\n\nexport {}\n",
+    expect(addNamedImport(multi, 'web', '@kitr/web')).toBe(
+      "import {\n  a,\n  b,\n} from 'x'\nimport { web } from '@kitr/web'\n\nexport {}\n",
     )
-    expect(addNamedImport('export {}\n', 'web', 'kitr/web')).toBe(
-      "import { web } from 'kitr/web'\n\nexport {}\n",
+    expect(addNamedImport('export {}\n', 'web', '@kitr/web')).toBe(
+      "import { web } from '@kitr/web'\n\nexport {}\n",
     )
   })
 
   it('does not import twice, even under another name', () => {
-    const src = "import { web as site } from 'kitr/web'\n"
-    expect(addNamedImport(src, 'site', 'kitr/web')).toBe(src)
-    expect(addNamedImport("import { web } from 'kitr/web'\n", 'web', 'kitr/web')).toBe(
-      "import { web } from 'kitr/web'\n",
+    const src = "import { web as site } from '@kitr/web'\n"
+    expect(addNamedImport(src, 'site', '@kitr/web')).toBe(src)
+    expect(addNamedImport("import { web } from '@kitr/web'\n", 'web', '@kitr/web')).toBe(
+      "import { web } from '@kitr/web'\n",
     )
   })
 
   it('removes one specifier, or the whole statement when it was the only one', () => {
     const two = "import { server, web } from 'kitr/x'\nexport {}\n"
     expect(removeNamedImport(two, 'web')).toBe("import { server } from 'kitr/x'\nexport {}\n")
-    expect(removeNamedImport("import { web } from 'kitr/web'\nexport {}\n", 'web')).toBe(
+    expect(removeNamedImport("import { web } from '@kitr/web'\nexport {}\n", 'web')).toBe(
       'export {}\n',
     )
     expect(removeNamedImport("import {web as site, server} from 'kitr/x'\n", 'site')).toBe(
@@ -132,8 +132,8 @@ describe('imports', () => {
 
 describe('platform entries in a file the user edited', () => {
   const rc = `import { defineKitrConfig } from "kitr/app";
-import { web as webPlatform } from "kitr/web";
-import { server } from "kitr/server";
+import { web as webPlatform } from "@kitr/web";
+import { server } from "@kitr/server";
 
 export default defineKitrConfig({
 \tpackages: [],
@@ -147,8 +147,8 @@ export default defineKitrConfig({
 
   it('reads the renamed factory as its type, and remembers the local name', () => {
     expect(readRcPlatforms(rc)).toMatchObject({
-      site: { factory: 'web', local: 'webPlatform', source: 'kitr/web' },
-      api: { factory: 'server', source: 'kitr/server' },
+      site: { factory: 'web', local: 'webPlatform', source: '@kitr/web' },
+      api: { factory: 'server', source: '@kitr/server' },
     })
     expect(readRcPlatforms(rc).api).not.toHaveProperty('local')
   })
@@ -168,7 +168,7 @@ export default defineKitrConfig({
     expect(read()).toBe(
       rc
         .replace('\t\tapi: server(), // keep\n', '')
-        .replace('import { server } from "kitr/server";\n', ''),
+        .replace('import { server } from "@kitr/server";\n', ''),
     )
   })
 
@@ -177,7 +177,7 @@ export default defineKitrConfig({
     const { ctx, read } = project(two)
     // Another platform is still a web platform: the type is in use, the import stays.
     expect(removeRcPlatform(ctx, 'admin')).toBeUndefined()
-    expect(read()).toContain('import { web as webPlatform } from "kitr/web";')
+    expect(read()).toContain('import { web as webPlatform } from "@kitr/web";')
     expect(removeRcPlatform(ctx, 'site')).toBe('web')
     expect(read()).not.toContain('webPlatform')
   })
@@ -194,8 +194,8 @@ export default defineKitrConfig({
 
   it('creates the platforms object when the file has none', () => {
     const { ctx, read } = project('export default defineKitrConfig({\n  packages: [],\n})\n')
-    writeRcPlatform(ctx, 'api', { entry: 'kitr/server', factory: 'server' }, {})
+    writeRcPlatform(ctx, 'api', { entry: '@kitr/server', factory: 'server' }, {})
     expect(read()).toContain('platforms: { api: server() },')
-    expect(read()).toContain("import { server } from 'kitr/server'")
+    expect(read()).toContain("import { server } from '@kitr/server'")
   })
 })

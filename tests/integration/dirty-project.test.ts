@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { bin, copyExample, kitr, remove, run, snapshot } from './helpers'
+import { bin, copyExample, kitr, linkPackages, remove, run, snapshot } from './helpers'
 
 /**
  * `kitr add` and `kitr remove` on a project somebody has been working in: kitrrc.ts reordered,
@@ -11,8 +11,8 @@ import { bin, copyExample, kitr, remove, run, snapshot } from './helpers'
 
 /** A kitrrc.ts as a person leaves it after a few months: tabs, double quotes, semicolons. */
 const dirtyRc = `import { defineKitrConfig } from "kitr/app";
-import { server as apiServer } from "kitr/server";
-import { web as webPlatform } from "kitr/web";
+import { server as apiServer } from "@kitr/server";
+import { web as webPlatform } from "@kitr/web";
 
 // Wiring of the shop. Edited by hand; keep the comments.
 export default defineKitrConfig({
@@ -66,7 +66,7 @@ export default defineKitrConfig({
 `
 
 /** A vite.config.ts with a plugin of the user's own, in a style kitr does not write. */
-const dirtyVite = `import { kitr } from "kitr/vite";
+const dirtyVite = `import { kitr } from "@kitr/vite";
 import { defineConfig, type Plugin } from "vite";
 
 // Stamps the build time into the bundle. Not kitr's; do not touch.
@@ -96,6 +96,8 @@ describe('kitr add / remove on a project the user has edited', () => {
 
   beforeAll(() => {
     dir = copyExample('fullstack')
+    // The tests add analytics with --no-install, so its workspace package is linked in for tsc.
+    linkPackages(dir, ['analytics'])
     // The project's formatter is the user's style: tabs, double quotes, semicolons.
     const biomePath = join(dir, 'biome.json')
     const biome = JSON.parse(readFileSync(biomePath, 'utf8'))
@@ -160,7 +162,7 @@ describe('kitr add / remove on a project the user has edited', () => {
     expect(back).toContain('// logging is wired by hand further down')
     expect(back).toContain('// the server comes before the rest: it is what the team knows best')
     expect(back).toContain('"@kitr/web", // last, on purpose')
-    expect(back).toContain('import { web as webPlatform } from "kitr/web";')
+    expect(back).toContain('import { web as webPlatform } from "@kitr/web";')
     expect(back).toContain('site: webPlatform({ mode: "ssr" })')
     expect(back).toContain('api: apiServer()')
     expect(read('vite.config.ts')).toBe(dirtyVite)
@@ -182,7 +184,7 @@ describe('kitr add / remove on a project the user has edited', () => {
     kitr(dir, 'add', 'web', 'admin', '--no-install', '--mode', 'static', '--port', '3002')
     const added = read('kitrrc.ts')
     expect(added).toContain('\t\tadmin: web({ mode: "static", port: 3002 }),\n')
-    expect(added).toContain('import { web } from "kitr/web";')
+    expect(added).toContain('import { web } from "@kitr/web";')
     expect(added).toContain('site: webPlatform({ mode: "ssr" })')
     expect(kitr(dir, 'platforms')).toMatch(/admin\s+web\s+mode=static port=3002/)
     kitr(dir, 'platforms', 'remove', 'admin')

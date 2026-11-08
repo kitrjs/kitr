@@ -15,8 +15,8 @@ export default function variant({ target }) {
   replaceIn(join(target, 'server/routes.ts'), ".ws('/ws', {", ".sse('/events', {")
   replaceIn(
     join(target, 'app/realtime.ts'),
-    "import { type SocketTransport, createSocketClient } from 'kitr/realtime'",
-    "import { type SocketTransport, createRealtimeClient } from 'kitr/realtime'",
+    "import { type SocketTransport, createSocketClient } from '@kitr/realtime'",
+    "import { type SocketTransport, createRealtimeClient } from '@kitr/realtime'",
   )
   replaceIn(
     join(target, 'app/realtime.ts'),

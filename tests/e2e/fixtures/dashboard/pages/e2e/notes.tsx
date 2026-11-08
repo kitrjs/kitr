@@ -1,4 +1,4 @@
-import { useStorage } from 'kitr/storage/react'
+import { useStorage } from '@kitr/storage/react'
 import { type FormEvent, useState } from 'react'
 import { notes } from '#app/e2e/notes-store'
 
