@@ -20,7 +20,7 @@ export function Rich({ text }: { text: string }) {
 }
 
 export function SoonBadge({ short = false, label }: { short?: boolean; label?: string }) {
-  return <span className="soon-badge">{label ?? (short ? 'Soon' : 'Coming soon')}</span>
+  return <span className="soon-badge">{label ?? (short ? 'Soon' : 'Preview')}</span>
 }
 
 /** One platform as a coloured tile: icon, name, the shell it ships in and where it runs. */
@@ -129,9 +129,8 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
           One app. As many platforms as you need.
         </Heading>
         <p className="muted">
-          A platform is one named line in <code>kitrrc.ts</code>. Add one with a single command,
-          keep several of the same type, and run them all with <code>kitr dev</code>. They share
-          your <code>app/</code> folder, your data contracts and your packages.
+          Each platform is one line in <code>kitrrc.ts</code>. Add as many as you like, and run them
+          all with <code>kitr dev</code>. They share the same code.
         </p>
         <fieldset className="builder-choices">
           <legend className="visually-hidden">Platforms in this project</legend>
@@ -158,7 +157,9 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
             )
           })}
         </fieldset>
-        <p className="builder-note muted">Electron or Tauri: a project keeps one desktop shell.</p>
+        <p className="builder-note muted">
+          Try it: toggle a platform. Pick Electron or Tauri for desktop, not both.
+        </p>
       </div>
       <div className="builder-out">
         <div
