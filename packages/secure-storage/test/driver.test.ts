@@ -3,12 +3,11 @@ import { createPlatform, type Runtime } from '@kitr/platform'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemorySecureStorageDriver, createSecureStorage, selectDriver } from '../src'
 import { selectDriver as selectFromModule } from '../src/driver'
-import { createCapacitorDriver } from '../src/drivers/capacitor'
 import { createElectronDriver } from '../src/drivers/electron'
 import { createTauriDriver } from '../src/drivers/tauri'
 import { createWebSecureStorageDriver } from '../src/drivers/web'
 
-const native = ['electron', 'tauri', 'capacitor'] as const
+const native = ['electron', 'tauri'] as const
 
 /** An app whose `platform` service reports `runtime`, as the desktop, tauri and mobile providers make it. */
 function appIn(runtime: Runtime) {
@@ -63,7 +62,7 @@ describe('secure-storage selectDriver', () => {
   })
 
   it('has a placeholder module per shell, each throwing', () => {
-    for (const make of [createElectronDriver, createTauriDriver, createCapacitorDriver])
+    for (const make of [createElectronDriver, createTauriDriver])
       expect(() => make()).toThrow(expect.objectContaining({ code: 'E_DRIVER_UNAVAILABLE' }))
   })
 

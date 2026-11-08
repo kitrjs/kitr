@@ -14,11 +14,10 @@ import {
   webShare,
 } from '../src'
 import { selectDriver as selectFromModule } from '../src/driver'
-import { createCapacitorDriver } from '../src/drivers/capacitor'
 import { createElectronDriver } from '../src/drivers/electron'
 import { createTauriDriver } from '../src/drivers/tauri'
 
-const native = ['electron', 'tauri', 'capacitor'] as const
+const native = ['electron', 'tauri'] as const
 const capabilities: NativeCapability[] = [
   'clipboard',
   'share',
@@ -91,7 +90,7 @@ describe('native selectDriver', () => {
   })
 
   it('has a placeholder module per shell, each throwing', () => {
-    for (const make of [createElectronDriver, createTauriDriver, createCapacitorDriver])
+    for (const make of [createElectronDriver, createTauriDriver])
       expect(() => make()).toThrow(expect.objectContaining({ code: 'E_DRIVER_UNAVAILABLE' }))
   })
 

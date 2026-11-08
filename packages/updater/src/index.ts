@@ -3,6 +3,7 @@ import { runtimeOf } from '@kitr/platform'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createCapacitorDriver as createCapacitorUpdaterDriver } from './drivers/capacitor'
 export { createMemoryUpdaterDriver } from './drivers/memory'
 export { createServiceWorkerUpdaterDriver } from './drivers/web'
 

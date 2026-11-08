@@ -69,10 +69,30 @@
     "@kitr/platform": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "@capacitor/core": ">=7.0.0",
+    "@capacitor/clipboard": ">=7.0.0",
+    "@capacitor/share": ">=7.0.0",
+    "@capacitor/haptics": ">=7.0.0",
+    "@capacitor/geolocation": ">=7.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "@capacitor/core": {
+      "optional": true
+    },
+    "@capacitor/clipboard": {
+      "optional": true
+    },
+    "@capacitor/share": {
+      "optional": true
+    },
+    "@capacitor/haptics": {
+      "optional": true
+    },
+    "@capacitor/geolocation": {
       "optional": true
     }
   },
@@ -82,7 +102,12 @@
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "react-dom": "^19.3.1",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/clipboard": "^8.0.1",
+    "@capacitor/share": "^8.0.3",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/geolocation": "^8.2.4"
   },
   "kitr": {
     "name": "native",

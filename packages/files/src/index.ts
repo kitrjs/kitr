@@ -3,6 +3,13 @@ import { runtimeOf } from '@kitr/platform'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export {
+  type CapacitorDirectory,
+  type CapacitorFileStore,
+  capacitorFileStore,
+  createCapacitorDriver as createCapacitorFilesDriver,
+  type FileEntry,
+} from './drivers/capacitor'
 export { createMemoryFilesDriver } from './drivers/memory'
 export { createWebFilesDriver } from './drivers/web'
 export { acceptFor, fromFile, mimeFor, toBlob } from './helpers'
