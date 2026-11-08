@@ -473,7 +473,7 @@ The service picks a driver once, the first time it is used. The table shows what
 | Chrome, Edge and other Chromium browsers | `web` | File System Access picker | Save picker, writes the chosen file | no |
 | Firefox, Safari | `web` | Hidden `<input type="file">` | Download link | no |
 | Desktop shell (Electron or Tauri) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The shell's webview decides | The shell's webview decides | no |
-| Mobile shell (Capacitor) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The system picker behind `<input type="file">` | Download link | no |
+| Mobile shell (Capacitor) | `capacitor` | The system document picker | Cache file, then the share sheet | yes |
 | Server | `memory` | Resolves `[]` | Records the call, resolves `name` | no |
 
 ### Chrome and Edge
@@ -490,7 +490,48 @@ The web driver adds a hidden `<input type="file">` to the page, sets its `accept
 
 ### Mobile
 
-[Mobile](/packages/mobile) doesn't register a `files` driver today either, so Capacitor needs `fallbackToWeb: true` or a driver of your own. With the fallback, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
+In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the service uses three optional peer dependencies, each imported the first time a method runs. `kitr add files` installs them when the project has the mobile platform.
+
+| Plugin | Used for |
+| --- | --- |
+| `@capawesome/capacitor-file-picker` | `open()` and `pick()`: the system document picker. The filters become MIME types; an extension kitr cannot map to a MIME type offers every file. |
+| `@capacitor/filesystem` | `save()` writes the file; picked files read their content from their `path`. |
+| `@capacitor/share` | `save()` opens the share sheet; `reveal(path)` hands a path to it. |
+
+Mobile has no "save as" dialog. `save()` writes the file into the app's cache directory and opens the share sheet, where Ada chooses Save to Files, Drive or Mail. It resolves to the cached file's `file://` URI, or `null` when she dismisses the sheet. The cache can be cleared by the OS, so the URI is for sharing now, not for keeping. To keep a file inside the app, use the file store below.
+
+```tsx
+// app/components/export-invoices.tsx
+import { useFileDialogs } from 'kitr/files/react'
+
+export function ExportInvoices({ csv }: { csv: string }) {
+  const files = useFileDialogs()
+  return (
+    <button type="button" onClick={async () => console.log(await files.save(csv, { name: 'invoices.csv' }))}>
+      Export invoices
+    </button>
+  )
+}
+// => file:///data/user/0/com.acme.app/cache/invoices.csv   (null if dismissed)
+```
+
+`capacitorFileStore()` reads, writes, deletes and lists files under the app's own directories, with no dialog. Paths are relative to the directory: `data` (the default, private to the app and backed up), `documents`, `cache`, `library` or `external`.
+
+```ts
+// app/drafts.ts
+import { capacitorFileStore } from 'kitr/files'
+
+const drafts = capacitorFileStore({ directory: 'data' })
+
+await drafts.write('drafts/invoice-1042.json', JSON.stringify({ total: 120 }))
+// => 'file:///data/user/0/com.acme.app/files/drafts/invoice-1042.json'
+await drafts.list('drafts') // => [{ name: 'invoice-1042.json', type: 'file', size: 13, modifiedAt: 1767000000000, uri: '...' }]
+await drafts.readText('drafts/invoice-1042.json') // => '{"total":120}'
+await drafts.exists('drafts/invoice-1042.json') // => true
+await drafts.remove('drafts/invoice-1042.json')
+```
+
+A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and the package to install, never a silent fallback.
 
 ## Errors
 

@@ -329,10 +329,41 @@ export function checkWhenFocused(app: KitrApp) {
 | --- | --- | --- |
 | Browser with `pwa` on | `createServiceWorkerUpdaterDriver()` | Activates the waiting worker and reloads the page. |
 | Browser without a service worker | The same driver | Nothing to apply: every check is `up-to-date`. |
-| Desktop and mobile shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the service-worker driver only with `fallbackToWeb: true` | Same as the browser, with the fallback. |
+| Mobile shell (Capacitor) | `createCapacitorUpdaterDriver()`, the store | Android: runs Play's in-app update. iOS: opens the App Store page. |
+| Desktop shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the service-worker driver only with `fallbackToWeb: true` | Same as the browser, with the fallback. |
 | Server | None; the provider binds nothing | Not available. |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `updater`. To update an installed app, register a driver for your shell's updater, as shown under [Extend](#extend).
+Today [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) register only `platform` and `storage` drivers, not `updater`. To update an installed desktop app, register a driver for your shell's updater, as shown under [Extend](#extend).
+
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell the service asks the store, not a server of yours, through `@capawesome/capacitor-app-update`, an optional peer dependency imported the first time a method runs. `kitr add updater` installs it when the project has the mobile platform. The service-worker path stays web-only: it cannot update a native app.
+
+| Call | Android | iOS |
+| --- | --- | --- |
+| `check()` | Asks Google Play. An update is available when Play reports one; `version` is its version name (or code). | Looks the app up in the App Store by its bundle id. |
+| `apply()` | A priority 4 or 5 update, or a device that allows only that flow, runs Play's full-screen immediate update, which restarts the app. Otherwise a flexible update downloads in the background, reports `progress` from 0 to 1, then restarts into the new version. If Play allows neither, it opens the store page. | Opens the App Store page: iOS cannot install in place. |
+| `currentVersion()` | The installed version name. | The installed version. |
+
+The driver sets no `onAvailable`, so the banner appears after `check()`, which `checkOnBoot` and `interval` run. Play only offers an update to an app installed from Play: a debug build or a sideloaded APK always checks as up to date.
+
+```tsx
+// app/components/update-banner.tsx
+import { useUpdate } from 'kitr/updater/react'
+
+export function UpdateBanner() {
+  const { available, update, status, progress, apply } = useUpdate()
+  if (!available) return null
+  return (
+    <button type="button" onClick={apply} disabled={status === 'downloading'}>
+      {status === 'downloading' ? `Updating ${Math.round(progress * 100)}%` : `Update to ${update?.version}`}
+    </button>
+  )
+}
+// Android flexible update => "Updating 40%" ... then the app restarts
+// iOS => opens apps.apple.com/app/id...
+```
+
 
 ## Errors
 

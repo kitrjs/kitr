@@ -339,11 +339,31 @@ On the server the service is an in-memory store, so code shared with the client 
 | Where it runs | Driver | `secure` |
 | --- | --- | --- |
 | Browser | `createWebSecureStorageDriver()`: AES-GCM, ciphertext in local storage | `false` |
-| Desktop and mobile shells | A vault a provider registers, else `E_DRIVER_UNAVAILABLE`. With `fallbackToWeb: true`, the same fallback inside the webview, its ciphertext in the shell's storage driver when one is registered. | `false` for the fallback |
+| Mobile shell (Capacitor) | `createCapacitorSecureStorageDriver()`: the iOS Keychain, the Android Keystore | `true` |
+| Desktop shells | A vault a provider registers, else `E_DRIVER_UNAVAILABLE`. With `fallbackToWeb: true`, the same fallback inside the webview, its ciphertext in the shell's storage driver when one is registered. | `false` for the fallback |
 | A registered vault | Whatever the driver wraps, such as Electron `safeStorage` | `true` when the driver says so |
 | Server | `createMemorySecureStorageDriver()`, in memory | `false` |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in the Keychain, the Keystore or Electron's `safeStorage`, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+Today [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in Electron's `safeStorage` or the OS keyring, register a vault driver as shown under [Extend](#extend).
+
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell the service uses `@aparajita/capacitor-secure-storage`, an optional peer dependency imported the first time a method runs. `kitr add secure-storage` installs it when the project has the mobile platform. Values go to the iOS Keychain and, on Android, to storage encrypted with a key in the Android Keystore. `secure` is `true`, so `requireSecure: true` is satisfied. Secrets are never written to `localStorage` or IndexedDB there.
+
+```ts
+// app/session.ts
+import { createSecureStorage } from 'kitr/secure-storage'
+
+const storage = createSecureStorage({ requireSecure: true })
+await storage.set('refresh-token', 'rt_ada_91f')
+await storage.get('refresh-token') // => 'rt_ada_91f'
+console.log(storage.driver.name, storage.secure) // => capacitor-keychain true
+```
+
+- The driver turns off iCloud Keychain sync and sets `whenUnlockedThisDeviceOnly`: a secret is readable only while the phone is unlocked, never leaves the device and is not restored onto a new phone. People sign in again after a restore.
+- The iOS Keychain survives uninstalling the app, so a reinstalled app can still read the old secrets. Clear them on first launch if that is wrong for your app.
+- On Android, uninstalling the app removes its secrets.
+- If the plugin is not installed, every call rejects with `E_DRIVER_UNAVAILABLE` and `install @aparajita/capacitor-secure-storage`. When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
 
 ## Errors
 
