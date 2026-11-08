@@ -1,6 +1,6 @@
 import { type CreateAppOptions, createApp, inProduction, type KitrApp } from '@kitr/core'
 import { createLogger, type Logger } from '@kitr/logger'
-import { bodyLimit, getRequestIP, H3, type H3Event, type Middleware } from 'h3'
+import { bodyLimit, getRequestIP, H3, type H3Event, HTTPError, type Middleware } from 'h3'
 import type { ServerConfig } from './config'
 import { type RequestContext, runWithRequest } from './context'
 import { errorToResponse } from './errors'
@@ -38,6 +38,17 @@ export interface ListenOptions {
   host?: string
 }
 
+/** Options of `server.fetch()`. */
+export interface FetchOptions {
+  /**
+   * Renders pages: Start's fetch handler, in an app with a web platform. A request none of the
+   * server's routes answers (see `handles()`) goes to it *inside* the server's middleware, so
+   * `shield` puts its security headers and CSP nonce on pages too, and the nonce reaches the
+   * renderer through the request context.
+   */
+  pages?: (request: Request) => Response | Promise<Response>
+}
+
 /** The server `createServer()` returns: an h3 app with the kitr lifecycle, served by `listen()` or `fetch()`. */
 export interface KitrServer {
   /** The kitr app: container, config and providers. */
@@ -59,7 +70,7 @@ export interface KitrServer {
   /** Boot providers. Called by `listen()` and lazily by `fetch()`. */
   boot(): Promise<KitrServer>
   /** Web-standard fetch handler: use inside TanStack Start, Nitro, Cloudflare, Bun, Deno. */
-  fetch(request: Request): Promise<Response>
+  fetch(request: Request, options?: FetchOptions): Promise<Response>
   /**
    * Whether this server answers the request's path: a route of the table, the health path, or
    * anything under a top-level segment one of its routes lives in (`/api/*` once `/api/health`
@@ -150,11 +161,15 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       })()
       return booted
     },
-    async fetch(request) {
+    async fetch(request, fetchOptions) {
       await server.boot()
       // Serving through fetch() (Start's /api route, Workers) is serving too: providers' `ready`
       // (job workers, schedulers) runs once here as it does on listen(). Tests stay quiet.
       if (app.environment !== 'test') await app.ready()
+      // Pages are everything the table does not claim; a claimed path that matches no route
+      // keeps the server's JSON 404.
+      if (fetchOptions?.pages && !server.handles(request))
+        return h3.request(request, undefined, { kitrPages: fetchOptions.pages })
       return h3.fetch(request)
     },
     handles(request) {
@@ -221,17 +236,13 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
           await stopped
           await server.close()
         })())
-      for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-        process.once(signal, () => {
-          server.logger.info(`${signal} received, shutting down`)
-          const timer = setTimeout(() => process.exit(1), config.shutdownTimeout * 1000)
-          close().then(() => {
-            clearTimeout(timer)
-            process.exit(0)
-          })
-        })
+      // One SIGINT/SIGTERM handler per process, however many servers it runs.
+      const leave = joinShutdown({ close, logger: server.logger, timeout: config.shutdownTimeout })
+      const closeAndLeave = async () => {
+        leave()
+        await close()
       }
-      return { url, close, node: (srv as any).node?.server }
+      return { url, close: closeAndLeave, node: (srv as any).node?.server }
     },
     async close() {
       await app.shutdown()
@@ -252,7 +263,10 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
         best = prefix
     return best ? config.bodyLimits![best]! : config.bodyLimit
   }
+  // Pages are the renderer's (Start has its own limits for server functions and forms).
+  const isPage = (event: H3Event) => typeof event.context.kitrPages === 'function'
   h3.use((event, next) => {
+    if (isPage(event)) return next()
     const limit = limitFor(event.url.pathname)
     const length = Number(event.req.headers.get('content-length'))
     if (length > limit) {
@@ -267,7 +281,9 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     }
     return next()
   })
-  h3.use((event, next) => bodyLimit(limitFor(event.url.pathname))(event, next))
+  h3.use((event, next) =>
+    isPage(event) ? next() : bodyLimit(limitFor(event.url.pathname))(event, next),
+  )
   h3.use(async (event, next) => {
     const requestId = event.req.headers.get(config.requestIdHeader) ?? crypto.randomUUID()
     const requestLogger = server.logger.child({ requestId })
@@ -279,6 +295,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
       startedAt: performance.now(),
       locals: {},
       ip: clientIp(event, config.trustProxy),
+      page: isPage(event),
     }
     event.context.kitr = ctx
     event.res.headers.set(config.requestIdHeader, requestId)
@@ -293,6 +310,13 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
     })
   })
   if (config.healthPath) h3.get(config.healthPath, () => ({ ok: true }))
+  // Paths no route answers: the app's pages when `fetch(request, { pages })` brought a renderer,
+  // else the usual 404.
+  h3.all('/**', (event) => {
+    const pages = event.context.kitrPages
+    if (typeof pages !== 'function') throw new HTTPError({ status: 404, statusText: 'Not Found' })
+    return pages(event.req)
+  })
   // Endpoints and sockets from the route table: each extension mounts its own kind.
   if (routes) routes.compile('h3', server)
   // The paths this server answers, for `handles()`: every entry of an extension with an h3 target,
@@ -365,5 +389,56 @@ export function clientIp(event: H3Event, trustProxy: boolean | number = false): 
 declare module 'h3' {
   interface H3EventContext {
     kitr?: RequestContext
+    /** The page renderer of `server.fetch(request, { pages })`. */
+    kitrPages?: (request: Request) => Response | Promise<Response>
+  }
+}
+
+/** A server that takes part in the process-wide shutdown. */
+interface ShutdownEntry {
+  close(): Promise<void>
+  logger: Logger
+  /** Seconds to wait for everything to drain before exiting with code 1. */
+  timeout: number
+}
+
+// kitr-allow-module-state: SIGINT/SIGTERM belong to the process, so the servers in it share one handler and one list
+const shutdownEntries = new Set<ShutdownEntry>()
+// kitr-allow-module-state: the single handler this process installed for SIGINT and SIGTERM, if any
+let shutdownHandler: ((signal: NodeJS.Signals) => void) | undefined
+const SHUTDOWN_SIGNALS = ['SIGINT', 'SIGTERM'] as const
+
+/**
+ * Add a server to the set the signal handler drains, installing the handler for the first one.
+ * Returns the function that removes it, which also takes the handler off when the last server
+ * leaves, so two servers in a process never stack handlers that each call `process.exit`.
+ */
+function joinShutdown(entry: ShutdownEntry): () => void {
+  shutdownEntries.add(entry)
+  if (!shutdownHandler) {
+    let draining = false
+    const handler = (signal: NodeJS.Signals) => {
+      if (draining) return
+      draining = true
+      const entries = [...shutdownEntries]
+      for (const e of entries) e.logger.info(`${signal} received, shutting down`)
+      const timer = setTimeout(
+        () => process.exit(1),
+        Math.max(0, ...entries.map((e) => e.timeout)) * 1000,
+      )
+      Promise.allSettled(entries.map((e) => e.close())).then(() => {
+        clearTimeout(timer)
+        process.exit(0)
+      })
+    }
+    shutdownHandler = handler
+    for (const signal of SHUTDOWN_SIGNALS) process.on(signal, handler)
+  }
+  return () => {
+    shutdownEntries.delete(entry)
+    if (shutdownEntries.size === 0 && shutdownHandler) {
+      for (const signal of SHUTDOWN_SIGNALS) process.off(signal, shutdownHandler)
+      shutdownHandler = undefined
+    }
   }
 }

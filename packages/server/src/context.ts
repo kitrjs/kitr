@@ -22,13 +22,35 @@ export interface RequestContext {
   locals: Record<string, unknown>
   /** The client's IP address, through `trustProxy` proxies. Undefined when the runtime does not say. */
   ip?: string
+  /**
+   * The Content-Security-Policy nonce for this request, set by `shield` when its policy uses
+   * nonces. Inline `<script>` and `<style>` tags in the page carry it; `useCspNonce()` from
+   * `kitr/shield` reads it.
+   */
+  nonce?: string
+  /** True when the request is a page the server hands to the app's renderer (`server.fetch(request, { pages })`), not one of the server's own routes. */
+  page?: boolean
 }
 
 const storage = new AsyncLocalStorage<RequestContext>()
 
 /** Run `fn` with `ctx` as the current request. The server calls it for every request; use it to fake a request in tests. */
 export function runWithRequest<T>(ctx: RequestContext, fn: () => T): T {
+  publishNonceReader()
   return storage.run(ctx, fn)
+}
+
+/**
+ * The key client-safe packages (`kitr/router`, `kitr/shield`) read the current request's nonce
+ * through. They cannot import this file (it needs `node:async_hooks`), so the server leaves a
+ * reader on `globalThis` the first time it runs a request; it stays unset in the browser.
+ */
+export const REQUEST_NONCE_READER = Symbol.for('kitr.server.requestNonce')
+
+const readNonce = () => storage.getStore()?.nonce
+
+function publishNonceReader() {
+  ;(globalThis as unknown as Record<symbol, unknown>)[REQUEST_NONCE_READER] = readNonce
 }
 
 /** The current request, from anywhere on the server (services, db hooks, loggers). */

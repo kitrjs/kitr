@@ -1714,6 +1714,9 @@ importers:
       '@kitr/server':
         specifier: workspace:*
         version: link:../server
+      '@kitr/shield':
+        specifier: workspace:*
+        version: link:../shield
     devDependencies:
       '@kitr/logger':
         specifier: workspace:*

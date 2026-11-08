@@ -55,6 +55,23 @@ declare module '@kitr/core' {
 }
 
 /**
+ * The CSP nonce of the request being rendered, when `kitr/shield` made one: TanStack Start puts
+ * `router.options.ssr.nonce` on its inline hydration scripts, `<HeadContent />` and `<Scripts />`.
+ * Start builds the router inside the request, so the server's request context is current here.
+ * `@kitr/server` leaves its reader on `globalThis` (this package cannot import it: the browser
+ * bundle must not see `node:async_hooks`).
+ */
+function requestNonce(): string | undefined {
+  if (typeof window !== 'undefined') return undefined
+  const read = (globalThis as unknown as Record<symbol, unknown>)[
+    Symbol.for('kitr.server.requestNonce')
+  ]
+  return typeof read === 'function'
+    ? ((read as () => string | undefined)() ?? undefined)
+    : undefined
+}
+
+/**
  * `createRouter` with kitr's defaults: queryClient and app in context, intent
  * preload, scroll restoration, default pending/error/not-found components,
  * and the app's providers wrapped around the whole tree.
@@ -126,6 +143,7 @@ export function createKitrRouter(
     defaultNotFoundComponent: DefaultNotFound,
     defaultStructuralSharing: true,
     ...(rest as Omit<RouterOptions<AnyRoute, 'never', false, any, any>, 'context' | 'routeTree'>),
+    ...(requestNonce() ? { ssr: { ...rest.ssr, nonce: rest.ssr?.nonce ?? requestNonce() } } : {}),
     routeTree,
     context: routerContext as any,
     Wrap: ({ children }: { children: ReactNode }) => (

@@ -296,9 +296,52 @@ describe('worker', () => {
       await driver.push({ id, name: 'j', payload: null, attempt: 1, runAt })
     expect((await driver.pull(10, 2)).map((j) => j.id)).toEqual(['a', 'b'])
     expect((await driver.pull(10, 5)).map((j) => j.id)).toEqual(['c'])
-    expect(await driver.size()).toBe(1)
+    // Pulled jobs are reserved, not gone: all four still count until they are acked.
+    expect(await driver.size()).toBe(4)
     await driver.clear()
     expect(await driver.size()).toBe(0)
+  })
+
+  it('memory driver counts reserved jobs in size() until they are acked', async () => {
+    const driver = createMemoryJobsDriver()
+    const job = { id: 'a', name: 'j', payload: null, attempt: 1, runAt: 0 }
+    await driver.push(job)
+    const [pulled] = await driver.pull(1, 1)
+    // A worker that crashes here leaves the job reserved: the queue is not empty.
+    expect(await driver.size()).toBe(1)
+    await driver.ack!(pulled!)
+    expect(await driver.size()).toBe(0)
+  })
+
+  it('memory driver returns a job nobody acked after the visibility timeout', async () => {
+    const driver = createMemoryJobsDriver({ visibilityTimeout: 1000 })
+    await driver.push({ id: 'a', name: 'j', payload: 1, attempt: 1, runAt: 0 })
+    expect((await driver.pull(0, 5)).map((j) => j.id)).toEqual(['a'])
+    // Reserved: invisible to the next pull while its worker may still be running it.
+    expect(await driver.pull(999, 5)).toEqual([])
+    expect((await driver.pull(1000, 5)).map((j) => j.id)).toEqual(['a'])
+    // Back in the queue it was reserved again, with a fresh timeout.
+    expect(await driver.pull(1500, 5)).toEqual([])
+    expect(await driver.size()).toBe(1)
+  })
+
+  it('memory driver defaults the visibility timeout to 30 seconds', async () => {
+    const driver = createMemoryJobsDriver()
+    await driver.push({ id: 'a', name: 'j', payload: 1, attempt: 1, runAt: 0 })
+    await driver.pull(0, 1)
+    expect(await driver.pull(29_999, 1)).toEqual([])
+    expect(await driver.pull(30_000, 1)).toHaveLength(1)
+  })
+
+  it('a retry and its first attempt reserve independently', async () => {
+    const driver = createMemoryJobsDriver()
+    const first = { id: 'a', name: 'j', payload: 1, attempt: 1, runAt: 0 }
+    await driver.push(first)
+    await driver.pull(0, 1)
+    await driver.push({ ...first, attempt: 2 })
+    await driver.ack!(first)
+    expect(await driver.size()).toBe(1)
+    expect((await driver.pull(0, 1))[0]?.attempt).toBe(2)
   })
 
   it('backs off exponentially between retries', async () => {

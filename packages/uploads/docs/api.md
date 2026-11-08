@@ -64,6 +64,38 @@ const defineConfig: <const C extends UploadsConfig>(config: C) => C;
 
 Typed identity helper for `config/uploads.ts`.
 
+### ServedFile
+
+```ts
+interface ServedFile {
+  /** The storage key: `<id>/<name>`. */
+  key: string;
+  /** The file name, from the key. */
+  name: string;
+  /** The type the file will be served with (sniffed from its bytes, or allow-listed). */
+  type: string;
+  /** Size in bytes. */
+  size: number;
+}
+```
+
+The stored file `authorize` is asked about.
+
+### UploadAccess
+
+```ts
+interface UploadAccess {
+  /** The h3 event of the request. */
+  event: H3Event;
+  /** The request. */
+  request: Request;
+  /** The app for this request (a fork per request on a kitr server): `app.container.use('auth')` for the session. */
+  app: KitrApp;
+}
+```
+
+Who is asking, as `authorize` sees it.
+
 ### UploadedFile
 
 ```ts
@@ -135,6 +167,27 @@ interface UploadsConfig extends UploadRules {
   driver?: unknown;
   /** Public URL prefix the driver answers under, e.g. `/uploads`. */
   publicPath?: string;
+  /**
+   * Declared types served as themselves when the file's bytes carry no signature to check (text
+   * formats have none), always as a download except `text/plain`. Patterns such as `text/*` work.
+   * Files with a recognised signature (images, PDF, audio, video, archives) are served with the
+   * type their bytes show, whatever was declared; anything else is `application/octet-stream`.
+   * Default `['text/plain', 'text/csv', 'application/json']`.
+   */
+  allowTypes?: string[];
+  /**
+   * Secret for signed links (`uploads.signedUrl(key, { expiresIn })`), at least 16 characters.
+   * Set it from the environment, the same on every instance.
+   */
+  secret?: string;
+  /**
+   * Decides who may fetch a file without a signed link. Return false (or throw) to answer 403.
+   * Runs for every unsigned `GET`; a valid signed link skips it. Without it, and without
+   * `requireSigned`, files are public to anyone who knows the key.
+   */
+  authorize?: (access: UploadAccess, file: ServedFile) => boolean | Promise<boolean>;
+  /** Serve files only through signed links: a request without a valid signature is refused. Needs `secret`. Default false. */
+  requireSigned?: boolean;
 }
 ```
 
@@ -244,13 +297,55 @@ function mountUploads<S extends {
 Mount `POST <path>` (receive) and `GET <path>/**` (serve) on a kitr server from `server/main.ts`.
 The service is resolved per request, so this can run before the app has booted.
 
+### resolveServedType
+
+```ts
+function resolveServedType(declared: string, data: Uint8Array, allow?: string[]): {
+  type: string;
+  inline: boolean;
+};
+```
+
+The type a stored file is served as, and whether a browser may show it inline: the type its bytes
+show (so a declared `image/png` over HTML is not an image); failing that, the declared type if
+allow-listed; otherwise `application/octet-stream`.
+
 ### servedFileHeaders
 
 ```ts
-function servedFileHeaders(type: string, name?: string): Record<string, string>;
+function servedFileHeaders(type: string, name?: string, options?: ServedFileOptions): Record<string, string>;
 ```
 
-Headers for serving a stored file: never sniffed, sandboxed, and inline only when that is safe.
+Headers for serving a stored file: never sniffed by the browser (`nosniff`), sandboxed, and
+inline only when that is safe; everything else is a download (`Content-Disposition: attachment`).
+Pass the bytes in `options.data` so the type comes from them, not from the uploader.
+
+### signedUrl
+
+```ts
+function signedUrl(path: string, options: SignedUrlOptions): Promise<string>;
+```
+
+A link to `path` that works until it expires: `path?expires=<unix seconds>&signature=<HMAC>`.
+The signature is HMAC-SHA-256 (Web Crypto) over the path and the expiry, so the link works for
+that file only and only until then. Anyone holding the link can fetch the file, so keep
+`expiresIn` short and send it only to the person it is for.
+
+```ts
+signedUrl('/api/uploads/3f2a/report.pdf', { expiresIn: 300, secret })
+```
+
+### sniffType
+
+```ts
+function sniffType(data: Uint8Array): string | undefined;
+```
+
+The content type of a file from its first bytes, for formats that have a signature; undefined
+for everything else (text formats, SVG, HTML and unknown binaries have none).
+
+Uploads are served with the sniffed type, never the one the uploader declared: a browser trusts
+whatever the server says, so a declared `image/png` over HTML bytes would otherwise run as the site.
 
 ### useUploads
 
@@ -259,6 +354,48 @@ function useUploads(app: KitrApp): Uploads;
 ```
 
 Returns the `uploads` service the provider bound, for a controller or job: `useUploads(ctx.app)`.
+
+### verifySignedUrl
+
+```ts
+function verifySignedUrl(url: URL, secret: string, now?: number): Promise<SignatureCheck>;
+```
+
+Check the `expires` and `signature` query parameters of a request URL against `secret`.
+
+### ServedFileOptions
+
+```ts
+interface ServedFileOptions {
+  /**
+   * The file's bytes. With them the type is sniffed from the signature (PNG, JPEG, PDF, ZIP...)
+   * and the declared type is only a fallback for allow-listed text formats; without them the
+   * declared type is taken as given.
+   */
+  data?: Uint8Array;
+  /** Declared types that may be served as themselves when the bytes have no signature. Default `text/plain`, `text/csv`, `application/json`. */
+  allow?: string[];
+  /** Override `cache-control`. Default: public and immutable. */
+  cacheControl?: string;
+}
+```
+
+Options of `servedFileHeaders`.
+
+### SignedUrlOptions
+
+```ts
+interface SignedUrlOptions {
+  /** Seconds the link works for. */
+  expiresIn: number;
+  /** The signing secret: at least 16 characters, the same on every instance that serves the file. */
+  secret: string;
+  /** The current time in ms; for tests. */
+  now?: number;
+}
+```
+
+Options for `signedUrl()`.
 
 ### StoredFile
 
@@ -310,11 +447,27 @@ interface Uploads {
   } | undefined>;
   /** Delete a stored file through the driver. */
   remove(key: string): Promise<void>;
+  /**
+   * A link to a stored file that works for `expiresIn` seconds and no longer: the file's URL
+   * under the mount path (default `/api/uploads`) with an HMAC signature. Needs `secret` in
+   * `config/uploads.ts`. The link skips `authorize`, so hand it only to the person it is for.
+   */
+  signedUrl(key: string, options: {
+    expiresIn: number;
+    path?: string;
+  }): Promise<string>;
+  /** Answer a `GET` for a stored file under `base`: checks the signed link or `authorize`, then sends the file with safe headers. What the mounted route runs. */
+  serve(event: H3Event, options?: {
+    base?: string;
+    app?: KitrApp;
+  }): Promise<Response>;
   /** Mount `POST <path>` (receive) and `GET <path>/:key` (serve) on a kitr server. */
   mount<S extends {
     h3: any;
     app?: KitrApp;
   }>(server: S, path?: string): S;
+  /** The config this service was made from. */
+  readonly config: UploadsConfig;
   /** The driver files are stored with. */
   readonly driver: UploadsDriver;
 }
@@ -346,6 +499,14 @@ interface UploadsDriver {
 ```
 
 Where bytes go: disk, S3, R2, GCS. Keys are relative paths the driver owns.
+
+### SignatureCheck
+
+```ts
+type SignatureCheck = 'ok' | 'unsigned' | 'expired' | 'invalid';
+```
+
+Why a signed link was refused, or `ok`; `unsigned` when the request carries no signature at all.
 
 ## kitr/uploads/provider
 

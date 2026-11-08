@@ -117,7 +117,8 @@ describe('server()', () => {
       )
       const entry = f.files.get('app/server.ts')!
       expect(entry).toContain("from '@tanstack/react-start/server-entry'")
-      expect(entry).toContain('if (server.handles(request)) return server.fetch(request)')
+      expect(entry).toContain('return server.fetch(request, {')
+      expect(entry).toContain('pages: (request) => {')
       expect(entry).toContain('return handler.fetch(request, options)')
     })
 

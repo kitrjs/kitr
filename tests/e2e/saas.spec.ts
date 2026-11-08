@@ -82,3 +82,47 @@ test.describe('cookie sessions on the saas kit', () => {
     await expect(page.getByText(/invalid|incorrect|wrong/i)).toBeVisible()
   })
 })
+
+test.describe('content security policy', () => {
+  const nonceOf = (csp: string, directive: string) =>
+    new RegExp(`${directive} [^;]*'nonce-([^']+)'`).exec(csp)?.[1]
+
+  test('every page carries a fresh nonce in the header and on each inline script and style', async ({
+    baseURL,
+  }) => {
+    const seen = new Set<string>()
+    for (const path of ['/sign-in', '/sign-in', '/']) {
+      const res = await fetch(`${baseURL}${path}`, { redirect: 'manual' })
+      const csp = res.headers.get('content-security-policy')!
+      expect(csp).toBeTruthy()
+      // No blanket inline permission for scripts or style elements.
+      expect(csp).not.toMatch(/script-src[^;]*'unsafe-inline'/)
+      expect(csp).not.toMatch(/(^|; )style-src [^;]*'unsafe-inline'/)
+      const nonce = nonceOf(csp, 'script-src')!
+      expect(nonce).toBeTruthy()
+      expect(nonceOf(csp, 'style-src')).toBe(nonce)
+      seen.add(nonce)
+      if (!(res.headers.get('content-type') ?? '').includes('text/html')) continue
+      const html = await res.text()
+      const inline = [...html.matchAll(/<(script|style)\b([^>]*)>/g)].filter(
+        (m) => m[1] === 'style' || !/\bsrc=/.test(m[2]!),
+      )
+      expect(inline.length).toBeGreaterThan(0)
+      for (const m of inline) expect(m[2], `<${m[1]}> has the nonce`).toContain(`nonce="${nonce}"`)
+    }
+    // A nonce is never reused between requests.
+    expect(seen.size).toBeGreaterThanOrEqual(2)
+  })
+
+  test('the app hydrates and works under the policy with no violations', async ({ page }) => {
+    const violations: string[] = []
+    page.on('console', (m) => {
+      if (/content security policy|refused to/i.test(m.text())) violations.push(m.text())
+    })
+    const errors = watchForErrors(page)
+    await signIn(page)
+    await expect(page.getByRole('banner').getByText(admin.email)).toBeVisible()
+    expect(violations).toEqual([])
+    expect(errors.filter((e) => !/favicon|401/.test(e))).toEqual([])
+  })
+})

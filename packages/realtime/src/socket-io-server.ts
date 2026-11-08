@@ -4,6 +4,8 @@ import {
   type ChannelDefinition,
   type ChannelParams,
   type ClientMessage,
+  type ConnectionIdentity,
+  ownedBy,
   type ServerMessage,
   topicFor,
 } from './protocol'
@@ -14,6 +16,8 @@ export interface SocketIoServerOptions {
   channels: ChannelDefinition<any, any>[]
   /** Authenticate a connection (`socket.handshake.auth`). Return context or throw. */
   authorize?: (socket: Socket) => unknown | Promise<unknown>
+  /** Who a socket belongs to, for `closeSessions(userId)`. Default: the context's `userId`, `user.id` or `id`. */
+  identify?: ConnectionIdentity
   /** Serve channels on this Socket.IO namespace instead of the default `/`. */
   namespace?: string
 }
@@ -27,6 +31,8 @@ export interface SocketIoServer {
     channel: C,
     params: ChannelParams<C>,
   ): { emit(event: keyof C['events'] & string, data: unknown): void }
+  /** Disconnect every socket of `userId` on this instance and return how many; see `SocketServer.closeSessions`. */
+  closeSessions(userId: string | number): number
 }
 
 /**
@@ -98,6 +104,16 @@ export function attachSocketIo(io: Server, options: SocketIoServerOptions): Sock
 
   const sockets: SocketIoServer = {
     io,
+    closeSessions(userId) {
+      let closed = 0
+      const space = options.namespace ? io.of(options.namespace) : io.sockets
+      for (const socket of [...space.sockets.values()]) {
+        if (!ownedBy(options.identify, socket.data.kitrCtx, userId)) continue
+        closed++
+        socket.disconnect(true)
+      }
+      return closed
+    },
     use(channel, params) {
       const topic = topicFor(channel.name, params)
       return {

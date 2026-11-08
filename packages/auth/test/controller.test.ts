@@ -30,6 +30,7 @@ async function setup(
     requireVerifiedEmail?: boolean
     csrf?: false
     mailFails?: boolean
+    onSessionsRevoked?: (userId: string) => void
     users?: ReturnType<typeof createMemoryUserProvider<User>>
   } = {},
 ) {
@@ -56,6 +57,7 @@ async function setup(
     ...(options.mail === false ? {} : { mail: { verifyEmail, resetPassword } }),
     requireVerifiedEmail: options.requireVerifiedEmail,
     csrf: options.csrf,
+    onSessionsRevoked: options.onSessionsRevoked,
     appUrl: 'https://app.acme.com/',
   })
   const controller = new Controller()
@@ -203,6 +205,23 @@ describe('session controller', () => {
     expect(await sessions.list('ada')).toEqual([])
     expect(phone.id).toBeTruthy()
     await expect(call(controller.signOutAll)).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+  })
+
+  it('tells the app when every session of a user was revoked, so live connections can close', async () => {
+    const onSessionsRevoked = vi.fn()
+    const { controller, call, sent } = await setup({ onSessionsRevoked })
+    await call(controller.signIn, { email: 'ada@acme.com', password: 'lovelace-1815' })
+    await call(controller.signOut)
+    expect(onSessionsRevoked).not.toHaveBeenCalled()
+
+    await call(controller.signIn, { email: 'ada@acme.com', password: 'lovelace-1815' })
+    await call(controller.signOutAll)
+    expect(onSessionsRevoked).toHaveBeenCalledWith('ada')
+
+    await call(controller.requestPasswordReset, { email: 'ada@acme.com' })
+    const token = new URL(sent[0]!.props.url).searchParams.get('token')!
+    await call(controller.resetPassword, { token, password: 'new-password-1' })
+    expect(onSessionsRevoked).toHaveBeenCalledTimes(2)
   })
 
   describe('csrf', () => {
