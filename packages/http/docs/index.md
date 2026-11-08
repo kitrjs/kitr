@@ -370,7 +370,7 @@ export function ShipButton({ id }: { id: string }) {
 | --- | --- | --- |
 | `method` | `'post'` | One of `'get'`, `'post'`, `'put'`, `'patch'`, `'delete'`. |
 | `path` | required | A path, or a function of the input that returns one. |
-| `body` | the input | A function that builds the JSON body from the input. Without it, the whole input is the body, except for `get` and `delete`, which send none. |
+| `body` | the input | Builds the JSON body from the input. By default the input is the body (none for `get` and `delete`). |
 | `schema` | none | A Standard Schema that validates the response and types the result. |
 | `effects` | none | Cache effects after success: an object, or a function of `(result, input)`. See [Query](/packages/query). |
 | `options` | `{}` | ky options for this request only. |

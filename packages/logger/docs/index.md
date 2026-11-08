@@ -60,7 +60,7 @@ export default defineConfig({
 
 | Variable | Used for |
 | --- | --- |
-| `LOG_LEVEL` | The level in the generated config. Added to `.env.example` by the server package as `LOG_LEVEL=info`. Also read by the server when it has to create its own logger. |
+| `LOG_LEVEL` | The lowest level to print, such as `info`. |
 
 The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the browser, with neither `format` nor `write` set, the logger skips formatting and calls the console directly: see [Log in the browser](#log-in-the-browser).
 

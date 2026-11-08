@@ -77,8 +77,8 @@ export default defineConfig({
 | `host` | `'0.0.0.0'` | Interface `listen()` binds when you call it without one. |
 | `healthPath` | `'/healthz'` | Path of a route that answers `{ ok: true }` for load balancers. `false` removes the route. |
 | `bodyLimit` | `1048576` (1 MiB) | Largest request body in bytes. Larger requests get a `413`. |
-| `bodyLimits` | `{}` | A different limit under a path prefix, such as `{ '/api/uploads': 10 * 1024 * 1024 }`. The longest matching prefix wins; other paths keep `bodyLimit`. |
-| `trustProxy` | `false` | How many proxies in front of the server append to `X-Forwarded-For`: `true` for one (a load balancer), or a number. The client IP in `ctx.request.ip()`, rate limits and request logs is then the address the outermost trusted proxy saw; addresses a client puts in the header itself are ignored. With `false`, the socket's address. |
+| `bodyLimits` | `{}` | Limits per path: `{ '/api/uploads': 10 * 1024 * 1024 }`. |
+| `trustProxy` | `false` | How many proxies sit in front of the server, so `ctx.request.ip()` is the real client: `true` for one load balancer, or a number. |
 | `requestIdHeader` | `'x-request-id'` | Header the request id is read from and echoed in. |
 | `shutdownTimeout` | `10` | Seconds to wait for in-flight requests after `SIGINT` or `SIGTERM` before the process exits with code `1`. |
 | `websocket` | `false` | Accept WebSocket upgrades through `crossws`. [Realtime](/packages/realtime) sets it for you. |
@@ -103,7 +103,7 @@ export const server = createServer({
 | `LOG_LEVEL` | The server logger's level (`debug`, `info`, `warn`, `error`) when no logger provider is bound. `config/logger.ts` reads it too. |
 | `PORT` | The port `server/main.ts` listens on. `kitr dev` and `kitr start` set it from the platform options. |
 | `HOST` | The interface `server/main.ts` binds. `kitr dev` sets `localhost`, `kitr start` sets `0.0.0.0`. |
-| `NODE_ENV` | `production` hides the message and data of `5xx` responses. The app's mode (`kitr build`, Vite's production mode) does the same, so hosts that never set `NODE_ENV` are covered. |
+| `NODE_ENV` | `production` hides the details of `5xx` errors. A production build does too. |
 
 ### Platform options
 
@@ -288,7 +288,7 @@ export default createServerEntry({
 })
 ```
 
-`server.fetch(request, { pages })` runs the request through the server's middleware (the request context, `shield`'s headers and its CSP nonce) and answers it there when a route of the table matches; any other path is handed to `pages`, which here is Start's handler, so pages get the same security headers and Start's inline scripts get the request's nonce. Servers whose `app/server.ts` still reads `if (server.handles(request)) return server.fetch(request)` keep working, but their pages bypass the server's middleware. `server.handles(request)` matches the paths of the table passed to `createServer({ routes })`, so adding an endpoint or a socket needs no change here. The web platform in `ssr` mode answers `/api/orders` itself, with no second process. `kitr dev api` still runs the server alone when you want it on its own port, for a mobile app or a partner integration.
+`server.fetch(request, { pages })` answers API routes itself and hands every other path to `pages`, Start's handler. Pages get the same security headers. The web platform in `ssr` mode serves `/api/orders` too, with no second process. Run `kitr dev api` to run the server on its own port.
 
 ## Call the server from any fetch runtime
 
@@ -634,7 +634,7 @@ export default defineConfig({
 
 Keep the timeout below your orchestrator's grace period (30 seconds by default on Kubernetes), or the process is killed before it finishes.
 
-A process has one signal handler, however many servers it runs. Every server that is listening joins a process-wide list and leaves it when its `close()` runs; the first one installs the `SIGINT` and `SIGTERM` handlers and the last one to leave removes them. On a signal, the handler logs for each server, drains all of them at once, and exits once, with the longest `shutdownTimeout` among them as the deadline. Two `listen()` calls in one process (an API and an admin server, or a test file with several servers) no longer stack handlers that each call `process.exit`.
+A process has one handler for `SIGINT` and `SIGTERM`, however many servers it runs. On a signal it drains every server at once and exits once, after the longest `shutdownTimeout` at most.
 
 `listen()` returns a `close()` function that does steps 2 to 4 without exiting, which is what tests and scripts use:
 
@@ -669,7 +669,7 @@ Without the `crossws` package installed, `listen()` throws `[@kitr/server] webso
 
 | Command | What it does |
 | --- | --- |
-| `kitr add server <name>` | Adds a server platform: installs the packages, writes `platforms.<name>` in `kitrrc.ts`, runs the server and logger setup, adds scripts and scaffolds `server/main.ts`. |
+| `kitr add server <name>` | Add a server platform and write `server/main.ts`. |
 | `kitr dev <name>` | Runs the entry in watch mode for the runtime (see the table under "Run the server in development and production"). |
 | `kitr build <name>` | Typechecks on Node, Bun and Deno; bundles into `dist/<name>` on Workers. |
 | `kitr start <name>` | Runs the production server. `kitr serve` does the same. |

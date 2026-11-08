@@ -63,7 +63,7 @@ With `RESEND_API_KEY` set, messages go to Resend. Without it `transport` is unse
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `from` | none | The default sender for every message, as `'Acme <orders@acme.com>'`, `'orders@acme.com'` or `{ email, name }`. `send()` throws when neither this nor the `from` send option is set. |
+| `from` | none | The default sender: `'Acme <orders@acme.com>'`. `send()` throws if no sender is set. |
 | `transport` | the log transport, outside production | Where messages go. In production the provider refuses to boot when this is unset or is the log transport. |
 | `previewPath` | `/_kitr/mail` | Where `mailPreview()` serves rendered templates in development. `false` turns the preview pages off; `{ path }` passed to `mailPreview()` wins over it. |
 

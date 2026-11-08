@@ -6,7 +6,7 @@ order: 1
 
 # Consent
 
-In much of the world you need a visitor's permission before you load analytics, marketing pixels or session replay. `@kitr/consent` keeps one record per visitor of what they agreed to, by category, in a cookie that the server can read too. While a category is not granted, [analytics](/packages/analytics) keeps its calls in a queue and, if you ask it to, [monitoring](/packages/monitoring) drops its reports. Your banner is a few lines over `useConsent()`, so it looks like the rest of your app.
+In much of the world you need permission before you load analytics or marketing pixels. `@kitr/consent` stores what each visitor agreed to, by category, in a cookie the server can read too. Until a category is granted, [analytics](/packages/analytics) waits and [monitoring](/packages/monitoring) can hold its reports. You build the banner with `useConsent()`.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` asks Ada for consent on her first visit, holds Google Analytics until she agrees, loads a marketing pixel only for the `marketing` category, and lets Grace change her mind from the settings page.
 

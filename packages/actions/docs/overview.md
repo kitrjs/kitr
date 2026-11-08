@@ -69,7 +69,7 @@ kitr adds four things on top:
 | Input validation with any [Standard Schema](https://standardschema.dev) library (zod, valibot, arktype). | The server never trusts the browser, and the schema is also the TypeScript type. |
 | kitr's one error shape, `KitrError`. | A validation failure lands on the right form field in [forms](/packages/forms), and every other failure looks the same as it does from [api](/packages/api) or [http](/packages/http). |
 | Cache effects on mutations. | A mutation declares which [query](/packages/query) keys it changes, and every screen showing them updates. |
-| A generated registry. | `kitr types` writes the names and types of every action, so `useQuery('projects.list')` is typed and renaming a file is a type error, not a runtime one. |
+| A generated registry. | `useQuery('projects.list')` is typed from the action's name. |
 
 kitr adds the input schema, the typed error, the generated registry and the cache effects.
 
