@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
+    "test:electron": "playwright test -c playwright.electron.config.ts",
     "check:bundles": "node scripts/check-bundles.mjs",
     "test:all": "pnpm test:coverage && pnpm test:integration && pnpm check:bundles && pnpm check:examples && pnpm test:e2e",
     "check:examples": "node scripts/sync-examples.mjs --check",
