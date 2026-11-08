@@ -31,7 +31,7 @@ What `kitr add mobile phone` does, in order:
 - Adds `() => import('@kitr/mobile/provider')` to `providers` in `kitrrc.ts`.
 - Writes `phone: mobile({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { mobile } from 'kitr/mobile'`.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
-- Writes `platforms/phone/capacitor.config.ts` (shown under Configure) and `platforms/phone/.gitignore`, which ignores `ios/App/Pods`, `ios/App/build`, `android/build`, `android/app/build` and `android/.gradle`.
+- Writes `platforms/phone/capacitor.config.ts` (shown under Configure), `platforms/phone/package.json` (generated; see [Sync the plugins](#sync-the-plugins)) and `platforms/phone/.gitignore`, which ignores `ios/App/Pods`, `ios/App/build`, `android/build`, `android/app/build` and `android/.gradle`.
 - Adds a `## kitr: platform phone` section to `AGENTS.md`: how to run and build, never to sniff user agents, and to wrap other Capacitor plugins in `nativeOnly()`.
 
 It does not create the `ios/` and `android/` projects. The first `kitr build phone` or `kitr dev phone` runs `cap add` for each target.
@@ -299,6 +299,22 @@ The generated file then ends with:
 ```
 
 Like `appId`, `capacitor` is read when the file is written. For an existing project, edit `capacitor.config.ts` directly.
+
+## Sync the plugins
+
+The Capacitor CLI finds a project's plugins in the `package.json` of the folder it runs in, and kitr runs `cap` in `platforms/phone/`. So that every plugin the app installed reaches the native projects, kitr writes `platforms/phone/package.json` from the app's `dependencies` before each `cap` command (`kitr build`, `kitr dev`). Do not edit it: it is regenerated, and a plugin you install with `pnpm add @capacitor/camera` appears in it on the next build.
+
+`cap sync` prints what it found, so you can check that a plugin arrived:
+
+```sh
+kitr build phone
+# [info] Found 12 Capacitor plugins for android:
+#        @capacitor/clipboard@8.0.1
+#        @capacitor/share@8.0.3
+#        ...
+```
+
+The device packages [Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater) drive these plugins in the shell. `kitr add <package>` installs the ones it needs when the project has the mobile platform, and `kitr new --kit mobile` installs all of them. If you add a device package before the mobile platform, run `kitr add <package>` again afterwards. iOS and Android sync on Linux too: Capacitor 8 uses Swift Package Manager on iOS, so a CI job can run `kitr build phone` without Xcode or the Android SDK. It only syncs; building the app still needs the native toolchain.
 
 ## Check whether the app runs in the shell
 
