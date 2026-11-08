@@ -3,12 +3,17 @@ import {
   type ColumnDef,
   clientTableFeatures,
   flexRender,
+  parseTableSearch,
+  type TableSearch,
   useTable,
+  useUrlTableState,
 } from '@kitr/table'
+import { useCallback, useState } from 'react'
 
 export const meta = {
-  title: 'A table that sorts by its headers',
-  description: 'Click a header to sort, click again to reverse. Status is not sortable.',
+  title: 'A sort that lives in the URL',
+  description:
+    'Click a header to sort, click again to reverse, then press Reload: the sort comes back from the URL. Status is not sortable.',
   storage: false,
 }
 
@@ -37,14 +42,36 @@ const columns: ColumnDef<ClientTableFeatures, Order>[] = [
   { accessorKey: 'status', header: 'Status', enableSorting: false },
 ]
 
+/**
+ * This page's search params, read once and written with replaceState. In an app, pass the route's
+ * `Route.useSearch()` and a `navigate({ search })` instead.
+ */
+function useLocationSearch() {
+  const [search, setState] = useState<TableSearch>(() =>
+    parseTableSearch(Object.fromEntries(new URLSearchParams(window.location.search))),
+  )
+  const setSearch = useCallback((patch: Partial<TableSearch>) => {
+    setState((current) => {
+      const next = { ...current, ...patch }
+      const params = new URLSearchParams()
+      if (next.sort) params.set('sort', next.sort)
+      if (next.page) params.set('page', String(next.page))
+      const query = params.toString()
+      window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname)
+      return next
+    })
+  }, [])
+  return { search, setSearch }
+}
+
 export default function SortableOrders() {
+  const { search, setSearch } = useLocationSearch()
   const table = useTable<ClientTableFeatures, Order>({
     features: clientTableFeatures,
     data: orders,
     columns,
-    manualSorting: false,
+    ...useUrlTableState({ search, setSearch, manual: false }),
   })
-  const sort = table.state.sorting?.[0]
   return (
     <div className="demo">
       <table className="demo-table">
@@ -84,9 +111,7 @@ export default function SortableOrders() {
         </tbody>
       </table>
       <p className="demo-muted mono">
-        {sort
-          ? `?sort=${sort.desc ? '-' : ''}${sort.id}`
-          : 'No sort: rows in the order the API returned them'}
+        {search.sort ? `?sort=${search.sort}` : 'No sort: rows in the order the API returned them'}
       </p>
     </div>
   )

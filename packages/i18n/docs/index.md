@@ -66,7 +66,7 @@ export default defineConfig({
 | `locales` | the keys of `resources` | The languages the app supports. A language outside this list is never chosen, even when you call `changeLanguage()` with it. |
 | `detect` | `true` | In the browser, choose the language from the saved choice under `storageKey`, then from the browser's languages. `false` always starts in `defaultLocale`. |
 | `storageKey` | `'locale'` | The `localStorage` key detection reads for a saved choice. |
-| `defaultNS` | i18next's `'translation'` | The namespace `t('save')` looks in when the key names none. Keep it `'common'` to match the generated bundle. |
+| `defaultNS` | `'common'` when a bundle has it, else the first namespace in `resources` | The namespace `t('save')` looks in when the key names none. |
 
 Any other [i18next option](https://www.i18next.com/overview/configuration-options) passes straight through, and wins over kitr's defaults:
 

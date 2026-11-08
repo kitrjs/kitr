@@ -55,6 +55,10 @@ export function createI18n(config: I18nConfig, initialLocale?: string): i18n {
     ...rest
   } = config
   const supported = locales ?? Object.keys(resources)
+  // i18next looks in a namespace called `translation` unless told otherwise, which none of these
+  // bundles have: without this, `t('hello')` prints `hello` in every language.
+  const namespaces = [...new Set(Object.values(resources).flatMap((bundle) => Object.keys(bundle)))]
+  const defaultNS = namespaces.includes('common') ? 'common' : namespaces[0]
   const instance = i18next.createInstance()
   const locale =
     initialLocale ?? (detect ? detectLocale(supported, storageKey) : undefined) ?? defaultLocale
@@ -63,6 +67,7 @@ export function createI18n(config: I18nConfig, initialLocale?: string): i18n {
     lng: locale,
     fallbackLng: defaultLocale,
     supportedLngs: supported,
+    ...(defaultNS ? { ns: namespaces, defaultNS } : {}),
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
     ...rest,

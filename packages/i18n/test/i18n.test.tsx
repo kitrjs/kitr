@@ -1,8 +1,8 @@
 import { createApp } from '@kitr/core'
 import { KitrProvider } from '@kitr/react'
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createI18n, detectLocale, matchLocale, useTranslation } from '../src'
+import { createI18n, detectLocale, I18nextProvider, matchLocale, useTranslation } from '../src'
 import { i18nProvider } from '../src/provider'
 
 const resources = {
@@ -55,6 +55,46 @@ describe('createI18n', () => {
     const b = createI18n({ resources, defaultLocale: 'en', detect: false }, 'de')
     expect(a.language).toBe('en')
     expect(b.language).toBe('de')
+  })
+})
+
+describe('default namespace', () => {
+  it('looks keys up in the bundle namespace without a defaultNS, and follows changeLanguage', async () => {
+    const i18n = createI18n({ resources, defaultLocale: 'en', detect: false })
+    function Hello() {
+      const { t, i18n: current } = useTranslation()
+      return (
+        <button type="button" onClick={() => void current.changeLanguage('de')}>
+          {t('hello', { name: 'Ada' })}
+        </button>
+      )
+    }
+    render(
+      <I18nextProvider i18n={i18n}>
+        <Hello />
+      </I18nextProvider>,
+    )
+    expect(screen.getByRole('button').textContent).toBe('Hello Ada')
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button'))
+    })
+    expect(screen.getByRole('button').textContent).toBe('Hallo Ada')
+  })
+
+  it('prefers `common`, else the first namespace, and an explicit defaultNS wins', () => {
+    const two = { en: { orders: { title: 'Orders' }, common: { title: 'App' } } }
+    expect(createI18n({ resources: two, defaultLocale: 'en', detect: false }).t('title')).toBe(
+      'App',
+    )
+    const one = { en: { orders: { title: 'Orders' } } }
+    expect(createI18n({ resources: one, defaultLocale: 'en', detect: false }).t('title')).toBe(
+      'Orders',
+    )
+    expect(
+      createI18n({ resources: two, defaultLocale: 'en', detect: false, defaultNS: 'orders' }).t(
+        'title',
+      ),
+    ).toBe('Orders')
   })
 })
 
