@@ -45,7 +45,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@kitr/core": "workspace:*"
+    "@kitr/core": "workspace:*",
+    "@kitr/react": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

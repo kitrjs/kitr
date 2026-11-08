@@ -6,15 +6,11 @@ order: 0
 
 # Platform
 
-An app that ships to the browser, a phone and a desktop window keeps asking the same questions: where am I running, am I online, did the user press back, which link opened me, how big is the notch. Answered ad hoc, those questions become user-agent sniffing and `window.Capacitor` checks scattered through components, each one wrong on at least one platform.
-
-`@kitr/platform` answers them once, with one service and a set of hooks, whatever the app is running in.
-
 ## What it is
 
-`@kitr/platform` is a `platform` service and React hooks: `usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea` and `useFormFactor`. Components ask the service and never check where they run. `<Only>` and `<Except>` render a piece on some platforms, `perPlatform()` picks an implementation per platform, and `forPlatform()` matches a platform or an operating system.
+`@kitr/platform` tells components where they run: web, desktop or mobile, which OS, online or not, in the foreground or not, with which safe areas. Hooks like `usePlatform` and `useOnline` replace user-agent checks; `<Only>` and `perPlatform()` pick what to render.
 
-It runs on both sides. In the browser and in native shells it reports the real device; during server rendering it returns safe defaults (online, in the foreground, no insets), so the first render matches the HTML. For device features such as the camera, biometrics or haptics, use [native](/packages/native) instead.
+Runs on both sides, with safe defaults during server rendering. For the camera or biometrics, use [native](/packages/native).
 
 ## Install
 
@@ -22,7 +18,7 @@ It runs on both sides. In the browser and in native shells it reports the real d
 kitr add platform
 ```
 
-This installs `@kitr/platform`, registers the provider in `kitrrc.ts` and writes `config/platform.ts`. The desktop, tauri and mobile packages add it for you. The guide's [Install](/packages/platform/guide#install) section lists every change.
+Adds `@kitr/platform`, its provider and `config/platform.ts`. The desktop, tauri and mobile packages add it for you. [Every change](/packages/platform/guide#install).
 
 ## Quick start
 
@@ -43,7 +39,7 @@ export function PlatformBadge() {
 }
 ```
 
-Put `<PlatformBadge />` in a page and run `kitr dev site`. On a Mac in Chrome it shows `web · macos`. In the iOS simulator through `kitr dev phone` it shows `mobile · ios · native`, and in the Electron or Tauri window `desktop · macos · native`. The same component, with no user-agent sniffing. The guide continues from here: [Show where the app runs](/packages/platform/guide#show-where-the-app-runs).
+In Chrome on a Mac it shows `web · macos`. In the iOS simulator, `mobile · ios · native`. In an Electron window, `desktop · macos · native`. Next in the guide: [Show where the app runs](/packages/platform/guide#show-where-the-app-runs).
 
 ## Built on
 
@@ -56,21 +52,21 @@ Put `<PlatformBadge />` in a page and run `kitr dev site`. On a Mac in Chrome it
 | [Desktop](/packages/desktop) | Electron: app version, external links, exit. |
 | [Tauri](/packages/tauri) | Tauri: the same through its plugins. |
 
-kitr adds the service, the hooks, the server defaults, the form-factor breakpoints, the platform-matching helpers and a devtools panel that shows what the driver reports.
+kitr adds the service, the hooks, the server defaults, form-factor breakpoints and a devtools panel.
 
 ## Problems it solves
 
-- **User-agent sniffing in components.** `usePlatform()` tells you the type and OS from the active driver. See [Show where the app runs](/packages/platform/guide#show-where-the-app-runs).
-- **Different code per platform.** `perPlatform()` and `<Only>` keep the branches declarative. See [Pick an implementation per platform](/packages/platform/guide#pick-an-implementation-per-platform).
-- **Phone and desktop layouts.** `useFormFactor()` gives width class, orientation and input kind. See [Adapt to the form factor](/packages/platform/guide#adapt-to-the-form-factor).
-- **Work that keeps running in the background.** `useAppState()` pauses polling when the app is hidden. See [Pause work in the background](/packages/platform/guide#pause-work-in-the-background).
-- **A back button that closes the app.** `useBackButton()` lets the current screen handle it first. See [Handle the back button](/packages/platform/guide#handle-the-back-button).
-- **Deep links and the notch.** `useDeepLink()` routes the opening URL; `useSafeArea()` gives the insets. See [Route deep links](/packages/platform/guide#route-deep-links) and [Respect the notch and home indicator](/packages/platform/guide#respect-the-notch-and-home-indicator).
+- **User-agent sniffing in components.** [Show where the app runs](/packages/platform/guide#show-where-the-app-runs).
+- **Different code per platform.** [Pick an implementation per platform](/packages/platform/guide#pick-an-implementation-per-platform).
+- **Phone and desktop layouts.** [Adapt to the form factor](/packages/platform/guide#adapt-to-the-form-factor).
+- **Work that keeps running in the background.** [Pause work in the background](/packages/platform/guide#pause-work-in-the-background).
+- **A back button that closes the app.** [Handle the back button](/packages/platform/guide#handle-the-back-button).
+- **Deep links and the notch.** [Route deep links](/packages/platform/guide#route-deep-links).
 
 ## Further reading
 
-- [Guide](/packages/platform/guide): install, configure and every task.
-- [API reference](/packages/platform/api): every export and type.
-- [Capacitor App plugin](https://capacitorjs.com/docs/apis/app): what the mobile driver reports.
-- [Web](/packages/web), [Mobile](/packages/mobile), [Desktop](/packages/desktop) and [Tauri](/packages/tauri): the drivers.
-- [Platforms](/docs/platforms): every platform type and the commands they share.
+- [Guide](/packages/platform/guide).
+- [API reference](/packages/platform/api).
+- [Capacitor App plugin](https://capacitorjs.com/docs/apis/app).
+- [Web](/packages/web), [Mobile](/packages/mobile), [Desktop](/packages/desktop) and [Tauri](/packages/tauri).
+- [Platforms](/docs/platforms).

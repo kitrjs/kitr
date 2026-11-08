@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@kitr/core": "workspace:*",
+    "@kitr/react": "workspace:*",
     "@kitr/storage": "workspace:*"
   },
   "peerDependencies": {

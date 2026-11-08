@@ -6,15 +6,11 @@ order: 0
 
 # Mail
 
-Order confirmations, password resets, invoices, team invites: almost every app sends email, and most end up with a folder of HTML strings nobody wants to touch. Previewing them means sending a real email to yourself, and the plain-text version is usually forgotten.
-
-In kitr an email is a React component with a subject. `@kitr/mail` renders it, checks it, sends it and previews it.
-
 ## What it is
 
-`@kitr/mail` lets you define an email with `defineMail`: a React component for the body and a function for the subject. The mailer renders it to HTML and plain text, validates every address and header, and sends it through the configured transport. In development, a preview page lists every template and renders it with sample data as you edit. Controllers and jobs get the mailer with `useMailer()`.
+`@kitr/mail` sends email from React components. `defineMail` pairs a component with a subject; the mailer renders HTML and plain text, checks every address and sends through a transport. A preview page shows each template in development.
 
-It runs on the server only. The provider binds nothing in the browser. To send without making a request wait for the provider, send from a [job](/packages/jobs).
+Runs on the server only. To send without making a request wait, send from a [job](/packages/jobs).
 
 ## Install
 
@@ -22,11 +18,11 @@ It runs on the server only. The provider binds nothing in the browser. To send w
 kitr add mail
 ```
 
-This installs `@kitr/mail`, registers the provider in `kitrrc.ts`, writes `config/mail.ts`, an example template in `server/mail/welcome.tsx`, adds `RESEND_API_KEY` and `MAIL_FROM` to `.env.example` and mounts the development preview in `server/main.ts`. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/mail/guide#install) section lists every change.
+Adds `@kitr/mail`, its provider, `config/mail.ts`, an example template and the preview page. Adds [server](/packages/server) first if missing. [Every change](/packages/mail/guide#install).
 
 ## Quick start
 
-Generate a template with `kitr make:mail order-shipped` and write the email as a React component:
+Generate a template with `kitr make:mail order-shipped`:
 
 ```tsx
 // server/mail/order_shipped.tsx
@@ -72,7 +68,7 @@ Hi Ada, order 1042 left our warehouse today.
 Track your order (https://app.acme.com/orders/1042)
 ```
 
-The props are typed from the template, so leaving out `orderId` is a type error. Set `RESEND_API_KEY` and the same call sends a real email. The guide continues from here: [Send your first email](/packages/mail/guide#send-your-first-email).
+The props are typed from the template, so leaving out `orderId` is a type error. Set `RESEND_API_KEY` and the same call sends a real email. Next in the guide: [Send your first email](/packages/mail/guide#send-your-first-email).
 
 ## Built on
 
@@ -82,21 +78,21 @@ The props are typed from the template, so leaving out `orderId` is a type error.
 | [Resend](https://resend.com/docs) | The built-in API transport. |
 | [Nodemailer](https://nodemailer.com/) | The built-in SMTP transport. |
 
-kitr adds `defineMail`, the mailer with address and header validation, automatic plain-text rendering with `htmlToText`, attachments, a log transport for development and tests, the preview page, and a `MailTransport` interface for your own provider.
+kitr adds `defineMail`, address validation, plain-text rendering, attachments, a log transport for development and tests, the preview page and a `MailTransport` interface.
 
 ## Problems it solves
 
-- **HTML strings as templates.** An email is a typed React component with props. See [Write a template](/packages/mail/guide#write-a-template).
-- **No plain-text version.** The mailer renders one from the HTML, or you write your own. See [Write the plain-text version](/packages/mail/guide#write-the-plain-text-version).
-- **Previewing by sending.** The development preview renders every template with sample data in the browser. See [Preview templates in development](/packages/mail/guide#preview-templates-in-development).
-- **Attachments and headers done differently per provider.** One `send()` call covers recipients, reply-to, headers and attachments on every transport. See [Attach a file](/packages/mail/guide#attach-a-file).
-- **Requests waiting on the mail provider.** Dispatch a [job](/packages/jobs) that sends. See [Send from a job](/packages/mail/guide#send-from-a-job).
-- **Real emails sent from tests.** The log transport records every message as `sent` for assertions. See [Testing](/packages/mail/guide#testing).
+- **HTML strings as templates.** [Write a template](/packages/mail/guide#write-a-template).
+- **No plain-text version.** [Write the plain-text version](/packages/mail/guide#write-the-plain-text-version).
+- **Previewing by sending.** [Preview templates in development](/packages/mail/guide#preview-templates-in-development).
+- **Attachments and headers done differently per provider.** [Attach a file](/packages/mail/guide#attach-a-file).
+- **Requests waiting on the mail provider.** [job](/packages/jobs).
+- **Real emails sent from tests.** [Testing](/packages/mail/guide#testing).
 
 ## Further reading
 
-- [Guide](/packages/mail/guide): install, configure and every task.
-- [API reference](/packages/mail/api): every export with its signature.
-- [React Email](https://react.email/docs/introduction): components for email layouts.
-- [Resend](https://resend.com/docs) and [Nodemailer](https://nodemailer.com/): the providers behind the built-in transports.
-- [Jobs](/packages/jobs) and [Server](/packages/server): sending in the background, and the server the mailer runs in.
+- [Guide](/packages/mail/guide).
+- [API reference](/packages/mail/api).
+- [React Email](https://react.email/docs/introduction).
+- [Resend](https://resend.com/docs) and [Nodemailer](https://nodemailer.com/).
+- [Jobs](/packages/jobs) and [Server](/packages/server).
