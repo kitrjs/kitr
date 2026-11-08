@@ -1,6 +1,6 @@
 {
   "name": "@kitr/seo",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "@kitr/seo: meta and Open Graph tags per route, prerender list, sitemap and robots, cache headers. Works for SSR, static sites, SPAs and PWAs.",
   "kitr": {
     "name": "seo",

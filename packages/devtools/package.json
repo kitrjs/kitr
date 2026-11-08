@@ -1,6 +1,6 @@
 {
   "name": "@kitr/devtools",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "@kitr/devtools: A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.",
   "keywords": [
     "kitr",
