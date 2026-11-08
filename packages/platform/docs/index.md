@@ -754,4 +754,5 @@ With [Devtools](/packages/devtools) installed, the provider adds a Platform pane
 - [Mobile](/packages/mobile): the Capacitor driver, deep link registration and native storage
 - [Desktop](/packages/desktop): the Electron desktop shell, and [Tauri](/packages/tauri), its lighter alternative
 - [Offline](/packages/offline): queued writes and a cache that pauses without a connection
+- [Extending kitr](/docs/extending): your own services, and your own driver for a shell.
 - [Platforms](/docs/platforms): every platform type and the commands they share

@@ -1,0 +1,14 @@
+appId: com.example.everywhere
+productName: Everywhere
+directories:
+  output: dist/app/release
+files:
+  - dist/app/client/**
+  - dist/app/electron/**
+  - package.json
+mac:
+  category: public.app-category.productivity
+win:
+  target: nsis
+linux:
+  target: AppImage

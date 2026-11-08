@@ -141,6 +141,42 @@ What the Capacitor runtime (`mobile()`) gets, with each plugin an optional peer 
 
 A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and `install <plugin>`; nothing falls back to the webview. Electron and Tauri keep throwing until their drivers land.
 
+## One project, every platform
+
+[`examples/everywhere`](../examples/everywhere) is one project with a website, an Electron app and a Capacitor app:
+
+```ts
+// kitrrc.ts
+platforms: {
+  site: web({ mode: 'spa' }),
+  app: desktop(),
+  phone: mobile(),
+},
+```
+
+It is the `app` kit plus `kitr add desktop app`, `kitr add mobile phone`, `kitr add secure-storage` and `kitr add notifications`. Add the platforms first, so the device packages see Capacitor and install its plugins.
+
+| Command | What it does |
+| --- | --- |
+| `kitr dev` | Runs every platform. Each line of output starts with `[site]`, `[app]` or `[phone]`. Each platform has its own port. |
+| `kitr dev app` | Runs one. |
+| `kitr build site` | Builds one. `kitr build app` also packs the Electron app. `kitr build phone` also runs `cap sync`. |
+
+Branch on the shell in code:
+
+```ts
+import { detectRuntime } from '@kitr/platform'
+
+if (detectRuntime() === 'electron') {
+  // Electron only. In components, use useRuntime().
+}
+if (import.meta.env.KITR_PLATFORM === 'phone') {
+  // Only in the build of the platform named phone. Other builds drop this branch.
+}
+```
+
+Use the runtime for what the shell can do. Use `KITR_PLATFORM` for what to ship. To add your own state or a different driver, see [Extending kitr](/docs/extending).
+
 ## Layout
 
 ```

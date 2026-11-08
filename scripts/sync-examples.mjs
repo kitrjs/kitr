@@ -34,6 +34,25 @@ export const examples = {
   desktop: 'desktop',
   tauri: 'tauri',
   mobile: 'mobile',
+  everywhere: 'app',
+}
+/**
+ * Examples that are a kit plus more `kitr add` commands (run in order, after `kitr new`) and
+ * optionally files copied over the result from `overlay` (a folder under scripts/).
+ * Platforms first, so the device packages see Capacitor and add its plugins.
+ */
+const extras = {
+  everywhere: {
+    steps: [
+      ['add', 'desktop', 'app', '--no-install'],
+      ['add', 'mobile', 'phone', '--no-install'],
+      ['add', 'secure-storage', '--no-install', '--yes'],
+      ['add', 'notifications', '--no-install', '--yes'],
+      // Level one of docs/extending: your own provider. The overlay fills in the stub.
+      ['make:provider', 'flags'],
+    ],
+    overlay: 'scripts/overlays/everywhere',
+  },
 }
 /** Build output and generated files that are not part of the kit. */
 const ignored = new Set([
@@ -96,6 +115,15 @@ export function generate() {
         env: { ...process.env, CI: '1', NO_COLOR: '1', KITR_PREVIEW: '1' },
       },
     )
+    const env = { ...process.env, CI: '1', NO_COLOR: '1', KITR_PREVIEW: '1' }
+    for (const step of extras[name]?.steps ?? [])
+      execFileSync(process.execPath, [join(root, 'packages/kitr/bin/kitr.mjs'), ...step], {
+        cwd: join(tmp, name),
+        stdio: 'pipe',
+        env,
+      })
+    if (extras[name]?.overlay)
+      cpSync(join(root, extras[name].overlay), join(tmp, name), { recursive: true })
     normalise(join(tmp, name), name)
     out[name] = join(tmp, name)
   }
