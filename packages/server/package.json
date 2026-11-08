@@ -1,0 +1,83 @@
+{
+  "name": "@kitr/server",
+  "version": "0.2.1",
+  "description": "@kitr/server: the kitr app on h3. Standalone (srvx) or as a fetch handler inside TanStack Start, Nitro or any runtime. No React.",
+  "kitr": {
+    "name": "server",
+    "title": "Server",
+    "summary": "Run a Node server that starts, logs and shuts down cleanly.",
+    "category": "backend",
+    "runsOn": "server",
+    "builtOn": [
+      "h3"
+    ],
+    "requires": [
+      "logger"
+    ],
+    "docs": "docs",
+    "setup": "./kitr",
+    "kind": "platform"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/server"
+  },
+  "homepage": "https://kitr.dev/packages/server",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json",
+    "./platform": {
+      "types": "./dist/platform.d.ts",
+      "default": "./dist/platform.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/logger": "workspace:*"
+  },
+  "peerDependencies": {
+    "h3": ">=2.0.0",
+    "srvx": ">=1.0.0",
+    "crossws": ">=0.4.0"
+  },
+  "peerDependenciesMeta": {
+    "crossws": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "h3": "^2.0.8",
+    "srvx": "^1.0.8",
+    "crossws": "^0.4.17",
+    "@types/node": "^22.19.0"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

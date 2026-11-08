@@ -1,0 +1,99 @@
+{
+  "name": "@kitr/auth",
+  "version": "0.2.1",
+  "description": "@kitr/auth: one session interface, cookie sessions with stores and password hashing, bearer-token and Better Auth adapters, route guards and API middleware.",
+  "kitr": {
+    "name": "auth",
+    "title": "Auth",
+    "summary": "Sign users in and out, protect pages, and check who can do what.",
+    "category": "auth",
+    "runsOn": "both",
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/auth"
+  },
+  "homepage": "https://kitr.dev/packages/auth",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@kitr/api": "workspace:*",
+    "@kitr/http": "workspace:*",
+    "ky": ">=1.7.0",
+    "@kitr/server": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@kitr/api": {
+      "optional": true
+    },
+    "@kitr/http": {
+      "optional": true
+    },
+    "ky": {
+      "optional": true
+    },
+    "@kitr/server": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@kitr/devtools": "workspace:*",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@kitr/api": "workspace:*",
+    "@kitr/http": "workspace:*",
+    "ky": "^2.2.0",
+    "h3": "^2.0.8",
+    "@types/node": "^22.19.0",
+    "@kitr/react": "workspace:*",
+    "react-dom": "^19.3.1",
+    "@kitr/server": "workspace:*"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "name": "@kitr/web",
+  "version": "0.2.1",
+  "description": "@kitr/web: the web platform. mode static, spa or ssr, optional PWA; owns the Vite dev server, build, prerendering and the production server.",
+  "kitr": {
+    "name": "web",
+    "title": "Web",
+    "summary": "Ship to the browser as a static site, a single-page app or a server-rendered app, installable if you want.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Vite",
+      "TanStack Start",
+      "vite-plugin-pwa"
+    ],
+    "requires": [
+      "vite",
+      "router"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr",
+    "kind": "platform"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/web"
+  },
+  "homepage": "https://kitr.dev/packages/web",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "vite": ">=6.0.0",
+    "vite-plugin-pwa": ">=1.0.0",
+    "srvx": ">=1.0.0",
+    "crossws": ">=0.4.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
+    "vite-plugin-pwa": {
+      "optional": true
+    },
+    "srvx": {
+      "optional": true
+    },
+    "crossws": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "vite": "^8.3.6",
+    "vite-plugin-pwa": "^2.0.0",
+    "srvx": "^1.0.8",
+    "crossws": "^0.4.17"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

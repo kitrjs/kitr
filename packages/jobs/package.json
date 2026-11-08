@@ -1,0 +1,73 @@
+{
+  "name": "@kitr/jobs",
+  "version": "0.2.1",
+  "description": "@kitr/jobs: typed background jobs with retries and backoff, cron and interval schedules, a memory queue for development and a Redis queue for several workers.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/jobs"
+  },
+  "homepage": "https://kitr.dev/packages/jobs",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "@kitr/server": "workspace:*",
+    "@kitr/logger": "workspace:*",
+    "jiti": "^2.7.0"
+  },
+  "kitr": {
+    "name": "jobs",
+    "title": "Jobs",
+    "summary": "Run work in the background or on a schedule, with retries when it fails.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "peerDependencies": {
+    "jiti": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "jiti": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "name": "@kitr/http",
+  "version": "0.2.1",
+  "description": "@kitr/http: ky re-exported, plus a client with auth, refresh and kitr error normalisation.",
+  "kitr": {
+    "name": "http",
+    "title": "HTTP client",
+    "summary": "Call a REST API with login tokens added for you and errors in one shape.",
+    "category": "data-fetching",
+    "runsOn": "client",
+    "builtOn": [
+      "ky"
+    ],
+    "requires": [
+      "query"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/http"
+  },
+  "homepage": "https://kitr.dev/packages/http",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "ky": ">=2.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "ky": "^2.2.0",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@kitr/devtools": "workspace:*"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

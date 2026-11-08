@@ -1,0 +1,51 @@
+{
+  "name": "@kitr/kit-desktop",
+  "version": "0.2.1",
+  "description": "kitr new --kit desktop: The app kit in an Electron shell with a typed IPC contract and native dialogs. See the tauri kit for a Tauri shell.",
+  "kitr": {
+    "name": "desktop",
+    "title": "Desktop kit",
+    "summary": "Start the app kit in an Electron shell with a typed IPC contract and native dialogs.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/kit-desktop"
+  },
+  "homepage": "https://kitr.dev/docs/cli",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "sideEffects": false,
+  "exports": {
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package",
+    "kitr-kit"
+  ],
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0"
+  }
+}

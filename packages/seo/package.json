@@ -1,0 +1,61 @@
+{
+  "name": "@kitr/seo",
+  "version": "0.2.1",
+  "description": "@kitr/seo: meta and Open Graph tags per route, prerender list, sitemap and robots, cache headers. Works for SSR, static sites, SPAs and PWAs.",
+  "kitr": {
+    "name": "seo",
+    "title": "SEO",
+    "summary": "Give every page a title, a share preview and a sitemap entry so search engines and chat apps show it well.",
+    "category": "pages",
+    "runsOn": "both",
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/seo"
+  },
+  "homepage": "https://kitr.dev/packages/seo",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {},
+  "peerDependenciesMeta": {},
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

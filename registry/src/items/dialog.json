@@ -1,0 +1,5 @@
+{
+  "title": "Dialog",
+  "description": "Modal dialog on the native <dialog> element. No positioning library.",
+  "registryDependencies": ["button"]
+}

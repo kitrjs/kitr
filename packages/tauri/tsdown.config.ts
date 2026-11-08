@@ -1,0 +1,33 @@
+import { defineConfig } from 'tsdown'
+
+export default defineConfig({
+  entry: ['src/index.ts', 'src/client.ts', 'src/provider.ts', 'src/kitr.ts'],
+  format: ['esm'],
+  dts: { resolve: false },
+  clean: true,
+  platform: 'neutral',
+  fixedExtension: false,
+  external: [
+    'react',
+    '@tauri-apps/api',
+    '@tauri-apps/api/core',
+    '@tauri-apps/api/event',
+    '@tauri-apps/api/app',
+    '@tauri-apps/api/path',
+    '@tauri-apps/api/window',
+    '@tauri-apps/plugin-clipboard-manager',
+    '@tauri-apps/plugin-dialog',
+    '@tauri-apps/plugin-fs',
+    '@tauri-apps/plugin-notification',
+    '@tauri-apps/plugin-os',
+    '@tauri-apps/plugin-stronghold',
+    '@tauri-apps/plugin-updater',
+    '@tauri-apps/plugin-store',
+    '@tauri-apps/plugin-opener',
+    '@tauri-apps/plugin-process',
+    '@kitr/core',
+    '@kitr/core/package',
+    '@kitr/platform',
+    '@kitr/storage',
+  ],
+})

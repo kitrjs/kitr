@@ -1,0 +1,5 @@
+{
+  "title": "Form",
+  "description": "Styled FormField, FormMessage and SubmitButton over @kitr/forms.",
+  "registryDependencies": ["button", "input", "label"]
+}

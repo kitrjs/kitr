@@ -1,0 +1,90 @@
+{
+  "name": "@kitr/uploads",
+  "version": "0.2.1",
+  "description": "@kitr/uploads: multipart uploads with size and type limits on the server, a disk driver and a driver interface for object storage, and upload progress in the browser.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/uploads"
+  },
+  "homepage": "https://kitr.dev/packages/uploads",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "h3": ">=2.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "h3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@kitr/logger": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "h3": "^2.0.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "unstorage": "1.17.6"
+  },
+  "kitr": {
+    "name": "uploads",
+    "title": "Uploads",
+    "summary": "Accept file uploads with size limits, store them on disk or in the cloud, and show progress in the browser.",
+    "category": "backend",
+    "runsOn": "both",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "name": "@kitr/router",
+  "version": "0.2.1",
+  "description": "@kitr/router: TanStack Router re-exported, plus the pages extension for the route table (@kitr/router/routes), guards, default pending/error components, createKitrRouter and the stack outlet (@kitr/router/stack).",
+  "kitr": {
+    "name": "router",
+    "title": "Router",
+    "summary": "Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free.",
+    "category": "pages",
+    "runsOn": "client",
+    "builtOn": [
+      "@tanstack/react-router"
+    ],
+    "requires": [
+      "react"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/router"
+  },
+  "homepage": "https://kitr.dev/packages/router",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
+    },
+    "./stack": {
+      "types": "./dist/stack.d.ts",
+      "default": "./dist/stack.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tanstack/react-router": ">=1.120.0",
+    "@tanstack/react-query": ">=5.80.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-router": "^1.170.46",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "name": "@kitr/api",
+  "version": "0.2.1",
+  "description": "@kitr/api: Adonis-style router, controllers, validators and middleware on h3, with a typed client and OpenAPI. No React.",
+  "kitr": {
+    "name": "api",
+    "title": "API routes",
+    "summary": "Build JSON API routes with validation, and call them from the browser fully typed.",
+    "category": "backend",
+    "runsOn": "both",
+    "builtOn": [
+      "h3"
+    ],
+    "requires": [
+      "server"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/api"
+  },
+  "homepage": "https://kitr.dev/packages/api",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@kitr/shield": "workspace:*"
+  },
+  "peerDependencies": {
+    "h3": ">=2.0.0",
+    "jiti": ">=2.0.0"
+  },
+  "devDependencies": {
+    "@kitr/logger": "workspace:*",
+    "@types/node": "^22.19.0",
+    "h3": "^2.0.8",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "jiti": "^2.7.0"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "peerDependenciesMeta": {
+    "jiti": {
+      "optional": true
+    }
+  }
+}

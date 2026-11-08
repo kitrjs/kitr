@@ -1,0 +1,42 @@
+{
+  "name": "@kitr/example-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "kitr typecheck",
+    "lint": "biome check .",
+    "kitr": "kitr",
+    "api:sync": "kitr api:sync",
+    "test": "vitest run",
+    "dev": "kitr dev",
+    "build": "kitr build",
+    "start": "kitr start"
+  },
+  "dependencies": {
+    "@kitr/api": "workspace:*",
+    "@kitr/core": "workspace:*",
+    "@kitr/db": "workspace:*",
+    "@kitr/logger": "workspace:*",
+    "@kitr/realtime": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "crossws": "^0.4.17",
+    "h3": "^2.0.8",
+    "kitr": "workspace:*",
+    "srvx": "^1.0.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@kitr/testing": "workspace:*",
+    "@types/node": "^22.19.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  },
+  "imports": {
+    "#app/*": "./app/*",
+    "#config/*": "./config/*",
+    "#components/*": "./app/components/*",
+    "#server/*": "./server/*",
+    "#kitr/*": "./.kitr/*"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "title": "Theme toggle",
+  "description": "Light/dark toggle using @kitr/theme's useTheme.",
+  "registryDependencies": ["button", "icon"]
+}

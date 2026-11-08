@@ -1,0 +1,58 @@
+{
+  "name": "@kitr/logger",
+  "version": "0.2.1",
+  "description": "@kitr/logger: a tiny structured logger with levels, children and pretty/JSON output. No dependencies.",
+  "kitr": {
+    "name": "logger",
+    "title": "Logger",
+    "summary": "Write readable logs in development and structured logs in production.",
+    "category": "dev-tools",
+    "runsOn": "both",
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/logger"
+  },
+  "homepage": "https://kitr.dev/packages/logger",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

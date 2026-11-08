@@ -1,0 +1,68 @@
+{
+  "name": "@kitr/state",
+  "version": "0.2.1",
+  "description": "@kitr/state: Zustand re-exported, plus an SSR-safe store factory.",
+  "kitr": {
+    "name": "state",
+    "title": "State",
+    "summary": "Keep app-wide values like a cart or settings, and optionally save them in the browser.",
+    "category": "app-state",
+    "runsOn": "client",
+    "builtOn": [
+      "zustand"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/state"
+  },
+  "homepage": "https://kitr.dev/packages/state",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "zustand": ">=5.0.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "zustand": "^5.1.0"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

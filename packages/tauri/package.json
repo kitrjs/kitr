@@ -1,0 +1,134 @@
+{
+  "name": "@kitr/tauri",
+  "version": "0.2.1",
+  "description": "@kitr/tauri: the desktop platform with a Tauri shell. Rust project in platforms/<name>/src-tauri, typed commands and events, storage drivers, installers.",
+  "kitr": {
+    "name": "tauri",
+    "kind": "platform",
+    "title": "Tauri",
+    "summary": "Ship the same app to Windows, macOS and Linux as a small Tauri binary on the operating system's webview.",
+    "category": "platforms",
+    "runsOn": "client",
+    "builtOn": [
+      "Tauri 2"
+    ],
+    "requires": [
+      "vite",
+      "router",
+      "platform",
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/tauri"
+  },
+  "homepage": "https://kitr.dev/packages/tauri",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/platform": "workspace:*",
+    "@kitr/storage": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tauri-apps/api": ">=2.0.0",
+    "@tauri-apps/plugin-store": ">=2.0.0",
+    "@tauri-apps/plugin-opener": ">=2.0.0",
+    "@tauri-apps/plugin-process": ">=2.0.0",
+    "@tauri-apps/plugin-clipboard-manager": ">=2.0.0",
+    "@tauri-apps/plugin-dialog": ">=2.0.0",
+    "@tauri-apps/plugin-fs": ">=2.0.0",
+    "@tauri-apps/plugin-notification": ">=2.0.0",
+    "@tauri-apps/plugin-os": ">=2.0.0",
+    "@tauri-apps/plugin-stronghold": ">=2.0.0",
+    "@tauri-apps/plugin-updater": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@tauri-apps/api": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-store": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-opener": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-process": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-clipboard-manager": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-dialog": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-fs": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-notification": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-os": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-stronghold": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-updater": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/plugin-store": "^2.4.0",
+    "@tauri-apps/plugin-opener": "^2.5.0",
+    "@tauri-apps/plugin-process": "^2.3.0"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

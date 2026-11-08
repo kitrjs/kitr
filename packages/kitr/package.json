@@ -1,0 +1,108 @@
+{
+  "name": "kitr",
+  "version": "0.2.1",
+  "description": "kitr: the CLI and the kitrrc.ts config for apps built from @kitr/* packages. Each package is installed with `kitr add <name>` and imported from `@kitr/<name>`.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/kitr"
+  },
+  "homepage": "https://kitr.dev",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "bin": {
+    "kitr": "./bin/kitr.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./env": {
+      "types": "./dist/env.d.ts",
+      "default": "./dist/env.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/cli": "workspace:*"
+  },
+  "devDependencies": {
+    "@kitr/actions": "workspace:*",
+    "@kitr/api": "workspace:*",
+    "@kitr/auth": "workspace:*",
+    "@kitr/db": "workspace:*",
+    "@kitr/forms": "workspace:*",
+    "@kitr/http": "workspace:*",
+    "@kitr/i18n": "workspace:*",
+    "@kitr/logger": "workspace:*",
+    "@kitr/mocks": "workspace:*",
+    "@kitr/query": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/router": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@kitr/state": "workspace:*",
+    "@kitr/table": "workspace:*",
+    "@kitr/animation": "workspace:*",
+    "@kitr/3d": "workspace:*",
+    "@kitr/tailwind": "workspace:*",
+    "@kitr/testing": "workspace:*",
+    "@kitr/vite": "workspace:*",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@kitr/analytics": "workspace:*",
+    "@kitr/monitoring": "workspace:*",
+    "@kitr/storage": "workspace:*",
+    "@kitr/devtools": "workspace:*",
+    "@kitr/web": "workspace:*",
+    "@kitr/mobile": "workspace:*",
+    "@kitr/desktop": "workspace:*",
+    "@kitr/tauri": "workspace:*",
+    "@kitr/platform": "workspace:*",
+    "@kitr/theme": "workspace:*",
+    "@kitr/toast": "workspace:*",
+    "@kitr/seo": "workspace:*",
+    "@kitr/realtime": "workspace:*",
+    "@kitr/cache": "workspace:*",
+    "@kitr/shield": "workspace:*",
+    "@kitr/jobs": "workspace:*",
+    "@kitr/mail": "workspace:*",
+    "@kitr/uploads": "workspace:*",
+    "@kitr/flags": "workspace:*",
+    "@kitr/consent": "workspace:*",
+    "@kitr/offline": "workspace:*",
+    "@kitr/secure-storage": "workspace:*",
+    "@kitr/files": "workspace:*",
+    "@kitr/notifications": "workspace:*",
+    "@kitr/native": "workspace:*",
+    "@kitr/updater": "workspace:*",
+    "@kitr/kit-app": "workspace:*",
+    "@kitr/kit-dashboard": "workspace:*",
+    "@kitr/kit-server": "workspace:*",
+    "@kitr/kit-fullstack": "workspace:*",
+    "@kitr/kit-saas": "workspace:*",
+    "@kitr/kit-site": "workspace:*",
+    "@kitr/kit-realtime": "workspace:*",
+    "@kitr/kit-desktop": "workspace:*",
+    "@kitr/kit-tauri": "workspace:*",
+    "@kitr/kit-mobile": "workspace:*"
+  }
+}

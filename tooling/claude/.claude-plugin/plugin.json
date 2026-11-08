@@ -1,0 +1,12 @@
+{
+  "name": "kitr",
+  "version": "0.1.0",
+  "description": "Skills for kitr apps: follow the conventions, scaffold a feature with kitr make, and fix kitr doctor findings.",
+  "author": {
+    "name": "kitrjs"
+  },
+  "homepage": "https://kitr.dev/docs/agents",
+  "repository": "https://github.com/kitrjs/kitr",
+  "license": "MIT",
+  "keywords": ["kitr", "typescript", "react", "framework", "scaffolding", "agents"]
+}

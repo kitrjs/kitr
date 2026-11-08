@@ -1,0 +1,54 @@
+{
+  "name": "@kitr/kit-server",
+  "version": "0.2.1",
+  "description": "kitr new --kit server: A pure backend: h3 server, Adonis-style API, logger, db binding, realtime channels. No React in the bundle.",
+  "kitr": {
+    "name": "server",
+    "title": "Server kit",
+    "summary": "Start a pure backend: h3 server, API routes, logger, database and realtime channels, no React.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/kit-server"
+  },
+  "homepage": "https://kitr.dev/docs/cli",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package",
+    "kitr-kit"
+  ],
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0"
+  }
+}

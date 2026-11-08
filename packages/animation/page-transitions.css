@@ -1,0 +1,77 @@
+/*
+ * @kitr/animation/page-transitions.css: the page animations `pageTransitions()` asks for.
+ * Import it once, in app/router.tsx or app/styles/app.css. Every rule sits behind
+ * prefers-reduced-motion, so visitors who ask for less motion get an instant change even if
+ * `reducedMotion: 'never'` is passed to pageTransitions().
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Browsers with view transitions but without transition types get a short cross-fade. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 180ms;
+  }
+
+  /* Fade: the old page fades out while the new one fades in. */
+  html:active-view-transition-type(kitr-fade)::view-transition-old(root) {
+    animation: 120ms cubic-bezier(0.3, 0, 0.8, 0.15) both kitr-fade-out;
+  }
+  html:active-view-transition-type(kitr-fade)::view-transition-new(root) {
+    animation: 220ms cubic-bezier(0.05, 0.7, 0.1, 1) 60ms both kitr-fade-in;
+  }
+
+  /* Slide forward: the new page comes in from the right, the old one drifts left. */
+  html:active-view-transition-type(kitr-slide)::view-transition-old(root) {
+    animation: 280ms cubic-bezier(0.2, 0, 0, 1) both kitr-slide-out-left;
+  }
+  html:active-view-transition-type(kitr-slide)::view-transition-new(root) {
+    animation: 280ms cubic-bezier(0.2, 0, 0, 1) both kitr-slide-in-right;
+  }
+
+  /* Slide back (the back button, or history.back()): the same motion, reversed. */
+  html:active-view-transition-type(kitr-slide):active-view-transition-type(
+    kitr-back
+  )::view-transition-old(root) {
+    animation-name: kitr-slide-out-right;
+  }
+  html:active-view-transition-type(kitr-slide):active-view-transition-type(
+    kitr-back
+  )::view-transition-new(root) {
+    animation-name: kitr-slide-in-left;
+  }
+}
+
+@keyframes kitr-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes kitr-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes kitr-slide-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-12%);
+  }
+}
+@keyframes kitr-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16%);
+  }
+}
+@keyframes kitr-slide-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(16%);
+  }
+}
+@keyframes kitr-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12%);
+  }
+}

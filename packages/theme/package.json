@@ -1,0 +1,99 @@
+{
+  "name": "@kitr/theme",
+  "version": "0.2.1",
+  "description": "@kitr/theme: design tokens and light/dark/system theming with no flash on load, cookie-backed for SSR, synced to the native status bar and window chrome.",
+  "kitr": {
+    "name": "theme",
+    "title": "Theme",
+    "summary": "Light, dark and system themes with no flash on load, design tokens, and the components you copy into your app.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "CSS variables",
+      "shadcn/ui"
+    ],
+    "requires": [
+      "react"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/theme"
+  },
+  "homepage": "https://kitr.dev/packages/theme",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./styles.css": "./styles.css",
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./commands": {
+      "types": "./dist/commands.d.ts",
+      "default": "./dist/commands.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "styles.css",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "clsx": "^2.1.1",
+    "class-variance-authority": "^0.7.1"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@kitr/cli": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@kitr/cli": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@types/react-dom": "^19.3.0",
+    "@kitr/react": "workspace:*",
+    "@testing-library/react": "^16.3.3",
+    "@kitr/cli": "workspace:*"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

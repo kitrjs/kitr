@@ -1,0 +1,60 @@
+name: Release
+
+# Changesets opens a "Version packages" pull request as changesets land on main, and publishes
+# to npm when that pull request is merged. Needs an NPM_TOKEN secret with publish rights, and
+# "Allow GitHub Actions to create and approve pull requests" on under Settings > Actions > General.
+# Until the secret exists the job only says so, so main stays green.
+# Every package is published with an npm provenance statement (the `id-token: write` permission
+# and NPM_CONFIG_PROVENANCE below), which links each version to the commit and run that built it.
+on:
+  push:
+    branches: [main]
+  # Run by hand from the Actions tab, e.g. right after adding NPM_TOKEN.
+  workflow_dispatch:
+
+concurrency: release-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: Skip until NPM_TOKEN is set
+        if: env.NPM_TOKEN == ''
+        run: echo "::notice::NPM_TOKEN is not set, so nothing is versioned or published. Add the secret to enable releases."
+      - uses: actions/checkout@v4
+        if: env.NPM_TOKEN != ''
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        if: env.NPM_TOKEN != ''
+      - uses: actions/setup-node@v4
+        if: env.NPM_TOKEN != ''
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+        if: env.NPM_TOKEN != ''
+      - run: pnpm build
+        if: env.NPM_TOKEN != ''
+      # `pnpm run`, not `pnpm version`: the bare form is pnpm's own command, which only prints
+      # Node's versions, so the version PR came out empty.
+      - name: Version or publish
+        if: env.NPM_TOKEN != ''
+        uses: changesets/action@v1
+        with:
+          version: pnpm run version
+          publish: pnpm run release
+          commit: "Version packages"
+          title: "Version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

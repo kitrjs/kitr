@@ -1,0 +1,112 @@
+{
+  "name": "@kitr/secure-storage",
+  "version": "0.2.1",
+  "description": "@kitr/secure-storage: typed secrets in the platform vault (Keychain, Keystore, safeStorage) with an encrypted web fallback.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/secure-storage"
+  },
+  "homepage": "https://kitr.dev/packages/secure-storage",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./driver": {
+      "types": "./dist/driver.d.ts",
+      "default": "./dist/driver.js"
+    },
+    "./drivers/web": {
+      "types": "./dist/drivers/web.d.ts",
+      "default": "./dist/drivers/web.js"
+    },
+    "./drivers/electron": {
+      "types": "./dist/drivers/electron.d.ts",
+      "default": "./dist/drivers/electron.js"
+    },
+    "./drivers/tauri": {
+      "types": "./dist/drivers/tauri.d.ts",
+      "default": "./dist/drivers/tauri.js"
+    },
+    "./drivers/capacitor": {
+      "types": "./dist/drivers/capacitor.d.ts",
+      "default": "./dist/drivers/capacitor.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/platform": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/storage": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@capacitor/core": ">=7.0.0",
+    "@aparajita/capacitor-secure-storage": ">=7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@capacitor/core": {
+      "optional": true
+    },
+    "@aparajita/capacitor-secure-storage": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@kitr/react": "workspace:*",
+    "@types/node": "^22.19.0",
+    "@capacitor/core": "^8.6.0",
+    "@aparajita/capacitor-secure-storage": "^8.0.1"
+  },
+  "kitr": {
+    "name": "secure-storage",
+    "title": "Secure storage",
+    "summary": "Keep login tokens and secrets in the phone or computer's secure vault instead of plain storage.",
+    "category": "device",
+    "runsOn": "both",
+    "requires": [
+      "storage"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  }
+}

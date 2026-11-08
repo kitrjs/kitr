@@ -1,0 +1,61 @@
+{
+  "name": "@kitr/db",
+  "version": "0.2.1",
+  "description": "@kitr/db: bind any ORM (Drizzle, Prisma, Kysely) as ctx.db with lifecycle hooks. No ORM shipped.",
+  "kitr": {
+    "name": "db",
+    "title": "Database",
+    "summary": "Connect your database so every request can use it.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/db"
+  },
+  "homepage": "https://kitr.dev/packages/db",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

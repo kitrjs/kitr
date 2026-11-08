@@ -1,0 +1,75 @@
+{
+  "name": "@kitr/devtools",
+  "version": "0.2.1",
+  "description": "@kitr/devtools: A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/devtools"
+  },
+  "homepage": "https://kitr.dev/packages/devtools",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@hugeicons/core-free-icons": "^4.4.0",
+    "@hugeicons/react": "^1.1.10"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@kitr/http": "workspace:*",
+    "@kitr/react": "workspace:*"
+  },
+  "kitr": {
+    "name": "devtools",
+    "title": "Devtools",
+    "summary": "A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.",
+    "category": "dev-tools",
+    "runsOn": "client",
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  }
+}

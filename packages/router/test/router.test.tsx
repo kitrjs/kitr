@@ -1,0 +1,210 @@
+import { createApp, defineProvider, KitrError } from '@kitr/core'
+import { QueryClient } from '@tanstack/react-query'
+import { act, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  createKitrRouter,
+  createMemoryHistory,
+  createRootRouteWithContext,
+  createRoute,
+  type KitrRouterContext,
+  Outlet,
+  RouterProvider,
+} from '../src'
+
+function build(throwOn?: string) {
+  const root = createRootRouteWithContext<KitrRouterContext>()({ component: () => <Outlet /> })
+  const home = createRoute({
+    getParentRoute: () => root,
+    path: '/',
+    component: function Home() {
+      const ctx = home.useRouteContext()
+      return (
+        <p>
+          home {ctx.app ? 'with app' : 'no app'} {ctx.queryClient ? 'with client' : ''}
+        </p>
+      )
+    },
+  })
+  const boom = createRoute({
+    getParentRoute: () => root,
+    path: '/boom',
+    loader: () => {
+      throw throwOn === 'forbidden'
+        ? KitrError.forbidden()
+        : new KitrError('CONFLICT', 'Already archived')
+    },
+    component: () => <p>never</p>,
+  })
+  return root.addChildren([home, boom])
+}
+
+async function mount(path: string, throwOn?: string) {
+  const app = createApp()
+  const queryClient = new QueryClient()
+  app.container.value('queryClient', queryClient)
+  await app.boot()
+  const router = createKitrRouter({
+    routeTree: build(throwOn),
+    app,
+    history: createMemoryHistory({ initialEntries: [path] }),
+    context: { extra: true },
+  })
+  await act(async () => {
+    render(<RouterProvider router={router} />)
+    await router.load()
+  })
+  return { app, router, queryClient }
+}
+
+describe('createKitrRouter', () => {
+  it('puts app and the container queryClient in context and binds itself', async () => {
+    const { app, router, queryClient } = await mount('/')
+    expect(await screen.findByText('home with app with client')).toBeTruthy()
+    expect(app.container.use('router')).toBe(router)
+    expect((router.options.context as any).queryClient).toBe(queryClient)
+    expect((router.options.context as any).extra).toBe(true)
+    expect(router.options.defaultPreload).toBe('intent')
+  })
+
+  it('applies ssr from config/seo.ts as the router default, without touching the routes', () => {
+    const root = createRootRouteWithContext<KitrRouterContext>()({ component: () => <Outlet /> })
+    const plain = createRoute({ getParentRoute: () => root, path: '/', component: () => null })
+    const own = createRoute({
+      getParentRoute: () => root,
+      path: '/own',
+      ssr: true,
+      component: () => null,
+    })
+    const tree = root.addChildren([plain, own])
+    const app = createApp({ config: { seo: { ssr: 'data-only' } } })
+    const router = createKitrRouter({ routeTree: tree, app })
+    expect((router.options as { defaultSsr?: unknown }).defaultSsr).toBe('data-only')
+    // Start overwrites `defaultSsr` on every request; the config still applies when it sets none.
+    router.update({ defaultSsr: undefined } as never)
+    expect((router.options as { defaultSsr?: unknown }).defaultSsr).toBe('data-only')
+    router.update({ defaultSsr: false } as never)
+    expect((router.options as { defaultSsr?: unknown }).defaultSsr).toBe(false)
+    // Route objects are shared between requests and are never written to.
+    expect(plain.options.ssr).toBeUndefined()
+    expect(own.options.ssr).toBe(true)
+    const other = createKitrRouter({ routeTree: tree, app: createApp() })
+    expect((other.options as { defaultSsr?: unknown }).defaultSsr).toBeUndefined()
+  })
+
+  it('renders the default not-found page', async () => {
+    await mount('/nowhere')
+    expect(await screen.findByText('Page not found')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Go home' })).toBeTruthy()
+  })
+
+  it('renders kitr errors with their message and code', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await mount('/boom')
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-code')).toBe('CONFLICT')
+    expect(alert.textContent).toContain('Already archived')
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+  })
+
+  it('explains FORBIDDEN in plain words', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await mount('/boom', 'forbidden')
+    expect(await screen.findByText("You don't have access to this page.")).toBeTruthy()
+  })
+
+  it('works when created before the app boots: queryClient resolves lazily and load boots', async () => {
+    const queryClient = new QueryClient()
+    const app = createApp({
+      providers: [
+        defineProvider({
+          name: 'query',
+          register: (a) => a.container.value('queryClient', queryClient),
+        }),
+      ],
+    })
+    const router = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    expect(app.status).toBe('created')
+    expect((router.options.context as any).queryClient).toBeUndefined()
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+      await router.load()
+    })
+    expect(app.status).toBe('booted')
+    expect((router.options.context as any).queryClient).toBe(queryClient)
+    expect(await screen.findByText('home with app with client')).toBeTruthy()
+  })
+
+  it('logs navigations to devtools', async () => {
+    const app = createApp()
+    const hub = { log: vi.fn(), mark: vi.fn() }
+    app.container.value('devtools', hub as any)
+    await app.boot()
+    const router = createKitrRouter({
+      routeTree: build(),
+      app,
+      queryClient: new QueryClient(),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+      await router.load()
+    })
+    expect(hub.mark).toHaveBeenCalledWith(expect.stringMatching(/^navigated .*\/$/))
+    expect(hub.log).toHaveBeenCalledWith(
+      'router',
+      expect.stringMatching(/\/$/),
+      expect.any(Object),
+      'info',
+    )
+  })
+})
+
+describe('router context bindings', () => {
+  it('exposes the auth session and the platform service lazily from the container', async () => {
+    const app = createApp()
+    let session: { user: unknown } | null = null
+    app.container.value('auth', {
+      get session() {
+        return session
+      },
+    } as any)
+    app.container.value('platform', { name: 'site', type: 'web' } as any)
+    await app.boot()
+    const router = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    const ctx = router.options.context as any
+    expect(ctx.session).toBeNull()
+    session = { user: { id: 1 } }
+    expect(ctx.session).toEqual({ user: { id: 1 } })
+    expect(ctx.platform).toEqual({ name: 'site', type: 'web' })
+  })
+
+  it('leaves session and platform undefined without those packages, and keeps an explicit session', async () => {
+    const app = createApp()
+    await app.boot()
+    const plain = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+    expect((plain.options.context as any).session).toBeUndefined()
+    expect((plain.options.context as any).platform).toBeUndefined()
+    const explicit = createKitrRouter({
+      routeTree: build(),
+      app,
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+      context: { session: { user: 'me' } },
+    })
+    expect((explicit.options.context as any).session).toEqual({ user: 'me' })
+  })
+})

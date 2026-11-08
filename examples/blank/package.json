@@ -1,0 +1,26 @@
+{
+  "name": "@kitr/example-blank",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "kitr typecheck",
+    "lint": "biome check .",
+    "kitr": "kitr"
+  },
+  "dependencies": {
+    "kitr": "workspace:*",
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@types/node": "^22.19.0",
+    "typescript": "^5.9.3"
+  },
+  "imports": {
+    "#app/*": "./app/*",
+    "#config/*": "./config/*",
+    "#components/*": "./app/components/*",
+    "#server/*": "./server/*",
+    "#kitr/*": "./.kitr/*"
+  }
+}

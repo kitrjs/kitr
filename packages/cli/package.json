@@ -1,0 +1,51 @@
+{
+  "name": "@kitr/cli",
+  "version": "0.2.1",
+  "description": "The kitr CLI: new, add, remove, make:*, ui add, api:sync, doctor, eject, upgrade. Runs from flags with no prompts for agents and CI.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://kitr.dev/packages/cli",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "citty": "^0.2.2",
+    "@clack/prompts": "^1.8.1",
+    "magicast": "^0.5.5",
+    "picocolors": "^1.1.1",
+    "jiti": "^2.7.0",
+    "semver": "^7.8.6"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0",
+    "@types/semver": "^7.7.0",
+    "srvx": "^1.0.8",
+    "crossws": "^0.4.17"
+  }
+}

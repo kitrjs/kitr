@@ -1,0 +1,70 @@
+{
+  "name": "kitr-monorepo",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"@kitr/*\" --filter kitr --filter \"!@kitr/example-*\" --filter \"!@kitr/registry\" run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "vitest run",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "coverage:gate": "node scripts/coverage-gate.mjs",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "test:electron": "playwright test -c playwright.electron.config.ts",
+    "check:bundles": "node scripts/check-bundles.mjs",
+    "check:module-state": "node scripts/check-module-state.mjs",
+    "smoke:registry": "node scripts/verdaccio-smoke.mjs",
+    "versions:check": "node scripts/check-versions.mjs",
+    "test:all": "pnpm test:coverage && pnpm test:integration && pnpm check:bundles && pnpm check:examples && pnpm test:e2e",
+    "check:examples": "node scripts/sync-examples.mjs --check",
+    "sync:examples": "node scripts/sync-examples.mjs",
+    "manifests": "node scripts/sync-manifests.mjs",
+    "manifests:check": "node scripts/sync-manifests.mjs --check",
+    "readmes": "node scripts/package-readmes.mjs",
+    "readmes:check": "node scripts/package-readmes.mjs --check",
+    "docs:check": "node scripts/docs-check.mjs",
+    "docs:rules": "node scripts/docs-rules.mjs",
+    "docs:guides": "node scripts/guide-rules.mjs",
+    "docs:api": "node scripts/api-docs.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@changesets/cli": "^3.0.3",
+    "@playwright/test": "1.63.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/ioredis-mock": "^8.2.8",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "happy-dom": "^21.0.4",
+    "ioredis": "^5.11.1",
+    "ioredis-mock": "^8.13.1",
+    "publint": "^0.3.25",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "semver": "7.8.6",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  },
+  "type": "module",
+  "pnpm": {
+    "overrides": {
+      "@types/node": "^22.19.0"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "title": "App shell",
+  "description": "Sidebar + top bar layout with navigation links, user menu slot and theme toggle.",
+  "registryDependencies": ["button", "icon", "theme-toggle"]
+}

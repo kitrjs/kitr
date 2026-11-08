@@ -1,0 +1,66 @@
+{
+  "name": "@kitr/cache",
+  "version": "0.2.1",
+  "description": "@kitr/cache: a tagged server cache with TTLs, memory, Redis and unstorage drivers; remember() around slow work.",
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/cache"
+  },
+  "homepage": "https://kitr.dev/packages/cache",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "unstorage": "1.17.6"
+  },
+  "kitr": {
+    "name": "cache",
+    "title": "Cache",
+    "summary": "Remember slow results on the server and clear them by tag when the data changes.",
+    "category": "backend",
+    "runsOn": "server",
+    "requires": [
+      "server"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  }
+}

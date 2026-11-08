@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "form",
+  "type": "registry:ui",
+  "title": "Form",
+  "description": "Styled FormField, FormMessage and SubmitButton over @kitr/forms.",
+  "dependencies": [],
+  "registryDependencies": [
+    "button",
+    "input",
+    "label"
+  ],
+  "files": [
+    {
+      "path": "app/components/ui/form.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/form.tsx",
+      "content": "import type { FieldValues } from '@kitr/forms'\nimport {\n  type FormFieldProps,\n  FormField as KitrFormField,\n  useFieldProps,\n  useFormStatus,\n  useRootError,\n} from '@kitr/forms'\nimport { cn } from '@kitr/tailwind'\nimport type { ComponentProps, ReactNode } from 'react'\nimport { Button, type ButtonProps } from '#components/ui/button'\nimport { Input } from '#components/ui/input'\n\nexport { Form } from '@kitr/forms'\n\n/** A labelled field with spacing; renders the error below the control. */\nexport function FormField<T extends FieldValues>({ className, ...props }: FormFieldProps<T>) {\n  return (\n    <KitrFormField\n      className={cn(\n        'grid gap-1.5 [&_[data-kitr=label]]:text-sm [&_[data-kitr=label]]:font-medium [&_[data-kitr=field-error]]:text-sm [&_[data-kitr=field-error]]:text-destructive [&_[data-kitr=description]]:text-sm [&_[data-kitr=description]]:text-muted-foreground',\n        className,\n      )}\n      {...props}\n    />\n  )\n}\n\n/** An <Input> registered to the surrounding <FormField>. */\nexport function FieldInput(props: Omit<ComponentProps<typeof Input>, 'name' | 'id'>) {\n  const field = useFieldProps()\n  return <Input {...props} {...field} />\n}\n\n/** Shows the form-level server error, if any. */\nexport function FormMessage({ className }: { className?: string }) {\n  const error = useRootError()\n  if (!error) return null\n  return (\n    <p\n      role=\"alert\"\n      className={cn(\n        'rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive',\n        className,\n      )}\n    >\n      {error}\n    </p>\n  )\n}\n\nexport function SubmitButton({\n  children,\n  pendingText = 'Saving…',\n  ...props\n}: ButtonProps & { pendingText?: ReactNode }) {\n  const { pending } = useFormStatus()\n  return (\n    <Button type=\"submit\" disabled={pending || props.disabled} aria-busy={pending} {...props}>\n      {pending ? pendingText : children}\n    </Button>\n  )\n}\n"
+    }
+  ]
+}

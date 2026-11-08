@@ -1,0 +1,37 @@
+/*
+ * kitr preset for Tailwind v4. Maps kitr's tokens (CSS variables set by @kitr/ui/styles.css
+ * or your own theme) onto Tailwind's theme, so `bg-background`, `text-primary`,
+ * `rounded-md` and friends use the same values as the rest of the app.
+ */
+@theme inline {
+  --color-background: var(--kitr-color-background);
+  --color-foreground: var(--kitr-color-foreground);
+  --color-muted: var(--kitr-color-muted);
+  --color-muted-foreground: var(--kitr-color-mutedForeground);
+  --color-border: var(--kitr-color-border);
+  --color-primary: var(--kitr-color-primary);
+  --color-primary-foreground: var(--kitr-color-primaryForeground);
+  --color-destructive: var(--kitr-color-destructive);
+  --color-destructive-foreground: var(--kitr-color-destructiveForeground);
+  --color-ring: var(--kitr-color-ring);
+  --radius-sm: var(--kitr-radius-sm);
+  --radius-md: var(--kitr-radius-md);
+  --radius-lg: var(--kitr-radius-lg);
+  --font-sans: var(--kitr-font-sans);
+  --font-mono: var(--kitr-font-mono);
+  --shadow-sm: var(--kitr-shadow-sm);
+  --shadow-md: var(--kitr-shadow-md);
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "select",
+  "type": "registry:ui",
+  "title": "Select",
+  "description": "Native select, styled to match inputs.",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "app/components/ui/select.tsx",
+      "type": "registry:ui",
+      "target": "app/components/ui/select.tsx",
+      "content": "import { cn } from '@kitr/tailwind'\nimport type { ComponentProps } from 'react'\n\nexport function Select({ className, children, ...props }: ComponentProps<'select'>) {\n  return (\n    <select\n      className={cn(\n        'flex h-9 w-full appearance-none rounded-md border border-border bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',\n        className,\n      )}\n      {...props}\n    >\n      {children}\n    </select>\n  )\n}\n"
+    }
+  ]
+}

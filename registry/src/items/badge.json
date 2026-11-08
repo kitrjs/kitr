@@ -1,0 +1,5 @@
+{
+  "title": "Badge",
+  "description": "Status badge.",
+  "dependencies": ["class-variance-authority"]
+}

@@ -1,0 +1,71 @@
+{
+  "name": "@kitr/forms",
+  "version": "0.2.1",
+  "description": "@kitr/forms: React Hook Form re-exported, plus useSchemaForm, <Form>, <FormField> and server-error mapping.",
+  "kitr": {
+    "name": "forms",
+    "title": "Forms",
+    "summary": "Build forms with validation, and show server errors next to the right field.",
+    "category": "forms",
+    "runsOn": "client",
+    "builtOn": [
+      "react-hook-form"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/forms"
+  },
+  "homepage": "https://kitr.dev/packages/forms",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-hook-form": ">=7.50.0",
+    "@hookform/resolvers": ">=5.0.0"
+  },
+  "devDependencies": {
+    "@hookform/resolvers": "^7.0.3",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "react-hook-form": "^7.91.0",
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "zod": "^4.6.7"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

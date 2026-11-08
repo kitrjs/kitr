@@ -1,0 +1,74 @@
+{
+  "name": "@kitr/query",
+  "version": "0.2.1",
+  "description": "@kitr/query: TanStack Query re-exported, plus the data contract, subscriptions and cache effects.",
+  "kitr": {
+    "name": "query",
+    "title": "Query",
+    "summary": "Load data from your API, keep it cached, and refresh it when something changes.",
+    "category": "data-fetching",
+    "runsOn": "client",
+    "builtOn": [
+      "@tanstack/react-query"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/query"
+  },
+  "homepage": "https://kitr.dev/packages/query",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "@kitr/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@tanstack/react-query": ">=5.80.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@kitr/devtools": "workspace:*",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@tanstack/react-query": "^5.107.1"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}

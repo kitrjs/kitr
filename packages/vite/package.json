@@ -1,0 +1,90 @@
+{
+  "name": "@kitr/vite",
+  "version": "0.2.1",
+  "description": "@kitr/vite: the kitr() Vite plugin. Reads kitrrc.ts and the installed packages' Vite needs: router, React, Tailwind, virtual modules, aliases.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/vite"
+  },
+  "homepage": "https://kitr.dev/packages/vite",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json",
+    "./client": {
+      "types": "./client.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "client.d.ts",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "jiti": "^2.7.0"
+  },
+  "peerDependencies": {
+    "vite": ">=6.0.0",
+    "@tanstack/router-plugin": ">=1.120.0",
+    "@tanstack/react-start": ">=1.120.0",
+    "@kitr/web": "workspace:*",
+    "@kitr/cli": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-start": {
+      "optional": true
+    },
+    "@kitr/web": {
+      "optional": true
+    },
+    "@kitr/cli": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6",
+    "@tanstack/router-plugin": "^1.168.48",
+    "@tanstack/react-start": "^1.169.4",
+    "@types/node": "^22.19.0",
+    "@kitr/web": "workspace:*",
+    "@kitr/cli": "workspace:*"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package",
+    "vite"
+  ],
+  "kitr": {
+    "name": "vite",
+    "title": "Vite",
+    "summary": "Build and serve the browser side of your app with Vite, wired to kitrrc.ts by one plugin.",
+    "category": "dev-tools",
+    "runsOn": "server",
+    "builtOn": [
+      "vite"
+    ],
+    "docs": "docs",
+    "setup": "./kitr"
+  }
+}
