@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifications/provider`, read from the published type definitions. The [guide](/packages/notifications/guide) shows them in use.
+Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifications/provider`, `kitr/notifications/driver`, `kitr/notifications/drivers/web`, `kitr/notifications/drivers/electron`, `kitr/notifications/drivers/tauri`, `kitr/notifications/drivers/capacitor`, read from the published type definitions. The [guide](/packages/notifications/guide) shows them in use.
 
 ## kitr/notifications
 
@@ -33,7 +33,8 @@ function createNotifications(config?: NotificationsConfig, app?: KitrApp): Notif
 ```
 
 Build the `notifications` service. The driver is `config.driver`, else the one registered on
-`app`, else the web driver in a browser or a memory driver (`unsupported`) on the server.
+`app`, else `selectDriver()` for the runtime: the web driver in a browser, a memory driver (`unsupported`)
+on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
 ### createWebNotificationsDriver
 
@@ -54,6 +55,17 @@ function notificationId(): string;
 
 A unique id such as `n-m5x2k1qz-0`, used when `show()` or `schedule()` gets none.
 
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The notifications driver for a runtime: the browser Notification API on `web` (a memory driver
+reporting `unsupported` on the server), and each native shell's own driver. A shell with no
+driver yet throws `E_DRIVER_UNAVAILABLE` rather than falling back to the web one, unless
+`fallbackToWeb` is set.
+
 ### useNotifications
 
 ```ts
@@ -69,6 +81,17 @@ const defineConfig: <const C extends NotificationsConfig>(config: C) => C;
 ```
 
 Types `config/notifications.ts`. Returns the object unchanged.
+
+### DriverOptions
+
+```ts
+interface DriverOptions extends SelectDriverOptions {
+  /** Default icon for web notifications. */
+  icon?: string;
+}
+```
+
+Options of `selectDriver()`.
 
 ### NotificationOptions
 
@@ -132,6 +155,11 @@ interface NotificationsConfig {
   icon?: string;
   /** Ask for permission at boot instead of waiting for the first `request()`. Default false. */
   requestOnBoot?: boolean;
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no notifications driver, use the web
+   * driver inside the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean;
 }
 ```
 
@@ -194,6 +222,14 @@ interface ScheduleOptions extends NotificationOptions {
 
 A notification to show later.
 
+### Driver
+
+```ts
+type Driver = NotificationsDriver;
+```
+
+What a notifications driver is: `NotificationsDriver`, whichever runtime supplies it.
+
 ### NotificationPermission
 
 ```ts
@@ -242,5 +278,89 @@ const notificationsProvider: import("@kitr/core").KitrProvider;
 
 Binds `notifications` to the platform driver (`notifications` capability) or the web
 Notification API. With `requestOnBoot` it asks for permission as the app starts.
+
+## kitr/notifications/driver
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The notifications driver for a runtime: the browser Notification API on `web` (a memory driver
+reporting `unsupported` on the server), and each native shell's own driver. A shell with no
+driver yet throws `E_DRIVER_UNAVAILABLE` rather than falling back to the web one, unless
+`fallbackToWeb` is set.
+
+### DriverOptions
+
+```ts
+interface DriverOptions extends SelectDriverOptions {
+  /** Default icon for web notifications. */
+  icon?: string;
+}
+```
+
+Options of `selectDriver()`.
+
+### Driver
+
+```ts
+type Driver = NotificationsDriver;
+```
+
+What a notifications driver is: `NotificationsDriver`, whichever runtime supplies it.
+
+## kitr/notifications/drivers/web
+
+### createWebNotificationsDriver
+
+```ts
+function createWebNotificationsDriver(config?: {
+  icon?: string;
+}): NotificationsDriver;
+```
+
+Driver on the browser Notification API, with timers for scheduling. Scheduled ones are lost when
+the page closes. Falls back to the service worker where the constructor is not allowed.
+
+## kitr/notifications/drivers/electron
+
+### createElectronDriver
+
+```ts
+function createElectronDriver(_options?: DriverOptions): Driver;
+```
+
+The notifications driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/notifications` and `electron` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
+to opt in to the WebView behaviour.
+
+## kitr/notifications/drivers/tauri
+
+### createTauriDriver
+
+```ts
+function createTauriDriver(_options?: DriverOptions): Driver;
+```
+
+The notifications driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/notifications` and `tauri` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
+to opt in to the WebView behaviour.
+
+## kitr/notifications/drivers/capacitor
+
+### createCapacitorDriver
+
+```ts
+function createCapacitorDriver(_options?: DriverOptions): Driver;
+```
+
+The notifications driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/notifications` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

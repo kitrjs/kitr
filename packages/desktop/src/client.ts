@@ -1,3 +1,5 @@
+import { detectRuntime } from '@kitr/platform'
+
 /**
  * One schema shared by main, preload and renderer:
  *
@@ -16,7 +18,7 @@ export type IpcSchema = Record<string, (...args: any[]) => unknown>
 export type IpcEvents = Record<string, (...args: any[]) => void>
 
 /** The `window` property the preload script exposes the bridge under, and the client reads by default. */
-export const IPC_BRIDGE_KEY = 'kitrIpc'
+export const IPC_BRIDGE_KEY = 'kitrIpc' // `detectRuntime()` in @kitr/platform looks for this name
 
 /** The untyped bridge `exposeIpc()` puts on `window`; `createIpcClient()` wraps it with your schema's types. */
 export interface IpcBridge {
@@ -70,9 +72,7 @@ export function createIpcClient<S extends IpcSchema, E extends IpcEvents = {}>(
   }
 }
 
-/** True in an Electron renderer (checks the bridge, then the user agent). */
+/** True in an Electron renderer: `detectRuntime()` says `electron` (the preload bridge, then the user agent). */
 export function isElectron(): boolean {
-  if (typeof globalThis === 'undefined') return false
-  if ((globalThis as any)[IPC_BRIDGE_KEY]) return true
-  return typeof navigator !== 'undefined' && /electron/i.test(navigator.userAgent)
+  return detectRuntime() === 'electron'
 }

@@ -1,5 +1,5 @@
-import { defineProvider } from '@kitr/core'
-import type { PlatformDriver } from '@kitr/platform'
+import type { ShellDriverHooks } from '@kitr/platform/shell'
+import { createShellProvider } from '@kitr/platform/shell'
 import { createAsyncStorageDriver, type StorageDriver } from '@kitr/storage'
 import { capacitorPlatform, isCapacitor } from './client'
 
@@ -7,20 +7,25 @@ import { capacitorPlatform, isCapacitor } from './client'
  * Runtime provider of the mobile platform. Inside the Capacitor shell it registers the
  * `platform` driver (App plugin: state, back button, deep links) and a `storage` driver on
  * Preferences, which survives the OS clearing WebView storage. In a plain browser it does nothing,
- * so the same bundle runs on the web.
+ * so the same bundle runs on the web. The shared shell behaviour (detection, registration,
+ * devtools) is `createShellProvider()`.
  */
-export const mobileProvider = defineProvider({
+export const mobileProvider = createShellProvider({
   name: 'mobile',
-  register(app) {
-    if (!isCapacitor()) return
-    app.drivers.register('platform', platformDriver(), { platform: 'mobile' })
+  platform: 'mobile',
+  type: 'mobile',
+  runtime: 'capacitor',
+  detect: isCapacitor,
+  os: () => capacitorPlatform(),
+  driver: capacitorHooks,
+  register: (app) => {
     app.drivers.register('storage', preferencesDriver(), { platform: 'mobile' })
   },
 })
 
 export default mobileProvider
 
-function platformDriver(): PlatformDriver {
+function capacitorHooks(): ShellDriverHooks {
   const appPlugin = () => import('@capacitor/app').then((m) => m.App)
   const listen = <T>(event: string, map: (data: any) => T, listener: (value: T) => void) => {
     let handle: { remove(): Promise<void> } | undefined
@@ -36,10 +41,6 @@ function platformDriver(): PlatformDriver {
     }
   }
   return {
-    type: 'mobile',
-    native: true,
-    os: () => capacitorPlatform(),
-    standalone: () => true,
     appVersion: () =>
       appPlugin()
         .then((App) => App.getInfo())

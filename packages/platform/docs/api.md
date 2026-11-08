@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/platform`, `kitr/platform/react`, `kitr/platform/provider`, `kitr/platform/devtools`, read from the published type definitions. The [guide](/packages/platform/guide) shows them in use.
+Every export of `kitr/platform`, `kitr/platform/react`, `kitr/platform/provider`, `kitr/platform/devtools`, `kitr/platform/shell`, `kitr/platform/cli`, read from the published type definitions. The [guide](/packages/platform/guide) shows them in use.
 
 ## kitr/platform
 
@@ -34,6 +34,27 @@ function defaultDriver(): PlatformDriver;
 
 The browser (or server) driver used when no platform package registered one.
 
+### detectRuntime
+
+```ts
+function detectRuntime(scope?: RuntimeScope): Runtime;
+```
+
+Detect the runtime: Tauri by `window.__TAURI_INTERNALS__`, Capacitor by
+`Capacitor.isNativePlatform()`, Electron by the preload bridge, `process.versions.electron` or an
+`Electron/` user agent. Everything else, including the server, is `web`. Safe to call anywhere:
+it only reads globals.
+
+### driverUnavailable
+
+```ts
+function driverUnavailable(runtime: Exclude<Runtime, 'web'>, pkg: string, detail?: string): KitrError;
+```
+
+The error a device package throws when its driver for a native shell is not implemented (or
+its plugin is not installed): it names the runtime and the package so the fix is obvious. Never
+a silent fallback to the web driver; apps that want the WebView behaviour pass `fallbackToWeb`.
+
 ### fallbackFormFactor
 
 ```ts
@@ -57,6 +78,14 @@ Resolve a per-platform table at build time, from `import.meta.env.KITR_PLATFORM`
 export const Route = createFileRoute('/feed')({ ...forPlatform({ www: { ssr: true }, default: { ssr: false } }) })
 ```
 The platform name wins over its type, then `default`. Outside a kitr build the table's `default` is returned.
+
+### isDriverUnavailable
+
+```ts
+function isDriverUnavailable(error: unknown): error is KitrError;
+```
+
+Whether `error` is a `driverUnavailable()` error.
 
 ### osFromUserAgent
 
@@ -111,6 +140,25 @@ function readFormFactor(win: Pick<Window, 'innerWidth' | 'innerHeight' | 'matchM
 
 The form factor a browser window reports right now. Not for the server: use `fallbackFormFactor()` there.
 
+### runtimeOf
+
+```ts
+function runtimeOf(app?: Pick<KitrApp, 'container'>): Runtime;
+```
+
+The runtime an app is in: the `platform` service's when it is registered (the platform packages
+set it from their shell), else `detectRuntime()`. Device packages call this to pick a driver.
+
+### selectRuntimeDriver
+
+```ts
+function selectRuntimeDriver<D>(runtime: Runtime, drivers: RuntimeDrivers<D>, options?: SelectDriverOptions): D;
+```
+
+Pick the driver for `runtime` from a table of factories. `web` calls its factory; a native
+runtime calls its own, and when that throws `E_DRIVER_UNAVAILABLE` the error propagates unless
+`fallbackToWeb` is set. Any other error propagates untouched.
+
 ### widthClass
 
 ```ts
@@ -137,6 +185,22 @@ const defineConfig: <const C extends PlatformConfig>(config: C) => C;
 ```
 
 Typed helper for `config/platform.ts`.
+
+### DRIVER_UNAVAILABLE
+
+```ts
+const DRIVER_UNAVAILABLE = "E_DRIVER_UNAVAILABLE";
+```
+
+The error code `driverUnavailable()` carries, for `error.code === DRIVER_UNAVAILABLE` checks.
+
+### runtimes
+
+```ts
+const runtimes: readonly Runtime[];
+```
+
+Every runtime, in the order `detectRuntime()` checks the native ones after `web`.
 
 ### FormFactor
 
@@ -181,6 +245,11 @@ interface Platform {
   readonly type: PlatformType;
   /** True inside a native shell (Capacitor, Tauri, Electron). */
   readonly native: boolean;
+  /**
+   * The host runtime: `web`, `electron`, `tauri` or `capacitor`. Device packages
+   * (`native`, `files`, `notifications`, `secure-storage`, `updater`) pick their driver by it.
+   */
+  readonly runtime: Runtime;
   /** The operating system, read from the driver on every access. */
   readonly os: PlatformOs | string;
   /** Installed as an app: a standalone PWA or any native shell. */
@@ -243,6 +312,8 @@ interface PlatformDriver {
   type: PlatformType;
   /** True inside a native shell (Capacitor, Tauri, Electron). */
   native: boolean;
+  /** The host runtime: `web`, `electron`, `tauri` or `capacitor`. Default: `web` for a browser driver, the detected runtime for a native one. */
+  runtime?: Runtime;
   /** The operating system, read on every access. */
   os(): PlatformOs | string;
   /** Installed as an app (PWA standalone, native shell). */
@@ -273,6 +344,34 @@ interface PlatformDriver {
 What a platform package implements so `kitr/platform` can answer for it. Register one with
 `app.drivers.register('platform', driver)`; every optional member falls back to a browser default.
 
+### RuntimeScope
+
+```ts
+interface RuntimeScope {
+  /** Tauri puts its internals on `window`. */
+  __TAURI_INTERNALS__?: unknown;
+  /** The bridge the Electron preload script exposes (`exposeIpc()`). */
+  kitrIpc?: unknown;
+  /** The Capacitor runtime global. */
+  Capacitor?: {
+    isNativePlatform?(): boolean;
+  };
+  /** Node's `process`, present in Electron's main process and in Node-integrated renderers. */
+  process?: {
+    versions?: {
+      electron?: string;
+    };
+  };
+  navigator?: {
+    userAgent?: string;
+  };
+  /** When the scope is a worker or test global that holds a separate `window`, the checks look there first. */
+  window?: RuntimeScope;
+}
+```
+
+The globals `detectRuntime()` reads. Pass a fake in tests; the default is `globalThis`.
+
 ### SafeArea
 
 ```ts
@@ -289,6 +388,20 @@ interface SafeArea {
 ```
 
 Safe-area insets in CSS pixels: the space the notch, status bar and home indicator cover.
+
+### SelectDriverOptions
+
+```ts
+interface SelectDriverOptions {
+  /**
+   * Use the web driver when the native shell has no driver of its own. Off by default: a native
+   * shell without a driver throws `E_DRIVER_UNAVAILABLE` instead of silently running web code in a WebView.
+   */
+  fallbackToWeb?: boolean;
+}
+```
+
+Options every device package's `selectDriver()` accepts.
 
 ### InputKind
 
@@ -330,6 +443,25 @@ type PlatformType = 'web' | 'mobile' | 'desktop' | 'server' | (string & {});
 ```
 
 The kind of place the app runs: `web`, `mobile`, `desktop`, `server`, or a custom platform's own type.
+
+### Runtime
+
+```ts
+type Runtime = 'web' | 'electron' | 'tauri' | 'capacitor';
+```
+
+Which host the code is running in, as one value: a browser (or the server) is `web`, and the
+three native shells are `electron`, `tauri` and `capacitor`. It answers "which driver should I
+load?", while `platform.type` answers "what kind of place is this?" (`desktop` covers both
+Electron and Tauri).
+
+### RuntimeDrivers
+
+```ts
+type RuntimeDrivers<D> = Record<Runtime, () => D>;
+```
+
+One driver factory per runtime. `web` always works; the others may throw `driverUnavailable()`.
 
 ### WidthClass
 
@@ -439,6 +571,16 @@ function usePlatformMatch(match: PlatformMatch): boolean;
 
 Whether the current platform and form factor satisfy a `PlatformMatch`. The hook behind `<Only>` and `<Except>`.
 
+### useRuntime
+
+```ts
+function useRuntime(): Runtime;
+```
+
+The host runtime: `web`, `electron`, `tauri` or `capacitor`. Use it to branch on the shell
+itself; `usePlatform().type` says `desktop` for both Electron and Tauri. Without the platform
+provider it falls back to `detectRuntime()`.
+
 ### useSafeArea
 
 ```ts
@@ -504,5 +646,351 @@ function panels(app: KitrApp): DevtoolsPanel[];
 ```
 
 The Platform panel: active platform, OS and which package supplies each capability driver.
+
+## kitr/platform/shell
+
+### createShell
+
+```ts
+function createShell(options: ShellOptions): Shell;
+```
+
+Build the `Shell` helpers for a configuration.
+
+### createShellDriver
+
+```ts
+function createShellDriver(options: ShellOptions, shell?: Shell): PlatformDriver;
+```
+
+The `platform` driver a shell registers: native, standalone, app state from visibility, plus the shell's own hooks.
+
+### createShellProvider
+
+```ts
+function createShellProvider(options: ShellOptions): KitrProvider;
+```
+
+The runtime provider of a native shell. Inside the shell it registers the `platform` driver and
+whatever `register()` adds; in a plain browser it does nothing, so the web build of the same app
+keeps working. Logs the runtime to devtools at boot.
+
+```ts
+export const desktopProvider = createShellProvider({
+  name: 'desktop', platform: 'desktop', type: 'desktop', runtime: 'electron',
+  driver: (shell) => ({ exit: () => shell.invoke('kitr:app:quit').then(() => {}) }),
+})
+```
+
+### userAgentOs
+
+```ts
+function userAgentOs(): PlatformOs;
+```
+
+The operating system from the user agent, `unknown` on the server.
+
+### visibilityAppState
+
+```ts
+function visibilityAppState(listener: (active: boolean) => void): () => void;
+```
+
+The foreground/background default every shell shares: the page's visibility.
+
+### Shell
+
+```ts
+interface Shell {
+  /** The native runtime this provider wraps. */
+  readonly runtime: ShellRuntime;
+  /** The bridge, or undefined when the shell has none or the page is not inside it. */
+  bridge(): ShellBridge | undefined;
+  /** Call the bridge. Rejects with a message naming the provider when the bridge is missing. */
+  invoke<T = unknown>(channel: string, ...args: unknown[]): Promise<T>;
+  /** The operating system the shell reports. */
+  os(): PlatformOs | string;
+  /** True when the page is running inside this shell. */
+  active(): boolean;
+}
+```
+
+What `createShellProvider()` hands to its hooks: the pieces every shell uses.
+
+### ShellBridge
+
+```ts
+interface ShellBridge {
+  /** Call the native side and resolve with its answer. */
+  invoke(channel: string, ...args: unknown[]): Promise<unknown>;
+  /** Listen to a channel the native side sends on. Returns the unsubscribe function. */
+  on?(channel: string, listener: (...args: unknown[]) => void): () => void;
+  /** Send a one-way message, with no reply. */
+  send?(channel: string, ...args: unknown[]): void;
+}
+```
+
+The untyped message bridge a shell exposes to the page: Electron's preload `kitrIpc`, a Tauri command channel.
+
+### ShellOptions
+
+```ts
+interface ShellOptions {
+  /** The provider name, shown by `kitr doctor` and in errors: `desktop`, `tauri`, `mobile`. */
+  name: string;
+  /** The tag drivers are registered under (`app.drivers.describe()`, devtools): `desktop`, `mobile`. */
+  platform: string;
+  /** The `platform.type` the shell reports. */
+  type: PlatformType;
+  /** Which native runtime this is. */
+  runtime: ShellRuntime;
+  /** Whether the page is inside this shell. Default: `detectRuntime() === runtime`. */
+  detect?(): boolean;
+  /** Where the page finds the IPC bridge. Omit for shells that call native plugins directly. */
+  bridge?(): ShellBridge | undefined;
+  /** The operating system. Default: from the user agent. */
+  os?(): PlatformOs | string;
+  /** The shell's own `platform` driver hooks (app version, open link, exit, back button...). */
+  driver?(shell: Shell): ShellDriverHooks;
+  /** Register the shell's other drivers (storage, ...) once the page is known to be inside it. */
+  register?(app: KitrApp, shell: Shell): void;
+}
+```
+
+How a shell package configures `createShellProvider()`.
+
+### ShellDriverHooks
+
+```ts
+type ShellDriverHooks = Partial<Omit<PlatformDriver, 'type' | 'native' | 'runtime' | 'os'>>;
+```
+
+The platform driver hooks a shell may implement; `type`, `native`, `runtime` and `os` are filled in by the provider.
+
+### ShellRuntime
+
+```ts
+/** The native shells a provider can wrap. */
+type ShellRuntime = Exclude<Runtime, 'web'>;
+```
+
+The native shells a provider can wrap.
+
+## kitr/platform/cli
+
+### displayName
+
+```ts
+function displayName(name?: string): string;
+```
+
+`@acme/field-notes` becomes `Field Notes`: the default window or home-screen title.
+
+### hasCommand
+
+```ts
+function hasCommand(command: string): Promise<boolean>;
+```
+
+Whether `command --version` runs and exits 0: the check behind "the Rust toolchain is not on PATH".
+
+### installCommand
+
+```ts
+function installCommand(ctx: PlatformContext, dependency: PlatformDependency): string;
+```
+
+Where a dependency is declared and how to install it, for the `kitr doctor` fix line.
+
+### lanAddress
+
+```ts
+function lanAddress(): Promise<string>;
+```
+
+The machine's first non-internal IPv4 address, for a device on the network to reach the dev server; `0.0.0.0` when there is none.
+
+### missingDependencies
+
+```ts
+function missingDependencies(ctx: PlatformContext, dependencies: PlatformDependency[], pkg?: Record<string, any>): PlatformFinding[];
+```
+
+One `error` finding per dependency the project's `package.json` does not list.
+
+### readPackage
+
+```ts
+function readPackage(ctx: PlatformContext): Record<string, any>;
+```
+
+Read `package.json`, or `{}` when it is missing or invalid.
+
+### shellPlatformHooks
+
+```ts
+function shellPlatformHooks<O extends ShellPlatformOptions, S = undefined>(options: O, cli: ShellCli<O, S>): PlatformHooks<O>;
+```
+
+The hooks of a shell platform, for the factory `definePlatform` takes:
+
+```ts
+definePlatform<MyOptions>(definition, (options) => shellPlatformHooks(options, { ... }))
+```
+`dev` starts Vite on `--port` (or the option), waits for it, then launches the shell; `build`
+runs the client build and then the shell's own; `doctor` checks dependencies, files and tools.
+
+### slug
+
+```ts
+function slug(name: string): string;
+```
+
+The lower-case alphanumeric form of a name, for bundle ids: `Field Notes` becomes `fieldnotes`.
+
+### waitForPort
+
+```ts
+function waitForPort(host: string, port: number, signal?: AbortSignal): Promise<void>;
+```
+
+`waitForUrl` for a host and port; a wildcard bind address (`0.0.0.0`) is polled on loopback.
+
+### waitForUrl
+
+```ts
+function waitForUrl(url: string, signal?: AbortSignal): Promise<void>;
+```
+
+Poll `url` until it answers (any response, even an error status) or `signal` aborts. Gives up after about 30 seconds.
+
+### RequiredFile
+
+```ts
+interface RequiredFile {
+  /** Path from the project root. */
+  path: string;
+  /** The `kitr doctor` fix line. Default: `kitr platforms scaffold <name>`. */
+  fix?: string;
+}
+```
+
+A file the shell needs: reported as `error` when missing, with the command that recreates it.
+
+### RequiredTool
+
+```ts
+interface RequiredTool {
+  /** The executable, checked with `<command> --version`. */
+  command: string;
+  /** The finding's message; `<name>:` is prepended. */
+  message: string;
+  /** The fix line. */
+  fix?: string;
+}
+```
+
+A command-line tool the shell builds with: `cargo` for Tauri.
+
+### ShellBuild
+
+```ts
+interface ShellBuild<O extends object> {
+  /** Build the shell around `dist/<name>/client` (installers, a synced native project). */
+  shell(ctx: PlatformContext<O>): Promise<void>;
+  /** Runs before the client build (generate icons, create native projects). */
+  before?(ctx: PlatformContext<O>): void | Promise<void>;
+}
+```
+
+What `kitr build <name>` runs after the client build.
+
+### ShellCli
+
+```ts
+interface ShellCli<O extends ShellPlatformOptions, S = undefined> {
+  /** npm dependencies `kitr add` installs; `kitr doctor` checks them too. */
+  dependencies: PlatformDependency[];
+  /** Write the shell's files. */
+  scaffold(ctx: PlatformContext<O>): void;
+  /** `kitr dev <name>`. */
+  dev: ShellDev<O, S>;
+  /** `kitr build <name>`. */
+  build: ShellBuild<O>;
+  /** `kitr start <name>`. Omit when the shell has nothing to start (the mobile app runs on a device). */
+  start?(ctx: PlatformContext<O>): Promise<void>;
+  /** `kitr doctor`. */
+  doctor?: ShellDoctor<O>;
+  /** Lines for the platform's `AGENTS.md` section. */
+  agents: string;
+}
+```
+
+How a shell package parameterises the platform CLI skeleton.
+
+### ShellDev
+
+```ts
+interface ShellDev<O extends object, S = undefined> {
+  /** Runs before the dev server starts (create the native project, pick a target); its result goes to the other hooks. */
+  prepare?(ctx: PlatformContext<O>): S | Promise<S>;
+  /** The address Vite binds to. Default: Vite's own (localhost). The mobile shell passes the LAN address. */
+  host?(ctx: PlatformContext<O>): string | undefined | Promise<string | undefined>;
+  /** The line logged once the server's address is known. */
+  banner(ctx: PlatformContext<O>, dev: ShellDevInfo<S>): string;
+  /** Runs while Vite starts, before waiting for it (generate icons). */
+  ready?(ctx: PlatformContext<O>, dev: ShellDevInfo<S>): void | Promise<void>;
+  /** Start the shell against the dev server. Errors are logged, and the dev server keeps running until it exits. */
+  launch(ctx: PlatformContext<O>, dev: ShellDevInfo<S>): Promise<void>;
+}
+```
+
+What `kitr dev <name>` runs: the Vite dev server and then the shell on top of it.
+
+### ShellDevInfo
+
+```ts
+interface ShellDevInfo<S = undefined> {
+  /** The port, from `--port` or the platform option. */
+  port: number;
+  /** The bind address, when `host()` gave one. */
+  host: string | undefined;
+  /** `http://<host or localhost>:<port>`. */
+  url: string;
+  /** What `prepare()` returned. */
+  state: S;
+}
+```
+
+What the `dev` hooks know about the running dev server.
+
+### ShellDoctor
+
+```ts
+interface ShellDoctor<O extends object> {
+  /** Dependencies that must be in `package.json`. Default: the platform's `dependencies`. */
+  dependencies?: PlatformDependency[];
+  /** Files that must exist, relative to the project root. */
+  files?(ctx: PlatformContext<O>): RequiredFile[];
+  /** Tools that must be on `PATH`. */
+  tools?: RequiredTool[];
+  /** Checks of your own (a `main` field, a registered URL scheme). Appended last. */
+  extra?(ctx: PlatformContext<O>, pkg: Record<string, any>): PlatformFinding[];
+}
+```
+
+What `kitr doctor` checks for a shell platform.
+
+### ShellPlatformOptions
+
+```ts
+/** The options every shell platform has. */
+interface ShellPlatformOptions {
+  /** Dev server port the shell loads from with `kitr dev <name>`. */
+  port: number;
+}
+```
+
+The options every shell platform has.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

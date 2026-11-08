@@ -1,4 +1,11 @@
 import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
+import { runtimeOf } from '@kitr/platform'
+import { selectDriver } from './driver'
+
+export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createMemoryFilesDriver } from './drivers/memory'
+export { createWebFilesDriver } from './drivers/web'
+export { acceptFor, fromFile, mimeFor, toBlob } from './helpers'
 
 /**
  * Open, save and pick files with one API. Platform packages register a `FilesDriver` that shows
@@ -75,6 +82,11 @@ export interface FilesConfig {
   driver?: FilesDriver
   /** Filters added to every dialog, e.g. the app's own document type. */
   filters?: FileFilter[]
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no files driver, use the web driver inside
+   * the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean
 }
 
 /** The `files` service bound in the container: open, pick and save through the active driver. */
@@ -106,183 +118,16 @@ declare module '@kitr/core' {
 /** Type-checks `config/files.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<FilesConfig>()
 
-const MIME: Record<string, string> = {
-  txt: 'text/plain',
-  md: 'text/markdown',
-  csv: 'text/csv',
-  json: 'application/json',
-  html: 'text/html',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  svg: 'image/svg+xml',
-  pdf: 'application/pdf',
-  zip: 'application/zip',
-}
-
-/** The MIME type for a file name's extension, e.g. `invoice.pdf` → `application/pdf`. Unknown → `fallback`. */
-export function mimeFor(name: string, fallback = 'application/octet-stream'): string {
-  const dot = name.lastIndexOf('.')
-  const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : ''
-  return MIME[ext] ?? fallback
-}
-
-/** Turn any `FileData` into a Blob of the given type. A Blob passes through unchanged. */
-export function toBlob(data: FileData, type: string): Blob {
-  if (data instanceof Blob) return data
-  if (typeof data === 'string') return new Blob([data], { type })
-  return new Blob([data as BlobPart], { type })
-}
-
-/** Wrap a browser `File` (or any Blob with a name) as a `PickedFile`. */
-export function fromFile(file: File, path?: string): PickedFile {
-  return {
-    name: file.name,
-    size: file.size,
-    type: file.type,
-    path,
-    text: () => file.text(),
-    bytes: async () => new Uint8Array(await file.arrayBuffer()),
-    blob: async () => file,
-  }
-}
-
-/** `'.PNG'`, `'png'` and `' png '` are the same extension; `'*'` and empty ones mean "any". */
-function extensions(filter: FileFilter): string[] {
-  return [
-    ...new Set(
-      filter.extensions
-        .map((e) => e.trim().replace(/^\.+/, '').toLowerCase())
-        .filter((e) => e && e !== '*'),
-    ),
-  ]
-}
-
-/** The `accept` string an `<input type="file">` needs for a set of filters. */
-export function acceptFor(filters: FileFilter[] = []): string {
-  return [...new Set(filters.flatMap((f) => extensions(f).map((e) => `.${e}`)))].join(',')
-}
-
-interface FsHandleWindow {
-  showOpenFilePicker?(options: unknown): Promise<Array<{ getFile(): Promise<File> }>>
-  showSaveFilePicker?(options: unknown): Promise<{
-    createWritable(): Promise<{ write(d: Blob): Promise<void>; close(): Promise<void> }>
-    name: string
-  }>
-}
-
-/** Picker types; a filter with no usable extension is left out (the picker throws on it). */
-function pickerTypes(filters: FileFilter[] = []) {
-  return filters
-    .map((f) => ({ description: f.name, exts: extensions(f) }))
-    .filter((f) => f.exts.length)
-    .map((f) => ({
-      description: f.description,
-      accept: { 'application/octet-stream': f.exts.map((e) => `.${e}`) },
-    }))
-}
-
-function isAbort(error: unknown) {
-  return error instanceof Error && error.name === 'AbortError'
-}
-
-/** File System Access API when available, `<input type="file">` and a download link otherwise. */
-export function createWebFilesDriver(): FilesDriver {
-  return {
-    name: 'web',
-    async open(options) {
-      const w = (typeof window === 'undefined' ? {} : window) as FsHandleWindow
-      if (w.showOpenFilePicker) {
-        try {
-          const handles = await w.showOpenFilePicker({
-            multiple: options.multiple ?? false,
-            types: pickerTypes(options.filters),
-            excludeAcceptAllOption: false,
-          })
-          return Promise.all(handles.map(async (h) => fromFile(await h.getFile())))
-        } catch (error) {
-          if (isAbort(error)) return []
-          throw error
-        }
-      }
-      if (typeof document === 'undefined') return []
-      return new Promise((resolve) => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.multiple = options.multiple ?? false
-        input.accept = acceptFor(options.filters)
-        input.style.display = 'none'
-        input.onchange = () => {
-          resolve([...(input.files ?? [])].map((f) => fromFile(f)))
-          input.remove()
-        }
-        input.oncancel = () => {
-          resolve([])
-          input.remove()
-        }
-        document.body.appendChild(input)
-        input.click()
-      })
-    },
-    async save(data, options) {
-      const type = options.type ?? mimeFor(options.name)
-      const blob = toBlob(data, type)
-      const w = (typeof window === 'undefined' ? {} : window) as FsHandleWindow
-      if (w.showSaveFilePicker) {
-        try {
-          const handle = await w.showSaveFilePicker({
-            suggestedName: options.name,
-            types: pickerTypes(options.filters),
-          })
-          const writable = await handle.createWritable()
-          await writable.write(blob)
-          await writable.close()
-          return handle.name
-        } catch (error) {
-          if (isAbort(error)) return null
-          throw error
-        }
-      }
-      if (typeof document === 'undefined') return null
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = options.name
-      a.style.display = 'none'
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-      return options.name
-    },
-  }
-}
-
-/** A driver for tests and the server: `open` returns what you queue, `save` records what was written. */
-export function createMemoryFilesDriver(queue: PickedFile[] = []): FilesDriver & {
-  queue: PickedFile[]
-  saved: Array<{ name: string; data: FileData }>
-} {
-  const saved: Array<{ name: string; data: FileData }> = []
-  return {
-    name: 'memory',
-    queue,
-    saved,
-    open: async (options) => (options.multiple ? queue.splice(0) : queue.splice(0, 1)),
-    save: async (data, options) => {
-      saved.push({ name: options.name, data })
-      return options.name
-    },
-  }
-}
-
-/** Build the `files` service: the given driver, else the platform's, else the web driver (memory on the server). */
+/**
+ * Build the `files` service: the given driver, else the platform's, else `selectDriver()` for the
+ * runtime (the web driver in a browser, memory on the server, `E_DRIVER_UNAVAILABLE` in a native
+ * shell unless `fallbackToWeb` is set).
+ */
 export function createFiles(config: FilesConfig = {}, app?: KitrApp): Files {
   const driver =
     config.driver ??
     app?.drivers.resolve('files') ??
-    (typeof window === 'undefined' ? createMemoryFilesDriver() : createWebFilesDriver())
+    selectDriver(runtimeOf(app), { fallbackToWeb: config.fallbackToWeb })
   const log = (label: string, data?: unknown) => app && getDevtools(app)?.log('files', label, data)
   const withDefaults = <T extends { filters?: FileFilter[] }>(options: T): T => ({
     ...options,

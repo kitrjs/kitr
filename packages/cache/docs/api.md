@@ -34,24 +34,7 @@ Build a cache without an app: what the provider binds, and what tests and script
 function createMemoryCacheDriver(): CacheDriver;
 ```
 
-In-process cache with TTLs and tags. The default; fine for one server, wrong for several (use `createRedisCacheDriver`).
-
-### createRedisCacheDriver
-
-```ts
-function createRedisCacheDriver(redis: RedisCacheClient, options?: {
-  base?: string;
-}): CacheDriver;
-```
-
-A cache driver over Redis, so every instance reads and clears the same entries. Redis expires
-entries itself; tags are Redis sets, and a value set again starts untagged, as with the memory
-driver. Everything lives under `base` (default `kitr:cache:`), and `clear()` deletes only
-keys under it, never the whole database:
-
-```ts
-driver: createRedisCacheDriver(new Redis(process.env.REDIS_URL))
-```
+In-process cache with TTLs and tags. The default; fine for one server, wrong for several.
 
 ### createUnstorageCacheDriver
 
@@ -148,29 +131,6 @@ interface CacheDriver {
 
 What a cache backend implements: six async methods over string keys and string values.
 Values arrive already serialised to JSON by the cache, and keys already carry the prefix.
-
-### RedisCacheClient
-
-```ts
-interface RedisCacheClient {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string): Promise<unknown>;
-  set(key: string, value: string, ex: 'EX', seconds: number): Promise<unknown>;
-  del(...keys: string[]): Promise<number>;
-  sadd(key: string, ...members: string[]): Promise<number>;
-  smembers(key: string): Promise<string[]>;
-  sismember(key: string, member: string): Promise<number>;
-  pttl(key: string): Promise<number>;
-  pexpire(key: string, ms: number): Promise<number>;
-  scan(cursor: string, match: 'MATCH', pattern: string, count: 'COUNT', n: number): Promise<[
-    string,
-    string[]
-  ]>;
-}
-```
-
-The part of an [ioredis](https://github.com/redis/ioredis) client the Redis cache driver uses.
-An ioredis `Redis` fits as it is.
 
 ### RememberOptions
 

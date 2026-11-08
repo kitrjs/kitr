@@ -3,6 +3,8 @@
  * deep links, online) live in `kitr/platform/react`, where every platform shares them.
  */
 
+import { detectRuntime } from '@kitr/platform'
+
 type Platform = 'ios' | 'android' | 'web'
 
 function cap(): {
@@ -19,9 +21,9 @@ export function capacitorPlatform(): Platform {
   return (cap()?.getPlatform() as Platform | undefined) ?? 'web'
 }
 
-/** True inside the iOS or Android shell. */
+/** True inside the iOS or Android shell: `detectRuntime()` says `capacitor`. */
 export function isCapacitor(): boolean {
-  return cap()?.isNativePlatform() ?? false
+  return detectRuntime() === 'capacitor'
 }
 
 /** True when the native shell registered the Capacitor plugin `name` (`'App'`, `'Share'`); always false on the web. */

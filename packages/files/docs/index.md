@@ -56,11 +56,12 @@ export default defineConfig({
 | `filters` | `[]` | File types added to every dialog, after the ones a call passes. Use it for your app's own document type. |
 | `filters[].name` | | The label in the dialog's file-type menu, such as `Acme projects`. |
 | `filters[].extensions` | | Extensions without the dot, such as `['acme']`. Case, leading dots and spaces are ignored; `'*'` and empty strings are dropped. |
-| `driver` | the platform's driver, else the web driver | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
+| `driver` | the platform's driver, else the driver for the runtime | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no files driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
 `kitr/files` adds no environment variables.
 
-The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then the web driver in a browser, and an in-memory driver on the server.
+The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then `selectDriver(runtime)`: the web driver in a browser, an in-memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
 Acme's app has its own project export format, so every dialog offers it:
 
@@ -471,8 +472,8 @@ The service picks a driver once, the first time it is used. The table shows what
 | --- | --- | --- | --- | --- |
 | Chrome, Edge and other Chromium browsers | `web` | File System Access picker | Save picker, writes the chosen file | no |
 | Firefox, Safari | `web` | Hidden `<input type="file">` | Download link | no |
-| Desktop shell (Electron or Tauri) | `web`, unless you register one | The shell's webview decides | The shell's webview decides | no |
-| Mobile shell (Capacitor) | `web`, unless you register one | The system picker behind `<input type="file">` | Download link | no |
+| Desktop shell (Electron or Tauri) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The shell's webview decides | The shell's webview decides | no |
+| Mobile shell (Capacitor) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The system picker behind `<input type="file">` | Download link | no |
 | Server | `memory` | Resolves `[]` | Records the call, resolves `name` | no |
 
 ### Chrome and Edge
@@ -485,11 +486,11 @@ The web driver adds a hidden `<input type="file">` to the page, sets its `accept
 
 ### Desktop
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver today, so the web driver runs inside the shell's webview. Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver today, so the service throws `E_DRIVER_UNAVAILABLE` there unless you set `fallbackToWeb: true`, which runs the web driver inside the shell's webview. With the fallback, Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
 
 ### Mobile
 
-[Mobile](/packages/mobile) doesn't register a `files` driver today either. Inside Capacitor, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
+[Mobile](/packages/mobile) doesn't register a `files` driver today either, so Capacitor needs `fallbackToWeb: true` or a driver of your own. With the fallback, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
 
 ## Errors
 
@@ -497,6 +498,7 @@ Cancelling is never an error. Anything else the dialog throws reaches your code 
 
 | Error | When | What to do |
 | --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no files driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts` to run the web driver inside the webview. |
 | `AbortError` | The person cancelled the File System Access picker. | Nothing: `kitr/files` catches it and resolves `[]` or `null`. |
 | `SecurityError` | The picker was called without a user gesture, such as from a timer or after an `await` that took too long. | Call `open`, `pick` or `save` directly from a click or key handler. |
 | `NotAllowedError` | The browser or the person denied write access to the chosen file. | Show a message and offer to save again. |

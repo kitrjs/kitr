@@ -36,7 +36,7 @@ kitr add native --dry-run
 
 ## Configure
 
-`kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the web driver. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
+`kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
 
 ```ts
 // config/native.ts
@@ -59,6 +59,7 @@ export default defineConfig({
 | `drivers.geolocation` | registered, else `webGeolocation()` | A `GeolocationDriver`: `current(options)` and `watch(listener, options)`. |
 | `drivers.camera` | registered, else `webCamera()` | A `CameraDriver`: `capture(options)`. |
 | `drivers.biometrics` | registered, else `webBiometrics()` | A `BiometricsDriver`: `available()` and `authenticate(options)`. |
+| `fallbackToWeb` | `false` | In a native shell with no driver for a capability, use the web drivers inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
 The same object goes to `createNative(config, app)` when you build the service by hand, as in tests. Writing a driver is covered under [Extend](#extend).
 
@@ -522,8 +523,8 @@ For each capability the service takes the first of these that exists:
 
 1. The driver in `config.drivers`, named `'configured'`.
 2. A driver a provider registered with `app.drivers.register('<capability>', driver, { platform })`, named after `platform`.
-3. The web driver, named `'web'`.
-4. Nothing: `supported: false`, named `'unsupported'`.
+3. The driver `selectDriver(runtime)` picks, where `runtime` is `platform.runtime` (`web`, `electron`, `tauri` or `capacitor`). On `web` that is the web driver, named `'web'`, or nothing (`supported: false`, named `'unsupported'`) where the browser lacks the API. A native runtime uses its own driver, named after the runtime, and throws `E_DRIVER_UNAVAILABLE` while it has none.
+4. In a native shell with `fallbackToWeb: true`, the web driver, named `'web'`.
 
 | Capability | Web driver | Works in |
 | --- | --- | --- |
@@ -534,12 +535,13 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, so the web drivers apply there too. Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six. To use the native clipboard, Face ID or real haptics in a shell, register a driver as shown under [Extend](#extend).
+Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six, so creating the service in a shell throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use the native clipboard, Face ID or real haptics, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
 
 ## Errors
 
 | Error | When | What to do |
 | --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no native driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts` to run the web driver inside the webview. |
 | `UnsupportedError` (`capability` set) | A method other than `canShare`, `available` or `watch` on a capability with no driver. | Check `supported` before showing the control. |
 | `NotAllowedError` (browser) | Clipboard read denied, or `share()` / `writeText()` not called from a click. | Call from an event handler; explain the permission. |
 | `GeolocationPositionError` (browser) | `current()` denied (code 1), unavailable (2) or timed out (3). | Show a message, and offer a manual address. |

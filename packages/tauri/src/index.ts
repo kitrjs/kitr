@@ -1,4 +1,5 @@
-import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
+import { definePlatform, type PlatformContext } from '@kitr/core'
+import { displayName, readPackage, shellPlatformHooks, slug } from '@kitr/platform/cli'
 
 /**
  * Options of `tauri()` in `kitrrc.ts`. They are written into the scaffolded `tauri.conf.json` by
@@ -71,106 +72,64 @@ export const tauri = definePlatform<TauriOptions>(
       },
     },
   },
-  (options) => ({
-    dependencies: [
-      { name: '@tauri-apps/api' },
-      { name: '@tauri-apps/plugin-store' },
-      // The provider opens links and quits through these two.
-      { name: '@tauri-apps/plugin-opener' },
-      { name: '@tauri-apps/plugin-process' },
-      { name: '@tauri-apps/cli', dev: true },
-    ],
-    scaffold(ctx) {
-      scaffoldTauri(ctx, options)
-    },
-    async dev(ctx) {
-      const port = Number(ctx.flags.port ?? options.port)
-      const url = `http://localhost:${port}`
-      ctx.log.info(`${ctx.name}: dev server on ${url}, the Tauri window loads it live`)
-      const vite = ctx.exec('vite', ['dev', '--port', String(port), '--strictPort'])
-      await ensureIcons(ctx)
-      await waitForUrl(url, ctx.signal)
-      // tauri.conf.json holds the port from scaffold time; --port and KITR_<NAME>_PORT win over it.
-      const config = JSON.stringify({ build: { devUrl: url } })
-      await ctx
-        .exec('tauri', ['dev', '--no-watch', '--config', config], {
-          cwd: ctx.dir(),
-          env: { KITR_DEV_URL: url, KITR_DEVTOOLS: options.devtools ? '1' : '0' },
-        })
-        .catch((e) => ctx.log.error(String(e)))
-      await vite
-    },
-    async build(ctx) {
-      await ensureIcons(ctx)
-      await ctx.exec('vite', ['build'])
-      await ctx.exec('tauri', ['build', ...(ctx.flags.debug ? ['--debug'] : [])], {
-        cwd: ctx.dir(),
-      })
-      ctx.log.success(
-        `${ctx.name}: installers are in platforms/${ctx.name}/src-tauri/target/release/bundle`,
-      )
-    },
-    async start(ctx) {
-      ctx.log.info(
-        `${ctx.name}: run the installed app or the binary in platforms/${ctx.name}/src-tauri/target/release`,
-      )
-    },
-    async doctor(ctx) {
-      const out: PlatformFinding[] = []
-      const pkg = readPackage(ctx)
-      const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-      for (const dep of [
-        '@tauri-apps/api',
-        '@tauri-apps/cli',
-        '@tauri-apps/plugin-store',
-        '@tauri-apps/plugin-opener',
-        '@tauri-apps/plugin-process',
-      ])
-        if (!(dep in deps))
-          out.push({
-            level: 'error',
-            message: `${ctx.name}: ${dep} is not installed`,
-            fix: `${ctx.pm} add ${dep === '@tauri-apps/cli' ? '-D ' : ''}${dep}`,
+  (options) =>
+    shellPlatformHooks(options, {
+      dependencies: [
+        { name: '@tauri-apps/api' },
+        { name: '@tauri-apps/plugin-store' },
+        // The provider opens links and quits through these two.
+        { name: '@tauri-apps/plugin-opener' },
+        { name: '@tauri-apps/plugin-process' },
+        { name: '@tauri-apps/cli', dev: true },
+      ],
+      scaffold(ctx) {
+        scaffoldTauri(ctx, options)
+      },
+      dev: {
+        banner: (ctx, { url }) =>
+          `${ctx.name}: dev server on ${url}, the Tauri window loads it live`,
+        ready: (ctx) => ensureIcons(ctx),
+        launch: (ctx, { url }) => {
+          // tauri.conf.json holds the port from scaffold time; --port and KITR_<NAME>_PORT win over it.
+          const config = JSON.stringify({ build: { devUrl: url } })
+          return ctx.exec('tauri', ['dev', '--no-watch', '--config', config], {
+            cwd: ctx.dir(),
+            env: { KITR_DEV_URL: url, KITR_DEVTOOLS: options.devtools ? '1' : '0' },
           })
-      if (!ctx.exists(`platforms/${ctx.name}/src-tauri/tauri.conf.json`))
-        out.push({
-          level: 'error',
-          message: `${ctx.name}: platforms/${ctx.name}/src-tauri is missing`,
-          fix: `kitr platforms scaffold ${ctx.name}`,
-        })
-      // The shell is a Rust binary: no cargo, no build.
-      if (!(await hasCommand('cargo')))
-        out.push({
-          level: 'error',
-          message: `${ctx.name}: the Rust toolchain (cargo) is not on PATH, and Tauri builds with it`,
-          fix: 'Install Rust from https://rustup.rs, then open a new terminal',
-        })
-      return out
-    },
-    agents: `- \`kitr dev <name>\` starts Vite and the Tauri window; \`kitr build <name>\` builds the client and installers. Rust lives in \`platforms/<name>/src-tauri\` (needs the Rust toolchain).
+        },
+      },
+      build: {
+        before: (ctx) => ensureIcons(ctx),
+        async shell(ctx) {
+          await ctx.exec('tauri', ['build', ...(ctx.flags.debug ? ['--debug'] : [])], {
+            cwd: ctx.dir(),
+          })
+          ctx.log.success(
+            `${ctx.name}: installers are in platforms/${ctx.name}/src-tauri/target/release/bundle`,
+          )
+        },
+      },
+      async start(ctx) {
+        ctx.log.info(
+          `${ctx.name}: run the installed app or the binary in platforms/${ctx.name}/src-tauri/target/release`,
+        )
+      },
+      doctor: {
+        files: (ctx) => [{ path: `platforms/${ctx.name}/src-tauri/tauri.conf.json` }],
+        // The shell is a Rust binary: no cargo, no build.
+        tools: [
+          {
+            command: 'cargo',
+            message: 'the Rust toolchain (cargo) is not on PATH, and Tauri builds with it',
+            fix: 'Install Rust from https://rustup.rs, then open a new terminal',
+          },
+        ],
+      },
+      agents: `- \`kitr dev <name>\` starts Vite and the Tauri window; \`kitr build <name>\` builds the client and installers. Rust lives in \`platforms/<name>/src-tauri\` (needs the Rust toolchain).
 - Commands: add \`#[tauri::command]\` in src-tauri/src/lib.rs, register it in \`generate_handler!\`, declare it in \`app/commands.ts\` (\`defineCommands\` from \`kitr/tauri/client\`); call \`commands.name(args)\` or wrap with \`commandQuery\`/\`commandMutation\`. Guard with \`isTauri()\` so the web build keeps working.
 - Events from Rust: \`useTauriEvent('name', handler)\`; to Rust: \`emitTauri('name', payload)\`. Permissions go in \`src-tauri/capabilities/default.json\`. Storage items from \`kitr/storage\` persist through the store plugin here.`,
-  }),
+    }),
 )
-
-function readPackage(ctx: PlatformContext): Record<string, any> {
-  try {
-    return JSON.parse(ctx.read('package.json'))
-  } catch {
-    return {}
-  }
-}
-
-function displayName(name = 'app') {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-function slug(name: string) {
-  return name.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'app'
-}
 
 function scaffoldTauri(ctx: PlatformContext, options: TauriOptions) {
   const pkg = readPackage(ctx)
@@ -394,25 +353,4 @@ export async function placeholderPng(size = 1024): Promise<Buffer> {
     chunk('IDAT', deflateSync(raw)),
     chunk('IEND', Buffer.alloc(0)),
   ])
-}
-
-async function hasCommand(command: string): Promise<boolean> {
-  const { spawnSync } = await import('node:child_process')
-  const result = spawnSync(command, ['--version'], {
-    stdio: 'ignore',
-    shell: process.platform === 'win32',
-  })
-  return !result.error && result.status === 0
-}
-
-async function waitForUrl(url: string, signal?: AbortSignal) {
-  for (let i = 0; i < 100; i++) {
-    if (signal?.aborted) return
-    try {
-      await fetch(url, { method: 'HEAD' })
-      return
-    } catch {
-      await new Promise((r) => setTimeout(r, 300))
-    }
-  }
 }

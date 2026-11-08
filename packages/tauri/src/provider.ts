@@ -1,44 +1,21 @@
-import { defineProvider } from '@kitr/core'
-import type { PlatformDriver } from '@kitr/platform'
+import { createShellProvider } from '@kitr/platform/shell'
 import { createAsyncStorageDriver, type StorageDriver } from '@kitr/storage'
 import { isTauri } from './client'
 
 /**
  * Runtime provider of the Tauri platform. Inside a Tauri webview it registers the `platform`
  * driver on the Tauri APIs and a `storage` driver on the store plugin. In a plain browser it
- * does nothing, so the web build of the same app keeps working.
+ * does nothing, so the web build of the same app keeps working. The shared shell behaviour
+ * (detection, registration, app state, devtools) is `createShellProvider()`.
  */
-export const tauriProvider = defineProvider({
+export const tauriProvider = createShellProvider({
   name: 'tauri',
-  register(app) {
-    if (!isTauri()) return
-    app.drivers.register('platform', tauriPlatformDriver(), { platform: 'tauri' })
-    app.drivers.register('storage', tauriStoreDriver(), { platform: 'tauri' })
-  },
-})
-
-export default tauriProvider
-
-function desktopOs(): string {
-  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent
-  if (/mac os/i.test(ua)) return 'macos'
-  if (/windows/i.test(ua)) return 'windows'
-  if (/linux/i.test(ua)) return 'linux'
-  return 'unknown'
-}
-
-function tauriPlatformDriver(): PlatformDriver {
-  return {
-    type: 'desktop',
-    native: true,
-    os: desktopOs,
-    standalone: () => true,
+  platform: 'tauri',
+  type: 'desktop',
+  runtime: 'tauri',
+  detect: isTauri,
+  driver: () => ({
     appVersion: () => import('@tauri-apps/api/app').then((m) => m.getVersion()),
-    onAppState: (listener) => {
-      const handler = () => listener(document.visibilityState === 'visible')
-      document.addEventListener('visibilitychange', handler)
-      return () => document.removeEventListener('visibilitychange', handler)
-    },
     openExternal: (url) =>
       import('@tauri-apps/plugin-opener')
         .then((m) => m.openUrl(url))
@@ -47,8 +24,13 @@ function tauriPlatformDriver(): PlatformDriver {
         }),
     exit: () =>
       import('@tauri-apps/plugin-process').then((m) => m.exit(0)).catch(() => window.close()),
-  }
-}
+  }),
+  register: (app) => {
+    app.drivers.register('storage', tauriStoreDriver(), { platform: 'tauri' })
+  },
+})
+
+export default tauriProvider
 
 /** `@tauri-apps/plugin-store` (`kitr.json` in the app data dir) as a kitr storage driver. */
 export function tauriStoreDriver(file = 'kitr.json'): StorageDriver {

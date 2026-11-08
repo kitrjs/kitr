@@ -202,24 +202,6 @@ function createMemoryUploadsDriver(): UploadsDriver;
 
 A driver that keeps files in a Map, for tests and demos. Everything is lost when the process exits.
 
-### createUnstorageUploadsDriver
-
-```ts
-function createUnstorageUploadsDriver(storage: UnstorageRawLike, options?: {
-  base?: string;
-  publicPath?: string;
-}): UploadsDriver;
-```
-
-An uploads driver over any unstorage instance, so every server instance reads and writes the
-same files: object storage such as S3 or R2 instead of one machine's disk.
-
-```ts
-driver: createUnstorageUploadsDriver(createStorage({ driver: s3Driver({ bucket: 'acme-uploads', ... }) }))
-```
-Files live under `base` (default `uploads`) with their type and name kept beside them under
-`<base>:meta`. `publicPath` gives the driver a `url(key)`, as with the disk driver.
-
 ### createUploads
 
 ```ts
@@ -272,22 +254,6 @@ interface StoredFile {
 ```
 
 A stored file's key, original name, size and type.
-
-### UnstorageRawLike
-
-```ts
-interface UnstorageRawLike {
-  getItemRaw(key: string): Promise<unknown>;
-  setItemRaw(key: string, value: Uint8Array): Promise<void>;
-  getItem(key: string): Promise<unknown>;
-  setItem(key: string, value: string): Promise<void>;
-  removeItem(key: string): Promise<void>;
-}
-```
-
-The part of an [unstorage](https://unstorage.unjs.io) `Storage` the uploads driver uses. Any
-unstorage instance fits, whatever its driver: S3 and R2 (`unstorage/drivers/s3`), Azure Blob,
-Vercel Blob, Netlify Blobs, the filesystem.
 
 ### Uploads
 

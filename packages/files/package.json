@@ -30,6 +30,26 @@
       "types": "./dist/provider.d.ts",
       "default": "./dist/provider.js"
     },
+    "./driver": {
+      "types": "./dist/driver.d.ts",
+      "default": "./dist/driver.js"
+    },
+    "./drivers/web": {
+      "types": "./dist/drivers/web.d.ts",
+      "default": "./dist/drivers/web.js"
+    },
+    "./drivers/electron": {
+      "types": "./dist/drivers/electron.d.ts",
+      "default": "./dist/drivers/electron.js"
+    },
+    "./drivers/tauri": {
+      "types": "./dist/drivers/tauri.d.ts",
+      "default": "./dist/drivers/tauri.js"
+    },
+    "./drivers/capacitor": {
+      "types": "./dist/drivers/capacitor.d.ts",
+      "default": "./dist/drivers/capacitor.js"
+    },
     "./kitr": {
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"
@@ -45,7 +65,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@kitr/core": "workspace:*"
+    "@kitr/core": "workspace:*",
+    "@kitr/platform": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

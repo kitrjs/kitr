@@ -1,4 +1,10 @@
 import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
+import { runtimeOf } from '@kitr/platform'
+import { selectDriver } from './driver'
+
+export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createMemoryNotificationsDriver } from './drivers/memory'
+export { createWebNotificationsDriver } from './drivers/web'
 
 /**
  * Local notifications with one API: ask for permission, show one now or at a time, and learn
@@ -75,6 +81,11 @@ export interface NotificationsConfig {
   icon?: string
   /** Ask for permission at boot instead of waiting for the first `request()`. Default false. */
   requestOnBoot?: boolean
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no notifications driver, use the web
+   * driver inside the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean
 }
 
 /** The `notifications` service: permission, show, schedule, cancel and taps. */
@@ -114,154 +125,16 @@ declare module '@kitr/core' {
 /** Types `config/notifications.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<NotificationsConfig>()
 
-const MAX_TIMEOUT = 2 ** 31 - 1
-
 let counter = 0
 /** A unique id such as `n-m5x2k1qz-0`, used when `show()` or `schedule()` gets none. */
 export function notificationId(): string {
   return `n-${Date.now().toString(36)}-${(counter++).toString(36)}`
 }
 
-type Listener = (tap: NotificationTap) => void
-
-function listenerSet() {
-  const listeners = new Set<Listener>()
-  return {
-    on(listener: Listener) {
-      listeners.add(listener)
-      return () => {
-        listeners.delete(listener)
-      }
-    },
-    emit(tap: NotificationTap) {
-      for (const l of listeners) l(tap)
-    },
-  }
-}
-
-/**
- * Driver on the browser Notification API, with timers for scheduling. Scheduled ones are lost when
- * the page closes. Falls back to the service worker where the constructor is not allowed.
- */
-export function createWebNotificationsDriver(config: { icon?: string } = {}): NotificationsDriver {
-  const taps = listenerSet()
-  const timers = new Map<string, ReturnType<typeof setTimeout>>()
-  const shown = new Map<string, Notification>()
-  const api = () => (typeof Notification === 'undefined' ? undefined : Notification)
-  const toPermission = (p: string): NotificationPermission =>
-    p === 'granted' ? 'granted' : p === 'denied' ? 'denied' : 'prompt'
-  const display = async (options: NotificationOptions & { id: string }) => {
-    const N = api()
-    if (N?.permission !== 'granted') return
-    shown.get(options.id)?.close()
-    const init = {
-      body: options.body,
-      icon: options.icon ?? config.icon,
-      tag: options.channel ?? options.id,
-      silent: options.silent,
-      data: { id: options.id, url: options.url, data: options.data },
-    }
-    let n: Notification
-    try {
-      n = new N(options.title, init)
-    } catch (error) {
-      // Chrome on Android has no page notifications ("Illegal constructor"): only a service
-      // worker can show one. Taps then reach the worker's notificationclick, not onTap.
-      const sw = typeof navigator === 'undefined' ? undefined : navigator.serviceWorker
-      if (!sw?.controller) throw error
-      await (await sw.ready).showNotification(options.title, init)
-      return
-    }
-    n.onclick = () => {
-      window.focus()
-      n.close()
-      taps.emit({ id: options.id, url: options.url, data: options.data })
-    }
-    n.onclose = () => shown.delete(options.id)
-    shown.set(options.id, n)
-  }
-  return {
-    name: 'web',
-    permission: async () => (api() ? toPermission(api()!.permission) : 'unsupported'),
-    request: async () => (api() ? toPermission(await api()!.requestPermission()) : 'unsupported'),
-    show: (options) => display(options),
-    schedule: async (options) => {
-      const at = new Date(options.at).getTime()
-      clearTimeout(timers.get(options.id))
-      // setTimeout overflows past ~24.8 days and fires at once; wait in steps instead.
-      const wait = () => {
-        const delay = Math.max(0, at - Date.now())
-        timers.set(
-          options.id,
-          setTimeout(
-            () => {
-              if (at - Date.now() > 0) return wait()
-              timers.delete(options.id)
-              void display(options).catch(() => {})
-            },
-            Math.min(delay, MAX_TIMEOUT),
-          ),
-        )
-      }
-      wait()
-    },
-    cancel: async (id) => {
-      clearTimeout(timers.get(id))
-      timers.delete(id)
-      shown.get(id)?.close()
-    },
-    cancelAll: async () => {
-      for (const t of timers.values()) clearTimeout(t)
-      timers.clear()
-      for (const n of shown.values()) n.close()
-    },
-    pending: async () => [...timers.keys()],
-    onTap: taps.on,
-  }
-}
-
-/** For tests and the server: records what was shown, `tap(id)` simulates a tap. */
-export function createMemoryNotificationsDriver(permission: NotificationPermission = 'granted') {
-  const taps = listenerSet()
-  const shown: Array<NotificationOptions & { id: string }> = []
-  const scheduled = new Map<string, ScheduleOptions & { id: string }>()
-  let state = permission
-  const driver: NotificationsDriver & {
-    shown: typeof shown
-    scheduled: typeof scheduled
-    tap(id: string): void
-  } = {
-    name: 'memory',
-    shown,
-    scheduled,
-    permission: async () => state,
-    request: async () => {
-      if (state === 'prompt') state = 'granted'
-      return state
-    },
-    show: async (options) => {
-      shown.push(options)
-    },
-    schedule: async (options) => {
-      scheduled.set(options.id, options)
-    },
-    cancel: async (id) => {
-      scheduled.delete(id)
-    },
-    cancelAll: async () => scheduled.clear(),
-    pending: async () => [...scheduled.keys()],
-    onTap: taps.on,
-    tap(id) {
-      const n = shown.find((s) => s.id === id) ?? scheduled.get(id)
-      taps.emit({ id, url: n?.url, data: n?.data })
-    },
-  }
-  return driver
-}
-
 /**
  * Build the `notifications` service. The driver is `config.driver`, else the one registered on
- * `app`, else the web driver in a browser or a memory driver (`unsupported`) on the server.
+ * `app`, else `selectDriver()` for the runtime: the web driver in a browser, a memory driver (`unsupported`)
+ * on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
  */
 export function createNotifications(
   config: NotificationsConfig = {},
@@ -270,9 +143,7 @@ export function createNotifications(
   const driver =
     config.driver ??
     app?.drivers.resolve('notifications') ??
-    (typeof window === 'undefined'
-      ? createMemoryNotificationsDriver('unsupported')
-      : createWebNotificationsDriver({ icon: config.icon }))
+    selectDriver(runtimeOf(app), { icon: config.icon, fallbackToWeb: config.fallbackToWeb })
   const log = (label: string, data?: unknown) =>
     app && getDevtools(app)?.log('notifications', label, data)
   return {
