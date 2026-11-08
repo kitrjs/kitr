@@ -4,9 +4,13 @@ name: Release
 # to npm when that pull request is merged. Needs an NPM_TOKEN secret with publish rights, and
 # "Allow GitHub Actions to create and approve pull requests" on under Settings > Actions > General.
 # Until the secret exists the job only says so, so main stays green.
+# Every package is published with an npm provenance statement (the `id-token: write` permission
+# and NPM_CONFIG_PROVENANCE below), which links each version to the commit and run that built it.
 on:
   push:
     branches: [main]
+  # Run by hand from the Actions tab, e.g. right after adding NPM_TOKEN.
+  workflow_dispatch:
 
 concurrency: release-${{ github.ref }}
 
@@ -51,3 +55,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
