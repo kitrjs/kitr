@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-realtime",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "kitr new --kit realtime: A chat room: typed WebSocket channels that feed the query cache, a messages controller, rooms in the URL.",
   "kitr": {
     "name": "realtime",

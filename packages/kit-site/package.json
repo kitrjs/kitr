@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-site",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "kitr new --kit site: A marketing site: server-rendered with prerendering, SEO heads, i18n (en/de), a blog and a newsletter form on a controller.",
   "kitr": {
     "name": "site",
