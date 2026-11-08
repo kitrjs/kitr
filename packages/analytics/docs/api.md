@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/analytics`, `kitr/analytics/provider`, `kitr/analytics/react`, read from the published type definitions. The [guide](/packages/analytics) shows them in use.
+Every export of `kitr/analytics`, `kitr/analytics/provider`, `kitr/analytics/react`, read from the published type definitions. The [guide](/packages/analytics/guide) shows them in use.
 
 ## kitr/analytics
 

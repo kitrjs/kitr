@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/theme`, `kitr/theme/provider`, `kitr/theme/server`, read from the published type definitions. The [guide](/packages/theme) shows them in use.
+Every export of `kitr/theme`, `kitr/theme/provider`, `kitr/theme/server`, read from the published type definitions. The [guide](/packages/theme/guide) shows them in use.
 
 ## kitr/theme
 

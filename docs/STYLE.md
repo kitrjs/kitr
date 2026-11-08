@@ -30,9 +30,12 @@ Four documentation sets were studied: AdonisJS (mail, i18n), Laravel (mail), Str
 
 ```
 packages/<name>/docs/
-├── index.md   # the guide: everything a reader needs, in the order below
-└── api.md     # the reference: every export with its signature and one sentence; generated
+├── overview.md  # the landing page at /packages/<name>: what it is, built on, problems it solves, further reading
+├── index.md     # the guide at /packages/<name>/guide: everything a reader needs, in the order below
+└── api.md       # the reference at /packages/<name>/api: every export with its signature; generated
 ```
+
+Link to a guide section as `/packages/<name>/guide#<section>`. Until a package has an `overview.md`, the site builds its overview from the manifest.
 
 More pages are allowed when the guide passes 6,000 words. Split by audience, not by topic: `server.md` for the server half of a package that runs on both sides, `tauri.md` and `electron.md` for a platform with two shells. Each extra page keeps the same frontmatter and links back to the guide in its first paragraph.
 

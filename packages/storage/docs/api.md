@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/storage`, `kitr/storage/react`, `kitr/storage/server`, `kitr/storage/provider`, read from the published type definitions. The [guide](/packages/storage) shows them in use.
+Every export of `kitr/storage`, `kitr/storage/react`, `kitr/storage/server`, `kitr/storage/provider`, read from the published type definitions. The [guide](/packages/storage/guide) shows them in use.
 
 ## kitr/storage
 

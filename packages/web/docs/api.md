@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/web`, `kitr/web/client`, `kitr/web/provider`, `kitr/web/vite`, read from the published type definitions. The [guide](/packages/web) shows them in use.
+Every export of `kitr/web`, `kitr/web/client`, `kitr/web/provider`, `kitr/web/vite`, read from the published type definitions. The [guide](/packages/web/guide) shows them in use.
 
 ## kitr/web
 

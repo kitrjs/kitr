@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/cache`, `kitr/cache/provider`, read from the published type definitions. The [guide](/packages/cache) shows them in use.
+Every export of `kitr/cache`, `kitr/cache/provider`, read from the published type definitions. The [guide](/packages/cache/guide) shows them in use.
 
 ## kitr/cache
 

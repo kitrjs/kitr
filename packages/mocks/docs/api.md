@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/mocks`, read from the published type definitions. The [guide](/packages/mocks) shows them in use.
+Every export of `kitr/mocks`, read from the published type definitions. The [guide](/packages/mocks/guide) shows them in use.
 
 ## kitr/mocks
 

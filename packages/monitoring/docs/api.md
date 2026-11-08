@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/monitoring`, `kitr/monitoring/provider`, `kitr/monitoring/server`, read from the published type definitions. The [guide](/packages/monitoring) shows them in use.
+Every export of `kitr/monitoring`, `kitr/monitoring/provider`, `kitr/monitoring/server`, read from the published type definitions. The [guide](/packages/monitoring/guide) shows them in use.
 
 ## kitr/monitoring
 

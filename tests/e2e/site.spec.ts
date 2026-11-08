@@ -250,6 +250,7 @@ test.describe('in the browser', () => {
     await expect(sidebar.locator('a[href="/packages"]')).toBeVisible()
     await expect(sidebar.locator('a[href="/packages/query"]')).toHaveCount(0)
     await expect(sidebar.locator('a[href="#install"]')).toBeVisible()
+    await expect(sidebar.locator('a[href="/packages/mail/guide"]')).toBeVisible()
     await expect(sidebar.locator('a[href="/packages/mail/api"]')).toBeVisible()
     // On a wide screen the header shows its links, not the phone menu button.
     await expect(page.locator('.nav-links')).toBeVisible()
@@ -261,12 +262,26 @@ test.describe('in the browser', () => {
     await expect(sidebar.locator('[aria-current="page"]')).toHaveText(['API reference'])
   })
 
+  test('a package opens on its overview, and old section links land in the guide', async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.goto('/packages/mail')
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('#docs-sidebar .sidebar-page > [aria-current="page"]')).toHaveText([
+      'Overview',
+    ])
+    await page.goto('/packages/mail#attach-a-file')
+    await expect(page).toHaveURL(/\/packages\/mail\/guide#attach-a-file$/)
+    await expect(page.locator('#attach-a-file')).toBeVisible()
+  })
+
   test('on a phone, the docs bar opens the navigation and a section link closes it', async ({
     page,
   }) => {
     await isolate(page)
     await page.setViewportSize({ width: 375, height: 800 })
-    await page.goto('/packages/mail')
+    await page.goto('/packages/mail/guide')
     await page.waitForLoadState('networkidle')
     const sidebar = page.locator('#docs-sidebar')
     await expect(sidebar).toBeHidden()

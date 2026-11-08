@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/consent`, `kitr/consent/react`, `kitr/consent/provider`, read from the published type definitions. The [guide](/packages/consent) shows them in use.
+Every export of `kitr/consent`, `kitr/consent/react`, `kitr/consent/provider`, read from the published type definitions. The [guide](/packages/consent/guide) shows them in use.
 
 ## kitr/consent
 

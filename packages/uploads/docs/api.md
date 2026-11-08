@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/uploads`, `kitr/uploads/react`, `kitr/uploads/server`, `kitr/uploads/provider`, read from the published type definitions. The [guide](/packages/uploads) shows them in use.
+Every export of `kitr/uploads`, `kitr/uploads/react`, `kitr/uploads/server`, `kitr/uploads/provider`, read from the published type definitions. The [guide](/packages/uploads/guide) shows them in use.
 
 ## kitr/uploads
 

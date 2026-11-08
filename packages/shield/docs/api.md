@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/shield`, `kitr/shield/provider`, read from the published type definitions. The [guide](/packages/shield) shows them in use.
+Every export of `kitr/shield`, `kitr/shield/provider`, read from the published type definitions. The [guide](/packages/shield/guide) shows them in use.
 
 ## kitr/shield
 

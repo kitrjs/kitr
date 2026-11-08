@@ -176,7 +176,7 @@ order: 2
 
 # API reference
 
-Every export of ${list.map((e) => `\`${e.path}\``).join(', ')}, read from the published type definitions. The [guide](/packages/${pkg.kitr.name}) shows them in use.
+Every export of ${list.map((e) => `\`${e.path}\``).join(', ')}, read from the published type definitions. The [guide](/packages/${pkg.kitr.name}/guide) shows them in use.
 
 ${sections.join('\n')}
 ${MARKER}

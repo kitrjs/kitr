@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/react`, read from the published type definitions. The [guide](/packages/react) shows them in use.
+Every export of `kitr/react`, read from the published type definitions. The [guide](/packages/react/guide) shows them in use.
 
 ## kitr/react
 
