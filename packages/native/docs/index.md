@@ -839,4 +839,5 @@ Then set it in `config/native.ts`, as shown under [Configure](#configure). `elec
 - [Auth](/packages/auth): sign-in and passkeys verified on the server.
 - [Uploads](/packages/uploads): send photos from `camera.capture()` to your server.
 - [Mobile](/packages/mobile): the Capacitor shell that native drivers plug into.
+- [Extending kitr](/docs/extending): swap or write a driver for a device package.
 - [Web Share API on MDN](https://developer.mozilla.org/docs/Web/API/Web_Share_API): which browsers share files and which only share links.

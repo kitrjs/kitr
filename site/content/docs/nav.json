@@ -34,6 +34,9 @@
     "title": "Extending kitr",
     "pages": [
       {
+        "slug": "extending"
+      },
+      {
         "slug": "building-packages"
       },
       {

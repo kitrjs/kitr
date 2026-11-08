@@ -326,3 +326,34 @@ jobs:
           PY
           npx --yes @tauri-apps/cli@2 icon /tmp/app-icon.png
           cargo check
+
+  # One project, three platforms: the everywhere example builds its web site, its Electron app
+  # (unpacked, no installers) and syncs its Capacitor project, so the plugins reach Android and iOS.
+  everywhere:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Linux libraries for Electron
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C registry build
+      - run: pnpm -C examples/everywhere typecheck
+      - name: Web
+        run: pnpm -C examples/everywhere exec kitr build site
+      - name: Electron (unpacked app, no installers)
+        run: pnpm -C examples/everywhere exec kitr build app
+      - name: Capacitor (cap sync for Android and iOS)
+        run: pnpm -C examples/everywhere exec kitr build phone
+      - name: Plugins reached both native projects
+        run: |
+          grep -q capacitor-secure-storage examples/everywhere/platforms/phone/android/capacitor.settings.gradle
+          grep -q capacitor-local-notifications examples/everywhere/platforms/phone/android/capacitor.settings.gradle
+          grep -q capacitor-secure-storage examples/everywhere/platforms/phone/ios/App/CapApp-SPM/Package.swift

@@ -96,4 +96,5 @@ Previews exist in the repository but are refused by `kitr new` and `kitr add` un
 - [Project structure](/docs/project-structure): what each file is for.
 - [Loading and saving data](/docs/data): the contract that ties the packages together.
 - [How kitr compares](/docs/compare): kitr beside Next.js, Remix, Expo, Laravel and others.
+- [Extending kitr](/docs/extending): add your own state, services and drivers.
 - [Browse packages](/packages): the capabilities you can add.
