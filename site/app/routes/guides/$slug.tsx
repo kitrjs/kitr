@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { DocBody, Toc } from '#app/components/doc-body'
+import { SectionList, Sidebar, useActiveHeading } from '#app/components/docs-nav'
 import { GuideMeta } from '#app/components/guide-bits'
 import { guidesNav, loadPage } from '#app/lib/content'
 import { seo } from '#app/lib/seo'
@@ -30,9 +31,10 @@ function GuidePage() {
   const index = flat.findIndex((i) => i.slug === slug)
   const prev = flat[index - 1]
   const next = flat[index + 1]
+  const active = useActiveHeading(page.toc)
   return (
     <div className="container docs-layout">
-      <nav className="sidebar" aria-label="Guides">
+      <Sidebar label="Guides" where={page.title} toc={page.toc} active={active}>
         <div className="sidebar-group">
           <Link to="/guides" className="sidebar-home">
             All guides
@@ -42,18 +44,23 @@ function GuidePage() {
           <div key={group.title} className="sidebar-group">
             <span className="label sidebar-title">{group.title}</span>
             {group.items.map((item) => (
-              <Link
-                key={item.slug}
-                to="/guides/$slug"
-                params={{ slug: item.slug }}
-                aria-current={item.slug === slug ? 'page' : undefined}
-              >
-                {item.title}
-              </Link>
+              <div key={item.slug} className="sidebar-page">
+                <Link
+                  to="/guides/$slug"
+                  params={{ slug: item.slug }}
+                  aria-current={item.slug === slug ? 'page' : undefined}
+                >
+                  {item.title}
+                </Link>
+                {/* Below 1100px the "On this page" column is gone, so the sections sit here. */}
+                {item.slug === slug && (
+                  <SectionList toc={page.toc} active={active} className="narrow-only" />
+                )}
+              </div>
             ))}
           </div>
         ))}
-      </nav>
+      </Sidebar>
       <main className="docs-main">
         <header className="doc-head">
           {page.section && <span className="label">Guide · {page.section}</span>}

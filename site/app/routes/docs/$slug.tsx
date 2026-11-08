@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { DocBody, Toc } from '#app/components/doc-body'
-import { SectionList, Sidebar, sectionOf, useActiveHeading } from '#app/components/docs-nav'
+import { SectionList, Sidebar, useActiveHeading } from '#app/components/docs-nav'
 import { Icon, icons } from '#app/components/icons'
 import { docsNav, loadPage } from '#app/lib/content'
 import { seo } from '#app/lib/seo'
@@ -34,12 +34,7 @@ function DocsPage() {
   const active = useActiveHeading(page.toc)
   return (
     <div className="container docs-layout">
-      <Sidebar
-        label="Docs"
-        where={page.title}
-        section={sectionOf(page.toc, active)?.text}
-        active={active}
-      >
+      <Sidebar label="Docs" where={page.title} toc={page.toc} active={active}>
         {docsNav.map((group) => (
           <div key={group.title} className="sidebar-group">
             <span className="label sidebar-title">{group.title}</span>

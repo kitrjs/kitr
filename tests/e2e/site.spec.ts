@@ -262,11 +262,34 @@ test.describe('in the browser', () => {
     await page.waitForLoadState('networkidle')
     const sidebar = page.locator('#docs-sidebar')
     await expect(sidebar).toBeHidden()
-    await page.locator('.docs-bar-button').click()
+    await page.locator('.docs-bar-menu').click()
     await expect(sidebar).toBeVisible()
     await sidebar.locator('a[href="#configure"]').click()
     await expect(sidebar).toBeHidden()
     await expect(page.locator('.docs-bar-section')).toHaveText('Configure')
+
+    // The section button drops down the page's sections to jump between.
+    await page.locator('.docs-bar-toc').click()
+    const sections = page.locator('#docs-sections')
+    await expect(sections).toBeVisible()
+    await sections.locator('a[href="#testing"]').click()
+    await expect(sections).toBeHidden()
+    await expect(page.locator('.docs-bar-section')).toHaveText('Testing')
+  })
+
+  test('on a phone, the header menu lists every header link', async ({ page }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/docs/getting-started')
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.nav-links')).toBeHidden()
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const menu = page.locator('#nav-menu')
+    for (const label of ['Platforms', 'Packages', 'Docs', 'Guides', 'About', 'GitHub'])
+      await expect(menu.getByRole('link', { name: label })).toBeVisible()
+    await menu.getByRole('link', { name: 'Guides' }).click()
+    await expect(page).toHaveURL(/\/guides$/)
+    await expect(menu).toBeHidden()
   })
 
   test('an unknown page shows the not-found page', async ({ page }) => {

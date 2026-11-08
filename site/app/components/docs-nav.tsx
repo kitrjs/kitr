@@ -91,13 +91,14 @@ export function SectionList({
 }
 
 /**
- * The left-hand navigation. On wide screens it is a sticky column; on phones it collapses into
- * a bar under the header that says where you are and opens the same navigation full-screen.
+ * The left-hand navigation. On wide screens it is a sticky column. On phones it collapses into a
+ * sticky bar: the left button opens the same navigation full-screen, the right one names the
+ * section being read and drops down the page's sections to jump to.
  */
 export function Sidebar({
   label,
   where,
-  section,
+  toc = [],
   active,
   children,
 }: {
@@ -105,18 +106,44 @@ export function Sidebar({
   label: string
   /** The page you are on, shown in the phone bar. */
   where: ReactNode
-  /** The section you are reading, shown after the page in the phone bar. */
-  section?: string
-  /** Changes whenever the reader moves, so the sidebar can keep the current link in view. */
+  /** The page's headings: the phone bar's "On this page" menu lists them. */
+  toc?: TocEntry[]
+  /** The heading being read, from useActiveHeading. */
   active?: string
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
+  const [sections, setSections] = useState(false)
   const nav = useRef<HTMLElement>(null)
   const path = useRouterState({ select: (s) => s.location.pathname })
+  const section = sectionOf(toc, active)?.text
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: close whenever the page changes
-  useEffect(() => setOpen(false), [path])
+  useEffect(() => {
+    setOpen(false)
+    setSections(false)
+  }, [path])
+
+  const bar = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!sections) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSections(false)
+    }
+    const onPointer = (e: PointerEvent) => {
+      if (!bar.current?.contains(e.target as Node)) setSections(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onPointer)
+    // Open the list at the section being read.
+    const list = document.getElementById('docs-sections')
+    const current = list?.querySelector<HTMLElement>('[aria-current="location"]')
+    if (list && current) list.scrollTop = current.offsetTop - list.clientHeight / 3
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onPointer)
+    }
+  }, [sections])
 
   useEffect(() => {
     if (!open) return
@@ -151,19 +178,51 @@ export function Sidebar({
 
   return (
     <>
-      <div className="docs-bar">
-        <button
-          type="button"
-          className="docs-bar-button"
-          aria-expanded={open}
-          aria-controls="docs-sidebar"
-          onClick={() => setOpen(true)}
-        >
-          <Icon icon={icons.menu} size={18} />
-          <span className="docs-bar-where">{where}</span>
-          {section && <span className="docs-bar-section">{section}</span>}
-          <Icon icon={icons.chevronDown} size={16} className="docs-bar-chevron" />
-        </button>
+      <div className="docs-bar" ref={bar}>
+        <div className="docs-bar-row">
+          <button
+            type="button"
+            className="docs-bar-menu"
+            aria-expanded={open}
+            aria-controls="docs-sidebar"
+            aria-label={`${label} navigation`}
+            onClick={() => {
+              setSections(false)
+              setOpen(true)
+            }}
+          >
+            <Icon icon={icons.menu} size={18} />
+            <span className="docs-bar-where">{where}</span>
+          </button>
+          {toc.length > 0 && (
+            <button
+              type="button"
+              className="docs-bar-toc"
+              aria-expanded={sections}
+              aria-controls="docs-sections"
+              onClick={() => setSections((v) => !v)}
+            >
+              <span className="docs-bar-section">{section ?? 'On this page'}</span>
+              <Icon icon={icons.chevronDown} size={16} className="docs-bar-chevron" />
+            </button>
+          )}
+        </div>
+        {sections && (
+          <>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: closes the menu after a link inside it is followed; links handle their own keys */}
+            <nav
+              id="docs-sections"
+              className="docs-sections"
+              aria-label="On this page"
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('a')) setSections(false)
+              }}
+            >
+              <span className="label">On this page</span>
+              <SectionList toc={toc} active={active} />
+            </nav>
+          </>
+        )}
       </div>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: closes the drawer after a link inside it is followed; links handle their own keys */}
       <nav

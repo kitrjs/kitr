@@ -5,7 +5,7 @@ import type { Page } from '#app/lib/content'
 import { upstream } from '#app/lib/upstream'
 import { Command } from './command'
 import { DocBody } from './doc-body'
-import { SectionList, Sidebar, sectionOf, useActiveHeading } from './docs-nav'
+import { SectionList, Sidebar, useActiveHeading } from './docs-nav'
 import { Icon, icons } from './icons'
 import { LiveExample } from './live-example'
 import { CategoryBadge, RunsOnBadge, Tile } from './package-bits'
@@ -38,7 +38,7 @@ export function PackageLayout({
             {pkg.pages.length > 1 && <span className="docs-bar-page">{pageTitle}</span>}
           </>
         }
-        section={sectionOf(toc, active)?.text}
+        toc={toc}
         active={active}
       >
         <PackageNav pkg={pkg} page={page} current={current} active={active} />

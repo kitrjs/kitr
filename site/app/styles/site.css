@@ -218,6 +218,46 @@ pre,
   flex: 1 1 0;
 }
 
+/* The phone menu: every header link, behind one button. */
+.nav-menu-button {
+  display: none;
+}
+.nav-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 16px 32px rgb(0 0 0 / 0.18);
+}
+.nav-menu .container {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+.nav-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 500;
+}
+.nav-menu a:last-child {
+  border-bottom: 0;
+}
+.nav-menu a svg {
+  color: var(--muted);
+}
+.nav-menu a[aria-current="page"] {
+  color: var(--link);
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -2130,8 +2170,12 @@ a.dcard:focus-visible {
     height: 22px !important;
     width: 57px !important;
   }
-  .nav .github-link {
+  .nav .github-link,
+  .nav-links {
     display: none;
+  }
+  .nav-menu-button {
+    display: inline-flex;
   }
   .search-button {
     min-width: 0;
@@ -2158,7 +2202,15 @@ a.dcard:focus-visible {
   html:has(.docs-bar) {
     scroll-padding-top: 128px;
   }
-  /* Under the header, a bar that says where you are; tapping it opens the navigation. */
+  /* Under the header, a bar with two buttons: the navigation, and the section you are reading,
+     which drops down the page's sections. While you scroll down the header slides away and the
+     bar takes the top of the screen; scrolling up brings the header back above it. */
+  .site-header {
+    transition: transform 0.2s ease;
+  }
+  html.header-hidden .site-header {
+    transform: translateY(-100%);
+  }
   .docs-bar {
     display: block;
     position: sticky;
@@ -2169,12 +2221,20 @@ a.dcard:focus-visible {
     background: color-mix(in srgb, var(--bg) 92%, transparent);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
+    transition: top 0.2s ease;
   }
-  .docs-bar-button {
+  html.header-hidden .docs-bar {
+    top: 0;
+  }
+  .docs-bar-row {
+    display: flex;
+    gap: 8px;
+  }
+  .docs-bar-menu,
+  .docs-bar-toc {
     display: flex;
     align-items: center;
     gap: 8px;
-    width: 100%;
     min-height: 40px;
     padding: 0 12px;
     border: 1px solid var(--line);
@@ -2186,15 +2246,31 @@ a.dcard:focus-visible {
     text-align: left;
     cursor: pointer;
   }
+  .docs-bar-menu {
+    flex: 0 1 auto;
+    max-width: 45%;
+    min-width: 0;
+  }
+  .docs-bar-toc {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .docs-bar-menu[aria-expanded="true"],
+  .docs-bar-toc[aria-expanded="true"] {
+    border-color: var(--blue);
+  }
   .docs-bar-where {
     display: flex;
     gap: 6px;
-    flex: none;
-    max-width: 55%;
+    min-width: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     font-weight: 600;
+  }
+  .docs-bar-where > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .docs-bar-page {
     color: var(--muted);
@@ -2206,16 +2282,52 @@ a.dcard:focus-visible {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: var(--muted);
-  }
-  .docs-bar-section::before {
-    content: "/ ";
-    color: var(--line);
   }
   .docs-bar-chevron {
-    margin-left: auto;
     flex: none;
     color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  .docs-bar-toc[aria-expanded="true"] .docs-bar-chevron {
+    transform: rotate(180deg);
+  }
+  .docs-sections {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 0;
+    right: 0;
+    max-height: min(65vh, 520px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px 16px 18px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 16px 32px rgb(0 0 0 / 0.18);
+  }
+  .docs-sections .sidebar-sections {
+    margin-top: 8px;
+  }
+  .docs-sections .sidebar-sections a {
+    display: block;
+    margin-left: -1px;
+    padding: 7px 10px 7px 13px;
+    border-left: 2px solid transparent;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 15px;
+    line-height: 22px;
+  }
+  .docs-sections .sidebar-sections ul a {
+    padding-left: 25px;
+    font-size: 14px;
+  }
+  .docs-sections .sidebar-sections a[aria-current="location"] {
+    color: var(--link);
+    border-left-color: var(--blue);
+    font-weight: 500;
+  }
+  .docs-sections .sidebar-sections ul a[aria-current="location"] {
+    border-left-color: transparent;
   }
   /* The sidebar becomes a full-screen drawer. */
   .docs-layout .sidebar {
