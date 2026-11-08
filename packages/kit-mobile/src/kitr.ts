@@ -6,6 +6,7 @@ import {
 } from '@kitr/core/package'
 
 /** The Capacitor plugins the device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) drive on a phone. */
+// kitr-allow-module-state: immutable list of plugin names
 const devicePlugins = [
   '@capacitor/clipboard',
   '@capacitor/share',
