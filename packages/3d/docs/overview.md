@@ -36,7 +36,7 @@ The `kitr 3d:decoders` command and a `kitr doctor` check keep the Draco and KTX2
 - **Dropped frames on phones.** When the frame rate falls, the scene lowers its pixel ratio and recovers when it can. See [Keep it smooth on phones](/packages/3d/guide#keep-it-smooth-on-phones).
 - **Motion that some visitors cannot tolerate.** Visitors with reduced motion set get a still scene, with the same rules [animation](/packages/animation) follows. See [Respect reduced motion](/packages/3d/guide#respect-reduced-motion).
 - **Models that depend on a third-party CDN.** Compressed models need a decoder, and the default is to fetch it from Google's CDN. `kitr 3d:decoders` copies it into your app. See [Load compressed models offline](/packages/3d/guide#load-compressed-models-offline).
-- **Colors that drift from the design system.** `useThemeColor()` reads your theme tokens, so a product in dark mode is lit with the same palette as the page. See [Use theme colors](/packages/3d/guide#use-theme-colors).
+- **Colors that drift from the design system.** `useThemeColor()` reads your theme tokens, so a product in dark mode is lit with the same palette as the page. See [Use theme colours](/packages/3d/guide#use-theme-colours).
 
 For movement of ordinary DOM elements, such as a dialog opening or a list re-sorting, use [animation](/packages/animation) instead; three.js is for scenes with a camera.
 
