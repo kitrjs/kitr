@@ -611,12 +611,28 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "package": "@kitr/theme",
     "name": "theme",
     "title": "Theme",
-    "summary": "Light, dark and system themes with no flash on load, design tokens, toasts, and the components you copy into your app.",
+    "summary": "Light, dark and system themes with no flash on load, design tokens, and the components you copy into your app.",
     "category": "interface",
     "runsOn": "client",
     "builtOn": [
       "CSS variables",
-      "shadcn/ui",
+      "shadcn/ui"
+    ],
+    "requires": [
+      "react"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "toast": {
+    "package": "@kitr/toast",
+    "name": "toast",
+    "title": "Toast",
+    "summary": "Show short messages like \"Saved\" or \"Could not send\" from anywhere in your app, even outside React.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
       "sonner"
     ],
     "requires": [

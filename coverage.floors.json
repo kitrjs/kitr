@@ -52,7 +52,7 @@
     },
     "react": { "floor": 56, "reason": "behind" },
     "mocks": { "floor": 57, "reason": "behind" },
-    "theme": { "floor": 58, "reason": "behind" },
+    "theme": { "floor": 64, "reason": "behind" },
     "db": { "floor": 60, "reason": "behind" },
     "analytics": { "floor": 65, "reason": "behind" },
     "vite": { "floor": 68, "reason": "behind: plugin hooks that only run inside a Vite build" },

@@ -54,6 +54,8 @@ const browserEntries = new Set([
   '@kitr/router/stack',
   '@kitr/forms',
   '@kitr/theme',
+  '@kitr/toast',
+  '@kitr/toast/provider',
   '@kitr/state',
   '@kitr/storage',
   '@kitr/storage/react',

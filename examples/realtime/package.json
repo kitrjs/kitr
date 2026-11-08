@@ -27,6 +27,7 @@
     "@kitr/storage": "workspace:*",
     "@kitr/tailwind": "workspace:*",
     "@kitr/theme": "workspace:*",
+    "@kitr/toast": "workspace:*",
     "@kitr/web": "workspace:*",
     "@tailwindcss/vite": "^4.3.5",
     "@tanstack/react-query": "^5.107.1",

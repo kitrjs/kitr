@@ -11,7 +11,6 @@ export default defineConfig({
     'react',
     'react/jsx-runtime',
     'react-dom',
-    'sonner',
     'clsx',
     'class-variance-authority',
     '@kitr/core',

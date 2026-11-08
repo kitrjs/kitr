@@ -453,6 +453,7 @@ export default definePackage({
       'forms',
       'tailwind',
       'theme',
+      'toast',
       'storage',
       'testing',
       'seo',

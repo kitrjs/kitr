@@ -170,16 +170,6 @@
       "dependencies": []
     },
     {
-      "name": "sonner",
-      "type": "registry:ui",
-      "title": "Toaster",
-      "description": "Toasts with sonner, themed by @kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
-      "registryDependencies": [],
-      "dependencies": [
-        "sonner"
-      ]
-    },
-    {
       "name": "textarea",
       "type": "registry:ui",
       "title": "Textarea",

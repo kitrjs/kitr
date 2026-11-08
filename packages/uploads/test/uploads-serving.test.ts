@@ -173,7 +173,13 @@ describe('signed links', () => {
     expect(ok.headers.get('cache-control')).toMatch(/^private/)
 
     expect((await get(server, `/api/uploads/${file.key}`)).status).toBe(403)
-    expect((await get(server, `${link.replace(/signature=./, 'signature=_')}`)).status).toBe(403)
+    // Change the signature's first character to a different one; a fixed replacement is a no-op
+    // whenever the signature already starts with it.
+    const tampered = link.replace(
+      /signature=(.)/,
+      (_, c: string) => `signature=${c === 'A' ? 'B' : 'A'}`,
+    )
+    expect((await get(server, tampered)).status).toBe(403)
     const expired = await signedUrl(`/api/uploads/${file.key}`, {
       expiresIn: -10,
       secret: SECRET,
