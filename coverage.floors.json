@@ -63,7 +63,6 @@
     "i18n": { "floor": 73, "reason": "behind" },
     "storage": { "floor": 73, "reason": "behind" },
     "router": { "floor": 74, "reason": "behind" },
-    "seo": { "floor": 76, "reason": "behind" },
-    "api": { "floor": 77, "reason": "behind" }
+    "seo": { "floor": 76, "reason": "behind" }
   }
 }
