@@ -364,7 +364,7 @@ describe('kitr new and kitr eject', () => {
     const dir = copyExample('fullstack')
     const run = await kitr(dir, 'make:controller', 'Report')
     expect(run.code).toBeUndefined()
-    expect(existsSync(join(dir, 'server/controllers/report_controller.ts'))).toBe(true)
+    expect(existsSync(join(dir, 'server/controllers/report-controller.ts'))).toBe(true)
     const again = await kitr(dir, 'make:controller', 'Report')
     expect(again.code).toBeUndefined()
   })

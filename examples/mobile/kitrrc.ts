@@ -1,6 +1,6 @@
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
-import { mobile } from 'kitr/mobile'
+import { web } from '@kitr/web'
+import { mobile } from '@kitr/mobile'
 
 /**
  * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every
@@ -34,6 +34,7 @@ export default defineKitrConfig({
     () => import('@kitr/http/provider'),
     () => import('@kitr/theme/provider'),
     () => import('@kitr/auth/provider'),
+    // Development only: the kitr() Vite plugin strips this provider from production builds.
     () => import('@kitr/devtools/provider'),
     () => import('@kitr/web/provider'),
     () => import('@kitr/mobile/provider'),
