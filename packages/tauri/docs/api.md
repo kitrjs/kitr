@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/tauri, with its signature.
+description: Every export of @kitr/tauri, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/tauri`, `kitr/tauri/client`, `kitr/tauri/provider`, read from the published type definitions. The [guide](/packages/tauri) shows them in use.
+Every export of `@kitr/tauri`, `@kitr/tauri/client`, `@kitr/tauri/provider`, read from the published type definitions. The [guide](/packages/tauri) shows them in use.
 
-## kitr/tauri
+## @kitr/tauri
 
 ### ensureIcons
 
@@ -43,7 +43,7 @@ const tauri: import("@kitr/core").PlatformFactory<TauriOptions>;
 macOS, Windows and Linux through a Tauri shell: a small Rust binary around the webview the
 operating system provides. The Rust project lives in `platforms/<name>/src-tauri`; the window
 loads the same client build the web platform ships. For a bundled Chromium that renders the
-same everywhere, use `kitr/desktop` (Electron) instead.
+same everywhere, use `@kitr/desktop` (Electron) instead.
 
 ```ts
 platforms: { app: tauri({ title: 'Acme' }) }
@@ -77,7 +77,7 @@ interface TauriOptions {
 Options of `tauri()` in `kitrrc.ts`. They are written into the scaffolded `tauri.conf.json` by
 `kitr add`, which the Tauri CLI reads; edit that file to change them later.
 
-## kitr/tauri/client
+## @kitr/tauri/client
 
 ### commandMutation
 
@@ -156,7 +156,7 @@ type Commands<C extends CommandMap> = {
 
 The typed functions `defineCommands<C>()` returns: one per command, taking its argument object and resolving with its result.
 
-## kitr/tauri/provider
+## @kitr/tauri/provider
 
 ### tauriStoreDriver
 

@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/i18n, with its signature.
+description: Every export of @kitr/i18n, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/i18n`, `kitr/i18n/provider`, read from the published type definitions. The [guide](/packages/i18n) shows them in use.
+Every export of `@kitr/i18n`, `@kitr/i18n/provider`, read from the published type definitions. The [guide](/packages/i18n) shows them in use.
 
-## kitr/i18n
+## @kitr/i18n
 
 Re-exports `i18next`, `react-i18next` unchanged, plus the following.
 
@@ -76,7 +76,7 @@ type TranslationKeys<R, Prefix extends string = ''> = {
 
 Keys of a resource bundle as `namespace:key.path` strings, for typed `t()`.
 
-## kitr/i18n/provider
+## @kitr/i18n/provider
 
 ### i18nProvider
 

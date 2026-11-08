@@ -22,7 +22,7 @@ export default definePackage({
       target: (name, project) => ({
         file: `${project.rc.directories.app ?? 'app'}/stores/${naming.snake(name)}.ts`,
       }),
-      stub: ({ name }) => `import { createKitrStore } from 'kitr/state'
+      stub: ({ name }) => `import { createKitrStore } from '@kitr/state'
 
 interface ${naming.pascal(name)}State {
   count: number
@@ -41,7 +41,7 @@ export const [use${naming.pascal(name)}Store, ${naming.pascal(name)}StoreProvide
 `,
     },
   },
-  wraps: { zustand: 'kitr/state' },
-  eject: { 'kitr/state': 'zustand' },
+  wraps: { zustand: '@kitr/state' },
+  eject: { '@kitr/state': 'zustand' },
   vite: { optimizeDeps: ['zustand'] },
 })

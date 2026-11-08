@@ -1,5 +1,5 @@
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
+import { ThemeScript } from '@kitr/theme'
 import css from '#app/styles/app.css?url'
 
 /** Head tags for every page. Pages add their own with `head` on their route in app/routes.ts. */

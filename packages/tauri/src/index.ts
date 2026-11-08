@@ -27,7 +27,7 @@ export interface TauriOptions {
  * macOS, Windows and Linux through a Tauri shell: a small Rust binary around the webview the
  * operating system provides. The Rust project lives in `platforms/<name>/src-tauri`; the window
  * loads the same client build the web platform ships. For a bundled Chromium that renders the
- * same everywhere, use `kitr/desktop` (Electron) instead.
+ * same everywhere, use `@kitr/desktop` (Electron) instead.
  *
  *   platforms: { app: tauri({ title: 'Acme' }) }
  *   kitr dev app        # Vite on :3200 and the Tauri window with HMR
@@ -148,8 +148,8 @@ export const tauri = definePlatform<TauriOptions>(
       return out
     },
     agents: `- \`kitr dev <name>\` starts Vite and the Tauri window; \`kitr build <name>\` builds the client and installers. Rust lives in \`platforms/<name>/src-tauri\` (needs the Rust toolchain).
-- Commands: add \`#[tauri::command]\` in src-tauri/src/lib.rs, register it in \`generate_handler!\`, declare it in \`app/commands.ts\` (\`defineCommands\` from \`kitr/tauri/client\`); call \`commands.name(args)\` or wrap with \`commandQuery\`/\`commandMutation\`. Guard with \`isTauri()\` so the web build keeps working.
-- Events from Rust: \`useTauriEvent('name', handler)\`; to Rust: \`emitTauri('name', payload)\`. Permissions go in \`src-tauri/capabilities/default.json\`. Storage items from \`kitr/storage\` persist through the store plugin here.`,
+- Commands: add \`#[tauri::command]\` in src-tauri/src/lib.rs, register it in \`generate_handler!\`, declare it in \`app/commands.ts\` (\`defineCommands\` from \`@kitr/tauri/client\`); call \`commands.name(args)\` or wrap with \`commandQuery\`/\`commandMutation\`. Guard with \`isTauri()\` so the web build keeps working.
+- Events from Rust: \`useTauriEvent('name', handler)\`; to Rust: \`emitTauri('name', payload)\`. Permissions go in \`src-tauri/capabilities/default.json\`. Storage items from \`@kitr/storage\` persist through the store plugin here.`,
   }),
 )
 
@@ -308,7 +308,7 @@ pub fn run() {
   )
   ctx.write(
     'app/commands.ts',
-    `import { defineCommands } from 'kitr/tauri/client'
+    `import { defineCommands } from '@kitr/tauri/client'
 
 /** Mirrors the \`#[tauri::command]\` functions in platforms/${ctx.name}/src-tauri/src/lib.rs. */
 export type Commands = {

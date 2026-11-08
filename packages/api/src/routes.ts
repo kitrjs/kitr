@@ -207,7 +207,7 @@ function definesAction(controller: ControllerClass | LazyController, action: str
  * the route table, compiled to h3 by `createServer({ routes })` (the `h3` target).
  *
  *   import { defineRoutes } from 'kitr/app'
- *   import http from 'kitr/api/routes'
+ *   import http from '@kitr/api/routes'
  *   export const routes = defineRoutes([http], (r) => r.group('/api', (api) => api.resource('projects', ProjectsController)))
  */
 const http = defineRouteExtension({
@@ -284,5 +284,5 @@ export function joinPath(base: string, path: string): string {
   return joined === '' ? '/' : joined.startsWith('/') ? joined : `/${joined}`
 }
 
-/** Group options as `kitr/api` always spelled them: `{ prefix, middleware, as }`. */
+/** Group options as `@kitr/api` always spelled them: `{ prefix, middleware, as }`. */
 export type { GroupOptions }

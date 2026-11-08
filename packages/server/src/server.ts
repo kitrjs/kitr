@@ -183,7 +183,7 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
         const ws = await import('crossws/server/node').catch(() => null)
         if (!ws)
           throw new Error(
-            '[kitr/server] websocket: true needs the `crossws` package. Run `kitr add socket`.',
+            '[@kitr/server] websocket: true needs the `crossws` package. Run `kitr add socket`.',
           )
         plugins.push(ws.plugin({}))
       }

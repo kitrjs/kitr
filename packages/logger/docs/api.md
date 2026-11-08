@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/logger, with its signature.
+description: Every export of @kitr/logger, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/logger`, read from the published type definitions. The [guide](/packages/logger) shows them in use.
+Every export of `@kitr/logger`, read from the published type definitions. The [guide](/packages/logger) shows them in use.
 
-## kitr/logger
+## @kitr/logger
 
 ### createLogger
 

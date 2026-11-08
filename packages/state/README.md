@@ -6,7 +6,7 @@
 pnpm kitr add state
 ```
 
-`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `kitr/state`.
+`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `@kitr/state`.
 
 Built on zustand.
 

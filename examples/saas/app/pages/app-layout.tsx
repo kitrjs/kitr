@@ -1,6 +1,6 @@
 import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
-import { useAuth, useUser } from 'kitr/auth'
-import { Outlet, useNavigate } from 'kitr/router'
+import { useAuth, useUser } from '@kitr/auth'
+import { Outlet, useNavigate } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'

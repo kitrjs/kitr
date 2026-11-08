@@ -16,7 +16,7 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
     2,
   )} as const\n`
 
-const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
+const apiClient = `import { createApiClient, registerRoutes } from '@kitr/api/client'
 import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
@@ -60,7 +60,7 @@ export interface Project {
   write(
     ctx,
     'server/controllers/projects_controller.ts',
-    `import type { HttpContext } from 'kitr/api'
+    `import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import {
   type CreateProject,
@@ -133,7 +133,7 @@ export default class ProjectsController {
   write(
     ctx,
     'server/controllers/auth_controller.ts',
-    `import type { HttpContext } from 'kitr/api'
+    `import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
@@ -184,7 +184,7 @@ export default class AuthController {
     ctx,
     'server/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
+import api from '@kitr/api/routes'
 import AuthController from '#server/controllers/auth_controller'
 import HealthController from '#server/controllers/health_controller'
 import ProjectsController from '#server/controllers/projects_controller'
@@ -225,7 +225,7 @@ export type ServerRoutes = typeof routes.$types
   write(
     ctx,
     'config/auth.ts',
-    `import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+    `import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
@@ -250,7 +250,7 @@ export default defineConfig({ adapter, signInPath: '/sign-in' })
   write(
     ctx,
     'config/http.ts',
-    `import { defineConfig } from 'kitr/http'
+    `import { defineConfig } from '@kitr/http'
 
 /** Same-origin API; the bearer token is attached by the auth provider once signed in. */
 export default defineConfig({
@@ -262,8 +262,8 @@ export default defineConfig({
   write(
     ctx,
     'app/router.tsx',
-    `import type { Session } from 'kitr/auth'
-import { createKitrRouter } from 'kitr/router'
+    `import type { Session } from '@kitr/auth'
+import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
 import { routes } from './routes'
@@ -298,7 +298,7 @@ declare module '@kitr/router' {
   write(
     ctx,
     'app/features/projects/queries.ts',
-    `import { mutationFrom, queryFrom } from 'kitr/query'
+    `import { mutationFrom, queryFrom } from '@kitr/query'
 import { api } from '#app/api/client'
 
 /** One place for every query and mutation of the feature; routes and components import from here. */
@@ -332,11 +332,11 @@ export const deleteProject = mutationFrom(
     ctx,
     'app/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import type { Session } from 'kitr/auth'
-import { requireAuth } from 'kitr/router'
-import router from 'kitr/router/routes'
-import { ssrRoute } from 'kitr/seo'
-import { parseTableSearch } from 'kitr/table'
+import type { Session } from '@kitr/auth'
+import { requireAuth } from '@kitr/router'
+import router from '@kitr/router/routes'
+import { ssrRoute } from '@kitr/seo'
+import { parseTableSearch } from '@kitr/table'
 import type { User } from '#app/abilities'
 import { projectsQuery } from '#app/features/projects/queries'
 import { head, RootDocument } from './document'
@@ -390,10 +390,10 @@ export type AppRoutes = typeof routes.$types
   write(
     ctx,
     'app/pages/sign-in.tsx',
-    `import { useAnalytics } from 'kitr/analytics/react'
-import { useAuth } from 'kitr/auth'
-import { useSchemaForm } from 'kitr/forms'
-import { getRouteApi, useNavigate } from 'kitr/router'
+    `import { useAnalytics } from '@kitr/analytics/react'
+import { useAuth } from '@kitr/auth'
+import { useSchemaForm } from '@kitr/forms'
+import { getRouteApi, useNavigate } from '@kitr/router'
 import { z } from 'zod'
 import type { User } from '#app/abilities'
 import type { AppEvents } from '#app/analytics'
@@ -452,8 +452,8 @@ export default function SignInPage() {
     ctx,
     'app/pages/app-layout.tsx',
     `import { Folder01Icon, Home01Icon, Logout01Icon } from '@hugeicons/core-free-icons'
-import { useAuth, useUser } from 'kitr/auth'
-import { Outlet, useNavigate } from 'kitr/router'
+import { useAuth, useUser } from '@kitr/auth'
+import { Outlet, useNavigate } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 import { Button } from '#components/ui/button'
@@ -498,9 +498,9 @@ export default function AppLayout() {
   write(
     ctx,
     'app/pages/overview.tsx',
-    `import { useUser } from 'kitr/auth'
-import { useSuspenseQuery } from 'kitr/query'
-import { Link } from 'kitr/router'
+    `import { useUser } from '@kitr/auth'
+import { useSuspenseQuery } from '@kitr/query'
+import { Link } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { projectsQuery } from '#app/features/projects/queries'
 import { buttonVariants } from '#components/ui/button'
@@ -564,11 +564,11 @@ export default function OverviewPage() {
   write(
     ctx,
     'app/pages/projects.tsx',
-    `import { useAnalytics } from 'kitr/analytics/react'
-import { useSchemaForm } from 'kitr/forms'
-import { useMutation, useSuspenseQuery } from 'kitr/query'
-import { getRouteApi } from 'kitr/router'
-import { type ColumnDef, type DataTableFeatures, useUrlTableState } from 'kitr/table'
+    `import { useAnalytics } from '@kitr/analytics/react'
+import { useSchemaForm } from '@kitr/forms'
+import { useMutation, useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
+import { type ColumnDef, type DataTableFeatures, useUrlTableState } from '@kitr/table'
 import { useState } from 'react'
 import type { AppEvents } from '#app/analytics'
 import { createProject, deleteProject, projectsQuery } from '#app/features/projects/queries'

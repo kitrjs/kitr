@@ -1,4 +1,4 @@
-import { defineCookie } from 'kitr/storage'
+import { defineCookie } from '@kitr/storage'
 
 export type Locale = 'en' | 'de'
 

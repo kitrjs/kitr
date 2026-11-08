@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/react, with its signature.
+description: Every export of @kitr/react, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/react`, read from the published type definitions. The [guide](/packages/react) shows them in use.
+Every export of `@kitr/react`, read from the published type definitions. The [guide](/packages/react) shows them in use.
 
-## kitr/react
+## @kitr/react
 
 ### createApp
 

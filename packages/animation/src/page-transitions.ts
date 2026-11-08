@@ -44,7 +44,7 @@ export function prefersReducedMotion(): boolean {
  * Animated page changes for `createKitrRouter`, through the browser's View Transitions API:
  * `defaultViewTransition: pageTransitions()`. Each navigation gets the types
  * `kitr-<style>` and `kitr-forward` or `kitr-back` (from the history index, so the browser's
- * back button slides the other way), which `kitr/animation/page-transitions.css` animates.
+ * back button slides the other way), which `@kitr/animation/page-transitions.css` animates.
  * Browsers without view transitions change pages instantly.
  */
 export function pageTransitions(options: PageTransitionOptions = {}): PageTransitionsValue {

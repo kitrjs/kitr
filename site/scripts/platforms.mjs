@@ -112,7 +112,7 @@ export function buildPlatforms({ repo, site, out, highlight, packages, docs, par
     ['// kitrrc.ts', null],
     ["import { defineKitrConfig } from 'kitr/app'", null],
     ...['desktop', 'mobile', 'server', 'tauri', 'web'].map((t) => [
-      `import { ${t} } from 'kitr/${t}'`,
+      `import { ${t} } from '@kitr/${t}'`,
       { type: t },
     ]),
     ['', null],

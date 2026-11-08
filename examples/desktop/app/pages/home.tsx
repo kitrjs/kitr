@@ -1,4 +1,4 @@
-import { isElectron } from 'kitr/desktop/client'
+import { isElectron } from '@kitr/desktop/client'
 import { useEffect, useState } from 'react'
 import { ipc } from '#app/ipc'
 import { Badge } from '#components/ui/badge'

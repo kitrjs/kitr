@@ -1,5 +1,5 @@
-import type { Session } from 'kitr/auth'
-import { createKitrRouter } from 'kitr/router'
+import type { Session } from '@kitr/auth'
+import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
 import { routes } from './routes'

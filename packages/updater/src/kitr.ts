@@ -9,11 +9,11 @@ export default definePackage({
     ctx.provider.add('@kitr/updater/provider')
     ctx.config(
       'updater',
-      `import { defineConfig } from 'kitr/updater'\n\nexport default defineConfig({\n  checkOnBoot: true,\n  interval: 60 * 60 * 1000, // look again every hour while the app is open\n  auto: false, // true applies as soon as an update is ready, without asking\n})\n`,
+      `import { defineConfig } from '@kitr/updater'\n\nexport default defineConfig({\n  checkOnBoot: true,\n  interval: 60 * 60 * 1000, // look again every hour while the app is open\n  auto: false, // true applies as soon as an update is ready, without asking\n})\n`,
     )
     ctx.write(
       'app/components/update-banner.tsx',
-      `import { useUpdate } from 'kitr/updater/react'
+      `import { useUpdate } from '@kitr/updater/react'
 
 /** Mount once in the root layout. Hidden until the updater has something ready. */
 export function UpdateBanner() {
@@ -35,7 +35,7 @@ export function UpdateBanner() {
     )
     ctx.agents.add(
       'updater',
-      `- \`useUpdate()\` from \`kitr/updater/react\` drives \`app/components/update-banner.tsx\` (mount it once in the root layout). Status runs idle → checking → available → downloading → ready; the web driver watches the service worker, desktop/mobile packages register theirs.`,
+      `- \`useUpdate()\` from \`@kitr/updater/react\` drives \`app/components/update-banner.tsx\` (mount it once in the root layout). Status runs idle → checking → available → downloading → ready; the web driver watches the service worker, desktop/mobile packages register theirs.`,
     )
   },
   remove(ctx) {

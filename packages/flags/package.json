@@ -1,7 +1,7 @@
 {
   "name": "@kitr/flags",
   "version": "0.1.0",
-  "description": "kitr/flags: typed feature flags resolved once per request on the server and handed to the browser, with static, env, OpenFeature and custom providers.",
+  "description": "@kitr/flags: typed feature flags resolved once per request on the server and handed to the browser, with static, env, OpenFeature and custom providers.",
   "keywords": [
     "kitr",
     "kitr-package"

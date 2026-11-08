@@ -21,17 +21,17 @@ const printer = ts.createPrinter({ removeComments: true, newLine: ts.NewLineKind
 /** Keeps member doc comments, for interfaces and object types. */
 const commented = ts.createPrinter({ removeComments: false, newLine: ts.NewLineKind.LineFeed })
 
-/** Entry points with their public import path: `.` → kitr/storage, `./react` → kitr/storage/react. */
+/** Entry points with their public import path: `.` → @kitr/storage, `./react` → @kitr/storage/react. */
 function entries(dir, pkg) {
   const out = []
   for (const [key, value] of Object.entries(pkg.exports ?? {})) {
-    // The setup module and command modules face the CLI, not the app; they have no kitr/* entry.
+    // The setup module and command modules face the CLI, not the app; apps never import them.
     if (key === './kitr' || key === './commands') continue
     const types = typeof value === 'string' ? value : value.types
     if (!types?.endsWith('.d.ts')) continue
     const file = join('packages', dir, types)
     if (!existsSync(file)) continue
-    out.push({ path: `kitr/${pkg.kitr.name}${key === '.' ? '' : key.slice(1)}`, file })
+    out.push({ path: `${pkg.name}${key === '.' ? '' : key.slice(1)}`, file })
   }
   return out
 }
@@ -167,7 +167,7 @@ function render({ dir, pkg }) {
     sections.push(lines.join('\n'))
   }
   if (!sections.length) return null
-  const mainPath = `kitr/${pkg.kitr.name}`
+  const mainPath = pkg.name
   return `---
 title: API
 description: Every export of ${mainPath}, with its signature.

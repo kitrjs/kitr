@@ -142,7 +142,7 @@ export const remove = defineCommand({
       const { execSync } = await import('node:child_process')
       try {
         const hits = execSync(
-          `grep -rl "kitr/${short}\\|${loaded.package}" app config server start 2>/dev/null || true`,
+          `grep -rl "${loaded.package}" app config server start 2>/dev/null || true`,
           { cwd: ctx.root },
         )
           .toString()

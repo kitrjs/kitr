@@ -2,7 +2,7 @@
   "name": "@kitr/devtools",
   "version": "0.1.0",
   "private": true,
-  "description": "kitr/devtools: the development overlay. Every provider can contribute panels, actions and event logs; stripped from production builds.",
+  "description": "@kitr/devtools: the development overlay. Every provider can contribute panels, actions and event logs; stripped from production builds.",
   "keywords": [
     "kitr",
     "kitr-package"

@@ -16,7 +16,7 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
     2,
   )} as const\n`
 
-const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
+const apiClient = `import { createApiClient, registerRoutes } from '@kitr/api/client'
 import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
@@ -59,7 +59,7 @@ export interface Message {
   write(
     ctx,
     'app/channels/chat.ts',
-    `import { defineChannel } from 'kitr/realtime'
+    `import { defineChannel } from '@kitr/realtime'
 import type { Message } from '#app/features/chat/schema'
 
 /**
@@ -85,7 +85,7 @@ export const chatChannel = defineChannel<{ room: string }>({
   write(
     ctx,
     'server/controllers/messages_controller.ts',
-    `import type { HttpContext } from 'kitr/api'
+    `import type { HttpContext } from '@kitr/api'
 import { chatChannel } from '#app/channels/chat'
 import {
   type Message,
@@ -150,8 +150,8 @@ export default class MessagesController {
     ctx,
     'server/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
 import { chatChannel } from '#app/channels/chat'
 import HealthController from '#server/controllers/health_controller'
 import MessagesController from '#server/controllers/messages_controller'
@@ -188,7 +188,7 @@ export type ServerRoutes = typeof routes.$types
   write(
     ctx,
     'config/realtime.ts',
-    `import { defineConfig } from 'kitr/realtime'
+    `import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   path: '/api/ws',
@@ -199,7 +199,7 @@ export default defineConfig({
   write(
     ctx,
     'app/realtime.ts',
-    `import { type SocketTransport, createSocketClient } from 'kitr/realtime'
+    `import { type SocketTransport, createSocketClient } from '@kitr/realtime'
 import realtimeConfig from '#config/realtime'
 
 let transport: SocketTransport | undefined
@@ -217,8 +217,8 @@ export function getSocket(): SocketTransport {
   write(
     ctx,
     'app/features/chat/queries.ts',
-    `import { mutationFrom, queryFrom, subscriptionFrom } from 'kitr/query'
-import { channel } from 'kitr/realtime'
+    `import { mutationFrom, queryFrom, subscriptionFrom } from '@kitr/query'
+import { channel } from '@kitr/realtime'
 import { api } from '#app/api/client'
 import { chatChannel } from '#app/channels/chat'
 import { getSocket } from '#app/realtime'
@@ -239,7 +239,7 @@ export const chatSubscription = () => subscriptionFrom(channel(getSocket(), chat
   write(
     ctx,
     'app/storage.ts',
-    `import { defineStorage } from 'kitr/storage'
+    `import { defineStorage } from '@kitr/storage'
 
 /** The display name, remembered between visits. */
 export const displayName = defineStorage('chat:name', { default: '' })
@@ -264,8 +264,8 @@ export const displayName = defineStorage('chat:name', { default: '' })
     ctx,
     'app/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import router from 'kitr/router/routes'
-import { ssrRoute } from 'kitr/seo'
+import router from '@kitr/router/routes'
+import { ssrRoute } from '@kitr/seo'
 import { head, RootDocument } from './document'
 
 const rooms = ['general', 'random', 'help']
@@ -289,9 +289,9 @@ export type AppRoutes = typeof routes.$types
   write(
     ctx,
     'app/pages/chat.tsx',
-    `import { useMutation, useSubscription, useSuspenseQuery } from 'kitr/query'
-import { getRouteApi } from 'kitr/router'
-import { useStorage } from 'kitr/storage/react'
+    `import { useMutation, useSubscription, useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
+import { useStorage } from '@kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { chatSubscription, messagesQuery, sendMessage } from '#app/features/chat/queries'
 import { displayName } from '#app/storage'

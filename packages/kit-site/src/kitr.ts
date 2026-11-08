@@ -16,7 +16,7 @@ const routeTable = (routes: Array<[name: string, method: string, path: string]>)
     2,
   )} as const\n`
 
-const apiClient = `import { createApiClient, registerRoutes } from 'kitr/api/client'
+const apiClient = `import { createApiClient, registerRoutes } from '@kitr/api/client'
 import type { ServerRoutes } from '#server/routes'
 import { routeTable } from './routes.gen'
 
@@ -103,7 +103,7 @@ export default de
   write(
     ctx,
     'config/i18n.ts',
-    `import { defineConfig } from 'kitr/i18n'
+    `import { defineConfig } from '@kitr/i18n'
 import de from '#app/locales/de'
 import en from '#app/locales/en'
 
@@ -119,7 +119,7 @@ export default defineConfig({
   write(
     ctx,
     'app/storage.ts',
-    `import { defineCookie } from 'kitr/storage'
+    `import { defineCookie } from '@kitr/storage'
 
 export type Locale = 'en' | 'de'
 
@@ -134,7 +134,7 @@ export const localeCookie = defineCookie<Locale>('locale', {
   write(
     ctx,
     'app/locale.tsx',
-    `import { I18nextProvider, useTranslation } from 'kitr/i18n'
+    `import { I18nextProvider, useTranslation } from '@kitr/i18n'
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { type Locale, localeCookie } from '#app/storage'
 
@@ -189,7 +189,7 @@ export function useLocale(): LocaleState {
   write(
     ctx,
     'app/components/locale-switch.tsx',
-    `import { useTranslation } from 'kitr/i18n'
+    `import { useTranslation } from '@kitr/i18n'
 import { useLocale } from '#app/locale'
 import { Button } from '#components/ui/button'
 
@@ -268,7 +268,7 @@ export type Subscribe = z.infer<typeof subscribeSchema>
   write(
     ctx,
     'server/controllers/newsletter_controller.ts',
-    `import type { HttpContext } from 'kitr/api'
+    `import type { HttpContext } from '@kitr/api'
 import { type Subscribe, subscribeSchema } from '#app/features/newsletter/schema'
 
 /** In-memory for the demo; a real app would write to a database or an email provider. */
@@ -289,7 +289,7 @@ export default class NewsletterController {
     ctx,
     'server/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
+import api from '@kitr/api/routes'
 import HealthController from '#server/controllers/health_controller'
 import NewsletterController from '#server/controllers/newsletter_controller'
 
@@ -319,7 +319,7 @@ export type ServerRoutes = typeof routes.$types
   write(
     ctx,
     'config/seo.ts',
-    `import { defineConfig } from 'kitr/seo'
+    `import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   ssr: true,
@@ -336,9 +336,9 @@ export default defineConfig({
     startDocument({
       imports: `import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
-import { useTranslation } from 'kitr/i18n'
-import { getRouteApi, Link } from 'kitr/router'
-import { seo } from 'kitr/seo'
+import { useTranslation } from '@kitr/i18n'
+import { getRouteApi, Link } from '@kitr/router'
+import { seo } from '@kitr/seo'
 import { LocaleSwitch } from '#app/components/locale-switch'
 import { LocaleProvider } from '#app/locale'
 import { localeCookie } from '#app/storage'
@@ -405,9 +405,9 @@ function SiteFooter() {
     ctx,
     'app/routes.ts',
     `import { defineRoutes } from 'kitr/app'
-import { notFound } from 'kitr/router'
-import router from 'kitr/router/routes'
-import { seo } from 'kitr/seo'
+import { notFound } from '@kitr/router'
+import router from '@kitr/router/routes'
+import { seo } from '@kitr/seo'
 import { getPost } from '#app/content/posts'
 import { head, readLocale, RootDocument } from './document'
 
@@ -449,11 +449,11 @@ export type AppRoutes = typeof routes.$types
   write(
     ctx,
     'app/pages/home.tsx',
-    `import { useSchemaForm } from 'kitr/forms'
-import { useTranslation } from 'kitr/i18n'
-import { useMutation } from 'kitr/query'
-import { mutationFrom } from 'kitr/query'
-import { Link } from 'kitr/router'
+    `import { useSchemaForm } from '@kitr/forms'
+import { useTranslation } from '@kitr/i18n'
+import { useMutation } from '@kitr/query'
+import { mutationFrom } from '@kitr/query'
+import { Link } from '@kitr/router'
 import { useState } from 'react'
 import { api } from '#app/api/client'
 import { subscribeSchema } from '#app/features/newsletter/schema'
@@ -579,7 +579,7 @@ export default function PricingPage() {
   write(
     ctx,
     'app/pages/blog/index.tsx',
-    `import { Link } from 'kitr/router'
+    `import { Link } from '@kitr/router'
 import { posts } from '#app/content/posts'
 import { PageHeader } from '#components/ui/page-header'
 
@@ -610,7 +610,7 @@ export default function BlogIndexPage() {
     ctx,
     'app/pages/blog/post.tsx',
     `import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
-import { definePage, getRouteApi, Link } from 'kitr/router'
+import { definePage, getRouteApi, Link } from '@kitr/router'
 import { Icon } from '#components/ui/icon'
 
 const route = getRouteApi('/blog/$slug')

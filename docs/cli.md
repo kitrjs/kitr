@@ -11,7 +11,7 @@
 | `kitr <pkg>:<cmd>` | Commands the installed packages contribute (`kitr jobs:list`, `kitr jobs:work`). `kitr --help` lists them after the core commands. |
 | `kitr add <type> <name> [--option value]` | Adds a platform (`web`, `server`, `desktop`, `tauri`, `mobile`): `kitr add web admin --mode spa`, `kitr add desktop app --title Acme`. Installs the platform package and the packages it needs, writes `platforms.<name>` into `kitrrc.ts`, scaffolds `platforms/<name>/` for native shells and adds the `dev`/`build`/`start` scripts. See [platforms.md](platforms.md). |
 | `kitr remove <pkg...>` | Reverse of `add`: unregisters the provider and package, deletes `config/<pkg>.ts`, removes dependencies, then lists files that still import it. |
-| `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where a `kitr/*` entry exists, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
+| `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where an `@kitr/*` package re-exports them, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
 | `kitr info` | JSON summary: version, package manager, packages, providers, platforms, directories, server-only or not. |
 | `kitr upgrade [--to x.y.z] [--majors]` | Moves `kitr` and every `@kitr/*` to one version and aligns upstream libraries with the versions that release was tested with. Major bumps are listed, not applied, unless `--majors`. |
 
@@ -139,4 +139,4 @@ export default definePackage({
 
 ## Leaving kitr
 
-`kitr eject stubs` copies every generator stub. `kitr eject all` also prints the import rewrites that remove kitr entirely: each `kitr/*` entry maps to the upstream package it re-exports.
+`kitr eject stubs` copies every generator stub. `kitr eject all` also prints the import rewrites that remove kitr entirely: each `@kitr/*` import maps to the upstream package it re-exports.

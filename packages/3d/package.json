@@ -1,7 +1,7 @@
 {
   "name": "@kitr/3d",
   "version": "0.1.0",
-  "description": "kitr/3d: React Three Fiber and drei re-exported, plus a Scene that degrades without WebGL, pauses off screen and adapts its resolution, theme colours for materials and offline model decoders.",
+  "description": "@kitr/3d: React Three Fiber and drei re-exported, plus a Scene that degrades without WebGL, pauses off screen and adapts its resolution, theme colours for materials and offline model decoders.",
   "kitr": {
     "name": "3d",
     "title": "3D",

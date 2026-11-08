@@ -6,11 +6,11 @@ order: 1
 
 # Consent
 
-In much of the world you need a visitor's permission before you load analytics, marketing pixels or session replay. `kitr/consent` keeps one record per visitor of what they agreed to, by category, in a cookie that the server can read too. While a category is not granted, [analytics](/packages/analytics) keeps its calls in a queue and, if you ask it to, [monitoring](/packages/monitoring) drops its reports. Your banner is a few lines over `useConsent()`, so it looks like the rest of your app.
+In much of the world you need a visitor's permission before you load analytics, marketing pixels or session replay. `@kitr/consent` keeps one record per visitor of what they agreed to, by category, in a cookie that the server can read too. While a category is not granted, [analytics](/packages/analytics) keeps its calls in a queue and, if you ask it to, [monitoring](/packages/monitoring) drops its reports. Your banner is a few lines over `useConsent()`, so it looks like the rest of your app.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` asks Ada for consent on her first visit, holds Google Analytics until she agrees, loads a marketing pixel only for the `marketing` category, and lets Grace change her mind from the settings page.
 
-`kitr/consent` runs in the browser: the provider only gates analytics and monitoring on the client. The record lives in a cookie made with [`kitr/storage`](/packages/storage), so server code can read it from the request. It is not a legal template: you decide the categories and the wording, and your lawyer decides whether they are enough.
+`@kitr/consent` runs in the browser: the provider only gates analytics and monitoring on the client. The record lives in a cookie made with [`@kitr/storage`](/packages/storage), so server code can read it from the request. It is not a legal template: you decide the categories and the wording, and your lawyer decides whether they are enough.
 
 ## Install
 
@@ -20,7 +20,7 @@ kitr add consent
 
 What `kitr add` does:
 
-- Installs `@kitr/consent`, which brings `kitr/storage` along as a dependency for its cookie.
+- Installs `@kitr/consent`, which brings `@kitr/storage` along as a dependency for its cookie.
 - Adds `() => import('@kitr/consent/provider')` to the end of `providers` and `'@kitr/consent'` to `packages` in `kitrrc.ts`.
 - Writes `config/consent.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Writes `app/components/consent-banner.tsx`, a banner with "Only necessary" and "Accept all" buttons, styled with Tailwind classes.
@@ -42,7 +42,7 @@ No kit includes consent. `kitr add consent` adds [storage](/packages/storage) fi
 
 ```ts
 // config/consent.ts
-import { defineConfig } from 'kitr/consent'
+import { defineConfig } from '@kitr/consent'
 
 export default defineConfig({
   categories: ['analytics', 'marketing'],
@@ -77,7 +77,7 @@ With the consent provider in `kitrrc.ts`, [analytics](/packages/analytics) start
 
 ```tsx
 // app/components/consent-banner.tsx
-import { useConsent } from 'kitr/consent/react'
+import { useConsent } from '@kitr/consent/react'
 
 /** Mount once in the root layout. Renders nothing once a choice is recorded. */
 export function ConsentBanner() {
@@ -101,7 +101,7 @@ Mount it once, in the document. Keep the rest of `app/document.tsx` as it is and
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { ConsentBanner } from '#app/components/consent-banner'
 
 // ...
@@ -136,7 +136,7 @@ Reload the page and the banner stays hidden: the choice is read back from the co
 
 ```tsx
 // app/components/consent-banner.tsx
-import { useConsent } from 'kitr/consent/react'
+import { useConsent } from '@kitr/consent/react'
 import { useState } from 'react'
 
 const labels: Record<string, string> = {
@@ -189,7 +189,7 @@ Categories are plain strings. Add one to `config/consent.ts` and it appears in `
 
 ```ts
 // config/consent.ts
-import { defineConfig } from 'kitr/consent'
+import { defineConfig } from '@kitr/consent'
 
 export default defineConfig({
   categories: ['analytics', 'marketing', 'preferences'],
@@ -203,7 +203,7 @@ Then check it where the feature lives. Here the projects list only remembers Lin
 
 ```tsx
 // app/features/projects/use-sort-order.ts
-import { useConsent } from 'kitr/consent/react'
+import { useConsent } from '@kitr/consent/react'
 import { useEffect, useState } from 'react'
 
 export function useSortOrder() {
@@ -231,7 +231,7 @@ By default analytics waits for `analytics`. Point it at another category, or tur
 
 ```ts
 // config/consent.ts
-import { defineConfig } from 'kitr/consent'
+import { defineConfig } from '@kitr/consent'
 
 export default defineConfig({
   categories: ['statistics', 'marketing'],
@@ -249,9 +249,9 @@ Some trackers belong to a different category from your page views, such as a mar
 
 ```tsx
 // app/components/marketing-tracker.tsx
-import { posthog } from 'kitr/analytics'
-import { useAnalytics } from 'kitr/analytics/react'
-import { useConsent } from 'kitr/consent/react'
+import { posthog } from '@kitr/analytics'
+import { useAnalytics } from '@kitr/analytics/react'
+import { useConsent } from '@kitr/consent/react'
 import posthogJs from 'posthog-js'
 import { useEffect } from 'react'
 
@@ -275,7 +275,7 @@ Some regulators expect you to ask again after six months. Set `maxAge` in days, 
 
 ```ts
 // config/consent.ts
-import { defineConfig } from 'kitr/consent'
+import { defineConfig } from '@kitr/consent'
 
 export default defineConfig({
   categories: ['analytics', 'marketing'],
@@ -295,7 +295,7 @@ On the server, the consent service has no cookie to read, so server-rendered HTM
 
 ```tsx
 // app/components/consent-banner.tsx
-import { useConsent } from 'kitr/consent/react'
+import { useConsent } from '@kitr/consent/react'
 import { useEffect, useState } from 'react'
 
 export function ConsentBanner() {
@@ -321,7 +321,7 @@ For a script that is not a kitr package, such as an ad pixel or a chat widget, c
 
 ```tsx
 // app/components/marketing-pixel.tsx
-import { useConsent } from 'kitr/consent/react'
+import { useConsent } from '@kitr/consent/react'
 import { useEffect } from 'react'
 
 export function MarketingPixel() {
@@ -354,7 +354,7 @@ app.page('/settings/privacy', { lazy: () => import('./pages/settings/privacy') }
 
 ```tsx
 // app/pages/settings/privacy.tsx
-import { useConsent } from 'kitr/consent/react'
+import { useConsent } from '@kitr/consent/react'
 
 export default function PrivacySettings() {
   const { record, decided, has, grant, reset } = useConsent()
@@ -394,7 +394,7 @@ When you add a vendor or change what a category covers, bump `version`:
 
 ```ts
 // config/consent.ts
-import { defineConfig } from 'kitr/consent'
+import { defineConfig } from '@kitr/consent'
 
 export default defineConfig({
   categories: ['analytics', 'marketing'],
@@ -412,7 +412,7 @@ Error reports can contain page content and who the visitor is, so some teams tre
 
 ```ts
 // config/consent.ts
-import { defineConfig } from 'kitr/consent'
+import { defineConfig } from '@kitr/consent'
 
 export default defineConfig({
   categories: ['analytics', 'marketing'],
@@ -461,7 +461,7 @@ export function logConsentChanges(app: KitrApp) {
 | `categories` | `ConsentCategory[]` | The configured categories. |
 | `cookie` | `CookieItem<ConsentRecord>` | The [storage](/packages/storage) cookie item that holds the record. |
 
-`kitr/consent` also exports a `useConsent(app)` function that returns this service. Despite the name it is not a hook; in components use `useConsent()` from `kitr/consent/react`.
+`@kitr/consent` also exports a `useConsent(app)` function that returns this service. Despite the name it is not a hook; in components use `useConsent()` from `@kitr/consent/react`.
 
 ## Read consent on the server
 
@@ -471,7 +471,7 @@ The record is a cookie, so a server function or loader can read it from the requ
 // app/features/consent/read-consent.ts
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
-import { createConsent } from 'kitr/consent'
+import { createConsent } from '@kitr/consent'
 import consentConfig from '#config/consent'
 
 const { cookie } = createConsent(consentConfig)
@@ -494,11 +494,11 @@ Two things are worth testing: that your banner records the right choice, and tha
 ```tsx
 // app/components/consent-banner.test.tsx
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { memoryAdapter } from 'kitr/analytics'
-import { analyticsProvider } from 'kitr/analytics/provider'
-import { consentProvider } from 'kitr/consent/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { memoryAdapter } from '@kitr/analytics'
+import { analyticsProvider } from '@kitr/analytics/provider'
+import { consentProvider } from '@kitr/consent/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ConsentBanner } from './consent-banner'
 
@@ -557,7 +557,7 @@ For logic that only needs the record, `createConsent()` builds a service with no
 
 ```ts
 // app/features/consent/consent.test.ts
-import { createConsent } from 'kitr/consent'
+import { createConsent } from '@kitr/consent'
 import { afterEach, expect, it } from 'vitest'
 
 afterEach(() => {

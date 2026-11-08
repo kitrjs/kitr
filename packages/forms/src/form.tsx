@@ -161,7 +161,7 @@ export function FormField<T extends FieldValues>({
 /** Props to spread on the input inside a `<FormField>`: `{...useFieldProps()}` plus `form.register(name)`. */
 export function useFieldProps() {
   const ctx = useContext(FieldContext)
-  if (!ctx) throw new Error('[kitr/forms] useFieldProps() must be used inside <FormField>.')
+  if (!ctx) throw new Error('[@kitr/forms] useFieldProps() must be used inside <FormField>.')
   const form = useFormContext()
   return {
     id: ctx.id,

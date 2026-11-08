@@ -218,7 +218,7 @@ export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
     name: string
     [k: string]: unknown
   }>
-  /** @deprecated The http entries, as `kitr/api`'s router exposed them. Use `entries`. */
+  /** @deprecated The http entries, as `@kitr/api`'s router exposed them. Use `entries`. */
   readonly routes: RouteEntry[]
 }
 

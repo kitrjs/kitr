@@ -1,4 +1,4 @@
-import { mutationFrom, queryFrom } from 'kitr/query'
+import { mutationFrom, queryFrom } from '@kitr/query'
 import { api } from '#app/api/client'
 
 /** One place for every query and mutation of the feature; routes and components import from here. */

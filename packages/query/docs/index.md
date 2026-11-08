@@ -6,7 +6,7 @@ order: 1
 
 # Query
 
-Most screens show data that lives on a server: Acme's list of orders, one invoice, the projects a team owns. `kitr/query` loads that data, keeps a cached copy so going back to a page is instant, and refreshes it when it changes, whether because you saved something, another tab did, or a live update arrived.
+Most screens show data that lives on a server: Acme's list of orders, one invoice, the projects a team owns. `@kitr/query` loads that data, keeps a cached copy so going back to a page is instant, and refreshes it when it changes, whether because you saved something, another tab did, or a live update arrived.
 
 It is [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), re-exported unchanged, plus a small **data contract**: you describe each piece of data once with `queryFrom`, `mutationFrom` and `subscriptionFrom`, and every source (a REST API, your own API routes, server actions, realtime channels) plugs into it the same way. Every failure from every source arrives as one error type, `KitrError`.
 
@@ -31,7 +31,7 @@ What `kitr add` does:
 - Installs `@kitr/query` and `@tanstack/react-query`, and `@tanstack/react-query-devtools` as a dev dependency.
 - Adds `'@kitr/query'` to `packages` and `() => import('@kitr/query/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/query.ts` (shown under [Configure](#configure)).
-- Adds a `## kitr: query` section to `AGENTS.md` with four rules: import from `kitr/query`, keep each feature's queries in `app/features/<name>/queries.ts`, load data in route loaders with `ensureQueryData`, and declare cache `effects` on mutations instead of calling `invalidateQueries` in components.
+- Adds a `## kitr: query` section to `AGENTS.md` with four rules: import from `@kitr/query`, keep each feature's queries in `app/features/<name>/queries.ts`, load data in route loaders with `ensureQueryData`, and declare cache `effects` on mutations instead of calling `invalidateQueries` in components.
 
 `kitr add query` asks no questions. Every UI kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
 
@@ -39,7 +39,7 @@ What `kitr add` does:
 kitr add query --dry-run
 ```
 
-`kitr remove query` reverses every step above and deletes `config/query.ts`. It then lists the files that still import `kitr/query`, which you remove by hand.
+`kitr remove query` reverses every step above and deletes `config/query.ts`. It then lists the files that still import `@kitr/query`, which you remove by hand.
 
 ## Configure
 
@@ -47,7 +47,7 @@ kitr add query --dry-run
 
 ```ts
 // config/query.ts
-import { defineConfig } from 'kitr/query'
+import { defineConfig } from '@kitr/query'
 
 export default defineConfig({
   // Navigating back within 30s never refetches.
@@ -62,7 +62,7 @@ export default defineConfig({
 | `defaultOptions.queries.retry` | no retry on 4xx, two retries otherwise | When a failed query retries. kitr's rule reads `error.status`: a status from 400 to 499 never retries; anything else retries up to twice. |
 | `createClient` | | A function that returns your own `QueryClient`. When set, every other option is ignored. |
 
-`kitr/query` adds no environment variables.
+`@kitr/query` adds no environment variables.
 
 The provider reads this file at boot, builds the client with `createQueryClient(config)`, binds it in the container as `queryClient`, wraps the React tree in `QueryClientProvider` and hands the same client to the router as `context.queryClient`.
 
@@ -70,7 +70,7 @@ To change the defaults for every query, for example to stop refetching when the 
 
 ```ts
 // config/query.ts
-import { defineConfig } from 'kitr/query'
+import { defineConfig } from '@kitr/query'
 
 export default defineConfig({
   staleTime: 60_000,
@@ -85,7 +85,7 @@ To build the client yourself, for example to share one with code outside kitr, r
 
 ```ts
 // config/query.ts
-import { defineConfig, QueryClient } from 'kitr/query'
+import { defineConfig, QueryClient } from '@kitr/query'
 
 export default defineConfig({
   createClient: () =>
@@ -100,7 +100,7 @@ A query needs two things: a **key**, its name in the cache, and a **fetch** func
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { queryFrom } from 'kitr/query'
+import { queryFrom } from '@kitr/query'
 
 export interface Order {
   id: string
@@ -129,7 +129,7 @@ r.page('/orders', { lazy: () => import('./pages/orders') })
 
 ```tsx
 // app/pages/orders.tsx
-import { useQuery } from 'kitr/query'
+import { useQuery } from '@kitr/query'
 import { ordersQuery } from '#app/features/orders/queries'
 
 export default function OrdersPage() {
@@ -188,7 +188,7 @@ The first argument of `key` and `fetch` is the query's input. Type it once on `k
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { queryFrom } from 'kitr/query'
+import { queryFrom } from '@kitr/query'
 import type { Order } from './types'
 
 export const orderKeys = createKeys('orders')
@@ -231,7 +231,7 @@ Components never learn which source they read from. Swap a REST endpoint for a s
 
 ```tsx
 // app/features/orders/order-summary.tsx
-import { useQuery } from 'kitr/query'
+import { useQuery } from '@kitr/query'
 import { orderQuery } from './queries'
 
 export function OrderSummary({ id }: { id: string }) {
@@ -250,7 +250,7 @@ export function OrderSummary({ id }: { id: string }) {
 
 ```tsx
 // app/features/orders/order-list.tsx
-import { useSuspenseQuery } from 'kitr/query'
+import { useSuspenseQuery } from '@kitr/query'
 import { ordersQuery } from './queries'
 
 export function OrderList({ page }: { page: number }) {
@@ -271,7 +271,7 @@ Errors thrown by a suspense query go to the nearest error boundary, such as the 
 
 ```tsx
 // app/features/orders/open-count.tsx
-import { useQuery } from 'kitr/query'
+import { useQuery } from '@kitr/query'
 import { ordersQuery } from './queries'
 
 export function OpenOrderCount() {
@@ -301,9 +301,9 @@ r.page('/orders/$orderId', {
 
 ```tsx
 // app/pages/orders/orderId.tsx
-import { useSuspenseQuery } from 'kitr/query'
+import { useSuspenseQuery } from '@kitr/query'
 import { orderQuery } from '#app/features/orders/queries'
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders/$orderId')
 
@@ -353,7 +353,7 @@ A mutation changes something on the server: pay an invoice, rename a project, sh
 
 ```ts
 // app/features/orders/queries.ts
-import { mutationFrom } from 'kitr/query'
+import { mutationFrom } from '@kitr/query'
 import type { Order } from './types'
 
 export const shipOrder = mutationFrom({
@@ -370,7 +370,7 @@ export const shipOrder = mutationFrom({
 
 ```tsx
 // app/features/orders/ship-button.tsx
-import { useMutation } from 'kitr/query'
+import { useMutation } from '@kitr/query'
 import { shipOrder } from './queries'
 
 export function ShipButton({ id }: { id: string }) {
@@ -395,7 +395,7 @@ export function ShipButton({ id }: { id: string }) {
 ```tsx
 // app/features/orders/use-ship-and-return.ts
 import { useNavigate } from '@tanstack/react-router'
-import { useMutation } from 'kitr/query'
+import { useMutation } from '@kitr/query'
 import { shipOrder } from './queries'
 
 export function useShipAndReturn() {
@@ -413,7 +413,7 @@ After a save, every screen showing the changed data must update. Instead of tell
 
 ```ts
 // app/features/orders/queries.ts
-import { mutationFrom } from 'kitr/query'
+import { mutationFrom } from '@kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
@@ -446,7 +446,7 @@ They run in that order: `set`, then `remove`, then `invalidate`. The mutation's 
 ```ts
 // app/features/invoices/queries.ts
 import { createKeys } from 'kitr/app'
-import { mutationFrom } from 'kitr/query'
+import { mutationFrom } from '@kitr/query'
 
 export const invoiceKeys = createKeys('invoices')
 
@@ -482,7 +482,7 @@ Shipping an order also changes the customer's open invoice. `mergeEffects` from 
 ```ts
 // app/features/orders/queries.ts
 import { mergeEffects } from 'kitr/app'
-import { mutationFrom } from 'kitr/query'
+import { mutationFrom } from '@kitr/query'
 import { invoiceKeys } from '#app/features/invoices/queries'
 import { orderKeys } from './keys'
 import type { Order } from './types'
@@ -511,7 +511,7 @@ Sometimes the change comes from somewhere that is not a mutation: a message from
 ```ts
 // app/features/orders/sync.ts
 import { app } from '#app/app'
-import { applyCacheEffect, invalidate } from 'kitr/query'
+import { applyCacheEffect, invalidate } from '@kitr/query'
 import { invoiceKeys } from '#app/features/invoices/queries'
 import { orderKeys } from './keys'
 
@@ -537,7 +537,7 @@ For an optimistic update, write the expected value before the request, and roll 
 
 ```tsx
 // app/features/orders/use-mark-paid.ts
-import { mutationFrom, useMutation, useQueryClient } from 'kitr/query'
+import { mutationFrom, useMutation, useQueryClient } from '@kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
@@ -573,11 +573,11 @@ export function useMarkPaid(id: string) {
 
 ## Use a query or mutation by name
 
-[Server actions](/packages/actions) register every `defineQuery('orders.list', ...)` and `defineMutation('orders.ship', ...)` under its name, and `kitr types` writes those names into `.kitr/actions.ts` so they are typed. Every hook in `kitr/query` then takes the name as its first argument, the input as the second, and TanStack overrides as the third:
+[Server actions](/packages/actions) register every `defineQuery('orders.list', ...)` and `defineMutation('orders.ship', ...)` under its name, and `kitr types` writes those names into `.kitr/actions.ts` so they are typed. Every hook in `@kitr/query` then takes the name as its first argument, the input as the second, and TanStack overrides as the third:
 
 ```tsx
 // app/components/open-orders.tsx
-import { queryOptions, useMutation, useQuery, useSuspenseQuery } from 'kitr/query'
+import { queryOptions, useMutation, useQuery, useSuspenseQuery } from '@kitr/query'
 
 export function OpenOrders() {
   const { data } = useQuery('orders.list', { status: 'open' }, { refetchInterval: 10_000 })
@@ -590,12 +590,12 @@ export function OpenOrders() {
 const options = queryOptions('orders.list', { status: 'open' })
 ```
 
-The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[kitr/query] "orders.lsit" is not registered` with the names that are.
+The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[@kitr/query] "orders.lsit" is not registered` with the names that are.
 
 `useMutation(name)` works the same way as `useMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
 
 ```ts
-import { call } from 'kitr/query'
+import { call } from '@kitr/query'
 
 const open = await call('orders.list', { status: 'open' })
 // => [{ id: 'ord_2', customer: 'Grace', total: 80, status: 'open' }]
@@ -629,7 +629,7 @@ Define it with the input and event types, a `key`, a `subscribe` function that r
 
 ```ts
 // app/features/orders/subscriptions.ts
-import { subscriptionFrom } from 'kitr/query'
+import { subscriptionFrom } from '@kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
@@ -654,7 +654,7 @@ Then subscribe from the component that needs it. The hook subscribes on mount, u
 
 ```tsx
 // app/features/orders/live-orders.tsx
-import { useSubscription } from 'kitr/query'
+import { useSubscription } from '@kitr/query'
 import { OrderList } from './order-list'
 import { orderEvents } from './subscriptions'
 
@@ -720,7 +720,7 @@ Queries retry only failures that might pass on a second try. A 4xx means the req
 ```ts
 // app/features/teams/queries.ts
 import { createKeys } from 'kitr/app'
-import { queryFrom } from 'kitr/query'
+import { queryFrom } from '@kitr/query'
 
 export const teamKeys = createKeys('teams')
 
@@ -739,7 +739,7 @@ export const teamsQuery = queryFrom({
 
 ```tsx
 // app/features/teams/team-picker.tsx
-import { useQuery } from 'kitr/query'
+import { useQuery } from '@kitr/query'
 import { teamsQuery } from './queries'
 
 export function TeamPicker() {
@@ -765,7 +765,7 @@ Nothing in your code changes for this. Read the client through `context.queryCli
 
 ## Testing
 
-In a test, boot an app with the query provider, seed the cache with the data the component needs, and render inside the app's providers. `createTestApp` from `kitr/testing` boots the app; `renderWithKitr` from `kitr/testing/react` renders inside `KitrProvider` and takes `queryData` as `[key, data]` pairs. Seeded data is fresh for 30 seconds, so the component reads it without calling `fetch`:
+In a test, boot an app with the query provider, seed the cache with the data the component needs, and render inside the app's providers. `createTestApp` from `@kitr/testing` boots the app; `renderWithKitr` from `@kitr/testing/react` renders inside `KitrProvider` and takes `queryData` as `[key, data]` pairs. Seeded data is fresh for 30 seconds, so the component reads it without calling `fetch`:
 
 ```tsx
 // app/features/orders/orders.test.tsx
@@ -777,10 +777,10 @@ import {
   queryProvider,
   useMutation,
   useSuspenseQuery,
-} from 'kitr/query'
-import { KitrProvider } from 'kitr/react'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+} from '@kitr/query'
+import { KitrProvider } from '@kitr/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { type ReactNode, Suspense } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -860,7 +860,7 @@ To test effects without React, call `effectsFor` and apply the result to a bare 
 
 ```ts
 // app/features/orders/effects.test.ts
-import { applyCacheEffect, QueryClient } from 'kitr/query'
+import { applyCacheEffect, QueryClient } from '@kitr/query'
 import { expect, it } from 'vitest'
 import { orderKeys } from './keys'
 import { shipOrder } from './queries'
@@ -932,7 +932,7 @@ export function graphqlQuery<TInput = void, TOutput = unknown>(
 ```ts
 // app/features/projects/queries.ts
 import { createKeys } from 'kitr/app'
-import { queryFrom } from 'kitr/query'
+import { queryFrom } from '@kitr/query'
 import { graphqlQuery } from '#app/lib/graphql'
 
 export const projectKeys = createKeys('projects')
@@ -957,7 +957,7 @@ Failed mutations are logged to the Log panel under `query` as `mutation failed: 
 ## Next steps
 
 - [API reference](/packages/query/api)
-- [TanStack Query docs](https://tanstack.com/query/latest/docs/framework/react/overview): everything there works as written, imported from `kitr/query`.
+- [TanStack Query docs](https://tanstack.com/query/latest/docs/framework/react/overview): everything there works as written, imported from `@kitr/query`.
 - [HTTP](/packages/http): turn REST endpoints into queries and mutations.
 - [Realtime](/packages/realtime): live channels whose events update the cache.
 - [Loading and saving data](/docs/data): how every kitr data source shares one contract.

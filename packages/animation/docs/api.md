@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/animation, with its signature.
+description: Every export of @kitr/animation, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/animation`, `kitr/animation/provider`, read from the published type definitions. The [guide](/packages/animation) shows them in use.
+Every export of `@kitr/animation`, `@kitr/animation/provider`, read from the published type definitions. The [guide](/packages/animation) shows them in use.
 
-## kitr/animation
+## @kitr/animation
 
 Re-exports `framer-motion`, `motion`, `motion-dom`, `motion-utils` unchanged, plus the following.
 
@@ -21,7 +21,7 @@ function pageTransitions(options?: PageTransitionOptions): PageTransitionsValue;
 Animated page changes for `createKitrRouter`, through the browser's View Transitions API:
 `defaultViewTransition: pageTransitions()`. Each navigation gets the types
 `kitr-<style>` and `kitr-forward` or `kitr-back` (from the history index, so the browser's
-back button slides the other way), which `kitr/animation/page-transitions.css` animates.
+back button slides the other way), which `@kitr/animation/page-transitions.css` animates.
 Browsers without view transitions change pages instantly.
 
 ### prefersReducedMotion
@@ -294,7 +294,7 @@ type TransitionName = keyof typeof transitions;
 
 A transition name from `transitions`.
 
-## kitr/animation/provider
+## @kitr/animation/provider
 
 ### animationProvider
 

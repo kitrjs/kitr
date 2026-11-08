@@ -1,5 +1,4 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { kitrEntryPackage } from '@kitr/core/package'
 import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createProjectInfo } from '../add-context'
@@ -83,16 +82,10 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
   const upstream: Record<string, string> = {}
   for (const def of definitions.values()) Object.assign(upstream, def.wraps)
   const appDir = ctx.path(rc.directories.app ?? 'app')
-  /** `kitr/<name>` imports whose `@kitr/<name>` is missing: the first file that needs each. */
-  const missing = new Map<string, string>()
   if (existsSync(appDir)) {
     for (const file of walk(appDir)) {
       if (!/\.(ts|tsx)$/.test(file) || file.endsWith('.gen.ts')) continue
       const src = readFileSync(file, 'utf8')
-      for (const [, id] of src.matchAll(/(?:from|import)\s*\(?\s*['"](kitr(?:\/[^'"]*)?)['"]/g)) {
-        const pkg = kitrEntryPackage(id!)
-        if (pkg && !(pkg in deps) && !missing.has(pkg)) missing.set(pkg, rel(ctx, file))
-      }
       const isRouteFile = file.includes(`/${rc.directories.routes ?? 'app/routes'}/`)
       for (const [lib, entry] of Object.entries(upstream)) {
         if (!new RegExp(`from ['"]${lib}['"]`).test(src)) continue
@@ -111,13 +104,6 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
         })
     }
   }
-
-  for (const [pkg, file] of missing)
-    out.push({
-      level: 'error',
-      message: `${file} imports kitr/${pkg.slice('@kitr/'.length)}, but ${pkg} is not installed`,
-      fix: `kitr add ${pkg.slice('@kitr/'.length)}`,
-    })
 
   // Server-only guard: React, and any package that needs it, must not be present.
   if (serverOnly) {
@@ -245,13 +231,13 @@ export function tailwindChecks(ctx: ProjectContext): Finding[] {
     out.push({
       level: 'warn',
       message: `${entry} does not import kitr's preset, so utilities like bg-background have no tokens`,
-      fix: `Add @import 'kitr/tailwind/preset.css'; after Tailwind, or set preset: false`,
+      fix: `Add @import '@kitr/tailwind/preset.css'; after Tailwind, or set preset: false`,
     })
   if (!preset && hasPreset)
     out.push({
       level: 'warn',
       message: `config/tailwind.ts sets preset: false, but ${entry} still imports it`,
-      fix: `Remove the kitr/tailwind/preset.css import, or set preset: true`,
+      fix: `Remove the @kitr/tailwind/preset.css import, or set preset: true`,
     })
   return out
 }
@@ -304,10 +290,9 @@ export async function platformChecks(ctx: ProjectContext): Promise<Finding[]> {
   return out
 }
 
-/** `kitr/web` → `@kitr/web`; `@acme/shell` or `@acme/shell/platform` → `@acme/shell`; a relative path → none. */
+/** `@kitr/web` or `@kitr/web/client` → `@kitr/web`; `@acme/shell` or `@acme/shell/platform` → `@acme/shell`; a relative path → none. */
 function platformPackage(source: string | undefined): string | undefined {
   if (!source || source.startsWith('.') || source.startsWith('#')) return undefined
-  if (source.startsWith('kitr/')) return `@kitr/${source.split('/')[1]}`
   return source.startsWith('@') ? source.split('/').slice(0, 2).join('/') : source.split('/')[0]
 }
 

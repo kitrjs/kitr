@@ -13,8 +13,8 @@ import {
   type RowData,
   type TableOptions,
   useTable,
-} from 'kitr/table'
-import { cn } from 'kitr/tailwind'
+} from '@kitr/table'
+import { cn } from '@kitr/tailwind'
 import type { ReactNode } from 'react'
 import { Button } from '#components/ui/button'
 import { Icon } from '#components/ui/icon'
@@ -36,7 +36,7 @@ export interface DataTableProps<TData extends RowData>
 }
 
 /**
- * Spread `useUrlTableState(...)` from kitr/table into the props to bind sorting,
+ * Spread `useUrlTableState(...)` from @kitr/table into the props to bind sorting,
  * pagination and filters to the URL. Built on TanStack Table v9's feature slices,
  * so only sorting, pagination and filtering ship with it.
  */

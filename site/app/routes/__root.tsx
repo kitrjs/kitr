@@ -1,3 +1,4 @@
+import type { KitrRouterContext } from '@kitr/router'
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -5,7 +6,6 @@ import {
   Scripts,
   useRouterState,
 } from '@tanstack/react-router'
-import type { KitrRouterContext } from 'kitr/router'
 import { type ReactNode, useEffect } from 'react'
 import { Footer, Header } from '#app/components/chrome'
 import { NotFound } from '#app/components/not-found'

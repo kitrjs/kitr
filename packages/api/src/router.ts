@@ -9,9 +9,9 @@ import http from './routes'
 export { joinPath } from './routes'
 
 /**
- * A route table with the http extension: what `kitr/api`'s `defineRoutes` and `createRouter`
- * return. The same table takes `.page` from `kitr/router/routes` and `.ws` from
- * `kitr/realtime/routes` when those extensions are listed in `defineRoutes([...])`.
+ * A route table with the http extension: what `@kitr/api`'s `defineRoutes` and `createRouter`
+ * return. The same table takes `.page` from `@kitr/router/routes` and `.ws` from
+ * `@kitr/realtime/routes` when those extensions are listed in `defineRoutes([...])`.
  */
 export type Router<R extends TableMap = {}> = KitrRouter<'http', R>
 

@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/mobile, with its signature.
+description: Every export of @kitr/mobile, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/mobile`, `kitr/mobile/client`, `kitr/mobile/provider`, read from the published type definitions. The [guide](/packages/mobile) shows them in use.
+Every export of `@kitr/mobile`, `@kitr/mobile/client`, `@kitr/mobile/provider`, read from the published type definitions. The [guide](/packages/mobile) shows them in use.
 
-## kitr/mobile
+## @kitr/mobile
 
 ### addScheme
 
@@ -83,7 +83,7 @@ type MobileTarget = 'ios' | 'android';
 
 A native project the mobile platform creates and builds: `ios` (Xcode) or `android` (Android Studio).
 
-## kitr/mobile/client
+## @kitr/mobile/client
 
 ### capacitorPlatform
 
@@ -117,7 +117,7 @@ function nativeOnly<T>(fn: () => Promise<T>, fallback?: T): Promise<T | undefine
 
 Run `fn` only inside the native shell; returns `fallback` on the web.
 
-## kitr/mobile/provider
+## @kitr/mobile/provider
 
 ### preferencesDriver
 

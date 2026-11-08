@@ -8,11 +8,11 @@ export default definePackage({
     ctx.provider.add('@kitr/shield/provider')
     ctx.config(
       'shield',
-      `import { defineConfig } from 'kitr/shield'\n\nexport default defineConfig({\n  headers: {}, // sensible security headers; set contentSecurityPolicy to tighten\n  cors: false, // { origin: ['https://app.example.com'], credentials: true } for a separate front end\n  rateLimit: { max: 300, windowMs: 60_000 }, // per IP per minute\n  csrf: {}, // double-submit cookie; kitr/http sends the token on every non-GET request\n})\n`,
+      `import { defineConfig } from '@kitr/shield'\n\nexport default defineConfig({\n  headers: {}, // sensible security headers; set contentSecurityPolicy to tighten\n  cors: false, // { origin: ['https://app.example.com'], credentials: true } for a separate front end\n  rateLimit: { max: 300, windowMs: 60_000 }, // per IP per minute\n  csrf: {}, // double-submit cookie; @kitr/http sends the token on every non-GET request\n})\n`,
     )
     ctx.server.attach({
       marker: 'shield(server',
-      import: "import { shield } from 'kitr/shield'",
+      import: "import { shield } from '@kitr/shield'",
       line: '// Security headers, CORS, rate limit and CSRF from config/shield.ts.\nshield(server)',
       first: true,
     })

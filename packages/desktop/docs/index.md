@@ -6,17 +6,17 @@ order: 1
 
 # Desktop
 
-Some teams want the app in the dock or the Start menu: a window that opens offline, saves files where they choose and keeps running when the browser is closed. `kitr/desktop` is the desktop platform for Windows, macOS and Linux. It wraps the same `app/` you ship to the browser in an [Electron](https://www.electronjs.org/docs/latest) window and gives you a typed channel between the window and the Node.js process behind it.
+Some teams want the app in the dock or the Start menu: a window that opens offline, saves files where they choose and keeps running when the browser is closed. `@kitr/desktop` is the desktop platform for Windows, macOS and Linux. It wraps the same `app/` you ship to the browser in an [Electron](https://www.electronjs.org/docs/latest) window and gives you a typed channel between the window and the Node.js process behind it.
 
-Electron bundles its own Chromium and Node.js, so the app renders and behaves the same on every machine. kitr adds the platform on top: `kitr dev` runs the window with hot reload through [electron-vite](https://electron-vite.org/), `kitr build` builds installers with [electron-builder](https://www.electron.build/), one TypeScript type describes every call between the window and the main process, and `kitr/desktop/provider` moves the [platform](/packages/platform) and [storage](/packages/storage) packages to their Electron drivers.
+Electron bundles its own Chromium and Node.js, so the app renders and behaves the same on every machine. kitr adds the platform on top: `kitr dev` runs the window with hot reload through [electron-vite](https://electron-vite.org/), `kitr build` builds installers with [electron-builder](https://www.electron.build/), one TypeScript type describes every call between the window and the main process, and `@kitr/desktop/provider` moves the [platform](/packages/platform) and [storage](/packages/storage) packages to their Electron drivers.
 
-The code runs in three places. `kitr/desktop/client` and the provider run in the window (and in a plain browser, where they stand aside). `kitr/desktop/main` runs in Electron's main process. `kitr/desktop/preload` runs in the preload script between the two. For a smaller download on the operating system's own webview, use [Tauri](/packages/tauri) instead.
+The code runs in three places. `@kitr/desktop/client` and the provider run in the window (and in a plain browser, where they stand aside). `@kitr/desktop/main` runs in Electron's main process. `@kitr/desktop/preload` runs in the preload script between the two. For a smaller download on the operating system's own webview, use [Tauri](/packages/tauri) instead.
 
 The examples on this page ship the Acme orders app to the desktop: Ada's warehouse team at Acme checks orders, saves invoices as PDF files and watches order sync progress, with the same code the browser runs at `app.acme.com`.
 
 ## When to use it
 
-Use `kitr/desktop` for most desktop apps. Electron ships Chromium inside the app, so the page your team tests is the page every user runs, on Windows 10, an old MacBook and a Linux kiosk alike. The main process is plain Node.js, so any npm package works there. Electron has the larger community, the most third-party guides and a mature toolchain for installers, auto-update and code signing.
+Use `@kitr/desktop` for most desktop apps. Electron ships Chromium inside the app, so the page your team tests is the page every user runs, on Windows 10, an old MacBook and a Linux kiosk alike. The main process is plain Node.js, so any npm package works there. Electron has the larger community, the most third-party guides and a mature toolchain for installers, auto-update and code signing.
 
 Use [Tauri](/packages/tauri) when download size and memory matter more than identical rendering. A Tauri app is a few megabytes because it uses the webview the OS already has (WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux). The trade-off is that those engines differ between platforms, and native code is written in Rust, so you need the Rust toolchain to build. Both platforms load the same client build and register the same `platform` and `storage` drivers, so the app code does not change when you switch.
 
@@ -36,13 +36,13 @@ What `kitr add desktop app` does:
 - Adds the packages the platform needs when they are missing, each with its own setup: [Router](/packages/router) (and [React](/packages/react) before it), [Platform](/packages/platform), which writes `config/platform.ts`, and [Storage](/packages/storage), which writes `config/storage.ts` and `app/storage.ts`.
 - Installs `electron`, `electron-vite` and `electron-builder` as dev dependencies.
 - Adds `() => import('@kitr/desktop/provider')` to `providers` in `kitrrc.ts`.
-- Writes `app: desktop({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { desktop } from 'kitr/desktop'`.
+- Writes `app: desktop({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { desktop } from '@kitr/desktop'`.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
 - Writes `platforms/app/ipc.ts`, `main.ts`, `preload.ts`, `electron.vite.config.ts` and `electron-builder.yml`, and `app/ipc.ts` for the window. Files that already exist are kept.
 - Sets `"main"` in `package.json` to `dist/app/electron/main/index.js`, so Electron and electron-builder find the built main process.
 - Adds a `kitr: platform app` section to `AGENTS.md`: how to run and build, where IPC is declared and implemented, and to keep context isolation and the sandbox on.
 
-`kitr/desktop` asks no questions. Platform options are flags on the same command, named as in the options table under Configure:
+`@kitr/desktop` asks no questions. Platform options are flags on the same command, named as in the options table under Configure:
 
 ```sh
 kitr add desktop app --title "Acme Orders" --width 1280 --height 860 --appId com.acme.orders
@@ -70,13 +70,13 @@ kitr new acme-orders --kit desktop
 
 ## Configure
 
-`kitr/desktop` has no config file in `config/`. Its options live on the `desktop()` call in `kitrrc.ts`:
+`@kitr/desktop` has no config file in `config/`. Its options live on the `desktop()` call in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { desktop } from 'kitr/desktop'
-import { web } from 'kitr/web'
+import { desktop } from '@kitr/desktop'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/platform', '@kitr/storage', '@kitr/web', '@kitr/desktop'],
@@ -172,7 +172,7 @@ The scaffold already declared two commands in `platforms/app/ipc.ts` and wrote a
 
 ```ts
 // app/ipc.ts
-import { createIpcClient } from 'kitr/desktop/client'
+import { createIpcClient } from '@kitr/desktop/client'
 import type { Ipc, IpcPush } from '../platforms/app/ipc'
 
 /** Typed renderer-side client. `ipc.available` is false in a plain browser, so the web build still runs. */
@@ -239,7 +239,7 @@ In the main process, `handleIpc<Ipc>(ipcMain, handlers)` registers one handler p
 // platforms/app/main.ts
 import { writeFile } from 'node:fs/promises'
 import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron'
-import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from 'kitr/desktop/main'
+import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from '@kitr/desktop/main'
 import type { Ipc, IpcPush } from './ipc'
 
 const window = { title: 'Acme Orders', width: 1280, height: 860 }
@@ -328,7 +328,7 @@ Some things start in the main process: a window gains focus, a background sync m
 ```ts
 // platforms/app/sync.ts
 import { BrowserWindow } from 'electron'
-import { createIpcEmitter } from 'kitr/desktop/main'
+import { createIpcEmitter } from '@kitr/desktop/main'
 import type { IpcPush } from './ipc'
 
 const push = createIpcEmitter<IpcPush>(() => BrowserWindow.getAllWindows()[0]?.webContents)
@@ -391,11 +391,11 @@ The same `app/` ships to the browser through your web platform, where there is n
 | `ipc.available` | The preload bridge is present, so `invoke()` will reach main. |
 | `isElectron()` | The bridge is present, or the user agent contains `Electron`. |
 
-Use `ipc.available` before calling the main process. Without the bridge, `ipc.invoke()` rejects with `[kitr/desktop] IPC bridge "kitrIpc" is not available (not running in Electron, or the preload script did not call exposeIpc)`, `ipc.on()` returns a no-op and `ipc.send()` does nothing. Use `isElectron()` for anything that only depends on running in the shell:
+Use `ipc.available` before calling the main process. Without the bridge, `ipc.invoke()` rejects with `[@kitr/desktop] IPC bridge "kitrIpc" is not available (not running in Electron, or the preload script did not call exposeIpc)`, `ipc.on()` returns a no-op and `ipc.send()` does nothing. Use `isElectron()` for anything that only depends on running in the shell:
 
 ```tsx
 // app/components/title-bar.tsx
-import { isElectron } from 'kitr/desktop/client'
+import { isElectron } from '@kitr/desktop/client'
 
 export function TitleBar() {
   // Electron draws the window title; the browser tab shows document.title instead.
@@ -415,7 +415,7 @@ Don't sniff the user agent for `Electron` yourself, and don't import `electron` 
 ```ts
 // platforms/app/preload.ts
 import { contextBridge, ipcRenderer } from 'electron'
-import { allowChannels, exposeIpc } from 'kitr/desktop/preload'
+import { allowChannels, exposeIpc } from '@kitr/desktop/preload'
 import { channels } from './ipc'
 
 // Only the channels declared in ipc.ts (and kitr's own kitr:* channels) reach the renderer.
@@ -431,7 +431,7 @@ To expose the bridge under another name (two bridges in one window, say), pass t
 
 ```ts
 // app/admin-ipc.ts
-import { createIpcClient } from 'kitr/desktop/client'
+import { createIpcClient } from '@kitr/desktop/client'
 import type { AdminIpc } from '../platforms/app/admin-ipc'
 
 // preload: exposeIpc(contextBridge, ipcRenderer, { key: 'acmeAdminIpc' })
@@ -447,7 +447,7 @@ export const adminIpc = createIpcClient<AdminIpc>('acmeAdminIpc')
 ```ts
 // platforms/app/admin.ts
 import { ipcMain } from 'electron'
-import { handleIpc } from 'kitr/desktop/main'
+import { handleIpc } from '@kitr/desktop/main'
 import type { AdminIpc } from './admin-ipc'
 
 let stop: (() => void) | undefined
@@ -483,7 +483,7 @@ A second window for one order, with a fixed size and a title bar that blends int
 
 ```ts
 // platforms/app/order-window.ts
-import { createMainWindow } from 'kitr/desktop/main'
+import { createMainWindow } from '@kitr/desktop/main'
 
 export async function openOrderWindow(orderId: string) {
   const win = await createMainWindow({
@@ -513,7 +513,7 @@ Call `serveClient()` yourself only when you load the client without `createMainW
 // platforms/app/main.ts
 import { join } from 'node:path'
 import { app, BrowserWindow, protocol } from 'electron'
-import { APP_SCHEME, registerAppScheme, serveClient } from 'kitr/desktop/main'
+import { APP_SCHEME, registerAppScheme, serveClient } from '@kitr/desktop/main'
 
 registerAppScheme(protocol)
 
@@ -532,7 +532,7 @@ Items you declare with [Storage](/packages/storage) persist in a JSON file in El
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 export const ordersView = defineStorage('orders-view', {
   default: { status: 'open' as 'open' | 'paid' | 'shipped', pageSize: 25 },
@@ -545,14 +545,14 @@ The provider registers `electronStorageDriver()`, which loads every value once a
 // platforms/app/main.ts
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
-import { handleKitrIpc } from 'kitr/desktop/main'
+import { handleKitrIpc } from '@kitr/desktop/main'
 
 app.whenReady().then(() => {
   handleKitrIpc(ipcMain, app, { storageFile: join(app.getPath('userData'), 'acme-orders.json') })
 })
 ```
 
-On macOS the default file is `~/Library/Application Support/Acme Orders/kitr-storage.json`. Writes are queued, so two quick changes never interleave. If the file is missing or not valid JSON, the store starts empty. Without `handleKitrIpc()`, reads find nothing and every write logs `[kitr/storage] electron:ipc:` with Electron's "No handler registered" error.
+On macOS the default file is `~/Library/Application Support/Acme Orders/kitr-storage.json`. Writes are queued, so two quick changes never interleave. If the file is missing or not valid JSON, the store starts empty. Without `handleKitrIpc()`, reads find nothing and every write logs `[@kitr/storage] electron:ipc:` with Electron's "No handler registered" error.
 
 ## Use the platform service on the desktop
 
@@ -570,7 +570,7 @@ The provider also registers a `desktop` driver for [Platform](/packages/platform
 
 ```tsx
 // app/components/help-menu.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function HelpMenu() {
   const platform = usePlatform()
@@ -675,7 +675,7 @@ kitr build app
 
 ## Switch to Tauri
 
-The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. What changes is the native side. Electron IPC commands in `platforms/app/main.ts` become Rust commands, and `ipc.invoke()` calls become `commands.<name>()` from `kitr/tauri/client`:
+The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. What changes is the native side. Electron IPC commands in `platforms/app/main.ts` become Rust commands, and `ipc.invoke()` calls become `commands.<name>()` from `@kitr/tauri/client`:
 
 ```sh
 kitr platforms remove app
@@ -686,7 +686,7 @@ Port each handler in `main.ts` to a `#[tauri::command]` in `platforms/app/src-ta
 
 ## Commands
 
-`kitr/desktop` adds no generators. The desktop platform answers these commands:
+`@kitr/desktop` adds no generators. The desktop platform answers these commands:
 
 | Command | What it does |
 | --- | --- |
@@ -711,7 +711,7 @@ Any option is also a flag on `dev`, `build` and `start` for one run: `kitr dev a
 
 | Message | When | What to do |
 | --- | --- | --- |
-| `[kitr/desktop] IPC bridge "kitrIpc" is not available (not running in Electron, or the preload script did not call exposeIpc)` | `ipc.invoke()` ran in a browser, or the preload script did not run. | Check `ipc.available` first. In Electron, check that `preload.ts` calls `exposeIpc()` and the `preload` path is right. |
+| `[@kitr/desktop] IPC bridge "kitrIpc" is not available (not running in Electron, or the preload script did not call exposeIpc)` | `ipc.invoke()` ran in a browser, or the preload script did not run. | Check `ipc.available` first. In Electron, check that `preload.ts` calls `exposeIpc()` and the `preload` path is right. |
 | `IPC channel "<channel>" is not allowed` | The preload `allow` function rejected the channel. | Add the channel to the allow list. |
 | `Error invoking remote method '<channel>': Error: No handler registered for '<channel>'` | No `handleIpc()` handler for the channel, or it was removed. | Implement it in `main.ts`. For `kitr:*` channels, call `handleKitrIpc()`. |
 | `Error invoking remote method '<channel>': <error>` | The handler in main threw. | Read the error after the colon; it is the one main threw. |
@@ -731,12 +731,12 @@ This test checks the `invoices.save` command end to end, that the desktop driver
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createIpcClient, IPC_BRIDGE_KEY } from 'kitr/desktop/client'
-import { handleIpc, handleKitrIpc } from 'kitr/desktop/main'
-import { exposeIpc } from 'kitr/desktop/preload'
-import { desktopProvider } from 'kitr/desktop/provider'
-import { platformProvider } from 'kitr/platform/provider'
-import { createTestApp } from 'kitr/testing'
+import { createIpcClient, IPC_BRIDGE_KEY } from '@kitr/desktop/client'
+import { handleIpc, handleKitrIpc } from '@kitr/desktop/main'
+import { exposeIpc } from '@kitr/desktop/preload'
+import { desktopProvider } from '@kitr/desktop/provider'
+import { platformProvider } from '@kitr/platform/provider'
+import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Ipc, IpcPush } from '../platforms/app/ipc'
 

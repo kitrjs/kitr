@@ -38,7 +38,7 @@ Generated files have their own checks. If one fails, run the command without `--
 
 ## Making a change
 
-- **Re-export, never re-implement.** A `kitr/*` entry point re-exports the library it wraps and adds beside it. Read [docs/entry-points.md](docs/entry-points.md) and [docs/package-contract.md](docs/package-contract.md) before adding exports or a package.
+- **Re-export, never re-implement.** An `@kitr/*` package re-exports the library it wraps and adds beside it. Read [docs/entry-points.md](docs/entry-points.md) and [docs/package-contract.md](docs/package-contract.md) before adding exports or a package.
 - **Docs ship with the code.** A package's guide lives in `packages/<name>/docs/` and follows [docs/STYLE.md](docs/STYLE.md); `pnpm docs:rules` and `pnpm docs:check` check the mechanical rules.
 - **Tests ship with the code.** A fix comes with a test that fails without it.
 - **Changesets.** If a published package changes, run `pnpm changeset` and describe the change for users. All packages release together on one version.

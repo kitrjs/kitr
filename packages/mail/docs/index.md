@@ -6,11 +6,11 @@ order: 1
 
 # Mail
 
-Order confirmations, password resets, invoices, team invites: almost every app sends email, and most end up with a folder of HTML strings nobody wants to touch. In kitr an email is a React component with a subject. `kitr/mail` renders it to HTML and plain text, checks every address and header, sends it through [Resend](https://resend.com/docs), SMTP or your own transport, and shows you a live preview of every template while you work.
+Order confirmations, password resets, invoices, team invites: almost every app sends email, and most end up with a folder of HTML strings nobody wants to touch. In kitr an email is a React component with a subject. `@kitr/mail` renders it to HTML and plain text, checks every address and header, sends it through [Resend](https://resend.com/docs), SMTP or your own transport, and shows you a live preview of every template while you work.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` emails Ada Lovelace when her order ships, sends Grace an invoice as a PDF, and copies Linus on the ones he cares about.
 
-`kitr/mail` runs on the server only. The provider binds nothing in the browser. To send without making a request wait for the mail provider, send from a [job](/packages/jobs).
+`@kitr/mail` runs on the server only. The provider binds nothing in the browser. To send without making a request wait for the mail provider, send from a [job](/packages/jobs).
 
 ## Install
 
@@ -44,7 +44,7 @@ No kit includes mail; add it to any kit with a server platform (`fullstack`, `se
 
 ```ts
 // config/mail.ts
-import { createResendTransport, defineConfig } from 'kitr/mail'
+import { createResendTransport, defineConfig } from '@kitr/mail'
 
 /**
  * Without a transport, development logs every message and production refuses to boot, so a
@@ -86,7 +86,7 @@ That writes `server/mail/order_shipped.tsx`. Edit it to describe the email Ada g
 
 ```tsx
 // server/mail/order_shipped.tsx
-import { defineMail } from 'kitr/mail'
+import { defineMail } from '@kitr/mail'
 
 export interface OrderShippedProps {
   firstName: string
@@ -112,8 +112,8 @@ Send it from a controller. `ctx.app` is the request's app, and `useMailer(app)` 
 
 ```ts
 // server/controllers/orders_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useMailer } from 'kitr/mail'
+import type { HttpContext } from '@kitr/api'
+import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
 export default class OrdersController {
@@ -132,7 +132,7 @@ export default class OrdersController {
 Register the route with `api.post('/orders/:id/ship', [OrdersController, 'ship'])` in `server/routes.ts` and call it. In development, with no `RESEND_API_KEY`, the server prints the message instead of sending it:
 
 ```
-[kitr/mail] to Ada Lovelace <ada@acme.com>: Order 1042 has shipped
+[@kitr/mail] to Ada Lovelace <ada@acme.com>: Order 1042 has shipped
 Your order is on its way
 Hi Ada, order 1042 left our warehouse today.
 Track your order (https://app.acme.com/orders/1042)
@@ -181,7 +181,7 @@ export function AcmeLayout({ title, children }: { title: string; children: React
 
 ```tsx
 // server/mail/invoice_ready.tsx
-import { defineMail } from 'kitr/mail'
+import { defineMail } from '@kitr/mail'
 import { AcmeLayout } from './layout'
 
 export interface InvoiceReadyProps {
@@ -205,7 +205,7 @@ export const invoiceReadyMail = defineMail<InvoiceReadyProps>('invoice_ready', {
 })
 ```
 
-Props are escaped like any React text, so a project name of `<script>` arrives as `&lt;script&gt;`. Mail clients do not load your stylesheets, so use inline `style` props. Images must be absolute URLs (`https://app.acme.com/logo.png`); `kitr/mail` has no inline (CID) attachments. When the rendered HTML does not start with `<!doctype` or `<html`, `kitr/mail` prepends `<!DOCTYPE html>`.
+Props are escaped like any React text, so a project name of `<script>` arrives as `&lt;script&gt;`. Mail clients do not load your stylesheets, so use inline `style` props. Images must be absolute URLs (`https://app.acme.com/logo.png`); `@kitr/mail` has no inline (CID) attachments. When the rendered HTML does not start with `<!doctype` or `<html`, `@kitr/mail` prepends `<!DOCTYPE html>`.
 
 ## Use React Email components
 
@@ -218,7 +218,7 @@ pnpm add @react-email/components
 ```tsx
 // server/mail/team_invite.tsx
 import { Body, Button, Container, Html, Text } from '@react-email/components'
-import { defineMail } from 'kitr/mail'
+import { defineMail } from '@kitr/mail'
 
 export interface TeamInviteProps {
   inviter: string
@@ -244,15 +244,15 @@ export const teamInviteMail = defineMail<TeamInviteProps>('team_invite', {
 })
 ```
 
-`kitr/mail` renders with `renderToStaticMarkup` from `react-dom/server`, not React Email's own `render()`. A component that only works through React Email's async `render()` needs a mailer you create yourself with `createMailer({ renderHtml })`; see [Create a mailer without the provider](#create-a-mailer-without-the-provider).
+`@kitr/mail` renders with `renderToStaticMarkup` from `react-dom/server`, not React Email's own `render()`. A component that only works through React Email's async `render()` needs a mailer you create yourself with `createMailer({ renderHtml })`; see [Create a mailer without the provider](#create-a-mailer-without-the-provider).
 
 ## Write the plain-text version
 
-Every message has a text part, for clients that show no HTML and for spam filters that score its absence. Left out, `kitr/mail` derives it from the HTML with `htmlToText()`:
+Every message has a text part, for clients that show no HTML and for spam filters that score its absence. Left out, `@kitr/mail` derives it from the HTML with `htmlToText()`:
 
 ```ts
 // scripts/text_preview.ts
-import { htmlToText } from 'kitr/mail'
+import { htmlToText } from '@kitr/mail'
 
 htmlToText(
   '<h1>Invoice INV-7</h1><p>Total: $40 &amp; tax</p><ul><li>Hosting</li><li>Support</li></ul><a href="https://app.acme.com/invoices/7">View invoice</a>',
@@ -269,7 +269,7 @@ When the derived text reads badly, usually because of layout tables, write it yo
 
 ```tsx
 // server/mail/order_shipped.tsx
-import { defineMail } from 'kitr/mail'
+import { defineMail } from '@kitr/mail'
 
 export const orderShippedMail = defineMail<{ firstName: string; orderId: string }>('order_shipped', {
   subject: ({ orderId }) => `Order ${orderId} has shipped`,
@@ -314,7 +314,7 @@ Every address field takes one recipient or a list, in any of the three forms:
 ```ts
 // server/services/invoice_service.ts
 import type { KitrApp } from 'kitr/app'
-import { useMailer } from 'kitr/mail'
+import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
 export async function sendInvoice(app: KitrApp) {
@@ -334,7 +334,7 @@ Before anything is sent, each address is parsed with `address()` and checked. Yo
 
 ```ts
 // scripts/addresses.ts
-import { address, formatAddress } from 'kitr/mail'
+import { address, formatAddress } from '@kitr/mail'
 
 address('Ada Lovelace <ada@acme.com>')
 // => { name: 'Ada Lovelace', email: 'ada@acme.com' }
@@ -355,7 +355,7 @@ The sender comes from `from` in `config/mail.ts`. Override it per message, and p
 ```ts
 // server/services/support_service.ts
 import type { KitrApp } from 'kitr/app'
-import { useMailer } from 'kitr/mail'
+import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
 export async function sendFromSupport(app: KitrApp) {
@@ -371,7 +371,7 @@ export async function sendFromSupport(app: KitrApp) {
 }
 ```
 
-Without a `from` anywhere, `send()` and `render()` throw ``[kitr/mail] No sender: set `from` in config/mail.ts or in send().``
+Without a `from` anywhere, `send()` and `render()` throw ``[@kitr/mail] No sender: set `from` in config/mail.ts or in send().``
 
 ## Add headers
 
@@ -380,7 +380,7 @@ Pass custom headers in `headers`. The common one is `List-Unsubscribe`, which Gm
 ```ts
 // server/services/digest_service.ts
 import type { KitrApp } from 'kitr/app'
-import { useMailer } from 'kitr/mail'
+import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
 export async function sendWithUnsubscribe(app: KitrApp, token: string) {
@@ -403,17 +403,17 @@ Header names must be tokens (letters, digits and ``!#$%&'*+.^_`|~-``), so `X Acm
 
 ### Header injection
 
-A line break in an address, a display name, the subject or a header value would let a value start a new header (`Bcc: someone@else.com`) at the SMTP layer. `kitr/mail` throws before sending instead, including when the subject is built from props a user typed:
+A line break in an address, a display name, the subject or a header value would let a value start a new header (`Bcc: someone@else.com`) at the SMTP layer. `@kitr/mail` throws before sending instead, including when the subject is built from props a user typed:
 
 ```ts
 // scripts/injection.ts
-import { createLogTransport, createMailer } from 'kitr/mail'
+import { createLogTransport, createMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
 const mailer = createMailer({ from: 'orders@acme.com', transport: createLogTransport({ print: false }) })
 
 await mailer.send(orderShippedMail, { firstName: 'Ada', orderId: '1042\r\nBcc: someone@else.com' }, { to: 'ada@acme.com' })
-// throws Error: [kitr/mail] Line break in the subject.
+// throws Error: [@kitr/mail] Line break in the subject.
 ```
 
 Nothing reaches the transport when a check fails.
@@ -426,7 +426,7 @@ Attachments are `{ filename, content, contentType? }`. `content` is a string or 
 // server/services/invoice_service.ts
 import { readFile } from 'node:fs/promises'
 import type { KitrApp } from 'kitr/app'
-import { useMailer } from 'kitr/mail'
+import { useMailer } from '@kitr/mail'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
 export async function sendInvoicePdf(app: KitrApp, invoiceNumber: string) {
@@ -453,8 +453,8 @@ Sending inside a request makes the response wait for the mail provider, and a pr
 
 ```ts
 // server/jobs/send_order_shipped.ts
-import { defineJob } from 'kitr/jobs'
-import { useMailer } from 'kitr/mail'
+import { defineJob } from '@kitr/jobs'
+import { useMailer } from '@kitr/mail'
 import { z } from 'zod'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
@@ -473,8 +473,8 @@ List the job in `config/jobs.ts`, then dispatch it from the controller:
 
 ```ts
 // server/controllers/orders_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useJobs } from 'kitr/jobs'
+import type { HttpContext } from '@kitr/api'
+import { useJobs } from '@kitr/jobs'
 import { sendOrderShipped } from '#server/jobs/send_order_shipped'
 
 export default class OrdersController {
@@ -498,7 +498,7 @@ Pass ids and plain values in the payload, not rendered HTML: the job renders the
 ```ts
 // server/services/archive_service.ts
 import type { KitrApp } from 'kitr/app'
-import { useMailer } from 'kitr/mail'
+import { useMailer } from '@kitr/mail'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
 export async function renderShipped(app: KitrApp) {
@@ -527,9 +527,9 @@ export async function renderShipped(app: KitrApp) {
 
 ```ts
 // server/main.ts
-import { mountRoutes } from 'kitr/api'
-import { mailPreview } from 'kitr/mail'
-import { createServer } from 'kitr/server'
+import { mountRoutes } from '@kitr/api'
+import { mailPreview } from '@kitr/mail'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { invoiceReadyMail } from './mail/invoice_ready'
@@ -568,7 +568,7 @@ The provider binds the mailer as `mailer` in the container, so anything with the
 | --- | --- |
 | A controller | `useMailer(ctx.app)` |
 | A job | `useMailer(ctx.app)` in `run(payload, ctx)` |
-| An action or service during a request | `useMailer(useRequestApp())`, with `useRequestApp` from `kitr/server` |
+| An action or service during a request | `useMailer(useRequestApp())`, with `useRequestApp` from `@kitr/server` |
 | A script or the server file | `useMailer(server.app)` after `await server.boot()` |
 
 `useMailer(app)` is `app.container.use('mailer')`. Called in the browser, or before the app has booted, it throws because nothing is bound.
@@ -583,7 +583,7 @@ The default outside production. It prints each message's recipients, subject and
 
 ```ts
 // config/mail.ts
-import { createLogTransport, defineConfig } from 'kitr/mail'
+import { createLogTransport, defineConfig } from '@kitr/mail'
 
 export default defineConfig({
   from: 'Acme <orders@acme.com>',
@@ -603,7 +603,7 @@ Sends through [Resend's HTTP API](https://resend.com/docs/api-reference/emails/s
 
 ```ts
 // config/mail.ts
-import { createResendTransport, defineConfig } from 'kitr/mail'
+import { createResendTransport, defineConfig } from '@kitr/mail'
 
 export default defineConfig({
   from: 'Acme <orders@acme.com>',
@@ -622,7 +622,7 @@ RESEND_API_KEY=re_...
 | `apiKey` | required | Your Resend API key. |
 | `fetch` | global `fetch` | The fetch to call, for proxies or tests. |
 
-A response that is not 2xx throws `[kitr/mail] Resend <status>: <body>`, such as `Resend 403: The acme.com domain is not verified`. The id Resend returns becomes `SentMail.id`.
+A response that is not 2xx throws `[@kitr/mail] Resend <status>: <body>`, such as `Resend 403: The acme.com domain is not verified`. The id Resend returns becomes `SentMail.id`.
 
 ### SMTP
 
@@ -634,7 +634,7 @@ pnpm add nodemailer
 
 ```ts
 // config/mail.ts
-import { createSmtpTransport, defineConfig } from 'kitr/mail'
+import { createSmtpTransport, defineConfig } from '@kitr/mail'
 import nodemailer from 'nodemailer'
 
 export default defineConfig({
@@ -670,7 +670,7 @@ Choose in `config/mail.ts` with plain conditions. This one sends through Resend 
 
 ```ts
 // config/mail.ts
-import { createResendTransport, createSmtpTransport, defineConfig } from 'kitr/mail'
+import { createResendTransport, createSmtpTransport, defineConfig } from '@kitr/mail'
 import nodemailer from 'nodemailer'
 
 const transport = process.env.RESEND_API_KEY
@@ -686,11 +686,11 @@ Point `SMTP_HOST` at [Mailpit](https://mailpit.axllent.org/) or a similar local 
 
 ## Send in production
 
-The provider checks `transport` at boot when the app runs in production. With `transport` unset it throws `[kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).`; with the log transport it throws `[kitr/mail] The log transport prints every email (reset links included) and is not allowed in production; set Resend, SMTP or your own transport in config/mail.ts.` The generated config leaves `transport` unset when `RESEND_API_KEY` is empty, so a deploy with a missing key fails at boot:
+The provider checks `transport` at boot when the app runs in production. With `transport` unset it throws `[@kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).`; with the log transport it throws `[@kitr/mail] The log transport prints every email (reset links included) and is not allowed in production; set Resend, SMTP or your own transport in config/mail.ts.` The generated config leaves `transport` unset when `RESEND_API_KEY` is empty, so a deploy with a missing key fails at boot:
 
 ```sh
 RESEND_API_KEY= NODE_ENV=production kitr start
-# fails at boot: [kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).
+# fails at boot: [@kitr/mail] Set a transport in config/mail.ts (Resend, SMTP or your own).
 ```
 
 Set the key on the host and the same deploy boots and sends. Before you go live:
@@ -707,7 +707,7 @@ Set the key on the host and the same deploy boots and sends. Before you go live:
 ```ts
 // scripts/send_digest.ts
 import { render } from '@react-email/render'
-import { createMailer, createResendTransport } from 'kitr/mail'
+import { createMailer, createResendTransport } from '@kitr/mail'
 import { teamInviteMail } from '#server/mail/team_invite'
 
 const mailer = createMailer({
@@ -723,7 +723,7 @@ await mailer.send(teamInviteMail, { inviter: 'Grace', teamName: 'Analytical Engi
 
 ## Errors
 
-Every error is a plain `Error` whose message starts with `[kitr/mail]`. Nothing is sent when one is thrown.
+Every error is a plain `Error` whose message starts with `[@kitr/mail]`. Nothing is sent when one is thrown.
 
 | Message | When | What to do |
 | --- | --- | --- |
@@ -751,7 +751,7 @@ SMTP errors come from nodemailer unchanged.
 
 ```tsx
 // server/mail/order_shipped.tsx
-import { defineMail } from 'kitr/mail'
+import { defineMail } from '@kitr/mail'
 
 export interface OrderShippedProps {
   firstName: string
@@ -780,9 +780,9 @@ Outside production the provider uses the log transport, which keeps every messag
 
 ```ts
 // test/order_shipped.test.ts
-import { createLogTransport, useMailer } from 'kitr/mail'
-import mailProvider from 'kitr/mail/provider'
-import { createTestApp } from 'kitr/testing'
+import { createLogTransport, useMailer } from '@kitr/mail'
+import mailProvider from '@kitr/mail/provider'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
@@ -826,13 +826,13 @@ describe('order shipped email', () => {
 
 To test that nothing was sent, assert `expect(mailer.sent).toHaveLength(0)`. Each `createTestApp()` gets its own mailer, so messages do not leak between tests that boot their own app.
 
-To test through an HTTP route, send the request with `createTestClient(server)` from `kitr/testing` and read `useMailer(server.app).sent` afterwards. The server uses your `config/mail.ts`, so its log transport prints unless you pass `print: false`.
+To test through an HTTP route, send the request with `createTestClient(server)` from `@kitr/testing` and read `useMailer(server.app).sent` afterwards. The server uses your `config/mail.ts`, so its log transport prints unless you pass `print: false`.
 
 To check a template's markup without a container, use `createMailer()` and `render()`, and snapshot the result:
 
 ```ts
 // test/invoice_ready.test.ts
-import { createMailer } from 'kitr/mail'
+import { createMailer } from '@kitr/mail'
 import { expect, it } from 'vitest'
 import { invoiceReadyMail } from '#server/mail/invoice_ready'
 
@@ -850,7 +850,7 @@ To test your code's handling of a transport failure, pass a transport that throw
 
 ```ts
 // test/transport_failure.test.ts
-import { createMailer, type MailTransport } from 'kitr/mail'
+import { createMailer, type MailTransport } from '@kitr/mail'
 import { expect, it } from 'vitest'
 import { orderShippedMail } from '#server/mail/order_shipped'
 
@@ -874,7 +874,7 @@ A transport is an object with a `name` and a `send(message)` method that resolve
 
 ```ts
 // server/mail/postmark_transport.ts
-import { formatAddress, type MailTransport } from 'kitr/mail'
+import { formatAddress, type MailTransport } from '@kitr/mail'
 
 /** Sends through Postmark's HTTP API. Attachments are left out to keep the example short. */
 export function createPostmarkTransport(options: { serverToken: string }): MailTransport {
@@ -912,7 +912,7 @@ Register it in `config/mail.ts` like a built-in one:
 
 ```ts
 // config/mail.ts
-import { defineConfig } from 'kitr/mail'
+import { defineConfig } from '@kitr/mail'
 import { createPostmarkTransport } from '#server/mail/postmark_transport'
 
 export default defineConfig({
@@ -927,7 +927,7 @@ Transports compose. This one falls back to a second provider when the first thro
 
 ```ts
 // server/mail/fallback_transport.ts
-import type { MailTransport } from 'kitr/mail'
+import type { MailTransport } from '@kitr/mail'
 
 export function withFallback(primary: MailTransport, backup: MailTransport): MailTransport {
   return {

@@ -106,7 +106,7 @@ export type MountedSockets = Record<string, SocketServer | SseServer>
  * `createServer({ routes })`. No React: safe in a pure backend.
  *
  *   import { defineRoutes } from 'kitr/app'
- *   import ws from 'kitr/realtime/routes'
+ *   import ws from '@kitr/realtime/routes'
  *   export const routes = defineRoutes([ws], (r) => r.ws('/ws', { channels: [chatChannel] }))
  */
 const ws = defineRouteExtension({

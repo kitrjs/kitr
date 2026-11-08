@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/theme'
+import { defineConfig } from '@kitr/theme'
 
 export default defineConfig({
   default: 'system',

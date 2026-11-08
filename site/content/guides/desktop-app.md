@@ -84,8 +84,8 @@ A desktop window is wide enough for the list and the selected invoice side by si
 ```ts
 // app/routes.ts
 import { defineRoutes } from 'kitr/app'
-import { requireAuth } from 'kitr/router'
-import router from 'kitr/router/routes'
+import { requireAuth } from '@kitr/router'
+import router from '@kitr/router/routes'
 import { invoiceQuery, invoicesQuery } from '#app/features/invoices/queries'
 import { head, RootDocument } from './document'
 
@@ -123,7 +123,7 @@ export type AppRoutes = typeof routes.$types
 
 ```tsx
 // app/pages/invoices-layout.tsx
-import { SplitStack, StackOutlet } from 'kitr/router/stack'
+import { SplitStack, StackOutlet } from '@kitr/router/stack'
 import { InvoiceList } from '#app/components/invoice-list'
 
 export default function InvoicesLayout() {
@@ -139,7 +139,7 @@ The `/` page is the list on a narrow window and a placeholder on a wide one, bec
 
 ```tsx
 // app/pages/invoices.tsx
-import { useSplitPane } from 'kitr/router/stack'
+import { useSplitPane } from '@kitr/router/stack'
 import { InvoiceList } from '#app/components/invoice-list'
 
 export default function InvoicesIndex() {
@@ -186,7 +186,7 @@ export const channels = {
 // platforms/app/main.ts
 import { writeFile } from 'node:fs/promises'
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol } from 'electron'
-import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from 'kitr/desktop/main'
+import { createIpcEmitter, createMainWindow, handleIpc, handleKitrIpc, registerAppScheme } from '@kitr/desktop/main'
 import type { Ipc, IpcPush } from './ipc'
 
 const window = { title: 'Acme Billing', width: 1280, height: 820, minWidth: 900, minHeight: 600 }
@@ -241,7 +241,7 @@ In the page, `ipc.on()` subscribes and returns the unsubscribe function, which f
 
 ```tsx
 // app/components/menu-commands.tsx
-import { useNavigate } from 'kitr/router'
+import { useNavigate } from '@kitr/router'
 import { useEffect } from 'react'
 import { ipc } from '#app/ipc'
 
@@ -293,7 +293,7 @@ For things every native shell can do, use [Platform](/packages/platform) instead
 
 ```tsx
 // app/pages/invoice.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 // ...
 const platform = usePlatform()
 
@@ -325,9 +325,9 @@ kitr's IPC pieces take Electron's objects as arguments, so a test passes small f
 
 ```ts
 // test/desktop.test.ts
-import { createIpcClient, IPC_BRIDGE_KEY } from 'kitr/desktop/client'
-import { handleIpc } from 'kitr/desktop/main'
-import { exposeIpc } from 'kitr/desktop/preload'
+import { createIpcClient, IPC_BRIDGE_KEY } from '@kitr/desktop/client'
+import { handleIpc } from '@kitr/desktop/main'
+import { exposeIpc } from '@kitr/desktop/preload'
 import { afterEach, describe, expect, it } from 'vitest'
 import { invoicesToCsv } from '#app/features/invoices/csv'
 import type { Ipc, IpcPush } from '../platforms/app/ipc'
@@ -404,7 +404,7 @@ Unsigned apps trigger Gatekeeper on macOS and SmartScreen on Windows. electron-b
 
 ## Choose Tauri instead
 
-When download size matters more than identical rendering, the [Tauri](/packages/tauri) platform wraps the same client build in the operating system's own web view, for an installer of a few megabytes instead of around a hundred. Both platforms register the same `platform` and `storage` drivers, so the pages, the queries and the storage items do not change. What changes is the native side: IPC commands in `main.ts` become Rust commands in `platforms/app/src-tauri/src/lib.rs`, called with `commands.<name>()` from `kitr/tauri/client`, and you need the Rust toolchain to build.
+When download size matters more than identical rendering, the [Tauri](/packages/tauri) platform wraps the same client build in the operating system's own web view, for an installer of a few megabytes instead of around a hundred. Both platforms register the same `platform` and `storage` drivers, so the pages, the queries and the storage items do not change. What changes is the native side: IPC commands in `main.ts` become Rust commands in `platforms/app/src-tauri/src/lib.rs`, called with `commands.<name>()` from `@kitr/tauri/client`, and you need the Rust toolchain to build.
 
 ```sh
 kitr platforms remove app

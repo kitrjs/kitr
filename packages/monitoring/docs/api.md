@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/monitoring, with its signature.
+description: Every export of @kitr/monitoring, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/monitoring`, `kitr/monitoring/provider`, `kitr/monitoring/server`, read from the published type definitions. The [guide](/packages/monitoring) shows them in use.
+Every export of `@kitr/monitoring`, `@kitr/monitoring/provider`, `@kitr/monitoring/server`, read from the published type definitions. The [guide](/packages/monitoring) shows them in use.
 
-## kitr/monitoring
+## @kitr/monitoring
 
 ### consoleReporter
 
@@ -243,7 +243,7 @@ type Severity = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 
 How serious a report or breadcrumb is, using Sentry's levels.
 
-## kitr/monitoring/provider
+## @kitr/monitoring/provider
 
 ### MonitoringErrorBoundary
 
@@ -291,7 +291,7 @@ interface ErrorBoundaryProps {
 
 Props of `MonitoringErrorBoundary`.
 
-## kitr/monitoring/server
+## @kitr/monitoring/server
 
 ### reportErrors
 

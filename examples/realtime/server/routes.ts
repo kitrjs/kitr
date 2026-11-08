@@ -1,6 +1,6 @@
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
 import { chatChannel } from '#app/channels/chat'
 import HealthController from '#server/controllers/health_controller'
 import MessagesController from '#server/controllers/messages_controller'

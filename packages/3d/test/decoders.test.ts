@@ -99,8 +99,8 @@ describe('setup module', () => {
     const commands = (await threeD.commands!()) as Record<string, { meta: { name: string } }>
     expect(commands.decoders!.meta.name).toBe('3d:decoders')
     expect(threeD.wraps).toEqual({
-      '@react-three/fiber': 'kitr/3d',
-      '@react-three/drei': 'kitr/3d/drei',
+      '@react-three/fiber': '@kitr/3d',
+      '@react-three/drei': '@kitr/3d/drei',
     })
   })
 })

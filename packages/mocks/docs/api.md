@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/mocks, with its signature.
+description: Every export of @kitr/mocks, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/mocks`, read from the published type definitions. The [guide](/packages/mocks) shows them in use.
+Every export of `@kitr/mocks`, read from the published type definitions. The [guide](/packages/mocks) shows them in use.
 
-## kitr/mocks
+## @kitr/mocks
 
 Re-exports `msw` unchanged, plus the following.
 

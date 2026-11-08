@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/vite, with its signature.
+description: Every export of @kitr/vite, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/vite`, `kitr/vite/client`, read from the published type definitions. The [guide](/packages/vite) shows them in use.
+Every export of `@kitr/vite`, `@kitr/vite/client`, read from the published type definitions. The [guide](/packages/vite) shows them in use.
 
-## kitr/vite
+## @kitr/vite
 
 ### kitr
 
@@ -60,8 +60,7 @@ Static read of `platforms: { site: web({ mode: 'ssr' }) }`: names, factories and
 function robotsFor(root: string, configDir?: string): Promise<string | null>;
 ```
 
-The robots.txt for a project: `robotsTxt()` from kitr/seo over `config/seo.ts`, or null when
-there is no config/seo.ts or it sets `robots: false`.
+The robots.txt for a project: `robotsTxt()` from
 
 ### KitrPluginOptions
 

@@ -11,7 +11,7 @@ describe('actions setup module', () => {
       vars: { feature: 'projects', name: 'list' },
     })
     const src = query.stub({ feature: 'projects', name: 'list' })
-    expect(src).toContain("import { defineQuery } from 'kitr/actions'")
+    expect(src).toContain("import { defineQuery } from '@kitr/actions'")
     expect(src).toContain("defineQuery('projects.list', {")
     const mutation = actions.generators!.mutation!.stub({ feature: 'projects', name: 'archive' })
     expect(mutation).toContain("defineMutation('projects.archive', {")

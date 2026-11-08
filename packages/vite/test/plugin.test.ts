@@ -31,7 +31,7 @@ const rc = `export default defineKitrConfig({
   providers: [
     () => import('@kitr/query/provider'),
     // () => import('@kitr/disabled/provider'),
-    () => import('kitr/devtools/provider'),
+    () => import('@kitr/devtools/provider'),
   ],
   directories: { config: 'settings' },
 })`
@@ -53,7 +53,7 @@ async function corePlugin(
 describe('readRc', () => {
   it('ignores commented-out providers', () => {
     const root = project({ 'kitrrc.ts': rc })
-    expect(readRc(root).providers).toEqual(['@kitr/query/provider', 'kitr/devtools/provider'])
+    expect(readRc(root).providers).toEqual(['@kitr/query/provider', '@kitr/devtools/provider'])
     expect(readRc(root).directories.config).toBe('settings')
   })
 })
@@ -75,7 +75,7 @@ describe('kitr() plugin', () => {
     const { load, config } = await corePlugin(root)
     const providers = load('virtual:kitr/providers')
     expect(providers).toContain(`import p0 from "@kitr/query/provider"`)
-    expect(providers).toContain(`import p1 from "kitr/devtools/provider"`)
+    expect(providers).toContain(`import p1 from "@kitr/devtools/provider"`)
     expect(providers).not.toContain('disabled')
     expect(providers).toContain('export const providers = [p0, p1]')
     const cfg = load('virtual:kitr/config')
@@ -119,7 +119,7 @@ describe('kitr() plugin', () => {
 
   it('aliases #kitr to the generated folder and writes it on buildStart', async () => {
     const root = project({
-      'kitrrc.ts': `import { web } from 'kitr/web'\nexport default defineKitrConfig({ packages: [], providers: [], platforms: { site: web({ mode: 'spa' }) } })`,
+      'kitrrc.ts': `import { web } from '@kitr/web'\nexport default defineKitrConfig({ packages: [], providers: [], platforms: { site: web({ mode: 'spa' }) } })`,
       'package.json': JSON.stringify({ name: 'app' }),
     })
     const { core, config } = await corePlugin(root)
@@ -201,7 +201,7 @@ describe('kitr() plugin', () => {
 
   it('applies the desktop shell settings for a Tauri platform', async () => {
     const root = project({
-      'kitrrc.ts': `import { tauri } from 'kitr/tauri'
+      'kitrrc.ts': `import { tauri } from '@kitr/tauri'
 export default defineKitrConfig({
   platforms: { app: tauri({ port: 3200 }) },
   packages: ['@kitr/router'],
@@ -217,7 +217,7 @@ export default defineKitrConfig({
   // Regression: web({ base }) was accepted and documented, but never reached Vite.
   it("passes a web platform's base to Vite, unless vite.config.ts sets one", async () => {
     const root = project({
-      'kitrrc.ts': `import { web } from 'kitr/web'
+      'kitrrc.ts': `import { web } from '@kitr/web'
 export default defineKitrConfig({
   platforms: { admin: web({ base: '/admin' }), site: web() },
   packages: ['@kitr/router'],
@@ -246,25 +246,6 @@ export default defineKitrConfig({
     const { core } = await corePlugin(project({}))
     expect((core.resolveId as any)('react')).toBeNull()
     expect((core.load as any)('react')).toBeNull()
-  })
-
-  // Regression: a missing optional peer failed as `"useQuery" is not exported by kitr/dist/query.js`,
-  // or, for a namespace import, built and threw in the browser.
-  it('names the package and the command when a kitr/* entry is not installed', async () => {
-    const root = project({ 'package.json': '{}' }, ['query'])
-    const { core } = await corePlugin(root)
-    const resolveId = (id: string, importer?: string) => (core.resolveId as any)(id, importer)
-    const importer = join(root, 'app/main.tsx')
-    expect(resolveId('kitr/query', importer)).toBeNull()
-    expect(resolveId('kitr/query/provider', importer)).toBeNull()
-    expect(resolveId('kitr', importer)).toBeNull()
-    expect(resolveId('kitr/env', importer)).toBeNull()
-    expect(() => resolveId('kitr/forms', importer)).toThrow(
-      'kitr/forms re-exports @kitr/forms, which is not installed. Run `kitr add forms`.',
-    )
-    expect(() => resolveId('kitr/forms/x', '\0virtual:kitr/providers')).toThrow('kitr add forms')
-    // A dependency's own imports are its business.
-    expect(resolveId('kitr/forms', join(root, 'node_modules/x/index.js'))).toBeNull()
   })
 })
 

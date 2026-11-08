@@ -1,4 +1,4 @@
-import { channel, createSocketClient } from 'kitr/realtime'
+import { channel, createSocketClient } from '@kitr/realtime'
 import { useEffect, useState } from 'react'
 import { exampleChannel } from '#app/channels/example'
 

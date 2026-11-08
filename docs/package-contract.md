@@ -91,7 +91,7 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `ctx.vite.addPlugin('tailwind', '@tailwindcss/vite')` | `plugins` in `vite.config.ts`, when the file exists |
 | `ctx.routes.extend('@kitr/api/routes')`, `.remove(...)` | the extensions list of the project's `defineRoutes([...])` call, in `directories.routeTable` (default `app/routes.ts`); created when missing |
 | `ctx.server.attach({ marker, import, line, first })` | one line (and its import) after `createServer()` in the server platform's entry, once; `first` puts it straight after `createServer()` for middleware that must see every request |
-| `ctx.replaceImport(file, from, to)` | swap one side-effect import for another (`kitr/theme/styles.css` for the Tailwind preset) |
+| `ctx.replaceImport(file, from, to)` | swap one side-effect import for another (`@kitr/theme/styles.css` for the Tailwind preset) |
 | `ctx.types.enable()` | the `#kitr/*` path and `.kitr` include in `tsconfig.json`, `.kitr` in `.gitignore`, `kitr types` before `tsc` in the typecheck script |
 | `ctx.app.option('operations', '#kitr/actions')`, `.removeOption(...)` | pass a named value to `createApp({ ... })` in `app/app.ts`, imported from the given module |
 

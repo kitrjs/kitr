@@ -1,6 +1,6 @@
 import { defineRoutes } from 'kitr/app'
-import router from 'kitr/router/routes'
-import { ssrRoute } from 'kitr/seo'
+import router from '@kitr/router/routes'
+import { ssrRoute } from '@kitr/seo'
 import { head, RootDocument } from './document'
 
 const rooms = ['general', 'random', 'help']

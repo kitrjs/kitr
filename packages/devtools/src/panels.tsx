@@ -145,7 +145,7 @@ function RouterPanel({ app }: { app: KitrApp }) {
   if (!router)
     return (
       <p className="kitr-dt-muted">
-        No router bound. Create it with createKitrRouter() from kitr/router.
+        No router bound. Create it with createKitrRouter() from @kitr/router.
       </p>
     )
   const { location, matches, status } = router.state

@@ -6,7 +6,7 @@ order: 1
 
 # Cache
 
-Some reads are slow or expensive: a project report that joins six tables, a call to a rate-limited exchange-rate API, an invoice PDF summary rendered from a template. `kitr/cache` keeps the result for a while, so the next request gets it straight from memory or Redis. When the data changes, you clear every cached result about it with one tag instead of hunting down keys.
+Some reads are slow or expensive: a project report that joins six tables, a call to a rate-limited exchange-rate API, an invoice PDF summary rendered from a template. `@kitr/cache` keeps the result for a while, so the next request gets it straight from memory or Redis. When the data changes, you clear every cached result about it with one tag instead of hunting down keys.
 
 The package is a small layer of its own, not a wrapper: values are stored as JSON through a six-method driver, with a memory driver built in and an [unstorage](https://unstorage.unjs.io) driver for Redis, Upstash, Cloudflare KV and the rest. On top of a plain key-value store it adds expiry times, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
 
@@ -30,7 +30,7 @@ What `kitr add` does:
 
 It adds no env variables, no scripts and asks no questions. No kit includes the cache, so every project adds it with this command.
 
-`kitr remove cache` reverses every step above: it takes the provider and the package out of `kitrrc.ts`, deletes `config/cache.ts`, removes the dependency and the `AGENTS.md` section, then lists the files that still import `kitr/cache`.
+`kitr remove cache` reverses every step above: it takes the provider and the package out of `kitrrc.ts`, deletes `config/cache.ts`, removes the dependency and the `AGENTS.md` section, then lists the files that still import `@kitr/cache`.
 
 ## Configure
 
@@ -38,7 +38,7 @@ It adds no env variables, no scripts and asks no questions. No kit includes the 
 
 ```ts
 // config/cache.ts
-import { defineConfig } from 'kitr/cache'
+import { defineConfig } from '@kitr/cache'
 
 export default defineConfig({
   // In-memory by default. For several instances pass a shared driver: createUnstorageCacheDriver(...).
@@ -59,7 +59,7 @@ Config files are TypeScript, so you can choose values per environment in the fil
 
 ```ts
 // config/cache.ts
-import { defineConfig } from 'kitr/cache'
+import { defineConfig } from '@kitr/cache'
 
 export default defineConfig({
   prefix: 'acme-app:',
@@ -73,8 +73,8 @@ On the server, get the cache with `useCache(app)` and wrap the slow call in `rem
 
 ```ts
 // server/controllers/reports_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useCache } from 'kitr/cache'
+import type { HttpContext } from '@kitr/api'
+import { useCache } from '@kitr/cache'
 import { buildProjectReport } from '#server/reports/project_report'
 
 export default class ReportsController {
@@ -92,7 +92,7 @@ Add the route next to the others:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from '@kitr/api'
 import ReportsController from '#server/controllers/reports_controller'
 
 export const routes = defineRoutes((router) =>
@@ -110,8 +110,8 @@ The provider binds one cache as `cache` in the container. `useCache(app)` reads 
 
 ```ts
 // server/controllers/invoices_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useCache } from 'kitr/cache'
+import type { HttpContext } from '@kitr/api'
+import { useCache } from '@kitr/cache'
 
 export default class InvoicesController {
   async index({ app }: HttpContext) {
@@ -125,8 +125,8 @@ export default class InvoicesController {
 
 ```ts
 // server/jobs/warm_reports.ts
-import { useCache } from 'kitr/cache'
-import { defineJob } from 'kitr/jobs'
+import { useCache } from '@kitr/cache'
+import { defineJob } from '@kitr/jobs'
 import { buildProjectReport } from '#server/reports/project_report'
 
 export const warmReportsJob = defineJob('warm-reports', {
@@ -151,7 +151,7 @@ If the provider is not registered, `useCache` throws `[kitr] No binding named "c
 
 ```ts
 // server/reports/team_summary.ts
-import type { Cache } from 'kitr/cache'
+import type { Cache } from '@kitr/cache'
 import { countOpenInvoices } from '#server/repositories/invoices'
 
 export function teamSummary(cache: Cache, teamId: string) {
@@ -181,7 +181,7 @@ The last row is the reason to prefer `remember()` over a `get()` then `set()` pa
 
 ```ts
 // server/reports/warm.ts
-import type { Cache } from 'kitr/cache'
+import type { Cache } from '@kitr/cache'
 import { buildProjectReport } from '#server/reports/project_report'
 
 export async function loadReportForEveryone(cache: Cache) {
@@ -199,7 +199,7 @@ A failure is not cached, so a database blip does not leave a broken answer in pl
 
 ```ts
 // server/rates/eur_rate.ts
-import type { Cache } from 'kitr/cache'
+import type { Cache } from '@kitr/cache'
 import { fetchRate } from '#server/rates/client'
 
 export async function eurRate(cache: Cache): Promise<number | null> {
@@ -240,7 +240,7 @@ Every entry written through the cache expires. `ttl` is in seconds; without one,
 
 ```ts
 // server/rates/refresh.ts
-import { useCache } from 'kitr/cache'
+import { useCache } from '@kitr/cache'
 import type { KitrApp } from 'kitr/app'
 import { fetchRate } from '#server/rates/client'
 
@@ -261,8 +261,8 @@ Tag an entry with what it is about when you store it. After a write, clear the t
 
 ```ts
 // server/controllers/projects_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useCache } from 'kitr/cache'
+import type { HttpContext } from '@kitr/api'
+import { useCache } from '@kitr/cache'
 import { updateProject } from '#server/repositories/projects'
 
 export default class ProjectsController {
@@ -278,8 +278,8 @@ The report under `report:project:42` and anything else tagged `project:42` are c
 
 ```ts
 // server/controllers/invoices_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useCache } from 'kitr/cache'
+import type { HttpContext } from '@kitr/api'
+import { useCache } from '@kitr/cache'
 import { markInvoicePaid } from '#server/repositories/invoices'
 
 export default class InvoicesController {
@@ -303,7 +303,7 @@ Don't guess keys after a write with a loop of `delete()` calls. Lists, pages and
 
 ```ts
 // server/rates/exchange_rate.ts
-import { type Cache, cached } from 'kitr/cache'
+import { type Cache, cached } from '@kitr/cache'
 import { fetchRate } from '#server/rates/client'
 
 export const exchangeRate = (cache: Cache) =>
@@ -318,8 +318,8 @@ Call it with the app's cache wherever you need a rate:
 
 ```ts
 // server/controllers/orders_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { useCache } from 'kitr/cache'
+import type { HttpContext } from '@kitr/api'
+import { useCache } from '@kitr/cache'
 import { exchangeRate } from '#server/rates/exchange_rate'
 
 export default class OrdersController {
@@ -343,7 +343,7 @@ The cache also works as a typed key-value store. Values go in and come out as JS
 
 ```ts
 // server/teams/budget.ts
-import { useCache } from 'kitr/cache'
+import { useCache } from '@kitr/cache'
 import type { KitrApp } from 'kitr/app'
 
 export async function budgetExample(app: KitrApp) {
@@ -380,7 +380,7 @@ Every value passes through `JSON.stringify` on the way in and `JSON.parse` on th
 
 ```ts
 // server/orders/last_order.ts
-import { useCache } from 'kitr/cache'
+import { useCache } from '@kitr/cache'
 import type { KitrApp } from 'kitr/app'
 
 export async function lastOrderExample(app: KitrApp) {
@@ -423,7 +423,7 @@ The default. Nothing to install and no config: leave `driver` out of `config/cac
 
 ```ts
 // config/cache.ts
-import { createMemoryCacheDriver, defineConfig } from 'kitr/cache'
+import { createMemoryCacheDriver, defineConfig } from '@kitr/cache'
 
 export default defineConfig({
   driver: createMemoryCacheDriver(),
@@ -444,7 +444,7 @@ pnpm add unstorage ioredis
 
 ```ts
 // config/cache.ts
-import { createUnstorageCacheDriver, defineConfig } from 'kitr/cache'
+import { createUnstorageCacheDriver, defineConfig } from '@kitr/cache'
 import { createStorage } from 'unstorage'
 import redisDriver from 'unstorage/drivers/redis'
 
@@ -470,7 +470,7 @@ Use it in the config:
 
 ```ts
 // config/cache.ts
-import { createRedisCacheDriver, defineConfig } from 'kitr/cache'
+import { createRedisCacheDriver, defineConfig } from '@kitr/cache'
 import { Redis } from 'ioredis'
 
 export default defineConfig({
@@ -514,7 +514,7 @@ When the [devtools](/packages/devtools) package is installed, the cache provider
 
 ```ts
 // server/reports/team_summary.test.ts
-import { createCache } from 'kitr/cache'
+import { createCache } from '@kitr/cache'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 afterEach(() => {
@@ -557,9 +557,9 @@ Code that calls `useCache(app)` needs an app with the provider. `createTestApp` 
 
 ```ts
 // server/reports/report_cache.test.ts
-import { useCache } from 'kitr/cache'
-import cacheProvider from 'kitr/cache/provider'
-import { createTestApp } from 'kitr/testing'
+import { useCache } from '@kitr/cache'
+import cacheProvider from '@kitr/cache/provider'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 
 it('binds the cache from config', async () => {
@@ -593,7 +593,7 @@ A driver is an object that implements `CacheDriver`: a `name` and six async meth
 
 ```ts
 // server/cache/counting_driver.ts
-import type { CacheDriver } from 'kitr/cache'
+import type { CacheDriver } from '@kitr/cache'
 
 export function countingDriver(inner: CacheDriver) {
   const stats = { hits: 0, misses: 0 }
@@ -619,7 +619,7 @@ Register it in the config like any other driver:
 
 ```ts
 // config/cache.ts
-import { createMemoryCacheDriver, defineConfig } from 'kitr/cache'
+import { createMemoryCacheDriver, defineConfig } from '@kitr/cache'
 import { countingDriver } from '#server/cache/counting_driver'
 
 export const cacheStats = countingDriver(createMemoryCacheDriver())

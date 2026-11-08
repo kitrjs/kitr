@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/files, with its signature.
+description: Every export of @kitr/files, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/files`, `kitr/files/react`, `kitr/files/provider`, read from the published type definitions. The [guide](/packages/files) shows them in use.
+Every export of `@kitr/files`, `@kitr/files/react`, `@kitr/files/provider`, read from the published type definitions. The [guide](/packages/files) shows them in use.
 
-## kitr/files
+## @kitr/files
 
 ### acceptFor
 
@@ -214,7 +214,7 @@ type FileData = string | Blob | Uint8Array | ArrayBuffer;
 
 What `save()` accepts: text, a Blob or File, or raw bytes.
 
-## kitr/files/react
+## @kitr/files/react
 
 ### useDropFiles
 
@@ -255,7 +255,7 @@ function useFiles(): Files;
 
 The `files` service from the app in context. Use `useFileDialogs()` when you want a busy flag.
 
-## kitr/files/provider
+## @kitr/files/provider
 
 ### filesProvider
 

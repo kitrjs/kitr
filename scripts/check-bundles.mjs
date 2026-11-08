@@ -9,7 +9,7 @@
 // 5. server entries never pull React into their import graph
 // 6. browser entries never import node: builtins
 // 7. size budgets (gzip) per entry, so an accidental bundle-in shows up
-// 8. the umbrella depends on core and the CLI only; every other subpath is an optional peer
+// 8. `kitr` depends on core and the CLI only and re-exports nothing else
 import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
@@ -271,24 +271,24 @@ for (const [dir, pkg] of manifests) {
   }
 }
 
-// 8. a blank project installs only the core and the CLI: every other `kitr/*` subpath is an
-//    optional peer that `kitr add <package>` brings in. A hard dependency here would ship to
-//    every project whether it uses the package or not.
+// 8. `kitr` is the CLI and the kitrrc.ts config, nothing else: it depends on the core and the CLI
+//    only, and re-exports no other package. Apps import `@kitr/<name>` after `kitr add <name>`, so
+//    a missing package is a plain "cannot find module" in the editor and the build.
 {
   const umbrella = manifests.get('kitr')
   const hard = Object.keys(umbrella.dependencies ?? {}).sort()
   const allowed = ['@kitr/cli', '@kitr/core']
   if (hard.join() !== allowed.join())
+    fail('kitr', `dependencies must be exactly ${allowed.join(', ')} (got ${hard.join(', ')})`)
+  if (umbrella.peerDependencies && Object.keys(umbrella.peerDependencies).length)
+    fail('kitr', 'must not list peers; apps install @kitr/* packages themselves')
+  const subpaths = Object.keys(umbrella.exports ?? {}).sort()
+  const allowedSubpaths = ['.', './app', './env', './package.json']
+  if (subpaths.join() !== allowedSubpaths.join())
     fail(
       'kitr',
-      `dependencies must be exactly ${allowed.join(', ')} (got ${hard.join(', ')}); make the rest optional peers`,
+      `exports must be exactly ${allowedSubpaths.join(', ')} (got ${subpaths.join(', ')})`,
     )
-  for (const [dir, pkg] of manifests) {
-    if (dir === 'kitr' || dir === 'core' || dir === 'cli') continue
-    if (!umbrella.peerDependencies?.[pkg.name]) continue
-    if (!umbrella.peerDependenciesMeta?.[pkg.name]?.optional)
-      fail('kitr', `peer ${pkg.name} must be optional`)
-  }
 }
 
 // 3. every entry imports in Node (run in one child process so module state is isolated from us)

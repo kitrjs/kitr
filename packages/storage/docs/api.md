@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/storage, with its signature.
+description: Every export of @kitr/storage, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/storage`, `kitr/storage/react`, `kitr/storage/server`, `kitr/storage/provider`, read from the published type definitions. The [guide](/packages/storage) shows them in use.
+Every export of `@kitr/storage`, `@kitr/storage/react`, `@kitr/storage/server`, `@kitr/storage/provider`, read from the published type definitions. The [guide](/packages/storage) shows them in use.
 
-## kitr/storage
+## @kitr/storage
 
 ### createAsyncStorageDriver
 
@@ -54,7 +54,7 @@ const locale = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 36
 locale.get()                      // client: document.cookie
 locale.get(request.headers)       // server: any Headers / Cookie header string
 locale.set('de')                  // client
-cookies(event).set(locale, 'de')  // server (kitr/storage/server)
+cookies(event).set(locale, 'de')  // server (@kitr/storage/server)
 ```
 
 ### defineStorage
@@ -364,7 +364,7 @@ type StorageArea = 'local' | 'session';
 
 `local` keeps a value until it is cleared; `session` keeps it for the current tab.
 
-## kitr/storage/react
+## @kitr/storage/react
 
 ### CookieHeader
 
@@ -404,7 +404,7 @@ function useStorage<T>(item: StorageItem<T>): [
 Read and write a storage item from a component. Hydration-safe: the server (and the first
 client render) see the default, then the stored value applies, so markup always matches.
 
-## kitr/storage/server
+## @kitr/storage/server
 
 ### cookies
 
@@ -451,7 +451,7 @@ interface ServerCookies {
 
 Typed cookie access for one request, returned by `cookies()`.
 
-## kitr/storage/provider
+## @kitr/storage/provider
 
 ### storageProvider
 

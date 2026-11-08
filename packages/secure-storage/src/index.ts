@@ -140,7 +140,7 @@ function tx<T>(
 
 async function loadOrCreateKey(): Promise<CryptoKey> {
   const subtle = globalThis.crypto?.subtle
-  if (!subtle) throw new Error('kitr/secure-storage: Web Crypto is not available')
+  if (!subtle) throw new Error('@kitr/secure-storage: Web Crypto is not available')
   const db = idb() ? await openDb() : undefined
   const existing = db
     ? await tx<CryptoKey | undefined>(db, 'readonly', (s) => s.get(KEY_ID))
@@ -159,7 +159,7 @@ async function loadOrCreateKey(): Promise<CryptoKey> {
   } catch {
     const winner = await tx<CryptoKey | undefined>(db, 'readonly', (s) => s.get(KEY_ID))
     if (winner) return winner
-    throw new Error('kitr/secure-storage: could not store the encryption key')
+    throw new Error('@kitr/secure-storage: could not store the encryption key')
   }
 }
 
@@ -237,7 +237,9 @@ export function createSecureStorage(
   const known = new Set<string>()
   const guard = () => {
     if (config.requireSecure && !driver.secure)
-      throw new Error('kitr/secure-storage: no secure vault on this platform (requireSecure is on)')
+      throw new Error(
+        '@kitr/secure-storage: no secure vault on this platform (requireSecure is on)',
+      )
   }
   return {
     driver,

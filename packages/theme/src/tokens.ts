@@ -64,7 +64,7 @@ export function defineTokens<const T extends TokenGroup>(
   }
 }
 
-/** kitr's light (default) tokens, the values `kitr/theme/styles.css` sets on `:root`. Override them in `app/styles/tokens.css`. */
+/** kitr's light (default) tokens, the values `@kitr/theme/styles.css` sets on `:root`. Override them in `app/styles/tokens.css`. */
 export const defaultTokens = defineTokens({
   color: {
     background: 'oklch(99% 0 0)',
@@ -86,7 +86,7 @@ export const defaultTokens = defineTokens({
   shadow: { sm: '0 1px 2px oklch(0% 0 0 / 0.06)', md: '0 4px 12px oklch(0% 0 0 / 0.08)' },
 })
 
-/** kitr's dark colour tokens, the values `kitr/theme/styles.css` sets under `[data-theme="dark"]`. Radius, font and shadow are shared with the light set. */
+/** kitr's dark colour tokens, the values `@kitr/theme/styles.css` sets under `[data-theme="dark"]`. Radius, font and shadow are shared with the light set. */
 export const darkTokens = defineTokens({
   color: {
     background: 'oklch(16% 0.01 260)',

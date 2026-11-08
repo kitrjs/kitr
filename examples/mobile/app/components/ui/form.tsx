@@ -1,17 +1,17 @@
-import type { FieldValues } from 'kitr/forms'
+import type { FieldValues } from '@kitr/forms'
 import {
   type FormFieldProps,
   FormField as KitrFormField,
   useFieldProps,
   useFormStatus,
   useRootError,
-} from 'kitr/forms'
-import { cn } from 'kitr/tailwind'
+} from '@kitr/forms'
+import { cn } from '@kitr/tailwind'
 import type { ComponentProps, ReactNode } from 'react'
 import { Button, type ButtonProps } from '#components/ui/button'
 import { Input } from '#components/ui/input'
 
-export { Form } from 'kitr/forms'
+export { Form } from '@kitr/forms'
 
 /** A labelled field with spacing; renders the error below the control. */
 export function FormField<T extends FieldValues>({ className, ...props }: FormFieldProps<T>) {

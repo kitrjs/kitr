@@ -135,7 +135,7 @@ export function createConsent(config: ConsentConfig = {}, app?: KitrApp): Consen
   }
 }
 
-/** The consent service from an app's container. Not a hook; components use `useConsent()` from `kitr/consent/react`. */
+/** The consent service from an app's container. Not a hook; components use `useConsent()` from `@kitr/consent/react`. */
 export function useConsent(app: KitrApp): Consent {
   return app.container.use('consent')
 }

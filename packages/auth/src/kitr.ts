@@ -32,11 +32,11 @@ export default definePackage({
     ctx.provider.add('@kitr/auth/provider')
     ctx.write(
       'app/abilities.ts',
-      `import { defineAbilities } from 'kitr/auth'\n\nexport interface User {\n  id: string\n  email: string\n  role: 'admin' | 'member'\n}\n\nexport const abilities = defineAbilities({\n  'projects.update': (user: User, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,\n})\n`,
+      `import { defineAbilities } from '@kitr/auth'\n\nexport interface User {\n  id: string\n  email: string\n  role: 'admin' | 'member'\n}\n\nexport const abilities = defineAbilities({\n  'projects.update': (user: User, project: { ownerId: string }) => user.role === 'admin' || project.ownerId === user.id,\n})\n`,
     )
     ctx.config(
       'auth',
-      `import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'\nimport { type User, abilities } from '#app/abilities'\nimport { env } from '#app/env'\n\n// Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}).\nconst adapter = tokenAdapter<User>({\n  abilities,\n  storage: localStorageTokens(),\n  fetchUser: async (token) => {\n    const res = await fetch(\`\${env.VITE_API_URL}/me\`, { headers: { authorization: \`Bearer \${token}\` } })\n    return res.ok ? ((await res.json()) as User) : null\n  },\n  signIn: async (credentials) => {\n    const res = await fetch(\`\${env.VITE_API_URL}/sign-in\`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(credentials) })\n    if (!res.ok) throw new Error('Invalid credentials')\n    return (await res.json()) as { token: string; refreshToken?: string }\n  },\n})\n\nexport default defineConfig({ adapter, signInPath: '/sign-in' })\n`,
+      `import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'\nimport { type User, abilities } from '#app/abilities'\nimport { env } from '#app/env'\n\n// Swap for betterAuthAdapter(createAuthClient()) or a customAdapter({...}).\nconst adapter = tokenAdapter<User>({\n  abilities,\n  storage: localStorageTokens(),\n  fetchUser: async (token) => {\n    const res = await fetch(\`\${env.VITE_API_URL}/me\`, { headers: { authorization: \`Bearer \${token}\` } })\n    return res.ok ? ((await res.json()) as User) : null\n  },\n  signIn: async (credentials) => {\n    const res = await fetch(\`\${env.VITE_API_URL}/sign-in\`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(credentials) })\n    if (!res.ok) throw new Error('Invalid credentials')\n    return (await res.json()) as { token: string; refreshToken?: string }\n  },\n})\n\nexport default defineConfig({ adapter, signInPath: '/sign-in' })\n`,
     )
     ctx.env.schema(
       'public',
@@ -50,8 +50,8 @@ export default definePackage({
       return plain && !src.includes('KitrRouterContext')
         ? src
             .replace(
-              "import { createKitrRouter } from 'kitr/router'\n",
-              "import type { Session } from 'kitr/auth'\nimport { createKitrRouter } from 'kitr/router'\nimport type { User } from '#app/abilities'\n",
+              "import { createKitrRouter } from '@kitr/router'\n",
+              "import type { Session } from '@kitr/auth'\nimport { createKitrRouter } from '@kitr/router'\nimport type { User } from '#app/abilities'\n",
             )
             .replace(plain[0], sessionRouterCall(plain[1]!))
             .concat(SESSION_CONTEXT_TYPE)
@@ -59,7 +59,7 @@ export default definePackage({
     })
     ctx.agents.add(
       'auth',
-      `- Guard routes with \`beforeLoad: requireAuth()\` (from \`kitr/router\`) on a layout route; permissions with \`can('projects.update', { subject })\` or \`useCan()\` in components.\n- The session is \`useSession()\` / \`useUser()\` from \`kitr/auth\`. Abilities are plain functions in \`app/abilities.ts\`, shared with the API middleware (\`kitr/auth/server\`).`,
+      `- Guard routes with \`beforeLoad: requireAuth()\` (from \`@kitr/router\`) on a layout route; permissions with \`can('projects.update', { subject })\` or \`useCan()\` in components.\n- The session is \`useSession()\` / \`useUser()\` from \`@kitr/auth\`. Abilities are plain functions in \`app/abilities.ts\`, shared with the API middleware (\`@kitr/auth/server\`).`,
     )
   },
   remove(ctx) {
@@ -69,7 +69,7 @@ export default definePackage({
       )
       return tree
         ? src
-            .replace("import type { Session } from 'kitr/auth'\n", '')
+            .replace("import type { Session } from '@kitr/auth'\n", '')
             .replace("import type { User } from '#app/abilities'\n", '')
             .replace(sessionRouterCall(tree), `return createKitrRouter({ ${tree}, app })`)
             .replace(SESSION_CONTEXT_TYPE, '')

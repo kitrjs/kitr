@@ -1,5 +1,5 @@
 import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'
-import { useTheme } from 'kitr/theme'
+import { useTheme } from '@kitr/theme'
 import { Button } from '#components/ui/button'
 import { Icon } from '#components/ui/icon'
 

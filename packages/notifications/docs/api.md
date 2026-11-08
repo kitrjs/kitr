@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/notifications, with its signature.
+description: Every export of @kitr/notifications, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifications/provider`, read from the published type definitions. The [guide](/packages/notifications) shows them in use.
+Every export of `@kitr/notifications`, `@kitr/notifications/react`, `@kitr/notifications/provider`, read from the published type definitions. The [guide](/packages/notifications) shows them in use.
 
-## kitr/notifications
+## @kitr/notifications
 
 ### createMemoryNotificationsDriver
 
@@ -203,7 +203,7 @@ type NotificationPermission = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 Where permission stands: `prompt` until asked, `unsupported` where there is no notification API.
 
-## kitr/notifications/react
+## @kitr/notifications/react
 
 ### useNotificationPermission
 
@@ -232,7 +232,7 @@ function useNotificationTap(handler: (tap: NotificationTap) => void): void;
 
 Run a handler when a notification is tapped, typically `(tap) => tap.url && navigate(tap.url)`.
 
-## kitr/notifications/provider
+## @kitr/notifications/provider
 
 ### notificationsProvider
 

@@ -1,7 +1,7 @@
 {
   "name": "@kitr/analytics",
   "version": "0.1.0",
-  "description": "kitr/analytics: one page/track/identify API with Google Analytics, Plausible, PostHog and console adapters; page views from the router.",
+  "description": "@kitr/analytics: one page/track/identify API with Google Analytics, Plausible, PostHog and console adapters; page views from the router.",
   "keywords": [
     "kitr",
     "kitr-package"

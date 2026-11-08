@@ -263,28 +263,6 @@ describe('doctor', () => {
       expect(f.fix, f.message).toBeTruthy()
   })
 
-  it('flags kitr/* imports whose @kitr package is not installed', () => {
-    const dir = project({
-      'package.json': JSON.stringify({ dependencies: { kitr: '1', '@kitr/query': '1' } }),
-      'kitrrc.ts': rc,
-      'src/a.tsx': [
-        "import { useQuery } from 'kitr/query'",
-        "import { Form } from 'kitr/forms'",
-        "import { defineConfig } from 'kitr'",
-        "import { env } from 'kitr/env'",
-        "const lazy = () => import('kitr/table')",
-      ].join('\n'),
-      'src/b.ts': "import { useForm } from 'kitr/forms'",
-    })
-    const missing = runChecks(createContext({ root: dir })).filter((f) =>
-      f.message.includes(' imports kitr/'),
-    )
-    expect(missing.map((f) => [f.message, f.fix])).toEqual([
-      ['src/a.tsx imports kitr/forms, but @kitr/forms is not installed', 'kitr add forms'],
-      ['src/a.tsx imports kitr/table, but @kitr/table is not installed', 'kitr add table'],
-    ])
-  })
-
   // Regression: `entry` and `preset` in config/tailwind.ts were read by nothing.
   it('checks config/tailwind.ts against the stylesheet it names', () => {
     const base = {
@@ -307,13 +285,13 @@ describe('doctor', () => {
     const presetOff = project({
       ...base,
       'config/tailwind.ts': 'export default defineConfig({ preset: false })',
-      'app/styles/app.css': "@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n",
+      'app/styles/app.css': "@import 'tailwindcss';\n@import '@kitr/tailwind/preset.css';\n",
     })
     expect(tailwind(runChecks(createContext({ root: presetOff })))).toEqual(['warn'])
     const good = project({
       ...base,
       'config/tailwind.ts': "export default defineConfig({ entry: 'app/styles/app.css' })",
-      'app/styles/app.css': "@import 'tailwindcss';\n@import 'kitr/tailwind/preset.css';\n",
+      'app/styles/app.css': "@import 'tailwindcss';\n@import '@kitr/tailwind/preset.css';\n",
     })
     expect(tailwind(runChecks(createContext({ root: good })))).toEqual([])
   })
@@ -351,9 +329,9 @@ export default defineKitrConfig({
     })
 
   it('names an extension after its package', () => {
-    expect(extensionLocalName('kitr/api/routes')).toBe('api')
+    expect(extensionLocalName('@kitr/api/routes')).toBe('api')
     expect(extensionLocalName('@kitr/router/routes')).toBe('router')
-    expect(extensionLocalName('kitr/realtime/routes')).toBe('realtime')
+    expect(extensionLocalName('@kitr/realtime/routes')).toBe('realtime')
     expect(extensionLocalName('@acme/widgets')).toBe('widgets')
   })
 
@@ -361,15 +339,15 @@ export default defineKitrConfig({
     quiet()
     const dir = reactProject()
     const mods = new Codemods(createContext({ root: dir }))
-    mods.extendRoutes('kitr/router/routes')
-    mods.extendRoutes('kitr/router/routes')
+    mods.extendRoutes('@kitr/router/routes')
+    mods.extendRoutes('@kitr/router/routes')
     const src = readFileSync(join(dir, 'app/routes.ts'), 'utf8')
-    expect(src).toContain("import router from 'kitr/router/routes'")
+    expect(src).toContain("import router from '@kitr/router/routes'")
     expect(src.match(/defineRoutes\(\[router\]/g)).toHaveLength(1)
     expect(src).toContain('export type AppRoutes')
-    mods.removeRoutesExtension('kitr/router/routes')
+    mods.removeRoutesExtension('@kitr/router/routes')
     const after = readFileSync(join(dir, 'app/routes.ts'), 'utf8')
-    expect(after).not.toContain('kitr/router/routes')
+    expect(after).not.toContain('@kitr/router/routes')
     expect(after).toContain('defineRoutes([]')
   })
 
@@ -377,8 +355,8 @@ export default defineKitrConfig({
     quiet()
     const fullstack = reactProject()
     const mods = new Codemods(createContext({ root: fullstack }))
-    mods.extendRoutes('kitr/api/routes', { table: 'server' })
-    mods.extendRoutes('kitr/realtime/routes', { table: 'server' })
+    mods.extendRoutes('@kitr/api/routes', { table: 'server' })
+    mods.extendRoutes('@kitr/realtime/routes', { table: 'server' })
     const src = readFileSync(join(fullstack, 'server/routes.ts'), 'utf8')
     expect(src).toContain('defineRoutes([api, realtime]')
     expect(src).toContain('export type ServerRoutes')
@@ -389,8 +367,8 @@ export default defineKitrConfig({
       'kitrrc.ts': plainRc.replace("'@kitr/react', ", ''),
     })
     const backendMods = new Codemods(createContext({ root: backend }))
-    backendMods.extendRoutes('kitr/api/routes', { table: 'server' })
-    backendMods.extendRoutes('kitr/realtime/routes')
+    backendMods.extendRoutes('@kitr/api/routes', { table: 'server' })
+    backendMods.extendRoutes('@kitr/realtime/routes')
     expect(readFileSync(join(backend, 'server/routes.ts'), 'utf8')).toContain(
       'defineRoutes([api, realtime]',
     )
@@ -401,7 +379,7 @@ export default defineKitrConfig({
     quiet()
     const dir = reactProject({
       'app/routes.ts': `import { defineRoutes } from 'kitr/app'
-import router from 'kitr/router/routes'
+import router from '@kitr/router/routes'
 
 export const routes = defineRoutes([router], (r) =>
   r
@@ -424,7 +402,7 @@ export const routes = defineRoutes([router], (r) =>
     quiet()
     const dir = reactProject()
     const mods = new Codemods(createContext({ root: dir }))
-    mods.extendRoutes('kitr/router/routes')
+    mods.extendRoutes('@kitr/router/routes')
     expect(mods.addPage('/', './pages/home')).toBe(true)
     expect(readFileSync(join(dir, 'app/routes.ts'), 'utf8')).toContain(
       "(r) => r\n    .page('/', { lazy: () => import('./pages/home') }))",
@@ -438,7 +416,7 @@ export const routes = defineRoutes([router], (r) =>
   it('appends sockets with their imports and hands the server table to the server entry', () => {
     quiet()
     const dir = reactProject({
-      'server/main.ts': `import { createServer } from 'kitr/server'
+      'server/main.ts': `import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 
@@ -447,7 +425,7 @@ export default server
 `,
     })
     const mods = new Codemods(createContext({ root: dir }))
-    mods.extendRoutes('kitr/realtime/routes', { table: 'server' })
+    mods.extendRoutes('@kitr/realtime/routes', { table: 'server' })
     const link = ".ws('/api/ws', { channels: [exampleChannel] })"
     const imports = [{ from: '#app/channels/example', local: 'exampleChannel' }]
     expect(mods.appendRoute(link, { table: 'server', imports, skipIf: /\.ws\(/ })).toBe(true)

@@ -224,7 +224,7 @@ describe('add context', () => {
 
   it('derives readable local names for extension imports', () => {
     expect(extensionLocalName('@kitr/api/routes')).toBe('api')
-    expect(extensionLocalName('kitr/router/routes')).toBe('router')
+    expect(extensionLocalName('@kitr/router/routes')).toBe('router')
     expect(extensionLocalName('@acme/sockets/routes')).toBe('sockets')
     expect(extensionLocalName('my-router')).toBe('myRouter')
     expect(extensionLocalName('@scope/x')).toBe('x')

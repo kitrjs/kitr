@@ -6,17 +6,17 @@ order: 1
 
 # Tauri
 
-Some desktop apps have to be small: a download of a few megabytes, a window that starts fast and idles on little memory. `kitr/tauri` is a desktop platform for Windows, macOS and Linux built on [Tauri 2](https://v2.tauri.app/). It wraps the same `app/` you ship to the browser in a small Rust binary around the webview the operating system already has, and gives you typed calls from your components to Rust functions.
+Some desktop apps have to be small: a download of a few megabytes, a window that starts fast and idles on little memory. `@kitr/tauri` is a desktop platform for Windows, macOS and Linux built on [Tauri 2](https://v2.tauri.app/). It wraps the same `app/` you ship to the browser in a small Rust binary around the webview the operating system already has, and gives you typed calls from your components to Rust functions.
 
-Tauri renders with the OS webview: WebView2 (Chromium-based) on Windows, WKWebView (Safari's engine) on macOS and WebKitGTK on Linux. Native code is Rust. kitr adds the platform on top: `kitr dev` runs the window with hot reload, `kitr build` builds installers through the Tauri CLI, `defineCommands` types every `#[tauri::command]` from TypeScript, `commandQuery` and `commandMutation` plug those commands into [Query](/packages/query), and `kitr/tauri/provider` moves the [platform](/packages/platform) and [storage](/packages/storage) packages to their Tauri drivers.
+Tauri renders with the OS webview: WebView2 (Chromium-based) on Windows, WKWebView (Safari's engine) on macOS and WebKitGTK on Linux. Native code is Rust. kitr adds the platform on top: `kitr dev` runs the window with hot reload, `kitr build` builds installers through the Tauri CLI, `defineCommands` types every `#[tauri::command]` from TypeScript, `commandQuery` and `commandMutation` plug those commands into [Query](/packages/query), and `@kitr/tauri/provider` moves the [platform](/packages/platform) and [storage](/packages/storage) packages to their Tauri drivers.
 
-`kitr/tauri/client` and the provider run in the window, and in a plain browser, where they stand aside. The Rust project runs as the app's native process. For most desktop apps we recommend [Desktop](/packages/desktop) (Electron) instead, which ships its own browser engine so the app renders the same on every OS.
+`@kitr/tauri/client` and the provider run in the window, and in a plain browser, where they stand aside. The Rust project runs as the app's native process. For most desktop apps we recommend [Desktop](/packages/desktop) (Electron) instead, which ships its own browser engine so the app renders the same on every OS.
 
 The examples on this page ship the Acme orders app to the desktop: Ada's warehouse team at Acme lists orders, exports invoices to disk and watches order sync progress, with the same code the browser runs at `app.acme.com`.
 
 ## When to use it
 
-Use `kitr/tauri` when download size, start-up time and memory matter more than identical rendering everywhere: an internal tool on old laptops, a tray utility, an app distributed over slow connections. Installers are a few megabytes because the browser engine is not inside them. Tauri's permission system also makes you list every native capability the window may use.
+Use `@kitr/tauri` when download size, start-up time and memory matter more than identical rendering everywhere: an internal tool on old laptops, a tray utility, an app distributed over slow connections. Installers are a few megabytes because the browser engine is not inside them. Tauri's permission system also makes you list every native capability the window may use.
 
 Use [Desktop](/packages/desktop) (Electron) for most other apps. Electron ships Chromium with the app, so the page your team tests is the page every user runs, while Tauri's three webviews can differ in CSS support, media codecs and Web APIs. Electron's native side is Node.js, with the larger community and ecosystem, where Tauri's is Rust and needs the Rust toolchain on every build machine. Both platforms load the same client build and register the same `platform` and `storage` drivers, so the app code does not change when you switch.
 
@@ -38,13 +38,13 @@ What `kitr add tauri app` does:
 - Adds the packages the platform needs when they are missing, each with its own setup: [Router](/packages/router) (and [React](/packages/react) before it), [Platform](/packages/platform), which writes `config/platform.ts`, and [Storage](/packages/storage), which writes `config/storage.ts` and `app/storage.ts`.
 - Installs `@tauri-apps/api` and `@tauri-apps/plugin-store`, and `@tauri-apps/cli` as a dev dependency.
 - Adds `() => import('@kitr/tauri/provider')` to `providers` in `kitrrc.ts`.
-- Writes `app: tauri({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { tauri } from 'kitr/tauri'`.
+- Writes `app: tauri({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { tauri } from '@kitr/tauri'`.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
 - Writes the Rust project in `platforms/app/src-tauri/`: `tauri.conf.json`, `Cargo.toml`, `build.rs`, `src/main.rs`, `src/lib.rs` with a `greet` command, `capabilities/default.json`, `.gitignore` (ignoring `/target` and `/gen/schemas`) and `icons/README.md`. Files that already exist are kept.
 - Writes `app/commands.ts`, the typed mirror of the Rust commands.
 - Adds a `kitr: platform app` section to `AGENTS.md`: how to run and build, how to add a command, and where permissions go.
 
-`kitr/tauri` asks no questions. Platform options are flags on the same command, named as in the options table under Configure:
+`@kitr/tauri` asks no questions. Platform options are flags on the same command, named as in the options table under Configure:
 
 ```sh
 kitr add tauri app --title "Acme Orders" --width 1280 --height 860 --appId com.acme.orders
@@ -72,13 +72,13 @@ kitr new acme-orders --kit tauri
 
 ## Configure
 
-`kitr/tauri` has no config file in `config/`. Its options live on the `tauri()` call in `kitrrc.ts`:
+`@kitr/tauri` has no config file in `config/`. Its options live on the `tauri()` call in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { tauri } from 'kitr/tauri'
-import { web } from 'kitr/web'
+import { tauri } from '@kitr/tauri'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/platform', '@kitr/storage', '@kitr/web', '@kitr/tauri'],
@@ -198,7 +198,7 @@ pub fn run() {
 
 ```ts
 // app/commands.ts
-import { defineCommands } from 'kitr/tauri/client'
+import { defineCommands } from '@kitr/tauri/client'
 
 /** Mirrors the `#[tauri::command]` functions in platforms/app/src-tauri/src/lib.rs. */
 export type Commands = {
@@ -213,7 +213,7 @@ Call it from a component:
 
 ```tsx
 // app/components/welcome.tsx
-import { isTauri } from 'kitr/tauri/client'
+import { isTauri } from '@kitr/tauri/client'
 import { useEffect, useState } from 'react'
 import { commands } from '#app/commands'
 
@@ -271,7 +271,7 @@ Then declare it in `app/commands.ts`, with the same name and the TypeScript shap
 
 ```ts
 // app/commands.ts
-import { defineCommands } from 'kitr/tauri/client'
+import { defineCommands } from '@kitr/tauri/client'
 
 export interface Order {
   id: string
@@ -345,8 +345,8 @@ To cache a command's result, share it between components and refresh it after a 
 
 ```ts
 // app/features/orders/queries.ts
-import { queryFrom } from 'kitr/query'
-import { commandQuery } from 'kitr/tauri/client'
+import { queryFrom } from '@kitr/query'
+import { commandQuery } from '@kitr/tauri/client'
 import { commands } from '#app/commands'
 
 export const ordersByStatus = queryFrom(commandQuery(commands.list_orders, 'list_orders'))
@@ -359,7 +359,7 @@ r.page('/orders', { lazy: () => import('./pages/orders') })
 
 ```tsx
 // app/pages/orders.tsx
-import { useQuery } from 'kitr/query'
+import { useQuery } from '@kitr/query'
 import { ordersByStatus } from '#app/features/orders/queries'
 
 export default function OrdersPage() {
@@ -400,8 +400,8 @@ Then wrap it. The effects say which cached queries to refresh when it succeeds:
 
 ```ts
 // app/features/orders/mutations.ts
-import { mutationFrom } from 'kitr/query'
-import { commandMutation } from 'kitr/tauri/client'
+import { mutationFrom } from '@kitr/query'
+import { commandMutation } from '@kitr/tauri/client'
 import { commands } from '#app/commands'
 
 export const shipOrder = mutationFrom(
@@ -413,7 +413,7 @@ export const shipOrder = mutationFrom(
 
 ```tsx
 // app/features/orders/ship-button.tsx
-import { useMutation } from 'kitr/query'
+import { useMutation } from '@kitr/query'
 import { shipOrder } from './mutations'
 
 export function ShipButton({ id }: { id: string }) {
@@ -450,7 +450,7 @@ In a component, `useTauriEvent(event, handler)` subscribes for as long as the co
 
 ```tsx
 // app/features/orders/sync-progress.tsx
-import { useTauriEvent } from 'kitr/tauri/client'
+import { useTauriEvent } from '@kitr/tauri/client'
 import { useCallback, useState } from 'react'
 import { commands } from '#app/commands'
 
@@ -474,7 +474,7 @@ Clicking "Sync orders" moves the bar to 25, 50, 75 and 100. The hook re-subscrib
 
 ```ts
 // app/features/orders/opened.ts
-import { emitTauri } from 'kitr/tauri/client'
+import { emitTauri } from '@kitr/tauri/client'
 
 export function reportOrderOpened(orderId: string) {
   return emitTauri('order-opened', { orderId })
@@ -524,7 +524,7 @@ So guard command calls, and offer the web alternative next to them:
 
 ```tsx
 // app/features/invoices/export-button.tsx
-import { isTauri } from 'kitr/tauri/client'
+import { isTauri } from '@kitr/tauri/client'
 import { exportInvoice } from './export'
 
 export function ExportButton({ invoiceId }: { invoiceId: string }) {
@@ -537,7 +537,7 @@ export function ExportButton({ invoiceId }: { invoiceId: string }) {
 }
 ```
 
-For behaviour that differs per platform but is not specific to Tauri, such as opening links or reading the app version, use the [platform service](/packages/platform) instead of `isTauri()`. It answers the same way in Electron and on phones. Don't import `@tauri-apps/api` at the top of shared modules either: `kitr/tauri/client` loads it lazily, only when a command or event actually runs.
+For behaviour that differs per platform but is not specific to Tauri, such as opening links or reading the app version, use the [platform service](/packages/platform) instead of `isTauri()`. It answers the same way in Electron and on phones. Don't import `@tauri-apps/api` at the top of shared modules either: `@kitr/tauri/client` loads it lazily, only when a command or event actually runs.
 
 ## Grant the window permissions
 
@@ -573,7 +573,7 @@ Then call the plugin's JavaScript API, guarded like any Tauri call:
 
 ```ts
 // app/features/invoices/pick-folder.ts
-import { isTauri } from 'kitr/tauri/client'
+import { isTauri } from '@kitr/tauri/client'
 
 export async function pickExportFolder(): Promise<string | null> {
   if (!isTauri()) return null
@@ -591,22 +591,22 @@ Items you declare with [Storage](/packages/storage) persist through Tauri's [sto
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 export const ordersView = defineStorage('orders-view', {
   default: { status: 'open' as 'open' | 'paid' | 'shipped', pageSize: 25 },
 })
 ```
 
-The provider registers `tauriStoreDriver()`, which loads every value once at boot and saves each change to disk in the background. The scaffold already registers `tauri_plugin_store` in `lib.rs` and grants `store:default`; without either, the values live in memory only and every write logs `[kitr/storage] tauri:store:` with the plugin's error.
+The provider registers `tauriStoreDriver()`, which loads every value once at boot and saves each change to disk in the background. The scaffold already registers `tauri_plugin_store` in `lib.rs` and grants `store:default`; without either, the values live in memory only and every write logs `[@kitr/storage] tauri:store:` with the plugin's error.
 
 On macOS, with `identifier: 'com.acme.orders'`, the file is `~/Library/Application Support/com.acme.orders/kitr.json`. Values are kept as strings; any other value another part of the app put in `kitr.json` is skipped on load. To keep kitr's items in another file, register the driver yourself with a provider of your own:
 
 ```ts
 // app/providers/orders-store.ts
 import { defineProvider } from 'kitr/app'
-import { isTauri } from 'kitr/tauri/client'
-import { tauriStoreDriver } from 'kitr/tauri/provider'
+import { isTauri } from '@kitr/tauri/client'
+import { tauriStoreDriver } from '@kitr/tauri/provider'
 
 export default defineProvider({
   name: 'orders-store',
@@ -642,7 +642,7 @@ For `exit()`, add the process plugin on both sides with `pnpm exec tauri add pro
 
 ```tsx
 // app/components/help-menu.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function HelpMenu() {
   const platform = usePlatform()
@@ -715,7 +715,7 @@ Notarization, Windows certificates and Linux signing have their own settings; se
 
 ## Switch to Electron
 
-The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. What changes is the native side. Rust commands become IPC handlers in `platforms/app/main.ts`, and `commands.<name>()` calls become `ipc.invoke('<area>.<verb>')` from `kitr/desktop/client`:
+The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. What changes is the native side. Rust commands become IPC handlers in `platforms/app/main.ts`, and `commands.<name>()` calls become `ipc.invoke('<area>.<verb>')` from `@kitr/desktop/client`:
 
 ```sh
 kitr platforms remove app
@@ -726,7 +726,7 @@ Port each command to a handler as the [Desktop](/packages/desktop) guide shows, 
 
 ## Commands
 
-`kitr/tauri` adds no generators. The Tauri platform answers these commands:
+`@kitr/tauri` adds no generators. The Tauri platform answers these commands:
 
 | Command | What it does |
 | --- | --- |
@@ -772,10 +772,10 @@ This test checks a command, the query built from it, an event reaching a compone
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { clearMocks, mockIPC } from '@tauri-apps/api/mocks'
 import { emit } from '@tauri-apps/api/event'
-import { platformProvider } from 'kitr/platform/provider'
-import { isTauri, useTauriEvent } from 'kitr/tauri/client'
-import { tauriProvider } from 'kitr/tauri/provider'
-import { createTestApp } from 'kitr/testing'
+import { platformProvider } from '@kitr/platform/provider'
+import { isTauri, useTauriEvent } from '@kitr/tauri/client'
+import { tauriProvider } from '@kitr/tauri/provider'
+import { createTestApp } from '@kitr/testing'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { commands, type Order } from '#app/commands'

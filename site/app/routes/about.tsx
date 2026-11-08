@@ -18,7 +18,7 @@ const ideas = [
     title: 're-export',
     color: '#2D6CF0',
     ink: '#FFFFFF',
-    text: 'kitr/router is TanStack Router. kitr/forms is React Hook Form. Upstream docs still apply, and leaving is an import rewrite.',
+    text: '@kitr/router is TanStack Router. @kitr/forms is React Hook Form. Upstream docs still apply, and leaving is an import rewrite.',
   },
   {
     title: 'one contract',

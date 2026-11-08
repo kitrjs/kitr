@@ -192,7 +192,7 @@ The API runs on other runtimes without code changes. Set the runtime in `kitrrc.
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { server } from 'kitr/server'
+import { server } from '@kitr/server'
 
 export default defineKitrConfig({
   // ...packages and providers

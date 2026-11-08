@@ -15,7 +15,7 @@ export default definePackage({
     ctx.deps.remove('@tanstack/react-table')
     ctx.agents.remove('table')
   },
-  wraps: { '@tanstack/react-table': 'kitr/table' },
-  eject: { 'kitr/table': '@tanstack/react-table' },
+  wraps: { '@tanstack/react-table': '@kitr/table' },
+  eject: { '@kitr/table': '@tanstack/react-table' },
   vite: { optimizeDeps: ['@tanstack/react-table'] },
 })

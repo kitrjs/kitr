@@ -104,7 +104,7 @@ describe('defineQuery and defineMutation', () => {
     expect(error.message).toBe('Internal server error')
     expect(error.data).toBeUndefined()
     expect(log).toHaveBeenCalledWith(
-      '[kitr/actions] reports.build failed:',
+      '[@kitr/actions] reports.build failed:',
       expect.objectContaining({ message: 'db password is hunter2' }),
     )
   })

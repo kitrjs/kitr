@@ -167,7 +167,7 @@ export class Codemods {
     const main = readFileSync(full, 'utf8')
     if (main.includes(options.marker)) return
     let next = options.import
-      ? main.replace(/(import \{ createServer \} from 'kitr\/server'\n)/, `$1${options.import}\n`)
+      ? main.replace(/(import \{ createServer \} from '@kitr\/server'\n)/, `$1${options.import}\n`)
       : main
     next = options.first
       ? next.replace(/(export const server = createServer\([^\n]*\)\n)/, `$1${options.line}\n`)
@@ -568,7 +568,7 @@ export class Codemods {
     const full = this.ctx.path(file)
     if (!existsSync(full))
       this.extendRoutes(
-        options.table === 'server' ? 'kitr/api/routes' : 'kitr/router/routes',
+        options.table === 'server' ? '@kitr/api/routes' : '@kitr/router/routes',
         options,
       )
     if (this.ctx.dryRun) return true
@@ -627,7 +627,7 @@ export class Codemods {
     let next = main.replace(call[0], `createServer({${call[1]!.replace(/\s*$/, '')}, routes })`)
     if (!next.includes(`'${spec}'`) && !next.includes('#server/routes'))
       next = next.replace(
-        /(import \{ createServer \} from 'kitr\/server'\n)/,
+        /(import \{ createServer \} from '@kitr\/server'\n)/,
         `$1import { routes } from '${spec}'\n`,
       )
     if (next === main) return
@@ -704,7 +704,7 @@ function insertPackageImport(mod: ReturnType<typeof parseModule>, spec: string, 
 /** `@kitr/api/routes` → `api`; `@acme/thing/routes` → `thing`; `my-router` → `myRouter`. */
 export function extensionLocalName(spec: string): string {
   const parts = spec.split('/').filter((p) => p && !p.startsWith('@'))
-  // `kitr/api/routes` is the api package's extension: `api` in `defineRoutes([api], ...)`.
+  // `@kitr/api/routes` is the api package's extension: `api` in `defineRoutes([api], ...)`.
   const base =
     parts.length > 1 && parts.at(-1) === 'routes'
       ? parts.at(-2)!

@@ -1,7 +1,7 @@
+import { useSchemaForm } from '@kitr/forms'
+import { useNavigate } from '@kitr/router'
 import { createFileRoute } from '@tanstack/react-router'
 import { schemaFrom } from 'kitr/app'
-import { useSchemaForm } from 'kitr/forms'
-import { useNavigate } from 'kitr/router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 

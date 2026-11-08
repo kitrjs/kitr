@@ -1,12 +1,12 @@
 ---
 title: API
-description: Every export of kitr/query.
+description: Every export of @kitr/query.
 order: 2
 ---
 
 # API
 
-`kitr/query` re-exports everything from `@tanstack/react-query` and adds the following.
+`@kitr/query` re-exports everything from `@tanstack/react-query` and adds the following.
 
 ## queryFrom
 

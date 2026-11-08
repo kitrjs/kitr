@@ -6,7 +6,7 @@ order: 1
 
 # Vite
 
-A browser app needs a dev server, a bundler and a build step, and every package you add wants a piece of that setup: a React transform, a Tailwind compiler, a route generator, a list of dependencies to pre-bundle. `kitr/vite` is one plugin, `kitr()`, that reads `kitrrc.ts` and asks each installed package what it needs, so `vite.config.ts` stays a three-line file however much the app grows.
+A browser app needs a dev server, a bundler and a build step, and every package you add wants a piece of that setup: a React transform, a Tailwind compiler, a route generator, a list of dependencies to pre-bundle. `@kitr/vite` is one plugin, `kitr()`, that reads `kitrrc.ts` and asks each installed package what it needs, so `vite.config.ts` stays a three-line file however much the app grows.
 
 It is built on [Vite](https://vite.dev). On top it adds the `virtual:kitr/providers` and `virtual:kitr/config` modules that `app/app.ts` imports, the `#app`, `#config`, `#components`, `#server` and `#kitr` aliases from the `directories` in `kitrrc.ts`, the active platform's port and output directory, and `kitr types` on every build and on every change to a file a type generator watches.
 
@@ -32,11 +32,11 @@ You rarely run `kitr add vite` yourself: `kitr add web site`, `kitr add desktop 
 
 ## Configure
 
-`kitr/vite` has no config file. The file it writes is the whole configuration:
+`@kitr/vite` has no config file. The file it writes is the whole configuration:
 
 ```ts
 // vite.config.ts
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -63,7 +63,7 @@ The platform in `kitrrc.ts` sets the rest. `web({ port: 3000 })` becomes `server
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/vite', '@kitr/react', '@kitr/router'],
@@ -174,7 +174,7 @@ In `static` mode every route is prerendered at build time. In `ssr` mode the [se
 
 ```ts
 // config/seo.ts
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   site: { url: 'https://app.acme.com' },
@@ -195,7 +195,7 @@ With `site.url` set, Start writes `sitemap.xml` from the same list. A route that
 
 ```ts
 // vite.config.ts
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -235,7 +235,7 @@ Pass `types: false` to leave it to a `kitr types` step of your own, for example 
 
 ```ts
 // vite.config.ts
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig } from 'vite'
 
@@ -265,7 +265,7 @@ Vitest runs the same plugin, so tests import `virtual:kitr/*`, `#app/*` and rout
 
 ```ts
 // vitest.config.ts
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({

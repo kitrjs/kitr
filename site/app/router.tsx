@@ -1,4 +1,4 @@
-import { createKitrRouter } from 'kitr/router'
+import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { routeTree } from './routeTree.gen'
 

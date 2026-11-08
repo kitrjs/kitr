@@ -82,7 +82,7 @@ export function createKitrStore<T extends object>(
     const store = fromContext ?? singleton
     if (!store) {
       throw new Error(
-        `[kitr/state] Store "${options.name}" has no instance on the server. Wrap the tree in its <StoreProvider>.`,
+        `[@kitr/state] Store "${options.name}" has no instance on the server. Wrap the tree in its <StoreProvider>.`,
       )
     }
     const select = (selector ?? ((s) => s)) as (state: T) => U

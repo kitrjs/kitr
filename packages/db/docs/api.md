@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/db, with its signature.
+description: Every export of @kitr/db, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/db`, read from the published type definitions. The [guide](/packages/db) shows them in use.
+Every export of `@kitr/db`, read from the published type definitions. The [guide](/packages/db) shows them in use.
 
-## kitr/db
+## @kitr/db
 
 ### defineDb
 

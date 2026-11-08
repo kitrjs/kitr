@@ -6,9 +6,9 @@ order: 1
 
 # Forms
 
-Sign-up pages, invoice editors and settings screens all need the same three things: check the input before it is sent, stop a second click while it saves, and show the server's "this customer does not exist" under the right field instead of in a generic alert. `kitr/forms` gives you all three from one schema and one `<Form>` component.
+Sign-up pages, invoice editors and settings screens all need the same three things: check the input before it is sent, stop a second click while it saves, and show the server's "this customer does not exist" under the right field instead of in a generic alert. `@kitr/forms` gives you all three from one schema and one `<Form>` component.
 
-It is [React Hook Form](https://react-hook-form.com) re-exported unchanged, plus `useSchemaForm` (React Hook Form with a [Standard Schema](https://standardschema.dev) resolver), a `<Form>` that maps server errors onto fields, and headless, accessible field helpers. Everything on this page runs in the browser. For the server half of a form, see [server actions](/packages/actions) or [API routes](/packages/api); `kitr/forms` does not run on the server.
+It is [React Hook Form](https://react-hook-form.com) re-exported unchanged, plus `useSchemaForm` (React Hook Form with a [Standard Schema](https://standardschema.dev) resolver), a `<Form>` that maps server errors onto fields, and headless, accessible field helpers. Everything on this page runs in the browser. For the server half of a form, see [server actions](/packages/actions) or [API routes](/packages/api); `@kitr/forms` does not run on the server.
 
 The examples follow one form through the page: Ada creates invoices for Acme's customers in the app at `app.acme.com`.
 
@@ -30,11 +30,11 @@ In a server-only project `kitr add` skips forms with a warning, because it needs
 
 ## Configure
 
-`kitr/forms` has no config file. Each form is set up where you write it, with `useSchemaForm` and `<Form>`:
+`@kitr/forms` has no config file. Each form is set up where you write it, with `useSchemaForm` and `<Form>`:
 
 ```tsx
 // app/features/invoices/new-invoice-form.tsx
-import { Form, useSchemaForm } from 'kitr/forms'
+import { Form, useSchemaForm } from '@kitr/forms'
 import { newInvoiceSchema } from './schema'
 
 export function NewInvoiceForm({ onCreate }: { onCreate: (values: unknown) => Promise<unknown> }) {
@@ -93,7 +93,7 @@ Then the form. Each field is a `<FormField>` with an input inside it.
 
 ```tsx
 // app/features/invoices/new-invoice-form.tsx
-import { FieldInput, Form, FormField, SubmitButton, useRootError, useSchemaForm } from 'kitr/forms'
+import { FieldInput, Form, FormField, SubmitButton, useRootError, useSchemaForm } from '@kitr/forms'
 import { type NewInvoice, newInvoiceSchema } from './schema'
 
 export function NewInvoiceForm({ onCreate }: { onCreate: (invoice: NewInvoice) => Promise<unknown> }) {
@@ -157,7 +157,7 @@ created { customerEmail: 'grace@acme.com', amount: 120, dueOn: '2026-12-01' }
 ```tsx
 // app/features/invoices/new-invoice-form.tsx
 import * as v from 'valibot'
-import { useSchemaForm } from 'kitr/forms'
+import { useSchemaForm } from '@kitr/forms'
 
 const newInvoiceSchema = v.object({
   customerEmail: v.pipe(v.string(), v.email('Enter the customer’s email')),
@@ -182,7 +182,7 @@ The form has two types. The schema's input type is what the fields hold (`amount
 
 ```tsx
 // app/features/invoices/quick-invoice-form.tsx
-import { useSchemaForm } from 'kitr/forms'
+import { useSchemaForm } from '@kitr/forms'
 import { newInvoiceSchema } from './schema'
 
 export function useQuickInvoiceForm() {
@@ -210,8 +210,8 @@ Submitting always validates every field, whatever the mode.
 
 ```ts
 // app/features/invoices/queries.ts
-import { mutationFrom, queryFrom } from 'kitr/query'
-import { httpMutation, httpQuery } from 'kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
+import { httpMutation, httpQuery } from '@kitr/http'
 import { app } from '#app/app'
 import type { NewInvoice } from './schema'
 
@@ -239,8 +239,8 @@ r.page('/invoices/new', { lazy: () => import('./pages/invoices/new') })
 
 ```tsx
 // app/pages/invoices/new.tsx
-import { useMutation } from 'kitr/query'
-import { useNavigate } from 'kitr/router'
+import { useMutation } from '@kitr/query'
+import { useNavigate } from '@kitr/router'
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
 import { createInvoice } from '#app/features/invoices/queries'
 
@@ -266,7 +266,7 @@ In a project with [server actions](/packages/actions), the action validates with
 
 ```ts
 // app/actions/invoices/create_invoice.ts
-import { defineMutation } from 'kitr/actions'
+import { defineMutation } from '@kitr/actions'
 import { newInvoiceSchema } from '#app/features/invoices/schema'
 
 export const createInvoice = defineMutation('invoices.create', {
@@ -281,7 +281,7 @@ export const createInvoice = defineMutation('invoices.create', {
 
 ```tsx
 // app/pages/invoices/new.tsx
-import { useMutation } from 'kitr/query'
+import { useMutation } from '@kitr/query'
 import { NewInvoiceForm } from '#app/features/invoices/new-invoice-form'
 
 export default function NewInvoicePage() {
@@ -327,7 +327,7 @@ For a rule the schema cannot check, such as "this customer exists", throw `KitrE
 
 ```ts
 // app/actions/invoices/create_invoice.ts
-import { defineMutation } from 'kitr/actions'
+import { defineMutation } from '@kitr/actions'
 import { KitrError } from 'kitr/app'
 import { newInvoiceSchema } from '#app/features/invoices/schema'
 
@@ -358,7 +358,7 @@ Errors that are not about one field come back from `useRootError()`. It returns 
 
 ```tsx
 // app/features/invoices/form-alert.tsx
-import { useRootError } from 'kitr/forms'
+import { useRootError } from '@kitr/forms'
 
 export function FormAlert() {
   const error = useRootError()
@@ -389,8 +389,8 @@ For anything else that should react to the submit, call `useFormStatus()` inside
 
 ```tsx
 // app/features/invoices/cancel-link.tsx
-import { useFormStatus } from 'kitr/forms'
-import { Link } from 'kitr/router'
+import { useFormStatus } from '@kitr/forms'
+import { Link } from '@kitr/router'
 
 export function CancelLink() {
   const { pending, isValid } = useFormStatus()
@@ -410,8 +410,8 @@ export function CancelLink() {
 
 ```tsx
 // app/features/invoices/new-invoice-panel.tsx
-import { toast } from 'kitr/theme'
-import { Form, useSchemaForm } from 'kitr/forms'
+import { toast } from '@kitr/theme'
+import { Form, useSchemaForm } from '@kitr/forms'
 import { newInvoiceSchema } from './schema'
 
 export function NewInvoicePanel({ onCreate }: { onCreate: (v: unknown) => Promise<{ number: string }> }) {
@@ -447,9 +447,9 @@ r.page('/invoices/$id/edit', { lazy: () => import('./pages/invoices/edit') })
 
 ```tsx
 // app/pages/invoices/edit.tsx
-import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
-import { useSuspenseQuery } from 'kitr/query'
-import { getRouteApi } from 'kitr/router'
+import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
+import { useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
 import { newInvoiceSchema } from '#app/features/invoices/schema'
 import { invoiceQuery } from '#app/features/invoices/queries'
 
@@ -484,7 +484,7 @@ To follow data that changes while the form is open, pass `values` instead of `de
 
 ```tsx
 // app/features/invoices/currency-select.tsx
-import { useFieldProps } from 'kitr/forms'
+import { useFieldProps } from '@kitr/forms'
 
 export function CurrencySelect() {
   const props = useFieldProps()
@@ -504,7 +504,7 @@ export function CurrencySelect() {
 </FormField>
 ```
 
-`useFieldProps()` returns the field's `id` (so the `<label>` points at it), `aria-invalid` and `aria-describedby`, plus everything `form.register(name)` returns. Outside a `<FormField>` it throws `[kitr/forms] useFieldProps() must be used inside <FormField>.`
+`useFieldProps()` returns the field's `id` (so the `<label>` points at it), `aria-invalid` and `aria-describedby`, plus everything `form.register(name)` returns. Outside a `<FormField>` it throws `[@kitr/forms] useFieldProps() must be used inside <FormField>.`
 
 The registered `onChange`, `onBlur`, `name` and `ref` are spread after your own props, so they win. Don't pass `onChange` to `<FieldInput>` to watch a value; it is replaced. Use `form.watch` instead ([Watch a field](#watch-a-field)).
 
@@ -522,7 +522,7 @@ A checkbox works the same way, and its value arrives as a boolean:
 
 ```tsx
 // app/features/invoices/note-field.tsx
-import { FormField, useFormContext } from 'kitr/forms'
+import { FormField, useFormContext } from '@kitr/forms'
 
 export function NoteField() {
   const form = useFormContext<{ note: string }>()
@@ -542,15 +542,15 @@ export function NoteField() {
 }
 ```
 
-`useFormContext` is React Hook Form's, re-exported from `kitr/forms`. It works anywhere inside `<Form>`.
+`useFormContext` is React Hook Form's, re-exported from `@kitr/forms`. It works anywhere inside `<Form>`.
 
 ## Wrap a controlled component
 
-Date pickers, comboboxes and rich-text editors often take `value` and `onChange` but no `ref`. Use React Hook Form's `Controller`, exported from `kitr/forms`:
+Date pickers, comboboxes and rich-text editors often take `value` and `onChange` but no `ref`. Use React Hook Form's `Controller`, exported from `@kitr/forms`:
 
 ```tsx
 // app/features/invoices/due-date-field.tsx
-import { Controller, FormField, useFormContext } from 'kitr/forms'
+import { Controller, FormField, useFormContext } from '@kitr/forms'
 import { DatePicker } from '#components/date-picker'
 
 export function DueDateField() {
@@ -579,7 +579,7 @@ Invoice lines are a list. `useFieldArray` from React Hook Form adds and removes 
 
 ```tsx
 // app/features/invoices/invoice-lines.tsx
-import { FieldInput, FormField, useFieldArray, useFormContext } from 'kitr/forms'
+import { FieldInput, FormField, useFieldArray, useFormContext } from '@kitr/forms'
 
 type Lines = { lines: { description: string; quantity: string }[] }
 
@@ -618,7 +618,7 @@ To show or hide part of the form based on a value, read it with `form.watch`:
 
 ```tsx
 // app/features/invoices/delivery-fields.tsx
-import { FieldInput, FormField, useFormContext } from 'kitr/forms'
+import { FieldInput, FormField, useFormContext } from '@kitr/forms'
 
 export function DeliveryFields() {
   const form = useFormContext<{ sendNow: boolean; ccEmail: string }>()
@@ -640,7 +640,7 @@ When a submit does not go through `<Form>`, for example a "Mark as paid" button 
 
 ```tsx
 // app/features/invoices/mark-paid.tsx
-import { applyServerErrors, useForm } from 'kitr/forms'
+import { applyServerErrors, useForm } from '@kitr/forms'
 
 export function MarkPaid({ save }: { save: (paidOn: string) => Promise<void> }) {
   const form = useForm({ defaultValues: { paidOn: '' } })
@@ -692,7 +692,7 @@ For a finished look, copy the styled components into your app:
 kitr ui add form
 ```
 
-This writes `app/components/ui/form.tsx` (plus `button`, `input` and `label` if they are missing). It exports `Form`, a spaced `FormField`, a `FieldInput` built on your `Input`, a `FormMessage` that shows the root error, and a `SubmitButton` built on your `Button`. Import from `#components/ui/form` instead of `kitr/forms`; the file is yours to edit.
+This writes `app/components/ui/form.tsx` (plus `button`, `input` and `label` if they are missing). It exports `Form`, a spaced `FormField`, a `FieldInput` built on your `Input`, a `FormMessage` that shows the root error, and a `SubmitButton` built on your `Button`. Import from `#components/ui/form` instead of `@kitr/forms`; the file is yours to edit.
 
 ## Make forms accessible
 
@@ -730,7 +730,7 @@ writes:
 
 ```tsx
 // app/components/forms/invoice_form.tsx
-import { useSchemaForm } from 'kitr/forms'
+import { useSchemaForm } from '@kitr/forms'
 import { z } from 'zod'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'
 
@@ -753,7 +753,7 @@ export function InvoiceForm({ defaultValues, onSubmit }: { defaultValues?: Parti
 }
 ```
 
-The generated file needs `kitr ui add form` first, which the `app` and `fullstack` kits have already run. `kitr doctor` warns when a file under `app/` imports `react-hook-form` directly instead of `kitr/forms`.
+The generated file needs `kitr ui add form` first, which the `app` and `fullstack` kits have already run. `kitr doctor` warns when a file under `app/` imports `react-hook-form` directly instead of `@kitr/forms`.
 
 ## Errors
 
@@ -766,7 +766,7 @@ These are the errors a form shows and where each one appears. The codes are `Kit
 | `CONFLICT` | Another user changed the record (409). | Reload the record and ask the user to try again. |
 | `NETWORK` | The request never reached the server. Root error: "Network request failed". | Keep the values; let the user resubmit. |
 | `INTERNAL` | The server crashed (500). In production the root error is "Internal server error". | Read the server log. |
-| none | `useFieldProps()` was called outside `<FormField>`: `[kitr/forms] useFieldProps() must be used inside <FormField>.` | Move the input inside a `<FormField>`, or use the render-function child. |
+| none | `useFieldProps()` was called outside `<FormField>`: `[@kitr/forms] useFieldProps() must be used inside <FormField>.` | Move the input inside a `<FormField>`, or use the render-function child. |
 
 ## Testing
 
@@ -832,7 +832,7 @@ describe('NewInvoiceForm', () => {
 ## Next steps
 
 - [API reference](/packages/forms/api): every export with its signature.
-- [React Hook Form docs](https://react-hook-form.com/docs): everything there works as written, imported from `kitr/forms`. Its own `<Form>` is exported as `RhfForm`.
+- [React Hook Form docs](https://react-hook-form.com/docs): everything there works as written, imported from `@kitr/forms`. Its own `<Form>` is exported as `RhfForm`.
 - [Server actions](/packages/actions): the server half of a form, with the same error shape.
 - [Query](/packages/query): mutations, cache effects and `mutateAsync`.
 - [Tailwind](/packages/tailwind): style fields with the `data-kitr` attributes.

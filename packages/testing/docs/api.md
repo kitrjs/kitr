@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/testing, with its signature.
+description: Every export of @kitr/testing, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/testing`, `kitr/testing/react`, read from the published type definitions. The [guide](/packages/testing) shows them in use.
+Every export of `@kitr/testing`, `@kitr/testing/react`, read from the published type definitions. The [guide](/packages/testing) shows them in use.
 
-## kitr/testing
+## @kitr/testing
 
 ### createApp
 
@@ -75,7 +75,7 @@ interface TestResponse<T = unknown> {
 
 What every `createTestClient` call resolves to: the status, headers and parsed body of one response.
 
-## kitr/testing/react
+## @kitr/testing/react
 
 ### createApp
 

@@ -1,7 +1,7 @@
 {
   "name": "@kitr/mail",
   "version": "0.1.0",
-  "description": "kitr/mail: emails as React components rendered to HTML and text, sent through SMTP, Resend or a log transport, previewed at /_kitr/mail in development.",
+  "description": "@kitr/mail: emails as React components rendered to HTML and text, sent through SMTP, Resend or a log transport, previewed at /_kitr/mail in development.",
   "keywords": [
     "kitr",
     "kitr-package"

@@ -60,7 +60,7 @@ export function createIpcClient<S extends IpcSchema, E extends IpcEvents = {}>(
       if (!b)
         return Promise.reject(
           new Error(
-            `[kitr/desktop] IPC bridge "${key}" is not available (not running in Electron, or the preload script did not call exposeIpc)`,
+            `[@kitr/desktop] IPC bridge "${key}" is not available (not running in Electron, or the preload script did not call exposeIpc)`,
           ),
         )
       return b.invoke(channel, ...args) as any

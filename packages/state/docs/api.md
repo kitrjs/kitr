@@ -1,12 +1,12 @@
 ---
 title: API
-description: Every export of kitr/state.
+description: Every export of @kitr/state.
 order: 2
 ---
 
 # API
 
-`kitr/state` re-exports everything from `zustand` and adds `createKitrStore`.
+`@kitr/state` re-exports everything from `zustand` and adds `createKitrStore`.
 
 ## createKitrStore
 
@@ -42,7 +42,7 @@ A tuple. Name the parts whatever suits your store.
 Calling the hook on the server without a surrounding `StoreProvider` throws:
 
 ```
-[kitr/state] Store "cart" has no instance on the server. Wrap the tree in its <StoreProvider>.
+[@kitr/state] Store "cart" has no instance on the server. Wrap the tree in its <StoreProvider>.
 ```
 
 ## Re-exports from zustand

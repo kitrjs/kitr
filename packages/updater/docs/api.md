@@ -1,14 +1,14 @@
 ---
 title: API
-description: Every export of kitr/updater, with its signature.
+description: Every export of @kitr/updater, with its signature.
 order: 2
 ---
 
 # API
 
-Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, read from the published type definitions. The [guide](/packages/updater) shows them in use.
+Every export of `@kitr/updater`, `@kitr/updater/react`, `@kitr/updater/provider`, read from the published type definitions. The [guide](/packages/updater) shows them in use.
 
-## kitr/updater
+## @kitr/updater
 
 ### createMemoryUpdaterDriver
 
@@ -170,7 +170,7 @@ type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' 
 
 Where the update flow is: `idle → checking → available → downloading → ready`, or `up-to-date` / `error`.
 
-## kitr/updater/react
+## @kitr/updater/react
 
 ### useUpdate
 
@@ -199,7 +199,7 @@ function useUpdater(): Updater;
 
 The app's `updater` service in a component. Only bound in the browser.
 
-## kitr/updater/provider
+## @kitr/updater/provider
 
 ### updaterProvider
 

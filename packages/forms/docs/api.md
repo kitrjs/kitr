@@ -1,12 +1,12 @@
 ---
 title: API
-description: Every export of kitr/forms.
+description: Every export of @kitr/forms.
 order: 2
 ---
 
 # API
 
-`kitr/forms` re-exports everything from `react-hook-form` (its `Form` as `RhfForm`) and adds the following.
+`@kitr/forms` re-exports everything from `react-hook-form` (its `Form` as `RhfForm`) and adds the following.
 
 ## useSchemaForm
 

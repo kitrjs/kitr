@@ -1,7 +1,7 @@
 import type { StackRouteOptions } from './engine'
 
 /**
- * `kitr/router/stack`: stacked navigation for TanStack Router. Pages push over each other and
+ * `@kitr/router/stack`: stacked navigation for TanStack Router. Pages push over each other and
  * stay mounted beneath (state, scroll and media intact), with iOS swipe back, Android back button
  * order, tabs that each keep a stack, and a list-beside-detail split on wide screens.
  */

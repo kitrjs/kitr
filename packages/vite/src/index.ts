@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { PackageDefinition, PackageViteNeeds } from '@kitr/core/package'
-import { kitrEntryPackage, pickPackageDefinition, shortPackageName } from '@kitr/core/package'
+import { pickPackageDefinition } from '@kitr/core/package'
 import type { Plugin, PluginOption } from 'vite'
 
 export interface KitrPluginOptions {
@@ -104,11 +104,9 @@ async function loadNeeds(root: string, packages: string[]): Promise<PackageNeeds
   return all.filter((n): n is PackageNeeds => !!n)
 }
 
-/** Does a provider spec (`@kitr/devtools/provider`, `kitr/devtools/provider`) belong to this package? */
+/** Does a provider spec (`@kitr/devtools/provider`) belong to this package? */
 function providerOf(spec: string, pkg: string): boolean {
-  const short = shortPackageName(pkg)
-  const prefixes = pkg.startsWith('@kitr/') ? [pkg, `kitr/${short}`] : [pkg]
-  return prefixes.some((p) => spec === p || spec.startsWith(`${p}/`))
+  return spec === pkg || spec.startsWith(`${pkg}/`)
 }
 
 interface RcPlatform {
@@ -143,27 +141,13 @@ function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | 
   // No platforms at all: a project that wires Vite itself (legacy or custom). A wrong name is an error.
   if (wanted && !pick && entries.length)
     throw new Error(
-      `[kitr/vite] KITR_PLATFORM=${wanted} is not a platform in kitrrc.ts (have: ${entries.map(([n]) => n).join(', ') || 'none'})`,
+      `[@kitr/vite] KITR_PLATFORM=${wanted} is not a platform in kitrrc.ts (have: ${entries.map(([n]) => n).join(', ') || 'none'})`,
     )
   if (!pick) return undefined
   const [name, p] = pick
   const options = p.options ?? {}
   const mode: WebMode = p.factory === 'web' ? (options.mode ?? 'spa') : 'spa'
   return { name, type: p.factory, mode, options }
-}
-
-const installedKitrPackages = new Set<string>()
-/** Whether `pkg` is in a node_modules folder at or above `from`. Yarn PnP has none, so it always passes. */
-function packageInstalled(pkg: string, from: string): boolean {
-  const key = `${from}\0${pkg}`
-  if (installedKitrPackages.has(key) || process.versions.pnp) return true
-  for (let dir = from; ; dir = dirname(dir)) {
-    if (existsSync(join(dir, 'node_modules', pkg, 'package.json'))) {
-      installedKitrPackages.add(key)
-      return true
-    }
-    if (dirname(dir) === dir) return false
-  }
 }
 
 /**
@@ -246,18 +230,8 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         },
       }
     },
-    resolveId(id, importer) {
+    resolveId(id) {
       if (id === 'virtual:kitr/providers' || id === 'virtual:kitr/config') return `\0${id}`
-      // `kitr` lists every @kitr/* package as an optional peer. Without this check a missing one
-      // fails as "X is not exported by kitr/dist/query.js", or builds and throws in the browser.
-      const pkg = kitrEntryPackage(id)
-      if (pkg && !importer?.includes('/node_modules/')) {
-        const from = importer && isAbsolute(importer) ? dirname(importer) : root
-        if (!packageInstalled(pkg, from))
-          throw new Error(
-            `${id} re-exports ${pkg}, which is not installed. Run \`kitr add ${shortPackageName(pkg)}\`.`,
-          )
-      }
       return null
     },
     load(id, loadOptions) {
@@ -341,7 +315,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           try {
             await types.run(only)
           } catch (error) {
-            server.config.logger.error(`[kitr/vite] ${(error as Error).message}`)
+            server.config.logger.error(`[@kitr/vite] ${(error as Error).message}`)
           }
         }, 50)
       }
@@ -438,7 +412,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           if (typeof mod.default === 'function') out.push(mod.default())
         } catch (error) {
           console.warn(
-            `[kitr/vite] ${name}: its Vite plugin ${n.plugin} could not load (${(error as Error).message})`,
+            `[@kitr/vite] ${name}: its Vite plugin ${n.plugin} could not load (${(error as Error).message})`,
           )
         }
       }
@@ -477,7 +451,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         return mod.kitrPwa(active.options, appName(root))
       })().catch((error) => {
         console.warn(
-          `[kitr/vite] ${active.name}: pwa is on but vite-plugin-pwa could not load (${(error as Error).message})`,
+          `[@kitr/vite] ${active.name}: pwa is on but vite-plugin-pwa could not load (${(error as Error).message})`,
         )
         return null
       }),
@@ -645,7 +619,7 @@ function arrayBlock(src: string, key: string): string {
 }
 
 /**
- * The robots.txt for a project: `robotsTxt()` from kitr/seo over `config/seo.ts`, or null when
+ * The robots.txt for a project: `robotsTxt()` from @kitr/seo over `config/seo.ts`, or null when
  * there is no config/seo.ts or it sets `robots: false`.
  */
 export async function robotsFor(root: string, configDir = 'config'): Promise<string | null> {
@@ -655,7 +629,7 @@ export async function robotsFor(root: string, configDir = 'config'): Promise<str
   const jiti = createJiti(resolve(root, 'package.json'))
   const config = await jiti.import<Record<string, unknown>>(path, { default: true })
   const seo = await jiti
-    .import<{ robotsTxt: (c: unknown) => string | null }>('kitr/seo')
+    .import<{ robotsTxt: (c: unknown) => string | null }>('@kitr/seo')
     .catch(() => jiti.import<{ robotsTxt: (c: unknown) => string | null }>('@kitr/seo'))
   return seo.robotsTxt(config ?? {})
 }
@@ -705,7 +679,7 @@ function routeShim(root: string): string {
     mkdirSync(dirname(file), { recursive: true })
     writeFileSync(
       file,
-      "// Generated by kitr/vite: TanStack's route generator needs a root file route to crawl. The\n// real tree comes from app/routes.ts. Do not edit; safe to delete.\nimport { createRootRoute } from '@tanstack/react-router'\n\nexport const Route = createRootRoute()\n",
+      "// Generated by @kitr/vite: TanStack's route generator needs a root file route to crawl. The\n// real tree comes from app/routes.ts. Do not edit; safe to delete.\nimport { createRootRoute } from '@tanstack/react-router'\n\nexport const Route = createRootRoute()\n",
     )
   }
   return dir

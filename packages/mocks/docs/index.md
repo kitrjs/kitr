@@ -6,7 +6,7 @@ order: 1
 
 # Mocks
 
-Frontend work shouldn't wait for the backend. The invoices screen is designed, the API that feeds it is still a ticket, and the tests for its empty and error states need answers the real server rarely gives. `kitr/mocks` answers your app's HTTP requests with fake data: in the browser while you develop, and in Node while your tests run.
+Frontend work shouldn't wait for the backend. The invoices screen is designed, the API that feeds it is still a ticket, and the tests for its empty and error states need answers the real server rarely gives. `@kitr/mocks` answers your app's HTTP requests with fake data: in the browser while you develop, and in Node while your tests run.
 
 It is [Mock Service Worker](https://mswjs.io) (MSW), with `http` and `HttpResponse` re-exported unchanged. On top it adds `mockRoutes()`, which turns a kitr route table into one handler per route so you only write the answers, plus helpers that send errors in exactly the shape a kitr server sends them, so forms and error screens behave as they will in production.
 
@@ -35,15 +35,15 @@ It writes no config file and asks no questions. Mocks are a client package, so i
 
 The worker file appears in `public/` when the package manager installs `msw`. If it is missing, for example after `--no-install`, run `pnpm mocks:init`; see [Turn mocks on in the browser](#turn-mocks-on-in-the-browser).
 
-`kitr remove mocks` takes `'@kitr/mocks'` out of `kitrrc.ts`, removes `@kitr/mocks`, `msw`, the `msw` field and the `mocks:init` script from `package.json` and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `kitr/mocks`. It leaves `app/mocks/`, the `VITE_MOCKS` line and `public/mockServiceWorker.js` for you to delete.
+`kitr remove mocks` takes `'@kitr/mocks'` out of `kitrrc.ts`, removes `@kitr/mocks`, `msw`, the `msw` field and the `mocks:init` script from `package.json` and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `@kitr/mocks`. It leaves `app/mocks/`, the `VITE_MOCKS` line and `public/mockServiceWorker.js` for you to delete.
 
 ## Configure
 
-`kitr/mocks` has no config file. What you configure is the handler list and one env variable. `kitr add` writes these two files:
+`@kitr/mocks` has no config file. What you configure is the handler list and one env variable. `kitr add` writes these two files:
 
 ```ts
 // app/mocks/handlers.ts
-import { HttpResponse, http } from 'kitr/mocks'
+import { HttpResponse, http } from '@kitr/mocks'
 
 export const handlers = [
   http.get('*/me', () => HttpResponse.json({ id: 'u1', email: 'dev@example.com', role: 'admin' })),
@@ -52,7 +52,7 @@ export const handlers = [
 
 ```ts
 // app/mocks/browser.ts
-import { setupBrowserMocks } from 'kitr/mocks'
+import { setupBrowserMocks } from '@kitr/mocks'
 import { handlers } from './handlers'
 
 /**
@@ -89,7 +89,7 @@ Add a handler for the request your screen makes. This one answers the invoice li
 
 ```ts
 // app/mocks/handlers.ts
-import { HttpResponse, http } from 'kitr/mocks'
+import { HttpResponse, http } from '@kitr/mocks'
 
 export const handlers = [
   http.get('*/api/me', () =>
@@ -157,7 +157,7 @@ A handler pairs a method and a URL pattern with a function that returns a respon
 
 ```ts
 // app/mocks/handlers.ts
-import { HttpResponse, http } from 'kitr/mocks'
+import { HttpResponse, http } from '@kitr/mocks'
 
 export const handlers = [
   http.get('*/api/invoices/:id', ({ params }) =>
@@ -205,7 +205,7 @@ export const invoices: Invoice[] = [
 
 ```ts
 // app/mocks/handlers.ts
-import { HttpResponse, http } from 'kitr/mocks'
+import { HttpResponse, http } from '@kitr/mocks'
 import { type Invoice, invoices } from './data'
 
 export const handlers = [
@@ -229,7 +229,7 @@ With the [API](/packages/api) package, every route has a name. `mockRoutes` buil
 ```ts
 // app/mocks/handlers.ts
 import { KitrError } from 'kitr/app'
-import { HttpResponse, mockRoutes } from 'kitr/mocks'
+import { HttpResponse, mockRoutes } from '@kitr/mocks'
 import { routeTable } from '#app/api/routes.gen'
 import { type Invoice, invoices } from './data'
 
@@ -279,7 +279,7 @@ Error screens are the hardest states to see in development. `kitrErrorResponse()
 ```ts
 // app/mocks/handlers.ts
 import { KitrError } from 'kitr/app'
-import { http, kitrErrorResponse } from 'kitr/mocks'
+import { http, kitrErrorResponse } from '@kitr/mocks'
 
 export const handlers = [
   http.post('*/api/invoices/:id/refund', () =>
@@ -308,7 +308,7 @@ A `KitrError` keeps its code, message, status, `fieldErrors` and `data`. Anythin
 
 ```ts
 // app/mocks/handlers.ts
-import { mockValidationError } from 'kitr/mocks'
+import { mockValidationError } from '@kitr/mocks'
 
 export const handlers = [
   mockValidationError('post', '*/api/invoices', {
@@ -338,7 +338,7 @@ Loading spinners and retry buttons need slow and broken responses. MSW's `delay`
 
 ```ts
 // app/mocks/handlers.ts
-import { HttpResponse, http } from 'kitr/mocks'
+import { HttpResponse, http } from '@kitr/mocks'
 import { delay } from 'msw'
 import { invoices } from './data'
 
@@ -359,7 +359,7 @@ Handlers match full URLs too, so the same file fakes services you don't own. Thi
 
 ```ts
 // app/mocks/handlers.ts
-import { HttpResponse, http } from 'kitr/mocks'
+import { HttpResponse, http } from '@kitr/mocks'
 
 export const handlers = [
   http.get('https://api.exchangerate.host/latest', ({ request }) => {
@@ -377,7 +377,7 @@ In a test, `setupNodeMocks(handlers)` starts MSW in Node and returns MSW's serve
 
 ```ts
 // app/features/invoices/invoices.test.ts
-import { setupNodeMocks } from 'kitr/mocks'
+import { setupNodeMocks } from '@kitr/mocks'
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'
 import { handlers } from '#app/mocks/handlers'
 
@@ -407,7 +407,7 @@ To render a component against these mocks, combine them with `renderWithKitr` fr
 ```ts
 // app/features/invoices/invoices.test.ts
 import { KitrError } from 'kitr/app'
-import { HttpResponse, http, kitrErrorResponse, setupNodeMocks } from 'kitr/mocks'
+import { HttpResponse, http, kitrErrorResponse, setupNodeMocks } from '@kitr/mocks'
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest'
 import { handlers } from '#app/mocks/handlers'
 
@@ -444,7 +444,7 @@ Production builds never start the worker, because the check in `app/client.tsx` 
 
 ## Errors
 
-The responses `kitr/mocks` builds itself:
+The responses `@kitr/mocks` builds itself:
 
 | Code | When | What to do |
 | --- | --- | --- |
@@ -460,7 +460,7 @@ Your handlers are the contract the frontend is built against, so test them like 
 
 ```ts
 // app/mocks/handlers.test.ts
-import { setupNodeMocks } from 'kitr/mocks'
+import { setupNodeMocks } from '@kitr/mocks'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { handlers } from './handlers'
 
@@ -520,7 +520,7 @@ The test uses the `mockRoutes` handlers from [Mock a whole route table](#mock-a-
 
 ## Next steps
 
-- [API reference](/packages/mocks/api): every export of `kitr/mocks`.
+- [API reference](/packages/mocks/api): every export of `@kitr/mocks`.
 - [MSW docs](https://mswjs.io/docs): handlers, response helpers, GraphQL and WebSocket mocking.
 - [Testing](/packages/testing): `createTestApp`, `renderWithKitr` and the API test client.
 - [API](/packages/api): route names and `kitr api:sync`, which feed `mockRoutes`.

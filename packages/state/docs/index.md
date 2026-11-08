@@ -6,7 +6,7 @@ order: 1
 
 # State
 
-Some values belong to the whole app rather than one component: the order Ada is putting together before she submits it, whether the sidebar is open, which currency Linus prefers. `kitr/state` gives you a small store for those values that any component can read and update, and that can remember them across page reloads.
+Some values belong to the whole app rather than one component: the order Ada is putting together before she submits it, whether the sidebar is open, which currency Linus prefers. `@kitr/state` gives you a small store for those values that any component can read and update, and that can remember them across page reloads.
 
 It is [Zustand](https://zustand.docs.pmnd.rs), re-exported, plus one helper, `createKitrStore`, that makes a store safe for server rendering, saves it in the browser when you ask, and connects it to the Redux DevTools in development.
 
@@ -44,15 +44,15 @@ What `kitr add` does:
 kitr add state --dry-run
 ```
 
-`kitr remove state` removes the `packages` entry, both dependencies and the `AGENTS.md` section. It leaves `app/stores/` and your stores in place, and lists the files that still import `kitr/state`.
+`kitr remove state` removes the `packages` entry, both dependencies and the `AGENTS.md` section. It leaves `app/stores/` and your stores in place, and lists the files that still import `@kitr/state`.
 
 ## Configure
 
-`kitr/state` has no config file. Each store takes its options as the first argument of `createKitrStore`:
+`@kitr/state` has no config file. Each store takes its options as the first argument of `createKitrStore`:
 
 ```ts
 // app/stores/preferences.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface PreferencesState {
   currency: 'USD' | 'EUR'
@@ -102,7 +102,7 @@ Put each store in `app/stores/`. This one holds the order Ada is building:
 
 ```ts
 // app/stores/order-draft.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 export interface DraftLine {
   sku: string
@@ -240,7 +240,7 @@ Inside the creator, `set` merges a partial state into the current one. Pass an o
 
 ```ts
 // app/stores/invoice-selection.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface InvoiceSelectionState {
   selected: string[]
@@ -325,7 +325,7 @@ Pass an object to control what is saved. `partialize` picks the fields; here the
 
 ```ts
 // app/stores/order-draft.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 import type { DraftLine } from './types'
 
 interface OrderDraftState {
@@ -359,7 +359,7 @@ When the state's shape changes, data saved by the old version no longer fits. Bu
 
 ```ts
 // app/stores/preferences.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface PreferencesState {
   currency: 'USD' | 'EUR'
@@ -395,7 +395,7 @@ export const [usePreferences, PreferencesProvider, preferencesStore] =
 
 ```ts
 // app/stores/import-wizard.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 import { createJSONStorage } from 'zustand/middleware'
 
 interface ImportWizardState {
@@ -435,7 +435,7 @@ r.page('/orders/$orderId/edit', {
 // app/pages/orders/orderId/edit.tsx
 import { OrderDraftProvider } from '#app/stores/order-draft'
 import { DraftEditor } from '#app/features/orders/draft-editor'
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders/$orderId/edit')
 
@@ -462,7 +462,7 @@ If a page renders on the server (a `web` platform in `ssr` or `static` mode), wr
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { OrderDraftProvider } from '#app/stores/order-draft'
 
 export function RootDocument() {
@@ -485,7 +485,7 @@ export function RootDocument() {
 Without a provider, a server render fails with:
 
 ```txt
-[kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
+[@kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
 ```
 
 In a client-only app (`spa` mode, desktop, mobile) you can skip the provider entirely.
@@ -494,11 +494,11 @@ A saved store renders its initial state on the server, because the server cannot
 
 ## Use plain Zustand
 
-`kitr/state` re-exports `zustand` unchanged, so `create`, `createStore`, `useStore` and the types work as in the [Zustand docs](https://zustand.docs.pmnd.rs). Middleware comes from `zustand/middleware`. A store made with `create` is a module-level singleton on the server too, so use it only in client-only apps or for state that is the same for every user:
+`@kitr/state` re-exports `zustand` unchanged, so `create`, `createStore`, `useStore` and the types work as in the [Zustand docs](https://zustand.docs.pmnd.rs). Middleware comes from `zustand/middleware`. A store made with `create` is a module-level singleton on the server too, so use it only in client-only apps or for state that is the same for every user:
 
 ```ts
 // app/stores/toasts.ts
-import { create } from 'kitr/state'
+import { create } from '@kitr/state'
 
 interface ToastState {
   messages: string[]
@@ -525,7 +525,7 @@ It writes `app/stores/order_draft.ts`. The file name is snake case; the exports 
 
 ```ts
 // app/stores/order_draft.ts
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 interface OrderDraftState {
   count: number
@@ -628,7 +628,7 @@ In development, every store connects to the [Redux DevTools](https://github.com/
 ## Next steps
 
 - [API reference](/packages/state/api)
-- [Zustand docs](https://zustand.docs.pmnd.rs): everything there works as written, imported from `kitr/state`.
+- [Zustand docs](https://zustand.docs.pmnd.rs): everything there works as written, imported from `@kitr/state`.
 - [Zustand persist options](https://zustand.docs.pmnd.rs/middlewares/persist): every option `persist` accepts.
 - [Query](/packages/query): where server data belongs.
 - [Forms](/packages/forms): form state, validation and server errors, without a store.
