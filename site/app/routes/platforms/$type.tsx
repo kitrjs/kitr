@@ -222,12 +222,19 @@ function PlatformPage() {
           <div className="learn-col">
             <span className="label">Guides</span>
             {p.guides.length ? (
-              p.guides.map((g) => (
-                <Link key={g.url} to={g.url} className="learn-link">
-                  <strong>{g.title}</strong>
-                  {g.description && <span className="muted">{g.description}</span>}
-                </Link>
-              ))
+              <>
+                {p.guides.slice(0, 4).map((g) => (
+                  <Link key={g.url} to={g.url} className="learn-link">
+                    <strong>{g.title}</strong>
+                    {g.description && <span className="muted">{g.description}</span>}
+                  </Link>
+                ))}
+                {p.guides.length > 4 && (
+                  <Link to="/guides" className="learn-more">
+                    All {p.guides.length} guides →
+                  </Link>
+                )}
+              </>
             ) : (
               <p className="muted learn-empty">
                 A step-by-step guide for {lower} is being written. Until then the platform guide

@@ -24,8 +24,8 @@ function Platforms() {
           <span className="label">Platforms</span>
           <h1 className="display platform-title">Pick the platform, not the framework.</h1>
           <p className="lede">
-            Where your app runs is a platform. Each one is a package you add with one command, and
-            they all share the same <code>app/</code> folder, the same packages and the same CLI.
+            Where your app runs is a platform. Add one with a single command. They all share your
+            code, your packages and the CLI.
           </p>
         </div>
         <PlatformBoard />
@@ -61,8 +61,8 @@ function Platforms() {
                       {!p.available && <SoonBadge />}
                     </Link>
                   </th>
-                  <td>{p.targets.join(', ')}</td>
-                  <td>{p.shell}</td>
+                  <td className="platform-table-targets">{p.targets.join(', ')}</td>
+                  <td className="platform-table-shell">{p.shell}</td>
                   <td>
                     <code>{p.command}</code>
                   </td>

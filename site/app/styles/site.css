@@ -1705,6 +1705,22 @@ a.dcard:focus-visible {
   background: var(--raised);
   border: 1px solid var(--line);
 }
+.prose blockquote {
+  margin: 20px 0;
+  padding: 14px 18px;
+  border-left: 3px solid var(--link);
+  border-radius: 0 12px 12px 0;
+  background: var(--raised);
+}
+.prose blockquote > :first-child {
+  margin-top: 0;
+}
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+.prose blockquote pre {
+  background: var(--bg);
+}
 .prose kbd {
   font-size: 0.8em;
   color: var(--ink);
@@ -2115,7 +2131,7 @@ a.dcard:focus-visible {
 }
 .link-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 .link-cards a {
@@ -2292,9 +2308,12 @@ a.dcard:focus-visible {
     font-size: 40px;
     line-height: 46px;
   }
+  .about-hero {
+    gap: 24px;
+  }
   .about-hero img {
-    width: 160px;
-    height: 160px;
+    width: 88px;
+    height: 88px;
   }
   .docs-layout {
     display: block;
@@ -2878,6 +2897,34 @@ a.dcard:focus-visible {
   margin: 0;
   font-size: 15px;
 }
+@media (max-width: 760px) {
+  .platform-table thead,
+  .platform-table td.platform-table-shell {
+    display: none;
+  }
+  .platform-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .platform-table th,
+  .platform-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+  .platform-table td.platform-table-targets {
+    padding-left: 44px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .platform-table td code {
+    margin-left: 44px;
+    white-space: normal;
+  }
+}
 
 /* /platforms/<type> */
 .crumbs {
@@ -3108,6 +3155,11 @@ a.dcard:focus-visible {
 .learn-link span {
   font-size: 14px;
   line-height: 21px;
+}
+.learn-more {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 14px;
 }
 .learn-empty {
   margin: 0;

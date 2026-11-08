@@ -20,7 +20,7 @@ export function Rich({ text }: { text: string }) {
 }
 
 export function SoonBadge({ short = false, label }: { short?: boolean; label?: string }) {
-  return <span className="soon-badge">{label ?? (short ? 'Soon' : 'Coming soon')}</span>
+  return <span className="soon-badge">{label ?? (short ? 'Soon' : 'Preview')}</span>
 }
 
 /** One platform as a coloured tile: icon, name, the shell it ships in and where it runs. */
