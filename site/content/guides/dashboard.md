@@ -36,7 +36,8 @@ It installs and wires [Router](/packages/router), [Query](/packages/query), [HTT
 ```
 acme-admin/
 ├── app/
-│   ├── routes/            # one file per page
+│   ├── routes.ts          # the route table: every page, as .page('/path', { lazy })
+│   ├── pages/             # one component file per page
 │   ├── components/ui/     # data-table, form, button, input, app-shell: yours to edit
 │   ├── mocks/             # handlers.ts and browser.ts
 │   ├── abilities.ts       # the User type and permission rules

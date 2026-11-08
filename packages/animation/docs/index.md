@@ -211,7 +211,7 @@ export function ProjectRow({ name, invoices }: { name: string; invoices: string[
 `<Reveal>` animates its content the first time it scrolls into view. Acme's marketing page at `acme.com` brings each section in as the reader reaches it:
 
 ```tsx
-// app/routes/index.tsx
+// app/pages/home.tsx
 import { Reveal } from '@kitr/animation'
 
 export function Features() {
@@ -268,11 +268,11 @@ import { pageTransitions } from '@kitr/animation'
 import '@kitr/animation/page-transitions.css'
 import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
-import { routeTree } from './routeTree.gen'
+import { routes } from './routes'
 
 export function getRouter() {
   return createKitrRouter({
-    routeTree,
+    routes,
     app,
     defaultViewTransition: pageTransitions(),
   })
@@ -296,10 +296,10 @@ To animate a single link differently, pass `viewTransition` to it. A link that s
 By default the whole page slides. To keep the app's header and navigation in place, give them their own `view-transition-name`; the browser then animates them separately, and with no animation for that name they simply stay:
 
 ```tsx
-// app/routes/__root.tsx
+// app/pages/app-layout.tsx
 import { Outlet } from '@kitr/router'
 
-export function RootLayout() {
+export default function AppLayout() {
   return (
     <>
       <header style={{ viewTransitionName: 'app-header' }}>Acme</header>

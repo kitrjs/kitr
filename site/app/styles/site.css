@@ -3207,3 +3207,41 @@ a.dcard:focus-visible {
     font-size: 14px;
   }
 }
+
+/* ------------------------------------------------------------- status strip, "if you know" */
+
+.status-strip {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--muted);
+  max-width: 52ch;
+}
+.status-strip strong {
+  color: var(--ink);
+}
+
+.familiar {
+  margin-top: 72px;
+}
+.familiar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.familiar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.familiar-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.familiar-card p {
+  margin: 0;
+  flex: 1;
+}

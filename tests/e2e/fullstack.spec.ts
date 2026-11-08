@@ -7,7 +7,7 @@ test.describe('server rendering', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toMatch(/text\/html/)
     const html = await res.text()
-    expect(html).toContain('<h1>fullstack</h1>')
+    expect(html).toContain('<h1>fullstack is running</h1>')
     expect(html).toMatch(/<link[^>]+stylesheet/)
   })
 
