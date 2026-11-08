@@ -215,7 +215,7 @@ import { httpMutation, httpQuery } from 'kitr/http'
 import { app } from '#app/app'
 import type { NewInvoice } from './schema'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 
 export const invoiceQuery = queryFrom(
   httpQuery<string, NewInvoice & { id: string }>(http, {

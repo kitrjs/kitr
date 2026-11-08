@@ -1175,6 +1175,13 @@ a.dcard:focus-visible {
   align-items: center;
   gap: 4px;
 }
+.guide-preview {
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+.guide-meta .guide-preview {
+  margin-left: 0;
+}
 .guide-more,
 .guide-time {
   font-size: 13px;
