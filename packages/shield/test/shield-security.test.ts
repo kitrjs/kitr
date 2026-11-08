@@ -3,13 +3,17 @@ import { createServer } from '@kitr/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   cors,
+  corsPolicy,
   createMemoryRateLimitStore,
   csrf,
   DEFAULT_CSP,
+  defaultCsp,
+  getCspNonce,
   rateLimit,
   securityHeaders,
   shield,
   shieldMiddlewares,
+  useCspNonce,
 } from '../src'
 
 function app(...middlewares: Parameters<ReturnType<typeof createServer>['use']>[0][]) {
@@ -37,7 +41,7 @@ describe('securityHeaders', () => {
     const dev = await app(securityHeaders()).fetch(req('/ping'))
     expect(dev.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin')
     expect(dev.headers.get('permissions-policy')).toBe('camera=(), microphone=(), geolocation=()')
-    expect(dev.headers.get('content-security-policy')).toBe(DEFAULT_CSP)
+    expect(dev.headers.get('content-security-policy')).toContain("script-src 'self' 'nonce-")
     expect(dev.headers.get('strict-transport-security')).toBeNull()
 
     vi.stubEnv('NODE_ENV', 'production')
@@ -76,6 +80,65 @@ describe('securityHeaders', () => {
     expect(DEFAULT_CSP).toContain("base-uri 'self'")
     expect(DEFAULT_CSP).toContain("form-action 'self'")
     expect(DEFAULT_CSP).not.toMatch(/script-src[^;]*\*/)
+  })
+
+  it('the default CSP has no unsafe-inline for scripts, and styles take the nonce in production', async () => {
+    expect(DEFAULT_CSP).not.toMatch(/script-src[^;]*unsafe-inline/)
+    expect(DEFAULT_CSP).not.toMatch(/(^|; )style-src [^;]*unsafe-inline/)
+    vi.stubEnv('NODE_ENV', 'production')
+    const res = await app(securityHeaders()).fetch(req('/ping'))
+    const csp = res.headers.get('content-security-policy')!
+    const nonce = /'nonce-([^']+)'/.exec(csp)![1]!
+    expect(csp).toContain(`script-src 'self' 'nonce-${nonce}'`)
+    expect(csp).toContain(`style-src 'self' 'nonce-${nonce}'`)
+    expect(csp).not.toContain('{nonce}')
+    expect(csp).not.toMatch(/(script|(^|; )style)-src [^;]*unsafe-inline/)
+  })
+
+  it('gives each request its own nonce, in the request context and for useCspNonce()', async () => {
+    const server = app(securityHeaders({ production: true }))
+    const seen: Array<{ ctx?: string; event?: string; hook?: string }> = []
+    server.h3.get('/nonce', (event) => {
+      seen.push({
+        ctx: event.context.kitr?.nonce,
+        event: getCspNonce(event),
+        hook: useCspNonce(),
+      })
+      return 'ok'
+    })
+    const [a, b] = await Promise.all([server.fetch(req('/nonce')), server.fetch(req('/nonce'))])
+    const nonces = [a, b].map(
+      (r) => /'nonce-([^']+)'/.exec(r.headers.get('content-security-policy')!)![1],
+    )
+    expect(nonces[0]).not.toBe(nonces[1])
+    expect(new Set(nonces).size).toBe(2)
+    for (const entry of seen) {
+      expect(entry.ctx).toBeTruthy()
+      expect(entry.event).toBe(entry.ctx)
+      expect(entry.hook).toBe(entry.ctx)
+    }
+    expect(seen.map((e) => e.ctx).sort()).toEqual([...nonces].sort())
+    // Outside a request there is no nonce.
+    expect(useCspNonce()).toBeUndefined()
+  })
+
+  it('strictDynamic adds strict-dynamic; unsafeInline restores the old inline policy', () => {
+    expect(defaultCsp({ strictDynamic: true })).toContain(
+      "script-src 'self' 'nonce-{nonce}' 'strict-dynamic'",
+    )
+    const loose = defaultCsp({ unsafeInline: true })
+    expect(loose).toContain("script-src 'self' 'unsafe-inline'")
+    expect(loose).toContain("style-src 'self' 'unsafe-inline'")
+    expect(loose).not.toContain('nonce-')
+  })
+
+  it('a custom policy can place the nonce with {nonce}', async () => {
+    const res = await app(
+      securityHeaders({ contentSecurityPolicy: "script-src 'nonce-{nonce}' https://cdn.test" }),
+    ).fetch(req('/ping'))
+    expect(res.headers.get('content-security-policy')).toMatch(
+      /^script-src 'nonce-[^'{}]+' https:\/\/cdn\.test$/,
+    )
   })
 
   it('every header can be changed or turned off', async () => {
@@ -290,5 +353,14 @@ describe('shieldMiddlewares', () => {
     const server = app(...shieldMiddlewares({ rateLimit: { max: 1, key: () => 'k' } }))
     expect((await server.fetch(req('/save', { method: 'POST' }))).status).toBe(403)
     expect((await server.fetch(req('/save', { method: 'POST' }))).status).toBe(429)
+  })
+})
+
+describe('corsPolicy', () => {
+  it('accepts one origin as a string, like kitr/api always did', () => {
+    const policy = corsPolicy({ origin: 'https://a.dev' })
+    expect(policy('https://a.dev').headers['access-control-allow-origin']).toBe('https://a.dev')
+    expect(policy('https://b.dev').headers).toEqual({})
+    expect(policy(null).headers).toEqual({})
   })
 })

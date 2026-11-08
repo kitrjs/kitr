@@ -637,7 +637,7 @@ Middleware runs outer to inner: group middleware first, then route middleware, t
 
 ## Allow cross-origin requests
 
-`cors()` answers browser preflight requests and sets the CORS headers for the origins you list. The generated routes file leaves it out: the app and its API share an origin, so no CORS is needed. Add it when another site calls the API:
+`cors()` answers browser preflight requests and sets the CORS headers for the origins you list. It is the same function as `cors()` in [kitr/shield](/packages/shield), with the same options, fitted to route middleware; one policy works in both. The generated routes file leaves it out: the app and its API share an origin, so no CORS is needed. Add it when another site calls the API:
 
 ```ts
 // server/routes.ts
@@ -663,7 +663,7 @@ export type ServerRoutes = typeof routes.$types
 | --- | --- | --- |
 | `origin` | none | One origin, a list, a function `(origin) => boolean`, or `'*'` for a public API. With none, no cross-origin caller is allowed. `'*'` with `credentials` throws, because it would let any site act as the user. |
 | `methods` | `GET, POST, PUT, PATCH, DELETE, OPTIONS` | `access-control-allow-methods` on preflight. |
-| `headers` | `Content-Type, Authorization` | `access-control-allow-headers` on preflight. |
+| `headers` | `Content-Type, Authorization, X-CSRF-Token, X-Requested-With` | `access-control-allow-headers` on preflight. Earlier releases allowed only the first two, so a client that sent the CSRF header needed it listed. |
 | `credentials` | `false` | Sends `access-control-allow-credentials: true`, needed for cookies. |
 | `maxAge` | `600` | Seconds a browser may cache the preflight. |
 

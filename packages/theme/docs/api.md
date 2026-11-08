@@ -72,6 +72,7 @@ function ThemeScript(props: {
   storageKey?: string;
   attribute?: string;
   tokens?: ThemeConfig['tokens'];
+  nonce?: string;
 }): import("react").JSX.Element;
 ```
 

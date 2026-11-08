@@ -134,6 +134,12 @@ export function ThemeScript(props: {
   storageKey?: string
   attribute?: string
   tokens?: ThemeConfig['tokens']
+  /**
+   * The Content-Security-Policy nonce for the inline script and style. Default: the nonce
+   * `kitr/shield` made for this request (server-side), so a page under the default policy works
+   * as it is; pass one only when you made your own.
+   */
+  nonce?: string
 }) {
   const config = useContext(ThemeConfigContext)
   const storageKey = props.storageKey ?? config?.storageKey ?? 'kitr-theme'
@@ -141,13 +147,21 @@ export function ThemeScript(props: {
   const tokens = props.tokens ?? config?.tokens
   const code = `(function(){try{var k=${inlineJson(storageKey)};var t=localStorage.getItem(k)||'system';var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;document.documentElement.setAttribute(${inlineJson(attribute)},r);document.documentElement.style.colorScheme=r}catch(e){}})()`
   const css = tokens ? tokenCss(tokens, attribute) : ''
+  // The browser hides a tag's nonce once it has accepted it, so the client's render has none to
+  // compare with the server's: that mismatch is expected.
+  const nonce = props.nonce ?? requestNonce()
   return (
     <>
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static, no user input */}
-      <script dangerouslySetInnerHTML={{ __html: code }} />
+      <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: code }} />
       {css ? (
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: config values, `<` escaped
-        <style data-kitr-tokens="" dangerouslySetInnerHTML={{ __html: css }} />
+        <style
+          data-kitr-tokens=""
+          nonce={nonce}
+          suppressHydrationWarning
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: config values, `<` escaped
+          dangerouslySetInnerHTML={{ __html: css }}
+        />
       ) : null}
     </>
   )
@@ -167,6 +181,17 @@ export function tokenCss(
   if (tokens.dark && Object.keys(tokens.dark).length)
     css += defineTokens(tokens.dark).css(`:root:root[${attribute}="dark"]`)
   return css.replace(/</g, '\\3c ')
+}
+
+/** The nonce `kitr/shield` made for the request being rendered; undefined in the browser and outside a request. `@kitr/server` leaves the reader on `globalThis`. */
+function requestNonce(): string | undefined {
+  if (typeof window !== 'undefined') return undefined
+  const read = (globalThis as unknown as Record<symbol, unknown>)[
+    Symbol.for('kitr.server.requestNonce')
+  ]
+  return typeof read === 'function'
+    ? ((read as () => string | undefined)() ?? undefined)
+    : undefined
 }
 
 /** JSON that is safe inside an inline <script>: `<` can never close the tag. */

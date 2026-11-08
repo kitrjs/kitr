@@ -59,7 +59,8 @@
   },
   "dependencies": {
     "@kitr/core": "workspace:*",
-    "@kitr/server": "workspace:*"
+    "@kitr/server": "workspace:*",
+    "@kitr/shield": "workspace:*"
   },
   "peerDependencies": {
     "h3": ">=2.0.0",
