@@ -86,6 +86,7 @@ export function PackageLayout({
             example={example.slug}
             title={example.title}
             description={example.description}
+            storage={example.storage}
           />
         )}
 

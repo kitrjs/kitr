@@ -56,12 +56,13 @@
     "@hookform/resolvers": ">=5.0.0"
   },
   "devDependencies": {
+    "@hookform/resolvers": "^7.0.3",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "react-hook-form": "^7.91.0",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
-    "react": "^19.3.1",
-    "@types/react": "^19.3.0",
-    "react-hook-form": "^7.91.0",
-    "@hookform/resolvers": "^7.0.3"
+    "zod": "^4.6.7"
   },
   "keywords": [
     "kitr",
