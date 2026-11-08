@@ -251,6 +251,11 @@ test.describe('in the browser', () => {
     await expect(sidebar.locator('a[href="/packages/query"]')).toHaveCount(0)
     await expect(sidebar.locator('a[href="#install"]')).toBeVisible()
     await expect(sidebar.locator('a[href="/packages/mail/api"]')).toBeVisible()
+
+    // On the API page only "API reference" is marked current, not the guide as well.
+    await sidebar.locator('a[href="/packages/mail/api"]').click()
+    await expect(page).toHaveURL(/\/packages\/mail\/api$/)
+    await expect(sidebar.locator('[aria-current="page"]')).toHaveText(['API reference'])
   })
 
   test('on a phone, the docs bar opens the navigation and a section link closes it', async ({
