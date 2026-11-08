@@ -91,6 +91,19 @@ export const base = (ctx: ProjectContext, name: string) => {
 }
 
 /**
+ * `.vscode/extensions.json` recommending the kitr extension, so VS Code offers to install it on
+ * first open. Written only when the project has none; `kitr new --no-vscode` skips it.
+ */
+export const writeVscode = (ctx: ProjectContext) => {
+  if (ctx.exists('.vscode/extensions.json')) return false
+  ctx.write(
+    '.vscode/extensions.json',
+    `${JSON.stringify({ recommendations: ['kitrjs.kitr'] }, null, 2)}\n`,
+  )
+  return true
+}
+
+/**
  * README.md for a new project. Written once, after the kit has run, so it lists the scripts and
  * folders that actually exist.
  */

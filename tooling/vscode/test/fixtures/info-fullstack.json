@@ -1,0 +1,59 @@
+{
+  "root": "/home/me/acme",
+  "kitr": "0.1.0",
+  "packageManager": "pnpm",
+  "serverOnly": false,
+  "platforms": {
+    "site": {
+      "factory": "web",
+      "source": "@kitr/web",
+      "options": {
+        "mode": "ssr"
+      }
+    },
+    "api": {
+      "factory": "server",
+      "source": "@kitr/server"
+    }
+  },
+  "packages": [
+    "@kitr/react",
+    "@kitr/router",
+    "@kitr/logger",
+    "@kitr/server",
+    "@kitr/query",
+    "@kitr/http",
+    "@kitr/forms",
+    "@kitr/table",
+    "@kitr/state",
+    "@kitr/tailwind",
+    "@kitr/theme",
+    "@kitr/auth",
+    "@kitr/storage",
+    "@kitr/testing",
+    "@kitr/seo",
+    "@kitr/actions",
+    "@kitr/api",
+    "@kitr/realtime",
+    "@kitr/vite",
+    "@kitr/web"
+  ],
+  "providers": [
+    "@kitr/logger",
+    "@kitr/query/provider",
+    "@kitr/http/provider",
+    "@kitr/theme/provider",
+    "@kitr/auth/provider",
+    "@kitr/storage/provider",
+    "@kitr/web/provider"
+  ],
+  "directories": {
+    "app": "app",
+    "routes": "app/routes",
+    "config": "config",
+    "components": "app/components",
+    "server": "server",
+    "platforms": "platforms",
+    "stubs": "stubs"
+  }
+}

@@ -1,0 +1,47 @@
+/**
+ * What `kitr add` knows, for the quick picks. `kitr info` reports what is installed, not what is
+ * available, so this mirrors docs/packages.md (published packages only; previews need
+ * `--preview` from a kitr checkout).
+ */
+export const knownPackages: Array<{ name: string; description: string }> = [
+  { name: 'router', description: 'TanStack Router, pages in app/routes.ts, guards' },
+  { name: 'react', description: 'KitrProvider, useApp, useService, useConfig' },
+  { name: 'query', description: 'TanStack Query with cache effects' },
+  { name: 'http', description: 'ky with bearer auth and refresh on 401' },
+  { name: 'forms', description: 'React Hook Form with schema validation' },
+  { name: 'table', description: 'TanStack Table with URL state' },
+  { name: 'state', description: 'Zustand stores, per request on the server' },
+  { name: 'tailwind', description: 'Tailwind v4 with the kitr preset' },
+  { name: 'theme', description: 'Design tokens, light and dark, toasts, kitr ui add' },
+  { name: 'animation', description: 'Motion for React with shared presets' },
+  { name: '3d', description: 'React Three Fiber and drei' },
+  { name: 'auth', description: 'Sign-in, abilities, router guards' },
+  { name: 'logger', description: 'Structured logger with request ids' },
+  { name: 'server', description: 'h3 server with the kitr app lifecycle' },
+  { name: 'api', description: 'Routes, controllers, typed client, OpenAPI' },
+  { name: 'actions', description: 'defineQuery and defineMutation server functions' },
+  { name: 'seo', description: 'Head tags, JSON-LD, sitemap, prerender list' },
+  { name: 'realtime', description: 'Typed channels over WebSocket, socket.io or SSE' },
+  { name: 'db', description: 'Any ORM in the app lifecycle as ctx.db' },
+  { name: 'testing', description: 'Vitest config, test app and client' },
+  { name: 'mocks', description: 'MSW handlers from route tables' },
+  { name: 'i18n', description: 'react-i18next with typed keys' },
+  { name: 'analytics', description: 'page, track, identify behind one API' },
+  { name: 'monitoring', description: 'Error reporting with Sentry or console' },
+  { name: 'offline', description: 'Persisted queries and replayed mutations' },
+  { name: 'flags', description: 'Feature flags with typed defaults' },
+  { name: 'consent', description: 'Cookie consent by category' },
+  { name: 'cache', description: 'remember, tags and cached()' },
+  { name: 'shield', description: 'Security headers, CORS, rate limits, CSRF' },
+  { name: 'mail', description: 'React email templates and transports' },
+  { name: 'storage', description: 'Typed local storage items and cookies' },
+]
+
+/** Platform types for `kitr add <type> <name>`, with the name a kit would give each. */
+export const platformTypes: Array<{ type: string; name: string; description: string }> = [
+  { type: 'web', name: 'site', description: 'A web app or site: SSR, static or SPA' },
+  { type: 'server', name: 'api', description: 'A standalone server for routes and sockets' },
+  { type: 'desktop', name: 'desktop', description: 'An Electron shell with typed IPC' },
+  { type: 'tauri', name: 'app', description: 'A Tauri shell with typed Rust commands' },
+  { type: 'mobile', name: 'mobile', description: 'A Capacitor shell for iOS and Android' },
+]

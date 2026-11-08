@@ -1,0 +1,65 @@
+name: VS Code extension
+
+# Builds, tests and packages tooling/vscode on every change to it. On a `vscode-v*` tag it also
+# publishes to the Visual Studio Marketplace and Open VSX, each only when its token secret is
+# set (see tooling/vscode/PUBLISHING.md). The .vsix is always uploaded as an artifact, so a build
+# can be installed by hand ("Install from VSIX...") before any registry exists.
+on:
+  push:
+    tags: ["vscode-v*"]
+  pull_request:
+    paths: ["tooling/vscode/**", ".github/workflows/vscode-release.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: vscode-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tooling/vscode
+    steps:
+      - uses: actions/checkout@v4
+      # The extension is not in the pnpm workspace (its package name, `kitr`, is the CLI's
+      # there), so it has its own npm lockfile.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tooling/vscode/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: The tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/vscode-v')
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "vscode-v$version" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version $version"
+            exit 1
+          fi
+      - run: npm run package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kitr-vscode
+          path: tooling/vscode/*.vsix
+          if-no-files-found: error
+      # Secrets cannot appear in a step's `if`, so record which ones exist.
+      - name: Which registries have a token
+        id: tokens
+        run: |
+          echo "vsce=${{ secrets.VSCE_PAT != '' }}" >> "$GITHUB_OUTPUT"
+          echo "ovsx=${{ secrets.OVSX_PAT != '' }}" >> "$GITHUB_OUTPUT"
+      - name: Publish to the Visual Studio Marketplace
+        if: startsWith(github.ref, 'refs/tags/vscode-v') && steps.tokens.outputs.vsce == 'true'
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --no-dependencies --packagePath *.vsix -p "$VSCE_PAT"
+      - name: Publish to Open VSX
+        if: startsWith(github.ref, 'refs/tags/vscode-v') && steps.tokens.outputs.ovsx == 'true'
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: npx ovsx publish *.vsix -p "$OVSX_PAT"

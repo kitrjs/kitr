@@ -1,0 +1,21 @@
+[
+  {
+    "level": "error",
+    "message": "@kitr/jobs is listed in kitrrc.ts but not in package.json",
+    "fix": "pnpm add @kitr/jobs"
+  },
+  {
+    "level": "warn",
+    "message": "app/pages/bad.tsx imports @tanstack/react-query directly",
+    "fix": "import from '@kitr/query' instead; it re-exports @tanstack/react-query unchanged"
+  },
+  {
+    "level": "error",
+    "message": "kitrrc.ts could not be loaded: Cannot find module 'kitr/app'\nRequire stack:\n- /home/me/acme/kitrrc.ts"
+  },
+  {
+    "level": "warn",
+    "message": ".kitr/platforms.d.ts is stale",
+    "fix": "kitr types"
+  }
+]

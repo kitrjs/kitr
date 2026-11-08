@@ -1,0 +1,1 @@
+ℹ No platforms yet. Add one: kitr add desktop|mobile|server|tauri|web <name>

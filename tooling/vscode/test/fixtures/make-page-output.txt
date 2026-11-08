@@ -1,0 +1,2 @@
+→ write app/pages/reports/daily.tsx
+✔ page: app/pages/reports/daily.tsx
