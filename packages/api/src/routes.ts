@@ -75,9 +75,13 @@ export type RouteFor<Method extends HttpMethod, Path extends string, H, V> = Rou
   OutputOf<H>
 >
 
-type NameOf<Name, Method extends string, Path extends string> = Name extends string
-  ? Name
-  : `${Method} ${Path}`
+// `[Name] extends [never]`: without `{ name }` the default `never` would distribute to no key at all,
+// and the endpoint would vanish from `$types`. It is keyed `"GET /path"` instead.
+type NameOf<Name, Method extends string, Path extends string> = [Name] extends [never]
+  ? `${Method} ${Path}`
+  : Name extends string
+    ? Name
+    : `${Method} ${Path}`
 
 export type ResourceAction = 'index' | 'store' | 'show' | 'update' | 'destroy'
 const resourceActions: Array<{ action: ResourceAction; method: HttpMethod; suffix: string }> = [
