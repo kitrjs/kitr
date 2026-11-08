@@ -2,10 +2,15 @@ import { definePackage, naming } from '@kitr/core/package'
 
 const operation = (kind: 'query' | 'mutation') => ({
   description: `Create a server ${kind} in app/actions/<feature>/<name>.ts (define${naming.pascal(kind)})`,
+  usage: '<feature>/<name>',
+  definition:
+    kind === 'query'
+      ? "A server function the client reads by name: useQuery('projects.list')."
+      : "A server function the client calls by name to change data: useMutation('projects.update').",
   target: (name: string, project: { rc: { directories: Record<string, string> } }) => {
     const [feature, op] = name.includes('/') ? (name.split('/') as [string, string]) : ['app', name]
     const dir = project.rc.directories.actions ?? `${project.rc.directories.app ?? 'app'}/actions`
-    return { file: `${dir}/${feature}/${naming.snake(op)}.ts`, vars: { feature, name: op } }
+    return { file: `${dir}/${feature}/${naming.kebab(op)}.ts`, vars: { feature, name: op } }
   },
 })
 

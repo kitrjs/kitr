@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /**
  * `kitr add api`: Adonis-style router, controllers, validators and middleware on the server,
@@ -53,6 +53,7 @@ export default definePackage({
   generators: {
     controller: {
       description: 'Create a controller in server/controllers',
+      definition: 'A class whose methods answer routes; validation goes in static validation.',
       args: {
         resource: {
           type: 'boolean',
@@ -60,10 +61,20 @@ export default definePackage({
           default: false,
         },
       },
-      target: (name, project, args) => ({
-        file: `${project.rc.directories.server ?? 'server'}/controllers/${naming.snake(name)}_controller.ts`,
-        vars: { resource: String(args.resource ?? false) },
-      }),
+      target: (name, project, args) => {
+        const out = generatorFile(project, 'server', 'controllers', name, { suffix: '-controller' })
+        return { file: out.file, vars: { ...out.vars, resource: String(args.resource ?? false) } }
+      },
+      // Routes stay hand-written (their paths and names are yours): print the line to add.
+      after(ctx, { file, vars }) {
+        const spec = `#server/${file.split('/').slice(1).join('/').replace(/\.ts$/, '')}`
+        const path = [vars.dir, vars.kebab].filter(Boolean).join('/')
+        const line =
+          vars.resource === 'true'
+            ? `r.resource('${path}', () => import('${spec}'))`
+            : `r.get('/${path}', [${naming.pascal(vars.name)}Controller, 'handle'])  // import ${naming.pascal(vars.name)}Controller from '${spec}'`
+        ctx.log.step(`route it in server/routes.ts: ${line}`)
+      },
       stub: ({ name, resource }) =>
         resource === 'true'
           ? `import type { HttpContext } from '@kitr/api'
@@ -111,9 +122,10 @@ export default class ${naming.pascal(name)}Controller {
 `,
     },
     middleware: {
-      description: 'Create an API middleware in app/middleware',
+      description: 'Create an API middleware in server/middleware',
+      definition: 'A function that runs before and after a controller (auth, audit, rate limits).',
       target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/middleware/${naming.snake(name)}.ts`,
+        ...generatorFile(project, 'server', 'middleware', name),
       }),
       stub: ({ name }) => `import { defineMiddleware } from '@kitr/api'
 
@@ -127,8 +139,9 @@ export const ${naming.camel(name)} = defineMiddleware(async (ctx, next) => {
     },
     validator: {
       description: 'Create a shared zod schema in app/validators',
+      definition: 'A zod schema and its type, shared by forms, actions and controllers.',
       target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/validators/${naming.snake(name)}.ts`,
+        ...generatorFile(project, 'app', 'validators', name),
       }),
       stub: ({ name }) => `import { z } from 'zod'
 

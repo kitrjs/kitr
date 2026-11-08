@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add testing`: Vitest, Testing Library, renderWithKitr and a request client for API tests. */
 export default definePackage({
@@ -39,8 +39,10 @@ export default definePackage({
   generators: {
     test: {
       description: 'Create a vitest file in test/',
+      definition:
+        'An app-level Vitest file; unit tests may also sit beside their file as *.test.ts.',
       // test/, where every kit's vitest config and tsconfig look.
-      target: (name) => ({ file: `test/${naming.snake(name)}.test.ts` }),
+      target: (name, project) => generatorFile(project, 'test', '', name, { suffix: '.test' }),
       stub: ({ name }) => `import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 

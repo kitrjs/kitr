@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `app/document.tsx`: the HTML shell and head tags every page renders inside. */
 function documentFile(cssImports: string[]): string {
@@ -154,6 +154,8 @@ export default definePackage({
   generators: {
     page: {
       description: 'Create a page in app/pages and add it to app/routes.ts',
+      definition: 'The component a route renders; the file path is the URL path.',
+      usage: '<path>',
       target: (name, project) => {
         // `projects/$id` → app/pages/projects/id.tsx, route path '/projects/$id'. `:id` works too.
         const path = `/${name
@@ -186,6 +188,44 @@ export default function ${naming.pascal(name)}Page() {
         ctx.log.warn(
           `app/routes.ts is not a method chain; add \`.page('${vars.path}', { lazy: () => import('${vars.module}') })\` to it by hand.`,
         )
+      },
+    },
+    layout: {
+      description: 'Create a pathless layout in app/layouts and add it to app/routes.ts',
+      definition:
+        'A component that wraps a group of pages through <Outlet />; guards go on its route.',
+      target: (name, project) => {
+        const out = generatorFile(project, 'app', 'layouts', name, { ext: '.tsx' })
+        const rel = [out.vars.dir, out.vars.kebab].filter(Boolean).join('/')
+        // `_admin` for admin, `_settings-billing` for settings/billing: pathless ids are unique.
+        const id = `_${rel.replace(/\//g, '-')}`
+        return { file: out.file, vars: { ...out.vars, id, module: `./layouts/${rel}` } }
+      },
+      stub: ({ name, id }) => `import { Outlet } from '@kitr/router'
+
+/**
+ * Wraps every page inside \`.layout('${id}', ...)\` in app/routes.ts. Guards (\`beforeLoad\`) and
+ * loaders shared by those pages go on that route; move pages into its callback to wrap them.
+ */
+export default function ${naming.pascal(name)}Layout() {
+  return (
+    <div>
+      <Outlet />
+    </div>
+  )
+}
+`,
+      after(ctx, { vars }) {
+        const camel = naming.camel(vars.name)
+        const link = `.layout('${vars.id}', { lazy: () => import('${vars.module}') }, (${camel}) => ${camel})`
+        const added = ctx.routes.append(link, {
+          table: 'app',
+          skipIf: new RegExp(`\\.layout\\(\\s*['"]${vars.id}['"]`),
+        })
+        if (!added)
+          ctx.log.warn(`app/routes.ts is not a method chain; add \`${link}\` to it by hand.`)
+        else
+          ctx.log.step(`add pages inside the ${vars.id} layout: (${camel}) => ${camel}.page(...)`)
       },
     },
   },

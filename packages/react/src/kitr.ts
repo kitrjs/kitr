@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /**
  * `kitr add react`: React, the app object (`app/app.ts`) and the typed env (`app/env.ts`).
@@ -49,9 +49,8 @@ export default definePackage({
   generators: {
     component: {
       description: 'Create a React component in app/components',
-      target: (name, project) => ({
-        file: `${project.rc.directories.components ?? 'app/components'}/${naming.kebab(name)}.tsx`,
-      }),
+      definition: 'A reusable piece of UI with no route of its own.',
+      target: (name, project) => generatorFile(project, 'components', '', name, { ext: '.tsx' }),
       stub: ({ name }) => `import type { ReactNode } from 'react'
 
 export interface ${naming.pascal(name)}Props {
@@ -66,9 +65,11 @@ export function ${naming.pascal(name)}({ children, className }: ${naming.pascal(
     },
     hook: {
       description: 'Create a React hook in app/hooks',
-      target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/hooks/use-${naming.kebab(name)}.ts`,
-      }),
+      definition: 'A use* function that packages React state or effects for reuse.',
+      target: (name, project) =>
+        generatorFile(project, 'app', 'hooks', name.replace(/(^|\/)use(?:[-_]|(?=[A-Z]))/, '$1'), {
+          prefix: 'use-',
+        }),
       stub: ({ name }) => `import { useCallback, useState } from 'react'
 
 export function use${naming.pascal(name)}(initial = false) {
