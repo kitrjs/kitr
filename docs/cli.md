@@ -149,9 +149,9 @@ export default definePackage({
 | --- | --- |
 | `verify` | Generated manifests, READMEs and API pages, the docs rules, Biome, that the examples are unmodified kit output, the production bundle checks, and `pnpm versions:check`. |
 | `typecheck` | `pnpm typecheck` across every package and example. |
-| `unit` | `pnpm test:coverage` on Node 22 and 24, with a real Redis. |
+| `unit` | `pnpm test:coverage` on Node 22 and 24, with a real Redis, then `pnpm coverage:gate` (per-package floors, see Tests). |
 | `integration` | `pnpm test:integration`: the CLI scaffolding every kit, generators, add and remove, the backend over the network. |
-| `e2e` | Playwright against production and dev builds. |
+| `e2e` | Playwright against production and dev builds, one project per kit (see Tests). |
 | `registry-smoke` | `pnpm smoke:registry`, below. |
 | `windows` | The CLI integration suite (`tests/integration/cli.test.ts`) on `windows-latest`. It builds for itself, since the artifact comes from Linux. |
 
@@ -177,3 +177,31 @@ Run it locally after `pnpm build` and `pnpm -C registry build`: `pnpm smoke:regi
 ### Publishing
 
 `release.yml` runs Changesets on `main`: it opens a "Version packages" pull request and publishes to npm when that is merged. It needs an `NPM_TOKEN` secret and does nothing without it.
+
+## Tests
+
+Four layers, from fast to slow: unit tests next to the code (`pnpm test`), the integration suite (`pnpm test:integration`), Playwright (`pnpm test:e2e`), and the coverage gate that keeps the first from eroding.
+
+### One browser spec per kit
+
+`tests/e2e/` has a Playwright project for each kit, on its own port, each against a real build served by `kitr start site` (the project list and ports are in `playwright.config.ts`). The spec drives the app as a visitor would.
+
+| Project | Port | What the spec does |
+| --- | --- | --- |
+| `kit-site` | 4415 | Reads the prerendered `/`, `/pricing` and `/blog` with JavaScript disabled, switches the language and checks the page, `<html lang>` and the cookie across a reload and a navigation, and checks that a page rendered per request is in the cookie's language from the first byte. The kit switches language with a cookie on one URL, so there is nothing to put in `hreflang`; the spec asserts none is emitted. |
+| `kit-realtime`, `kit-realtime-sse` | 4416, 4417 | Two browser contexts join one room and exchange messages live, rooms stay separate, a late joiner sees the history, and the connection recovers after going offline. The same spec runs over the WebSocket the kit ships and over Server-Sent Events, and asserts which transport each page opened. |
+| `fullstack` | 4412 | Server rendering, per-request isolation, the API and WebSockets, plus a mutation: create a note through the form, read it back from the API, reload and find it in the server-rendered HTML. |
+| `dashboard` | 4410 | The SPA build, plus a mutation: add notes, reload, read them back. The dashboard has no server, so its record store is `localStorage`. |
+| `saas`, `site`, `dashboard-dev` | 4414, 4413, 4411 | Cookie sessions and guards, kitr.dev as built, and the devtools overlay on the Vite dev server. |
+
+`tests/e2e/prepare.mjs` builds each app from a copy of `examples/<kit>` in the system temp directory, so the examples stay untouched kit output. Files in `tests/e2e/fixtures/<kit>/` are copied into the copy's `app/` folder (a notes page, a store), and the fixture's `patch.mjs` links them into the route table and server routes the way `kitr make:page` would. A `variant-<name>.mjs` next to it rewires the kit for `--variant <name>`; `variant-sse.mjs` is the realtime kit switched to SSE in `config/realtime.ts`. Builds run a few at a time (`KITR_E2E_BUILDS`, default 3), because a prerender that cannot reach its own server in time fails the build.
+
+### The dirty-project fixture
+
+`tests/integration/dirty-project.test.ts` copies the fullstack example and edits it the way people do before `kitr add` and `kitr remove` ever run: providers reordered in `kitrrc.ts`, a platform factory imported under another name (`web as webPlatform`), comments between entries, tabs, double quotes and semicolons, and a user plugin in `vite.config.ts`. It then adds and removes packages, providers, commands and platforms, and checks that every hand edit survives byte for byte, that removing what was added restores the file exactly, and that the project still typechecks. The codemods that edit `kitrrc.ts` read and write it as text (`packages/cli/src/rc-text.ts`) for that reason: a printer that rebuilds the file moves comments and changes indentation.
+
+### The coverage gate
+
+`pnpm test:coverage` writes `coverage/coverage-summary.json`; `pnpm coverage:gate` (`scripts/coverage-gate.mjs`) reads it and prints a line coverage table per package. It exits 1 when a package is under its floor, and the CI `unit` job runs it right after the tests.
+
+Floors live in `coverage.floors.json`. The `default` is 80 for every published package. A package that cannot reach that is listed under `packages` with a `floor` and a `reason`: the native shells (`desktop`, `tauri`, `mobile`) and the packages that mostly wrap Electron, Tauri or a WebView sit at 60 because Node cannot run their code; a package that is simply behind is held at its coverage when the gate was added, minus two points. Raise a floor when coverage improves (the table says when a package is well above its floor), and give a reason in the same change if you ever lower one.

@@ -150,6 +150,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:coverage
+      # Per-package floors from coverage.floors.json: a package under its floor fails the job.
+      - run: pnpm coverage:gate
       - if: matrix.node == 22
         uses: actions/upload-artifact@v4
         with:
@@ -232,7 +234,9 @@ jobs:
       - name: Install and build the ${{ matrix.kit }} kit from a registry
         run: pnpm smoke:registry --kits ${{ matrix.kit }} ${{ matrix.catalog && github.event_name == 'push' && '--all-packages' || '' }}
 
-  # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools.
+  # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools, and
+  # one spec per kit (site: language and prerendering; realtime: two pages over WebSocket and SSE;
+  # fullstack and dashboard: a record created, reloaded and read back). Every Playwright project runs.
   e2e:
     needs: build
     runs-on: ubuntu-latest
