@@ -4,9 +4,9 @@ import { Command } from '#app/components/command'
 import { CreatorMark } from '#app/components/creator-marks'
 import { Icon, icons } from '#app/components/icons'
 import { DirectoryCard, Tile } from '#app/components/package-bits'
-import { PlatformTile, Rich, SoonBadge } from '#app/components/platform-bits'
+import { PlatformTile, Rich } from '#app/components/platform-bits'
 import { type Category, categories, findPackage, glyph, type PackageEntry } from '#app/lib/catalog'
-import { findPlatform, type PlatformEntry, platforms, unpublished } from '#app/lib/platforms'
+import { findPlatform, type PlatformEntry, platforms } from '#app/lib/platforms'
 import { seo } from '#app/lib/seo'
 import { upstream } from '#app/lib/upstream'
 
@@ -29,10 +29,7 @@ export const Route = createFileRoute('/platforms/$type')({
 })
 
 const resolve = (names: string[]) =>
-  names
-    .filter((n) => !unpublished.has(n))
-    .map(findPackage)
-    .filter((p): p is PackageEntry => Boolean(p))
+  names.map(findPackage).filter((p): p is PackageEntry => Boolean(p))
 
 /** Electron and Tauri side by side, on both desktop pages. */
 const shells = [
@@ -51,7 +48,7 @@ function PlatformPage() {
     .map((c) => ({ category: c, list: other.filter((pkg) => pkg.category === c) }))
     .filter((g) => g.list.length)
   const others = platforms.filter((x) => x.type !== p.type)
-  const kits = p.kits.filter((k) => k.available)
+  const kits = p.kits
   const lower = p.type === 'tauri' ? p.name : p.name.toLowerCase()
 
   return (
@@ -71,7 +68,6 @@ function PlatformPage() {
             <span className="label">
               Platform · <span className="mono">{p.type}</span>
             </span>
-            {!p.available && <SoonBadge />}
           </div>
           <h1 className="display platform-title">{p.name}</h1>
           <p className="lede">{p.tagline}</p>
@@ -80,15 +76,7 @@ function PlatformPage() {
               <li key={t}>{t}</li>
             ))}
           </ul>
-          {p.available ? (
-            <Command cmd={p.command} />
-          ) : (
-            <p className="soon-note">
-              <strong>Not on npm yet.</strong> <code>@kitr/{p.type}</code> is held back from the
-              first release while it gets the same polish as the rest. It works from the repository
-              today, and this page describes how it will ship.
-            </p>
-          )}
+          <Command cmd={p.command} />
           <div className="actions">
             <Link to="/packages/$name" params={{ name: p.type }} className="button primary">
               Read the {lower} guide
@@ -281,9 +269,9 @@ function PlatformPage() {
                 <>
                   Kits with {lower}:{' '}
                   {kits.map((k, i) => (
-                    <span key={k.name}>
+                    <span key={k}>
                       {i > 0 && ', '}
-                      <code>{k.name}</code>
+                      <code>{k}</code>
                     </span>
                   ))}
                   .
@@ -291,7 +279,7 @@ function PlatformPage() {
               )}
             </p>
           </div>
-          <Command cmd={`kitr new my-app --kit ${kits[0]!.name}`} />
+          <Command cmd={`kitr new my-app --kit ${kits[0]}`} />
         </section>
       )}
 

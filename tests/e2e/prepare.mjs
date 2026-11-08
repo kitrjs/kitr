@@ -37,8 +37,8 @@ for (const entry of readdirSync(join(source, 'node_modules'))) {
 const bin = join(source, 'node_modules/.bin')
 if (existsSync(bin)) symlinkSync(bin, join(target, 'node_modules/.bin'), 'dir')
 
-// `--add <pkg>`: a preview package no kit installs (devtools), added the way a user would with
-// `kitr add <pkg> --preview`, and linked from the workspace.
+// `--add <pkg>`: a package no kit installs (devtools), added the way a user would with
+// `kitr add <pkg>`, and linked from the workspace.
 for (let i = 0; i < flags.length; i++) {
   if (flags[i] !== '--add') continue
   const pkg = flags[++i]
@@ -51,7 +51,7 @@ for (let i = 0; i < flags.length; i++) {
   symlinkSync(join(root, 'packages', pkg), join(scope, pkg), 'dir')
   execFileSync(
     process.execPath,
-    [join(root, 'packages/kitr/bin/kitr.mjs'), 'add', pkg, '--preview', '--no-install', '--yes'],
+    [join(root, 'packages/kitr/bin/kitr.mjs'), 'add', pkg, '--no-install', '--yes'],
     { cwd: target, stdio: 'inherit', env: { ...process.env, CI: '1' } },
   )
 }

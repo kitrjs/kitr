@@ -2,7 +2,6 @@ import type { Answers, KitPackage } from '@kitr/core/package'
 import type { ProjectContext } from './context'
 import { kitManifests } from './manifests.gen'
 import { ensureAvailable, loadPackage } from './packages'
-import { assertReleased } from './preview'
 
 /**
  * Kits are packages (`kind: 'kit'`, `@kitr/kit-saas`) the CLI loads the way it loads any setup
@@ -51,7 +50,6 @@ export async function loadKit(
 ): Promise<Kit> {
   if (name === blankKit.name) return blankKit
   const official = kitManifests[name]
-  if (official) assertReleased(official.package, 'kit')
   const pkg = official?.package ?? (name.includes('/') ? name : undefined)
   if (!pkg) throw new Error(`Unknown kit "${name}". Kits: ${kitNames.join(', ')}`)
   await ensureAvailable(ctx, pkg, options)

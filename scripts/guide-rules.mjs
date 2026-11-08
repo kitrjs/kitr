@@ -40,16 +40,6 @@ const packages = new Set(
     .map((f) => JSON.parse(readFileSync(f, 'utf8')).kitr?.name)
     .filter(Boolean),
 )
-// Packages kept off npm for now (`"private": true`): a guide only teaches what ships, unless it is a
-// preview guide (`preview: true` in its frontmatter), which says so at the top.
-const unreleased = new Set(
-  readdirSync('packages')
-    .map((d) => join('packages', d, 'package.json'))
-    .filter(existsSync)
-    .map((f) => JSON.parse(readFileSync(f, 'utf8')))
-    .filter((p) => p.private && p.kitr?.name)
-    .map((p) => p.kitr.name),
-)
 const docs = new Set([
   ...readdirSync(docsDir)
     .filter((f) => f.endsWith('.md'))
@@ -79,24 +69,12 @@ for (const slug of [...guides].sort()) {
   else
     for (const key of ['title', 'description', 'time'])
       if (!fm[key]) problems.push(`frontmatter needs "${key}"`)
-  const preview = fm?.preview === 'true'
-  if (fm?.preview && !preview) problems.push('frontmatter "preview" must be true or absent')
-  const usesUnreleased = []
+  if (fm?.preview) problems.push('"preview" is gone from the frontmatter: every package ships')
   for (const name of (fm?.packages ?? '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean))
     if (!packages.has(name)) problems.push(`frontmatter lists unknown package "${name}"`)
-    else if (unreleased.has(name)) usesUnreleased.push(name)
-  if (usesUnreleased.length && !preview)
-    for (const name of usesUnreleased)
-      problems.push(
-        `frontmatter lists unreleased package "${name}"; mark the guide "preview: true"`,
-      )
-  if (preview && !usesUnreleased.length)
-    problems.push('"preview: true" but every package it lists is released; drop the flag')
-  if (preview && !/^> \*\*Preview\*\*$/m.test(src))
-    problems.push('a preview guide needs a "> **Preview**" callout saying what is unreleased')
   if (!listed.has(slug)) problems.push('not listed in nav.json')
 
   const h2 = [...src.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim())
@@ -122,8 +100,6 @@ for (const slug of [...guides].sort()) {
   const prose = stripCode(src)
   for (const [, name] of prose.matchAll(/\]\(\/packages\/([^)/#]+)/g))
     if (!packages.has(name)) problems.push(`links to unknown package "${name}"`)
-    else if (unreleased.has(name) && !preview)
-      problems.push(`links to unreleased package "${name}"`)
   for (const [, page] of prose.matchAll(/\]\(\/docs\/([^)/#]+)/g))
     if (!docs.has(page)) problems.push(`links to unknown doc "/docs/${page}"`)
   for (const [, page] of prose.matchAll(/\]\(\/guides\/([^)/#]+)/g))

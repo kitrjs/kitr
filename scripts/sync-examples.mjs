@@ -112,10 +112,10 @@ export function generate() {
       {
         cwd: tmp,
         stdio: 'pipe',
-        env: { ...process.env, CI: '1', NO_COLOR: '1', KITR_PREVIEW: '1' },
+        env: { ...process.env, CI: '1', NO_COLOR: '1' },
       },
     )
-    const env = { ...process.env, CI: '1', NO_COLOR: '1', KITR_PREVIEW: '1' }
+    const env = { ...process.env, CI: '1', NO_COLOR: '1' }
     for (const step of extras[name]?.steps ?? [])
       execFileSync(process.execPath, [join(root, 'packages/kitr/bin/kitr.mjs'), ...step], {
         cwd: join(tmp, name),

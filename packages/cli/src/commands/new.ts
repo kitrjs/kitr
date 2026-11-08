@@ -18,7 +18,6 @@ import { kitAnswers, kitNames, kitPackageNames, loadKit } from '../kits'
 import { base, writeReadme, writeVscode } from '../kits-base'
 import { cliResolve, ensureAvailable } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
-import { enablePreviews, isPreview, isPreviewKit } from '../preview'
 import { generateTypesQuietly } from '../types'
 
 export const newCommand = defineCommand({
@@ -31,12 +30,12 @@ export const newCommand = defineCommand({
     name: { type: 'positional', description: 'Directory name', required: true },
     kit: {
       type: 'string',
-      description: `Starter kit: ${kitNames.filter((k) => !isPreviewKit(k)).join(' | ')}, or a package that exports one`,
+      description: `Starter kit: ${kitNames.join(' | ')}, or a package that exports one`,
       default: 'blank',
     },
     platform: {
       type: 'string',
-      description: `Platforms as name=type pairs, replacing the kit's: --platform site=web,api=server (types: ${platformTypeNames.filter((t) => !isPreview(t)).join(', ')})`,
+      description: `Platforms as name=type pairs, replacing the kit's: --platform site=web,api=server (types: ${platformTypeNames.join(', ')})`,
     },
     mode: { type: 'string', description: 'web platform mode: static | spa | ssr' },
     pwa: { type: 'boolean', description: 'web platform: installable (manifest + service worker)' },
@@ -59,14 +58,8 @@ export const newCommand = defineCommand({
       description: 'Component registry URL or local path for the kit components',
     },
     force: { type: 'boolean', description: 'Allow a non-empty directory', default: false },
-    preview: {
-      type: 'boolean',
-      description: 'Allow preview kits and packages, which are not published yet',
-      default: false,
-    },
   },
   async run({ args, rawArgs }) {
-    if (args.preview) enablePreviews()
     if (!kitNames.includes(args.kit) && !args.kit.includes('/'))
       throw new Error(`Unknown kit "${args.kit}". Kits: ${kitNames.join(', ')}`)
     const dir = resolve(args.name)

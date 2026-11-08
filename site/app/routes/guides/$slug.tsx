@@ -66,7 +66,7 @@ function GuidePage() {
           {page.section && <span className="label">Guide · {page.section}</span>}
           <h1>{page.title}</h1>
           {page.description && <p className="lede">{page.description}</p>}
-          <GuideMeta packages={page.packages ?? []} time={page.time} preview={page.preview} />
+          <GuideMeta packages={page.packages ?? []} time={page.time} />
         </header>
         <DocBody page={page} />
         <nav className="pager" aria-label="Previous and next">

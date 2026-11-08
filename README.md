@@ -6,7 +6,7 @@
 
 kitr gives you a React app with routing, data loading, forms, sign-in and a typed API server already wired together, from one CLI, and ships the same code to the web, a server, desktop and phones. It is for teams who want the decisions made and written down, with libraries they already know underneath.
 
-**Status.** Pre-release: the API is settling and every package is at `0.1.0` (they release in lockstep). kitr is not on npm yet, so `npm install -g kitr` and `pnpm dlx kitr` do not work today. The web (`web()`) and server (`server()`) platforms work; desktop, Tauri and mobile (and the device packages behind them) are previews that `kitr add` and `kitr new` refuse without `--preview`.
+**Status.** Pre-release: the API is settling and every package is at `0.1.0` (they release in lockstep). kitr is not on npm yet, so `npm install -g kitr` and `pnpm dlx kitr` do not work today. The web (`web()`), server (`server()`), desktop (Electron and Tauri) and mobile (Capacitor) platforms all work, and CI builds each of them.
 
 Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
 
@@ -55,7 +55,7 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 `@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
 
 **Debuggable by default.**
-`kitr add devtools --preview` (a preview, not in the kits yet) adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
+`kitr add devtools` (not in the kits) adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
 
 **Components you own.**
 `kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and the tokens from `@kitr/theme`; there is no component library in `node_modules` to fight.
@@ -65,7 +65,7 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 - **Next.js:** a full-stack React framework with its own router and server model; kitr builds on TanStack Router, Query and Start instead, and adds auth, forms, an API server and a CLI that adds packages for you.
 - **Remix / React Router:** loaders and actions on web standards; kitr's data layer is TanStack Query with one contract for server actions, API routes, external APIs and realtime channels.
 - **TanStack Start:** kitr is TanStack Start underneath for SSR and server functions, plus conventions, a package system and `kitr add`; you can use Start directly if you want fewer opinions.
-- **Expo:** React Native renders native views; kitr's mobile and desktop platforms wrap your web app in Capacitor, Electron or Tauri WebView shells, and they are previews today.
+- **Expo:** React Native renders native views; kitr's mobile and desktop platforms wrap your web app in Capacitor, Electron or Tauri WebView shells.
 - **AdonisJS:** the model for kitr's wiring (`kitrrc.ts`, providers, controllers); kitr's server is h3 with Adonis-style controllers, and it stays TypeScript on the same stack as your React code.
 
 See the full comparison at [kitr.dev/docs/compare](https://kitr.dev/docs/compare).
@@ -104,31 +104,29 @@ Start with [what kitr is](https://kitr.dev/docs/what-is-kitr), then follow the g
 | `@kitr/i18n` | `react-i18next` | typed keys, locale detection |
 | `@kitr/analytics` | | `createAnalytics`, GA/Plausible/PostHog/console adapters, `useAnalytics`, router page views |
 | `@kitr/monitoring` | | `createMonitoring`, Sentry/console reporters, error boundary; `@kitr/monitoring/server` middleware |
-| `@kitr/platform` | | **Preview.** `platform()`, `isNative()`, `perPlatform()`, driver registry; `@kitr/platform/react` hooks (`usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) |
+| `@kitr/platform` | | `platform()`, `isNative()`, `perPlatform()`, driver registry; `@kitr/platform/react` hooks (`usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) |
 | `@kitr/storage` | | `defineStorage`, `defineCookie`; `@kitr/storage/react` hooks, `@kitr/storage/server` cookies, native drivers from the platform packages |
-| `@kitr/devtools` | | **Preview.** the development overlay; `getDevtools(app)?.log()`, panels via a provider's `devtools()` |
+| `@kitr/devtools` | | the development overlay; `getDevtools(app)?.log()`, panels via a provider's `devtools()` |
 | `@kitr/cache` | | `createCache`, `remember`, tags, `cached()`; in-memory driver, Redis-shaped `CacheDriver` |
 | `@kitr/shield` | | `shield(server)`: security headers, CORS, rate limit with RateLimit-* headers, double-submit CSRF |
 | `@kitr/mail` | | `defineMail` React templates, log/Resend/SMTP transports, `mailPreview` at `/_kitr/mail` |
-| `@kitr/jobs` | | **Preview.** `defineJob` with schema, retries, timeouts and cron/interval schedules; in-process worker over a `JobsDriver` |
-| `@kitr/uploads` | | **Preview.** `upload()` with progress; `@kitr/uploads/server` parses multipart per rules into a disk or custom driver; `@kitr/uploads/react` |
+| `@kitr/jobs` | | `defineJob` with schema, retries, timeouts and cron/interval schedules; in-process worker over a `JobsDriver` |
+| `@kitr/uploads` | | `upload()` with progress; `@kitr/uploads/server` parses multipart per rules into a disk or custom driver; `@kitr/uploads/react` |
 | `@kitr/flags` | | `defineFlags`, env/percentage/OpenFeature providers; `@kitr/flags/server` resolves per request, `@kitr/flags/react` reads |
 | `@kitr/consent` | | one consent record by category; gates analytics and monitoring; `@kitr/consent/react` for the banner |
 | `@kitr/offline` | | persisted query cache and paused mutations, restored before first render; `useOffline()` |
-| `@kitr/secure-storage` | | **Preview.** OS vault drivers with an AES-GCM web fallback; `defineSecureItem`, `useSecureItem` |
-| `@kitr/files` | | **Preview.** `open`/`pick`/`save` with native dialogs or the browser's; `useFileDialogs`, `useDropFiles` |
-| `@kitr/notifications` | | **Preview.** permission, `show`, `schedule`, `cancel`, tap routing; `useNotificationPermission`, `useNotificationTap` |
-| `@kitr/native` | | **Preview.** clipboard, share, haptics, geolocation, camera, biometrics with web fallbacks; `useClipboard`, `useShare`, `useGeolocation` |
-| `@kitr/updater` | | **Preview.** `check`/`apply` over the service worker or platform updaters; `useUpdate()` |
+| `@kitr/secure-storage` | | OS vault drivers with an AES-GCM web fallback; `defineSecureItem`, `useSecureItem` |
+| `@kitr/files` | | `open`/`pick`/`save` with native dialogs or the browser's; `useFileDialogs`, `useDropFiles` |
+| `@kitr/notifications` | | permission, `show`, `schedule`, `cancel`, tap routing; `useNotificationPermission`, `useNotificationTap` |
+| `@kitr/native` | | clipboard, share, haptics, geolocation, camera, biometrics with web fallbacks; `useClipboard`, `useShare`, `useGeolocation` |
+| `@kitr/updater` | | `check`/`apply` over the service worker or platform updaters; `useUpdate()` |
 | `@kitr/web` | | the `web()` platform (static, spa, ssr, pwa); `@kitr/web/client` has `useInstallPrompt`, `useServiceWorker`; `@kitr/web/vite` |
-| `@kitr/desktop` | `electron` | **Preview.** the `desktop()` platform (Electron); `@kitr/desktop/client` (typed IPC), `@kitr/desktop/main`, `@kitr/desktop/preload` |
-| `@kitr/tauri` | `@tauri-apps/api` | **Preview.** the `tauri()` platform; `@kitr/tauri/client` (`defineCommands`, `commandQuery`, `useTauriEvent`) |
-| `@kitr/mobile` | `@capacitor/core` | **Preview.** the `mobile()` platform (Capacitor); `@kitr/mobile/client` has `isCapacitor`, `isPluginAvailable`, `nativeOnly` |
+| `@kitr/desktop` | `electron` | the `desktop()` platform (Electron); `@kitr/desktop/client` (typed IPC), `@kitr/desktop/main`, `@kitr/desktop/preload` |
+| `@kitr/tauri` | `@tauri-apps/api` | the `tauri()` platform; `@kitr/tauri/client` (`defineCommands`, `commandQuery`, `useTauriEvent`) |
+| `@kitr/mobile` | `@capacitor/core` | the `mobile()` platform (Capacitor); `@kitr/mobile/client` has `isCapacitor`, `isPluginAvailable`, `nativeOnly` |
 | `@kitr/vite` | | the `kitr()` Vite plugin: platform-aware aliases, virtual modules, Start, Tailwind, PWA |
 
 See [docs/entry-points.md](docs/entry-points.md) for the rules behind this table.
-
-**Previews** are packages that live in this repo but are not published yet, because they don't meet the release bar: no durable driver (jobs), no auth hook or object storage (uploads), no native drivers behind their APIs (secure-storage, files, notifications, native, updater), a devtools shell still to settle (devtools), or native shells not yet built in CI (platform, desktop, tauri, mobile). They are `"private": true` in their `package.json`; `kitr add` and `kitr new` refuse them unless you pass `--preview` from a kitr checkout.
 
 ## A taste
 

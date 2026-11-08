@@ -261,7 +261,7 @@ async function checkResolvable() {
   )
   if (skipped.length)
     notes.push(
-      `${skipped.length} optional peers of kitr are private (preview) packages, not published: ${skipped.join(', ')}`,
+      `${skipped.length} optional peers of kitr are private packages, not published: ${skipped.join(', ')}`,
     )
   // Every other public package's dependencies and peers.
   await Promise.all(

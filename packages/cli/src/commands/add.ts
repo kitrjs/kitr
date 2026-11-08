@@ -10,7 +10,6 @@ import { manifests } from '../manifests.gen'
 import { loadPackage } from '../packages'
 import { knownPackageNames } from '../plan'
 import { parseFlags, platformTypeNames, removeRcPlatform } from '../platforms'
-import { enablePreviews, isPreview } from '../preview'
 import { describeQuestions } from '../questions'
 import { generateTypesQuietly } from '../types'
 import { addPlatformCommand } from './platforms'
@@ -47,7 +46,7 @@ export const add = defineCommand({
   args: {
     packages: {
       type: 'positional',
-      description: `A package (${knownPackageNames.join(', ')}, or @scope/name), or a platform type (${platformTypeNames.filter((t) => !isPreview(t)).join(', ')}) followed by its name`,
+      description: `A package (${knownPackageNames.join(', ')}, or @scope/name), or a platform type (${platformTypeNames.join(', ')}) followed by its name`,
       required: true,
     },
     install: {
@@ -62,15 +61,9 @@ export const add = defineCommand({
       default: false,
     },
     'dry-run': { type: 'boolean', description: 'Print what would change', default: false },
-    preview: {
-      type: 'boolean',
-      description: 'Allow preview packages, which are not published yet (from a kitr checkout)',
-      default: false,
-    },
     verbose: { type: 'boolean', default: false },
   },
   async run({ args, rawArgs }) {
-    if (args.preview) enablePreviews()
     const ctx = createContext({ dryRun: args['dry-run'], verbose: args.verbose })
     if (await isPlatformType(ctx, args.packages))
       return addPlatformCommand(args.packages, rawArgs.slice(1), {

@@ -5,7 +5,7 @@ description: The mental model for kitr in five minutes: platforms, packages, kit
 
 # What is kitr
 
-kitr is a TypeScript framework for apps that run in a browser, on a server, and (as previews) on the desktop and on phones. You write one `app/` folder in React and TypeScript. A project file called `kitrrc.ts` says where it runs and which capabilities it has, and one CLI (`kitr add`, `kitr dev`, `kitr build`) sets everything up. Each capability is a small package that wraps a library you may already know, such as TanStack Router, TanStack Query, React Hook Form or h3. It is for teams who want one set of conventions instead of choosing and wiring twenty libraries, and for coding agents, which can read the same conventions from `AGENTS.md`.
+kitr is a TypeScript framework for apps that run in a browser, on a server, on the desktop and on phones. You write one `app/` folder in React and TypeScript. A project file called `kitrrc.ts` says where it runs and which capabilities it has, and one CLI (`kitr add`, `kitr dev`, `kitr build`) sets everything up. Each capability is a small package that wraps a library you may already know, such as TanStack Router, TanStack Query, React Hook Form or h3. It is for teams who want one set of conventions instead of choosing and wiring twenty libraries, and for coding agents, which can read the same conventions from `AGENTS.md`.
 
 > **Pre-release.** kitr is version 0.1 and is not on npm yet. See [Getting started](/docs/getting-started) for how to run it from a checkout.
 
@@ -67,11 +67,11 @@ kitr does not re-implement the libraries below. It re-exports them and adds a th
 | `web()` platform (static, spa, ssr, pwa) | Ready |
 | `server()` platform (h3 on srvx) | Ready |
 | Packages in the `app`, `fullstack` and `server` kits | Ready |
-| `desktop()` (Electron), `tauri()`, `mobile()` (Capacitor) | Preview |
-| Device packages (platform, files, notifications, native, secure-storage, updater) | Preview |
+| `desktop()` (Electron), `tauri()`, `mobile()` (Capacitor) | Ready |
+| Device packages (platform, files, notifications, native, secure-storage, updater) | Ready |
 | Install from npm | Not yet: run an example from a checkout |
 
-Previews exist in the repository but are refused by `kitr new` and `kitr add` unless you pass `--preview`. The native shells are web views around your app, not React Native. kitr has no auth server of its own: the `auth` package connects to the one you have.
+The native shells are web views around your app, not React Native. kitr has no auth server of its own: the `auth` package connects to the one you have.
 
 ## Glossary
 
