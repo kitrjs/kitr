@@ -169,12 +169,12 @@ function render({ dir, pkg }) {
   if (!sections.length) return null
   const mainPath = `kitr/${pkg.kitr.name}`
   return `---
-title: API
+title: API reference
 description: Every export of ${mainPath}, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of ${list.map((e) => `\`${e.path}\``).join(', ')}, read from the published type definitions. The [guide](/packages/${pkg.kitr.name}) shows them in use.
 

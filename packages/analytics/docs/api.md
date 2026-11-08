@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/analytics, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/analytics`, `kitr/analytics/provider`, `kitr/analytics/react`, read from the published type definitions. The [guide](/packages/analytics) shows them in use.
 

@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/server.
 order: 2
 ---
 
-# API
+# API reference
 
 ## createServer
 

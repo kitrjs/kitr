@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/react, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/react`, read from the published type definitions. The [guide](/packages/react) shows them in use.
 

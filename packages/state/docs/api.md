@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/state.
 order: 2
 ---
 
-# API
+# API reference
 
 `kitr/state` re-exports everything from `zustand` and adds `createKitrStore`.
 

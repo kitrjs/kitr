@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/mail, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/mail`, `kitr/mail/provider`, read from the published type definitions. The [guide](/packages/mail) shows them in use.
 

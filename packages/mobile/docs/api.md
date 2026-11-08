@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/mobile, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/mobile`, `kitr/mobile/client`, `kitr/mobile/provider`, read from the published type definitions. The [guide](/packages/mobile) shows them in use.
 

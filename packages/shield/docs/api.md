@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/shield, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/shield`, `kitr/shield/provider`, read from the published type definitions. The [guide](/packages/shield) shows them in use.
 

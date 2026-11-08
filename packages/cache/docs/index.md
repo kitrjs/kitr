@@ -504,10 +504,6 @@ The cache passes tag names to the driver with the prefix in front, as it does ke
 - **A cache is not a store.** Anything in it can vanish at any time: a restart, an eviction, a `clear()`. Never keep the only copy of data in the cache.
 - **Driver errors are not caught.** If Redis is down, `get()`, `set()` and `remember()` reject with the driver's error. Catch it in the caller when the page should still load without the cache.
 
-## Devtools
-
-When the [devtools](/packages/devtools) package is installed, the cache provider logs the driver it booted with to the `cache` channel at start-up, for example `driver: memory`. That line is the quickest way to confirm that production picked up the Redis driver.
-
 ## Testing
 
 `createCache()` builds a cache with the memory driver and no app, which is all most tests need. Vitest's fake timers move the clock past a ttl without waiting:
@@ -632,6 +628,10 @@ export default defineConfig({
 ```
 
 `cacheStats.stats` now reads `{ hits: 41, misses: 3 }` after a busy minute. See [`CacheDriver`](/packages/cache/api#cachedriver) in the API reference for the exact signatures.
+
+## Devtools
+
+When the [devtools](/packages/devtools) package is installed, the cache provider logs the driver it booted with to the `cache` channel at start-up, for example `driver: memory`. That line is the quickest way to confirm that production picked up the Redis driver.
 
 ## Next steps
 

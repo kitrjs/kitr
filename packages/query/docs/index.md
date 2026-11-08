@@ -757,7 +757,7 @@ export function TeamPicker() {
 }
 ```
 
-## Server rendering
+## Render on the server
 
 On the server, every request gets its own `QueryClient`. The provider binds `queryClient` as a scoped binding, so each forked app that renders a request builds a fresh cache, and one customer's orders can never render into another customer's page. In the browser there is one app, so there is one client for the whole session.
 

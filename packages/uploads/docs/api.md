@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/uploads, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/uploads`, `kitr/uploads/react`, `kitr/uploads/server`, `kitr/uploads/provider`, read from the published type definitions. The [guide](/packages/uploads) shows them in use.
 

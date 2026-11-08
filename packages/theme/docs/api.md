@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/theme, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/theme`, `kitr/theme/provider`, `kitr/theme/server`, read from the published type definitions. The [guide](/packages/theme) shows them in use.
 

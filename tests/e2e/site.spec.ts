@@ -239,6 +239,67 @@ test.describe('in the browser', () => {
     expect(errors).toEqual([])
   })
 
+  test("a package's sidebar is its own guide, with a way back to every package", async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/packages/mail')
+    await page.waitForLoadState('networkidle')
+    const sidebar = page.locator('#docs-sidebar')
+    await expect(sidebar.locator('a[href="/packages"]')).toBeVisible()
+    await expect(sidebar.locator('a[href="/packages/query"]')).toHaveCount(0)
+    await expect(sidebar.locator('a[href="#install"]')).toBeVisible()
+    await expect(sidebar.locator('a[href="/packages/mail/api"]')).toBeVisible()
+    // On a wide screen the header shows its links, not the phone menu button.
+    await expect(page.locator('.nav-links')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open menu' })).toBeHidden()
+
+    // On the API page only "API reference" is marked current, not the guide as well.
+    await sidebar.locator('a[href="/packages/mail/api"]').click()
+    await expect(page).toHaveURL(/\/packages\/mail\/api$/)
+    await expect(sidebar.locator('[aria-current="page"]')).toHaveText(['API reference'])
+  })
+
+  test('on a phone, the docs bar opens the navigation and a section link closes it', async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/packages/mail')
+    await page.waitForLoadState('networkidle')
+    const sidebar = page.locator('#docs-sidebar')
+    await expect(sidebar).toBeHidden()
+    await page.locator('.docs-bar-menu').click()
+    await expect(sidebar).toBeVisible()
+    await sidebar.locator('a[href="#configure"]').click()
+    await expect(sidebar).toBeHidden()
+    await expect(page.locator('.docs-bar-section')).toHaveText('Configure')
+
+    // The section button drops down the page's sections to jump between.
+    await page.locator('.docs-bar-toc').click()
+    const sections = page.locator('#docs-sections')
+    await expect(sections).toBeVisible()
+    await sections.locator('a[href="#testing"]').click()
+    await expect(sections).toBeHidden()
+    await expect(page.locator('.docs-bar-section')).toHaveText('Testing')
+  })
+
+  test('on a phone, the header menu lists every header link', async ({ page }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/docs/getting-started')
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.nav-links')).toBeHidden()
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    const menu = page.locator('#nav-menu')
+    for (const label of ['Platforms', 'Packages', 'Docs', 'Guides', 'About', 'GitHub'])
+      await expect(menu.getByRole('link', { name: label })).toBeVisible()
+    await menu.getByRole('link', { name: 'Guides' }).click()
+    await expect(page).toHaveURL(/\/guides$/)
+    await expect(menu).toBeHidden()
+  })
+
   test('an unknown page shows the not-found page', async ({ page }) => {
     await isolate(page)
     await page.goto('/this-page-does-not-exist')

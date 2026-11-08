@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of kitr/native, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
 Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, read from the published type definitions. The [guide](/packages/native) shows them in use.
 

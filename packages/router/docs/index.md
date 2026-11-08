@@ -1058,21 +1058,6 @@ The binding is typed as TanStack's `AnyRouter`, so `to` is not checked here. Ins
 
 A project that already has `app/routes/__root.tsx` keeps working: `kitr/vite` sees the file and lets TanStack's route generator build `app/routeTree.gen.ts` as before, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line. New projects get the table; nothing forces a move, and the two can't mix in one app.
 
-## Devtools
-
-With [devtools](/packages/devtools) installed, every resolved navigation is logged to the overlay's log under the `router` source: `navigated /projects/apollo` when the path changed, `resolved /projects/apollo` when only the search did. Each entry carries the previous path and the new search params.
-
-## Errors
-
-| Code | When | What to do |
-| --- | --- | --- |
-| `FORBIDDEN` (403) | `can(permission)` failed and no `to` was given. Message: `Missing permission "<permission>"`. | Give the user the permission, hide the link with `useCan()`, or pass `to` to redirect. |
-| redirect | `requireAuth()` found no `session.user`. Not an error: TanStack follows it. | Put a session in context with `createKitrRouter({ context })`. |
-| not found | No page matches, or a loader threw `notFound()`. | Add the page to `app/routes.ts`, or check the id. |
-| `[kitr/router] routes.root() may only be called once` | Two `.root(...)` links on one table. | Keep one; a merged table brings its own root only when yours has none. |
-| `[kitr] No binding named "session"` | The router context read a service before the app booted. | Read it through a getter, as in "Add fields to the router context". |
-| `Something went wrong` | A loader threw something that is not a `KitrError`. | Throw a `KitrError` with a code and message the user can act on. |
-
 ## Commands
 
 | Command | What it does |
@@ -1102,6 +1087,17 @@ export default function ProjectsIdPage() {
 `projects/:id` is accepted for `projects/$id`. `--force` overwrites an existing page file. `kitr eject stub page` copies the template to `stubs/page.ts` so you can change what every new page looks like. Quote the argument in shells that expand `$`. When `app/routes.ts` is not one method chain (a callback with a block body), the command writes the page and prints the link to add by hand.
 
 `kitr doctor` reports a router with no pages (`app/routes.ts` missing) and warns about imports from `@tanstack/react-router` in app code; everything it exports comes from `kitr/router`.
+
+## Errors
+
+| Code | When | What to do |
+| --- | --- | --- |
+| `FORBIDDEN` (403) | `can(permission)` failed and no `to` was given. Message: `Missing permission "<permission>"`. | Give the user the permission, hide the link with `useCan()`, or pass `to` to redirect. |
+| redirect | `requireAuth()` found no `session.user`. Not an error: TanStack follows it. | Put a session in context with `createKitrRouter({ context })`. |
+| not found | No page matches, or a loader threw `notFound()`. | Add the page to `app/routes.ts`, or check the id. |
+| `[kitr/router] routes.root() may only be called once` | Two `.root(...)` links on one table. | Keep one; a merged table brings its own root only when yours has none. |
+| `[kitr] No binding named "session"` | The router context read a service before the app booted. | Read it through a getter, as in "Add fields to the router context". |
+| `Something went wrong` | A loader threw something that is not a `KitrError`. | Throw a `KitrError` with a code and message the user can act on. |
 
 ## Testing
 
@@ -1190,6 +1186,10 @@ describe('guards', () => {
 ```
 
 To render one component that uses `Link` or `getRouteApi` without the whole app, put it on a page in a small table like the one above. Links need a router around them.
+
+## Devtools
+
+With [devtools](/packages/devtools) installed, every resolved navigation is logged to the overlay's log under the `router` source: `navigated /projects/apollo` when the path changed, `resolved /projects/apollo` when only the search did. Each entry carries the previous path and the new search params.
 
 ## Next steps
 
