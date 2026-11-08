@@ -73,7 +73,7 @@ kitr dev
 # desk:  http://localhost:3200, the Electron window loads it
 ```
 
-Name one or two to start only those: `kitr dev site desk`. Each build sets `KITR_PLATFORM` to its name, which is how the rest of this guide tells them apart. A change to a page shows up in the browser, the simulator and the window at once.
+Name one or two to start only those: `kitr dev site desk`, or `kitr dev --filter=site,desk`. Each build sets `KITR_PLATFORM` to its name, which is how the rest of this guide tells them apart. A change to a page shows up in the browser, the simulator and the window at once.
 
 ## Keep a page to some platforms
 

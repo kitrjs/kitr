@@ -56,6 +56,8 @@ Any npm package with a kitr setup module works: `kitr add @acme/stripe`. See [Pa
 | `kitr platforms` | List platforms, their options and the config files each build uses. `types`, `scaffold <name>` and `remove <name>` are subcommands. |
 | `kitr config <name> [option] [value]` | Read or set one platform option: `kitr config site port 4000`, `kitr config admin without analytics,consent`. |
 
+To pick a few, list them (`kitr build admin api`) or use `--filter=admin,api`. Both do the same thing.
+
 With more than one platform, `kitr dev` prefixes each line with the platform's name (`[site]`). `KITR_<NAME>_<OPTION>` overrides any option at run time: `KITR_SITE_PORT=4000 kitr dev site`.
 
 The server without Vite imports `config/index.ts`, which `kitr add` regenerates. When a platform has a `config/<platform>/` folder or a `without` list, that file picks the build's object with `forBuildPlatform()`; see [Config per platform](platforms.md#config-per-platform).
@@ -80,7 +82,7 @@ Each app is a complete kitr project with its own `kitrrc.ts`. Shared code goes i
 | `kitr workspace` | List the apps with their platforms and packages. |
 | `kitr dev`, `kitr start` | Run in every app at once. |
 | `kitr build`, `kitr generate`, `kitr typecheck`, `kitr doctor`, ... | Run in every app, one after another. Exits 1 if any fails. |
-| `kitr build phone` | Run in one app: `kitr build phone ios` builds its `ios` platform. |
+| `kitr build phone` | Run in one app: `kitr build phone ios` builds its `ios` platform. `kitr build --filter=phone,www` runs in those two. |
 | `kitr --app phone <command>` | Run any command in one app without `cd`. `KITR_APP=phone` does the same. |
 
 Inside an app directory every command is the app's own, as if there were no workspace.

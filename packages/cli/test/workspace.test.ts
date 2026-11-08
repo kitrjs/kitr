@@ -11,6 +11,7 @@ import {
   resolveApp,
   shouldFanOut,
   takeAppFlag,
+  takeFilterFlag,
 } from '../src/workspace'
 
 function workspace() {
@@ -54,6 +55,24 @@ describe('kitr.workspace.ts', () => {
       www: join(root, 'apps/www'),
     })
     expect(findWorkspace(tmpdir())).toBeUndefined()
+  })
+
+  it('turns --filter into the names after the command', () => {
+    expect(takeFilterFlag(['build', '--filter=admin,api', '--minify'])).toEqual([
+      'build',
+      'admin',
+      'api',
+      '--minify',
+    ])
+    expect(takeFilterFlag(['--filter', 'phone', 'dev', '--filter=www'])).toEqual([
+      'dev',
+      'phone',
+      'www',
+    ])
+    expect(takeFilterFlag(['types'])).toEqual(['types'])
+    expect(() => takeFilterFlag(['dev', '--filter'])).toThrow(/--filter needs names/)
+    expect(() => takeFilterFlag(['dev', '--filter=,'])).toThrow(/--filter needs names/)
+    expect(() => takeFilterFlag(['types', '--filter=a'])).toThrow(/kitr dev, kitr build/)
   })
 
   it('takes --app out of the arguments, from either spelling or KITR_APP', () => {

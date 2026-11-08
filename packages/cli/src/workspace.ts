@@ -80,6 +80,43 @@ export function takeAppFlag(argv: string[]): { app: string | undefined; argv: st
   return { app, argv: out }
 }
 
+/** Commands whose positional names pick platforms (or workspace apps), so `--filter` applies. */
+const FILTERABLE = new Set(['dev', 'build', 'start']) // kitr-allow-module-state: constant set built once at import, never mutated
+
+/**
+ * `--filter=a,b` (or `--filter a,b`, repeatable) is another way to type the names:
+ * `kitr build --filter=admin,api` is `kitr build admin api`.
+ */
+export function takeFilterFlag(argv: string[]): string[] {
+  const names: string[] = []
+  const rest: string[] = []
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!
+    let value: string | undefined
+    if (arg === '--filter') {
+      value = argv[++i]
+      if (!value || value.startsWith('-'))
+        throw new Error('--filter needs names, for example --filter=admin,api')
+    } else if (arg.startsWith('--filter=')) value = arg.slice('--filter='.length)
+    else {
+      rest.push(arg)
+      continue
+    }
+    const picked = value
+      .split(',')
+      .map((n) => n.trim())
+      .filter(Boolean)
+    if (!picked.length) throw new Error('--filter needs names, for example --filter=admin,api')
+    names.push(...picked)
+  }
+  if (!names.length) return argv
+  const at = rest.findIndex((w) => !w.startsWith('-'))
+  const command = at === -1 ? undefined : rest[at]
+  if (!command || !FILTERABLE.has(command))
+    throw new Error('--filter works with kitr dev, kitr build and kitr start')
+  return [...rest.slice(0, at + 1), ...names, ...rest.slice(at + 1)]
+}
+
 /** The app directory for `--app`, or an error that lists the apps. */
 export function resolveApp(workspace: WorkspaceInfo | undefined, app: string): string {
   if (!workspace) throw new Error(`--app ${app}: no kitr.workspace.ts found above ${process.cwd()}`)
