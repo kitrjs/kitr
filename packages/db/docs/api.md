@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/db, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/db`, read from the published type definitions. The [guide](/packages/db) shows them in use.
+Every export of `@kitr/db`, read from the published type definitions. The [guide](/packages/db/guide) shows them in use.
 
 ## @kitr/db
 

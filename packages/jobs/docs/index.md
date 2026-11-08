@@ -532,27 +532,6 @@ export default class AdminJobsController {
 
 `dispatch()` registers a job it does not know yet, in this process only. Always list jobs in `config/jobs.ts`, so a separate worker knows them too.
 
-## Errors
-
-| Error | When | What to do |
-| --- | --- | --- |
-| `KitrError` `VALIDATION` (422), message `[jobs] <name>: bad payload` | `dispatch()` or `run()` with a payload the schema rejects. `error.fieldErrors` lists the fields. | Fix the payload. In a controller it becomes a 422 response. |
-| `[@kitr/jobs] Bad cron "<expr>" (5 fields)` | A cron expression without exactly five fields. | Use `minute hour day month weekday`. |
-| `[@kitr/jobs] Bad cron "<expr>" (field "<field>")` | A field out of range, a name like `MON`, or a step of `0`. | See the table in [Run a job on a schedule](#run-a-job-on-a-schedule). |
-| `[@kitr/jobs] Bad interval "<text>" (use 30s, 5m, 1h, 1d)` | `{ every }` without a number and a unit. | Write `5m`, not `5 minutes`. |
-| `[jobs] <name> timed out after <ms>ms` | An attempt ran past `timeout`. Counts as a failure. | Raise `timeout`, or pass `signal` to the slow call. |
-
-The worker never throws: it logs these messages through the app's [logger](/packages/logger) instead.
-
-| Log line | Level | Meaning |
-| --- | --- | --- |
-| `[jobs] <name> failed (attempt <n>), retry in <ms>ms` | warn | An attempt failed and the job is queued again. |
-| `[jobs] <name> failed after <n> attempts` | error | Retries used up; `onFailed` runs. |
-| `[jobs] <name> dropped: bad payload` | error | The queued payload failed the schema; `onFailed` runs. |
-| `[jobs] unknown job "<name>" dropped` | warn | No job with that name is listed in this process. |
-| `[jobs] could not queue scheduled <name>` | error | A scheduled dispatch failed, usually a schema that rejects `undefined`. |
-| `[jobs] worker poll failed` | error | The driver threw (Redis restarted) or a cron expression is bad. The worker keeps polling. |
-
 ## Commands
 
 | Command | What it does |
@@ -598,6 +577,27 @@ export const generateInvoice = defineJob('generate_invoice', {
 ```
 
 The generator does not add the job to `config/jobs.ts`; add it to `jobs` yourself.
+
+## Errors
+
+| Error | When | What to do |
+| --- | --- | --- |
+| `KitrError` `VALIDATION` (422), message `[jobs] <name>: bad payload` | `dispatch()` or `run()` with a payload the schema rejects. `error.fieldErrors` lists the fields. | Fix the payload. In a controller it becomes a 422 response. |
+| `[@kitr/jobs] Bad cron "<expr>" (5 fields)` | A cron expression without exactly five fields. | Use `minute hour day month weekday`. |
+| `[@kitr/jobs] Bad cron "<expr>" (field "<field>")` | A field out of range, a name like `MON`, or a step of `0`. | See the table in [Run a job on a schedule](#run-a-job-on-a-schedule). |
+| `[@kitr/jobs] Bad interval "<text>" (use 30s, 5m, 1h, 1d)` | `{ every }` without a number and a unit. | Write `5m`, not `5 minutes`. |
+| `[jobs] <name> timed out after <ms>ms` | An attempt ran past `timeout`. Counts as a failure. | Raise `timeout`, or pass `signal` to the slow call. |
+
+The worker never throws: it logs these messages through the app's [logger](/packages/logger) instead.
+
+| Log line | Level | Meaning |
+| --- | --- | --- |
+| `[jobs] <name> failed (attempt <n>), retry in <ms>ms` | warn | An attempt failed and the job is queued again. |
+| `[jobs] <name> failed after <n> attempts` | error | Retries used up; `onFailed` runs. |
+| `[jobs] <name> dropped: bad payload` | error | The queued payload failed the schema; `onFailed` runs. |
+| `[jobs] unknown job "<name>" dropped` | warn | No job with that name is listed in this process. |
+| `[jobs] could not queue scheduled <name>` | error | A scheduled dispatch failed, usually a schema that rejects `undefined`. |
+| `[jobs] worker poll failed` | error | The driver threw (Redis restarted) or a cron expression is bad. The worker keeps polling. |
 
 ## Testing
 

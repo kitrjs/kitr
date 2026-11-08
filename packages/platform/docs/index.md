@@ -559,13 +559,6 @@ So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A d
 | `exit()` | Does nothing. |
 | `standalone` | The driver's `native` value. |
 
-## Devtools
-
-With [Devtools](/packages/devtools) installed, the provider adds a Platform panel and logs one line at boot, such as `running as mobile (ios), native`. The panel shows:
-
-- the platform `name`, `type`, `os`, `native`, `standalone` and `online` values;
-- every capability with a registered driver (`platform`, `storage` and others) and who supplied it, such as `mobile (priority 10)`. In a plain browser it reads "No platform drivers registered (browser defaults)" until a provider registers one.
-
 ## Errors
 
 | Message | When | What to do |
@@ -724,6 +717,13 @@ export default defineKitrConfig({
 On a kiosk, `platform.is('kiosk')` is `true`, `perPlatform(platform, { kiosk: () => ..., default: () => ... })` picks the kiosk branch, and the devtools panel lists the driver as `kiosk (priority 20)`. Priority 20 beats the web driver (0) and the native drivers (10). Register only when you are sure you run there, as above, because the highest priority wins everywhere. See [`PlatformDriver`](/packages/platform/api) for every member.
 
 To make the kiosk a platform that `kitr dev` and `kitr build` can run, write a platform package with `definePlatform()`; [Platforms](/docs/platforms) shows one.
+
+## Devtools
+
+With [Devtools](/packages/devtools) installed, the provider adds a Platform panel and logs one line at boot, such as `running as mobile (ios), native`. The panel shows:
+
+- the platform `name`, `type`, `os`, `native`, `standalone` and `online` values;
+- every capability with a registered driver (`platform`, `storage` and others) and who supplied it, such as `mobile (priority 10)`. In a plain browser it reads "No platform drivers registered (browser defaults)" until a provider registers one.
 
 ## Next steps
 

@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/forms.
 order: 2
 ---
 
-# API
+# API reference
 
 `@kitr/forms` re-exports everything from `react-hook-form` (its `Form` as `RhfForm`) and adds the following.
 

@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/platform, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/platform`, `@kitr/platform/react`, `@kitr/platform/provider`, `@kitr/platform/devtools`, read from the published type definitions. The [guide](/packages/platform) shows them in use.
+Every export of `@kitr/platform`, `@kitr/platform/react`, `@kitr/platform/provider`, `@kitr/platform/devtools`, read from the published type definitions. The [guide](/packages/platform/guide) shows them in use.
 
 ## @kitr/platform
 

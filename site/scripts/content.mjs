@@ -43,6 +43,13 @@ export function parseFrontmatter(source) {
   return { data, body: source.slice(match[0].length) }
 }
 
+/**
+ * A package's guide lives at /packages/<name>/guide, so a link into one of its sections
+ * (`/packages/mail#attach-a-file`) points there; a bare `/packages/mail` is the overview.
+ */
+export const guideLinks = (markdown) =>
+  markdown.replace(/\]\(\/packages\/([\w-]+)#/g, '](/packages/$1/guide#')
+
 const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 
 /** Code blocks: shiki with both themes; `kitr ...` shell blocks become package-manager pickers. */
@@ -239,19 +246,36 @@ const addSearch = (url, title, section, rendered, summary) => {
     search.push({ url: `${url}#${s.id}`, title, section, heading: s.heading, text: s.text.trim() })
 }
 
+// A package's pages: overview.md is the package's landing page (/packages/<name>), index.md is
+// its guide (/packages/<name>/guide), and any other file keeps its name (api.md at /api).
+const pageSlug = (file) =>
+  file === 'overview.md' ? '' : file === 'index.md' ? 'guide' : file.replace(/\.md$/, '')
+const pageTitle = (file, title) =>
+  file === 'overview.md' ? 'Overview' : file === 'index.md' ? 'Guide' : title
+
 for (const { dir, docsDir, entry } of packages) {
   if (!existsSync(docsDir)) continue
   const files = readdirSync(docsDir).filter((f) => f.endsWith('.md'))
+  // Until a package has its own overview.md, the site builds one from the manifest.
+  if (files.includes('index.md') && !files.includes('overview.md'))
+    entry.pages.push({ slug: '', title: 'Overview', order: 0 })
   for (const f of files) {
     const source = readFileSync(join(docsDir, f), 'utf8')
-    const { data, body } = parseFrontmatter(source)
-    const slug = f === 'index.md' ? '' : f.replace(/\.md$/, '')
+    const parsed = parseFrontmatter(source)
+    const data = parsed.data
+    const body = guideLinks(parsed.body)
+    const slug = pageSlug(f)
+    const title = pageTitle(f, data.title)
     const url = slug ? `/packages/${entry.name}/${slug}` : `/packages/${entry.name}`
     const rendered = await render(body)
-    entry.pages.push({ slug, title: data.title, order: data.order ?? 99 })
+    entry.pages.push({
+      slug,
+      title,
+      order: f === 'overview.md' ? 0 : f === 'index.md' ? 1 : (data.order ?? 99),
+    })
     writePage(`pkg__${entry.name}__${slug || 'index'}`, {
       url,
-      title: data.title,
+      title,
       description: data.description,
       blocks: rendered.blocks,
       toc: rendered.toc,
@@ -259,14 +283,14 @@ for (const { dir, docsDir, entry } of packages) {
     })
     addSearch(
       url,
-      slug ? `${entry.title}: ${data.title}` : entry.title,
+      slug ? `${entry.title}: ${title}` : entry.title,
       'Packages',
       rendered,
       entry.summary,
     )
     llms.push({
       url,
-      title: slug ? `${entry.title} ${data.title}` : entry.title,
+      title: slug ? `${entry.title} ${title}` : entry.title,
       description: data.description,
       body,
     })
@@ -320,9 +344,11 @@ for (const group of nav) {
     const parsed = parseFrontmatter(source)
     const data = parsed.data
     // Repo docs link to each other as `cli.md`; on the site they live at /docs/cli.
-    const body = item.source
-      ? parsed.body.replace(/\]\(([\w-]+)\.md(#[\w-]+)?\)/g, '](/docs/$1$2)')
-      : parsed.body
+    const body = guideLinks(
+      item.source
+        ? parsed.body.replace(/\]\(([\w-]+)\.md(#[\w-]+)?\)/g, '](/docs/$1$2)')
+        : parsed.body,
+    )
     const title = item.title ?? data.title
     const description = item.description ?? data.description
     const url = `/docs/${item.slug}`
@@ -353,7 +379,9 @@ for (const group of guidesNavFile) {
   const items = []
   for (const slug of group.pages) {
     const path = join(site, 'content/guides', `${slug}.md`)
-    const { data, body } = parseFrontmatter(readFileSync(path, 'utf8'))
+    const parsed = parseFrontmatter(readFileSync(path, 'utf8'))
+    const data = parsed.data
+    const body = guideLinks(parsed.body)
     if (!data.title || !data.description)
       throw new Error(`${path}: frontmatter needs title and description`)
     const url = `/guides/${slug}`

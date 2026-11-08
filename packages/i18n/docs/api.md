@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/i18n, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/i18n`, `@kitr/i18n/provider`, read from the published type definitions. The [guide](/packages/i18n) shows them in use.
+Every export of `@kitr/i18n`, `@kitr/i18n/provider`, read from the published type definitions. The [guide](/packages/i18n/guide) shows them in use.
 
 ## @kitr/i18n
 

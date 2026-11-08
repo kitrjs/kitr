@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/testing, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/testing`, `@kitr/testing/react`, read from the published type definitions. The [guide](/packages/testing) shows them in use.
+Every export of `@kitr/testing`, `@kitr/testing/react`, read from the published type definitions. The [guide](/packages/testing/guide) shows them in use.
 
 ## @kitr/testing
 

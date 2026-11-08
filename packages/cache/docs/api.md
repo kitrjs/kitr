@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/cache, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/cache`, `@kitr/cache/provider`, read from the published type definitions. The [guide](/packages/cache) shows them in use.
+Every export of `@kitr/cache`, `@kitr/cache/provider`, read from the published type definitions. The [guide](/packages/cache/guide) shows them in use.
 
 ## @kitr/cache
 

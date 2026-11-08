@@ -1,7 +1,9 @@
-import { type AddContext, definePackage, displayName } from '@kitr/core/package'
-
-const write = (ctx: AddContext, path: string, content: string) =>
-  ctx.write(path, content, { overwrite: true })
+import {
+  type AddContext,
+  definePackage,
+  displayName,
+  writeTemplate as write,
+} from '@kitr/core/package'
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)

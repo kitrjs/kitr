@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/devtools, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/devtools`, `@kitr/devtools/provider`, `@kitr/devtools/ui`, read from the published type definitions. The [guide](/packages/devtools) shows them in use.
+Every export of `@kitr/devtools`, `@kitr/devtools/provider`, `@kitr/devtools/ui`, read from the published type definitions. The [guide](/packages/devtools/guide) shows them in use.
 
 ## @kitr/devtools
 

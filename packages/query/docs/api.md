@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/query.
 order: 2
 ---
 
-# API
+# API reference
 
 `@kitr/query` re-exports everything from `@tanstack/react-query` and adds the following.
 

@@ -1,10 +1,10 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/http.
 order: 2
 ---
 
-# API
+# API reference
 
 `@kitr/http` re-exports everything from `ky` and adds the following.
 

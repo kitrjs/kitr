@@ -523,15 +523,6 @@ try {
 
 `flush` waits for every reporter that has a `flush` method, up to the timeout (2 seconds by default), and never throws.
 
-## Devtools
-
-With [devtools](/packages/devtools) installed, the provider registers an Errors panel and a devtools reporter in development.
-
-- The panel lists captured exceptions, messages and `setUser` calls, newest first, with the time, the `source` as a badge, the stack and the `extra` data. The latest one is expanded.
-- Its tab shows a badge with the number of exceptions.
-- Below the list, the last 20 breadcrumbs.
-- The Clear errors action empties the list. Throw a test error throws an uncaught error, so you can check the global handler without writing code.
-
 ## Testing
 
 `memoryReporter()` keeps every report in arrays. Boot an app with the provider and a memory reporter, run the code, and assert on what was reported:
@@ -665,6 +656,15 @@ export default defineConfig({
 ```
 
 `captureException` must not throw or block: return at once and send in the background. The service calls each reporter inside `try`/`catch` and ignores rejected promises, so a failing endpoint loses its reports silently. `init` runs once, when the service is created. Breadcrumbs reach you without the merged tags; exceptions and messages arrive with them.
+
+## Devtools
+
+With [devtools](/packages/devtools) installed, the provider registers an Errors panel and a devtools reporter in development.
+
+- The panel lists captured exceptions, messages and `setUser` calls, newest first, with the time, the `source` as a badge, the stack and the `extra` data. The latest one is expanded.
+- Its tab shows a badge with the number of exceptions.
+- Below the list, the last 20 breadcrumbs.
+- The Clear errors action empties the list. Throw a test error throws an uncaught error, so you can check the global handler without writing code.
 
 ## Next steps
 

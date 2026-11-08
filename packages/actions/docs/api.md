@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/actions, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/actions`, `@kitr/actions/types`, read from the published type definitions. The [guide](/packages/actions) shows them in use.
+Every export of `@kitr/actions`, `@kitr/actions/types`, read from the published type definitions. The [guide](/packages/actions/guide) shows them in use.
 
 ## @kitr/actions
 

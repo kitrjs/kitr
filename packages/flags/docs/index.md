@@ -482,10 +482,6 @@ export const flags = defineFlags({
 
 Every typed `useFlag<typeof flags, 'new-dashboard'>` and `resolveFlags<typeof flags>` read of it is now a type error, which lists the code to clean up. Remove the old branch, then the `FLAG_NEW_DASHBOARD` line and the `'new-dashboard'` share in `config/flags.ts`.
 
-## Devtools
-
-When the [devtools](/packages/devtools) package is installed, every resolve or hydrate that updates the snapshot logs `resolved` with all values to the `flags` channel. It shows which values the browser booted with, and whether they came from the server's tag.
-
 ## Testing
 
 `createFlags(definitions, config)` builds a flags service with no app. Give it a `staticFlagsProvider` to test both sides of a flag:
@@ -602,6 +598,10 @@ export default defineConfig({
 ```
 
 The same config runs in the browser, which is why this provider uses `fetch` and an absolute URL rather than a database client. Keep server-only imports out of `config/flags.ts`. See [`FlagsProvider`](/packages/flags/api#flagsprovider) in the API reference.
+
+## Devtools
+
+When the [devtools](/packages/devtools) package is installed, every resolve or hydrate that updates the snapshot logs `resolved` with all values to the `flags` channel. It shows which values the browser booted with, and whether they came from the server's tag.
 
 ## Next steps
 

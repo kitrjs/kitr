@@ -51,7 +51,15 @@ for (const { dir, pkg } of pkgs) {
       const other = pkgs.find(({ pkg: p }) => p.kitr.name === target)
       if (
         other &&
-        !existsSync(join('packages', other.dir, other.pkg.kitr.docs ?? 'docs', `${page}.md`))
+        // On the site the guide (index.md) is served at /packages/<name>/guide.
+        !existsSync(
+          join(
+            'packages',
+            other.dir,
+            other.pkg.kitr.docs ?? 'docs',
+            `${page === 'guide' ? 'index' : page}.md`,
+          ),
+        )
       )
         errors.push(`${where}: links to missing page /packages/${target}/${page}`)
     }

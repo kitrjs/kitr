@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/animation, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/animation`, `@kitr/animation/provider`, read from the published type definitions. The [guide](/packages/animation) shows them in use.
+Every export of `@kitr/animation`, `@kitr/animation/provider`, read from the published type definitions. The [guide](/packages/animation/guide) shows them in use.
 
 ## @kitr/animation
 

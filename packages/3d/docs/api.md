@@ -1,12 +1,12 @@
 ---
-title: API
+title: API reference
 description: Every export of @kitr/3d, with its signature.
 order: 2
 ---
 
-# API
+# API reference
 
-Every export of `@kitr/3d`, `@kitr/3d/drei`, read from the published type definitions. The [guide](/packages/3d) shows them in use.
+Every export of `@kitr/3d`, `@kitr/3d/drei`, read from the published type definitions. The [guide](/packages/3d/guide) shows them in use.
 
 ## @kitr/3d
 

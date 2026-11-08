@@ -1,5 +1,5 @@
-import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@kitr/tailwind'
+import { cva, type VariantProps } from 'class-variance-authority'
 import type { ComponentProps } from 'react'
 
 export const badgeVariants = cva(

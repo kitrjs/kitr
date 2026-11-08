@@ -325,7 +325,7 @@ defaultTokens.tokens.radius.md // => '0.5rem'
 darkTokens.tokens.color.background // => 'oklch(16% 0.01 260)'
 ```
 
-## Brand the colours
+## Brand the colors
 
 To change a token for the whole app, override its variable in `app/styles/tokens.css`. Acme's brand is a teal primary:
 
@@ -745,15 +745,6 @@ createRoot(document.getElementById('acme-widget')!).render(
 
 Don't render a second `ThemeProvider` inside a kitr app. The provider already wraps the tree, and a nested one keeps its own state, so its `toggle` would not change what the rest of the app reads.
 
-## Errors
-
-| Error | When | What to do |
-| --- | --- | --- |
-| `[@kitr/theme] useTheme() must be used inside <ThemeProvider>.` | A component called `useTheme` with no theme provider above it. | Add the theme provider with `kitr add theme`, or render inside `ThemeProvider`. In tests, boot an app with `themeProvider`. |
-| `Component "<name>" not found at <registry> (404)` | `kitr ui add` asked the registry for a component it does not have. | Check the name with `kitr ui list`, or the `registry` setting. |
-| `Component "<name>" not found in <dir>` | The same, for a registry that is a local directory. | Check the directory has `<name>.json`. |
-| No error: the file is kept | `kitr ui add` found the component file already there. It keeps yours and still reports the component as added. | Pass `--overwrite` to replace it with the registry's version. |
-
 ## Commands
 
 | Command | What it does |
@@ -801,6 +792,15 @@ kitr ui list
   ...
   list-page        A list route: page header, data table bound to URL search params, empty state.  (page)
 ```
+
+## Errors
+
+| Error | When | What to do |
+| --- | --- | --- |
+| `[@kitr/theme] useTheme() must be used inside <ThemeProvider>.` | A component called `useTheme` with no theme provider above it. | Add the theme provider with `kitr add theme`, or render inside `ThemeProvider`. In tests, boot an app with `themeProvider`. |
+| `Component "<name>" not found at <registry> (404)` | `kitr ui add` asked the registry for a component it does not have. | Check the name with `kitr ui list`, or the `registry` setting. |
+| `Component "<name>" not found in <dir>` | The same, for a registry that is a local directory. | Check the directory has `<name>.json`. |
+| No error: the file is kept | `kitr ui add` found the component file already there. It keeps yours and still reports the component as added. | Pass `--overwrite` to replace it with the registry's version. |
 
 ## Testing
 

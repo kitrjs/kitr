@@ -311,7 +311,7 @@ try {
 
 With [forms](/packages/forms), pass `rename.mutateAsync` to `<Form onSubmit>` and each message appears under its field. Anything that is not a `KitrError` becomes a 500: the real error is logged on the server, and in production the browser sees only `Internal server error`.
 
-## Organise actions by feature
+## Organize actions by feature
 
 The generator writes one file per action under `app/actions/<feature>/`. The dotted name is yours; the registry only needs it to be unique, and `kitr types` groups the tree by the part before the first dot:
 
