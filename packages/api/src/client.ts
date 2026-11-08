@@ -175,6 +175,16 @@ export function createApiClient<R extends Record<string, unknown>>(
   }
 
   const routeTable = new Map<string, { method: string; path: string }>()
+  // Every dotted prefix of a registered name (`admin`, `admin.users` for `admin.users.index`).
+  // Built as names arrive, so deciding "group or endpoint" is one Set lookup, not a scan.
+  const groupNames = new Set<string>()
+  const register = (table: Array<{ name: string; method: string; path: string }>) => {
+    for (const r of table) {
+      routeTable.set(r.name, { method: r.method, path: r.path })
+      for (let i = r.name.indexOf('.'); i !== -1; i = r.name.indexOf('.', i + 1))
+        groupNames.add(r.name.slice(0, i))
+    }
+  }
   const parseName = (name: string): [string, string] => {
     const known = routeTable.get(name)
     if (known) return [known.method, known.path]
@@ -195,18 +205,24 @@ export function createApiClient<R extends Record<string, unknown>>(
     }
     return e
   }
-  const group = (prefix: string): any =>
+  const groups = new Map<string, any>()
+  const group = (prefix: string): any => {
+    let g = groups.get(prefix)
+    if (!g) {
+      g = makeGroup(prefix)
+      groups.set(prefix, g)
+    }
+    return g
+  }
+  const makeGroup = (prefix: string): any =>
     new Proxy(() => {}, {
       get: (_t, prop) => {
         if (typeof prop !== 'string' || nonRouteProps.has(prop)) return undefined
         const name = prefix ? `${prefix}.${prop}` : prop
         if (name === '$routes') return undefined
-        if (name === '$register')
-          return (table: Array<{ name: string; method: string; path: string }>) => {
-            for (const r of table) routeTable.set(r.name, { method: r.method, path: r.path })
-          }
+        if (name === '$register') return register
         // A group when some registered route starts with `name.`; else an endpoint.
-        for (const key of routeTable.keys()) if (key.startsWith(`${name}.`)) return group(name)
+        if (groupNames.has(name)) return group(name)
         if (routeTable.size === 0 && !/^[A-Z]+ \//.test(name) && !prefix) return group(name)
         return endpointFor(name)
       },
