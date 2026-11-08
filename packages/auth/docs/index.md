@@ -8,7 +8,7 @@ order: 1
 
 Almost every screen in an app asks two questions: who is this, and are they allowed to do that? `kitr/auth` answers both, in the browser and on the server, with the same rules in both places. It gives the app one session to read, guards for pages, and permission checks written once as plain functions.
 
-It doesn't store passwords or run a login server. It connects to what you already have, such as your own API's token endpoint or [Better Auth](https://www.better-auth.com/docs), through an adapter. On top it adds React hooks, router guards for [Router](/packages/router), and middleware for [API routes](/packages/api).
+By default it doesn't store passwords or run a login server: it connects to what you already have, such as your own API's token endpoint or [Better Auth](https://www.better-auth.com/docs), through an adapter. When your app has a kitr server, it can also run the sign-in itself with [cookie sessions](#cookie-sessions-with-a-server). On top it adds React hooks, router guards for [Router](/packages/router), and middleware for [API routes](/packages/api).
 
 The session, hooks and adapters run in the browser. `kitr/auth/server` runs on the server and has no React dependency. If all you need is to protect API routes with a token your server checks, use `kitr/auth/server` alone.
 
@@ -47,7 +47,7 @@ export const abilities = defineAbilities({
 })
 ```
 
-`kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. It asks no questions. Use `kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
+`kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. It asks how users sign in: `--provider token` (the default, described on this page), `session` ([cookie sessions](#cookie-sessions-with-a-server)) or `better-auth`; `--no-emails` skips the verification and reset emails of `session`. Use `kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
 
 `kitr remove auth` takes the session back out of `app/router.tsx`, unregisters the provider, removes `@kitr/auth` from `package.json` and `kitrrc.ts`, deletes `config/auth.ts` and drops the `AGENTS.md` section. It keeps `app/abilities.ts` and `VITE_API_URL`, and lists the files that still import `kitr/auth`.
 
@@ -859,6 +859,74 @@ The cookie value is URL-decoded before `verify` sees it. A malformed value count
 
 > **Warning**
 > Cookie sessions need CSRF protection on writes, because the browser sends the cookie with requests other sites trigger. Turn on CSRF in [Shield](/packages/shield).
+
+## Cookie sessions with a server
+
+Bearer tokens suit a single-page app in front of an API that issues them. When the app has a kitr server and renders pages on the server, use cookie sessions instead: the session is an HttpOnly cookie the browser cannot read, guarded pages render on the server with the signed-in user's data in the first response, and no token sits in `localStorage` for a script to steal.
+
+```sh
+kitr add auth --provider session
+```
+
+| Use | When |
+| --- | --- |
+| `--provider token` (the default) | An SPA in front of an API that issues bearer tokens, a native shell, or a server you do not control. The bearer adapters (`tokenAdapter`, `localStorageTokens`) stay in the package. |
+| `--provider session` | The app has a kitr server (`kitr add server`) and server-rendered pages. The `saas` kit uses it. |
+| `--provider better-auth` | You want Better Auth's server, plugins and social sign-in. Its guards run in the browser only. |
+
+`--provider session` writes `server/auth.ts` (the session service and the user provider), `server/controllers/auth_controller.ts`, the `/api/auth/*` routes in `server/routes.ts`, a sign-in page, `config/auth.ts` over `sessionAdapter`, and wraps page rendering in `app/server.ts` with `runWithSession`. With `@kitr/mail` installed it also writes the verification and reset emails (`--no-emails` skips them). Set `SESSION_SECRET` (at least 32 random characters, `openssl rand -base64 32`) and `APP_URL`; production refuses to boot without the secret.
+
+### Sessions and stores
+
+```ts
+// server/auth.ts
+import { createCookieSession, createMemorySessionStore } from 'kitr/auth/server'
+
+export const sessions = createCookieSession({
+  secret: process.env.SESSION_SECRET!,
+  store: createMemorySessionStore(),
+})
+```
+
+The cookie holds a random session id signed with HMAC-SHA256 (Web Crypto, so it runs on Node, Bun, Deno and Workers). It is `HttpOnly`, `SameSite=Lax`, and `Secure` in production. Expiry slides: a session that is used refreshes, up to an absolute limit (`maxAge`, default seven days idle, `absoluteMaxAge`, default thirty days). Signing in rotates the id, so a cookie planted before sign-in is worthless. `sessions.revoke(id)` ends one session, `sessions.revokeAll(userId)` every session of a user. Pass `secret` as an array to rotate the secret: the first signs, all verify.
+
+Where sessions live is a `SessionStore`:
+
+| Store | For |
+| --- | --- |
+| `createMemorySessionStore()` | One process, development and tests. Lost on restart. |
+| `createStorageSessionStore(driver)` | Any `@kitr/storage` driver (`get`, `set`, `remove`, `keys`). Drivers have no expiry, so an expired record is dropped when read. |
+| `createRedisSessionStore(redis)` | Several instances. Takes an `ioredis` client; keys expire with the session. |
+
+### Passwords and users
+
+`hashPassword(password)` returns a self-describing string (scrypt through `node:crypto`, with a PBKDF2-SHA256 600,000 round fallback on runtimes without scrypt). `verifyPassword(password, hash)` compares in constant time and never throws on a malformed hash. `needsRehash(hash)` says when to upgrade a stored hash after a successful sign-in.
+
+Users come from a `UserProvider`: `findByEmail`, `findById`, `create`, and optionally `setPasswordHash` and `markEmailVerified`. `createMemoryUserProvider` is the demo implementation (the kit seeds `admin@example.com` and `member@example.com`, password `password`). Implement the interface over your database and swap it in `server/auth.ts`.
+
+### The controller
+
+`createSessionController({ sessions, users, mail, appUrl })` returns a controller with `session`, `signIn`, `signUp`, `signOut`, `signOutAll`, `requestVerification`, `verifyEmail`, `requestPasswordReset` and `resetPassword`. Every state-changing method checks the CSRF token (the `kitr-csrf` cookie echoed in `x-csrf-token`, which [Shield](/packages/shield) sets and the typed `api` client sends), unknown emails and wrong passwords take the same time and give the same answer, and links in emails point at `appUrl`, never at the `Host` header. A reset link works once and ends every session of the account.
+
+### Guards on the server
+
+In a route that renders on the server, load the session first:
+
+```ts
+// app/routes.ts
+import { ensureSession } from 'kitr/auth'
+import { requireAuth } from 'kitr/router'
+
+.layout('_app', {
+  beforeLoad: async (ctx) => {
+    await ensureSession(ctx)
+    await requireAuth()(ctx)
+  },
+  lazy: () => import('./pages/app-layout'),
+})
+```
+
+On the server `ensureSession` reads the session of the request being rendered (`runWithSession` in `app/server.ts` makes it available); in the browser it asks `GET /api/auth/session` through the query cache, so a client-side navigation costs no request while the cache is fresh, and signing in or out updates the cache. Do not return the guard's result from `beforeLoad` in a server-rendered route: it holds functions, which cannot be serialized into the page. `sessionMiddleware(auth)` protects API routes the same way and answers `401` without a session; `getRequestUser()` reads the user anywhere in the request.
 
 ## Errors
 

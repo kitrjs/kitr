@@ -73,7 +73,7 @@ The CLI used to hold every package's setup as a recipe, so adding a package mean
 - Prerendering and sitemap generation are configured (`config/seo.ts`) and delegate to Start's own prerender; kitr adds no crawler.
 - The Socket.IO Redis adapter is wired through `attachSocketIo(io)`; the adapter itself is yours to install.
 - The Next-tier packages from the package map (`secure-storage`, `files`, `notifications`, `native`, `updater`, `offline`, `flags`, `consent`, `cache`, `shield`, `mail`, `jobs`, `uploads`) are not here yet.
-- Better Auth is supported through `betterAuthAdapter(client)`; no auth server is shipped.
+- Better Auth is supported through `betterAuthAdapter(client)`, and `kitr add auth --provider better-auth` wires its server into the container; its guards run in the browser only (see "Cookie sessions beside bearer tokens").
 - npm publishing is prepared (changesets, lockstep versions) but nothing is published yet.
 
 ## Queries and mutations by name
@@ -83,3 +83,12 @@ The plan had `defineAction('projects.update', { method: 'GET' })` for reads and 
 The name is not decoration. `kitr types` scans `app/actions`, writes `.kitr/actions.ts` and augments `Operations` in `@kitr/core`, and `app/app.ts` passes the generated `operations` to `createApp`. `useQuery`, `useSuspenseQuery`, `useMutation` and `queryOptions` in `kitr/query` take that name as their first argument, which is a departure from TanStack's signature: `useQuery('projects.list', input, overrides)`. Plain TanStack options still pass straight through, so nothing written against upstream breaks. `call(name, input)` runs one outside React, and the generated `actions` tree gives `actions.projects.list(input)` for scripts.
 
 Type generation is general. A package exports `defineTypes({ name, watch, generate })` from a `./types` subpath and names it in its manifest (`"kitr": { "types": "./types" }`); the CLI runs every generator the project's packages declare and writes under `.kitr/`, before `kitr dev` and `kitr build`, on change in the dev server, and on `kitr types`. The `platforms` generator is built in and types `app.platform` with the names from `kitrrc.ts`. `make:action` is replaced by `make:query` and `make:mutation`.
+
+## Cookie sessions beside bearer tokens
+
+`@kitr/auth` was client-side only: adapters, hooks and guards, with the sign-in endpoint somebody else's problem. It now also ships cookie sessions (`createCookieSession`, the `SessionStore` interface with memory, `@kitr/storage` and Redis stores, scrypt password hashing, a `UserProvider` contract and `createSessionController` with email verification and password reset). Four decisions worth knowing:
+
+- The default stays bearer tokens. `kitr add auth` without `--provider` writes what it always wrote, and picks `session` only when asked; the SPA kits have no server to hold a session. The `saas` kit, which has one and renders on the server, uses `session`, so its tokens left `localStorage`.
+- The `auth` container binding is scoped, not a singleton. On the server the router forks the app per request and a singleton would carry one visitor's session into the next request; the session service in the fork loads the request's own session (`ensureSession` in `beforeLoad`, inside `runWithSession`). The route context's `session` is therefore a stand-in object that reads the fork's session when a guard asks, because contexts are copied before `beforeLoad` runs. A guard's return value (it holds `can`) must not be returned from a server-rendered `beforeLoad`.
+- The storage-driver session store is typed structurally (`get`, `set`, `remove`, `keys`), as are the Redis client and the mail seam, so `@kitr/auth` depends on neither `@kitr/storage` nor `ioredis` nor `@kitr/mail`.
+- Better Auth stays a client of its own server: `--provider better-auth` wires its server into the container and its routes under `/api/auth/*`, but the guards run in the browser only; it has no server-rendered session. The session controller checks CSRF itself (double submit, the same cookie and header as Shield), so it is safe without Shield, and the typed `api` client gained a `csrf` option that copies the cookie into a header on writes.
