@@ -19,6 +19,7 @@ export default defineKitrConfig({
     '@kitr/state',
     '@kitr/tailwind',
     '@kitr/theme',
+    '@kitr/toast',
     '@kitr/auth',
     '@kitr/mocks',
     '@kitr/testing',
@@ -33,6 +34,7 @@ export default defineKitrConfig({
     () => import('@kitr/query/provider'),
     () => import('@kitr/http/provider'),
     () => import('@kitr/theme/provider'),
+    () => import('@kitr/toast/provider'),
     () => import('@kitr/auth/provider'),
     // Development only: the kitr() Vite plugin strips this provider from production builds.
     () => import('@kitr/devtools/provider'),

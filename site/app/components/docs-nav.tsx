@@ -1,7 +1,7 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Page } from '#app/lib/content'
-import { closeThenFollow, exit, usePresence } from '#app/lib/motion'
+import { closeThenFollow, exit, usePresence, useSwapped } from '#app/lib/motion'
 import { Icon, icons } from './icons'
 
 type TocEntry = Page['toc'][number]
@@ -48,6 +48,28 @@ export function sectionOf(toc: TocEntry[], id: string | undefined): TocEntry | u
 }
 
 /**
+ * Opens and closes its content by sliding its height, for the section lists under the current
+ * page in the sidebar. Closing keeps the last content on screen until it has folded away. Only a
+ * change animates: what is open on the first render, including the page you land on, just shows.
+ */
+export function Reveal({ open, children }: { open: boolean; children: ReactNode }) {
+  const presence = usePresence(open, exit.reveal)
+  const animate = useSwapped(open)
+  const last = useRef(children)
+  if (open) last.current = children
+  if (!presence.mounted) return null
+  return (
+    <div
+      className="reveal"
+      data-animate={animate || undefined}
+      data-closing={presence.closing || undefined}
+    >
+      <div className="reveal-inner">{open ? children : last.current}</div>
+    </div>
+  )
+}
+
+/**
  * A page's sections as a list of links: every h2, plus the h3s of the section being read,
  * so a long guide reads as a short outline that opens where you are.
  */
@@ -74,7 +96,7 @@ export function SectionList({
           <a href={`#${h2.id}`} aria-current={h2.id === open ? 'location' : undefined}>
             {h2.text}
           </a>
-          {h2.id === open && h3.length > 0 && (
+          <Reveal open={h2.id === open && h3.length > 0}>
             <ul>
               {h3.map((t) => (
                 <li key={t.id}>
@@ -84,7 +106,7 @@ export function SectionList({
                 </li>
               ))}
             </ul>
-          )}
+          </Reveal>
         </li>
       ))}
     </ul>

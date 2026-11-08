@@ -4,15 +4,7 @@ import { act, render, renderHook, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  setToastImplementation,
-  ThemeProvider,
-  ThemeScript,
-  themeFromCookie,
-  toast,
-  toastError,
-  useTheme,
-} from '../src'
+import { ThemeProvider, ThemeScript, themeFromCookie, useTheme } from '../src'
 import themeProvider from '../src/provider'
 
 function mockMatchMedia(dark: boolean) {
@@ -32,7 +24,6 @@ function mockMatchMedia(dark: boolean) {
 }
 
 afterEach(() => {
-  setToastImplementation(null)
   vi.restoreAllMocks()
   document.documentElement.removeAttribute('data-theme')
 })
@@ -141,54 +132,6 @@ describe('themeFromCookie', () => {
     expect(themeFromCookie('my-kitr-theme=dark')).toBeUndefined()
     expect(themeFromCookie('t=dark', 't')).toBe('dark')
     expect(themeFromCookie(null)).toBeUndefined()
-  })
-})
-
-describe('toast', () => {
-  it('falls back to the console without sonner', () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    toast('hi')
-    toast.success('yay')
-    toast.info('fyi')
-    toast.warning('hmm')
-    toast.error('oh no')
-    expect(info.mock.calls.map((c) => c[0])).toEqual([
-      '[toast] hi',
-      '[toast:success] yay',
-      '[toast:info] fyi',
-    ])
-    expect(warn).toHaveBeenCalledWith('[toast:warning] hmm')
-    expect(error).toHaveBeenCalledWith('[toast:error] oh no')
-  })
-
-  it('delegates to the installed implementation', async () => {
-    const impl: any = Object.assign(vi.fn(), {
-      success: vi.fn(),
-      error: vi.fn(),
-      info: vi.fn(),
-      warning: vi.fn(),
-      promise: vi.fn((p: Promise<unknown>) => p),
-    })
-    setToastImplementation(impl)
-    toast('a', { id: 1 })
-    toast.success('b')
-    await toast.promise(Promise.resolve(1), { loading: 'l', success: 's', error: 'e' })
-    expect(impl).toHaveBeenCalledWith('a', { id: 1 })
-    expect(impl.success).toHaveBeenCalledWith('b', undefined)
-    expect(impl.promise).toHaveBeenCalled()
-  })
-
-  it('toastError shows the message or a fallback', () => {
-    const impl: any = Object.assign(vi.fn(), { error: vi.fn() })
-    setToastImplementation(impl)
-    toastError(new Error('Nope'))
-    toastError('weird', 'Fallback')
-    expect(impl.error.mock.calls).toEqual([
-      ['Nope', undefined],
-      ['Fallback', undefined],
-    ])
   })
 })
 

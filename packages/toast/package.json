@@ -1,0 +1,79 @@
+{
+  "name": "@kitr/toast",
+  "version": "0.1.0",
+  "description": "@kitr/toast: short messages like \"Saved\" from anywhere in the app, drawn by sonner, with a console fallback outside React.",
+  "kitr": {
+    "name": "toast",
+    "title": "Toast",
+    "summary": "Show short messages like \"Saved\" or \"Could not send\" from anywhere in your app, even outside React.",
+    "category": "interface",
+    "runsOn": "client",
+    "builtOn": [
+      "sonner"
+    ],
+    "requires": [
+      "react"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/toast"
+  },
+  "homepage": "https://kitr.dev/packages/toast",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kitr/core": "workspace:*",
+    "sonner": "^2.0.8"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "react-dom": "^19.3.1",
+    "@types/react-dom": "^19.3.0",
+    "@kitr/react": "workspace:*",
+    "@testing-library/react": "^16.3.3"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package"
+  ]
+}
