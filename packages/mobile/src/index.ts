@@ -1,4 +1,5 @@
 import { definePlatform, type PlatformContext, type PlatformFinding } from '@kitr/core'
+import { displayName, lanAddress, readPackage, shellPlatformHooks } from '@kitr/platform/cli'
 
 /** A native project the mobile platform creates and builds: `ios` (Xcode) or `android` (Android Studio). */
 export type MobileTarget = 'ios' | 'android'
@@ -76,22 +77,99 @@ export const mobile = definePlatform<MobileOptions>(
       },
     },
   },
-  (options) => ({
-    dependencies: [
-      { name: '@capacitor/core' },
-      { name: '@capacitor/app' },
-      { name: '@capacitor/preferences' },
-      { name: '@capacitor/cli', dev: true },
-      ...options.targets.map((t) => ({ name: `@capacitor/${t}` })),
-    ],
-    scaffold(ctx) {
-      const pkg = readPackage(ctx)
-      const name = options.appName ?? displayName(pkg.name)
-      const id =
-        options.appId ?? `com.example.${name.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'app'}`
-      ctx.write(
-        `platforms/${ctx.name}/capacitor.config.ts`,
-        `import type { CapacitorConfig } from '@capacitor/cli'
+  (options) =>
+    shellPlatformHooks<MobileOptions, DevState>(options, {
+      dependencies: [
+        { name: '@capacitor/core' },
+        { name: '@capacitor/app' },
+        { name: '@capacitor/preferences' },
+        { name: '@capacitor/cli', dev: true },
+        ...options.targets.map((t) => ({ name: `@capacitor/${t}` })),
+      ],
+      scaffold(ctx) {
+        scaffoldCapacitor(ctx, options)
+      },
+      dev: {
+        async prepare(ctx) {
+          const target = pickTarget(ctx, options)
+          await ensureNativeProject(ctx, target, options)
+          return { target }
+        },
+        host: (ctx) => (ctx.flags.host ? String(ctx.flags.host) : lanAddress()),
+        banner: (ctx, { url, state }) =>
+          `${ctx.name}: dev server on ${url}, the ${state.target} app loads it live`,
+        launch: (ctx, { url, state }) =>
+          ctx.exec(
+            'cap',
+            [
+              'run',
+              state.target,
+              '--no-sync',
+              ...(ctx.flags.device ? ['--target', String(ctx.flags.device)] : []),
+            ],
+            { cwd: ctx.dir(), env: { CAP_SERVER_URL: url } },
+          ),
+      },
+      build: {
+        async shell(ctx) {
+          for (const target of targetsFor(ctx, options))
+            await ensureNativeProject(ctx, target, options)
+          await ctx.exec('cap', ['sync'], { cwd: ctx.dir() })
+          if (ctx.flags.open)
+            for (const target of targetsFor(ctx, options))
+              await ctx.exec('cap', ['open', target], { cwd: ctx.dir() })
+          ctx.log.success(
+            `${ctx.name}: synced dist/${ctx.name}/client into platforms/${ctx.name}/{${options.targets.join(',')}}. Open with \`${ctx.pm} exec cap open ios\` from platforms/${ctx.name}.`,
+          )
+        },
+      },
+      doctor: {
+        files: (ctx) => [{ path: `platforms/${ctx.name}/capacitor.config.ts` }],
+        extra(ctx) {
+          const out: PlatformFinding[] = []
+          for (const target of options.targets) {
+            if (!ctx.exists(`platforms/${ctx.name}/${target}`)) {
+              out.push({
+                level: 'info',
+                message: `${ctx.name}: the ${target} project is not created yet`,
+                fix: `kitr build ${ctx.name} (runs cap add ${target})`,
+              })
+              continue
+            }
+            const file = `platforms/${ctx.name}/${schemeFiles[target]}`
+            if (
+              options.scheme &&
+              ctx.exists(file) &&
+              !declaresScheme(target, ctx.read(file), options.scheme)
+            )
+              out.push({
+                level: 'warn',
+                message: `${ctx.name}: ${file} does not declare the ${options.scheme}:// scheme, so deep links will not open the app`,
+                fix: `kitr build ${ctx.name} (registers it)`,
+              })
+          }
+          return out
+        },
+      },
+      agents: `- \`kitr dev ${'<name>'} --target ios|android\` runs the app on a simulator or device with live reload; \`kitr build <name>\` builds the bundle and runs \`cap sync\`. Native projects are in \`platforms/<name>/ios|android\` and are yours to edit in Xcode or Android Studio.
+- Never branch on user agents: use \`usePlatform()\` / \`platform.is('ios')\` from \`kitr/platform/react\`. Storage items from \`kitr/storage\` persist in native Preferences here, so \`localStorage\` eviction on iOS never loses data.
+- Other Capacitor plugins are plain dependencies; wrap their calls in \`nativeOnly(fn, fallback)\` from \`kitr/mobile/client\` so the web build keeps working.`,
+    }),
+)
+
+/** What `kitr dev` decides before the dev server starts. */
+interface DevState {
+  target: MobileTarget
+}
+
+function scaffoldCapacitor(ctx: PlatformContext, options: MobileOptions) {
+  const pkg = readPackage(ctx)
+  const name = options.appName ?? displayName(pkg.name)
+  const id =
+    options.appId ?? `com.example.${name.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'app'}`
+  ctx.write(
+    `platforms/${ctx.name}/capacitor.config.ts`,
+    `import type { CapacitorConfig } from '@capacitor/cli'
 
 /**
  * Written by kitr from \`${ctx.name}: mobile({...})\` in kitrrc.ts. Native projects live next to this file;
@@ -109,114 +187,11 @@ const config: CapacitorConfig = {
 
 export default config
 `,
-      )
-      ctx.write(
-        `platforms/${ctx.name}/.gitignore`,
-        'ios/App/Pods\nios/App/build\nandroid/build\nandroid/app/build\nandroid/.gradle\n',
-      )
-    },
-    async dev(ctx) {
-      const target = pickTarget(ctx, options)
-      await ensureNativeProject(ctx, target, options)
-      const port = Number(ctx.flags.port ?? options.port)
-      const host = String(ctx.flags.host ?? (await lanAddress()))
-      ctx.log.info(
-        `${ctx.name}: dev server on http://${host}:${port}, the ${target} app loads it live`,
-      )
-      const vite = ctx.exec('vite', ['dev', '--port', String(port), '--strictPort', '--host', host])
-      await waitForPort(host, port, ctx.signal)
-      await ctx
-        .exec(
-          'cap',
-          [
-            'run',
-            target,
-            '--no-sync',
-            ...(ctx.flags.device ? ['--target', String(ctx.flags.device)] : []),
-          ],
-          {
-            cwd: ctx.dir(),
-            env: { CAP_SERVER_URL: `http://${host}:${port}` },
-          },
-        )
-        .catch((e) => ctx.log.error(String(e)))
-      await vite
-    },
-    async build(ctx) {
-      await ctx.exec('vite', ['build'])
-      for (const target of targetsFor(ctx, options)) await ensureNativeProject(ctx, target, options)
-      await ctx.exec('cap', ['sync'], { cwd: ctx.dir() })
-      if (ctx.flags.open)
-        for (const target of targetsFor(ctx, options))
-          await ctx.exec('cap', ['open', target], { cwd: ctx.dir() })
-      ctx.log.success(
-        `${ctx.name}: synced dist/${ctx.name}/client into platforms/${ctx.name}/{${options.targets.join(',')}}. Open with \`${ctx.pm} exec cap open ios\` from platforms/${ctx.name}.`,
-      )
-    },
-    doctor(ctx) {
-      const out: PlatformFinding[] = []
-      const deps = { ...readPackage(ctx).dependencies, ...readPackage(ctx).devDependencies }
-      for (const dep of [
-        '@capacitor/core',
-        '@capacitor/cli',
-        '@capacitor/app',
-        '@capacitor/preferences',
-        ...options.targets.map((t) => `@capacitor/${t}`),
-      ])
-        if (!(dep in deps))
-          out.push({
-            level: 'error',
-            message: `${ctx.name}: ${dep} is not installed`,
-            fix: `${ctx.pm} add ${dep}`,
-          })
-      if (!ctx.exists(`platforms/${ctx.name}/capacitor.config.ts`))
-        out.push({
-          level: 'error',
-          message: `${ctx.name}: platforms/${ctx.name}/capacitor.config.ts is missing`,
-          fix: `kitr platforms scaffold ${ctx.name}`,
-        })
-      for (const target of options.targets) {
-        if (!ctx.exists(`platforms/${ctx.name}/${target}`)) {
-          out.push({
-            level: 'info',
-            message: `${ctx.name}: the ${target} project is not created yet`,
-            fix: `kitr build ${ctx.name} (runs cap add ${target})`,
-          })
-          continue
-        }
-        const file = `platforms/${ctx.name}/${schemeFiles[target]}`
-        if (
-          options.scheme &&
-          ctx.exists(file) &&
-          !declaresScheme(target, ctx.read(file), options.scheme)
-        )
-          out.push({
-            level: 'warn',
-            message: `${ctx.name}: ${file} does not declare the ${options.scheme}:// scheme, so deep links will not open the app`,
-            fix: `kitr build ${ctx.name} (registers it)`,
-          })
-      }
-      return out
-    },
-    agents: `- \`kitr dev ${'<name>'} --target ios|android\` runs the app on a simulator or device with live reload; \`kitr build <name>\` builds the bundle and runs \`cap sync\`. Native projects are in \`platforms/<name>/ios|android\` and are yours to edit in Xcode or Android Studio.
-- Never branch on user agents: use \`usePlatform()\` / \`platform.is('ios')\` from \`kitr/platform/react\`. Storage items from \`kitr/storage\` persist in native Preferences here, so \`localStorage\` eviction on iOS never loses data.
-- Other Capacitor plugins are plain dependencies; wrap their calls in \`nativeOnly(fn, fallback)\` from \`kitr/mobile/client\` so the web build keeps working.`,
-  }),
-)
-
-function readPackage(ctx: PlatformContext): Record<string, any> {
-  try {
-    return JSON.parse(ctx.read('package.json'))
-  } catch {
-    return {}
-  }
-}
-
-function displayName(name = 'app') {
-  return name
-    .replace(/^@[^/]+\//, '')
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  )
+  ctx.write(
+    `platforms/${ctx.name}/.gitignore`,
+    'ios/App/Pods\nios/App/build\nandroid/build\nandroid/app/build\nandroid/.gradle\n',
+  )
 }
 
 function targetsFor(ctx: PlatformContext, options: MobileOptions): MobileTarget[] {
@@ -306,26 +281,4 @@ function registerScheme(ctx: PlatformContext, target: MobileTarget, scheme: stri
 
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-async function lanAddress(): Promise<string> {
-  try {
-    const os = await import('node:os')
-    for (const list of Object.values(os.networkInterfaces()))
-      for (const net of list ?? []) if (net.family === 'IPv4' && !net.internal) return net.address
-  } catch {}
-  return '0.0.0.0'
-}
-
-async function waitForPort(host: string, port: number, signal?: AbortSignal) {
-  const target = `http://${host === '0.0.0.0' ? '127.0.0.1' : host}:${port}/`
-  for (let i = 0; i < 100; i++) {
-    if (signal?.aborted) return
-    try {
-      await fetch(target, { method: 'HEAD' })
-      return
-    } catch {
-      await new Promise((r) => setTimeout(r, 300))
-    }
-  }
 }
