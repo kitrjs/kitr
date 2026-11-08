@@ -2,7 +2,8 @@ name: Deploy kitr.dev
 
 # kitr.dev reads the docs and package pages from this repo at build time, so a change on main
 # asks the site's Coolify app to rebuild. Does nothing until the two secrets are set:
-# COOLIFY_DEPLOY_WEBHOOK is <coolify>/api/v1/deploy?uuid=<app uuid>, COOLIFY_TOKEN a deploy-only API token.
+# COOLIFY_DEPLOY_WEBHOOK is <coolify>/api/v1/deploy?uuid=<app uuid>, COOLIFY_TOKEN a deploy-only API token,
+# and CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET a Cloudflare Access service token for that host.
 on:
   push:
     branches: [main]
@@ -19,6 +20,9 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
           TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          # deploy.jam.fan sits behind Cloudflare Access; a service token lets the call through.
+          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           if [ -z "$WEBHOOK" ]; then
             echo "COOLIFY_DEPLOY_WEBHOOK is not set; skipping."
@@ -26,7 +30,8 @@ jobs:
           fi
           # A redirect (Cloudflare Access login, for one) is a failure too, not a deploy.
           status=$(curl --silent --show-error -o response.txt -w '%{http_code}' -X POST \
-            -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" "$WEBHOOK")
+            -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+            -H "CF-Access-Client-Id: $CF_ID" -H "CF-Access-Client-Secret: $CF_SECRET" "$WEBHOOK")
           cat response.txt; echo
           if [ "$status" != "200" ]; then
             echo "::error::Coolify answered $status, so kitr.dev was not redeployed."
