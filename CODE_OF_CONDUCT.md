@@ -60,8 +60,8 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported privately to the community leaders responsible for enforcement, the
-maintainers of the kitrjs organization on GitHub
-([@PodkopovP](https://github.com/PodkopovP)).
+maintainers of the kitrjs organization, at
+[hello@platon.blue](mailto:hello@platon.blue).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
