@@ -1,5 +1,16 @@
 # kitr
 
+## 0.3.0
+
+### Minor Changes
+
+- f8b20ec: The CLI and the `kitrrc.ts` config are published as `@kitr/kitr`: npm refuses the unscoped name `kitr`. Install it with `npm install -g @kitr/kitr` (the command is still `kitr`) and import from `@kitr/kitr/app` and `@kitr/kitr/env`.
+
+### Patch Changes
+
+- @kitr/cli@0.3.0
+  - @kitr/core@0.3.0
+
 ## 0.2.1
 
 ### Patch Changes

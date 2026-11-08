@@ -1,5 +1,14 @@
 # @kitr/offline
 
+## 0.3.0
+
+### Patch Changes
+
+- @kitr/core@0.3.0
+  - @kitr/query@0.3.0
+  - @kitr/react@0.3.0
+  - @kitr/storage@0.3.0
+
 ## 0.2.1
 
 ### Patch Changes
