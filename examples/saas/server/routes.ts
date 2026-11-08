@@ -2,9 +2,9 @@ import { defineRoutes } from 'kitr/app'
 import { sessionMiddleware } from '@kitr/auth/server'
 import api from '@kitr/api/routes'
 import { auth } from '#server/auth'
-import AuthController from '#server/controllers/auth_controller'
-import HealthController from '#server/controllers/health_controller'
-import ProjectsController from '#server/controllers/projects_controller'
+import AuthController from '#server/controllers/auth-controller'
+import HealthController from '#server/controllers/health-controller'
+import ProjectsController from '#server/controllers/projects-controller'
 
 /** Resolves the session cookie and answers 401 without one. */
 const requireSession = sessionMiddleware(auth)

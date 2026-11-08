@@ -53,12 +53,14 @@ export function Search() {
         <kbd className="mono">⌘K</kbd>
       </button>
       {open && (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: Escape closes a modal <dialog> natively
         <dialog
           ref={dialog}
           className="search-dialog"
           onClose={close}
           // The dialog has no padding, so a click whose target is the dialog itself landed on the
-          // backdrop: close, as a tap outside does on every other sheet.
+          // backdrop: close, as a tap outside does on every other sheet. The keyboard already has
+          // Escape, which <dialog> handles natively.
           onClick={(e) => {
             if (e.target === e.currentTarget) close()
           }}

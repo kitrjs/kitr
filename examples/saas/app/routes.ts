@@ -3,7 +3,7 @@ import { ensureSession } from '@kitr/auth'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
 import { parseTableSearch } from '@kitr/table'
-import { projectsQuery } from '#app/features/projects/queries'
+import { projectsQuery } from '#app/queries/projects'
 import { head, RootDocument } from './document'
 
 /**
@@ -44,7 +44,7 @@ export const routes = defineRoutes([router], (r) =>
           // functions, and the route context of a server-rendered page must be serializable.
           await requireAuth()(ctx)
         },
-        lazy: () => import('./pages/app-layout'),
+        lazy: () => import('./layouts/app'),
       },
       (app) =>
         app

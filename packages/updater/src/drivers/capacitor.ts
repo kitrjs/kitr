@@ -77,7 +77,9 @@ export function createCapacitorDriver(_options: DriverOptions = {}): Driver {
         const result = await AppUpdate.startFlexibleUpdate()
         if (result.code === AppUpdateResultCode.CANCELED) return
         if (result.code !== AppUpdateResultCode.OK)
-          throw new Error(`@kitr/updater: the Play Store update did not start (code ${result.code})`)
+          throw new Error(
+            `@kitr/updater: the Play Store update did not start (code ${result.code})`,
+          )
         if (!(await done)) return
         onProgress?.(1)
         await AppUpdate.completeFlexibleUpdate()

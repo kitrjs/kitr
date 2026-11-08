@@ -112,7 +112,7 @@ describe('kitr add auth', () => {
     await auth.add!(ctx as never)
     expect(rec.configs.auth).toContain('sessionAdapter')
     expect(rec.writes['server/auth.ts']).toContain('createCookieSession')
-    expect(rec.writes['server/controllers/auth_controller.ts']).toContain('createSessionController')
+    expect(rec.writes['server/controllers/auth-controller.ts']).toContain('createSessionController')
     expect(rec.writes['server/mail/auth.tsx']).toContain('defineMail')
     expect(rec.writes['app/pages/sign-in.tsx']).toBeDefined()
     expect(rec.pages).toEqual(['/sign-in'])
@@ -127,7 +127,7 @@ describe('kitr add auth', () => {
     const { ctx, rec } = fakeCtx({ provider: 'session', emails: false })
     await auth.add!(ctx as never)
     expect(rec.writes['server/mail/auth.tsx']).toBeUndefined()
-    expect(rec.writes['server/controllers/auth_controller.ts']).not.toContain('resetPassword:')
+    expect(rec.writes['server/controllers/auth-controller.ts']).not.toContain('resetPassword:')
     expect(rec.routes.some((r) => r.includes('password'))).toBe(false)
   })
 

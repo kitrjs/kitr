@@ -84,7 +84,7 @@ export function createShell(options: ShellOptions): Shell {
       if (!bridge)
         return Promise.reject(
           new Error(
-            `[kitr/${options.name}] the ${options.runtime} bridge is not available (not running in ${options.runtime}, or its preload script did not expose it)`,
+            `[@kitr/${options.name}] the ${options.runtime} bridge is not available (not running in ${options.runtime}, or its preload script did not expose it)`,
           ),
         )
       return bridge.invoke(channel, ...args) as Promise<never>

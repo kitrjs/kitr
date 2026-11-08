@@ -4,9 +4,17 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: conventions
 
-- Import framework code from `kitr/*` entry points (`@kitr/router`, `@kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
+- Import framework code from the `@kitr/*` package that `kitr add` installed (`@kitr/router`, `@kitr/query`, ...). Each re-exports the upstream library unchanged plus kitr helpers. `kitr` itself is the CLI and the `kitrrc.ts` config (`kitr/app`, `kitr/env`).
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
-- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Every package brings its own generators (`kitr make:<kind>`, see `kitr --help`). Generated files are written by `kitr generate` (types under `.kitr/`, the API route table), which `kitr dev`, `kitr build` and `kitr typecheck` run first; import the types from `#kitr/*`. Run `kitr doctor` after changes.
+- Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Generated files are written by `kitr generate` (types under `.kitr/`, the API route table), which `kitr dev`, `kitr build` and `kitr typecheck` run first; import the types from `#kitr/*`. Run `kitr doctor` after changes.
+
+## kitr: structure
+
+- Every kind of file has one home. `kitr make` lists them with the path each `kitr make:<kind> <name>` writes; create files with those commands instead of by hand.
+- `app/` is what Vite bundles: pages, layouts, components, hooks, stores, queries, actions, validators, exceptions, providers, channels. `server/` is the standalone server and never imports React: controllers, services, middleware, jobs, mail. A declaration both sides read lives in `app/`.
+- File names are kebab-case. The file carries a kind suffix exactly when its export does (`UsersController` in `users-controller.ts`, `BillingService` in `billing-service.ts`); `define*()` files have none (`server/jobs/send-receipt.ts`). Pages are named by their URL path.
+- Group by feature inside the kind folder: `kitr make:controller admin/users` writes `server/controllers/admin/users-controller.ts`.
+- Import across folders with `#app/*`, `#components/*`, `#server/*`, `#config/*`, `#kitr/*`; relative imports only inside one folder.
 
 ## kitr: router
 
@@ -27,7 +35,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 ## kitr: query
 
 - Import from `@kitr/query`, never from `@tanstack/react-query` directly.
-- Every data source becomes `queryFrom(...)` / `mutationFrom(...)` in `app/features/<name>/queries.ts`. Components use `useSuspenseQuery(x.options(input))`.
+- Every data source becomes `queryFrom(...)` / `mutationFrom(...)` in `app/queries/<name>.ts`. Components use `useSuspenseQuery(x.options(input))`.
 - Route loaders call `context.queryClient.ensureQueryData(x.options(input))` so data is fetched once for server and client.
 - Mutations declare `effects` (invalidate/set keys). Never call `queryClient.invalidateQueries` inline in components.
 
@@ -96,7 +104,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 - Guard routes with `beforeLoad: requireAuth()` (from `@kitr/router`) on a layout route; permissions with `can('projects.update', { subject })` or `useCan()` in components.
 - The session is `useSession()` / `useUser()` from `@kitr/auth`. Abilities are plain functions in `app/abilities.ts`, shared with the API middleware (`@kitr/auth/server`).
 - Server-rendered guards: `beforeLoad: async (ctx) => { await ensureSession(ctx); await requireAuth()(ctx) }` (`ensureSession` is from `@kitr/auth`; drop the return value of the guard, it is not serializable), so the session is read from the request during SSR and from `GET /api/auth/session` in the browser.
-- Sessions are HttpOnly cookies: `server/auth.ts` holds the session service and the `UserProvider` (swap the in-memory users and store for your database and Redis), `server/controllers/auth_controller.ts` the routes. Pages render inside `runWithSession` (app/server.ts). Never put a token in localStorage.
+- Sessions are HttpOnly cookies: `server/auth.ts` holds the session service and the `UserProvider` (swap the in-memory users and store for your database and Redis), `server/controllers/auth-controller.ts` the routes. Pages render inside `runWithSession` (app/server.ts). Never put a token in localStorage.
 
 ## kitr: analytics
 

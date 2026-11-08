@@ -3,7 +3,7 @@ import { type User, abilities } from '#app/abilities'
 import { api } from '#app/api/client'
 
 /**
- * The session is an HttpOnly cookie the API sets (server/controllers/auth_controller.ts), so there
+ * The session is an HttpOnly cookie the API sets (server/controllers/auth-controller.ts), so there
  * is no token to keep: this adapter asks `GET /api/auth/session` in the browser and reads the
  * request's own session while a page renders on the server. Swap for betterAuthAdapter(createAuthClient())
  * or a customAdapter({...}) if you move to another identity provider.

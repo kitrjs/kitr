@@ -376,7 +376,9 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
       if (check === 'unsigned' && config.authorize) {
         const app = options.app ?? (event.context as { kitr?: { app?: KitrApp } }).kitr?.app
         if (!app)
-          throw new Error('[@kitr/uploads] authorize needs the app: mount uploads on a kitr server.')
+          throw new Error(
+            '[@kitr/uploads] authorize needs the app: mount uploads on a kitr server.',
+          )
         const allowed = await config.authorize(
           { event, request: event.req as unknown as Request, app },
           { key, name, type: served.type, size: file.data.byteLength },
