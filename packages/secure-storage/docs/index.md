@@ -60,10 +60,11 @@ export default defineConfig({
 | --- | --- | --- |
 | `requireSecure` | `false` | `true` makes every write throw when no vault is registered, instead of using the encrypted browser fallback. Reads and removes still work. |
 | `prefix` | `'kitr:secure:'` | Put in front of every key, so `session` is stored as `kitr:secure:session`. Two apps on one origin need different prefixes. |
-| `driver` | registered, else the browser fallback | A `SecureStorageDriver` that replaces the one the service would pick. For tests and custom vaults. |
+| `driver` | registered, else the driver for the runtime | A `SecureStorageDriver` that replaces the one the service would pick. For tests and custom vaults. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no vault driver, use the encrypted browser fallback inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. `secure` stays `false`. |
 | `storage` | the app's local storage driver | Where the browser fallback keeps its ciphertext. Any [Storage](/packages/storage) `StorageDriver`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `secure-storage`, then the browser fallback in a browser, or a memory driver on the server.
+The service picks its driver in this order: `driver` from the config, a driver a provider registered under `secure-storage`, then `selectDriver(runtime)`: the browser fallback in a browser, a memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. A shell never silently stores secrets in webview storage.
 
 A stricter setup for a banking-grade desktop build:
 
@@ -309,7 +310,7 @@ Reads and removes still work, so a value written before you turned it on can be 
 
 ## How the browser fallback works
 
-In the browser, and in a shell with no vault registered, each value is encrypted before it is stored:
+In the browser, and in a shell with no vault registered when you set `fallbackToWeb: true`, each value is encrypted before it is stored:
 
 - On first use the driver creates a 256-bit AES-GCM key with `extractable: false` and keeps it in IndexedDB (`kitr-secure-storage`). Script can use the key but cannot read its bytes.
 - Every write uses a fresh 12-byte IV and stores `<iv>.<ciphertext>` in base64 in local storage.
@@ -338,7 +339,7 @@ On the server the service is an in-memory store, so code shared with the client 
 | Where it runs | Driver | `secure` |
 | --- | --- | --- |
 | Browser | `createWebSecureStorageDriver()`: AES-GCM, ciphertext in local storage | `false` |
-| Desktop and mobile shells | The same fallback inside the webview, unless a provider registers a vault. The ciphertext goes to the shell's storage driver when one is registered. | `false` |
+| Desktop and mobile shells | A vault a provider registers, else `E_DRIVER_UNAVAILABLE`. With `fallbackToWeb: true`, the same fallback inside the webview, its ciphertext in the shell's storage driver when one is registered. | `false` for the fallback |
 | A registered vault | Whatever the driver wraps, such as Electron `safeStorage` | `true` when the driver says so |
 | Server | `createMemorySecureStorageDriver()`, in memory | `false` |
 
@@ -348,6 +349,7 @@ Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mob
 
 | Error | When | What to do |
 | --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no secure-storage driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/secure-storage.ts` to run the web driver inside the webview. |
 | `kitr/secure-storage: no secure vault on this platform (requireSecure is on)` | `set()` under `requireSecure: true` with no vault. | Check `storage.secure` first, or register a vault driver. |
 | `kitr/secure-storage: Web Crypto is not available` | The browser fallback's first use, without `crypto.subtle` (a plain `http://` page other than `localhost`). | Serve the app over HTTPS. |
 | `kitr/secure-storage: could not store the encryption key` | IndexedDB refused the new key and holds none. | Rare; usually storage is full or blocked in a private window. |

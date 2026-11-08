@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/files`, `kitr/files/react`, `kitr/files/provider`, read from the published type definitions. The [guide](/packages/files) shows them in use.
+Every export of `kitr/files`, `kitr/files/react`, `kitr/files/provider`, `kitr/files/driver`, `kitr/files/drivers/web`, `kitr/files/drivers/electron`, `kitr/files/drivers/tauri`, `kitr/files/drivers/capacitor`, read from the published type definitions. The [guide](/packages/files) shows them in use.
 
 ## kitr/files
 
@@ -24,7 +24,9 @@ The `accept` string an `<input type="file">` needs for a set of filters.
 function createFiles(config?: FilesConfig, app?: KitrApp): Files;
 ```
 
-Build the `files` service: the given driver, else the platform's, else the web driver (memory on the server).
+Build the `files` service: the given driver, else the platform's, else `selectDriver()` for the
+runtime (the web driver in a browser, memory on the server, `E_DRIVER_UNAVAILABLE` in a native
+shell unless `fallbackToWeb` is set).
 
 ### createMemoryFilesDriver
 
@@ -63,6 +65,16 @@ function mimeFor(name: string, fallback?: string): string;
 ```
 
 The MIME type for a file name's extension, e.g. `invoice.pdf` → `application/pdf`. Unknown → `fallback`.
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The files driver for a runtime: the File System Access API (or `<input type="file">`) on `web`,
+a memory driver on the server, and each native shell's own dialogs. A shell with no driver yet
+throws `E_DRIVER_UNAVAILABLE` rather than falling back to the web one, unless `fallbackToWeb` is set.
 
 ### toBlob
 
@@ -129,6 +141,11 @@ interface FilesConfig {
   driver?: FilesDriver;
   /** Filters added to every dialog, e.g. the app's own document type. */
   filters?: FileFilter[];
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no files driver, use the web driver inside
+   * the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean;
 }
 ```
 
@@ -206,6 +223,22 @@ interface SaveOptions {
 
 Options for `save()`: the suggested name and, for the download fallback, the MIME type.
 
+### Driver
+
+```ts
+type Driver = FilesDriver;
+```
+
+What a files driver is: `FilesDriver`, whichever runtime supplies it.
+
+### DriverOptions
+
+```ts
+type DriverOptions = SelectDriverOptions;
+```
+
+Options of `selectDriver()`.
+
 ### FileData
 
 ```ts
@@ -265,5 +298,82 @@ const filesProvider: import("@kitr/core").KitrProvider;
 
 Binds `files` to the native dialog driver a platform package registered (`files` capability),
 or the web driver. Nothing runs on the server beyond a no-op binding.
+
+## kitr/files/driver
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The files driver for a runtime: the File System Access API (or `<input type="file">`) on `web`,
+a memory driver on the server, and each native shell's own dialogs. A shell with no driver yet
+throws `E_DRIVER_UNAVAILABLE` rather than falling back to the web one, unless `fallbackToWeb` is set.
+
+### Driver
+
+```ts
+type Driver = FilesDriver;
+```
+
+What a files driver is: `FilesDriver`, whichever runtime supplies it.
+
+### DriverOptions
+
+```ts
+type DriverOptions = SelectDriverOptions;
+```
+
+Options of `selectDriver()`.
+
+## kitr/files/drivers/web
+
+### createWebFilesDriver
+
+```ts
+function createWebFilesDriver(): FilesDriver;
+```
+
+File System Access API when available, `<input type="file">` and a download link otherwise.
+
+## kitr/files/drivers/electron
+
+### createElectronDriver
+
+```ts
+function createElectronDriver(_options?: DriverOptions): Driver;
+```
+
+The files driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/files` and `electron` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
+to opt in to the WebView behaviour.
+
+## kitr/files/drivers/tauri
+
+### createTauriDriver
+
+```ts
+function createTauriDriver(_options?: DriverOptions): Driver;
+```
+
+The files driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/files` and `tauri` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
+to opt in to the WebView behaviour.
+
+## kitr/files/drivers/capacitor
+
+### createCapacitorDriver
+
+```ts
+function createCapacitorDriver(_options?: DriverOptions): Driver;
+```
+
+The files driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/files` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

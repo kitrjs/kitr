@@ -122,6 +122,7 @@ Read it after `app.boot()`. Before boot, or in an app without `@kitr/platform/pr
 | --- | --- | --- |
 | `type` | `'web' \| 'mobile' \| 'desktop' \| 'server' \| string` | The kind of platform the driver belongs to. |
 | `os` | `'ios' \| 'android' \| 'macos' \| 'windows' \| 'linux' \| 'server' \| 'unknown'` | The operating system. Read each time you access it. |
+| `runtime` | `'web' \| 'electron' \| 'tauri' \| 'capacitor'` | The host the code runs in. `desktop` covers both Electron and Tauri; the runtime tells them apart. |
 | `native` | `boolean` | `true` inside a native shell (Capacitor, Tauri, Electron). |
 | `standalone` | `boolean` | `true` when installed: a PWA in standalone display mode, or any native shell. |
 | `name` | `string \| undefined` | The platform name from `kitrrc.ts` this bundle was built for, such as `'site'` or `'phone'`. |
@@ -521,6 +522,25 @@ export function StoreBadge() {
 
 `kitr dev` and `kitr build` set it from `KITR_PLATFORM`, through `import.meta.env.KITR_PLATFORM`. To drop code from a bundle entirely, compare `import.meta.env.KITR_PLATFORM` itself so the bundler can remove the dead branch; see [Web](/packages/web).
 
+## Know which shell is running
+
+`platform.type` says `desktop` for both Electron and Tauri. When code has to know the shell itself, read the runtime: `web`, `electron`, `tauri` or `capacitor`.
+
+```tsx
+// app/components/update-hint.tsx
+import { useRuntime } from 'kitr/platform/react'
+
+export function UpdateHint() {
+  const runtime = useRuntime()
+  // => 'electron' inside the Acme desktop app, 'web' on app.acme.com
+  return runtime === 'web' ? <p>Refresh the page to update.</p> : <p>Updates install on restart.</p>
+}
+```
+
+Outside React, `platform.runtime` is the same value, and `detectRuntime()` answers without an app: it reads `window.__TAURI_INTERNALS__`, `Capacitor.isNativePlatform()`, the Electron preload bridge or user agent, and says `web` for anything else, including the server. The matrix of every environment's answers is in [Platforms](/docs/platforms#where-the-code-runs-runtime-platform-and-form-factor).
+
+The device packages ([Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater)) choose their driver by this runtime. In a native shell with no driver of its own they throw `E_DRIVER_UNAVAILABLE` rather than run browser code in the webview, unless the package's config sets `fallbackToWeb: true`.
+
 ## Render on the server
 
 During server rendering there is no `window`, so the default driver reports type `server`, OS `server`, online, and zero insets. With `kitr/web/provider` registered, the type is `web` and the OS is still `server`. Every hook starts from a value the server can produce:
@@ -545,6 +565,8 @@ Platform providers register a driver for the `platform` capability. The registry
 | `kitr/desktop/provider` | inside Electron | `desktop` | 10 |
 | `kitr/tauri/provider` | inside Tauri | `desktop` | 10 |
 | none | no driver registered | `web` in a browser, `server` without `window` | |
+
+Each shell driver also says which `runtime` it is (`electron`, `tauri` or `capacitor`), which is how `platform.runtime` is answered. The three shell providers are configurations of `createShellProvider()` from `kitr/platform/shell`, which holds the shared behaviour: detect the shell, register the driver, fall back to page visibility for app state, log to devtools.
 
 So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A driver may leave methods out; the service fills them in:
 

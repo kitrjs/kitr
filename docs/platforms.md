@@ -95,6 +95,30 @@ Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri
 
 `kitr/mobile/provider` registers the Capacitor drivers; `kitr/platform/react` (`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) and `kitr/storage` then answer the same way in the browser and in the shell.
 
+## Where the code runs: runtime, platform and form factor
+
+Three questions have three answers, kept apart on purpose:
+
+| Question | API | Values |
+| --- | --- | --- |
+| Which host am I in? | `detectRuntime()` from `kitr/platform`; `platform.runtime` and `useRuntime()` from `kitr/platform/react` | `web`, `electron`, `tauri`, `capacitor` |
+| What kind of place is it? | `platform.type`, `platform.os`, `platform.native`, `usePlatform()` | `web`, `desktop`, `mobile`, `server`; `macos`, `windows`, `linux`, `ios`, `android` |
+| How big is the screen and what is the input? | `useFormFactor()` from `kitr/platform/react` | `width` (`compact`, `medium`, `expanded`), `input` (`touch`, `pointer`), `orientation` |
+
+The matrix below is what each environment answers. `desktop()` and `tauri()` both report `type: 'desktop'`; only the runtime tells Electron from Tauri.
+
+| Environment | `runtime` | `type` | `native` | `os` | `useFormFactor()` before it can measure |
+| --- | --- | --- | --- | --- | --- |
+| Browser | `web` | `web` | `false` | from the user agent | `compact`, `touch` |
+| Server rendering | `web` | `server` | `false` | `server` | `compact`, `touch` |
+| Electron (`desktop()`) | `electron` | `desktop` | `true` | `macos`, `windows`, `linux` | `expanded`, `pointer` |
+| Tauri (`tauri()`) | `tauri` | `desktop` | `true` | `macos`, `windows`, `linux` | `expanded`, `pointer` |
+| Capacitor (`mobile()`) | `capacitor` | `mobile` | `true` | `ios`, `android` | `compact`, `touch` |
+
+`detectRuntime()` reads globals only, so it is safe anywhere: Tauri by `window.__TAURI_INTERNALS__`, Capacitor by `Capacitor.isNativePlatform()`, Electron by the preload bridge (`kitrIpc`), `process.versions.electron` or an `Electron/` user agent, and everything else is `web`. The `platform` service reports the runtime its shell provider registered, and falls back to `detectRuntime()` for a driver that does not say. `isElectron()`, `isTauri()` and `isCapacitor()` in each platform's `client` entry are `detectRuntime()` comparisons.
+
+The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick their driver by `platform.runtime`: a driver in the config, else one a provider registered, else `selectDriver(runtime)`. The web runtime gets the browser driver (a memory driver on the server). A native runtime gets its own driver, and until that driver exists `selectDriver()` throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` naming the runtime and the package, instead of quietly running browser code in the webview. Set `fallbackToWeb: true` in the package's `config/<name>.ts` to keep the webview behaviour on purpose.
+
 ## Layout
 
 ```
@@ -152,5 +176,7 @@ export const kiosk = definePlatform<{ port?: number }>(
   }),
 )
 ```
+
+A shell platform (Electron, Tauri, Capacitor or your own) does not have to write the skeleton again: `shellPlatformHooks()` from `@kitr/platform/cli` runs the sequence every shell shares (dev server, wait for it, launch the shell; client build, shell build; dependency, file and tool checks in `doctor`) and takes the parts that differ, and `createShellProvider()` from `@kitr/platform/shell` does the same for the runtime half (detect the shell, register the `platform` driver and the shell's other drivers, log the runtime to devtools). `desktop`, `tauri` and `mobile` are thin configurations of both.
 
 `ctx` carries the platform name, the project root, the resolved options, the package manager, the other platforms, the flags from the command line, an abort signal and `log`, `run` and `exec` helpers that resolve `node_modules/.bin`. `kitr/vite` reads `import.meta.env.KITR_PLATFORM` and `KITR_PLATFORM_TYPE` so app code can branch per platform at build time.

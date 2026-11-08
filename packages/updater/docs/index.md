@@ -56,9 +56,10 @@ export default defineConfig({
 | `checkOnBoot` | `true` | Check once as the app starts. |
 | `interval` | none | Check again every this many milliseconds while the app is open. Without it the app checks at start only. The generated file sets one hour. |
 | `auto` | `false` | Apply as soon as an update is found, without asking. |
-| `driver` | registered, else the service-worker driver | An `UpdaterDriver` that replaces the one the service would pick. For tests and custom shells. |
+| `driver` | registered, else the driver for the runtime | An `UpdaterDriver` that replaces the one the service would pick. For tests and custom shells. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no updater driver, use the service-worker driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `updater`, then the service-worker driver in a browser. The defaults in the table are what you get without a config file; the file `kitr add` writes only adds the hourly `interval`.
+The service picks its driver in this order: `driver` from the config, a driver a provider registered under `updater`, then `selectDriver(runtime)`: the service-worker driver in a browser, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. The defaults in the table are what you get without a config file; the file `kitr add` writes only adds the hourly `interval`.
 
 For the browser to have something to update, turn on the service worker in the web platform. `registerType: 'prompt'` is the default and is what the updater expects: the new worker waits until you apply it.
 
@@ -328,10 +329,18 @@ export function checkWhenFocused(app: KitrApp) {
 | --- | --- | --- |
 | Browser with `pwa` on | `createServiceWorkerUpdaterDriver()` | Activates the waiting worker and reloads the page. |
 | Browser without a service worker | The same driver | Nothing to apply: every check is `up-to-date`. |
-| Desktop and mobile shells | The service-worker driver, unless a provider registers one | Same as the browser. |
+| Desktop and mobile shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the service-worker driver only with `fallbackToWeb: true` | Same as the browser, with the fallback. |
 | Server | None; the provider binds nothing | Not available. |
 
 Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `updater`. To update an installed app, register a driver for your shell's updater, as shown under [Extend](#extend).
+
+## Errors
+
+| Error | When | What to do |
+| --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no updater driver is registered. Thrown when the service is created, so at boot with the provider. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts` to run the service-worker driver inside the webview. |
+
+A failed check or apply is not thrown: it sets `status` to `'error'` and `error` on the state.
 
 ## Testing
 

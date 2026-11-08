@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, read from the published type definitions. The [guide](/packages/updater) shows them in use.
+Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, `kitr/updater/driver`, `kitr/updater/drivers/web`, `kitr/updater/drivers/electron`, `kitr/updater/drivers/tauri`, `kitr/updater/drivers/capacitor`, read from the published type definitions. The [guide](/packages/updater) shows them in use.
 
 ## kitr/updater
 
@@ -48,7 +48,19 @@ function createUpdater(config?: UpdaterConfig, app?: KitrApp): Updater;
 ```
 
 Build the `updater` service. The driver is `config.driver`, else the one registered on `app`, else
-the service-worker driver in a browser. Starts the `interval` checks and the driver listener.
+`selectDriver()` for the runtime (the service-worker driver in a browser, `E_DRIVER_UNAVAILABLE` in a
+native shell unless `fallbackToWeb` is set). Starts the `interval` checks and the driver listener.
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The updater driver for a runtime: the service-worker driver on `web` (a memory driver on the
+server), and each shell's own updater (electron-updater, the Tauri updater plugin, store or
+live-update checks). A shell with no updater driver yet throws `E_DRIVER_UNAVAILABLE` rather than
+watching a service worker that cannot update a native app, unless `fallbackToWeb` is set.
 
 ### useUpdater
 
@@ -65,6 +77,17 @@ const defineConfig: <const C extends UpdaterConfig>(config: C) => C;
 ```
 
 Types `config/updater.ts`. Returns the object unchanged.
+
+### DriverOptions
+
+```ts
+interface DriverOptions extends SelectDriverOptions {
+  /** The running build's version, reported by the web driver as `<version>+` when a new worker waits. */
+  version?: string;
+}
+```
+
+Options of `selectDriver()`.
 
 ### UpdateInfo
 
@@ -118,6 +141,11 @@ interface UpdaterConfig {
   checkOnBoot?: boolean;
   /** Apply as soon as an update is ready, without asking. Default false. */
   auto?: boolean;
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no updater driver, use the service-worker
+   * driver inside the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean;
 }
 ```
 
@@ -160,6 +188,14 @@ interface UpdaterState {
 ```
 
 A snapshot of the updater, replaced on every change.
+
+### Driver
+
+```ts
+type Driver = UpdaterDriver;
+```
+
+What an updater driver is: `UpdaterDriver`, whichever runtime supplies it.
 
 ### UpdateStatus
 
@@ -209,5 +245,89 @@ const updaterProvider: import("@kitr/core").KitrProvider;
 
 Binds `updater` to the platform updater (`updater` capability) or the service-worker driver,
 checks at boot and on the configured interval, and stops at shutdown.
+
+## kitr/updater/driver
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The updater driver for a runtime: the service-worker driver on `web` (a memory driver on the
+server), and each shell's own updater (electron-updater, the Tauri updater plugin, store or
+live-update checks). A shell with no updater driver yet throws `E_DRIVER_UNAVAILABLE` rather than
+watching a service worker that cannot update a native app, unless `fallbackToWeb` is set.
+
+### DriverOptions
+
+```ts
+interface DriverOptions extends SelectDriverOptions {
+  /** The running build's version, reported by the web driver as `<version>+` when a new worker waits. */
+  version?: string;
+}
+```
+
+Options of `selectDriver()`.
+
+### Driver
+
+```ts
+type Driver = UpdaterDriver;
+```
+
+What an updater driver is: `UpdaterDriver`, whichever runtime supplies it.
+
+## kitr/updater/drivers/web
+
+### createServiceWorkerUpdaterDriver
+
+```ts
+function createServiceWorkerUpdaterDriver(options?: {
+  version?: string;
+}): UpdaterDriver;
+```
+
+Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
+to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
+
+## kitr/updater/drivers/electron
+
+### createElectronDriver
+
+```ts
+function createElectronDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/updater` and `electron` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts`
+to opt in to the WebView behaviour.
+
+## kitr/updater/drivers/tauri
+
+### createTauriDriver
+
+```ts
+function createTauriDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/updater` and `tauri` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts`
+to opt in to the WebView behaviour.
+
+## kitr/updater/drivers/capacitor
+
+### createCapacitorDriver
+
+```ts
+function createCapacitorDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/updater` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

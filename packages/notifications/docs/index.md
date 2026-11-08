@@ -54,9 +54,10 @@ export default defineConfig({
 | --- | --- | --- |
 | `icon` | none | Icon for browser notifications that don't set their own. A path under `public/` or a full URL. |
 | `requestOnBoot` | `false` | Ask for permission as the app starts in the browser. Browsers block or bury asks that don't follow a click, so leave it off for websites. |
-| `driver` | registered, else the web driver | A `NotificationsDriver` that replaces the one the service would pick. For tests and custom shells. |
+| `driver` | registered, else the driver for the runtime | A `NotificationsDriver` that replaces the one the service would pick. For tests and custom shells. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no notifications driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `notifications`, then the web driver in a browser, or a memory driver whose permission is `'unsupported'` on the server.
+The service picks its driver in this order: `driver` from the config, a driver a provider registered under `notifications`, then `selectDriver(runtime)`: the web driver in a browser, a memory driver whose permission is `'unsupported'` on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
 Point `icon` at a file that exists. The [Web](/packages/web) platform's PWA manifest uses `/icons/icon-192.png` by default, not the `/icon-192.png` that `kitr add` writes, so with `pwa` on you usually want `icon: '/icons/icon-192.png'`. A missing icon shows the notification with the browser's default image.
 
@@ -365,7 +366,7 @@ To build a service with no app, call `createNotifications(config)`. In a browser
 | --- | --- | --- |
 | Browser | `createWebNotificationsDriver()`, the Notification API | Fire only while the page is open. |
 | Chrome for Android | The same driver, through the service worker | The same. |
-| Desktop and mobile shells | The web driver inside the webview, unless a provider registers one | The same, until a native driver is registered. |
+| Desktop and mobile shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the web driver only with `fallbackToWeb: true` | The same as the web driver with the fallback, until a native driver is registered. |
 | Server | Memory driver, permission `'unsupported'` | Nothing is shown. |
 
 Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
@@ -375,6 +376,7 @@ Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mob
 | Error | When | What to do |
 | --- | --- | --- |
 | ``[kitr/notifications] schedule() needs a valid `at` `` | `at` is an invalid `Date` or `NaN`. | Pass a `Date` or a timestamp in milliseconds. |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no notifications driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts` to run the web driver inside the webview. |
 | `TypeError: Illegal constructor` (browser) | Chrome for Android, with no service worker controlling the page. | Turn on `pwa` in the web platform. |
 
 A `show()` without permission is not an error: it resolves and shows nothing. A denied permission is a state, not an exception.

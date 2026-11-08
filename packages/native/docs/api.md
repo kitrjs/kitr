@@ -6,7 +6,7 @@ order: 2
 
 # API
 
-Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, read from the published type definitions. The [guide](/packages/native) shows them in use.
+Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, `kitr/native/driver`, `kitr/native/drivers/web`, `kitr/native/drivers/electron`, `kitr/native/drivers/tauri`, `kitr/native/drivers/capacitor`, read from the published type definitions. The [guide](/packages/native) shows them in use.
 
 ## kitr/native
 
@@ -35,7 +35,19 @@ function createNative(config?: NativeConfig, app?: KitrApp): Native;
 ```
 
 Build the `native` service. Per capability it uses `config.drivers`, else the driver a platform
-registered on `app`, else the web driver, else an unsupported stand-in.
+registered on `app`, else the one `selectDriver()` picks for the runtime (the web drivers in a
+browser; in a native shell `E_DRIVER_UNAVAILABLE` unless `fallbackToWeb` is set), else an
+unsupported stand-in.
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The capability drivers for a runtime: the browser APIs on `web`, and each native shell's own
+(Capacitor plugins, Electron dialogs, Tauri plugins). A shell with no drivers yet throws
+`E_DRIVER_UNAVAILABLE` rather than falling back to the web ones, unless `fallbackToWeb` is set.
 
 ### useNative
 
@@ -177,6 +189,24 @@ interface ClipboardDriver {
 
 Reads and writes plain text on the system clipboard.
 
+### Driver
+
+```ts
+interface Driver {
+  /** Where the drivers come from, shown as the capability's `name`: `web`, `electron`, `tauri`, `capacitor`. */
+  name: string;
+  clipboard: ClipboardDriver | null;
+  share: ShareDriver | null;
+  haptics: HapticsDriver | null;
+  geolocation: GeolocationDriver | null;
+  camera: CameraDriver | null;
+  biometrics: BiometricsDriver | null;
+}
+```
+
+What one runtime supplies for the `native` service: a driver per capability, or `null` where
+the runtime has none (the capability then reports `supported: false`).
+
 ### GeolocationDriver
 
 ```ts
@@ -242,6 +272,11 @@ interface NativeConfig {
     camera: CameraDriver;
     biometrics: BiometricsDriver;
   }>;
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no native drivers, use the web drivers
+   * inside the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean;
 }
 ```
 
@@ -314,6 +349,14 @@ interface SharePayload {
 ```
 
 What to hand to the share sheet. Every field is optional; most targets use `url` or `text`.
+
+### DriverOptions
+
+```ts
+type DriverOptions = SelectDriverOptions;
+```
+
+Options of `selectDriver()`.
 
 ### HapticKind
 
@@ -391,5 +434,139 @@ const nativeProvider: import("@kitr/core").KitrProvider;
 
 Binds `native` from the drivers platform packages registered (`clipboard`, `share`, `haptics`,
 `geolocation`, `camera`, `biometrics`) with web drivers for the rest.
+
+## kitr/native/driver
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The capability drivers for a runtime: the browser APIs on `web`, and each native shell's own
+(Capacitor plugins, Electron dialogs, Tauri plugins). A shell with no drivers yet throws
+`E_DRIVER_UNAVAILABLE` rather than falling back to the web ones, unless `fallbackToWeb` is set.
+
+### Driver
+
+```ts
+interface Driver {
+  /** Where the drivers come from, shown as the capability's `name`: `web`, `electron`, `tauri`, `capacitor`. */
+  name: string;
+  clipboard: ClipboardDriver | null;
+  share: ShareDriver | null;
+  haptics: HapticsDriver | null;
+  geolocation: GeolocationDriver | null;
+  camera: CameraDriver | null;
+  biometrics: BiometricsDriver | null;
+}
+```
+
+What one runtime supplies for the `native` service: a driver per capability, or `null` where
+the runtime has none (the capability then reports `supported: false`).
+
+### DriverOptions
+
+```ts
+type DriverOptions = SelectDriverOptions;
+```
+
+Options of `selectDriver()`.
+
+## kitr/native/drivers/web
+
+### webBiometrics
+
+```ts
+function webBiometrics(options?: {
+  storageKey?: string;
+}): BiometricsDriver | null;
+```
+
+WebAuthn user verification with a platform authenticator (Touch ID, Windows Hello, Android
+screen lock). The first call registers a device-only credential for this site (that prompt is
+itself the check); later calls ask for that credential by id, so people without a passkey get
+the fingerprint or PIN prompt rather than an empty passkey picker. A local presence check, like
+the native ones: to prove identity to your server, verify a WebAuthn assertion there.
+
+### webCamera
+
+```ts
+function webCamera(): CameraDriver | null;
+```
+
+Camera driver that opens a hidden image file input, with `capture` for the camera source.
+Resolves null when cancelled; null itself only where there is no `document`.
+
+### webClipboard
+
+```ts
+function webClipboard(): ClipboardDriver | null;
+```
+
+Clipboard driver on the Clipboard API. Null where `navigator.clipboard` is missing (no HTTPS, no browser).
+
+### webGeolocation
+
+```ts
+function webGeolocation(): GeolocationDriver | null;
+```
+
+Geolocation driver on the browser Geolocation API. Null where `navigator.geolocation` is missing.
+
+### webHaptics
+
+```ts
+function webHaptics(): HapticsDriver | null;
+```
+
+Haptics driver that maps each kind to a `navigator.vibrate` pattern. Null where vibration is missing.
+
+### webShare
+
+```ts
+function webShare(): ShareDriver | null;
+```
+
+Share driver on Web Share. Resolves false when dismissed; null where `navigator.share` is missing.
+
+## kitr/native/drivers/electron
+
+### createElectronDriver
+
+```ts
+function createElectronDriver(_options?: DriverOptions): Driver;
+```
+
+The native driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/native` and `electron` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts`
+to opt in to the WebView behaviour.
+
+## kitr/native/drivers/tauri
+
+### createTauriDriver
+
+```ts
+function createTauriDriver(_options?: DriverOptions): Driver;
+```
+
+The native driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/native` and `tauri` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts`
+to opt in to the WebView behaviour.
+
+## kitr/native/drivers/capacitor
+
+### createCapacitorDriver
+
+```ts
+function createCapacitorDriver(_options?: DriverOptions): Driver;
+```
+
+The native driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/native` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->
