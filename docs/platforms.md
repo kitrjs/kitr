@@ -143,7 +143,7 @@ A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and `install 
 
 ## One project, every platform
 
-[`examples/everywhere`](../examples/everywhere) is one project with a website, an Electron app and a Capacitor app:
+[`examples/everywhere`](https://github.com/kitrjs/kitr/tree/main/examples/everywhere) is one project with a website, an Electron app and a Capacitor app:
 
 ```ts
 // kitrrc.ts

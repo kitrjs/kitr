@@ -49,7 +49,14 @@ describe('desktop()', () => {
     expect(f.calls.map((c) => [c.command, ...c.args])).toEqual([
       ['vite', 'build'],
       ['electron-vite', 'build', '-c', '/project/platforms/app/electron.vite.config.ts'],
-      ['electron-builder', '--config', '/project/platforms/app/electron-builder.yml', '--dir'],
+      [
+        'electron-builder',
+        '--config',
+        '/project/platforms/app/electron-builder.yml',
+        '--publish',
+        'never',
+        '--dir',
+      ],
     ])
     const noPack = fakePlatformContext(app, { flags: { pack: false } })
     await app.build!(noPack.ctx)

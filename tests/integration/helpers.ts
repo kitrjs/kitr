@@ -106,7 +106,8 @@ export function snapshot(dir: string): Record<string, string> {
       if (name === 'node_modules' || name === 'dist') continue
       const p = join(d, name)
       if (statSync(p).isDirectory()) walk(p)
-      else out[relative(dir, p)] = readFileSync(p, 'utf8')
+      // Forward slashes on every platform, so tests can name files the same way everywhere.
+      else out[relative(dir, p).split('\\').join('/')] = readFileSync(p, 'utf8')
     }
   }
   walk(dir)
