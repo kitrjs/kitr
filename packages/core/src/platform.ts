@@ -114,11 +114,11 @@ export interface PlatformBundleOptions {
 }
 
 /** How `without` reads in `kitr config <name>`, `kitr platforms` and `kitr add <type> --help`. */
-export const withoutOption: PlatformOptionSpec = {
+export const withoutOption = Object.freeze({
   description: "Packages left out of this platform's build (their provider and config file)",
   type: 'list',
-  default: [],
-}
+  default: Object.freeze([]) as unknown as string[],
+}) satisfies PlatformOptionSpec
 
 export interface PlatformInstance<O extends object = any> extends PlatformHooks<O> {
   readonly type: string
