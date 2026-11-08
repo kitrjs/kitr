@@ -1,0 +1,18 @@
+# @kitr/vite
+
+## 0.2.0
+
+### Minor Changes
+
+- c7e8330: Initial release: the kitr framework, CLI, component registry and example kits.
+- 3edf81d: Smaller browser bundles. A package can mark its provider `provider: { client: false }` and `@kitr/vite` leaves it out of the browser's provider list (cache, jobs, shield and uploads do); the devtools panels of every provider are dropped from production builds that do not ship `@kitr/devtools`. `kitr dev` names the generated type files it wrote with paths relative to the project.
+
+### Patch Changes
+
+- Updated dependencies [9f0d0c4]
+- Updated dependencies [1206461]
+- Updated dependencies [c7e8330]
+- Updated dependencies [3edf81d]
+  - @kitr/cli@0.2.0
+  - @kitr/core@0.2.0
+  - @kitr/web@0.2.0

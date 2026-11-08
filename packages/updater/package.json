@@ -1,6 +1,6 @@
 {
   "name": "@kitr/updater",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "@kitr/updater: one check/apply API for new versions: the service worker on the web, Tauri and Electron updaters on desktop, the store or live update on mobile.",
   "keywords": [
     "kitr",
