@@ -4,7 +4,7 @@ Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the rout
 
 ## Capabilities
 
-Packages marked **Preview** are not published yet: they don't meet the release bar (see the README). They are `"private": true`, and `kitr add` refuses them unless you pass `--preview` from a kitr checkout.
+Packages marked **Preview** are not published to npm: they don't meet the release bar (see the README). They are `"private": true`, and `kitr add` refuses them unless you pass `--preview` from a kitr checkout.
 
 | Name | Package | Scope | Needs | Provides |
 | --- | --- | --- | --- | --- |

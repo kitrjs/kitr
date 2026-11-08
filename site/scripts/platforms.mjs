@@ -1,6 +1,6 @@
 // Builds app/generated/platforms.json from content/platforms.mjs plus what the repo knows:
 // which packages run on each platform, whether a platform or kit package is published
-// (`"private": true` in its package.json means not yet), and which guides cover it.
+// (`"private": true` in its package.json means it is not), and which guides cover it.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { builder, platforms } from '../content/platforms.mjs'

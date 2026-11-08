@@ -93,8 +93,6 @@ describe('jsonLd escaping', () => {
   })
 })
 
-// Regression: `seo()` never read config/seo.ts, so every page lost the site name, image and
-// canonical origin unless it passed `site` itself.
 describe('seo() reads config/seo.ts', () => {
   it('uses the site from defineConfig, and an explicit site still wins', async () => {
     vi.resetModules()

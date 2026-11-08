@@ -14,7 +14,7 @@ Acme's finance team chases unpaid invoices from wherever they are, and a web pag
 The app is the same React code that runs in a browser. kitr wraps it in a [Capacitor](https://capacitorjs.com) shell, and while it runs inside the shell, the kitr packages that have a native version switch to it: storage moves to native preferences, the platform hooks get the hardware back button and the app's lifecycle, and links to other sites open in the system browser.
 
 > **Preview**
-> The mobile platform is a preview. `@kitr/mobile` and `@kitr/platform` are not on npm yet because their native shells are not built in CI. The commands below need `--preview` and a kitr checkout, as the next section shows. The API may still change before the release.
+> The mobile platform is a preview. `@kitr/mobile` and `@kitr/platform` are not on npm, because their native shells are not built in CI. The commands below need `--preview` and a kitr checkout, as the next section shows.
 
 ## Before you start
 

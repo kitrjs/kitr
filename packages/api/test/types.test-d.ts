@@ -140,7 +140,7 @@ describe('group names', () => {
 
   it('prefixes route names with `as`, like the runtime', () => {
     expectTypeOf<keyof AdminRoutes>().toEqualTypeOf<'admin.users.index'>()
-    expectTypeOf(admin.routes[0]!.name).toBeString()
+    expectTypeOf(admin.entries[0]!.name).toBeString()
   })
 
   it('nests three-level names in the client', () => {
@@ -158,6 +158,6 @@ describe('group names', () => {
     type N = typeof nested.$types
     expectTypeOf<keyof N>().toEqualTypeOf<'v1.me'>()
     expectTypeOf<N['v1.me']['path']>().toEqualTypeOf<'/api/v1/me'>()
-    expectTypeOf(nested.routes[0]!.path).toBeString()
+    expectTypeOf(nested.entries[0]!.path).toBeString()
   })
 })

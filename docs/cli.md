@@ -115,7 +115,7 @@ The default registry is kitr's own (`registry/dist` in this repo). Point `--regi
 | `platforms` (built in) | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`: the `KitrPlatforms` augmentation, so `app.platform` and `usePlatform().name` are the project's names. |
 | `actions` (`@kitr/actions`) | `app/actions/**/*.ts` | `.kitr/actions.ts`: `operations` and `actions` maps and the `Operations` augmentation behind `useQuery('projects.list')`. |
 
-A package adds a generator with `defineTypes()` and points its setup module at it with the `types` hook (`types: () => import('./types')` in `src/kitr.ts`). A package without a setup module can still name the subpath in its manifest (`"kitr": { "types": "./types" }`), which the runner falls back to:
+A package adds a generator with `defineTypes()` and points its setup module at it with the `types` hook (`types: () => import('./types')` in `src/kitr.ts`). A package without a setup module names the subpath in its manifest (`"kitr": { "types": "./types" }`):
 
 ```ts
 // packages/<name>/src/types.ts

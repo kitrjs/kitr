@@ -218,8 +218,6 @@ export interface RouteTableBase<K extends ExtensionKey, R extends RouteMap> {
     name: string
     [k: string]: unknown
   }>
-  /** @deprecated The http entries, as `@kitr/api`'s router exposed them. Use `entries`. */
-  readonly routes: RouteEntry[]
 }
 
 /** A table with the methods of the installed extensions. */
@@ -363,10 +361,6 @@ export class RouteTable {
       }
       return out as { kind: string; path: string; name: string }
     })
-  }
-
-  get routes(): RouteEntry[] {
-    return this.entries.filter((e) => e.kind === 'http')
   }
 }
 

@@ -368,7 +368,7 @@ To build a service with no app, call `createNotifications(config)`. In a browser
 | Desktop and mobile shells | The web driver inside the webview, unless a provider registers one | The same, until a native driver is registered. |
 | Server | Memory driver, permission `'unsupported'` | Nothing is shown. |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+[Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
 
 ## Errors
 

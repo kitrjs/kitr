@@ -263,7 +263,6 @@ describe('doctor', () => {
       expect(f.fix, f.message).toBeTruthy()
   })
 
-  // Regression: `entry` and `preset` in config/tailwind.ts were read by nothing.
   it('checks config/tailwind.ts against the stylesheet it names', () => {
     const base = {
       'package.json': JSON.stringify({ dependencies: { kitr: '1' } }),

@@ -3,8 +3,8 @@ import { outsidePrefix, syncPlan } from '../src/commands'
 
 const project = { name: 'acme', version: '1.2.3', hasAppApi: true }
 
-// Regression: `kitr api:sync` read config/api.ts with regexes that took the first `path:` in the
-// file, ignored `openapi.description` and `client.path`, and nothing read `prefix`.
+// `kitr api:sync` reads every option in config/api.ts: `prefix`, `openapi.path`,
+// `openapi.description` and `client.path`.
 describe('kitr api:sync config', () => {
   it('defaults from package.json and the project layout', () => {
     expect(syncPlan({}, project)).toEqual({
@@ -28,7 +28,7 @@ describe('kitr api:sync config', () => {
       tablePath: 'src/http/routes.gen.ts',
       info: { title: 'Acme', version: '2', description: 'The API' },
     })
-    // client.path declared before openapi.path no longer steals the OpenAPI output path.
+    // client.path declared before openapi.path does not take the OpenAPI output path.
     expect(syncPlan({ client: { path: 'app/api/client.ts' } }, project).out).toBe('openapi.json')
     expect(syncPlan({ openapi: { path: 'a.json' } }, project, 'b.json').out).toBe('b.json')
   })

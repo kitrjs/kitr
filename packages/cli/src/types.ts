@@ -90,7 +90,7 @@ ${env}export {}
 /**
  * The generators for a project: the built-in `platforms` and one per package. A package on the
  * package contract declares it as `types: () => import('./types')` in its setup module; one
- * without a setup module still works through `kitr.types` in its manifest.
+ * without a setup module names it as `kitr.types` in its manifest.
  */
 export async function loadGenerators(ctx: ProjectContext): Promise<TypesGenerator[]> {
   const rc = ctx.readRc()

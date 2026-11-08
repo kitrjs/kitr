@@ -234,7 +234,6 @@ export default defineKitrConfig({
     expect(config.build.outDir).toBe('dist/app')
   })
 
-  // Regression: web({ base }) was accepted and documented, but never reached Vite.
   it("passes a web platform's base to Vite, unless vite.config.ts sets one", async () => {
     const root = project({
       'kitrrc.ts': `import { web } from '@kitr/web'
@@ -269,7 +268,6 @@ export default defineKitrConfig({
   })
 })
 
-// Regression: `robots` in config/seo.ts only fed `robotsTxt()`, and nothing wrote robots.txt.
 describe('robots.txt', () => {
   it('renders config/seo.ts with robotsTxt(), sitemap included', async () => {
     const { robotsFor } = await import('../src')

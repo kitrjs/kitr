@@ -45,8 +45,8 @@ describe('storage provider', () => {
     expect(item.get()).toBe(1)
   })
 
-  // Regression: desktop and mobile apps list their platform provider after storage, so the native
-  // driver was registered too late and items silently kept using a throwaway driver.
+  // Desktop and mobile apps list their platform provider after storage; the native driver must
+  // still be the one items use.
   it.each(['platform first', 'storage first'])(
     'uses the platform storage driver whatever the provider order (%s)',
     async (order) => {

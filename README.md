@@ -6,21 +6,13 @@
 
 kitr gives you a React app with routing, data loading, forms, sign-in and a typed API server already wired together, from one CLI, and ships the same code to the web, a server, desktop and phones. It is for teams who want the decisions made and written down, with libraries they already know underneath.
 
-**Status.** Pre-release: the API is settling and every package is at `0.1.0` (they release in lockstep). kitr is not on npm yet, so `npm install -g kitr` and `pnpm dlx kitr` do not work today. The web (`web()`) and server (`server()`) platforms work; desktop, Tauri and mobile (and the device packages behind them) are previews that `kitr add` and `kitr new` refuse without `--preview`.
+Every `kitr` and `@kitr/*` package shares one version. The web (`web()`) and server (`server()`) platforms are stable; desktop, Tauri and mobile (and the device packages behind them) are previews that `kitr add` and `kitr new` refuse without `--preview`.
 
 Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
 
-## Try it
+## Get started
 
-kitr is not on npm yet, so a project made by `kitr new` cannot install its dependencies until the first release. To see it running today, clone the repository and start one of the [examples](examples/README.md), which are the exact output of `kitr new`:
-
-```sh
-git clone https://github.com/kitrjs/kitr && cd kitr
-pnpm install && pnpm build
-cd examples/dashboard && pnpm dev     # the app kit; examples/README.md lists the others
-```
-
-Once kitr is published, creating a project is one command:
+Creating a project is one command:
 
 ```sh
 pnpm dlx kitr new my-app                # the blank kit: the wiring files and nothing else; kitr add brings the rest
@@ -43,7 +35,7 @@ For Claude Code, the kitr plugin adds skills that know the conventions, the `kit
 Server actions, API routes, external HTTP APIs and realtime channels all produce the same `QueryContract` / `MutationContract` / `SubscriptionContract`. Mutations declare cache `effects` (`invalidate`, `set`, `remove`) instead of components calling `queryClient.invalidateQueries` inline. A channel event is just a subscription whose events carry effects.
 
 **Nothing you did not add.**
-The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform contracts and the CLI that runs them. It has no dev server, no bundler, no runtime and no React: `kitr new` writes seven files, and `kitr add web site` is what brings Vite, React and the router, through the same `kitr add` that brings `auth` or `mail`. Each package owns its setup end to end: its dependencies, its config file, its codemods, its questions, its scripts, its generators, its `AGENTS.md` lines and what it asks of the Vite build. The umbrella `kitr` package depends on the core and the CLI only; every other `kitr/*` entry point is an optional peer that resolves once its package is added.
+The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform contracts and the CLI that runs them. It has no dev server, no bundler, no runtime and no React: `kitr new` writes seven files, and `kitr add web site` is what brings Vite, React and the router, through the same `kitr add` that brings `auth` or `mail`. Each package owns its setup end to end: its dependencies, its config file, its codemods, its questions, its scripts, its generators, its `AGENTS.md` lines and what it asks of the Vite build. The `kitr` package is the CLI plus `kitr`, `kitr/app` and `kitr/env`; every other package is imported by its own name (`@kitr/query`, `@kitr/router/routes`) once it is added.
 
 **Explicit wiring, the Adonis way.**
 `kitrrc.ts` lists every provider as a lazy import. `config/<package>.ts` holds that package's options, typed by its `defineConfig`. Providers have `register → boot → ready → shutdown`, a typed container (`app.container.use('http')`), and a `wrap()` hook so React packages can wrap the tree without the core knowing React exists.
@@ -55,7 +47,7 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 `@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
 
 **Debuggable by default.**
-`kitr add devtools --preview` (a preview, not in the kits yet) adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
+`kitr add devtools --preview` (a preview, not in the kits) adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
 
 **Components you own.**
 `kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and the tokens from `@kitr/theme`; there is no component library in `node_modules` to fight.
@@ -65,7 +57,7 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 - **Next.js:** a full-stack React framework with its own router and server model; kitr builds on TanStack Router, Query and Start instead, and adds auth, forms, an API server and a CLI that adds packages for you.
 - **Remix / React Router:** loaders and actions on web standards; kitr's data layer is TanStack Query with one contract for server actions, API routes, external APIs and realtime channels.
 - **TanStack Start:** kitr is TanStack Start underneath for SSR and server functions, plus conventions, a package system and `kitr add`; you can use Start directly if you want fewer opinions.
-- **Expo:** React Native renders native views; kitr's mobile and desktop platforms wrap your web app in Capacitor, Electron or Tauri WebView shells, and they are previews today.
+- **Expo:** React Native renders native views; kitr's mobile and desktop platforms wrap your web app in Capacitor, Electron or Tauri WebView shells, and they are previews.
 - **AdonisJS:** the model for kitr's wiring (`kitrrc.ts`, providers, controllers); kitr's server is h3 with Adonis-style controllers, and it stays TypeScript on the same stack as your React code.
 
 See the full comparison at [kitr.dev/docs/compare](https://kitr.dev/docs/compare).
@@ -128,7 +120,7 @@ Start with [what kitr is](https://kitr.dev/docs/what-is-kitr), then follow the g
 
 See [docs/entry-points.md](docs/entry-points.md) for the rules behind this table.
 
-**Previews** are packages that live in this repo but are not published yet, because they don't meet the release bar: no durable driver (jobs), no auth hook or object storage (uploads), no native drivers behind their APIs (secure-storage, files, notifications, native, updater), a devtools shell still to settle (devtools), or native shells not yet built in CI (platform, desktop, tauri, mobile). They are `"private": true` in their `package.json`; `kitr add` and `kitr new` refuse them unless you pass `--preview` from a kitr checkout.
+**Previews** are packages that live in this repo but are not published to npm, because they don't meet the release bar: no durable driver (jobs), no auth hook or object storage (uploads), no native drivers behind their APIs (secure-storage, files, notifications, native, updater), no settled devtools shell (devtools), or native shells not built in CI (platform, desktop, tauri, mobile). They are `"private": true` in their `package.json`; `kitr add` and `kitr new` refuse them unless you pass `--preview` from a kitr checkout.
 
 ## A taste
 
@@ -194,7 +186,7 @@ registry/                    # shadcn-compatible component registry (built to re
 examples/
   blank, dashboard, fullstack, backend,        # kitr new --kit blank | app | fullstack | server
   saas, site, realtime, desktop, tauri, mobile  # the preset kits
-docs/                        # entry points, CLI, packages, platforms, pure backend, departures
+docs/                        # entry points, CLI, packages, platforms, design
 ```
 
 ```sh
@@ -215,7 +207,7 @@ The examples are exactly what the CLI generates (with workspace links instead of
 - [docs/platforms.md](docs/platforms.md): web, server, desktop, tauri and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
 - [site/content/guides](site/content/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](site/content/guides/api-server.md)
-- [docs/departures.md](docs/departures.md): where the implementation improved on the design plan, and why
+- [docs/design.md](docs/design.md): the main design choices, and why
 
 ## Contributing
 

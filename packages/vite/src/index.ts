@@ -155,7 +155,7 @@ function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | 
     ? entries.find(([n]) => n === wanted)
     : (entries.find(([, p]) => p.factory === 'web') ??
       entries.find(([, p]) => p.factory !== 'server'))
-  // No platforms at all: a project that wires Vite itself (legacy or custom). A wrong name is an error.
+  // No platforms at all: a project that wires Vite itself. A wrong name is an error.
   if (wanted && !pick && entries.length)
     throw new Error(
       `[@kitr/vite] KITR_PLATFORM=${wanted} is not a platform in kitrrc.ts (have: ${entries.map(([n]) => n).join(', ') || 'none'})`,

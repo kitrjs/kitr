@@ -101,8 +101,8 @@ export interface MailConfig {
   /** Default sender. */
   from?: Recipient
   /**
-   * Meant as the preview path (default `/_kitr/mail`; false disables). Not read today:
-   * `mailPreview()` takes its own `path` option.
+   * Where `mailPreview()` serves templates (default `/_kitr/mail`; false mounts nothing). A
+   * `path` passed to `mailPreview()` wins.
    */
   previewPath?: string | false
 }

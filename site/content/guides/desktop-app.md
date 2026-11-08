@@ -14,7 +14,7 @@ The people in Acme's back office keep the billing app open all day next to their
 kitr runs the same `app/` folder in an [Electron](https://www.electronjs.org) window. Electron ships its own Chromium, so the page your team tests is the page every user runs. Native work happens in Electron's main process, a Node.js program you write in `platforms/app/main.ts`, and the window calls it through IPC commands that are typed from one file.
 
 > **Preview**
-> The desktop platform is a preview. `@kitr/desktop` and `@kitr/platform` are not on npm yet because their native shells are not built in CI. The commands below need `--preview` and a kitr checkout, as the next section shows. The API may still change before the release.
+> The desktop platform is a preview. `@kitr/desktop` and `@kitr/platform` are not on npm, because their native shells are not built in CI. The commands below need `--preview` and a kitr checkout, as the next section shows.
 
 ## Before you start
 

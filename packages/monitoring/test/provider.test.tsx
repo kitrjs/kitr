@@ -170,7 +170,7 @@ describe('monitoringProvider', () => {
   })
 })
 
-// Regression: in development the default console reporter and `debug` both printed each report.
+// In development the console reporter and `debug` share one output, so each report prints once.
 describe('development console output', () => {
   it('prints a captured error once', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})

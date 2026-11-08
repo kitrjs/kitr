@@ -54,8 +54,8 @@ function fakeEventSource(fetchImpl: (req: Request) => Promise<Response>) {
 
 afterEach(() => vi.unstubAllGlobals())
 
-// Regression: the SSE server never sent the schema's output params back, so a client that
-// subscribed with ' prj_1 ' listened on a topic nobody published to and received nothing.
+// The SSE server sends the schema's output params back, so a client that subscribes with
+// ' prj_1 ' listens on the topic the server publishes to.
 describe('SSE transport', () => {
   it('delivers events to a subscription whose params the schema transformed', async () => {
     const sse = createSseServer({ channels: [project], keepAlive: 60_000 })

@@ -84,9 +84,8 @@ function PlatformPage() {
             <Command cmd={p.command} />
           ) : (
             <p className="soon-note">
-              <strong>Not on npm yet.</strong> <code>@kitr/{p.type}</code> is held back from the
-              first release while it gets the same polish as the rest. It works from the repository
-              today, and this page describes how it will ship.
+              <strong>Preview.</strong> <code>@kitr/{p.type}</code> is not on npm. Use it from a
+              kitr checkout with <code>--preview</code>.
             </p>
           )}
           <div className="actions">

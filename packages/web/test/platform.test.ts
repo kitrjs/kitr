@@ -158,8 +158,7 @@ describe('pwaManifest', () => {
 })
 
 describe('staticFiles', () => {
-  // Regression: every file was served with a one-year max-age, index.html and sw.js included,
-  // so a deploy never reached returning users.
+  // index.html and sw.js must not be cached for a year, or a deploy never reaches returning users.
   const setup = async (base?: string) => {
     const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')

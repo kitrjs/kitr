@@ -30,7 +30,7 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
   } = options
   let refreshing: Promise<boolean> | null = null
 
-  // ky v2 renamed `prefixUrl` to `prefix` (same joining rules: `http.get('users')` → `${baseUrl}/users`).
+  // ky's `prefix` joins paths onto the base URL: `http.get('users')` → `${baseUrl}/users`.
   const client: KyInstance = ky.create({
     ...(baseUrl ? { prefix: baseUrl } : {}),
     retry: { limit: 2, methods: ['get', 'put', 'head', 'delete', 'options', 'trace'] },

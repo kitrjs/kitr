@@ -7,8 +7,7 @@ export function NotFound() {
       <p className="label">404 · page not found</p>
       <h1 className="display">this part isn't in the box</h1>
       <p className="muted">
-        The page you asked for doesn't exist, or it moved when packages were renamed. These are good
-        places to look instead.
+        The page you asked for doesn't exist. These are good places to look instead.
       </p>
       <div className="not-found-links">
         <Link to="/packages" className="button primary">

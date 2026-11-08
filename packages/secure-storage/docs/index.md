@@ -342,7 +342,7 @@ On the server the service is an in-memory store, so code shared with the client 
 | A registered vault | Whatever the driver wraps, such as Electron `safeStorage` | `true` when the driver says so |
 | Server | `createMemorySecureStorageDriver()`, in memory | `false` |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in the Keychain, the Keystore or Electron's `safeStorage`, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+[Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, not `secure-storage`. To keep secrets in the Keychain, the Keystore or Electron's `safeStorage`, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
 
 ## Errors
 

@@ -27,13 +27,10 @@ export function GuideCard({ guide }: { guide: GuideItem }) {
   )
 }
 
-/** On a guide built on packages that are not published yet. */
+/** On a guide built on preview packages. */
 function PreviewBadge() {
   return (
-    <span
-      className="badge badge-status guide-preview"
-      title="Built on packages that are not published yet"
-    >
+    <span className="badge badge-status guide-preview" title="Built on preview packages">
       Preview
     </span>
   )

@@ -534,7 +534,7 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, so the web drivers apply there too. Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six. To use the native clipboard, Face ID or real haptics in a shell, register a driver as shown under [Extend](#extend).
+Desktop and mobile shells run the app in a webview, so the web drivers apply there too. [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six. To use the native clipboard, Face ID or real haptics in a shell, register a driver as shown under [Extend](#extend).
 
 ## Errors
 

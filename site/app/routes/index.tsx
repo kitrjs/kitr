@@ -155,7 +155,6 @@ function Home() {
     <main className="container home">
       <section className="hero">
         <div className="hero-copy">
-          <span className="label">v0.1 pre-release</span>
           <h1 className="display hero-title">One way to build everything.</h1>
           <p className="lede">
             A React app with routing, data, forms, sign-in and a typed API, wired together by one
@@ -175,11 +174,7 @@ function Home() {
             </Link>
           </div>
           <p className="status-strip">
-            Web and server are ready. Desktop and mobile are in preview. Not on npm yet,{' '}
-            <Link to="/docs/$slug" params={{ slug: 'getting-started' }}>
-              here is how to try it
-            </Link>
-            .
+            Web and server are ready. Desktop and mobile are in preview.
           </p>
         </div>
         <div className="hero-platforms">

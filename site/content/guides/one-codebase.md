@@ -22,7 +22,7 @@ Most of the app should not know where it runs. Pages, queries, forms and storage
 | Code that must not be in a bundle at all | `import.meta.env.KITR_PLATFORM` | by the bundler |
 
 > **Preview**
-> The mobile and desktop platforms are previews. `@kitr/mobile`, `@kitr/desktop` and `@kitr/platform` are not on npm yet. The commands below need `--preview` and a kitr checkout. The API may still change before the release.
+> The mobile and desktop platforms are previews. `@kitr/mobile`, `@kitr/desktop` and `@kitr/platform` are not on npm. The commands below need `--preview` and a kitr checkout.
 
 ## Before you start
 

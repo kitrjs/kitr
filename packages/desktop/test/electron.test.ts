@@ -56,7 +56,7 @@ describe('electron ipc', () => {
     expect(ipc.on('app.focus' as never, () => {})).toBeTypeOf('function')
   })
 
-  // Regression: the generated preload promised an allowlist but exposed every channel.
+  // The generated preload exposes only the allowlisted channels.
   it('allowChannels lets through the declared channels and kitr:*, nothing else', () => {
     const allow = allowChannels({ 'app.version': true, 'app.focus': true })
     expect(allow('app.version')).toBe(true)

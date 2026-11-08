@@ -67,7 +67,6 @@ describe('createKitrRouter', () => {
     expect(router.options.defaultPreload).toBe('intent')
   })
 
-  // Regression: `ssr` in config/seo.ts was read by nothing.
   it('applies ssr from config/seo.ts to routes that set none', () => {
     const root = createRootRouteWithContext<KitrRouterContext>()({ component: () => <Outlet /> })
     const plain = createRoute({ getParentRoute: () => root, path: '/', component: () => null })

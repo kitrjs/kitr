@@ -465,7 +465,7 @@ For progress, size limits, retries or direct uploads to object storage, pass the
 
 ## Where it runs
 
-The service picks a driver once, the first time it is used. The table shows what each environment gets today:
+The service picks a driver once, the first time it is used. The table shows what each environment gets:
 
 | Where the app runs | Driver | Open | Save | `path` |
 | --- | --- | --- | --- | --- |
@@ -485,11 +485,11 @@ The web driver adds a hidden `<input type="file">` to the page, sets its `accept
 
 ### Desktop
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver today, so the web driver runs inside the shell's webview. Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver, so the web driver runs inside the shell's webview. Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
 
 ### Mobile
 
-[Mobile](/packages/mobile) doesn't register a `files` driver today either. Inside Capacitor, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
+[Mobile](/packages/mobile) doesn't register a `files` driver either. Inside Capacitor, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
 
 ## Errors
 

@@ -10,8 +10,7 @@ const ping = defineChannel({ name: 'ping', events: { pong: {} } })
 
 const server = () => createServer({ logger: silentLogger, server: { healthPath: false } })
 
-// Regression: `transport` in config/realtime.ts only changed the client. The server stayed a
-// WebSocket server, so `transport: 'sse'` left the client posting to a route that did not exist.
+// `transport` in config/realtime.ts sets both ends: `transport: 'sse'` serves SSE, not WebSocket.
 describe('createRealtimeServer follows config/realtime.ts', () => {
   it('serves SSE at the configured path when transport is sse', async () => {
     const s = server()

@@ -11,8 +11,8 @@ const ipOf = async (trustProxy: boolean | number | undefined, forwarded?: string
   return ((await res.json()) as { ip: string | null }).ip
 }
 
-// Regression: `trustProxy` was read by nothing, so behind a load balancer every request had the
-// balancer's address and rate limits treated all users as one.
+// Behind a load balancer, `trustProxy` gives each request the client's address, so rate limits
+// tell users apart.
 describe('trustProxy', () => {
   it('ignores X-Forwarded-For by default, so a client cannot pick its own IP', async () => {
     expect(await ipOf(undefined, '6.6.6.6')).not.toBe('6.6.6.6')

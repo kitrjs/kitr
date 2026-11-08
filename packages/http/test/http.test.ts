@@ -271,7 +271,7 @@ describe('httpProvider', () => {
 })
 
 describe('ky v2 failures', () => {
-  // Regression: ky v2 throws TimeoutError and NetworkError, which became INTERNAL 500.
+  // ky v2 throws TimeoutError and NetworkError; both map to their own codes, not INTERNAL 500.
   it('maps timeouts and network failures to TIMEOUT and NETWORK', async () => {
     const hang = createHttpClient({
       retry: 0,
@@ -293,7 +293,7 @@ describe('ky v2 failures', () => {
 })
 
 describe('http provider on the server', () => {
-  // Regression: one client for the whole process, so getToken could not tell requests apart.
+  // A client per request, so getToken can tell requests apart.
   it('builds a client per request and gives getToken that request', async () => {
     const seen: string[] = []
     const fetch = vi.fn(async (input: Request | URL | string, init?: RequestInit) => {

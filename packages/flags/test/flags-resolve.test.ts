@@ -264,8 +264,7 @@ describe('server', () => {
   })
 })
 
-// Regression: `ttl` in config/flags.ts was read by nothing, so an open tab kept the flags it
-// resolved at boot until it was reloaded.
+// `ttl` in config/flags.ts makes an open tab resolve its flags again, without a reload.
 describe('ttl', () => {
   afterEach(() => vi.useRealTimers())
 

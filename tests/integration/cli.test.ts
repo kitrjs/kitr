@@ -415,7 +415,6 @@ describe('kitr add / remove', () => {
     expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).not.toContain('admin')
   })
 
-  // Regression: `kitr remove desktop` left the provider, the platforms entry and the import.
   it.each([
     ['desktop', 'desktop'],
     ['tauri', 'tauri'],
@@ -436,7 +435,6 @@ describe('kitr add / remove', () => {
     },
   )
 
-  // Regression: the platform name was required, so `kitr add server` alone threw.
   it('add <type> without a name uses the usual name for that type', () => {
     const blank = copyExample('blank')
     try {
