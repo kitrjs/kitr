@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { builders, generateCode, parseModule } from 'magicast'
 import { type ProjectContext, projectBin } from './context'
+import { findRcBlock, insertEntry, quoteOf, removeEntries } from './rc-text'
 import { versionOf } from './versions'
 
 /** Which route table a package extends: pages (`app`) or endpoints and sockets (`server`). */
@@ -33,41 +34,75 @@ export class Codemods {
 
   /** Add a provider lazy import to kitrrc.ts (`() => import('x')`). Idempotent. */
   addProvider(spec: string) {
-    this.editRc((mod, src) => {
-      if (hasImportOf(src, spec)) return
-      ensureArray(mod, 'providers').push(builders.raw(`() => import('${spec}')`))
-    })
+    this.editRcList('providers', { add: { spec, lazy: true } })
   }
   removeProvider(spec: string) {
-    // Lazy imports are opaque to magicast's proxies, so match them by their generated source.
-    this.editRc((mod) => {
-      const providers = ensureArray(mod, 'providers')
-      for (let i = providers.length - 1; i >= 0; i--) {
-        if (hasImportOf(generateCode(providers[i]).code, spec)) providers.splice(i, 1)
-      }
-    })
+    this.editRcList('providers', { remove: (text) => hasImportOf(text, spec) })
   }
   addPackage(name: string) {
-    this.editRc((mod) => {
-      const packages = ensureArray(mod, 'packages')
-      if (!packages.includes(name)) packages.push(name)
-    })
+    this.editRcList('packages', { add: { spec: name, lazy: false } })
   }
   removePackage(name: string) {
-    this.editRc((mod) => {
-      const packages = ensureArray(mod, 'packages')
-      for (let i = packages.length - 1; i >= 0; i--) {
-        const v = packages[i]
-        const text = typeof v === 'string' ? v : generateCode(v).code.replace(/^['"]|['"]$/g, '')
-        if (text === name) packages.splice(i, 1)
-      }
+    this.editRcList('packages', {
+      remove: (text) => text.slice(1, -1) === name && /^['"]/.test(text),
     })
   }
   addCommand(spec: string) {
-    this.editRc((mod, src) => {
-      if (hasImportOf(src, spec)) return
-      ensureArray(mod, 'commands').push(builders.raw(`() => import('${spec}')`))
-    })
+    this.editRcList('commands', { add: { spec, lazy: true } })
+  }
+
+  /**
+   * Edit one list of kitrrc.ts (`packages`, `providers`, `commands`) as text. The list's own
+   * entries, their order, comments, quotes and indentation are never reprinted: an added entry is
+   * inserted after the last one in the style of the others, and a removed entry takes its own line
+   * with it. Falls back to a structural edit when the list does not exist yet.
+   */
+  private editRcList(
+    key: 'packages' | 'providers' | 'commands',
+    edit: { add?: { spec: string; lazy: boolean }; remove?: (elementSource: string) => boolean },
+  ) {
+    const rcPath = this.ctx.rcPath ?? this.ctx.path('kitrrc.ts')
+    if (!existsSync(rcPath)) {
+      this.ctx.write(
+        'kitrrc.ts',
+        `import { defineKitrConfig } from 'kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n})\n`,
+      )
+      this.ctx.rcPath = rcPath
+    }
+    if (this.ctx.dryRun) return
+    const src = readFileSync(rcPath, 'utf8')
+    const list = findRcBlock(src, key, '[')
+    if (!list) {
+      // No such list yet: let magicast create it.
+      return this.editRc((mod) => {
+        if (!edit.add) return
+        const { spec, lazy } = edit.add
+        ensureArray(mod, key).push(lazy ? builders.raw(`() => import('${spec}')`) : spec)
+      })
+    }
+    let next = src
+    if (edit.add) {
+      const { spec, lazy } = edit.add
+      const present = list.elements.some((el) => {
+        const text = src.slice(el.start, el.end)
+        return lazy ? hasImportOf(text, spec) : text.slice(1, -1) === spec && /^['"]/.test(text)
+      })
+      if (present) return
+      const quote = quoteOf(src, list)
+      next = insertEntry(
+        src,
+        list,
+        lazy ? `() => import(${quote}${spec}${quote})` : `${quote}${spec}${quote}`,
+      )
+    }
+    if (edit.remove) {
+      const doomed = list.elements.filter((el) => edit.remove?.(src.slice(el.start, el.end)))
+      if (!doomed.length) return
+      next = removeEntries(src, list, doomed)
+    }
+    if (next === src) return
+    writeFileSync(rcPath, next)
+    this.ctx.touched.add('kitrrc.ts')
   }
 
   private editRc(edit: (mod: any, src: string) => void) {

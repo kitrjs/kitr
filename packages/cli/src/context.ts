@@ -32,8 +32,10 @@ export interface RcInfo {
 }
 
 export interface RcPlatform {
-  /** The factory called (`web`, `server`...), which is the platform type for kitr's packages. */
+  /** The factory called (`web`, `server`...), by its exported name: the platform type for kitr's packages. */
   factory: string
+  /** The name the factory is called by in kitrrc.ts, when the import renames it (`web as webPlatform`). */
+  local?: string
   /** Where the factory is imported from, when it is (`kitr/web`). */
   source?: string
   /** Literal options, when they parse as JSON-ish; otherwise undefined. */
@@ -111,12 +113,13 @@ export function readRcInfo(rcPath: string | undefined): RcInfo {
 /** Static read of the `platforms` dictionary. Nothing is executed; `loadPlatforms()` does that. */
 export function readRcPlatforms(src: string): Record<string, RcPlatform> {
   const out: Record<string, RcPlatform> = {}
-  const imports = new Map<string, string>()
+  const imports = new Map<string, { source: string; imported: string }>()
   for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g))
     for (const name of m[1]!.split(',')) {
       const parts = name.trim().split(/\s+as\s+/)
+      const imported = parts[0]!.trim()
       const local = (parts[1] ?? parts[0])!.trim()
-      if (local) imports.set(local, m[2]!)
+      if (local) imports.set(local, { source: m[2]!, imported })
     }
   const start = src.search(/platforms\s*:\s*\{/)
   if (start < 0) return out
@@ -149,7 +152,14 @@ export function readRcPlatforms(src: string): Record<string, RcPlatform> {
         options = new Function(`return (${arg})`)()
       } catch {}
     }
-    out[name] = { factory, source: imports.get(factory), options }
+    const from = imports.get(factory)
+    const renamed = from !== undefined && from.imported !== factory
+    out[name] = {
+      factory: from?.imported ?? factory,
+      ...(renamed ? { local: factory } : {}),
+      source: from?.source,
+      options,
+    }
     entry.lastIndex = i
   }
   return out
