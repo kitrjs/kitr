@@ -93,8 +93,8 @@ const ideas = [
     text: 'One file, kitrrc.ts, lists everything your app loads. Nothing happens behind your back.',
   },
   {
-    title: 'Made for agents too',
-    text: 'Every command runs without prompts, and AGENTS.md stays current as you add packages.',
+    title: 'Typed end to end',
+    text: 'The API client takes its types from your server routes. No codegen step, no schema to keep in sync.',
   },
 ]
 
@@ -111,6 +111,21 @@ const kitBlurb: Record<string, string> = {
   tauri: 'The app kit as a Tauri desktop app.',
   mobile: 'The app kit as an installable phone app.',
 }
+
+const agentPoints = [
+  {
+    title: 'One home for every file',
+    text: 'The conventions are fixed and written down. kitr make writes each kind of file where it belongs.',
+  },
+  {
+    title: 'AGENTS.md stays current',
+    text: 'kitr new writes it. Every kitr add appends the rules for that package, and kitr remove takes them out.',
+  },
+  {
+    title: 'One-line plugin install',
+    text: 'Skills for Claude Code, Cursor, Codex and Copilot that know the CLI and run kitr doctor when they finish.',
+  },
+]
 
 const familiar = [
   {
@@ -248,6 +263,28 @@ function Home() {
           // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted at build time
           dangerouslySetInnerHTML={{ __html: homeCode.contract }}
         />
+      </section>
+
+      <section className="agents" aria-labelledby="agents-title">
+        <div className="section-head">
+          <div>
+            <h2 id="agents-title">Built for agents</h2>
+            <p className="muted">
+              Less time choosing, more time coding. The same clarity keeps coding agents on track.
+            </p>
+          </div>
+          <Link to="/docs/$slug" params={{ slug: 'agents' }}>
+            Working with agents →
+          </Link>
+        </div>
+        <ul className="agents-list">
+          {agentPoints.map((point) => (
+            <li key={point.title}>
+              <h3>{point.title}</h3>
+              <p className="muted">{point.text}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="kits" aria-labelledby="kits-title">

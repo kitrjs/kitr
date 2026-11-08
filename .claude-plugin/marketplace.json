@@ -1,0 +1,16 @@
+{
+  "name": "kitr",
+  "owner": {
+    "name": "kitrjs"
+  },
+  "metadata": {
+    "description": "Skills for building kitr apps with coding agents."
+  },
+  "plugins": [
+    {
+      "name": "kitr",
+      "source": "./tooling/claude",
+      "description": "kitr conventions, generators and checks for coding agents."
+    }
+  ]
+}
