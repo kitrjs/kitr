@@ -34,7 +34,7 @@ What `kitr add` does:
 - Adds `VITE_APP_VERSION` to the public variables in `app/env.ts` as `e.string({ default: '0.0.0' })`, and `VITE_APP_VERSION=0.0.0` to `.env.example` (and to `.env` when it exists).
 - Adds a `## kitr: offline` section to `AGENTS.md`: successful queries are persisted and restored before the first render, mutations made offline pause and replay on reconnect, named mutations replay even after a restart, give any other mutation a `mutationKey` and `setMutationDefaults` and an optimistic `onMutate`, and use `useOffline()` from `@kitr/offline/react` for a status line.
 
-`kitr add offline` asks no questions and adds no scripts. No kit includes it.
+No kit includes it.
 
 The provider reads the `queryClient` that [Query](/packages/query) binds, and the snapshot goes through [Storage](/packages/storage). `kitr add offline` adds both first when the project lacks them. Like every package that runs in the browser, it is refused in a server-only project.
 

@@ -41,6 +41,7 @@ export default defineConfig({
         prerender: { enabled: true, crawlLinks: true, failOnError: true },
         pages: [
           { path: '/' },
+          { path: '/docs' },
           { path: '/packages' },
           { path: '/guides' },
           { path: '/about' },

@@ -219,7 +219,7 @@ const { data } = useSuspenseQuery(listProjects, { status: 'open' })
 const rename = useMutation(renameProject)
 ```
 
-Both forms end in the same TanStack options. Plain TanStack options still work as before: `useQuery({ queryKey, queryFn })` passes straight through.
+Both forms end in the same TanStack options. Plain TanStack options also work: `useQuery({ queryKey, queryFn })` passes straight through.
 
 ## Pass your own query and mutation options
 

@@ -8,6 +8,9 @@ order: 1
 
 API routes, webhooks from a payment provider, a realtime channel for order updates: anything that runs outside the browser needs a server underneath. `@kitr/server` is that server. It boots your providers in order, gives every request an id and a logger, turns thrown errors into clean JSON, and waits for in-flight requests before it shuts down.
 
+> [!SUMMARY]
+> The API server: it boots your providers, logs each request and shuts down cleanly. Add it with `kitr add server api`; the overview is at [/packages/server](/packages/server).
+
 It is built on [h3](https://h3.dev) and served by [srvx](https://srvx.h3.dev), so the same server runs on Node, Bun, Deno and Cloudflare Workers, standalone or inside TanStack Start. It never imports React, so a pure backend built with kitr ships none.
 
 `@kitr/server` runs on the server only. It is also a platform: `server()` in `kitrrc.ts` tells `kitr dev`, `kitr build` and `kitr start` how to run it. To define routes and controllers on top of it, add [API routes](/packages/api); for functions your own React UI calls, use [Actions](/packages/actions).
@@ -24,6 +27,9 @@ kitr add server api
 
 `server` is the platform type and `api` is the name you address it by (`kitr dev api`). `kitr add server` with no name uses `api`, the usual name for a server platform, and says so.
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add server api` does:
 
 - Adds [Logger](/packages/logger) first if it is missing, because the server requires it: installs `@kitr/logger`, registers its provider and writes `config/logger.ts`.
@@ -39,6 +45,8 @@ What `kitr add server api` does:
 - On the `workers` runtime, writes `platforms/api/wrangler.toml`.
 - Adds a `kitr: server` section and a `kitr: platform api` section to `AGENTS.md`.
 
+</details>
+
 Platform options are flags on the same command:
 
 ```sh
@@ -53,7 +61,12 @@ kitr add server api --runtime bun --port 4000
 | `--entry` | `server/main.ts` | The entry file the platform runs. |
 | `--no-scaffold` | | Register the platform without writing files. |
 
+<details>
+<summary>What kitr remove does</summary>
+
 The `fullstack`, `server`, `saas`, `site` and `realtime` kits already include a server platform named `api`. `kitr platforms remove api` takes the platform out of `kitrrc.ts`; `kitr remove server` reverses the package steps: it removes `@kitr/server`, `h3` and `srvx` from `package.json` and `kitrrc.ts`, deletes `config/server.ts` and drops the `AGENTS.md` section. It leaves `server/main.ts`, `server/routes.ts` and `app/server.ts` in place, because you have likely edited them, and lists the files that still import `@kitr/server`.
+
+</details>
 
 ## Configure
 
@@ -410,7 +423,8 @@ export function ordersDb() {
 }
 ```
 
-Don't import services from module scope into request handlers when they hold per-user state; take them from `useRequestApp()` so each request sees its own.
+> [!WARNING]
+> Don't import services from module scope into request handlers when they hold per-user state. Take them from `useRequestApp()` so each request sees its own.
 
 ## Log with the request id
 
@@ -497,7 +511,7 @@ A plain `Error` becomes `INTERNAL` with status `500`. In development its message
 { "code": "INTERNAL", "message": "Internal server error", "status": 500 }
 ```
 
-> **Warning**
+> [!WARNING]
 > Only a production app (`kitr build`, or `NODE_ENV=production`) hides `5xx` messages and `data`. A staging server started from source in development mode sends internal error messages, such as database errors, to the client.
 
 `4xx` errors keep their message in every mode, so write those messages for the user.
@@ -665,7 +679,7 @@ Without the `crossws` package installed, `listen()` throws `[@kitr/server] webso
 
 ## Commands
 
-`@kitr/server` adds no generators of its own. The server platform answers these commands:
+The server platform answers these commands:
 
 | Command | What it does |
 | --- | --- |

@@ -697,7 +697,7 @@ For a faster build with debug symbols and the webview inspector, pass `--debug`:
 kitr build app --debug
 ```
 
-`tauri build --debug` puts the bundles in `target/debug/bundle` instead, although kitr's closing log line still names the `release` folder. The release build is optimised and takes longer the first time.
+`tauri build --debug` puts the bundles in `target/debug/bundle` instead, although kitr's closing log line names the `release` folder either way. The release build is optimised and takes longer the first time.
 
 `kitr build app` passes only `--debug` to the Tauri CLI. For one bundle format or another target, build the client with kitr and run the Tauri CLI yourself:
 
@@ -746,7 +746,7 @@ Port each command to a handler as the [Desktop](/packages/desktop) guide shows, 
 
 ## Commands
 
-`@kitr/tauri` adds no generators. The Tauri platform answers these commands:
+The Tauri platform answers these commands:
 
 | Command | What it does |
 | --- | --- |

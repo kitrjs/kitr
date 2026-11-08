@@ -21,7 +21,7 @@ kitr add seo
 What `kitr add` does:
 
 - Installs `@kitr/seo`.
-- Adds `'@kitr/seo'` to `packages` in `kitrrc.ts`. There is no provider: nothing runs at startup.
+- Adds `'@kitr/seo'` to `packages` in `kitrrc.ts`. It registers no provider, so nothing runs at startup.
 - Writes `config/seo.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Adds a `## kitr: seo` section to `AGENTS.md` telling coding agents to set `head: (ctx) => seo({ title, description }, ctx)` on routes, to add structured data with `jsonLd()`, and to use `ssrRoute()` and `cacheHeaders()` for rendering and CDN caching.
 

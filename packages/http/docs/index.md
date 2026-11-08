@@ -8,6 +8,9 @@ order: 1
 
 If your app talks to a backend that already exists, such as a Laravel, Rails, Adonis or Go API, you need a client that adds the user's login token to every request, tries once to refresh it when it expires, and turns every kind of failure into one predictable error. `@kitr/http` is that client.
 
+> [!SUMMARY]
+> A REST client that adds the login token and returns errors in one shape. Add it with `kitr add http`; the overview is at [/packages/http](/packages/http).
+
 It is [ky](https://github.com/sindresorhus/ky#readme), re-exported, plus `createHttpClient`, which adds the token, refresh, CSRF and error handling, and two helpers, `httpQuery` and `httpMutation`, that turn endpoints into [Query](/packages/query) contracts. The app gets one client, bound in the container as `http`.
 
 It runs in the browser, and on the server when a page renders. When the API is part of this app, use [API](/packages/api) instead: its client is typed straight from your routes.
@@ -26,6 +29,9 @@ Use [API](/packages/api) when you write the endpoints in this app's `server/` fo
 kitr add http
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
 - Adds [Query](/packages/query) first if the project does not have it, because `http` requires it.
@@ -36,13 +42,20 @@ What `kitr add` does:
 - Writes `config/http.ts` (shown under [Configure](#configure)).
 - Adds a `## kitr: http` section to `AGENTS.md`: the client is `app.container.use('http')`, endpoints are wrapped with `httpQuery`/`httpMutation`, and errors are already `KitrError`.
 
-`kitr add http` asks no questions. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it. To preview the changes without writing them:
+</details>
+
+`kitr add http` asks no questions. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it. To see the changes without writing them:
 
 ```sh
 kitr add http --dry-run
 ```
 
+<details>
+<summary>What kitr remove does</summary>
+
 `kitr remove http` removes the provider, the `packages` entry, the `ky` and `@kitr/http` dependencies, the `AGENTS.md` section and `config/http.ts`. It leaves `VITE_API_URL` in `app/env.ts` and `.env.example`, and lists the files that still import `@kitr/http`.
+
+</details>
 
 ## Configure
 
@@ -435,7 +448,10 @@ export const importInvoices = mutationFrom({
 // => { imported: 42 }
 ```
 
-Don't set `content-type` yourself for `FormData`: the browser adds the boundary the server needs to parse the body. For uploads to your own server with progress and size limits, see [Uploads](/packages/uploads).
+> [!WARNING]
+> Don't set `content-type` yourself for `FormData`. The browser adds the boundary the server needs to parse the body.
+
+For uploads to your own server with progress and size limits, see [Uploads](/packages/uploads).
 
 ## Send the login token
 
@@ -494,7 +510,7 @@ export default defineConfig({
 })
 ```
 
-> **Warning**
+> [!WARNING]
 > `VITE_` variables are compiled into the browser bundle, where anyone can read them. Never put a secret API key in one. Fetch per-user tokens at sign-in instead.
 
 ## Refresh an expired token

@@ -5,7 +5,10 @@ description: Install kitr, create your first app and add a package, in about fiv
 
 # Getting started
 
-kitr is made of small packages you add as you need them, such as `kitr add forms` or `kitr add auth`. Each one is a popular library, like TanStack Query or React Hook Form, with the setup done for you.
+kitr is a framework made of small packages you add as you need them. A new project starts as the wiring files; `kitr add web site` brings Vite, React and a router, and `kitr add forms` or `kitr add auth` come when your app needs forms or sign-in. Each package is a popular library you may already know (TanStack Query, React Hook Form, Zustand...) with the setup done for you.
+
+> [!SUMMARY]
+> Two commands get you a running app: `npm install -g kitr`, then `kitr new my-app --kit app`. Run `npm run dev` inside the folder and open the URL it prints.
 
 You need [Node.js](https://nodejs.org) 22 or newer.
 
@@ -27,15 +30,17 @@ kitr new my-app --kit app
 
 A **kit** is a starting set of platforms, packages and files. Pick the one closest to what you're building; you can add or remove packages later, and every kit is itself a package you can read.
 
-| Kit | For | Includes |
-| --- | --- | --- |
-| `app` (start here) | A logged-in app that talks to an existing API | A web platform with Vite, React and the router, plus HTTP, forms, tables, state, Tailwind, theme, auth, storage, mocks, testing and devtools |
-| `blank` | Starting from nothing | Seven wiring files. No platform, no React, no dev server: `kitr add web site` adds them |
-| `fullstack` | An app with its own backend | The app kit plus server rendering, an API server, server actions, SEO and realtime channels |
-| `server` | An API with no React at all | Server, API routes, database, realtime channels, logger and testing |
-| `saas`, `site`, `realtime`, `desktop`, `tauri`, `mobile` | A real application to start from | The base kits plus pages, controllers and tests; see [Kits](/docs/kits) |
+| Kit | For |
+| --- | --- |
+| `app` (start here) | A logged-in app that talks to an existing API |
+| `fullstack` | An app with its own backend, server rendering and realtime |
+| `server` | An API with no React at all |
+| `blank` | Starting from nothing: seven wiring files |
 
-`app` is the one to start with. `kitr new my-app` without `--kit` makes a `blank` project, which has no platform and no dev server, so `npm run dev` fails until you run `kitr add web site`.
+[Kits](/docs/kits) lists the rest, including `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile`.
+
+> [!WARNING] Blank projects have no dev server
+> `kitr new my-app` without `--kit` makes a `blank` project, so `npm run dev` fails until you run `kitr add web site`. Use `--kit app` to start with a working page.
 
 `kitr new` installs dependencies, sets up git and writes an `AGENTS.md` for coding assistants.
 
@@ -46,9 +51,7 @@ cd my-app
 npm run dev
 ```
 
-Open the URL it prints. Edit `app/pages/home.tsx` and the page updates as you save.
-
-The starter page confirms the app is running, shows the next commands to try and links to these docs and to `AGENTS.md`. The project also has a `README.md` that says where everything lives.
+Open the URL it prints. Edit `app/pages/home.tsx` and the page updates as you save; the starter page also shows the next commands to try.
 
 ## 4. Add a page
 
@@ -78,11 +81,8 @@ kitr add state
 
 That one command installs the package, wires it up and notes the conventions in `AGENTS.md`. Every package page on this site shows exactly what `kitr add` changed, then walks through each task the package supports.
 
-## What next
+## Next steps
 
-- [What is kitr](/docs/what-is-kitr): the mental model, and a glossary of the words used here.
-- [How kitr compares](/docs/compare): kitr beside Next.js, Remix, Expo and others.
-- [Project structure](/docs/project-structure): where everything lives.
+- [Use a package](/packages): find the pieces your app needs.
 - [Configuration](/docs/configuration): `kitrrc.ts`, `config/` and environment variables.
-- [Browse packages](/packages): find the pieces your app needs.
-- [Loading and saving data](/docs/data): the one idea that ties kitr together.
+- [Add your own code](/docs/extending): your own state, services and drivers.

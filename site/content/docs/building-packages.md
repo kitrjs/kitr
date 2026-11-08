@@ -5,7 +5,7 @@ description: Write a kitr package that the CLI can install and this site can lis
 
 # Building a package
 
-Every package on this site, official or not, is an ordinary npm package with three additions: a `kitr` block in its `package.json`, a `docs` folder, and optionally an `examples` folder. Nothing is registered by hand. Publish it with the `kitr-package` keyword and it can be listed here.
+Every package on this site, official or not, is an ordinary npm package with three additions: a `kitr` block in its `package.json`, a `docs` folder, and optionally an `examples` folder. Publish it with the `kitr-package` keyword and it can be listed here.
 
 ## The manifest
 
@@ -156,4 +156,4 @@ A platform or a kit is the same package with a `kind`: a platform adds a `platfo
 npm publish
 ```
 
-Use the `kitr-package` keyword. Community listings are on the way: a weekly sync will pick up packages with that keyword and list them under Community, with a health badge based on recent releases and the kitr versions they support.
+Add the `kitr-package` keyword so the package can be found.

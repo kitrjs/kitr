@@ -10,7 +10,7 @@ order: 0
 
 `@kitr/server` is `createServer`: an HTTP server that boots your providers, gives each request an id and a logger, turns errors into JSON, answers `/healthz` and shuts down without dropping requests. `server()` in `kitrrc.ts` makes it a platform for `kitr dev`, `build` and `start`.
 
-Runs on the server only, with no React. Routes come from [API routes](/packages/api).
+Runs on the server only. Routes come from [API routes](/packages/api).
 
 ## Install
 

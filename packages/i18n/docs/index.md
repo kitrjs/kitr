@@ -10,7 +10,7 @@ Acme's first customers all read English. Then a team in Berlin signs up, and eve
 
 It is [react-i18next](https://react.i18next.com) and [i18next](https://www.i18next.com), re-exported unchanged, with a provider and defaults most apps want: an isolated i18next instance per app, the fallback language set to your default locale, no HTML escaping (React already escapes), no Suspense, and locale detection from a saved choice or the browser. It adds `matchLocale()` to pick a language from an `Accept-Language` header and a `TranslationKeys` type for typed key props.
 
-It runs in the browser, inside React. The provider is client-side, and `kitr add i18n` skips a server-only project with a warning. On the server you can still call `createI18n()` or `matchLocale()` directly, to translate an email or choose the language of a server-rendered page. Translating your marketing content in a CMS is a different job; this package is for the strings in your code.
+It runs in the browser, inside React. The provider is client-side, and `kitr add i18n` skips a server-only project with a warning. On the server you can still call `createI18n()` or `matchLocale()` directly, to translate an email or choose the language of a server-rendered page.
 
 The examples on this page translate Acme's order screens at `app.acme.com` into English and German: the page title, the order count, totals in euros and a welcome line for Ada.
 
@@ -28,7 +28,7 @@ What `kitr add` does:
 - Writes `config/i18n.ts`, unless it exists. See [Configure](#configure).
 - Adds a `## kitr: i18n` section to `AGENTS.md`: strings live in `app/locales/<lang>.ts`, components call `const { t } = useTranslation()` from `@kitr/i18n`, and keys are typed from the English bundle.
 
-It adds no env variables, no scripts and asks no questions. The `site` kit includes i18n with English and German bundles, a language switch, and the visitor's choice in a cookie so server-rendered pages arrive in the right language.
+The `site` kit includes i18n with English and German bundles, a language switch, and the visitor's choice in a cookie so server-rendered pages arrive in the right language.
 
 `kitr remove i18n` takes the provider and the package out of `kitrrc.ts`, deletes `config/i18n.ts`, removes the three dependencies and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `@kitr/i18n`. It leaves `app/locales/` in place.
 

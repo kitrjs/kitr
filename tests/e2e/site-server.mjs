@@ -30,10 +30,6 @@ const file = (rel) => {
 
 createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)
-  if (/^\/docs\/?$/.test(path)) {
-    res.writeHead(301, { location: '/docs/getting-started' }).end()
-    return
-  }
   let found
   if (path.endsWith('.md') || path.startsWith('/assets/')) found = file(path)
   else found = file(path) ?? file(join(path, 'index.html')) ?? file(`${path}.html`)

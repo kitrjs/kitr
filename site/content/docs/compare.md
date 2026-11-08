@@ -5,31 +5,55 @@ description: Where kitr overlaps with Next.js, Remix and React Router, TanStack 
 
 # How kitr compares
 
-kitr is young, with a small community. The frameworks below are older and better proven. Coming from Next.js? [Migrate from Next.js](/guides/migrate-from-nextjs) maps each idea to kitr.
+This page compares kitr with the frameworks it overlaps with. It says where kitr overlaps with each, where it differs, and when the other one is the better choice. If you are coming from Next.js, [Migrate from Next.js](/guides/migrate-from-nextjs) maps each Next.js idea to its kitr equivalent.
 
 ## Next.js
 
-Next.js is one framework with its own router, bundler and server, and a large ecosystem. kitr is a set of separate packages over TanStack and Vite, with pages listed in `app/routes.ts` instead of folders. Pick Next.js for the most widely used React framework and its hosting. Pick kitr when you want pieces you can swap out.
+Both build React apps with server rendering, static output and an API layer.
+
+Next.js is one framework with its own router, bundler and server conventions. kitr is a set of packages over TanStack Router, Query and Start, and Vite, with pages listed on a route table in `app/routes.ts`.
+
+Pick Next.js when you want the most widely used React framework and its hosting options. Pick kitr when you want the pieces to be separate libraries you can leave.
 
 ## Remix and React Router 7
 
-React Router is a focused router with a long track record, and you can adopt it one page at a time. kitr uses TanStack Router, where links and search params are typed, and also covers the server, forms, auth and mail. Pick React Router for just the router. Pick kitr when you want the rest decided too.
+Both lean on web standards and let a route own its data loading.
+
+kitr uses TanStack Router, where loaders, search params and links are typed, and adds query caching and mutation `effects`. It also covers the server, forms, auth and mail through the same CLI.
+
+Pick React Router when you want a focused router with a long track record. Pick kitr when you want the surrounding conventions as well.
 
 ## TanStack Start
 
-The closest relative: kitr's `web()` platform runs on Start, so TanStack knowledge carries over. kitr adds a project layout, `kitrrc.ts`, packages, generators and a CLI. Use Start directly to make those choices yourself; use kitr to have them made for you.
+This is the closest relative: kitr's `web()` platform uses TanStack Start for server rendering, and kitr re-exports TanStack Router and Query, so TanStack knowledge carries over.
+
+Start gives you the framework core. kitr adds a project layout, the `kitrrc.ts` wiring, a package system with generators and a CLI.
+
+Pick Start when you want to make your own choices about everything around it. Pick kitr when you want those choices made and written down.
 
 ## Expo
 
-Expo builds React Native apps with native views and a mature toolchain. kitr's mobile and desktop platforms wrap your web app in a native shell instead. Pick Expo when you need native views. Pick kitr when your app is a web app you also want on phones and desktops.
+Both aim at one codebase for several platforms.
+
+Expo builds React Native apps that render native views. kitr's mobile and desktop platforms (Capacitor, Electron and Tauri) wrap your web app in a native shell that shows it in a web view.
+
+Pick Expo when you need native views and platform-specific interaction. Pick kitr when your app is a web app that you also want in a shell.
 
 ## AdonisJS
 
-kitr borrows a lot from Adonis: config-file wiring, providers, a container, controllers and generators. Adonis is a mature backend framework with its own ORM, auth and mail. Pick Adonis for a full-featured backend. Pick kitr when the same project also has a React front end.
+kitr borrows from Adonis: explicit wiring in a config file, providers with a lifecycle, a container, controllers and generators. The `server` kit has Adonis-style controllers on h3.
+
+Adonis is a batteries-included Node framework with its own ORM, auth and mail. kitr's server side is lighter, and its front end is React with TanStack.
+
+Pick Adonis for a backend with a full-featured ecosystem. Pick kitr when the same project also has a React front end and you want one CLI for both.
 
 ## Laravel
 
-Laravel has an answer for everything: queues, mail, auth, a command line, hosting. kitr shares the idea that conventions beat wiring libraries by hand, but it is TypeScript and much younger. Pick Laravel for a proven PHP stack. Pick kitr for TypeScript end to end.
+Laravel is the reference point for a framework with an opinion on everything. kitr shares the idea that a CLI and fixed conventions beat assembling libraries by hand, and it has packages for mail, jobs, cache and flags.
+
+Laravel is PHP, with a first-party auth system and hosting products. kitr is TypeScript and has no auth server of its own.
+
+Pick Laravel for a PHP team that wants a complete stack. Pick kitr when your team works in TypeScript end to end.
 
 ## At a glance
 
@@ -48,11 +72,10 @@ Cells for other frameworks are general. Check their own documentation for curren
 
 - No auth server. The `auth` package works with the one you run.
 - Native shells are web views, not React Native.
-- The stack is new, so there are fewer answers online and fewer people who know it.
 
 ## Next steps
 
 - [What is kitr](/docs/what-is-kitr): the mental model.
 - [Getting started](/docs/getting-started): install kitr and create an app.
 - [Migrate from Next.js](/guides/migrate-from-nextjs): a step-by-step mapping.
-- [Design decisions](/docs/design): where kitr deliberately differs from the obvious approach.
+- [Design decisions](/docs/design): the rules behind kitr's architecture.

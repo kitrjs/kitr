@@ -55,11 +55,16 @@ export function PlatformTile({
   )
 }
 
-/** The hero's platform board: every platform, then the one you write yourself. */
+/**
+ * The platform board: one tile per kind of platform, then the one you write yourself. Tauri is
+ * left off because it is a second answer for desktop; the builder and /platforms still offer it.
+ */
+const boardPlatforms = platforms.filter((p) => p.type !== 'tauri')
+
 export function PlatformBoard() {
   return (
     <nav className="platform-board" aria-label="Platforms">
-      {platforms.map((p) => (
+      {boardPlatforms.map((p) => (
         <PlatformTile key={p.type} platform={p} />
       ))}
       <Link
@@ -117,13 +122,12 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
   return (
     <section className="builder" aria-labelledby="builder-title" id="mix">
       <div className="builder-copy">
-        <span className="label">Mix and match</span>
         <Heading id="builder-title" className="builder-title">
           One app. As many platforms as you need.
         </Heading>
         <p className="muted">
-          Each platform is one line in <code>kitrrc.ts</code>. Add as many as you like, and run them
-          all with <code>kitr dev</code>. They share the same code.
+          Each platform is one line in your config. Toggle one to see the file and the commands
+          change.
         </p>
         <fieldset className="builder-choices">
           <legend className="visually-hidden">Platforms in this project</legend>
@@ -149,9 +153,6 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
             )
           })}
         </fieldset>
-        <p className="builder-note muted">
-          Try it: toggle a platform. Pick Electron or Tauri for desktop, not both.
-        </p>
       </div>
       <div className="builder-out">
         <div

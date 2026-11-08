@@ -9,7 +9,7 @@ pnpm -C site build   # static output in site/dist/client
 
 ## Where content comes from
 
-Nothing about packages is written here. `scripts/content.mjs` runs before dev and build and reads:
+Package content comes from the packages themselves. `scripts/content.mjs` runs before dev and build and reads:
 
 | Source | Becomes |
 | --- | --- |

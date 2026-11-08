@@ -147,7 +147,7 @@ export default defineConfig({
 })
 ```
 
-The window itself is the kitr client build in `dist/app/client`, built by Vite with the kitr Vite plugin, not by electron-vite.
+The window itself is the kitr client build in `dist/app/client`, built by Vite with the kitr Vite plugin.
 
 | Variable | Used for |
 | --- | --- |
@@ -720,7 +720,7 @@ Port each handler in `main.ts` to a `#[tauri::command]` in `platforms/app/src-ta
 
 ## Commands
 
-`@kitr/desktop` adds no generators. The desktop platform answers these commands:
+The desktop platform answers these commands:
 
 | Command | What it does |
 | --- | --- |

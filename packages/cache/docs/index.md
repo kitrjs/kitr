@@ -8,7 +8,7 @@ order: 1
 
 Some reads are slow or expensive: a project report that joins six tables, a call to a rate-limited exchange-rate API, an invoice PDF summary rendered from a template. `@kitr/cache` keeps the result for a while, so the next request gets it straight from memory or Redis. When the data changes, you clear every cached result about it with one tag instead of hunting down keys.
 
-The package is a small layer of its own, not a wrapper: values are stored as JSON through a six-method driver, with a memory driver built in and an [unstorage](https://unstorage.unjs.io) driver for Redis, Upstash, Cloudflare KV and the rest. On top of a plain key-value store it adds expiry times, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
+Values are stored as JSON through a six-method driver, with a memory driver built in and an [unstorage](https://unstorage.unjs.io) driver for Redis, Upstash, Cloudflare KV and the rest. On top of a plain key-value store it adds expiry times, tags, a key prefix, and `remember()`, which runs slow work once even when fifty requests ask at the same moment.
 
 It runs on the server only. The provider does nothing in the browser. To cache what the API returns on the client, use [query](/packages/query), which already does.
 

@@ -10,7 +10,7 @@ When Ada reports that her order never shipped, the logs are where you find out w
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` ships orders, generates invoices and syncs projects, and the team (Ada, Grace and Linus) reads the logs when something goes wrong.
 
-`@kitr/logger` has no dependencies and runs on the server and in the browser. It is for lines a developer reads. To be alerted about errors with the user and the steps that led to them, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
+`@kitr/logger` runs on the server and in the browser. It is for lines a developer reads. To be alerted about errors with the user and the steps that led to them, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
 
 ## Install
 
@@ -25,7 +25,7 @@ What `kitr add` does:
 - Writes `config/logger.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Adds a `## kitr: logger` section to `AGENTS.md` telling coding agents to log through `ctx.logger` or `app.container.use('logger')`, never `console.log` in server code.
 
-`kitr add logger` adds no env variables or scripts and asks no questions. To edit `package.json` without running the package manager, pass the global flag:
+To edit `package.json` without running the package manager, pass the global flag:
 
 ```sh
 kitr add logger --no-install
@@ -388,7 +388,7 @@ const logger = createLogger({ name: 'import', level: 'debug' })
 logger.info('importing projects', { file: 'projects.csv' })
 ```
 
-`silentLogger` is a ready-made logger at level `silent` that writes nothing. Pass it where an API wants a logger and you want no output, as the server's own tests do with `createServer({ logger: silentLogger })`.
+`silentLogger` is a ready-made logger at level `silent` that writes nothing. Pass it where an API wants a logger and you want no output.
 
 ## See logs in devtools
 

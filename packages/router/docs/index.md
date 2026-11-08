@@ -8,9 +8,12 @@ order: 1
 
 Every app has pages: a dashboard, a list of projects, one project, a sign-in screen. With `@kitr/router` the pages are links on one chain in `app/routes.ts`. Add `.page('/projects/$id', { lazy: () => import('./pages/project') })` and `/projects/42` exists, with `id` typed in the component, the loader and every `<Link>` that points at it.
 
+> [!SUMMARY]
+> Pages on one route table, with typed links, loaders and guards. Add it with `kitr add router`; the overview is at [/packages/router](/packages/router).
+
 `@kitr/router` is [TanStack Router](https://tanstack.com/router/latest), re-exported unchanged, rendered by [TanStack Start](https://tanstack.com/start/latest). On top it adds the `router` extension for kitr's route table (`.root`, `.page`, `.layout`), `createKitrRouter` (the router built from that table, with kitr's defaults and the app in context), default loading, error and not-found screens, and three `beforeLoad` guards: `requireAuth`, `can` and `guards`.
 
-The route table itself comes from the core (`defineRoutes` in `kitr/app`). It only has the methods of the extensions you list: pages from `@kitr/router/routes`, endpoints from `@kitr/api/routes`, sockets from `@kitr/realtime/routes`. A server-only project never installs this package, so its table has no `.page` and no React; its HTTP routes come from [api](/packages/api).
+The route table itself comes from the core (`defineRoutes` in `kitr/app`). It only has the methods of the extensions you list: pages from `@kitr/router/routes`, endpoints from `@kitr/api/routes`, sockets from `@kitr/realtime/routes`. In a server-only project the table has no `.page`; its HTTP routes come from [api](/packages/api).
 
 It runs in the browser, and on the server when the web platform renders pages there.
 
@@ -24,6 +27,9 @@ The web, desktop and mobile [platforms](/docs/platforms) require the router, so 
 kitr add router
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
 - Adds [react](/packages/react) first if the project does not have it, because the router requires it.
@@ -35,19 +41,24 @@ What `kitr add` does:
 - Writes `app/router.tsx`, which creates the router from the table (shown under Configure).
 - Writes `app/client.tsx`, Start's client entry, which boots the app before it hydrates the page.
 - Adds a `router` section to `AGENTS.md`: routes are code in `app/routes.ts`, components live in `app/pages/`, loaders and guards go on the route options, and the document stays platform-neutral.
-- Adds no config file, no environment variables and no scripts.
+</details>
 
-`kitr add` skips any of these files that already exists. It asks no questions; `--no-install` skips the package manager and `--dry-run` prints the plan.
+`kitr add` skips any of these files that already exists. `--no-install` skips the package manager and `--dry-run` prints the plan.
 
 ```sh
 kitr add router --dry-run
 ```
 
+<details>
+<summary>What kitr remove does</summary>
+
 `kitr remove router` removes the packages, the `kitrrc.ts` entry, the `AGENTS.md` section and `router` from the table's extension list. It leaves `app/routes.ts`, `app/document.tsx`, `app/pages/`, `app/router.tsx` and `app/client.tsx` in place, because they are your pages now.
+
+</details>
 
 ## Configure
 
-`@kitr/router` has no config file. You configure it where it is created, in `app/router.tsx`, which `kitr add router` writes:
+`@kitr/router` has no config file; you configure it where it is created, in `app/router.tsx`, which `kitr add router` writes:
 
 ```tsx
 // app/router.tsx
@@ -344,7 +355,10 @@ export default function TeamPage() {
 // /teams/platform → "Platform: Ada, Grace, Linus"
 ```
 
-The router boots the app before the first loader runs, so every service is ready. Don't import `app` from `#app/app` in a loader: on the server, `context.app` is a per-request fork of it, and the shared app would leak one visitor's request-scoped services into another's page.
+The router boots the app before the first loader runs, so every service is ready.
+
+> [!WARNING]
+> Don't import `app` from `#app/app` in a loader. On the server, `context.app` is a per-request fork of it, and the shared app would leak one visitor's request-scoped services into another's page.
 
 ## Add a layout
 
@@ -545,7 +559,7 @@ export default function SignInPage() {
 
 The guard only sees a session if you put one in the router context, through `createKitrRouter`'s `context` option. The session can come from [auth](/packages/auth) or from your own provider; see "Add fields to the router context" below.
 
-> **Warning**
+> [!WARNING]
 > Route guards decide what the browser shows. They do not protect data: anyone can call your API without loading the page. Check the session again on the server, in the API route or action that returns the data.
 
 ## Check a permission
@@ -724,7 +738,7 @@ export default function AppLayout() {
 }
 ```
 
-Every page inside the `_app` layout is now a page in the stack. Navigating deeper pushes; the page beneath stays mounted with its state, scroll position and playing media; history back pops it with the matching animation. Nothing else changes: links, loaders, search params and guards work as before, and the same route tree renders as plain pages on the server, during hydration and in a static build.
+Every page inside the `_app` layout is now a page in the stack. Navigating deeper pushes; the page beneath stays mounted with its state, scroll position and playing media; history back pops it with the matching animation. Links, loaders, search params and guards work unchanged, and the same route tree renders as plain pages on the server, during hydration and in a static build.
 
 ```ts
 // app/routes.ts (inside the _app layout)
@@ -1063,7 +1077,7 @@ The binding is typed as TanStack's `AnyRouter`, so `to` is not checked here. Ins
 
 ## Keep file routes
 
-This section is the one place that documents file routes. A project that already has `app/routes/__root.tsx` keeps working: `@kitr/vite` sees the file and lets TanStack's route generator build `app/routeTree.gen.ts` as before, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line. New projects get the table; nothing forces a move, and the two can't mix in one app.
+A project can use TanStack's file routes instead of the table. With `app/routes/__root.tsx` present, `@kitr/vite` lets TanStack's route generator build `app/routeTree.gen.ts`, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line, and `kitr doctor` allows exactly that import. A project uses the table or file routes, not both.
 
 ## Commands
 

@@ -13,6 +13,8 @@ export interface Page {
   /** Guides only: roughly how long the guide takes, such as `30 min`. */
   time?: string
   blocks: Block[]
+  /** The page has numbered `## 1. Step` headings. */
+  steps?: boolean
   toc: Array<{ depth: number; id: string; text: string }>
   editUrl: string
 }
