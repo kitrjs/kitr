@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/testing`, `kitr/testing/react`, read from the published type definitions. The [guide](/packages/testing) shows them in use.
+Every export of `kitr/testing`, `kitr/testing/react`, read from the published type definitions. The [guide](/packages/testing/guide) shows them in use.
 
 ## kitr/testing
 

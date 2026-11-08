@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, read from the published type definitions. The [guide](/packages/native) shows them in use.
+Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, read from the published type definitions. The [guide](/packages/native/guide) shows them in use.
 
 ## kitr/native
 

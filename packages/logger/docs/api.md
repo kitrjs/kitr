@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/logger`, read from the published type definitions. The [guide](/packages/logger) shows them in use.
+Every export of `kitr/logger`, read from the published type definitions. The [guide](/packages/logger/guide) shows them in use.
 
 ## kitr/logger
 

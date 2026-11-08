@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/desktop`, `kitr/desktop/client`, `kitr/desktop/main`, `kitr/desktop/preload`, `kitr/desktop/provider`, read from the published type definitions. The [guide](/packages/desktop) shows them in use.
+Every export of `kitr/desktop`, `kitr/desktop/client`, `kitr/desktop/main`, `kitr/desktop/preload`, `kitr/desktop/provider`, read from the published type definitions. The [guide](/packages/desktop/guide) shows them in use.
 
 ## kitr/desktop
 

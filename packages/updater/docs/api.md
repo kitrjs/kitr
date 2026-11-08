@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, read from the published type definitions. The [guide](/packages/updater) shows them in use.
+Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, read from the published type definitions. The [guide](/packages/updater/guide) shows them in use.
 
 ## kitr/updater
 

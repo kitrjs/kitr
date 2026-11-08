@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/offline`, `kitr/offline/react`, `kitr/offline/provider`, read from the published type definitions. The [guide](/packages/offline) shows them in use.
+Every export of `kitr/offline`, `kitr/offline/react`, `kitr/offline/provider`, read from the published type definitions. The [guide](/packages/offline/guide) shows them in use.
 
 ## kitr/offline
 

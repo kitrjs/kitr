@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/router`, `kitr/router/routes`, `kitr/router/stack`, read from the published type definitions. The [guide](/packages/router) shows them in use.
+Every export of `kitr/router`, `kitr/router/routes`, `kitr/router/stack`, read from the published type definitions. The [guide](/packages/router/guide) shows them in use.
 
 ## kitr/router
 

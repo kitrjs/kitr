@@ -6,7 +6,7 @@ order: 2
 
 # API reference
 
-Every export of `kitr/tauri`, `kitr/tauri/client`, `kitr/tauri/provider`, read from the published type definitions. The [guide](/packages/tauri) shows them in use.
+Every export of `kitr/tauri`, `kitr/tauri/client`, `kitr/tauri/provider`, read from the published type definitions. The [guide](/packages/tauri/guide) shows them in use.
 
 ## kitr/tauri
 
