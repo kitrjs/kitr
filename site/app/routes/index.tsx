@@ -157,9 +157,9 @@ function Home() {
         <div className="hero-copy">
           <h1 className="display hero-title">One way to build everything.</h1>
           <p className="lede">
-            One framework for the web, servers, desktop, Tauri, phones and platforms of your own. The
-            tools are chosen and wired, so you spend your time building, and agents follow the same
-            conventions you do.
+            One framework for the web, servers, desktop, Tauri, phones and platforms of your own.
+            The tools are chosen and wired, so you spend your time building, and agents follow the
+            same conventions you do.
           </p>
           <Command cmd="kitr new my-app --kit app" />
           <div className="actions">
