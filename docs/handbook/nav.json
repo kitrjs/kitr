@@ -41,7 +41,7 @@
       },
       {
         "slug": "package-contract",
-        "source": "../../../docs/package-contract.md",
+        "source": "../package-contract.md",
         "title": "Package contract",
         "description": "How a package plugs into kitr add, the CLI and the build: questions, codemods, commands, generators."
       }
@@ -52,43 +52,43 @@
     "pages": [
       {
         "slug": "cli",
-        "source": "../../../docs/cli.md",
+        "source": "../cli.md",
         "title": "CLI",
         "description": "Every kitr command and flag."
       },
       {
         "slug": "kits",
-        "source": "../../../docs/kits.md",
+        "source": "../kits.md",
         "title": "Kits",
         "description": "What each kit sets up, what the presets scaffold, and how to write a kit of your own."
       },
       {
         "slug": "platforms",
-        "source": "../../../docs/platforms.md",
+        "source": "../platforms.md",
         "title": "Platforms",
         "description": "Web, server, desktop and mobile platforms: options, commands and layout."
       },
       {
         "slug": "data-sources",
-        "source": "../../../docs/data.md",
+        "source": "../data.md",
         "title": "Choosing a data source",
         "description": "Actions, API routes, HTTP or realtime: which one to use, what each kit chose and how they mix."
       },
       {
         "slug": "packages",
-        "source": "../../../docs/packages.md",
+        "source": "../packages.md",
         "title": "Packages",
         "description": "What each package provides, which kit includes it, and the roadmap."
       },
       {
         "slug": "entry-points",
-        "source": "../../../docs/entry-points.md",
+        "source": "../entry-points.md",
         "title": "Entry points",
         "description": "How @kitr/* packages wrap upstream libraries, and the rules behind them."
       },
       {
         "slug": "design",
-        "source": "../../../docs/design.md",
+        "source": "../design.md",
         "title": "Design decisions",
         "description": "The rules behind kitr's architecture and what each one means for your code."
       },

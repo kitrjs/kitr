@@ -206,7 +206,8 @@ The examples are exactly what the CLI generates (with workspace links instead of
 - [docs/packages.md](docs/packages.md): what each package provides and when to add it
 - [docs/platforms.md](docs/platforms.md): web, server, desktop, tauri and mobile platforms, their options and commands
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
-- [site/content/guides](site/content/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](site/content/guides/api-server.md)
+- [docs/guides](docs/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](docs/guides/api-server.md)
+- [docs/handbook](docs/handbook): the pages on [kitr.dev/docs](https://kitr.dev/docs), from getting started to the comparison
 - [docs/design.md](docs/design.md): the rules behind the architecture
 
 ## Contributing

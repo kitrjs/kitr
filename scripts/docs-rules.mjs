@@ -154,9 +154,9 @@ if (!only.size) {
     ...readdirSync('docs')
       .filter((f) => f.endsWith('.md') && f !== 'STYLE.md')
       .map((f) => join('docs', f)),
-    ...readdirSync(join('site', 'content', 'docs'))
+    ...readdirSync(join('docs', 'handbook'))
       .filter((f) => f.endsWith('.md'))
-      .map((f) => join('site', 'content', 'docs', f)),
+      .map((f) => join('docs', 'handbook', f)),
   ]
   for (const file of pages) {
     const long = longCellProblem(readFileSync(file, 'utf8'))
