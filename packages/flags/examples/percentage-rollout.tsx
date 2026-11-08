@@ -24,7 +24,8 @@ const app = createApp({
       definitions: flags,
       providers: [
         staticFlagsProvider({ 'support-chat': true }),
-        percentageFlagsProvider({ 'new-dashboard': 30 }),
+        // The salt picks who lands in the 30%: change it and a different group of users gets the redesign.
+        percentageFlagsProvider({ 'new-dashboard': 30 }, 'dashboard-2026'),
       ],
     },
   },
