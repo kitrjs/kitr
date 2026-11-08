@@ -25,6 +25,8 @@ export interface SearchEntry {
   section: string
   heading: string
   text: string
+  /** A package's short name, matched like the title. */
+  name?: string
 }
 
 export const docsNav = docsNavJson as Array<{
@@ -70,7 +72,7 @@ export function search(entries: SearchEntry[], query: string, limit = 8): Search
   if (!words.length) return []
   const scored: Array<[number, SearchEntry]> = []
   for (const entry of entries) {
-    const title = entry.title.toLowerCase()
+    const title = `${entry.title} ${entry.name ?? ''}`.toLowerCase()
     const heading = entry.heading.toLowerCase()
     const text = entry.text.toLowerCase()
     let score = 0
@@ -83,11 +85,22 @@ export function search(entries: SearchEntry[], query: string, limit = 8): Search
       }
       score += s
     }
-    if (title === query.toLowerCase()) score += 10
+    const q = query.toLowerCase().trim()
+    if (entry.title.toLowerCase() === q || entry.name === q) score += 10
+    // A package's own page first, then its guide and API pages.
+    if (entry.name) score += 3
     if (score) scored.push([score - (entry.heading ? 0.5 : 0), entry])
   }
-  return scored
-    .sort((a, b) => b[0] - a[0])
-    .slice(0, limit)
-    .map(([, e]) => e)
+  // At most two hits from one page, so a single long guide doesn't fill the list.
+  const perPage = new Map<string, number>()
+  const out: SearchEntry[] = []
+  for (const [, e] of scored.sort((a, b) => b[0] - a[0])) {
+    const page = e.url.split('#')[0] ?? e.url
+    const n = perPage.get(page) ?? 0
+    if (n >= 2) continue
+    perPage.set(page, n + 1)
+    out.push(e)
+    if (out.length >= limit) break
+  }
+  return out
 }
