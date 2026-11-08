@@ -352,10 +352,11 @@ const rootRoute = getRouteApi('__root__')
       prelude: `  const locale = rootRoute.useLoaderData()
 `,
       wrap: ['      <LocaleProvider initial={locale}>', '      </LocaleProvider>'],
+      headParams: 'ctx: object',
       head: `    meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      ...seo({ title: '${brand}', description: 'A marketing site built with kitr.' }).meta,
+      ...seo({ title: '${brand}', description: 'A marketing site built with kitr.' }, ctx).meta,
     ],`,
       body: `      <SiteHeader />
       <Outlet />
@@ -418,13 +419,14 @@ export const routes = defineRoutes([router], (r) =>
     .root({ head, loader: () => readLocale(), component: RootDocument })
     .page('/', { lazy: () => import('./pages/home') })
     .page('/pricing', {
-      head: () => seo({ title: 'Pricing', description: 'Simple plans for every team size.' }),
+      head: (ctx) =>
+        seo({ title: 'Pricing', description: 'Simple plans for every team size.' }, ctx),
       lazy: () => import('./pages/pricing'),
     })
     .group('/blog', (blog) =>
       blog
         .page('/', {
-          head: () => seo({ title: 'Blog', description: 'Notes on building with kitr.' }),
+          head: (ctx) => seo({ title: 'Blog', description: 'Notes on building with kitr.' }, ctx),
           lazy: () => import('./pages/blog/index'),
         })
         .page('/$slug', {
@@ -433,8 +435,11 @@ export const routes = defineRoutes([router], (r) =>
             if (!post) throw notFound()
             return post
           },
-          head: ({ loaderData }) =>
-            seo({ title: loaderData?.title, description: loaderData?.excerpt, type: 'article' }),
+          head: (ctx) =>
+            seo(
+              { title: ctx.loaderData?.title, description: ctx.loaderData?.excerpt, type: 'article' },
+              ctx,
+            ),
           lazy: () => import('./pages/blog/post'),
         }),
     ),

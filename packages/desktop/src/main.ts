@@ -63,6 +63,7 @@ export function registerAppScheme(protocol: typeof import('electron').protocol) 
   ])
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript',

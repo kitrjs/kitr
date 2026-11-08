@@ -162,7 +162,9 @@ import { queryOptions } from 'kitr/query'
 
 r.page('/projects/', {
   loader: ({ context }) =>
-    context.queryClient.ensureQueryData(queryOptions('projects.list', { status: 'open' })),
+    context.queryClient.ensureQueryData(
+      queryOptions(context.app, 'projects.list', { status: 'open' }),
+    ),
   lazy: () => import('./pages/projects/index'),
 })
 ```
@@ -187,13 +189,13 @@ const project = await renameProject({ id: 'prj_42', name: 'Acme site' })
 
 In the browser this is one request. On the server, during rendering or inside another handler, Start runs the handler in-process; there is no HTTP hop. A direct call applies no cache effects, because there is no cache in play; use `useMutation` in components for that.
 
-When all you have is the name, `call` from `kitr/query` looks it up in the registry:
+When all you have is the name, `call` from `kitr/query` looks it up in the app's registry (`app.operations`), so pass the app:
 
 ```ts
 import { call } from 'kitr/query'
 
-await call('projects.rename', { id: 'prj_42', name: 'Acme site' })
-const open = await call('projects.list', { status: 'open' })
+await call(app, 'projects.rename', { id: 'prj_42', name: 'Acme site' })
+const open = await call(app, 'projects.list', { status: 'open' })
 ```
 
 The generated tree gives the same functions grouped by feature, which reads well in scripts:

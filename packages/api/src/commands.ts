@@ -93,6 +93,7 @@ function write(file: string, content: string) {
 }
 
 /** `kitr api:sync`: writes the OpenAPI document and the client route table from the routes file. */
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const apiSync = {
   meta: {
     name: 'api:sync',
@@ -139,6 +140,7 @@ export const apiSync = {
 }
 
 /** `kitr routes:list`: prints every route with its method, path and name. */
+// kitr-allow-module-state: command definition object, built once at import, never mutated
 export const routesList = {
   meta: {
     name: 'routes:list',

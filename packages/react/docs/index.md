@@ -42,16 +42,16 @@ kitr add react --dry-run
 
 ```ts
 // app/app.ts
-import { createApp } from 'kitr/app'
+import { createApp, loadRc } from 'kitr/app'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { env } from './env'
 
 /** One app object: providers from kitrrc.ts, config from config/*.ts, both as static imports. */
-export const app = createApp({ providers, config, env })
+export const app = createApp({ ...loadRc({ providers }, config), env })
 ```
 
-`virtual:kitr/providers` is the `providers` list from `kitrrc.ts`, and `virtual:kitr/config` holds every `config/<name>.ts`, keyed by file name. The [`kitr()` Vite plugin](/docs/configuration) generates both.
+`virtual:kitr/providers` is the `providers` list from `kitrrc.ts`, and `virtual:kitr/config` holds every `config/<name>.ts`, keyed by file name. The [`kitr()` Vite plugin](/docs/configuration) generates both. `loadRc` turns them into the `createApp` options: the server entry, which runs without Vite, writes the same call with `loadRc(rc, config)` and the `rc` and `config` it imports from `kitrrc.ts` and `config/`, so both entry points read alike.
 
 `app/env.ts` is the environment file it passes in:
 

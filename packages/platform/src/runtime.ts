@@ -9,6 +9,7 @@ import { type KitrApp, KitrError } from '@kitr/core'
 export type Runtime = 'web' | 'electron' | 'tauri' | 'capacitor'
 
 /** Every runtime, in the order `detectRuntime()` checks the native ones after `web`. */
+// kitr-allow-module-state: immutable list of runtime names
 export const runtimes: readonly Runtime[] = ['web', 'electron', 'tauri', 'capacitor']
 
 /** The globals `detectRuntime()` reads. Pass a fake in tests; the default is `globalThis`. */

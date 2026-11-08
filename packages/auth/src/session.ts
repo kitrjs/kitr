@@ -43,4 +43,4 @@ export function createSession<TUser>(
 }
 
 /** The session for nobody: no user, every check false. */
-export const anonymousSession: Session<null> = { user: null, can: () => false }
+export const anonymousSession: Session<null> = { user: null, can: () => false } // kitr-allow-module-state: frozen-by-convention constant for the signed-out session, never mutated

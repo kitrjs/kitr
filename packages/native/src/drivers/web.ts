@@ -42,6 +42,7 @@ export function webShare(): ShareDriver | null {
   }
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const PATTERNS: Record<HapticKind, number | number[]> = {
   light: 10,
   medium: 20,

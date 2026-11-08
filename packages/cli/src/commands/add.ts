@@ -13,7 +13,7 @@ import { describeQuestions } from '../questions'
 import { generateTypesQuietly } from '../types'
 import { addPlatformCommand } from './platforms'
 
-const OWN_FLAGS = new Set(['install', 'dry-run', 'verbose', 'yes', 'y', 'help', 'h', 'preview'])
+const OWN_FLAGS = new Set(['install', 'dry-run', 'verbose', 'yes', 'y', 'help', 'h', 'preview']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 /** `kitr add <pkg> --help`: the package's summary and its questions as flags. */
 export async function describePackage(name: string): Promise<string> {

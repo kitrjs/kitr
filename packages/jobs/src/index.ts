@@ -268,7 +268,7 @@ export function createRedisJobsDriver(
   }
 }
 
-const units: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 }
+const units: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 } // kitr-allow-module-state: lookup table built once at import, never mutated
 
 /** Parse an interval such as `'30s'`, `'5m'` or `'1.5h'` into milliseconds (`'5m'` → 300000). Throws on anything else. */
 export function parseInterval(text: string): number {

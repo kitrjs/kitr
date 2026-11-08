@@ -1,4 +1,4 @@
-import { createApp, operations } from '@kitr/core'
+import { createApp } from '@kitr/core'
 import { mutationFrom, mutationKeyFor, onlineManager, QueryClient } from '@kitr/query'
 import queryProvider from '@kitr/query/provider'
 import { createMemoryStorageDriver } from '@kitr/storage'
@@ -76,35 +76,31 @@ describe('offline', () => {
       }),
       { name: 'projects.rename' },
     )
-    operations.register({ 'projects.rename': rename as never })
-    try {
-      // Before the restart: the mutation pauses offline and lands in the snapshot.
-      const before = new QueryClient()
-      before.mount()
-      const offline = createOffline(before, { storage, throttle: 1 })
-      onlineManager.setOnline(false)
-      const m = before.getMutationCache().build(before, {
-        mutationKey: mutationKeyFor('projects.rename'),
-        mutationFn: async (title: string) => title,
-      })
-      void m.execute('Renamed')
-      await vi.waitFor(() => expect(offline.pendingMutations()).toBe(1))
-      await vi.waitFor(() =>
-        expect(JSON.parse(storage.get('kitr:query-cache')!).state.mutations).toHaveLength(1),
-      )
-      before.unmount()
+    const app = createApp({ operations: { 'projects.rename': rename as never } })
+    // Before the restart: the mutation pauses offline and lands in the snapshot.
+    const before = new QueryClient()
+    before.mount()
+    const offline = createOffline(before, { storage, throttle: 1 })
+    onlineManager.setOnline(false)
+    const m = before.getMutationCache().build(before, {
+      mutationKey: mutationKeyFor('projects.rename'),
+      mutationFn: async (title: string) => title,
+    })
+    void m.execute('Renamed')
+    await vi.waitFor(() => expect(offline.pendingMutations()).toBe(1))
+    await vi.waitFor(() =>
+      expect(JSON.parse(storage.get('kitr:query-cache')!).state.mutations).toHaveLength(1),
+    )
+    before.unmount()
 
-      // After the restart: a fresh client, back online. The function comes from the registry.
-      onlineManager.setOnline(true)
-      const after = new QueryClient()
-      after.mount()
-      expect(await createOffline(after, { storage }).restore()).toBe(true)
-      await vi.waitFor(() => expect(sent).toEqual(['Renamed']))
-      await vi.waitFor(() => expect(after.getQueryData(['project'])).toEqual({ title: 'Renamed' }))
-      after.unmount()
-    } finally {
-      operations.reset()
-    }
+    // After the restart: a fresh client, back online. The function comes from the registry.
+    onlineManager.setOnline(true)
+    const after = new QueryClient()
+    after.mount()
+    expect(await createOffline(after, { storage }, app).restore()).toBe(true)
+    await vi.waitFor(() => expect(sent).toEqual(['Renamed']))
+    await vi.waitFor(() => expect(after.getQueryData(['project'])).toEqual({ title: 'Renamed' }))
+    after.unmount()
   })
 
   it('restores at boot through the provider', async () => {

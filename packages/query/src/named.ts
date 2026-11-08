@@ -1,13 +1,14 @@
-import {
-  type MutationName,
-  type OperationInput,
-  type OperationLike,
-  type OperationName,
-  type OperationOf,
-  type OperationOutput,
-  operations,
-  type QueryName,
+import type {
+  KitrApp,
+  MutationName,
+  OperationInput,
+  OperationLike,
+  OperationName,
+  OperationOf,
+  OperationOutput,
+  QueryName,
 } from '@kitr/core'
+import { useApp } from '@kitr/react'
 import {
   type QueryClient,
   type QueryKey,
@@ -31,6 +32,10 @@ import type { MutationDefinition, QueryDefinition } from './contract'
  * (`useQuery(listProjects, input)`), or as plain TanStack options, which pass straight through.
  * The first two resolve to the definition's own TanStack options, so there is nothing kitr adds
  * beyond the lookup and, for mutations, the cache effects.
+ *
+ * A name is looked up in the registry of the app in React context (`useApp().operations`), so two
+ * apps, or two tests, never share operations. Outside React (`queryOptions` in a loader, `call`)
+ * there is no context: pass the app first, `queryOptions(context.app, 'projects.list', input)`.
  */
 
 /** `[input?, options?]` when the input can be left out (`void`, or every field optional), `[input, options?]` otherwise. */
@@ -91,6 +96,7 @@ interface NamedUseMutation {
 
 interface NamedQueryOptions {
   <N extends QueryName>(
+    app: KitrApp,
     name: N,
     ...args: InputArgs<InputOfName<N>, never>
   ): ReturnType<QueryDefinition<InputOfName<N>, OutputOfName<N>>['options']>
@@ -109,11 +115,31 @@ function isDefinition(value: unknown): value is OperationLike {
   )
 }
 
-/** The definition behind a name or a definition; anything else is TanStack's own input. */
-function resolve(source: unknown): OperationLike | undefined {
-  if (typeof source === 'string') return operations.get(source)
+/** The definition behind a name (looked up in `app`) or a definition; anything else is TanStack's own input. */
+function resolve(source: unknown, app?: KitrApp): OperationLike | undefined {
+  if (typeof source === 'string' && app) return app.operations.get(source)
   if (isDefinition(source)) return source
   return undefined
+}
+
+/**
+ * `resolve` for hooks: a name is looked up in the app from React context. A call site passes one
+ * form for its whole life (a literal name, a definition or TanStack options), so reading the
+ * context only for names keeps the hook order stable, and definitions and options keep working
+ * without a `KitrProvider`.
+ */
+function useResolve(source: unknown): OperationLike | undefined {
+  // biome-ignore lint/correctness/useHookAtTopLevel: the form of `source` is fixed per call site
+  return resolve(source, typeof source === 'string' ? useApp() : undefined)
+}
+
+function isApp(value: unknown): value is KitrApp {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'operations' in value &&
+    typeof (value as KitrApp).operations?.get === 'function'
+  )
 }
 
 function asQuery(op: OperationLike, source: unknown): QueryDefinition<unknown, unknown> {
@@ -141,7 +167,7 @@ export const useQuery: NamedUseQuery & typeof tanstackUseQuery = ((
   input?: unknown,
   overrides?: object,
 ) => {
-  const op = resolve(source)
+  const op = useResolve(source)
   if (!op) return tanstackUseQuery(source as any, input as any)
   return tanstackUseQuery({ ...asQuery(op, source).options(input), ...overrides } as any)
 }) as any
@@ -152,7 +178,7 @@ export const useSuspenseQuery: NamedUseSuspenseQuery & typeof tanstackUseSuspens
   input?: unknown,
   overrides?: object,
 ) => {
-  const op = resolve(source)
+  const op = useResolve(source)
   if (!op) return tanstackUseSuspenseQuery(source as any, input as any)
   return tanstackUseSuspenseQuery({ ...asQuery(op, source).options(input), ...overrides } as any)
 }) as any
@@ -168,7 +194,7 @@ export const useMutation: NamedUseMutation & typeof tanstackUseMutation = ((
 ) => {
   // Always the same hooks in the same order: a call site is one form for its whole life.
   const queryClient = useQueryClient()
-  const op = resolve(source)
+  const op = useResolve(source)
   if (!op) return tanstackUseMutation(source as any, overrides as any)
   const definition = asMutation(op, source)
   const name = typeof source === 'string' ? source : op.name
@@ -197,26 +223,39 @@ export function mutationKeyFor(name: string): readonly unknown[] {
  * `context.queryClient.ensureQueryData(queryOptions('projects.list', input))`.
  */
 export const queryOptions: NamedQueryOptions & typeof tanstackQueryOptions = ((
-  source: unknown,
-  input?: unknown,
+  ...args: unknown[]
 ) => {
-  const op = resolve(source)
+  const app = isApp(args[0]) ? (args.shift() as KitrApp) : undefined
+  const [source, input] = args
+  // Outside a hook a name needs the app; without one the error says so instead of calling useApp().
+  if (typeof source === 'string' && !app)
+    throw new Error(
+      `[kitr/query] queryOptions("${source}") outside a component needs the app: queryOptions(context.app, "${source}", input)`,
+    )
+  const op = resolve(source, app)
   if (!op) return tanstackQueryOptions(source as any)
   return asQuery(op, source).options(input)
 }) as any
 
 /**
  * Run an operation by name, outside React: a query fetches, a mutation mutates. On the client it
- * is a request; on the server it runs the handler in-process.
+ * is a request; on the server it runs the handler in-process. The name is looked up in the app's
+ * registry, so pass the app (`context.app` in a loader, `app` from `app/app.ts` in a script).
  *
- *   await call('projects.update', { id, name })
+ *   await call(app, 'projects.update', { id, name })
  */
 export function call<N extends OperationName>(
+  app: KitrApp,
   name: N,
   ...args: InputArgs<InputOfName<N>, { signal?: AbortSignal }>
 ): Promise<OutputOfName<N>>
-export function call(name: string, input?: unknown, options: { signal?: AbortSignal } = {}) {
-  const op = operations.get(name)
+export function call(
+  app: KitrApp,
+  name: string,
+  input?: unknown,
+  options: { signal?: AbortSignal } = {},
+) {
+  const op = app.operations.get(name)
   if (op.kind === 'query')
     return (op as unknown as QueryDefinition<unknown, unknown>).fetch(input, options.signal)
   return (op as unknown as MutationDefinition<unknown, unknown>).mutate(input)

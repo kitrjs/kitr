@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { PassThrough } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { definePlatform } from '@kitr/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -10,6 +11,8 @@ import {
   literal,
   loadPlatforms,
   parseFlags,
+  pipeLines,
+  platformPrefix,
   removeRcPlatform,
   resolvePlatformType,
   runPlatforms,
@@ -445,5 +448,54 @@ describe('createPlatformContext', () => {
     await expect(running).resolves.toBeUndefined()
     // Already aborted: nothing is spawned.
     await expect(pctx.run(process.execPath, ['-e', 'process.exit(1)'])).resolves.toBeUndefined()
+  })
+})
+
+describe('platform output prefixes', () => {
+  it('labels every line a platform prints, joining chunks and flushing the last line', async () => {
+    const out: string[] = []
+    const source = new PassThrough()
+    pipeLines(source, { write: (chunk) => out.push(chunk) }, (line) => `[site] ${line}`)
+    source.write('ready in 3')
+    source.write('00ms\nlocal: http://localhost:3000\r\nlast')
+    const ended = new Promise((done) => source.on('end', done))
+    source.end()
+    await ended
+    expect(out.join('')).toBe(
+      '[site] ready in 300ms\n[site] local: http://localhost:3000\n[site] last\n',
+    )
+  })
+
+  it('wraps the name in brackets, in a colour per platform', () => {
+    const line = platformPrefix('api', 1)('listening')
+    expect(line).toContain('[api]')
+    expect(line.endsWith(' listening')).toBe(true)
+  })
+
+  it('runs a platform process through the prefix when the context has one', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'kitr-platforms-'))
+    dirs.push(dir)
+    writeFileSync(join(dir, 'package.json'), '{}')
+    const lines: string[] = []
+    const write = process.stdout.write.bind(process.stdout)
+    process.stdout.write = ((chunk: string) => {
+      lines.push(String(chunk))
+      return true
+    }) as typeof process.stdout.write
+    try {
+      const pctx = createPlatformContext(
+        createContext({ root: dir }),
+        'api',
+        definePlatform({ type: 'fake' }, () => ({}))(),
+        {
+          platforms: [],
+          prefix: (line) => `[api] ${line}`,
+        },
+      )
+      await pctx.run(process.execPath, ['-e', "console.log('one'); console.log('two')"])
+    } finally {
+      process.stdout.write = write
+    }
+    expect(lines.join('')).toBe('[api] one\n[api] two\n')
   })
 })

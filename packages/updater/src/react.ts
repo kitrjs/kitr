@@ -7,6 +7,7 @@ export function useUpdater(): Updater {
   return useApp().container.use('updater')
 }
 
+// kitr-allow-module-state: constant server snapshot for useSyncExternalStore, never mutated
 const serverState: UpdaterState = {
   status: 'idle',
   update: null,
@@ -15,6 +16,7 @@ const serverState: UpdaterState = {
   currentVersion: null,
 }
 
+// kitr-allow-module-state: constant server snapshot for useSyncExternalStore, never mutated
 const serverUpdater = {
   state: serverState,
   subscribe: () => () => {},

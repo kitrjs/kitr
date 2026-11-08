@@ -87,13 +87,13 @@ You can also pass server options in code, which overrides `config/server.ts`:
 
 ```ts
 // server/main.ts
+import { loadRc } from 'kitr/app'
 import { createServer } from 'kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 
 export const server = createServer({
-  providers: rc.providers,
-  config,
+  ...loadRc(rc, config),
   server: { shutdownTimeout: 30, requestIdHeader: 'x-acme-trace' },
 })
 ```

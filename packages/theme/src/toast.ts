@@ -13,7 +13,7 @@ type ToastFn = ((message: string, options?: Record<string, unknown>) => unknown)
   ) => Promise<T>
 }
 
-let impl: ToastFn | null = null
+let impl: ToastFn | null = null // kitr-allow-module-state: the page has one toaster: the UI host registers its implementation here
 
 const fallback: ToastFn = Object.assign((message: string) => console.info(`[toast] ${message}`), {
   success: (m: string) => console.info(`[toast:success] ${m}`),

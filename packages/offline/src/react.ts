@@ -1,6 +1,7 @@
 import { useApp } from '@kitr/react'
 import { useCallback, useSyncExternalStore } from 'react'
 
+// kitr-allow-module-state: constant server snapshot for useSyncExternalStore, never mutated
 const serverOffline = {
   subscribe: () => () => {},
   isOnline: () => true,

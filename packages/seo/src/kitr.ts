@@ -11,7 +11,7 @@ export default definePackage({
     )
     ctx.agents.add(
       'seo',
-      `- \`head: () => seo({ title, description })\` from \`kitr/seo\` writes title, Open Graph, Twitter and canonical tags; \`jsonLd({...})\` adds structured data. Site defaults live in \`config/seo.ts\`.\n- Use \`...ssrRoute('data-only')\` for heavy, non-SEO pages; \`cacheHeaders({ sMaxAge })\` for the CDN.`,
+      `- \`head: (ctx) => seo({ title, description }, ctx)\` from \`kitr/seo\` writes title, Open Graph, Twitter and canonical tags; \`jsonLd({...})\` adds structured data. Site defaults live in \`config/seo.ts\`.\n- Use \`...ssrRoute('data-only')\` for heavy, non-SEO pages; \`cacheHeaders({ sMaxAge })\` for the CDN.`,
     )
   },
   remove(ctx) {

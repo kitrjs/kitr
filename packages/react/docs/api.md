@@ -80,7 +80,7 @@ class KitrApp {
   readonly drivers: DriverRegistry;
   /** The platform name from kitrrc.ts this bundle runs as, when known. */
   readonly platform: PlatformName | undefined;
-  /** The process-wide operation registry (see `operations` in `@kitr/core`). */
+  /** This app's named queries and mutations. A fork reads through to its parent's. */
   readonly operations: OperationRegistry;
   private inputs;
   private phase;
@@ -128,8 +128,8 @@ interface CreateAppOptions {
   platform?: PlatformName;
   /**
    * Every named query and mutation, by name: the `operations` map `kitr types` writes to
-   * `.kitr/actions.ts`. Registered process-wide, so `useQuery('projects.list')` and
-   * `call('projects.update', input)` resolve anywhere.
+   * `.kitr/actions.ts`. Registered on this app (and every fork of it), so `useQuery('projects.list')`
+   * and `call(app, 'projects.update', input)` resolve through `app.operations`.
    */
   operations?: Record<string, OperationLike>;
 }

@@ -23,7 +23,7 @@ export interface MobileOptions {
   capacitor?: Record<string, unknown>
 }
 
-const TARGETS: MobileTarget[] = ['ios', 'android']
+const TARGETS: MobileTarget[] = ['ios', 'android'] // kitr-allow-module-state: constant list, never mutated
 
 /**
  * iOS and Android through Capacitor. The native projects live in `platforms/<name>/ios` and
@@ -227,6 +227,7 @@ async function ensureNativeProject(
 }
 
 /** Where each native project declares its URL schemes. */
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const schemeFiles: Record<MobileTarget, string> = {
   ios: 'ios/App/App/Info.plist',
   android: 'android/app/src/main/AndroidManifest.xml',

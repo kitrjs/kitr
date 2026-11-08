@@ -384,7 +384,21 @@ The context carries everything about the request:
 | `event` | The underlying h3 event. |
 | `validate(schema, source)` | Validates `body`, `query` or `params` on demand. |
 
-kitr creates one instance of each controller class and reuses it for every request. Don't store request data on `this`; keep it in local variables or `ctx.locals`.
+kitr builds a new instance of the controller for every request, from that request's container (`app.container.make(Controller)`), so a controller can take services and keep per-request state in its fields. List the bindings its constructor needs in `static inject`, in order; a controller without `inject` is built with no arguments:
+
+```ts
+// server/controllers/projects_controller.ts
+import type { Db } from '#server/db'
+
+export default class ProjectsController {
+  static inject = ['db'] as const
+  constructor(private db: Db) {}
+
+  async index() {
+    return this.db.projects.all()
+  }
+}
+```
 
 ## Validate input
 

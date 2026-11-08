@@ -290,7 +290,7 @@ export const CSP = [
   "connect-src 'self' ipc: http://ipc.localhost https: wss:",
 ].join('; ')
 
-const ICONS = ['32x32.png', '128x128.png', '128x128@2x.png', 'icon.icns', 'icon.ico']
+const ICONS = ['32x32.png', '128x128.png', '128x128@2x.png', 'icon.icns', 'icon.ico'] // kitr-allow-module-state: constant list, never mutated
 
 /** Tauri will not compile without the icons tauri.conf.json lists: make a placeholder set once. */
 export async function ensureIcons(ctx: PlatformContext) {

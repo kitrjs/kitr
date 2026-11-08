@@ -19,6 +19,7 @@ export interface WorkspaceInfo {
   apps: Record<string, string>
 }
 
+// kitr-allow-module-state: constant list, never mutated
 const WORKSPACE_FILES = [
   'kitr.workspace.ts',
   'kitr.workspace.mts',
@@ -91,6 +92,7 @@ export function resolveApp(workspace: WorkspaceInfo | undefined, app: string): s
 }
 
 /** Commands that run in every app when typed at the workspace root. */
+// kitr-allow-module-state: constant set built once at import, never mutated
 export const FAN_OUT_COMMANDS = new Set([
   'dev',
   'build',
@@ -102,7 +104,7 @@ export const FAN_OUT_COMMANDS = new Set([
   'info',
 ])
 /** Of those, the ones that keep running and so run side by side. */
-const CONCURRENT = new Set(['dev', 'start', 'serve'])
+const CONCURRENT = new Set(['dev', 'start', 'serve']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 /**
  * Whether a command typed here should fan out: the words name a fan-out command, the current

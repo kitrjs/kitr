@@ -1,5 +1,6 @@
 import type { FileData, FileFilter, PickedFile } from './index'
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const MIME: Record<string, string> = {
   txt: 'text/plain',
   md: 'text/markdown',

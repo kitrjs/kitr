@@ -2,6 +2,7 @@
 import type { KitrManifest } from './manifest'
 
 /** Packages and platforms, by short name. */
+// kitr-allow-module-state: generated constant data, never mutated
 export const manifests: Record<string, KitrManifest & { package: string }> = {
   "3d": {
     "package": "@kitr/3d",
@@ -700,6 +701,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
 }
 
 /** Kits (`kitr new --kit <name>`), by short name. */
+// kitr-allow-module-state: generated constant data, never mutated
 export const kitManifests: Record<string, KitrManifest & { package: string }> = {
   "app": {
     "package": "@kitr/kit-app",

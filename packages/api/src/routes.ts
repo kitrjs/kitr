@@ -84,6 +84,7 @@ type NameOf<Name, Method extends string, Path extends string> = [Name] extends [
     : `${Method} ${Path}`
 
 export type ResourceAction = 'index' | 'store' | 'show' | 'update' | 'destroy'
+// kitr-allow-module-state: constant list of resource action names, never mutated
 const resourceActions: Array<{ action: ResourceAction; method: HttpMethod; suffix: string }> = [
   { action: 'index', method: 'GET', suffix: '' },
   { action: 'store', method: 'POST', suffix: '' },

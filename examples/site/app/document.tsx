@@ -19,12 +19,12 @@ export const readLocale = createServerFn({ method: 'GET' }).handler(() =>
 const rootRoute = getRouteApi('__root__')
 
 /** Head tags for every page. Pages add their own with `head` on their route in app/routes.ts. */
-export function head() {
+export function head(ctx: object) {
   return {
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      ...seo({ title: 'Site', description: 'A marketing site built with kitr.' }).meta,
+      ...seo({ title: 'Site', description: 'A marketing site built with kitr.' }, ctx).meta,
     ],
     links: [{ rel: 'stylesheet', href: css }],
   }

@@ -237,6 +237,7 @@ export interface AddContext extends ProjectInfo {
 }
 
 /** Name casing helpers for generators and setup modules: `pascal('send-receipt')` is `SendReceipt`. */
+// kitr-allow-module-state: constant naming helpers, stateless
 export const naming = {
   pascal: (s: string): string =>
     s.replace(/(^|[-_/\s])(\w)/g, (_, __, c: string) => c.toUpperCase()).replace(/[^\w]/g, ''),
@@ -422,6 +423,8 @@ export interface StartDocumentOptions {
   head: string
   body: string
   extra?: string
+  /** Parameters of `head()`, when a kit's tags need the route context (`ctx: object` for `seo(..., ctx)`). Default none. */
+  headParams?: string
   /** Statements at the top of RootDocument. */
   prelude?: string
   /** Opening and closing JSX around the body. */
@@ -440,7 +443,7 @@ import { ThemeScript } from 'kitr/theme'
 import css from '#app/styles/app.css?url'
 ${options.imports}
 /** Head tags for every page. Pages add their own with \`head\` on their route in app/routes.ts. */
-export function head() {
+export function head(${options.headParams ?? ''}) {
   return {
 ${options.head}
     links: [{ rel: 'stylesheet', href: css }],
