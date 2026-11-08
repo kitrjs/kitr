@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createAddContext, createProjectInfo } from '../add-context'
@@ -139,23 +141,38 @@ export const remove = defineCommand({
       // kitr owns config/<name>.ts; the package's other files (stubs, routes) stay because the app may have edited them.
       codemods.remove(`${ctx.readRc().directories.config ?? 'config'}/${short}.ts`)
       ctx.log.success(`removed ${short}`)
-      const { execSync } = await import('node:child_process')
       try {
-        const hits = execSync(
-          `grep -rl "kitr/${short}\\|${loaded.package}" app config server start 2>/dev/null || true`,
-          { cwd: ctx.root },
+        const hits = filesMentioning(
+          ctx.root,
+          ['app', 'config', 'server', 'start'],
+          [`kitr/${short}`, loaded.package],
         )
-          .toString()
-          .trim()
-        if (hits)
-          ctx.log.warn(
-            `Still imported from:\n${hits
-              .split('\n')
-              .map((h) => `  ${h}`)
-              .join('\n')}`,
-          )
+        if (hits.length)
+          ctx.log.warn(`Still imported from:\n${hits.map((h) => `  ${h}`).join('\n')}`)
       } catch {}
     }
     await codemods.flush({ install: args.install })
   },
 })
+
+/** Files under `dirs` (relative to `root`, `/`-separated) whose text contains any needle. Plain Node, so it works where there is no grep. */
+function filesMentioning(root: string, dirs: string[], needles: string[]): string[] {
+  const out: string[] = []
+  const walk = (rel: string) => {
+    let names: string[]
+    try {
+      names = readdirSync(join(root, rel))
+    } catch {
+      return
+    }
+    for (const name of names.sort()) {
+      if (name === 'node_modules') continue
+      const child = `${rel}/${name}`
+      if (statSync(join(root, child)).isDirectory()) walk(child)
+      else if (needles.some((n) => readFileSync(join(root, child), 'utf8').includes(n)))
+        out.push(child)
+    }
+  }
+  for (const dir of dirs) walk(dir)
+  return out
+}

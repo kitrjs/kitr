@@ -10,8 +10,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lint, types, builds of every package, the registry and the examples, and the bundle checks.
-  verify:
+  # Everything that is built is built here, once, and handed to the jobs below as one artifact:
+  # every package's dist, the component registry, the examples' route trees and builds. Install
+  # and build cost minutes, so no other Linux job repeats them.
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +32,38 @@ jobs:
             pnpm -C examples/$app exec kitr build site
           done
           pnpm -C examples/backend exec kitr build api
+      # Every file the build wrote (ignored, untracked or changed), minus node_modules.
+      - name: Pack the build
+        run: |
+          git status --porcelain --ignored | grep -v '^ \?D' | cut -c4- | grep -Ev '(^|/)node_modules/?$' > "$RUNNER_TEMP/build-files.txt"
+          tar -czf "$RUNNER_TEMP/build.tgz" -T "$RUNNER_TEMP/build-files.txt"
+          ls -lh "$RUNNER_TEMP/build.tgz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}/build.tgz
+          retention-days: 1
+          compression-level: 0
+
+  # Lint, generated files and docs, and the bundle checks, against the build.
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      # Before the install, so the workspace bins link to files that exist.
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm manifests:check
       - run: pnpm readmes:check
       - run: pnpm docs:check --strict
@@ -39,7 +73,6 @@ jobs:
       - name: Generated API pages match the built types
         run: pnpm docs:api --check
       - run: pnpm -C site build
-      - run: pnpm typecheck
       - run: pnpm lint
       - name: No module-scope state in package sources
         run: pnpm check:module-state
@@ -47,9 +80,43 @@ jobs:
         run: pnpm check:examples
       - name: Production bundle checks
         run: pnpm check:bundles
+      # The upstream versions kitr installs are the ones this repo builds and tests with.
+      - name: Pinned upstream versions match the lockfile
+        run: pnpm versions:check
+
+  # Types of every package and example: the longest single step, so it runs beside `verify`,
+  # in two halves.
+  typecheck:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scope: packages
+            filter: ./packages/**
+          - scope: apps
+            filter: "!./packages/**"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: pnpm typecheck (${{ matrix.scope }})
+        run: pnpm -r --filter "${{ matrix.filter }}" run typecheck
 
   # Unit, component and type-level tests, on every supported Node.
   unit:
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -70,13 +137,18 @@ jobs:
       REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
       - run: pnpm test:coverage
       - if: matrix.node == 22
         uses: actions/upload-artifact@v4
@@ -87,8 +159,34 @@ jobs:
 
   # The CLI and the examples run for real: kits, generators, add/remove, the backend over the network.
   integration:
+    needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:integration
+
+  # The CLI on Windows: kits, generators, add/remove, with paths, shims and shells as Windows has them.
+  # It builds for itself: the artifact is Linux's, and this job is also the check that the repo builds here.
+  # Starts at once, next to `build`, so it adds no wall time.
+  windows:
+    runs-on: windows-latest
+    steps:
+      # Before checkout: the default (autocrlf) turns every file CRLF, and Biome and the
+      # "unmodified kit output" check compare against LF.
+      - run: git config --global core.autocrlf false
+      - run: git config --global core.longpaths true
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -98,21 +196,60 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm -C registry build
-      - run: pnpm test:integration
+      # The kit, generator and add/remove suites. backend.test.ts and platforms.test.ts start
+      # servers and dev builds of every platform; Linux covers them.
+      - name: CLI integration tests
+        run: pnpm test:integration tests/integration/cli.test.ts
+
+  # Publishes every package to a throwaway Verdaccio and runs `kitr new` against it: the first
+  # install from a registry, on every run. One kit per runner, so they install side by side. The
+  # whole-catalog pass (`kitr add` of every package) rides on the app run on main only.
+  registry-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kit: app
+            catalog: true
+          - kit: fullstack
+            catalog: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install and build the ${{ matrix.kit }} kit from a registry
+        run: pnpm smoke:registry --kits ${{ matrix.kit }} ${{ matrix.catalog && github.event_name == 'push' && '--all-packages' || '' }}
 
   # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools.
   e2e:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm -C registry build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
       - if: failure()

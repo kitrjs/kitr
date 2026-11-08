@@ -1,15 +1,22 @@
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { defineCommand } from 'citty'
 import { createAddContext } from '../add-context'
 import { Codemods } from '../codemods'
 import { configurePackages } from '../configure'
-import { createContext, detectPackageManager, log, type PackageManager } from '../context'
+import {
+  createContext,
+  detectPackageManager,
+  log,
+  type PackageManager,
+  projectBin,
+} from '../context'
 import { kitAnswers, kitNames, kitPackageNames, loadKit } from '../kits'
 import { base } from '../kits-base'
-import { cliResolve } from '../packages'
+import { cliResolve, ensureAvailable } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { enablePreviews, isPreview, isPreviewKit } from '../preview'
 import { generateTypesQuietly } from '../types'
@@ -64,7 +71,7 @@ export const newCommand = defineCommand({
     const pm = (args.pm as PackageManager | undefined) ?? detectPackageManager(dir)
     const ctx = createContext({ root: dir, pm })
     const projectName = args.name
-      .split('/')
+      .split(/[\\/]/)
       .pop()!
       .replace(/[^a-z0-9-_.]/gi, '-')
       .toLowerCase()
@@ -78,8 +85,12 @@ export const newCommand = defineCommand({
     const platforms = parsePlatformArg(args.platform) ?? kit.platforms ?? {}
     // What the platforms need (react, router, server...) goes first, so later recipes find app/env.ts and friends.
     const platformRequires: string[] = []
-    for (const spec of Object.values(platforms))
+    for (const spec of Object.values(platforms)) {
+      // The platform package is an optional peer of `kitr`, so a CLI installed from a registry
+      // cannot see it until it is installed into the project.
+      await ensureAvailable(ctx, spec.type, { install: args.install })
       platformRequires.push(...((await loadFactory(ctx, spec.type))({}).definition.requires ?? []))
+    }
     const added = new Set<string>()
     await configurePackages(ctx, codemods, [...platformRequires, ...kitPackages], {
       install: args.install,
@@ -105,8 +116,15 @@ export const newCommand = defineCommand({
     }
     await codemods.flush({ install: false })
     if (kit.components?.length && kitPackages.includes('theme')) {
-      // The registry client lives with the theme package (`kitr ui add`); the CLI resolves it the way it resolves setup modules.
-      const commands = cliResolve('@kitr/theme', 'commands')
+      // The registry client lives with the theme package (`kitr ui add`): found next to the CLI in a
+      // checkout, in the project once the kit installed it (a CLI from a registry has no @kitr/theme).
+      const commands =
+        cliResolve('@kitr/theme', 'commands') ??
+        (() => {
+          try {
+            return createRequire(ctx.path('package.json')).resolve('@kitr/theme/commands')
+          } catch {}
+        })()
       if (!commands)
         throw new Error(
           '@kitr/theme is not available to this CLI, so the kit components cannot be pulled',
@@ -138,7 +156,7 @@ export const newCommand = defineCommand({
       execSync(pm === 'yarn' ? 'yarn' : `${pm} install`, { cwd: dir, stdio: 'inherit' })
       // Kit files are templates; let the project's own Biome format them and sort imports,
       // so a fresh project passes its own `lint` script.
-      const biome = ctx.path('node_modules', '.bin', 'biome')
+      const biome = projectBin(ctx.root, 'biome')
       if (existsSync(biome)) {
         try {
           execSync(`"${biome}" check --write .`, { cwd: dir, stdio: 'pipe' })

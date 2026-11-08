@@ -14,7 +14,7 @@ import type { Codemods } from './codemods'
 import { configurePackages } from './configure'
 import { log, type ProjectContext } from './context'
 import { manifests } from './manifests.gen'
-import { loadPackage } from './packages'
+import { ensureAvailable, loadPackage } from './packages'
 
 /**
  * Platforms answer "where does this app run?". They are packages, listed by name in kitrrc.ts:
@@ -268,13 +268,14 @@ export function createPlatformContext(
       const full = resolve(ctx.root, path)
       if (existsSync(full) && !o.overwrite) return false
       if (ctx.dryRun) {
-        log.step(`would write ${relative(ctx.root, full)}`)
+        log.step(`would write ${relative(ctx.root, full).split('\\').join('/')}`)
         return true
       }
       mkdirSync(dirname(full), { recursive: true })
       writeFileSync(full, content)
-      ctx.touched.add(relative(ctx.root, full))
-      log.step(`write ${relative(ctx.root, full)}`)
+      const rel = relative(ctx.root, full).split('\\').join('/')
+      ctx.touched.add(rel)
+      log.step(`write ${rel}`)
       return true
     },
     run,
@@ -467,6 +468,7 @@ export async function addPlatform(
   codemods: Codemods,
   add: AddPlatformOptions,
 ): Promise<PlatformInstance> {
+  await ensureAvailable(ctx, add.type, { install: add.install ?? true })
   const info = await resolvePlatformType(ctx, add.type)
   if (!/^[a-z][a-z0-9_-]*$/i.test(add.name))
     throw new Error(
