@@ -8,7 +8,7 @@ order: 1
 
 A reminder to approve an invoice, a note that an order has shipped, a nudge before a meeting: some things should reach people even when your tab is in the background. `@kitr/notifications` gives you one `notifications` service to ask for permission, show a notification now or at a set time, and find out which one was tapped so the app opens the right page.
 
-In the browser it is built on the [Notification API](https://developer.mozilla.org/docs/Web/API/Notifications_API), with timers for scheduling. kitr adds stable ids you can cancel by, a `url` carried from the notification to its tap, a React hook for the permission state, a memory driver for tests and a driver slot for native shells.
+In the browser it is built on the [Notification API](https://developer.mozilla.org/docs/Web/API/Notifications_API), with timers for scheduling. kitr adds ids you choose and cancel by, a `url` carried from the notification to its tap, a React hook for the permission state, a memory driver for tests and a driver slot for native shells.
 
 It runs in the browser and in desktop and mobile shells; on the server the service shows nothing. It covers notifications the app shows itself. Push notifications sent from your server while the app is closed need a push service (APNs, FCM or [Web Push](https://developer.mozilla.org/docs/Web/API/Push_API)) on top.
 
@@ -27,7 +27,7 @@ What `kitr add` does:
 - Writes `config/notifications.ts` (shown under [Configure](#configure)).
 - Adds a `## kitr: notifications` section to `AGENTS.md`: `useNotificationPermission()` gives `{ permission, request }` and `request` is called from a click, `show({ title, url })` and `schedule({ ..., at })` resolve to an id for `cancel`, and taps are routed once near the router with `useNotificationTap`.
 
-It adds no environment variables or scripts. `kitr add notifications` asks no questions, and no kit includes it. To preview the changes:
+No kit includes it. To preview the changes:
 
 ```sh
 kitr add notifications --dry-run

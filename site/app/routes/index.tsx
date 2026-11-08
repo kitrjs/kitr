@@ -1,16 +1,20 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { repoUrl } from '#app/components/chrome'
 import { Command } from '#app/components/command'
 import { Icon } from '#app/components/icons'
+import { Tile } from '#app/components/package-bits'
 import { PlatformBoard, PlatformBuilder } from '#app/components/platform-bits'
-import homeCode from '#app/generated/home-code.json'
-import { glyph, kits } from '#app/lib/catalog'
+import { categoryCounts, findPackage, glyph, kits, packages } from '#app/lib/catalog'
 import { useSwapped } from '#app/lib/motion'
-import { findPlatform } from '#app/lib/platforms'
 import { seo, siteUrl } from '#app/lib/seo'
 
+/** Platon's pitch: the only description of kitr on the page. */
+const pitch =
+  'kitr is an opinionated TypeScript and React framework for apps on every platform, with the tools already chosen and wired. You and your coding agents spend less time deciding what to use and finding where things go, and more time building.'
+
 const description =
-  'kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform.'
+  'kitr is an opinionated TypeScript and React framework for apps on every platform, with the tools already chosen and wired.'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -18,7 +22,7 @@ const jsonLd = {
   name: 'kitr',
   description,
   url: siteUrl,
-  codeRepository: 'https://github.com/kitrjs/kitr',
+  codeRepository: repoUrl,
   programmingLanguage: 'TypeScript',
   license: 'https://opensource.org/licenses/MIT',
 }
@@ -84,68 +88,103 @@ const terminal = [
   },
 ] as const
 
-const ideas = [
+type Card = { title: string; text: string; icon: string } & (
+  | { to: '/packages' | '/platforms' }
+  | { slug: string }
+  | { pkg: string }
+)
+
+/** What you get: each card is a problem and its answer in one sentence. */
+const gets: Card[] = [
   {
-    title: 'Re-export, never re-implement',
-    text: '@kitr/router is TanStack Router. Their docs still apply, and leaving kitr is a find-and-replace.',
+    title: 'Start from a kit',
+    text: `${kits.length} starting apps, packages already wired.`,
+    icon: 'ui',
+    slug: 'kits',
   },
   {
-    title: 'No magic',
-    text: 'One file, kitrrc.ts, lists everything your app loads. Nothing happens behind your back.',
+    title: 'Add a package with one command',
+    text: 'Installs, configures and briefs your agent.',
+    icon: 'package',
+    to: '/packages',
+  },
+  {
+    title: 'One home for every file',
+    text: 'Each kind of file has one fixed place.',
+    icon: 'files',
+    slug: 'project-structure',
   },
   {
     title: 'Typed end to end',
-    text: 'The API client takes its types from your server routes. No codegen step, no schema to keep in sync.',
+    text: 'Server types reach your app. No codegen.',
+    icon: 'api',
+    pkg: 'api',
+  },
+  {
+    title: 'Same code on every platform',
+    text: 'Web, server, desktop and mobile share one codebase.',
+    icon: 'platform',
+    to: '/platforms',
+  },
+  {
+    title: 'Agents follow the same rules',
+    text: 'AGENTS.md holds the rules; packages add theirs.',
+    icon: 'ai',
+    slug: 'agents',
   },
 ]
 
-/** One plain line per kit for the home page; the kit's own text is the fallback. */
-const kitBlurb: Record<string, string> = {
-  blank: 'Only the wiring. Add what you need.',
-  app: 'A signed-in web app that talks to your API.',
-  fullstack: 'The app kit plus your own API server.',
-  server: 'An API server on its own, no React.',
-  saas: 'A product with sign-in, a dashboard and its own API.',
-  site: 'A marketing site with a blog, SEO and translations.',
-  realtime: 'A live chat over WebSockets.',
-  desktop: 'The app kit as an Electron desktop app.',
-  tauri: 'The app kit as a Tauri desktop app.',
-  mobile: 'The app kit as an installable phone app.',
+/** Three packages a newcomer reaches for first, with the benefit in a few words. */
+const examples = (
+  [
+    ['forms', 'Validation, and server errors on the right field.'],
+    ['auth', 'Sign-in, protected pages and permissions.'],
+    ['realtime', 'Live updates on every open screen.'],
+  ] as const
+).flatMap(([name, text]) => {
+  const pkg = findPackage(name)
+  return pkg ? [{ pkg, text }] : []
+})
+
+/** The headings of the compare page these chips jump to (rehype-slug ids). */
+const coming = [
+  { name: 'Next.js', hash: 'nextjs' },
+  { name: 'Expo', hash: 'expo' },
+  { name: 'TanStack Start', hash: 'tanstack-start' },
+  { name: 'AdonisJS', hash: 'adonisjs' },
+]
+
+/** A "What you get" card: the whole card is the link. */
+function GetCard({ card }: { card: Card }) {
+  const body = (
+    <>
+      <span className="get-icon" aria-hidden="true">
+        <Icon icon={glyph(card.icon)} size={22} strokeWidth={1.7} />
+      </span>
+      <span className="get-text">
+        <strong>{card.title}</strong>
+        <span className="muted">{card.text}</span>
+      </span>
+    </>
+  )
+  if ('to' in card)
+    return (
+      <Link to={card.to} className="get-card">
+        {body}
+      </Link>
+    )
+  if ('pkg' in card)
+    return (
+      <Link to="/packages/$name" params={{ name: card.pkg }} className="get-card">
+        {body}
+      </Link>
+    )
+  return (
+    <Link to="/docs/$slug" params={{ slug: card.slug }} className="get-card">
+      {body}
+    </Link>
+  )
 }
-
-const agentPoints = [
-  {
-    title: 'One home for every file',
-    text: 'The conventions are fixed and written down. kitr make writes each kind of file where it belongs.',
-  },
-  {
-    title: 'AGENTS.md stays current',
-    text: 'kitr new writes it. Every kitr add appends the rules for that package, and kitr remove takes them out.',
-  },
-  {
-    title: 'One-line plugin install',
-    text: 'Skills for Claude Code, Cursor, Codex and Copilot that know the CLI and run kitr doctor when they finish.',
-  },
-]
-
-const familiar = [
-  {
-    name: 'Next.js',
-    text: 'Same React and server rendering. Routes live in one file instead of folders, and data goes through TanStack Query.',
-  },
-  {
-    name: 'Expo',
-    text: 'Same React, one codebase for every target. Mobile is a web view in a Capacitor shell, not React Native.',
-  },
-  {
-    name: 'TanStack Start',
-    text: 'Same Start and Router underneath. kitr adds forms, auth, state, a typed server and a CLI that wires them.',
-  },
-  {
-    name: 'AdonisJS',
-    text: 'Same controllers and providers. The server is h3, and the API client is typed with no codegen.',
-  },
-]
 
 function Home() {
   const [tab, setTab] = useState(0)
@@ -156,32 +195,75 @@ function Home() {
       <section className="hero">
         <div className="hero-copy">
           <h1 className="display hero-title">One way to build everything.</h1>
-          <p className="lede">
-            One framework for the web, servers, desktop, Tauri, phones and platforms of your own.
-            The tools are chosen and wired, so you spend your time building, and agents follow the
-            same conventions you do.
-          </p>
+          <p className="lede">{pitch}</p>
           <Command cmd="kitr new my-app --kit app" />
           <div className="actions">
             <Link to="/docs/$slug" params={{ slug: 'getting-started' }} className="button primary">
               Get started
             </Link>
-            <Link to="/packages" className="button">
-              Browse packages
-            </Link>
+            <a href={repoUrl} className="button" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
           </div>
-          <p className="status-strip">Web, server, desktop and mobile are ready.</p>
         </div>
         <div className="hero-platforms">
           <span className="label">Ships to</span>
           <PlatformBoard />
           <a href="#mix" className="hero-platforms-note">
-            Use one, or all of them in one project ↓
+            Mix them in one project ↓
           </a>
         </div>
       </section>
 
+      <section className="gets" aria-labelledby="gets-title">
+        <h2 id="gets-title" className="home-title">
+          What you get
+        </h2>
+        <ul className="get-grid">
+          {gets.map((card) => (
+            <li key={card.title}>
+              <GetCard card={card} />
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <PlatformBuilder />
+
+      <section className="home-packages" aria-labelledby="packages-title">
+        <div className="section-head">
+          <h2 id="packages-title" className="home-title">
+            Add what you need, one command at a time.
+          </h2>
+          <Link to="/packages" className="home-pkgs-all">
+            Browse all {packages.length} packages →
+          </Link>
+        </div>
+        <ul className="home-cats" aria-label="Package categories">
+          {categoryCounts.map((c) => (
+            <li key={c.category}>
+              <Link to="/packages" search={{ category: c.category }} className="home-cat">
+                <span className="filter-dot" style={{ background: c.color }} />
+                {c.label}
+                <span className="mono home-cat-count">{c.count}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <ul className="home-pkgs">
+          {examples.map(({ pkg, text }) => (
+            <li key={pkg.name}>
+              <Link to="/packages/$name" params={{ name: pkg.name }} className="home-pkg">
+                <Tile pkg={pkg} size={40} />
+                <span className="home-pkg-text">
+                  <code className="home-pkg-cmd">kitr add {pkg.name}</code>
+                  <span className="muted">{text}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="terminal" aria-label="The kitr CLI">
         <div className="terminal-bar">
@@ -201,9 +283,7 @@ function Home() {
               {t.label}
             </button>
           ))}
-          <span className="terminal-note mono">
-            no prompts, so agents and CI can run every command
-          </span>
+          <span className="terminal-note mono">No prompts. Agents and CI run every command.</span>
         </div>
         <pre className={`terminal-body mono${tabSwapped ? ' swap-in' : ''}`} key={tab}>
           <span className="t-dim">~/code $</span> {current.cmd}
@@ -217,120 +297,27 @@ function Home() {
         </pre>
       </section>
 
-      <section className="familiar" aria-labelledby="familiar-title">
-        <div className="section-head">
-          <div>
-            <h2 id="familiar-title">If you know…</h2>
-            <p className="muted">What stays the same, and what changes with kitr.</p>
-          </div>
+      <section className="coming" aria-labelledby="coming-title">
+        <div>
+          <h2 id="coming-title" className="home-title">
+            Coming from…
+          </h2>
+          <p className="muted">What stays the same and what changes.</p>
         </div>
-        <div className="familiar-grid">
-          {familiar.map((f) => (
-            <article key={f.name} className="familiar-card">
-              <h3>{f.name}</h3>
-              <p className="muted">{f.text}</p>
-              <Link to="/docs/$slug" params={{ slug: 'compare' }}>
-                Compare in detail →
+        <ul className="coming-chips">
+          {coming.map((c) => (
+            <li key={c.hash}>
+              <Link
+                to="/docs/$slug"
+                params={{ slug: 'compare' }}
+                hash={c.hash}
+                className="coming-chip"
+              >
+                {c.name} <span aria-hidden="true">→</span>
               </Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="feature" aria-labelledby="contract-title">
-        <div className="feature-copy">
-          <span className="label">One data contract</span>
-          <h2 id="contract-title">Describe your data once. Every screen keeps up.</h2>
-          <p className="muted">
-            A query says where data comes from. A mutation says what it changes. REST, your own API,
-            server actions and live channels all use this pair, so every screen stays in sync with
-            no manual refetching.
-          </p>
-          <Link to="/packages/$name" params={{ name: 'query' }}>
-            How queries work →
-          </Link>
-        </div>
-        <div
-          className="feature-code"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted at build time
-          dangerouslySetInnerHTML={{ __html: homeCode.contract }}
-        />
-      </section>
-
-      <section className="agents" aria-labelledby="agents-title">
-        <div className="section-head">
-          <div>
-            <h2 id="agents-title">Built for agents</h2>
-            <p className="muted">
-              Less time choosing, more time coding. The same clarity keeps coding agents on track.
-            </p>
-          </div>
-          <Link to="/docs/$slug" params={{ slug: 'agents' }}>
-            Working with agents →
-          </Link>
-        </div>
-        <ul className="agents-list">
-          {agentPoints.map((point) => (
-            <li key={point.title}>
-              <h3>{point.title}</h3>
-              <p className="muted">{point.text}</p>
             </li>
           ))}
         </ul>
-      </section>
-
-      <section className="kits" aria-labelledby="kits-title">
-        <div className="section-head">
-          <div>
-            <h2 id="kits-title">Start from a kit</h2>
-            <p className="muted">A kit is a starting set of packages. Add or remove any later.</p>
-          </div>
-          <Link to="/docs/$slug" params={{ slug: 'kits' }}>
-            How kits work →
-          </Link>
-        </div>
-        <ul className="kit-list">
-          {kits.map((kit) => {
-            const types = [...new Set(kit.platforms.map((p) => p.split(':')[1]?.trim() ?? p))]
-            return (
-              <li key={kit.name} className="kit-row">
-                <span className="kit-row-icons" aria-hidden="true">
-                  {types.length ? (
-                    types.map((t) => (
-                      <span
-                        key={t}
-                        className="kit-row-icon"
-                        style={{ background: findPlatform(t)?.color }}
-                      >
-                        <Icon icon={glyph(t)} size={14} stroke="#0B121C" strokeWidth={1.8} />
-                      </span>
-                    ))
-                  ) : (
-                    <span className="kit-row-icon kit-row-icon-blank" />
-                  )}
-                </span>
-                <span className="kit-row-text">
-                  <code className="kit-row-name">--kit {kit.name}</code>
-                  <span className="muted">{kitBlurb[kit.name] ?? kit.text}</span>
-                </span>
-                <span className="kit-row-count mono">
-                  {kit.packages.length
-                    ? `${kit.packages.length} package${kit.packages.length === 1 ? '' : 's'}`
-                    : 'no packages'}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
-
-      <section className="ideas" aria-label="Principles">
-        {ideas.map((idea) => (
-          <div key={idea.title}>
-            <h3>{idea.title}</h3>
-            <p className="muted">{idea.text}</p>
-          </div>
-        ))}
       </section>
 
       <section className="cta" aria-labelledby="cta-title">

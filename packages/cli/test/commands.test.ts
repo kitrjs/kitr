@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { cleanup, copyExample, kitr, read, scratch, write } from './helpers'
@@ -117,6 +117,46 @@ describe('kitr add / remove / config in a project', () => {
     const removed = await kitr(dir, 'platforms', 'remove', 'admin')
     expect(removed.out).toMatch(/removed platforms\.admin/)
     expect(read(dir, 'kitrrc.ts')).not.toContain('admin')
+  })
+})
+
+describe('kitr config <name> without', () => {
+  let dir: string
+  beforeAll(() => {
+    dir = copyExample('dashboard')
+  })
+
+  it('leaves packages out of one platform, and kitr platforms shows its config files', async () => {
+    // One kitrrc.ts load per process: jiti caches the module, so each step reads what it wrote.
+    const added = await kitr(
+      dir,
+      'add',
+      'web',
+      'admin',
+      '--no-install',
+      '--without',
+      'http,storage',
+    )
+    expect(added.code).toBeUndefined()
+    expect(read(dir, 'kitrrc.ts')).toMatch(
+      /admin: web\(\{[^}]*without: \[(['"])http\1, \1storage\1\]/,
+    )
+    mkdirSync(join(dir, 'config/admin'))
+    write(dir, 'config/admin/theme.ts', 'export default {}\n')
+    const list = (await kitr(dir, 'platforms')).out
+    expect(list).toMatch(/admin\s+web\s+.*without=http,storage/)
+    const adminFiles = list.slice(list.indexOf('admin'))
+    expect(adminFiles).toContain('theme (config/admin/theme.ts)')
+    expect(adminFiles).not.toContain('(config/http.ts)')
+    expect(list).toContain('http (config/http.ts)')
+    expect((await kitr(dir, 'config', 'admin')).out).toMatch(/without\s+http,storage/)
+    const set = await kitr(dir, 'config', 'admin', 'without', 'storage')
+    expect(set.code).toBeUndefined()
+    expect(read(dir, 'kitrrc.ts')).toMatch(/without: \[(['"])storage\1\]/)
+    // The standalone server's index follows: one object for admin, picked by the build.
+    expect(read(dir, 'config/index.ts')).toContain('export const config = forBuildPlatform({')
+    await kitr(dir, 'config', 'admin', 'without', '--unset')
+    expect(read(dir, 'kitrrc.ts')).not.toContain('without')
   })
 })
 

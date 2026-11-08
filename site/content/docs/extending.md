@@ -1,11 +1,16 @@
 ---
-title: Extending kitr
+title: Add your own code
 description: Add your own state, services and drivers in three steps: a provider in your project, a swapped driver, a package of your own.
 ---
 
-# Extending kitr
+# Add your own code
 
-Three levels. Start at the first.
+You add your own code in three levels, and you start at the first.
+
+> [!SUMMARY]
+> 1. **Your project**: write a provider and a config file for a store, a client or a feature flag service.
+> 2. **A driver**: swap the storage, vault or notifications on one shell with one `register` call.
+> 3. **A package**: turn the same thing into a package with `definePackage` for many projects.
 
 | Level | You want | You write |
 | --- | --- | --- |
@@ -13,7 +18,7 @@ Three levels. Start at the first.
 | 2. A driver | Different storage, vault or notifications on one shell | A driver and one `register` call |
 | 3. A package | The same thing in many projects | A package with `definePackage` |
 
-The code in levels 1 and 2 is from [`examples/everywhere`](https://github.com/kitrjs/kitr/tree/main/examples/everywhere). CI type-checks and tests it.
+The code in levels 1 and 2 is from [`examples/everywhere`](https://github.com/kitrjs/kitr/tree/main/examples/everywhere).
 
 ## 1. Your own code in one project
 
@@ -63,7 +68,12 @@ export default defineProvider({
 })
 ```
 
-The `declare module` block types `app.config.get('flags')` and `useService('flags')`.
+<details>
+<summary>What the declare module block does</summary>
+
+The `declare module` block types `app.config.get('flags')` and `useService('flags')`. Without it both still work, but return untyped values.
+
+</details>
 
 ### Add its options
 
@@ -103,13 +113,18 @@ Pages read it with `useService('cart')`. Tests create their own app, so state ne
 
 ## 2. Swap a driver
 
-Device packages (`@kitr/secure-storage`, `@kitr/notifications`, `@kitr/files`, `@kitr/native`, `@kitr/updater`) ask the app for a driver. The best match wins. Priority decides.
+Device packages (`@kitr/secure-storage`, `@kitr/notifications`, `@kitr/files`, `@kitr/native`, `@kitr/updater`) ask the app for a driver. The best match wins, and priority decides.
+
+<details>
+<summary>Driver priority table</summary>
 
 | Source | Priority |
 | --- | --- |
 | Web fallback | 0 |
 | Shell drivers (Electron, Tauri, Capacitor) | 10 |
 | Yours | any number above |
+
+</details>
 
 ### Register your own
 
@@ -169,7 +184,7 @@ export default defineConfig({ driver: createMapVault() })
 
 ### Fall back to the web driver
 
-In a native shell with no driver for a package, the service throws `E_DRIVER_UNAVAILABLE`. Do not hide it by default. Opt in per package:
+In a native shell with no driver for a package, the service throws `E_DRIVER_UNAVAILABLE`. Opt in to the web driver per package:
 
 ```ts
 // config/notifications.ts

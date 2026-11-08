@@ -45,7 +45,7 @@ The first request builds the report and stores it for ten minutes. Every request
 
 ## Built on
 
-The package is a small layer of its own rather than a wrapper around one store. Storage goes through a six-method driver:
+Storage goes through a six-method driver:
 
 | Driver | Built on | Use it for |
 | --- | --- | --- |

@@ -63,7 +63,7 @@ kitr new acme-orders --kit mobile --targets ios
 
 ## Configure
 
-`@kitr/mobile` has no config file in `config/`. Its options live on the `mobile()` call in `kitrrc.ts`:
+`@kitr/mobile` has no config file in `config/`; its options live on the `mobile()` call in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
@@ -505,7 +505,7 @@ export function AboutVersion() {
 
 ## Commands
 
-`@kitr/mobile` adds no generators. The mobile platform answers these commands:
+The mobile platform answers these commands:
 
 | Command | What it does |
 | --- | --- |

@@ -570,7 +570,7 @@ kbd {
 .home {
   display: flex;
   flex-direction: column;
-  gap: 88px;
+  gap: 56px;
   padding-top: 64px;
 }
 
@@ -717,75 +717,6 @@ kbd {
   margin: 0;
 }
 
-.kit-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 40px;
-  border-top: 1px solid var(--line);
-}
-.kit-row {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--line);
-}
-.kit-row-icons {
-  display: flex;
-}
-.kit-row-icon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--bg);
-}
-.kit-row-icon + .kit-row-icon {
-  margin-left: -6px;
-}
-.kit-row-icon-blank {
-  box-shadow: inset 0 0 0 1.5px var(--line);
-  background-image: repeating-linear-gradient(
-    135deg,
-    transparent 0 4px,
-    color-mix(in srgb, var(--raised) 80%, transparent) 4px 8px
-  );
-}
-.kit-row-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  font-size: 15px;
-  line-height: 22px;
-}
-.kit-row-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.kit-row-count {
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-@media (max-width: 760px) {
-  .kit-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .kit-row {
-    grid-template-columns: 56px minmax(0, 1fr);
-    gap: 12px;
-  }
-  .kit-row-count {
-    display: none;
-  }
-}
 .kit-chips {
   list-style: none;
   margin: 6px 0 0;
@@ -818,30 +749,7 @@ kbd {
   border-radius: 50%;
 }
 
-/* home: feature rows, platforms, closing call to action */
-.feature {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: 56px;
-  align-items: center;
-}
-.feature-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: flex-start;
-}
-.feature-copy h2 {
-  margin: 0;
-  font-size: 36px;
-  line-height: 42px;
-  letter-spacing: -0.01em;
-}
-.feature-copy p {
-  margin: 0;
-  font-size: 18px;
-  line-height: 30px;
-}
+/* home: code panels and the closing call to action */
 .feature-code {
   min-width: 0;
 }
@@ -937,51 +845,6 @@ kbd {
 .table-wrap:focus-visible {
   outline: 2px solid var(--link);
   outline-offset: 2px;
-}
-
-.agents-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 40px;
-  border-top: 1px solid var(--line);
-}
-.agents-list li {
-  padding-top: 20px;
-}
-.agents-list h3 {
-  margin: 0 0 6px;
-  font-size: 18px;
-}
-.agents-list p {
-  margin: 0;
-}
-@media (max-width: 760px) {
-  .agents-list {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 4px;
-  }
-}
-
-.ideas {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 40px;
-}
-@media (max-width: 760px) {
-  .ideas {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
-  }
-}
-.ideas h3 {
-  margin: 0 0 6px;
-  font-size: 18px;
-}
-.ideas p {
-  margin: 0;
 }
 
 /* ------------------------------------------------------------- package directory */
@@ -2538,7 +2401,6 @@ a.dcard:focus-visible {
 }
 
 @media (max-width: 1100px) {
-  .feature,
   .platforms-layout,
   .cta {
     grid-template-columns: minmax(0, 1fr);
@@ -2564,10 +2426,6 @@ a.dcard:focus-visible {
   .cta h2 {
     font-size: 32px;
     line-height: 36px;
-  }
-  .feature-copy h2 {
-    font-size: 28px;
-    line-height: 34px;
   }
   .not-found {
     padding: 72px 16px 96px;
@@ -2982,7 +2840,7 @@ a.dcard:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px 0 6px;
   border-radius: 999px;
   border: 1px solid var(--line);
@@ -3032,13 +2890,8 @@ a.dcard:focus-visible {
     gap: 6px;
   }
   .builder-chip {
-    min-height: 38px;
+    min-height: 44px;
   }
-}
-.builder-copy > .builder-note {
-  margin: 0;
-  font-size: 14px;
-  line-height: 20px;
 }
 .builder-out {
   min-width: 0;
@@ -3048,6 +2901,7 @@ a.dcard:focus-visible {
 }
 .builder-code .shiki {
   min-height: 0;
+  line-height: 21px;
 }
 .builder-term {
   border-radius: 14px;
@@ -3056,7 +2910,7 @@ a.dcard:focus-visible {
   color: #eef2f7;
   padding: 16px 20px;
   font-size: 13.5px;
-  line-height: 23px;
+  line-height: 21px;
   white-space: pre;
   overflow-x: auto;
 }
@@ -3592,50 +3446,844 @@ a.dcard:focus-visible {
   }
 }
 
-/* ------------------------------------------------------------- status strip, "if you know" */
+/* ------------------------------------------------------------- home: sections */
 
-.status-strip {
-  margin: 0;
-  font-size: 14px;
-  line-height: 22px;
-  color: var(--muted);
-  max-width: 52ch;
+/* The board: four platforms and a double-width "Your own" tile, two rows of three (three rows of
+   two on phones). The wide tile takes its height from the row, not its aspect ratio. */
+.platform-tile-own {
+  grid-column: span 2;
 }
-.status-strip strong {
+.platform-tile-lg.platform-tile-own {
+  aspect-ratio: auto;
+}
+
+.home-title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 38px;
+}
+
+.gets {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.get-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.get-grid > li {
+  display: flex;
+}
+.get-card {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.18s;
+}
+@media (hover: hover) {
+  .get-card:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    transform: translateY(-2px);
+  }
+}
+.get-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--raised);
   color: var(--ink);
 }
-
-.familiar {
-  margin-top: 0;
+.get-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 23px;
 }
-.familiar-grid {
+.get-text strong {
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.home-packages {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+.home-packages .section-head {
+  width: 100%;
+  margin: 0;
+  align-items: baseline;
+}
+.home-pkgs-all {
+  font-weight: 500;
+}
+/* The closing call to action repeats the hero's command; its first-time note is in the hero. */
+.cta .command-note {
+  display: none;
+}
+.home-cats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+@media (hover: hover) {
+  .home-cat:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+}
+.home-cat-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+.home-pkgs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.home-pkg {
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.18s;
+}
+@media (hover: hover) {
+  .home-pkg:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    transform: translateY(-2px);
+  }
+}
+.home-pkg .tile {
+  flex: none;
+}
+.home-pkg-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 23px;
+}
+.home-pkg-cmd {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.coming {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 40px;
+}
+.coming p {
+  margin: 4px 0 0;
+}
+.coming-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.coming-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+@media (hover: hover) {
+  .coming-chip:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+}
+
+@media (max-width: 1100px) {
+  .get-grid,
+  .home-pkgs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .home {
+    gap: 48px;
+    padding-top: 32px;
+  }
+  .home-title {
+    font-size: 28px;
+    line-height: 34px;
+  }
+  .get-grid,
+  .home-pkgs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .get-card {
+    padding: 14px;
+  }
+  /* Categories as one row that scrolls sideways, like the package directory on a phone. */
+  .home-cats {
+    flex-wrap: nowrap;
+    width: calc(100% + 32px);
+    margin: 0 -16px;
+    padding: 2px 16px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .home-cats::-webkit-scrollbar {
+    display: none;
+  }
+  .home-cats > li {
+    flex: none;
+  }
+  .builder-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .builder-chip {
+    gap: 6px;
+    padding-right: 8px;
+    font-size: 12.5px;
+  }
+  .home-pkg {
+    padding: 14px;
+  }
+  .home-cat {
+    min-height: 44px;
+  }
+  .coming-chips {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .coming-chip {
+    width: 100%;
+    justify-content: center;
+    padding: 0 12px;
+  }
+}
+
+/* ------------------------------------------------------------- about: sections */
+
+.about h2 {
+  margin: 0 0 20px;
+  font-size: 32px;
+  line-height: 38px;
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+  border-top: 1px solid var(--line);
+}
+.why-grid > div {
+  padding-top: 20px;
+}
+.why-grid h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+.why-grid p {
+  margin: 0;
+}
+
+.built-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  line-height: 24px;
+}
+.built-table th,
+.built-table td {
+  text-align: left;
+  padding: 12px 16px 12px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.built-table thead th {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.built-table tbody th {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.built-table code {
+  font-size: 14px;
+}
+.about-built > p {
+  margin: 14px 0 0;
+}
+
+.box-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
+.box-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.18s;
+}
+@media (hover: hover) {
+  .box-stat:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    transform: translateY(-2px);
+  }
+}
+.box-number {
+  font-size: 48px;
+  line-height: 52px;
+}
+.box-stat > span:last-child {
+  color: var(--muted);
+}
+
 @media (max-width: 1100px) {
-  .familiar-grid {
+  .box-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 560px) {
-  .familiar-grid {
+@media (max-width: 760px) {
+  .about {
+    gap: 56px;
+    padding-top: 40px;
+  }
+  .about h2 {
+    font-size: 28px;
+    line-height: 34px;
+  }
+  .why-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .why-grid > div {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .why-grid > div:last-child {
+    border-bottom: 0;
+  }
+  /* The table becomes one block per row: the piece and what it is built on, then what kitr adds. */
+  .built-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .built-table tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .built-table th,
+  .built-table td {
+    padding: 0;
+    border: 0;
+  }
+  .built-table td:last-child {
+    grid-column: 1 / -1;
+    font-size: 15px;
+    line-height: 23px;
+  }
+  .built-table tbody td:nth-child(2) {
+    color: var(--muted);
+  }
+  .box-stat {
+    padding: 16px 18px;
+  }
+  .box-number {
+    font-size: 40px;
+    line-height: 44px;
+  }
+  .idea-tile {
+    min-height: 0;
+    padding: 24px;
+  }
+  .idea-tiles {
     grid-template-columns: minmax(0, 1fr);
   }
+  .maker,
+  .brand {
+    flex-basis: 100%;
+    padding: 24px;
+  }
 }
-.familiar-card {
+
+/* ------------------------------------------------------------- docs devices */
+
+/* Callouts: GitHub alert syntax becomes <aside class="callout callout-note">. The label takes the
+   accent; the body stays in ink. */
+.callout {
+  --accent: var(--link);
+  margin: 24px 0;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  background: var(--raised);
+  color: var(--ink);
+}
+.callout-note {
+  --accent: var(--brand-blue);
+}
+.callout-tip {
+  --accent: var(--brand-green);
+}
+.callout-warning {
+  --accent: var(--brand-red);
+}
+.callout-summary {
+  --accent: var(--brand-blue);
+  border-left-width: 1px;
+  background: var(--bg);
+  box-shadow: inset 0 3px 0 var(--brand-blue);
+  padding-top: 18px;
+}
+[data-theme="dark"] .callout-note,
+[data-theme="dark"] .callout-summary {
+  --accent: var(--link);
+}
+[data-theme="dark"] .callout-tip {
+  --accent: var(--ok);
+}
+[data-theme="dark"] .callout-warning {
+  --accent: var(--warn);
+}
+.callout > * {
+  margin: 0 0 10px;
+}
+.callout > :last-child {
+  margin-bottom: 0;
+}
+.prose .callout-title,
+.callout-title {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  padding: 20px;
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 22px;
+}
+/* The mark before the label: i for a note, a check for a tip, ! for a warning, a list for a summary. */
+.callout-title::before {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-brand);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  content: "i";
+}
+[data-theme="dark"] .callout-title::before {
+  color: var(--bg);
+}
+.callout-tip .callout-title::before {
+  content: "✓";
+}
+.callout-warning .callout-title::before {
+  content: "!";
+}
+.callout-summary .callout-title::before {
+  content: "≡";
+}
+.callout .code,
+.callout .command {
+  margin: 10px 0;
+}
+.callout .shiki,
+.callout .command {
+  background: var(--bg) !important;
+}
+.callout-summary .shiki,
+.callout-summary .command {
+  background: var(--raised) !important;
+}
+.prose .callout :not(pre) > code {
+  background: var(--bg);
+}
+.prose .callout-summary :not(pre) > code {
+  background: var(--raised);
+}
+
+/* Collapsibles: native details with a chevron that turns when open. */
+.prose details {
+  margin: 20px 0;
   border: 1px solid var(--line);
   border-radius: 12px;
+  background: var(--bg);
 }
-.familiar-card h3 {
-  margin: 0;
-  font-size: 18px;
+.prose summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 12px;
 }
-.familiar-card p {
-  margin: 0;
-  flex: 1;
+.prose summary::-webkit-details-marker {
+  display: none;
+}
+.prose summary::before {
+  flex: none;
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 2px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.18s;
+}
+.prose details[open] > summary::before {
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+.prose details[open] > summary {
+  border-bottom: 1px solid var(--line);
+  border-radius: 12px 12px 0 0;
+}
+@media (hover: hover) {
+  .prose summary:hover {
+    background: var(--raised);
+  }
+}
+.prose details > :not(summary) {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+.prose details > summary + * {
+  margin-top: 14px;
+}
+.prose details > :last-child:not(summary) {
+  margin-bottom: 16px;
+}
+
+/* Steps: "## 1. Install the CLI" headings get a circled number, and on wide screens a rule runs
+   down the left from one step to the next. The steps sit in several blocks (commands split them),
+   so the rule is drawn per element, from each step heading to the next heading that is not one. */
+.step-marker {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand-blue);
+  color: var(--on-brand);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+.prose .step-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+@media (min-width: 761px) {
+  .prose.steps .step-heading {
+    position: relative;
+    margin-left: -46px;
+  }
+  .prose.steps .step-heading ~ :not(h2),
+  .prose.steps > :has(.step-heading) ~ div > :not(h2),
+  .prose.steps > :has(.step-heading) ~ .command {
+    position: relative;
+    /* Its own clipping would hide the rule; nothing inside it reaches past its rounded edge. */
+    overflow: visible;
+  }
+  .prose.steps .step-heading ~ :not(h2)::after,
+  .prose.steps > :has(.step-heading) ~ div > :not(h2)::after,
+  .prose.steps > :has(.step-heading) ~ .command::after {
+    content: "";
+    position: absolute;
+    left: -31px;
+    top: -26px;
+    bottom: 0;
+    width: 2px;
+    background: var(--line);
+    pointer-events: none;
+  }
+  /* A step heading after the first joins the rule from above. */
+  .prose.steps .step-heading ~ .step-heading::before,
+  .prose.steps > :has(.step-heading) ~ div .step-heading::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: -52px;
+    height: 52px;
+    width: 2px;
+    background: var(--line);
+  }
+  /* Scrolling regions clip their own pseudo-elements, so tables draw the rule as a border image. */
+  .prose.steps .step-heading ~ .table-wrap::after,
+  .prose.steps > :has(.step-heading) ~ div > .table-wrap::after {
+    content: none;
+  }
+  .prose.steps .step-heading ~ .table-wrap,
+  .prose.steps > :has(.step-heading) ~ div > .table-wrap {
+    border-left: 2px solid transparent;
+    margin-left: -2px;
+    border-image: linear-gradient(var(--line), var(--line)) 0 0 0 1 / 0 0 0 2px / 26px 0 0 31px;
+  }
+  /* The rule ends at the first ordinary heading after the steps ("Next steps"). */
+  .prose.steps .step-heading ~ h2:not(.step-heading) ~ ::after,
+  .prose.steps > :has(.step-heading) ~ div > h2:not(.step-heading) ~ ::after {
+    content: none;
+  }
+  .prose.steps .step-heading ~ h2:not(.step-heading) ~ .table-wrap,
+  .prose.steps > :has(.step-heading) ~ div > h2:not(.step-heading) ~ .table-wrap {
+    border: 0;
+    margin-left: 0;
+    border-image: none;
+  }
+}
+
+/* Next-step cards: the last "Next steps" list as a row of cards. */
+.next-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.prose a.next-card,
+.next-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 44px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.18s;
+}
+@media (hover: hover) {
+  .prose a.next-card:hover,
+  .next-card:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    transform: translateY(-2px);
+  }
+}
+.next-card strong,
+.next-card-title {
+  font-size: 16px;
+  line-height: 23px;
+  font-weight: 600;
+  color: var(--link);
+}
+.next-card strong::after,
+.next-card-title::after {
+  content: " →";
+}
+.next-card > span {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 22px;
+}
+.next-card code {
+  font-size: 0.88em;
+}
+
+/* ------------------------------------------------------------- reading on phones and wide screens */
+
+/* About 70 characters a line on wide screens; the column itself stays wide for tables and code. */
+.prose > div > p,
+.prose > div > ul,
+.prose > div > ol,
+.prose .callout > p,
+.prose details > p {
+  max-width: 72ch;
+}
+.prose p,
+.prose li {
+  line-height: 1.65;
+}
+
+@media (max-width: 760px) {
+  /* 16px body at 1.6, headings well above it, code at 14px that scrolls inside its own box. */
+  .prose {
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+  }
+  .prose p,
+  .prose li {
+    line-height: 1.6;
+  }
+  .prose h2 {
+    font-size: 24px;
+    line-height: 30px;
+    margin: 40px 0 10px;
+  }
+  .prose h3 {
+    font-size: 19px;
+    line-height: 26px;
+    margin: 28px 0 8px;
+  }
+  .prose ul,
+  .prose ol {
+    padding-left: 22px;
+  }
+  .prose .shiki,
+  .prose pre {
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 22px;
+    padding: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prose .code,
+  .prose .command,
+  .prose .table-wrap,
+  .prose table {
+    max-width: 100%;
+  }
+  .prose .table-wrap {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .prose table {
+    font-size: 14px;
+    line-height: 21px;
+  }
+  .prose th,
+  .prose td {
+    padding: 8px 10px;
+  }
+  /* Long inline code (paths, package names) wraps instead of pushing the line out. */
+  .prose :not(pre) > code {
+    overflow-wrap: anywhere;
+  }
+  .prose td code {
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .callout {
+    margin: 20px 0;
+    padding: 14px 14px 14px 16px;
+  }
+  .callout-summary {
+    padding-top: 16px;
+  }
+  .prose summary {
+    min-height: 48px;
+    padding: 10px 12px;
+  }
+  .prose details > :not(summary) {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .prose .step-heading {
+    gap: 12px;
+  }
+  .step-marker {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  .next-cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .prose a.next-card,
+  .next-card {
+    padding: 14px 16px;
+  }
 }

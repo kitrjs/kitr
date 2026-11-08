@@ -26,9 +26,7 @@ What `kitr add` does:
 - Adds `'@kitr/react'` to `packages` in `kitrrc.ts`. React registers no provider, so `providers` is unchanged.
 - Writes `app/env.ts`, which declares one public variable, `VITE_APP_NAME`, defaulting to your package name.
 - Writes `app/app.ts`, which creates the app from the providers in `kitrrc.ts`, the files in `config/` and `app/env.ts`.
-- Adds no config file, no variables to `.env.example`, no scripts and no `AGENTS.md` section.
-
-`kitr add` never overwrites a file that exists, so an `app/env.ts` or `app/app.ts` you already have is kept. `kitr add react` asks no questions. It accepts the usual flags: `--no-install` skips the package manager and `--dry-run` prints what would change.
+`kitr add` never overwrites a file that exists, so an `app/env.ts` or `app/app.ts` you already have is kept. It accepts the usual flags: `--no-install` skips the package manager and `--dry-run` prints what would change.
 
 ```sh
 kitr add react --dry-run
@@ -38,7 +36,7 @@ kitr add react --dry-run
 
 ## Configure
 
-`@kitr/react` has no config file. What it needs is the app object, which `kitr add react` writes to `app/app.ts`:
+`@kitr/react` has no config file; it needs the app object, which `kitr add react` writes to `app/app.ts`:
 
 ```ts
 // app/app.ts
@@ -209,7 +207,7 @@ app.boot().then(() => {
 
 ## Render before boot with Suspense
 
-`KitrProvider` also accepts an app that has not booted. It suspends on the boot promise, so the nearest `<Suspense>` boundary shows its fallback until every provider is ready. TanStack Start relies on this, because it builds the router synchronously before anything has awaited `app.boot()`.
+`KitrProvider` also accepts an app that has not booted. It suspends on the boot promise, so the nearest `<Suspense>` boundary shows its fallback until every provider is ready.
 
 ```tsx
 // app/main.tsx
@@ -552,8 +550,6 @@ export function useOrderFilter(initial = false) {
   return { value, setValue, toggle }
 }
 ```
-
-React adds no `kitr doctor` checks.
 
 ## Errors
 

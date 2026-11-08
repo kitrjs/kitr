@@ -332,6 +332,52 @@ test.describe('in the browser', () => {
     expect(style).toEqual({ border: '1px', radius: '12px', underline: 'none', stacked: true })
   })
 
+  test('the home page leads with one pitch, the platform board and the package catalog', async ({
+    page,
+  }) => {
+    await isolate(page)
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    // One description in the hero, and no status strip.
+    await expect(page.locator('.hero-copy .lede')).toHaveCount(1)
+    await expect(page.locator('.status-strip')).toHaveCount(0)
+    // The board: Web, Server, Desktop, Mobile and a double-width "Your own" tile; no Tauri.
+    const board = page.locator('.hero .platform-board')
+    await expect(board.locator('a[href="/platforms/tauri"]')).toHaveCount(0)
+    await expect(board.locator('.platform-tile')).toHaveCount(5)
+    await expect(board.locator('.platform-tile-own')).toHaveCSS('grid-column-start', 'span 2')
+    // The builder keeps its #mix anchor.
+    await expect(page.locator('#mix')).toHaveCount(1)
+    // Category chips link to the filtered directory, and the count comes from the catalog.
+    await expect(page.locator('.home-cat').first()).toHaveAttribute('href', /\/packages\?category=/)
+    await expect(page.locator('.home-pkgs-all')).toHaveText(/Browse all \d+ packages/)
+    // "Coming from" chips jump to their section of the compare page.
+    await expect(page.locator('.coming-chip')).toHaveCount(4)
+    await expect(page.locator('.coming-chip').first()).toHaveAttribute(
+      'href',
+      '/docs/compare#nextjs',
+    )
+    // innerText, not textContent: count only the text a reader sees.
+    const words = await page.evaluate(() => {
+      const main = document.querySelector('main') as HTMLElement
+      // biome-ignore lint/performance/useDomNodeTextContent: hidden text must not count
+      const text = main.innerText
+      return text.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length
+    })
+    expect(words, 'words in main').toBeLessThan(500)
+  })
+
+  test('the about page counts what is in the box from the catalog', async ({ page }) => {
+    await isolate(page)
+    await page.goto('/about')
+    const stats = page.locator('.box-stat')
+    await expect(stats).toHaveCount(4)
+    for (const href of ['/packages', '/platforms', '/docs/kits', '/guides'])
+      await expect(page.locator(`.box-stat[href="${href}"]`)).toHaveCount(1)
+    await expect(page.locator('.built-table tbody tr')).toHaveCount(6)
+    await expect(page.locator('main')).not.toContainText(/before 1\.0|preview|coming soon/i)
+  })
+
   test("the about page and the footer credit the maker with Platon's mark", async ({ page }) => {
     await isolate(page)
     await page.goto('/about')
@@ -343,7 +389,7 @@ test.describe('in the browser', () => {
       'https://platon.blue/kitr',
     )
     const credit = page.locator('.maker-badge')
-    await expect(credit).toHaveText('made by platpk')
+    await expect(credit).toHaveText('made by platon')
     await expect(credit).toHaveAttribute('href', 'https://platon.blue')
   })
 
@@ -421,11 +467,11 @@ test.describe('in the browser', () => {
     await expect(page.getByText(/not found/i).first()).toBeVisible()
   })
 
-  test('/docs goes to the first guide', async ({ page }) => {
+  test('/docs is the docs landing page', async ({ page }) => {
     await isolate(page)
     await page.goto('/docs')
-    await expect(page).toHaveURL(/\/docs\/getting-started$/)
-    await expect(page.locator('h1')).toBeVisible()
+    await expect(page).toHaveURL(/\/docs$/)
+    await expect(page.locator('h1')).toHaveText('Docs')
   })
 
   test('assets are cached for a year and pages revalidate', async ({ request }) => {

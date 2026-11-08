@@ -254,6 +254,51 @@ export default defineKitrConfig({
     expect(own.base).toBeUndefined()
   })
 
+  it('gives each platform its own config files and leaves out its `without` packages', async () => {
+    const root = project({
+      'kitrrc.ts': `import { web } from '@kitr/web'
+export default defineKitrConfig({
+  packages: ['@kitr/theme', '@kitr/analytics'],
+  providers: [() => import('@kitr/theme/provider'), () => import('@kitr/analytics/provider')],
+  platforms: {
+    site: web(),
+    admin: web({ mode: 'spa', without: ['analytics'] }),
+  },
+})`,
+      'config/theme.ts': 'export default { default: "light" }',
+      'config/analytics.ts': 'export default {}',
+      'config/index.ts': 'export const config = {}',
+      'config/admin/theme.ts': 'export default { default: "dark" }',
+      'config/admin/extra.ts': 'export default {}',
+      'config/notes/theme.ts': 'export default {}',
+    })
+    const admin = await corePlugin(root, undefined, { platform: 'admin' })
+    expect(admin.load('virtual:kitr/providers')).toBe(
+      'import p0 from "@kitr/theme/provider"\nexport const providers = [p0]\n',
+    )
+    expect(admin.load('virtual:kitr/config')).toBe(
+      `import c0 from ${JSON.stringify(join(root, 'config/admin/theme.ts'))}\nexport const config = { "theme": c0 }\n`,
+    )
+    const site = await corePlugin(root, undefined, { platform: 'site' })
+    expect(site.load('virtual:kitr/providers')).toBe(
+      'import p0 from "@kitr/theme/provider"\nimport p1 from "@kitr/analytics/provider"\nexport const providers = [p0, p1]\n',
+    )
+    expect(site.load('virtual:kitr/config')).toBe(
+      `import c0 from ${JSON.stringify(join(root, 'config/analytics.ts'))}\nimport c1 from ${JSON.stringify(join(root, 'config/theme.ts'))}\nexport const config = { "analytics": c0, "theme": c1 }\n`,
+    )
+    // KITR_PLATFORM picks the build when the plugin is not told.
+    const before = process.env.KITR_PLATFORM
+    process.env.KITR_PLATFORM = 'admin'
+    try {
+      const fromEnv = await corePlugin(root)
+      expect(fromEnv.load('virtual:kitr/config')).toContain('config/admin/theme.ts')
+      expect(fromEnv.load('virtual:kitr/providers')).not.toContain('analytics')
+    } finally {
+      if (before === undefined) delete process.env.KITR_PLATFORM
+      else process.env.KITR_PLATFORM = before
+    }
+  })
+
   it('works without kitrrc.ts, config dir or package.json', async () => {
     const { load, config } = await corePlugin(project({}))
     expect(load('virtual:kitr/providers')).toContain('export const providers = []')

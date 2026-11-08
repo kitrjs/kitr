@@ -5,6 +5,9 @@ description: The one idea that ties kitr together, a single contract for every d
 
 # Loading and saving data
 
+> [!SUMMARY]
+> Every data source in kitr produces queries, mutations and subscriptions. Components use only those three, so you can swap a REST endpoint for a server action without touching them.
+
 Apps get data from many places: a REST API someone else built, your own API routes, server functions, a WebSocket. Usually each comes with its own way of loading, caching and reporting errors, and your components end up knowing which is which.
 
 In kitr, every source produces the same three things:

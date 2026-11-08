@@ -252,3 +252,17 @@ export interface KitEntry {
 
 /** Generated from the kit packages' setup modules by scripts/content.mjs. */
 export const kits = kitsJson as KitEntry[]
+
+/** Shipped packages per category, in catalog order, leaving out categories with none yet. */
+export const categoryCounts: Array<{
+  category: Category
+  label: string
+  color: string
+  count: number
+}> = (Object.keys(categories) as Category[])
+  .map((category) => ({
+    category,
+    ...categories[category],
+    count: packages.filter((p) => p.category === category).length,
+  }))
+  .filter((c) => c.count > 0)

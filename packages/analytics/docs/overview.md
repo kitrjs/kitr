@@ -61,7 +61,7 @@ With no adapter configured, the console shows `[analytics] track project.created
 
 ## Built on
 
-`@kitr/analytics` is a thin adapter layer rather than a wrapper around one SDK. Each adapter speaks to one vendor's script or API:
+`@kitr/analytics` is a thin adapter layer. Each adapter speaks to one vendor's script or API:
 
 | Adapter | Vendor docs |
 | --- | --- |

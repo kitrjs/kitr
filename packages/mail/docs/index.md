@@ -28,7 +28,7 @@ What `kitr add` does:
 - Adds `mailPreview(server, [welcomeMail])` to `server/main.ts`, inside `if (server.app.isDevelopment)`, with its imports. This step is skipped when the project has no `server/main.ts`.
 - Adds a `## kitr: mail` section to `AGENTS.md` telling coding agents where templates live and how to send them.
 
-`kitr add mail` asks no questions. To edit `package.json` without running the package manager, pass the global flag:
+To edit `package.json` without running the package manager, pass the global flag:
 
 ```sh
 kitr add mail --no-install

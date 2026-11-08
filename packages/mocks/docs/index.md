@@ -31,7 +31,7 @@ What `kitr add` does:
 - Adds `VITE_MOCKS=false` to `.env.example`, and to `.env` when it exists, under the comment `# Set true to serve app/mocks/handlers.ts in the browser`.
 - Adds a `## kitr: mocks` section to `AGENTS.md`: handlers live in `app/mocks/handlers.ts`, `VITE_MOCKS=true` turns them on in development, tests use `setupNodeMocks(handlers)`, and a kitr route table is mocked with `mockRoutes(routes.toJSON(), baseUrl, { ... })`.
 
-It writes no config file and asks no questions. Mocks are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `desktop` and `mobile` kits include it.
+Mocks are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `desktop` and `mobile` kits include it.
 
 The worker file appears in `public/` when the package manager installs `msw`. If it is missing, for example after `--no-install`, run `pnpm mocks:init`; see [Turn mocks on in the browser](#turn-mocks-on-in-the-browser).
 
@@ -39,7 +39,7 @@ The worker file appears in `public/` when the package manager installs `msw`. If
 
 ## Configure
 
-`@kitr/mocks` has no config file. What you configure is the handler list and one env variable. `kitr add` writes these two files:
+`@kitr/mocks` has no config file: you configure the handler list and one env variable. `kitr add` writes these two files:
 
 ```ts
 // app/mocks/handlers.ts
@@ -270,7 +270,7 @@ What a resolver can be, and what the request gets back:
 
 A resolver function receives `params` (the path params), `request` (the `Request`) and `body()`, which reads the body as JSON. An entry whose value is `undefined` counts as no entry and answers `501`; write `() => undefined` for a `204`.
 
-The `501` is on purpose. A route you forgot to mock fails loudly with its name, instead of quietly reaching a backend that does not exist yet.
+The `501` is on purpose. A route you forgot to mock fails loudly with its name.
 
 ## Send an error response
 

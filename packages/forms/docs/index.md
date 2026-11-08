@@ -8,6 +8,9 @@ order: 1
 
 Sign-up pages, invoice editors and settings screens all need the same three things: check the input before it is sent, stop a second click while it saves, and show the server's "this customer does not exist" under the right field instead of in a generic alert. `@kitr/forms` gives you all three from one schema and one `<Form>` component.
 
+> [!SUMMARY]
+> Forms with schema validation and server errors shown on the right field. Add it with `kitr add forms`; the overview is at [/packages/forms](/packages/forms).
+
 It is [React Hook Form](https://react-hook-form.com) re-exported unchanged, plus `useSchemaForm` (React Hook Form with a [Standard Schema](https://standardschema.dev) resolver), a `<Form>` that maps server errors onto fields, and headless, accessible field helpers. Everything on this page runs in the browser. For the server half of a form, see [server actions](/packages/actions) or [API routes](/packages/api); `@kitr/forms` does not run on the server.
 
 The examples follow one form through the page: Ada creates invoices for Acme's customers in the app at `app.acme.com`.
@@ -18,15 +21,25 @@ The examples follow one form through the page: Ada creates invoices for Acme's c
 kitr add forms
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
 - Installs `@kitr/forms`, `react-hook-form`, `@hookform/resolvers` and `zod`.
 - Adds `@kitr/forms` to `packages` in `kitrrc.ts`.
 - Adds a `## kitr: forms` section to `AGENTS.md` that tells agents to build forms with `useSchemaForm` and `<Form>`, and that a `KitrError` with `fieldErrors` lands on fields while anything else goes to `useRootError()`.
 
+</details>
+
 It writes no config file, registers no provider, adds no env variables and asks no questions. The `app` and `fullstack` kits already include forms, along with the styled `form` component described in [Style fields](#style-fields).
 
+<details>
+<summary>What kitr remove does</summary>
+
 In a server-only project `kitr add` skips forms with a warning, because it needs React. `kitr remove forms` removes the package from `kitrrc.ts`, uninstalls `@kitr/forms`, `react-hook-form` and `@hookform/resolvers`, and removes the `AGENTS.md` section. It leaves `zod` installed, because your server code usually uses it too.
+
+</details>
 
 ## Configure
 

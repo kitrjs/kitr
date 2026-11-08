@@ -69,7 +69,7 @@ kitr make
 
 ## The three files that wire everything
 
-**`kitrrc.ts`** lists the kitr packages in the project and their providers. Nothing is discovered by magic: if a package affects your app at startup, it's in this list.
+**`kitrrc.ts`** lists the kitr packages in the project and their providers. If a package affects your app at startup, it's in this list.
 
 **`config/<package>.ts`** holds one package's options, typed by that package's `defineConfig`. `config/query.ts` configures [Query](/packages/query), `config/http.ts` configures [HTTP](/packages/http), and so on.
 
@@ -79,7 +79,7 @@ kitr make
 
 `app/` is everything Vite bundles. It runs in the browser, and with a web platform in `ssr` or `static` mode it also runs in TanStack Start on the server. Server functions in `app/actions/` live here too: the client imports them by name, and Start runs their handlers on the server.
 
-`server/` is the standalone server that `kitr dev api` runs (`server/main.ts`). It never imports React, so it starts fast and its bundle has no client code. It imports from `app/` freely: a controller validates with `#app/validators/orders`, throws `#app/exceptions/payment-failed-error`, publishes on `#app/channels/orders`.
+`server/` is the standalone server that `kitr dev api` runs (`server/main.ts`). It never imports React. It imports from `app/` freely: a controller validates with `#app/validators/orders`, throws `#app/exceptions/payment-failed-error`, publishes on `#app/channels/orders`.
 
 A `server` app (no React at all) keeps the same split. Its `app/` holds only `env.ts` and the shared declarations, so a web or mobile platform can be added later without moving a file. See [Build an API server without React](/guides/api-server).
 

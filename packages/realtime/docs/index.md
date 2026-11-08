@@ -30,7 +30,7 @@ What `kitr add` does:
 - Regenerates `config/index.ts`, the config list the standalone server imports.
 - Adds a `## kitr: realtime` section to `AGENTS.md` that says where channels live, how the server emits and how components subscribe, and how to switch transports.
 
-`kitr add realtime` asks no questions. It checks for React instead: a project without React (a pure backend) gets the `/ws` path and no client files. Pass `--dry-run` to print the changes without writing them:
+`kitr add realtime` checks for React: a project without React (a pure backend) gets the `/ws` path and no client files. Pass `--dry-run` to print the changes without writing them:
 
 ```sh
 kitr add realtime --dry-run
@@ -63,8 +63,6 @@ The client reads this file through `createRealtimeClient(config)`. The server do
 | `path` | `'/ws'`, or `'/events'` for `sse` | Where the server listens. The client connects to the same origin at this path. |
 | `url` | same origin at `path` | A full URL for the client, such as `wss://realtime.acme.com/ws`, when the realtime server is on another host. |
 | `heartbeat` | `25000` | WebSocket only: milliseconds between pings. A missed ping reconnects. `0` turns pings off. |
-
-Realtime adds no environment variables.
 
 ## Push your first update
 
@@ -691,7 +689,7 @@ const listening = await server.listen({ port: 3001 })
 io.attach(listening.node as HttpServer)
 ```
 
-In the browser, `createRealtimeClient` refuses `socket.io` so that `socket.io-client` stays out of bundles that don't use it. Create the client from `@kitr/realtime/socket.io`, which also exports `channel` and `defineChannel`:
+In the browser, create the client from `@kitr/realtime/socket.io`, which also exports `channel` and `defineChannel`:
 
 ```ts
 // app/realtime.ts
@@ -804,7 +802,7 @@ Add the connection string to `.env`:
 REDIS_URL=redis://localhost:6379
 ```
 
-Nothing else changes. Grace's rename on instance A calls `realtime.use(projectChannel, { id: 'prj_1' }).emit('updated', project)` as before; the adapter publishes it on the Redis channel `acme-app:rt:projects:{"id":"prj_1"}`, and every instance with a subscriber for that topic writes it to its own sockets. Ada and Linus both see the new name.
+Nothing else changes. Grace's rename on instance A calls `realtime.use(projectChannel, { id: 'prj_1' }).emit('updated', project)`; the adapter publishes it on the Redis channel `acme-app:rt:projects:{"id":"prj_1"}`, and every instance with a subscriber for that topic writes it to its own sockets. Ada and Linus both see the new name.
 
 What the adapter does, and what stays per instance:
 

@@ -1,30 +1,19 @@
 # Entry points
 
-Apps import each package by its own name: `@kitr/query`, `@kitr/router/routes`, `@kitr/theme/styles.css`. The `kitr` package is the CLI plus the `kitrrc.ts` config (`kitr/app`, `kitr/env`, both from `@kitr/core`); it re-exports no other package.
+Apps import each package by its own name: `@kitr/query`, `@kitr/router/routes`, `@kitr/theme/styles.css`. The `kitr` package is the CLI plus the `kitrrc.ts` config (`kitr/app`, `kitr/env`, both from `@kitr/core`).
 
 ## The rules
 
-1. **Re-export, never re-implement.** `@kitr/router` does `export * from '@tanstack/react-router'`. Nothing upstream is renamed, wrapped or hidden. If a TanStack doc page says `import { Link } from '@tanstack/react-router'`, `import { Link } from '@kitr/router'` is the same thing.
-2. **Add beside, never change.** kitr's additions are new names (`createKitrRouter`, `queryFrom`, `useUrlTableState`). The one exception is documented in [design.md](design.md): `@kitr/forms` exports its own `Form` and re-exports React Hook Form's as `RhfForm`.
-3. **Providers are subpaths.** `@kitr/query/provider`, `@kitr/http/provider`, `@kitr/theme/provider`, `@kitr/auth/provider` export a provider as `default`, so `kitrrc.ts` can lazy-import them without pulling the rest of the package into the boot path.
+1. **Re-export, never re-implement.** `@kitr/router` does `export * from '@tanstack/react-router'`. Every upstream name is available unchanged. If a TanStack doc page says `import { Link } from '@tanstack/react-router'`, `import { Link } from '@kitr/router'` is the same thing.
+2. **Add beside, never change.** kitr's additions are new names (`createKitrRouter`, `queryFrom`, `useUrlTableState`). The one exception is `@kitr/forms`, which exports its own `Form` and re-exports React Hook Form's as `RhfForm`.
+3. **Providers are subpaths.** `@kitr/query/provider`, `@kitr/http/provider`, `@kitr/theme/provider`, `@kitr/auth/provider` export a provider as `default`, so `kitrrc.ts` can lazy-import them.
 4. **Server entries never import React.** `@kitr/server`, `@kitr/api`, `@kitr/logger`, `@kitr/realtime/server`, `@kitr/realtime/socket.io/server`, `@kitr/realtime/sse/server`, `@kitr/auth/server`, `@kitr/db` and `@kitr/testing` are safe in a Node-only project. `@kitr/testing/react` is where `renderWithKitr` lives.
-5. **Platforms are packages.** `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` each export a factory built with `definePlatform` from `@kitr/core`. The core knows the contract, never a platform.
-6. **You import what you installed.** `kitr add <name>` puts `@kitr/<name>` in `package.json`, and code imports it under that same name. A package that is not installed is a plain `Cannot find module '@kitr/<name>'` in the editor, in `tsc` and in the build. There is no umbrella re-export that resolves while its target is missing.
+5. **Platforms are packages.** `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` each export a factory built with `definePlatform` from `@kitr/core`.
+6. **You import what you installed.** `kitr add <name>` puts `@kitr/<name>` in `package.json`, and code imports it under that same name. A package that is not installed is a plain `Cannot find module '@kitr/<name>'` in the editor, in `tsc` and in the build.
 
 ## Route-table extensions are subpaths
 
-`@kitr/router/routes`, `@kitr/api/routes` and `@kitr/realtime/routes` each export one extension as `default`, for the list in `defineRoutes([...])`. Importing `@kitr/api/routes` into `server/routes.ts` never pulls React in; importing `@kitr/router/routes` into `app/routes.ts` never pulls h3 in. A package that adds route methods ships them this way and names the module in its `routes` field, so `kitr add` can keep the list current.
-
-## One exception, for projects still on file routes
-
-A project that kept `app/routes/__root.tsx` imports `createFileRoute`, `createLazyFileRoute` and the root-route creators from `@tanstack/react-router` directly:
-
-```ts
-import { createFileRoute } from '@tanstack/react-router'
-import { Link, Outlet } from '@kitr/router'
-```
-
-TanStack's route generator rewrites that specific import in every route file and only recognises `@tanstack/react-router` as its source. Everything else in the file comes from `@kitr/router`. `kitr doctor` knows about this exception and does not flag it. A table project has no route files, so nothing in it imports `@tanstack/react-router`.
+`@kitr/router/routes`, `@kitr/api/routes` and `@kitr/realtime/routes` each export one extension as `default`, for the list in `defineRoutes([...])`. Import `@kitr/api/routes` in `server/routes.ts` and `@kitr/router/routes` in `app/routes.ts`. A package that adds route methods ships them this way and names the module in its `routes` field, so `kitr add` can keep the list current.
 
 ## Reading the map
 

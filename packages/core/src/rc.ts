@@ -11,6 +11,8 @@ export interface KitrRc {
    * Where the app runs, by name. Each value comes from a platform package:
    * `{ site: web({ mode: 'ssr' }), phone: mobile({ targets: ['ios'] }), api: server({ runtime: 'node' }) }`.
    * Names are yours and must be unique; every CLI command can target them (`kitr dev site api`).
+   * Every platform also takes `without: ['analytics']`: packages whose provider and config file
+   * stay out of that build. `config/<name>/<file>.ts` replaces `config/<file>.ts` for one platform.
    */
   platforms?: Record<string, PlatformInstance<any>>
   /** Providers in boot order. Lazy imports keep startup bundles small. */

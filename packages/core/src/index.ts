@@ -78,6 +78,7 @@ export {
   coerceOption,
   definePlatform,
   isPlatformInstance,
+  type PlatformBundleOptions,
   type PlatformContext,
   type PlatformDefinition,
   type PlatformDependency,
@@ -88,6 +89,7 @@ export {
   type PlatformOptionSpec,
   type PlatformOptionType,
   parseOptions,
+  withoutOption,
 } from './platform'
 export {
   type BuildPlatformKey,

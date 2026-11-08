@@ -8,7 +8,7 @@ order: 1
 
 Every API that a browser can reach gets the same unwanted visitors: other sites that try to post forms as your signed-in users, pages that frame yours to trick clicks, scripts that hammer the sign-in route. `@kitr/shield` turns on the four defences every API needs, from one config file: safe response headers, CORS for a separate front end, CSRF protection for cookie sessions, and a rate limit per client.
 
-Each defence is a plain [h3](https://h3.dev/guide/basics/middleware) middleware with no dependencies of its own. kitr adds the defaults, the order they run in, a config file, and refusals for settings that would open a hole, such as CORS for every origin with cookies.
+Each defence is a plain [h3](https://h3.dev/guide/basics/middleware) middleware. kitr adds the defaults, the order they run in, a config file, and refusals for settings that would open a hole, such as CORS for every origin with cookies.
 
 It runs on the server only, in front of every route of the [kitr server](/packages/server). It does not know who the user is: sign-in, sessions and permissions are [auth](/packages/auth)'s job.
 
@@ -295,7 +295,7 @@ export default defineConfig({
 
 ### Allow every inline script
 
-A third-party widget that writes its own `<script>` or `<style>` tags into the page cannot have a nonce, and the policy blocks it. If you cannot replace it, `unsafeInline: true` restores the policy kitr shipped before nonces: `'unsafe-inline'` for scripts and styles, no nonce.
+A third-party widget that writes its own `<script>` or `<style>` tags into the page cannot have a nonce, and the policy blocks it. If you cannot replace it, `unsafeInline: true` allows `'unsafe-inline'` for scripts and styles and sends no nonce.
 
 ```ts
 // config/shield.ts

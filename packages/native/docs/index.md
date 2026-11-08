@@ -26,7 +26,7 @@ What `kitr add` does:
 - Adds `() => import('@kitr/native/provider')` to `providers` in `kitrrc.ts`.
 - Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `@kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
 
-It writes no config file and adds no environment variables or scripts. `kitr add native` asks no questions, and no kit includes it. It adds [platform](/packages/platform) first when the project lacks it. The web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
+No kit includes it. `kitr add native` adds [platform](/packages/platform) first when the project lacks it. The web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
 
 ```sh
 kitr add native --dry-run
@@ -36,7 +36,7 @@ kitr add native --dry-run
 
 ## Configure
 
-`@kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
+The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
 
 ```ts
 // config/native.ts

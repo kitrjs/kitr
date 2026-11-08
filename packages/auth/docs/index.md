@@ -8,6 +8,9 @@ order: 1
 
 Almost every screen in an app asks two questions: who is this, and are they allowed to do that? `@kitr/auth` answers both, in the browser and on the server, with the same rules in both places. It gives the app one session to read, guards for pages, and permission checks written once as plain functions.
 
+> [!SUMMARY]
+> Sign users in and out, guard pages and check permissions. Add it with `kitr add auth`; the overview is at [/packages/auth](/packages/auth).
+
 By default it doesn't store passwords or run a login server: it connects to what you already have, such as your own API's token endpoint or [Better Auth](https://www.better-auth.com/docs), through an adapter. When your app has a kitr server, it can also run the sign-in itself with [cookie sessions](#cookie-sessions-with-a-server). On top it adds React hooks, router guards for [Router](/packages/router), and middleware for [API routes](/packages/api).
 
 The session, hooks and adapters run in the browser. `@kitr/auth/server` runs on the server and has no React dependency. If all you need is to protect API routes with a token your server checks, use `@kitr/auth/server` alone.
@@ -20,6 +23,9 @@ The examples on this page follow Acme's project tracker at `app.acme.com`. Ada i
 kitr add auth
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add auth` does:
 
 - Installs `@kitr/auth` and adds it to `packages` in `kitrrc.ts`.
@@ -29,6 +35,8 @@ What `kitr add auth` does:
 - Declares `VITE_API_URL: e.url({ default: 'http://localhost:3333' })` in the `public` block of `app/env.ts`, and adds `VITE_API_URL=http://localhost:3333` to `.env.example` (and `.env` when it exists). The generated config calls that URL.
 - Edits `app/router.tsx` to put the live session in the router context and type it on `KitrRouterContext`, so `requireAuth()` works without more wiring ([Protect pages](#protect-pages)). A router file you have already changed from the generated one is left alone.
 - Adds a `kitr: auth` section to `AGENTS.md`: guard routes with `requireAuth()` and `can()`, read the session with `useSession()` and `useUser()`, and keep abilities in `app/abilities.ts`.
+
+</details>
 
 The generated permissions file:
 
@@ -49,7 +57,12 @@ export const abilities = defineAbilities({
 
 `@kitr/auth` is a client package: in a server-only project, `kitr add auth` skips it. It asks how users sign in: `--provider token` (the default, described on this page), `session` ([cookie sessions](#cookie-sessions-with-a-server)) or `better-auth`; `--no-emails` skips the verification and reset emails of `session`. Use `@kitr/auth/server` from `@kitr/auth` there by installing the package yourself. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include auth already.
 
+<details>
+<summary>What kitr remove does</summary>
+
 `kitr remove auth` takes the session back out of `app/router.tsx`, unregisters the provider, removes `@kitr/auth` from `package.json` and `kitrrc.ts`, deletes `config/auth.ts` and drops the `AGENTS.md` section. It keeps `app/abilities.ts` and `VITE_API_URL`, and lists the files that still import `@kitr/auth`.
+
+</details>
 
 ## Configure
 
@@ -350,7 +363,7 @@ const adapter = tokenAdapter<User>({
 export default defineConfig({ adapter })
 ```
 
-> **Warning**
+> [!WARNING]
 > Any script on your page can read `localStorage`, so an XSS bug exposes the token. Keep access tokens short-lived, keep refresh tokens in memory, or use a cookie session (Better Auth or `customAdapter`) for sensitive apps.
 
 Storage that throws, such as in a private window, is ignored: reads return `null`. To store tokens elsewhere, such as [Secure storage](/packages/secure-storage) in a mobile app, pass any object with `get()` and `set(token)`:
@@ -857,7 +870,7 @@ export const optionalAuth = authMiddleware<User>({
 
 The cookie value is URL-decoded before `verify` sees it. A malformed value counts as no cookie, not as a server error. Use `optionalAuth` on public pages that show more to signed-in users, such as a project page with an edit link for its owner.
 
-> **Warning**
+> [!WARNING]
 > Cookie sessions need CSRF protection on writes, because the browser sends the cookie with requests other sites trigger. Turn on CSRF in [Shield](/packages/shield).
 
 ## Cookie sessions with a server
@@ -928,7 +941,10 @@ import { requireAuth } from '@kitr/router'
 })
 ```
 
-On the server, `ensureSession` reads the session of the request being rendered. In the browser it asks `GET /api/auth/session` once and caches the answer. Don't return the guard's result from `beforeLoad` in a server-rendered route: it holds functions, which cannot be sent to the page.
+On the server, `ensureSession` reads the session of the request being rendered. In the browser it asks `GET /api/auth/session` once and caches the answer.
+
+> [!WARNING]
+> Do not return the guard's result from `beforeLoad` in a server-rendered route. It holds functions, which cannot be serialized into the page.
 
 For API routes, `sessionMiddleware(auth)` answers `401` without a session, and `getRequestUser()` reads the user anywhere in the request.
 
