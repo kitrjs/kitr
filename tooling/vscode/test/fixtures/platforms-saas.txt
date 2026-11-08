@@ -1,0 +1,2 @@
+  site       web      mode=ssr port=3000 pwa=false base=/ open=false
+  api        server   runtime=node port=3001 entry=server/main.ts

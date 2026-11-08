@@ -14,7 +14,8 @@ const live = !!process.env.SITE_URL
 function links(html: string): string[] {
   const out = new Set<string>()
   for (const [, href] of html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)) {
-    if (!href || /^(https?:|mailto:|tel:|#|\/\/)/.test(href)) continue
+    // Only paths on this site: skip anything with a scheme (https:, mailto:, vscode:, ...) and protocol-relative URLs.
+    if (!href || /^([a-z][a-z0-9+.-]*:|#|\/\/)/i.test(href)) continue
     const path = href.split('#')[0]!.split('?')[0]!
     // Cloudflare rewrites mailto links to /cdn-cgi/l/email-protection on the live site.
     if (path && !path.startsWith('/cdn-cgi/')) out.add(path)

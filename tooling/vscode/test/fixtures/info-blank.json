@@ -1,0 +1,18 @@
+{
+  "root": "/home/me/blank",
+  "kitr": "0.1.0",
+  "packageManager": "pnpm",
+  "serverOnly": false,
+  "platforms": {},
+  "packages": [],
+  "providers": [],
+  "directories": {
+    "app": "app",
+    "routes": "app/routes",
+    "config": "config",
+    "components": "app/components",
+    "server": "server",
+    "platforms": "platforms",
+    "stubs": "stubs"
+  }
+}

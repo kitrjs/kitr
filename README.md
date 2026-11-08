@@ -32,6 +32,8 @@ pnpm dlx kitr new my-saas --kit saas    # presets: saas, site, realtime. Real pa
 
 Every command runs from flags alone, so coding agents and CI never hit a prompt. `kitr new` writes an `AGENTS.md` that `kitr add` keeps up to date.
 
+For Claude Code, the kitr plugin adds skills that know the conventions, the `kitr make` generators and `kitr doctor`. Install it with `claude plugin marketplace add kitrjs/kitr && claude plugin install kitr@kitr`, or run `npx skills add kitrjs/kitr` for Cursor, Codex, Copilot and other agents that read `SKILL.md`. See [Built for agents](https://kitr.dev/docs/agents) and [tooling/claude](tooling/claude/README.md).
+
 ## The ideas
 
 **Re-export, never re-implement. Add beside, never change.**

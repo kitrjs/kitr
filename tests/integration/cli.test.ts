@@ -65,6 +65,9 @@ describe('kitr new', () => {
     expect(pkg.type).toBe('module')
     expect(exists(dir, 'kitrrc.ts')).toBe(true)
     expect(exists(dir, 'AGENTS.md')).toBe(true)
+    expect(JSON.parse(readFileSync(join(dir, '.vscode/extensions.json'), 'utf8'))).toEqual({
+      recommendations: ['kitrjs.kitr'],
+    })
     // Every provider in kitrrc.ts has its package in package.json.
     const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
     for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
@@ -105,6 +108,12 @@ describe('kitr new', () => {
 
   it('refuses a non-empty directory without --force', () => {
     expect(() => kitr(tmp, 'new', 'blank', '--kit', 'blank', '--no-install', '--no-git')).toThrow()
+  })
+
+  it('--no-vscode skips .vscode/extensions.json', () => {
+    kitr(tmp, 'new', 'novscode', '--kit', 'blank', '--no-install', '--no-git', '--no-vscode')
+    expect(exists(join(tmp, 'novscode'), 'kitrrc.ts')).toBe(true)
+    expect(exists(join(tmp, 'novscode'), '.vscode')).toBe(false)
   })
 
   it('rejects an unknown kit', () => {

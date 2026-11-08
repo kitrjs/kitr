@@ -1,0 +1,238 @@
+{
+  "name": "kitr",
+  "displayName": "kitr",
+  "description": "The kitr sidebar: platforms, packages, providers, routes and generators of your kitr app, with make, add, dev, build and doctor one click away.",
+  "version": "0.1.0",
+  "publisher": "kitrjs",
+  "license": "MIT",
+  "homepage": "https://kitr.dev/docs/agents",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kitrjs/kitr",
+    "directory": "tooling/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/kitrjs/kitr/issues"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "kitr",
+    "react",
+    "typescript",
+    "framework",
+    "scaffolding"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/kitrrc.ts"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kitr",
+          "title": "kitr",
+          "icon": "media/kitr.svg"
+        }
+      ]
+    },
+    "views": {
+      "kitr": [
+        {
+          "id": "kitr.platforms",
+          "name": "Platforms"
+        },
+        {
+          "id": "kitr.packages",
+          "name": "Packages"
+        },
+        {
+          "id": "kitr.providers",
+          "name": "Providers",
+          "visibility": "collapsed"
+        },
+        {
+          "id": "kitr.routes",
+          "name": "Routes"
+        },
+        {
+          "id": "kitr.generators",
+          "name": "Generators",
+          "visibility": "collapsed"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "kitr.platforms",
+        "contents": "No platforms yet. A platform is where the app runs: a web site, a server, a desktop or mobile shell.\n[Add platform](command:kitr.addPlatform)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "kitr.make",
+        "title": "Make…",
+        "category": "kitr",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "kitr.addPackage",
+        "title": "Add package…",
+        "category": "kitr",
+        "icon": "$(add)"
+      },
+      {
+        "command": "kitr.addPlatform",
+        "title": "Add platform…",
+        "category": "kitr",
+        "icon": "$(add)"
+      },
+      {
+        "command": "kitr.dev",
+        "title": "Dev",
+        "category": "kitr",
+        "icon": "$(play)"
+      },
+      {
+        "command": "kitr.build",
+        "title": "Build",
+        "category": "kitr",
+        "icon": "$(package)"
+      },
+      {
+        "command": "kitr.start",
+        "title": "Start",
+        "category": "kitr",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "kitr.doctor",
+        "title": "Doctor",
+        "category": "kitr",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "kitr.types",
+        "title": "Types",
+        "category": "kitr",
+        "icon": "$(symbol-interface)"
+      },
+      {
+        "command": "kitr.openAgents",
+        "title": "Open AGENTS.md",
+        "category": "kitr",
+        "icon": "$(book)"
+      },
+      {
+        "command": "kitr.refresh",
+        "title": "Refresh",
+        "category": "kitr",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kitr.selectProject",
+        "title": "Select project…",
+        "category": "kitr"
+      },
+      {
+        "command": "kitr.open",
+        "title": "Open",
+        "category": "kitr"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "kitr.open",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "kitr.refresh",
+          "when": "view =~ /^kitr\\./",
+          "group": "navigation@9"
+        },
+        {
+          "command": "kitr.doctor",
+          "when": "view == kitr.platforms",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kitr.addPlatform",
+          "when": "view == kitr.platforms",
+          "group": "navigation@2"
+        },
+        {
+          "command": "kitr.addPackage",
+          "when": "view == kitr.packages",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kitr.make",
+          "when": "view == kitr.generators",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "kitr.dev",
+          "when": "view == kitr.platforms && viewItem == platform",
+          "group": "inline@1"
+        },
+        {
+          "command": "kitr.build",
+          "when": "view == kitr.platforms && viewItem == platform",
+          "group": "inline@2"
+        },
+        {
+          "command": "kitr.start",
+          "when": "view == kitr.platforms && viewItem == platform",
+          "group": "inline@3"
+        },
+        {
+          "command": "kitr.make",
+          "when": "view == kitr.generators && viewItem == generator",
+          "group": "inline@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "kitr",
+      "properties": {
+        "kitr.cliPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the kitr binary. Empty: the project's node_modules/.bin/kitr, else the package manager's runner (pnpm exec, npx, yarn, bunx)."
+        },
+        "kitr.doctorOnOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run kitr doctor when the workspace opens, to colour the status bar item."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "package": "vsce package --no-dependencies",
+    "vscode:prepublish": "node esbuild.mjs --production"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/vscode": "1.95.0",
+    "@vscode/vsce": "^4.1.0",
+    "esbuild": "^0.28.2",
+    "ovsx": "^1.3.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}
