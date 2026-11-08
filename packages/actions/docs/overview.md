@@ -36,7 +36,7 @@ kitr adds four things on top:
 - **Data that arrives after the page.** Route loaders call the same actions, so the page renders with its data. See [Load before the page renders](/packages/actions/guide#load-before-the-page-renders).
 - **Untrusted input reaching server code.** Every action validates its input before the handler runs, and the error reaches the form field that caused it. See [Throw an error the caller understands](/packages/actions/guide#throw-an-error-the-caller-understands).
 - **Server code anyone can call.** Middleware runs before the handler, so `requireAuth` or a permission check protects the action the same way it protects a route. See [Protect an action with middleware](/packages/actions/guide#protect-an-action-with-middleware).
-- **Actions scattered across the codebase.** The guide shows one folder per feature, and the registry keeps names unique. See [Organise actions by feature](/packages/actions/guide#organise-actions-by-feature).
+- **Actions scattered across the codebase.** The guide shows one folder per feature, and the registry keeps names unique. See [Organize actions by feature](/packages/actions/guide#organize-actions-by-feature).
 
 ## Further reading
 

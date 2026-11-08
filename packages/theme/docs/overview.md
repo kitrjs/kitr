@@ -20,7 +20,7 @@ It runs in the browser, and on the server during server rendering. For utility c
 
 | Built on | Role |
 | --- | --- |
-| [CSS custom properties](https://developer.mozilla.org/docs/Web/CSS/Using_CSS_custom_properties) | The tokens: colours, radii, spacing, with a dark set under `[data-theme="dark"]`. |
+| [CSS custom properties](https://developer.mozilla.org/docs/Web/CSS/Using_CSS_custom_properties) | The tokens: colors, radii, spacing, with a dark set under `[data-theme="dark"]`. |
 | [sonner](https://sonner.emilkowal.ski) | The toasts behind `toast()` and `toastError()`. |
 | [shadcn/ui](https://ui.shadcn.com)-compatible registries | The component format `kitr ui add` reads and copies into `app/components/ui/`. |
 | [class-variance-authority](https://cva.style/docs) | Component variants in the copied components. |
@@ -31,8 +31,8 @@ kitr adds the theme provider, the no-flash script, the cookie for server renderi
 
 - **A white flash before dark mode.** `<ThemeScript />` sets the theme attribute before the first paint, and the server reads the cookie. See [Avoid a flash on load](/packages/theme/guide#avoid-a-flash-on-load).
 - **Light, dark and system as three code paths.** One provider, one hook, one saved choice. See [Let users pick light, dark or system](/packages/theme/guide#let-users-pick-light-dark-or-system).
-- **Colours copied between files.** Tokens are CSS variables, typed for CSS Modules and inline styles. See [Use the tokens in CSS](/packages/theme/guide#use-the-tokens-in-css).
-- **Rebranding by search and replace.** Change the token values once. See [Brand the colours](/packages/theme/guide#brand-the-colours).
+- **Colors copied between files.** Tokens are CSS variables, typed for CSS Modules and inline styles. See [Use the tokens in CSS](/packages/theme/guide#use-the-tokens-in-css).
+- **Rebranding by search and replace.** Change the token values once. See [Brand the colors](/packages/theme/guide#brand-the-colors).
 - **A different toast library in every project.** `toast()` with the app's theme, and an adapter if you already use another. See [Show toasts](/packages/theme/guide#show-toasts).
 - **Component libraries that fight the design system.** `kitr ui add` copies components that use these tokens into your app, where you own them. See [Add components](/packages/theme/guide#add-components).
 

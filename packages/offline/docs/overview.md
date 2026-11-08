@@ -35,5 +35,5 @@ kitr adds the throttled save, the restore at boot, choosing which queries to per
 
 - [Guide](/packages/offline/guide): install, configure and every task.
 - [API reference](/packages/offline/api): every export and type.
-- [TanStack Query: network mode](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode) and [hydration](https://tanstack.com/query/latest/docs/framework/react/reference/hydration): how paused queries behave and how the cache is serialised.
+- [TanStack Query: network mode](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode) and [hydration](https://tanstack.com/query/latest/docs/framework/react/reference/hydration): how paused queries behave and how the cache is serialized.
 - [Query](/packages/query), [Storage](/packages/storage) and [Web](/packages/web): the cache it saves, where it saves it, and making the app itself open offline.

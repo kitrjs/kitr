@@ -24,7 +24,7 @@ kitr adds a provider with the defaults most apps want: an isolated i18next insta
 
 ## Problems it solves
 
-- **Strings scattered through components.** One file per language, split into namespaces, loaded by the provider. See [Organise strings into namespaces](/packages/i18n/guide#organise-strings-into-namespaces).
+- **Strings scattered through components.** One file per language, split into namespaces, loaded by the provider. See [Organize strings into namespaces](/packages/i18n/guide#organize-strings-into-namespaces).
 - **Plurals and formatting done by hand.** i18next handles `count`, and the Intl formatters handle numbers, money and dates per locale. See [Count things](/packages/i18n/guide#count-things) and [Format numbers, money and dates](/packages/i18n/guide#format-numbers-money-and-dates).
 - **Misspelt keys that render blank.** `TranslationKeys` makes every key a compile-time check. See [Type your keys](/packages/i18n/guide#type-your-keys).
 - **The wrong language on first render.** The server picks the locale from the request, so the HTML and the hydrated page agree. See [Choose the language on the server](/packages/i18n/guide#choose-the-language-on-the-server).

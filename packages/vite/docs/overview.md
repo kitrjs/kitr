@@ -22,7 +22,7 @@ It runs at build time only; nothing of it ships to the browser. A pure backend n
 
 ## Problems it solves
 
-- **A growing `vite.config.ts`.** Packages declare what they need; the plugin assembles it. See [Ask the build for something from a package](/packages/vite/guide#ask-the-build-for-something-from-a-package).
+- **A growing `vite.config.ts`.** Packages declare what they need; the plugin assembles it. See [Let a package configure the build](/packages/vite/guide#let-a-package-configure-the-build).
 - **Several platforms, several configs.** Pick the platform with a flag; the same config builds all of them. See [Pick the platform to build](/packages/vite/guide#pick-the-platform-to-build).
 - **Relative import paths.** `#app`, `#config` and friends come from `kitrrc.ts`. See [Import through the aliases](/packages/vite/guide#import-through-the-aliases).
 - **Generated types going stale.** `kitr types` runs on build and on change. See [Keep generated types current](/packages/vite/guide#keep-generated-types-current).

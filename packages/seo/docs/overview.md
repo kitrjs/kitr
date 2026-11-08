@@ -24,7 +24,7 @@ It runs on both sides: the helpers are plain functions the server renders into H
 
 - **Tags written by hand on every page.** One call, with defaults from the site config. See [Give a page its title](/packages/seo/guide#give-a-page-its-title).
 - **Blank link previews.** Open Graph and Twitter tags with a share image. See [Add a share image](/packages/seo/guide#add-a-share-image).
-- **No rich results.** JSON-LD for articles, products and organisations. See [Add structured data](/packages/seo/guide#add-structured-data).
+- **No rich results.** JSON-LD for articles, products and organizations. See [Add structured data](/packages/seo/guide#add-structured-data).
 - **Private pages in search results.** Mark a route `noindex` and keep it out of the sitemap. See [Keep a page out of search results](/packages/seo/guide#keep-a-page-out-of-search-results).
 - **Crawlers that see an empty shell.** Prerender marketing pages at build time. See [Prerender pages at build time](/packages/seo/guide#prerender-pages-at-build-time).
 - **A sitemap that drifts from the routes.** Generate it from the route table. See [Generate a sitemap](/packages/seo/guide#generate-a-sitemap).

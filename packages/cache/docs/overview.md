@@ -26,7 +26,7 @@ The package is a small layer of its own rather than a wrapper around one store. 
 | unstorage | [unstorage](https://unstorage.unjs.io) | Redis, Upstash, Cloudflare KV, Vercel KV and every other unstorage driver. |
 | Your own | The `CacheDriver` interface | Anything with get, set, delete and keys. |
 
-On top of a plain key-value store kitr adds expiry, tags, the key prefix, `remember()` with request coalescing, serialisation for `Date`, `Map` and `Set`, and a devtools panel.
+On top of a plain key-value store kitr adds expiry, tags, the key prefix, `remember()` with request coalescing, serialization for `Date`, `Map` and `Set`, and a devtools panel.
 
 ## Problems it solves
 

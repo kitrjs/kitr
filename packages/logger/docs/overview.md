@@ -6,7 +6,7 @@ order: 0
 
 # Logger
 
-When a customer reports that an order never shipped, the logs are where you find out why. In development you want lines you can read at a glance: a coloured level, the time, the message. In production you want one JSON object per line so your log service can filter by `orderId` or `requestId`. Most projects get one of the two, and lose the request id somewhere between the middleware and the service that failed.
+When a customer reports that an order never shipped, the logs are where you find out why. In development you want lines you can read at a glance: a colored level, the time, the message. In production you want one JSON object per line so your log service can filter by `orderId` or `requestId`. Most projects get one of the two, and lose the request id somewhere between the middleware and the service that failed.
 
 `@kitr/logger` writes both formats from the same calls and carries the request id on every line.
 

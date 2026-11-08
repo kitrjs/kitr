@@ -12,7 +12,7 @@ Most React apps style with utility classes now, and most of them spend their fir
 
 ## What it is
 
-`@kitr/tailwind` is Tailwind CSS v4 with a preset stylesheet that maps kitr's design tokens onto Tailwind's theme, and `cn()`, which merges class names so the last one wins. Dark mode follows the [theme](/packages/theme) toggle. `defineConfig` in `config/tailwind.ts` adds your own colours and sizes, and `kitrTailwind` is the Vite plugin that the `kitr()` plugin already registers.
+`@kitr/tailwind` is Tailwind CSS v4 with a preset stylesheet that maps kitr's design tokens onto Tailwind's theme, and `cn()`, which merges class names so the last one wins. Dark mode follows the [theme](/packages/theme) toggle. `defineConfig` in `config/tailwind.ts` adds your own colors and sizes, and `kitrTailwind` is the Vite plugin that the `kitr()` plugin already registers.
 
 It runs at build time and in the browser; there is nothing to call on the server. If you prefer plain CSS or CSS Modules, skip this package and use the helpers in [theme](/packages/theme) instead.
 
@@ -28,7 +28,7 @@ kitr adds the preset that maps the theme tokens, the `cn()` helper taught about 
 
 ## Problems it solves
 
-- **Design tokens and Tailwind colours out of step.** The preset maps every token to a class, so changing a token changes the classes. See [Use the theme's colours](/packages/tailwind/guide#use-the-themes-colours).
+- **Design tokens and Tailwind colors out of step.** The preset maps every token to a class, so changing a token changes the classes. See [Use the theme's colors](/packages/tailwind/guide#use-the-themes-colors).
 - **Dark mode wired twice.** Tailwind's dark variant follows the theme attribute. See [Support dark mode](/packages/tailwind/guide#support-dark-mode).
 - **Conflicting classes from a `className` prop.** `cn()` lets the caller's class win. See [Merge classes with cn()](/packages/tailwind/guide#merge-classes-with-cn).
 - **Variants by string concatenation.** Build them with `cva` on top of `cn()`. See [Build variants with cva](/packages/tailwind/guide#build-variants-with-cva).
