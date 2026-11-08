@@ -176,7 +176,7 @@ export function createContext(
     read: (...parts) => readFileSync(join(root, ...parts), 'utf8'),
     write(path, content, { overwrite = false } = {}) {
       const full = resolve(root, path)
-      const rel = relative(root, full)
+      const rel = relative(root, full).split('\\').join('/')
       if (existsSync(full) && !overwrite) {
         if (ctx.verbose) log.step(`skip ${rel} (exists)`)
         return false
@@ -197,12 +197,20 @@ export function createContext(
       const rc = ctx.readRc()
       return (
         !('react' in deps) &&
+        // Installed from a registry, every package is added to package.json before any setup
+        // module runs, so @kitr/react can be there before `react` is in kitrrc.ts.
+        !('@kitr/react' in deps) &&
         !rc.packages.includes('@kitr/react') &&
         ('@kitr/server' in deps || rc.packages.includes('@kitr/server'))
       )
     },
   }
   return ctx
+}
+
+/** A binary in the project's node_modules/.bin. On Windows the runnable shim is `<name>.cmd`. */
+export function projectBin(root: string, name: string): string {
+  return join(root, 'node_modules', '.bin', process.platform === 'win32' ? `${name}.cmd` : name)
 }
 
 function cliVersion(): string {

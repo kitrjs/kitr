@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { builders, generateCode, parseModule } from 'magicast'
-import type { ProjectContext } from './context'
+import { type ProjectContext, projectBin } from './context'
 import { versionOf } from './versions'
 
 /** Which route table a package extends: pages (`app`) or endpoints and sockets (`server`). */
@@ -398,7 +398,7 @@ export class Codemods {
         /\.(ts|tsx|js|mjs|json)$/.test(f) && f !== 'package.json' && existsSync(this.ctx.path(f)),
     )
     if (!files.length) return
-    const bin = this.ctx.path('node_modules', '.bin', 'biome')
+    const bin = projectBin(this.ctx.root, 'biome')
     if (!existsSync(bin)) return
     try {
       execSync(`"${bin}" format --write ${files.map((f) => `"${f}"`).join(' ')}`, {
