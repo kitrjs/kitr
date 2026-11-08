@@ -472,8 +472,13 @@ interface PageEntry extends RouteEntry {
 }
 
 /**
- * The pages extension for `defineRoutes([pages], ...)`: `.page()`, `.layout()`, `.group()` and
- * the root document, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
+ * The pages extension for the kitr route table: `.root`, `.page` and `.layout` on
+ * `defineRoutes([pages], ...)`, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
+ *
+ *   import pages from 'kitr/router/routes'
+ *   export const routes = defineRoutes([pages], (r) =>
+ *     r.root({ head, component: RootDocument }).page('/', { lazy: () => import('./pages/home') }),
+ *   )
  */
 const pages = defineRouteExtension({
   key: 'pages',

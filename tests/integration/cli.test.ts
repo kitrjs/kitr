@@ -166,7 +166,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
 
   const generators: Array<[string, string, string]> = [
-    ['make:route', 'reports', 'app/routes/reports.tsx'],
+    ['make:page', 'reports', 'app/pages/reports.tsx'],
     ['make:query', 'projects/list', 'app/actions/projects/list.ts'],
     ['make:mutation', 'projects/archive', 'app/actions/projects/archive.ts'],
     ['make:controller', 'invoices', 'server/controllers/invoices_controller.ts'],
@@ -331,7 +331,7 @@ describe('kitr add / remove', () => {
     expect(router()).toContain('get session()')
     kitr(dir, 'remove', 'auth', '--no-install')
     expect(router()).not.toContain('session')
-    expect(router()).toContain('createKitrRouter({ routeTree, app })')
+    expect(router()).toContain('createKitrRouter({ routes, app })')
     kitr(dir, 'add', 'auth', '--no-install')
     expect(router()).toBe(before['app/router.tsx'])
     expect(readFileSync(join(dir, 'app/env.ts'), 'utf8')).toMatch(/VITE_API_URL:/)

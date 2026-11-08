@@ -377,6 +377,7 @@ for (const group of guidesNavFile) {
       packages: usesPackages,
       platforms,
       time: data.time,
+      preview: data.preview === 'true',
       blocks: rendered.blocks,
       toc: rendered.toc,
       editUrl: `${repoUrl}/edit/main/${relative(repo, path)}`,
@@ -388,6 +389,7 @@ for (const group of guidesNavFile) {
       packages: usesPackages,
       platforms,
       time: data.time,
+      preview: data.preview === 'true',
     })
     addSearch(url, data.title, 'Guides', rendered, data.description)
     llms.push({ url, title: data.title, description: data.description, body })

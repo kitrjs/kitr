@@ -84,6 +84,31 @@ From the root, `pnpm dev` starts both: the web app on `http://localhost:3000` an
 
 Rename the apps' packages so the filters and imports read well. Set `"name": "@acme/web"` in `apps/web/package.json` and `"name": "@acme/api"` in `apps/api/package.json`.
 
+## Run kitr from the root
+
+pnpm's filters run package scripts. For kitr's own commands, a `kitr.workspace.ts` at the root names the apps, and the CLI then works from the root as well as from inside each app:
+
+```ts
+// kitr.workspace.ts
+import { defineWorkspace } from 'kitr'
+
+export default defineWorkspace({
+  apps: { web: 'apps/web', api: 'apps/api' },
+})
+```
+
+The CLI reads the file without running it, the same way it reads `kitrrc.ts`, so the names are plain strings. At the root:
+
+| Command | What it does |
+| --- | --- |
+| `kitr workspace` | Lists the apps with their platforms and packages. |
+| `kitr dev` | Starts every app side by side: the web app on port 3000, the API on 3001. |
+| `kitr build`, `kitr types`, `kitr doctor` | Runs in each app, one after another, and stops at the first that fails. |
+| `kitr build api` | An app name selects that app: this builds the API only. |
+| `kitr --app api make:controller invoices --resource` | Runs any command inside one app without `cd`. |
+
+Inside `apps/web` or `apps/api` every command is that app's own, as if there were no workspace. Flags pass through, so `kitr doctor --strict` at the root checks both apps.
+
 ## Share schemas and types
 
 Put what both sides agree on into a package of its own: the shape of an order, the schema that validates a new one, and the routes' response types. Neither app owns it, so neither can change it without the other noticing:
@@ -220,7 +245,7 @@ import { httpMutation, httpQuery } from 'kitr/http'
 import { mutationFrom, queryFrom } from 'kitr/query'
 import { app } from '#app/app'
 
-const http = app.container.use('http')
+const http = () => app.container.use('http')
 export const orderKeys = createKeys('orders')
 
 export const ordersQuery = queryFrom(
@@ -296,10 +321,10 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm typecheck` runs `kitr types && tsc --noEmit` in each app and `tsc --noEmit` in `@acme/contracts`. `pnpm test` runs each app's Vitest suite, which [Test your app](/guides/testing) builds out. Add `kitr doctor` per app, so a missing provider or a React import in the API fails CI:
+`pnpm typecheck` runs `kitr types && tsc --noEmit` in each app and `tsc --noEmit` in `@acme/contracts`. `pnpm test` runs each app's Vitest suite, which [Test your app](/guides/testing) builds out. Add `kitr doctor` from the root, which runs in each app, so a missing provider or a React import in the API fails CI:
 
 ```sh
-pnpm --filter "./apps/*" exec kitr doctor --strict
+kitr doctor --strict
 ```
 
 In CI, run only what a change touched with pnpm's change filter: `pnpm --filter "...[origin/main]" test` tests the packages changed since `main` and everything that depends on them, so a change to `@acme/contracts` tests both apps and a change to the web app tests only the web app.

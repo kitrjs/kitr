@@ -143,9 +143,11 @@ const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]))
 const importRe =
   /(?:^|[\s;}])(?:import|export)\s*(?:[^'"`;]*?\sfrom\s*)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/gm
 
+/** Block comments go: doc comments show `import x from 'kitr/...'` examples, which are not imports. */
+const stripBlockComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '')
+
 function specifiers(file) {
-  // Doc comments quote import lines in their examples; only code counts.
-  const src = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+  const src = stripBlockComments(readFileSync(file, 'utf8'))
   return [...src.matchAll(importRe)].map((m) => m[1] ?? m[2])
 }
 const packageName = (spec) =>
