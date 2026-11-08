@@ -30,7 +30,6 @@ Kits: `blank`, `app`, `fullstack`, `server`, and the presets `saas`, `site`, `re
 | `--no-install`, `--no-git` | Skip installing dependencies or creating a git repository. |
 | `--registry <url\|path>` | Copy components from another registry. |
 | `--force` | Write into a folder that is not empty. |
-| `--no-vscode` | Skip `.vscode/extensions.json`, which recommends the kitr extension. |
 
 ### Add a package
 
