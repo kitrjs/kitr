@@ -10,7 +10,7 @@ import { applyRequestHeaders, fromEnvelope, keyFor } from '@kitr/core/request'
 import type { RouteType } from './types'
 
 /**
- * Options for `createApiClient()`. The client is typed from `typeof routes.$types`, with no codegen:
+ * Options for `createApiClient()`. The client is typed from `typeof routes.$types`; `registerRoutes` gives it the paths at run time:
  *
  *   const api = createApiClient<AppRoutes>({ baseUrl: env.VITE_API_URL })
  *   const project = await api.projects.show({ params: { id } })

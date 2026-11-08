@@ -20,7 +20,7 @@ async function serverFetch(request: Request): Promise<Response> {
   return server.fetch(request)
 }
 
-/** Typed, no codegen: route names, params, bodies and outputs come from the server table. The browser's cookie and CSRF token ride along. */
+/** Typed from the server table: route names, params, bodies and outputs; routes.gen.ts (kitr api:sync) carries the paths at run time. The browser's cookie and CSRF token ride along. */
 export const api = createApiClient<ServerRoutes>({
   baseUrl: import.meta.env.SSR ? 'http://localhost' : '',
   ...(import.meta.env.SSR ? { fetch: serverFetch } : {}),

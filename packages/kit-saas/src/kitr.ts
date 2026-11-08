@@ -36,7 +36,7 @@ async function serverFetch(request: Request): Promise<Response> {
   return server.fetch(request)
 }
 
-/** Typed, no codegen: route names, params, bodies and outputs come from the server table. The browser's cookie and CSRF token ride along. */
+/** Typed from the server table: route names, params, bodies and outputs; routes.gen.ts (kitr api:sync) carries the paths at run time. The browser's cookie and CSRF token ride along. */
 export const api = createApiClient<ServerRoutes>({
   baseUrl: import.meta.env.SSR ? 'http://localhost' : '',
   ...(import.meta.env.SSR ? { fetch: serverFetch } : {}),
@@ -302,19 +302,23 @@ export type ServerRoutes = typeof routes.$types
     'config/auth.ts',
     `import { defineConfig, sessionAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
-import { api } from '#app/api/client'
 
 /**
  * The session is an HttpOnly cookie the API sets (server/controllers/auth-controller.ts), so there
  * is no token to keep: this adapter asks \`GET /api/auth/session\` in the browser and reads the
  * request's own session while a page renders on the server. Swap for betterAuthAdapter(createAuthClient())
  * or a customAdapter({...}) if you move to another identity provider.
+ *
+ * config/ is loaded by the browser bundle and by the plain-Node API server alike, so the typed client
+ * (a Vite module) is imported when the adapter first runs, never while the server boots.
  */
+const client = () => import('#app/api/client').then((m) => m.api)
+
 const adapter = sessionAdapter<User>({
   abilities,
-  fetchSession: () => api.auth.session(),
-  signIn: (credentials) => api.auth.signIn({ body: credentials }),
-  signOut: () => api.auth.signOut(),
+  fetchSession: async () => (await client()).auth.session(),
+  signIn: async (credentials) => (await client()).auth.signIn({ body: credentials }),
+  signOut: async () => (await client()).auth.signOut(),
 })
 
 export default defineConfig({ adapter, signInPath: '/sign-in' })

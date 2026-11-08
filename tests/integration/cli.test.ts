@@ -38,6 +38,7 @@ describe('kitr new', () => {
   it.each([
     'blank',
     'app',
+    'dashboard',
     'fullstack',
     'server',
     'saas',
@@ -94,16 +95,24 @@ describe('kitr new', () => {
     }
   })
 
-  it.each(['blank', 'app', 'fullstack', 'server', 'saas', 'site', 'realtime', 'desktop', 'mobile'])(
-    'kit %s passes its own lint once formatted (what `new` does after install)',
-    (kit) => {
-      const dir = join(tmp, kit)
-      try {
-        run(dir, bin('biome'), ['check', '--write', '.'])
-      } catch {}
-      run(dir, bin('biome'), ['check', '--error-on-warnings', '.'])
-    },
-  )
+  it.each([
+    'blank',
+    'app',
+    'dashboard',
+    'fullstack',
+    'server',
+    'saas',
+    'site',
+    'realtime',
+    'desktop',
+    'mobile',
+  ])('kit %s passes its own lint once formatted (what `new` does after install)', (kit) => {
+    const dir = join(tmp, kit)
+    try {
+      run(dir, bin('biome'), ['check', '--write', '.'])
+    } catch {}
+    run(dir, bin('biome'), ['check', '--error-on-warnings', '.'])
+  })
 
   it('refuses a non-empty directory without --force', () => {
     expect(() => kitr(tmp, 'new', 'blank', '--kit', 'blank', '--no-install', '--no-git')).toThrow()
@@ -124,6 +133,7 @@ describe('kitr new', () => {
 
 describe.each([
   'blank',
+  'app',
   'backend',
   'dashboard',
   'fullstack',

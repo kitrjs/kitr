@@ -60,7 +60,7 @@ pnpm install
 ```
 acme/
 ├── apps/
-│   ├── web/                # the app kit: a SPA on port 3000
+│   ├── web/                # the app kit: a SPA on port 3000 (two pages, Query, Tailwind)
 │   │   ├── app/
 │   │   ├── config/
 │   │   └── kitrrc.ts       # platforms: { site: web({ mode: 'spa' }) }

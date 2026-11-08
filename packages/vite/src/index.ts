@@ -224,6 +224,8 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   let serverOnlyConfig: string[] = []
   /** Packages whose provider never ships in a production build. */
   let devOnlyProviders: string[] = []
+  let serverOnlyProviders: string[] = []
+  let devtoolsShipped = false
   /** Short name (`config/<name>.ts`) of each installed package, by full package name. */
   let configNames = new Map<string, string>()
   const configNamesOf = (p: ActivePlatform | undefined) =>
@@ -250,6 +252,14 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         // `enabled: true` (or any expression but `false`) in its config ships it after all.
         .filter((n) => !(options.devtools ?? configEnables(configDir, n.name)))
         .map((n) => n.package)
+      serverOnlyProviders = declared
+        .filter((n) => n.needs.provider?.client === false)
+        .map((n) => n.package)
+      // Packages guard their devtools panels with `__KITR_DEVTOOLS__`, so a production build without
+      // the overlay ships no panel chunks at all.
+      devtoolsShipped =
+        !production ||
+        (rc.packages.includes('@kitr/devtools') && !devOnlyProviders.includes('@kitr/devtools'))
       const include = installedDeps(
         root,
         declared.flatMap((n) => n.needs.optimizeDeps ?? []),
@@ -289,6 +299,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           'import.meta.env.KITR_PACKAGES': JSON.stringify(rc.packages),
           'import.meta.env.KITR_PLATFORM': JSON.stringify(platform?.name ?? ''),
           'import.meta.env.KITR_PLATFORM_TYPE': JSON.stringify(platform?.type ?? ''),
+          __KITR_DEVTOOLS__: JSON.stringify(devtoolsShipped),
         },
       }
     },
@@ -301,11 +312,17 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         // Production builds never import the devtools provider, so the overlay is not in the bundle.
         const dropped = (spec: string) => devOnlyProviders.some((pkg) => providerOf(spec, pkg))
         const left = (spec: string) => !!platform?.without.some((pkg) => providerOf(spec, pkg))
+        // Server-only providers (mail, jobs, cache...) return at once in a browser; the browser
+        // bundle leaves them out so their dependencies never reach it. The SSR build keeps them.
+        const serverOnly = (spec: string) =>
+          !loadOptions?.ssr && serverOnlyProviders.some((pkg) => providerOf(spec, pkg))
         const specs = (
           options.devtools === false || production
             ? rc.providers.filter((spec) => !dropped(spec))
             : rc.providers
-        ).filter((spec) => !left(spec))
+        )
+          .filter((spec) => !left(spec))
+          .filter((spec) => !serverOnly(spec))
         const imports = specs
           .map((spec, i) => `import p${i} from ${JSON.stringify(spec)}`)
           .join('\n')

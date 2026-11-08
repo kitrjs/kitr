@@ -9,6 +9,9 @@ import {
   type MonitoringConfig,
 } from './index'
 
+/** Set by @kitr/vite: `false` in a production build without the devtools overlay, so the panel chunk is never emitted. */
+declare const __KITR_DEVTOOLS__: boolean | undefined
+
 /** Props of `MonitoringErrorBoundary`. */
 export interface ErrorBoundaryProps {
   /** The service to report render errors to. */
@@ -92,7 +95,10 @@ export const monitoringProvider = defineProvider({
       })
     })
   },
-  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
+  devtools:
+    typeof __KITR_DEVTOOLS__ === 'boolean' && __KITR_DEVTOOLS__ === false
+      ? undefined
+      : (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
   boot(app) {
     const config = app.config.get('monitoring', {} as MonitoringConfig)
     if (config.globalHandlers !== false && app.isClient)

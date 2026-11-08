@@ -7,6 +7,9 @@ import {
   setStoragePrefix,
 } from './index'
 
+/** Set by @kitr/vite: `false` in a production build without the devtools overlay, so the panel chunk is never emitted. */
+declare const __KITR_DEVTOOLS__: boolean | undefined
+
 /**
  * Applies `config/storage.ts` (key prefix, cookie defaults), switches `defineStorage`
  * items to the platform's native driver when one is registered, hydrates it before the first
@@ -35,7 +38,10 @@ export const storageProvider = defineProvider({
         hub.log('storage', `${key ?? 'storage'} changed outside this context`),
       )
   },
-  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
+  devtools:
+    typeof __KITR_DEVTOOLS__ === 'boolean' && __KITR_DEVTOOLS__ === false
+      ? undefined
+      : (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
 })
 
 export default storageProvider

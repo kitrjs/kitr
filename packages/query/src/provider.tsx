@@ -2,6 +2,9 @@ import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } fr
 import { type DefaultOptions, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
+/** Set by @kitr/vite: `false` in a production build without the devtools overlay, so the panel chunk is never emitted. */
+declare const __KITR_DEVTOOLS__: boolean | undefined
+
 /** Options for `config/query.ts`; the provider builds the app's `QueryClient` from them. */
 export interface QueryConfig {
   /** Default `staleTime` in ms. kitr defaults to 30s so back-navigation doesn't refetch. */
@@ -77,7 +80,10 @@ export const queryProvider: KitrProvider = defineProvider({
     const client = app.container.use('queryClient')
     return <QueryClientProvider client={client}>{children as ReactNode}</QueryClientProvider>
   },
-  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
+  devtools:
+    typeof __KITR_DEVTOOLS__ === 'boolean' && __KITR_DEVTOOLS__ === false
+      ? undefined
+      : (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
 })
 
 export default queryProvider

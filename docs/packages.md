@@ -75,14 +75,15 @@ The full walkthrough of every kit is in [Kits](kits.md).
 | Kit | Platforms | Packages |
 | --- | --- | --- |
 | `blank` | none | none. `kitr add web site` adds Vite, React and the router. |
-| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing |
-| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit plus logger, server, seo, actions, api, realtime |
+| `app` | `site: web({ mode: 'spa' })` | router, query, tailwind, theme, testing |
+| `dashboard` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing |
+| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the dashboard kit plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |
 | `saas` | `site` (ssr), `api` | the fullstack set with analytics and monitoring; sign-in, guarded shell, projects CRUD, tests |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing; prerendered pages, blog, newsletter |
 | `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing; chat over typed channels |
-| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform; Electron, native dialogs over typed IPC |
-| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform; Tauri, typed Rust commands and events |
-| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform; installable PWA and the Capacitor shell |
+| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform; Electron, native dialogs over typed IPC |
+| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform; Tauri, typed Rust commands and events |
+| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform; installable PWA and the Capacitor shell |
 
 Every kit but `blank` is a package, such as `@kitr/kit-saas`. It runs once when the project is created and is not a dependency afterwards. `kitr new my-app --kit @acme/starter` runs a kit from any npm package.

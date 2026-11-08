@@ -1,11 +1,11 @@
 {
   "name": "@kitr/kit-app",
   "version": "0.1.0",
-  "description": "kitr new --kit app: A logged-in app on an external API: http, forms, tables, state, theme, tailwind, auth, mocks, testing.",
+  "description": "kitr new --kit app: The smallest app that runs: pages, data loading and styling, nothing else wired yet.",
   "kitr": {
     "name": "app",
     "title": "App kit",
-    "summary": "Start a logged-in app on an external API: forms, tables, state, theme, auth, mocks and tests.",
+    "summary": "Start with pages, data loading and styling, and add sign-in, forms or an API when you need them.",
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",

@@ -16,8 +16,9 @@ Creating a project is one command:
 
 ```sh
 pnpm dlx kitr new my-app                # the blank kit: the wiring files; kitr add brings the rest
-pnpm dlx kitr new my-app --kit app      # a logged-in app on an external API
-pnpm dlx kitr new my-site --kit fullstack  # the same, plus SSR, server actions, an API and realtime channels
+pnpm dlx kitr new my-app --kit app      # the smallest app that runs: pages, data loading, styling
+pnpm dlx kitr new my-admin --kit dashboard  # a logged-in app on an external API: forms, tables, auth, mocks
+pnpm dlx kitr new my-site --kit fullstack  # the dashboard kit plus SSR, server actions, an API and realtime channels
 pnpm dlx kitr new my-api --kit server   # a pure backend. No React anywhere in the dependency graph.
 pnpm dlx kitr new my-saas --kit saas    # presets: saas, site, realtime. Real pages, controllers and tests to start from.
 ```
@@ -44,7 +45,7 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 `kitrrc.ts` names them: `platforms: { site: web({ mode: 'ssr' }), api: server({ runtime: 'node' }), app: desktop(), phone: mobile() }`. `kitr dev site api` runs two of them, `kitr build` builds them all into `dist/<name>/`, `kitr config site port 4000` edits an option with validation, `KITR_SITE_PORT=4000` overrides it at run time. Platforms follow the `definePlatform` contract; `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` own their options, scaffold and tooling (TanStack Start, srvx and wrangler, electron-vite, Tauri, Capacitor), and native projects live in `platforms/<name>/`. One `app/` ships everywhere; `@kitr/platform` answers `usePlatform()`, `useBackButton()` and `useSafeArea()` the same way in a browser and a shell.
 
 **Pure backend is a first-class target.**
-`@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client with **no codegen**, OpenAPI via `kitr api:sync`, and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
+`@kitr/core`, `server`, `api`, `logger`, `realtime`, `auth/server` and `db` have no React dependency. `kitr new --kit server` produces an h3 server with Adonis-style controllers in `server/controllers/`, a typed API client (types come from the route table; `kitr api:sync` writes the route paths and the OpenAPI document), and typed channels over WebSocket, Socket.IO or SSE. The same packages run inside TanStack Start when you want both.
 
 **Debuggable by default.**
 `kitr add devtools` adds a panel (ctrl/cmd+shift+K) with App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log tabs and a command palette. Every package contributes its own tab, so adding `realtime` or `analytics` extends the devtools too; the Vite plugin drops it from production builds. `kitr add storage` gives typed localStorage, sessionStorage and cookies that read the same on the server and swap to native stores inside a desktop or mobile shell.
@@ -156,7 +157,7 @@ export const routes = defineRoutes((router) =>
 )
 export type AppRoutes = typeof routes.$types
 
-// anywhere on the client: fully typed, no codegen
+// anywhere on the client: typed from the server's route table
 const api = createApiClient<AppRoutes>({ baseUrl: '/' })
 const project = await api.projects.show({ params: { id: '1' } })
 useSuspenseQuery(api.projects.index.query())

@@ -2,6 +2,9 @@ import { createDefineConfig, defineProvider, getDevtools, type KitrProvider } fr
 import type { AdapterContext, AuthAdapter, Session, SessionQueryCache } from './session'
 import { anonymousSession } from './session'
 
+/** Set by @kitr/vite: `false` in a production build without the devtools overlay, so the panel chunk is never emitted. */
+declare const __KITR_DEVTOOLS__: boolean | undefined
+
 /** Options in `config/auth.ts`. */
 export interface AuthConfig<TUser = unknown, TCredentials = unknown> {
   /** Where sessions come from: `tokenAdapter`, `betterAuthAdapter` or `customAdapter`. */
@@ -142,7 +145,10 @@ export const authProvider: KitrProvider = defineProvider({
     // On the server the session belongs to a request: guards load it per request (`ensureSession`).
     if (config.eager !== false && !app.isServer) await auth.load()
   },
-  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
+  devtools:
+    typeof __KITR_DEVTOOLS__ === 'boolean' && __KITR_DEVTOOLS__ === false
+      ? undefined
+      : (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
 })
 
 export default authProvider

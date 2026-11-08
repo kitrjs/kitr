@@ -1,6 +1,6 @@
 # dashboard
 
-Built with [kitr](https://kitr.dev) from the `app` kit.
+Built with [kitr](https://kitr.dev) from the `dashboard` kit.
 
 ## Run it
 

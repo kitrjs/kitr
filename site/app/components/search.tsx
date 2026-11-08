@@ -121,13 +121,7 @@ export function Search() {
 
   return (
     <>
-      <button
-        type="button"
-        className="search-button"
-        aria-label="Search docs"
-        ref={button}
-        onClick={show}
-      >
+      <button type="button" className="search-button" ref={button} onClick={show}>
         <Icon icon={icons.search} size={16} />
         <span className="search-label">Search docs</span>
         <kbd className="mono">⌘K</kbd>

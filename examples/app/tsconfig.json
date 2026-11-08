@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "node",
+      "vite/client",
+      "@kitr/vite/client"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "#app/*": [
+        "./app/*"
+      ],
+      "#config/*": [
+        "./config/*"
+      ],
+      "#components/*": [
+        "./app/components/*"
+      ],
+      "#server/*": [
+        "./server/*"
+      ],
+      "#kitr/*": [
+        "./.kitr/*"
+      ]
+    },
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "app",
+    "config",
+    "server",
+    "platforms",
+    ".kitr/**/*",
+    "kitrrc.ts",
+    "test",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "platforms/**/src-tauri",
+    "platforms/**/ios",
+    "platforms/**/android"
+  ]
+}

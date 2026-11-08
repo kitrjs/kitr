@@ -18,9 +18,9 @@ Where an app runs is a platform package (`@kitr/web`, `@kitr/server`, `@kitr/des
 
 Pages, endpoints and sockets are entries on one route table instead of files in folders. One table shape serves the browser and the server, and `kitr add` can edit the list with a codemod. In your code, add a page with `.page()` in `app/routes.ts`; links, loaders and search params are TanStack Router's.
 
-## Typed from the server routes, no codegen
+## Typed from the server routes
 
-The API client gets its types from your route table and controllers through the compiler. In your code, change a route and the client's types change with it.
+The API client gets its types from your route table and controllers through the compiler: change a route and the client's types change with it. Types are erased at run time, so `kitr api:sync` writes one small generated file with each route's name, method and path (and the OpenAPI document); `kitr build` runs it for you.
 
 ## Queries and mutations are named contracts
 

@@ -2,6 +2,7 @@ import { createApp } from '@kitr/core'
 import { describe, expect, it, vi } from 'vitest'
 import {
   address,
+  createDiscardTransport,
   createLogTransport,
   createMailer,
   createResendTransport,
@@ -206,6 +207,36 @@ describe('mailer', () => {
     expect(m.sent).toEqual([])
     expect(seen[0]!.to).toEqual([{ email: 'b@x.test' }, { name: 'C', email: 'c@x.test' }])
     expect(seen[0]!.cc).toEqual([{ email: 'd@x.test' }])
+  })
+
+  it('boots in production with the discard transport, which logs recipients and subject only', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    try {
+      const app = createApp({
+        environment: 'server',
+        mode: 'production',
+        providers: [mailProvider],
+        config: { mail: { from: 'a@x.test', transport: createDiscardTransport() } },
+      } as never)
+      await app.boot()
+      const mailer = app.container.use('mailer')
+      expect(mailer.transport.name).toBe('discard')
+      const sent = await mailer.send(
+        defineMail<{ link: string }>('reset', {
+          subject: () => 'Reset your password',
+          render: ({ link }) => <a href={link}>reset</a>,
+        }),
+        { link: 'https://x.test/reset?token=SECRET' },
+        { to: 'b@x.test' },
+      )
+      expect(sent.id).toMatch(/^discard-1$/)
+      const printed = info.mock.calls.map((c) => c.join(' ')).join('\n')
+      expect(printed).toContain('b@x.test')
+      expect(printed).toContain('Reset your password')
+      expect(printed).not.toContain('SECRET')
+    } finally {
+      info.mockRestore()
+    }
   })
 
   it('refuses to boot in production without a transport, and is server-only', async () => {

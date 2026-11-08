@@ -51,7 +51,7 @@ Pick Adonis for a backend with a full-featured ecosystem. Pick kitr when the sam
 
 Laravel is the reference point for a framework with an opinion on everything. kitr shares the idea that a CLI and fixed conventions beat assembling libraries by hand, and it has packages for mail, jobs, cache and flags.
 
-Laravel is PHP, with a first-party auth system and hosting products. kitr is TypeScript and has no auth server of its own.
+Laravel is PHP, with a first-party auth system and hosting products. kitr is TypeScript; its `auth` package gives you cookie sessions, password hashing and user stores inside your own API, or connects to Better Auth.
 
 Pick Laravel for a PHP team that wants a complete stack. Pick kitr when your team works in TypeScript end to end.
 
@@ -70,7 +70,7 @@ Cells for other frameworks are general. Check their own documentation for curren
 
 ## What kitr does not have
 
-- No auth server. The `auth` package works with the one you run.
+- No hosted identity service. Sessions, passwords and users run inside your API through the `auth` package, or through Better Auth; there is no managed sign-in product to subscribe to.
 - Native shells are web views, not React Native.
 
 ## Next steps

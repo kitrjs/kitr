@@ -10,7 +10,7 @@ order: 0
 
 `@kitr/auth` gives the app one session, guards for pages, middleware for API routes and permissions written once as plain functions. Tokens are stored where the platform keeps them safest.
 
-It stores no passwords. It connects to your own API, [Better Auth](https://www.better-auth.com/docs) or any identity provider through an adapter. `@kitr/auth/server` runs without React.
+`@kitr/auth/server` runs without React and brings the server half: `createCookieSession` (signed HttpOnly cookies over a memory, storage or Redis store), `hashPassword` and `verifyPassword`, a `UserProvider` you implement over your database (a memory one for demos), and `createSessionController` for sign-in, sign-out, sign-up, password reset and email verification. Or connect to [Better Auth](https://www.better-auth.com/docs) or any identity provider through an adapter; there is no hosted sign-in service to subscribe to.
 
 ## Install
 

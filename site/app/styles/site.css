@@ -2463,9 +2463,18 @@ a.dcard:focus-visible {
   .search-button {
     min-width: 0;
   }
-  .search-label,
   .search-button kbd {
     display: none;
+  }
+  /* Narrow screens show the icon alone, but the label stays in the accessibility tree so the
+     button keeps its name. */
+  .search-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .hero-title {
     font-size: 38px;
@@ -2751,7 +2760,8 @@ a.dcard:focus-visible {
 .platform-tile-shell {
   font-size: 11.5px;
   line-height: 16px;
-  opacity: 0.72;
+  /* Dark on the pastel tiles; 0.9 keeps 4.5:1 on the lightest (sky) tile, 0.72 did not. */
+  opacity: 0.9;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -1,3 +1,5 @@
+import asimovian from '@fontsource/asimovian/files/asimovian-latin-400-normal.woff2?url'
+import instrumentSans from '@fontsource/instrument-sans/files/instrument-sans-latin-400-normal.woff2?url'
 import type { KitrRouterContext } from '@kitr/router'
 import {
   createRootRouteWithContext,
@@ -26,6 +28,16 @@ export const Route = createRootRouteWithContext<KitrRouterContext>()({
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       { rel: 'manifest', href: '/site.webmanifest' },
       { rel: 'alternate', type: 'text/plain', href: '/llms.txt', title: 'llms.txt' },
+      // The two fonts the first paint needs (the display face for headings, the body face), so
+      // text is not held back by the stylesheet discovering them.
+      { rel: 'preload', as: 'font', type: 'font/woff2', href: asimovian, crossOrigin: 'anonymous' },
+      {
+        rel: 'preload',
+        as: 'font',
+        type: 'font/woff2',
+        href: instrumentSans,
+        crossOrigin: 'anonymous',
+      },
       { rel: 'stylesheet', href: css },
     ],
   }),

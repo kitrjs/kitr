@@ -64,7 +64,7 @@ kitr re-exports these libraries and adds a thin layer: one import path, one data
 | `@kitr/web` | Vite and TanStack Start | Static, spa, ssr and pwa modes |
 | `@kitr/server` | h3 and srvx | An API server with request context |
 
-The native shells are web views around your app, not React Native. kitr has no auth server of its own: the `auth` package connects to the one you have.
+The native shells are web views around your app, not React Native. The `auth` package runs sessions, passwords and users inside your own API, or connects to Better Auth or another provider you already have.
 
 ## Next steps
 

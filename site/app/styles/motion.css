@@ -532,9 +532,14 @@ button.builder-chip {
 }
 
 /* The home hero arrives on the first page load only (data-navigated is set on the first client
-   navigation), so coming back to the home page does not replay it. */
+   navigation), so coming back to the home page does not replay it. The title and the pitch are
+   the page's largest paint, so they only slide and never start transparent: a fade on them would
+   hold the largest contentful paint until the animation ends. */
 html:not([data-navigated]) .hero-copy > * {
   animation: rise 420ms var(--ease-out) both;
+}
+html:not([data-navigated]) .hero-copy > :nth-child(-n + 2) {
+  animation-name: rise-slide;
 }
 html:not([data-navigated]) .hero-copy > :nth-child(2) {
   animation-delay: 40ms;
@@ -560,6 +565,11 @@ html:not([data-navigated]) .hero-platforms {
 @keyframes rise {
   from {
     opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes rise-slide {
+  from {
     transform: translateY(10px);
   }
 }

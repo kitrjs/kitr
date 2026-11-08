@@ -48,10 +48,7 @@ const terminal = [
     cmd: 'kitr new my-app --kit app',
     out: [
       ['ok', '✓ created my-app from the app kit'],
-      [
-        'dim',
-        '  web · http · forms · table · state · tailwind · theme · auth · storage · mocks · testing · devtools',
-      ],
+      ['dim', '  web · query · tailwind · theme · testing'],
       ['ok', '✓ wrote AGENTS.md'],
       ['info', '→ cd my-app && npm run dev'],
     ],
@@ -116,7 +113,7 @@ const gets: Card[] = [
   },
   {
     title: 'Typed end to end',
-    text: 'Server types reach your app. No codegen.',
+    text: 'Server types reach your app straight from the route table.',
     icon: 'api',
     pkg: 'api',
   },

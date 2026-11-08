@@ -16,7 +16,7 @@ This guide adds that to `acme-projects`, the app from [Build a full-stack app](/
 
 You need the project from [Build a full-stack app](/guides/fullstack-app), with its Postgres database and Drizzle schema. The `fullstack` kit already includes [Auth](/packages/auth): `config/auth.ts`, `app/abilities.ts` and the session in the router context exist. In another project, run `kitr add auth` first.
 
-kitr does not store passwords or run an identity server; [Auth](/packages/auth) connects to whatever does. This guide writes the few endpoints a password sign-in needs, in your own API, so you can see every moving part. To use a hosted provider or [Better Auth](https://www.better-auth.com/docs) instead, swap the adapter in "Connect the browser to the session"; everything after that section stays the same.
+[Auth](/packages/auth) ships the server pieces (`createCookieSession`, `hashPassword`, a `UserProvider` interface and `createSessionController` in `@kitr/auth/server`; the `saas` kit uses them as they come). This guide writes the same few endpoints by hand, in your own API, so you can see every moving part; swap in the shipped pieces once you have. To use a hosted provider or [Better Auth](https://www.better-auth.com/docs) instead, swap the adapter in "Connect the browser to the session"; everything after that section stays the same.
 
 ## Store users and sessions
 

@@ -26,7 +26,8 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 export const examples = {
   blank: 'blank',
   backend: 'server',
-  dashboard: 'app',
+  app: 'app',
+  dashboard: 'dashboard',
   fullstack: 'fullstack',
   saas: 'saas',
   site: 'site',
@@ -34,7 +35,7 @@ export const examples = {
   desktop: 'desktop',
   tauri: 'tauri',
   mobile: 'mobile',
-  everywhere: 'app',
+  everywhere: 'dashboard',
 }
 /**
  * Examples that are a kit plus more `kitr add` commands (run in order, after `kitr new`) and
