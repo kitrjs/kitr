@@ -1,5 +1,13 @@
 # @kitr/api
 
+## 0.2.1
+
+### Patch Changes
+
+- @kitr/core@0.2.1
+  - @kitr/server@0.2.1
+  - @kitr/shield@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

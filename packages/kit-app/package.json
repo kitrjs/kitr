@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-app",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "kitr new --kit app: The smallest app that runs: pages, data loading and styling, nothing else wired yet.",
   "kitr": {
     "name": "app",
