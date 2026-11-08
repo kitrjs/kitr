@@ -3,8 +3,8 @@ import { createLogger } from '../src'
 
 afterEach(() => vi.restoreAllMocks())
 
-// Regression: in the browser `process` is undefined, so the logger thought it was in Node dev
-// and printed ANSI escape codes into the console, even in production builds.
+// In the browser `process` is undefined; the logger must still detect the browser and print
+// no ANSI escape codes.
 describe('logger in the browser', () => {
   it('writes the message and fields to the matching console method, without ANSI', () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {})

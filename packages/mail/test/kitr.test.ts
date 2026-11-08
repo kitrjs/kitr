@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import mail from '../src/kitr'
 
 describe('mail setup module', () => {
-  // Regression: the generated config showed createSmtpTransport({ host, auth }), which does not type-check.
   it('the config hint matches the createSmtpTransport signature', async () => {
     const configs: Record<string, string> = {}
     const noop = () => {}

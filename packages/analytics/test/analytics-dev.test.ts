@@ -4,7 +4,7 @@ import analyticsProvider from '../src/provider'
 
 afterEach(() => vi.restoreAllMocks())
 
-// Regression: in development the default console adapter and `debug` both printed each call.
+// In development the console adapter and `debug` share one output, so each call prints once.
 describe('development console output', () => {
   it('prints a tracked event once', async () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {})

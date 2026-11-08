@@ -99,8 +99,7 @@ describe('ThemeScript', () => {
     expect(html).not.toContain('</script><script>')
   })
 
-  // Regression: `tokens` in config/theme.ts was read by nothing, and the head script ignored the
-  // config's storageKey and attribute, so it applied a theme the provider then disagreed with.
+  // The head script and the provider read the same config, so they agree on the theme.
   it('takes storageKey, attribute and tokens from config/theme.ts', async () => {
     const app = createApp({
       environment: 'test',

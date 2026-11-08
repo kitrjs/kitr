@@ -16,7 +16,6 @@ afterEach(() => {
 })
 
 describe('tauri()', () => {
-  // Regression: the provider imports the opener and process plugins, but nothing installed them.
   it('installs every plugin the provider imports', () => {
     const names = tauri().dependencies!.map((d) => d.name)
     for (const dep of ['@tauri-apps/plugin-opener', '@tauri-apps/plugin-process'])
@@ -87,7 +86,6 @@ describe('tauri()', () => {
     expect(caps.permissions).not.toContain('fs:default')
   })
 
-  // Regression: tauri.conf.json shipped `csp: null`, and the process plugin was not registered.
   it('scaffolds a content security policy and registers the process plugin', () => {
     const app = tauri()
     const f = fakePlatformContext(app, { files: { 'package.json': '{"name":"notes"}' } })
@@ -103,7 +101,7 @@ describe('tauri()', () => {
     expect(caps.permissions).toContain('process:default')
   })
 
-  // Regression: `--port` and KITR_<NAME>_PORT moved Vite but the window still loaded the scaffold-time devUrl.
+  // `--port` and KITR_<NAME>_PORT move Vite, so the window must load that port, not the scaffold-time devUrl.
   it('dev points the window at the port it started Vite on, and passes devtools', async () => {
     const app = tauri({ devtools: false })
     const f = fakePlatformContext(app, { files: icons, flags: { port: 3333 }, signal: aborted() })
@@ -116,7 +114,7 @@ describe('tauri()', () => {
     expect(shell!.env).toMatchObject({ KITR_DEVTOOLS: '0' })
   })
 
-  // Regression: the scaffold wrote no icons, so the first Rust build failed.
+  // Every Rust build needs the icons tauri.conf.json lists.
   it('generates icons from app-icon.png when tauri.conf.json lists missing ones', async () => {
     const app = tauri()
     const f = fakePlatformContext(app, { files: { 'platforms/app/app-icon.png': 'png' } })
@@ -140,7 +138,6 @@ describe('tauri()', () => {
     expect(raw[32 * (64 * 4 + 1) + 1 + 32 * 4 + 3]).toBe(255)
   })
 
-  // Regression: doctor never checked for Rust, which every Tauri build needs.
   it('doctor reports a missing Rust toolchain', async () => {
     vi.stubEnv('PATH', '/nonexistent')
     const app = tauri()

@@ -87,8 +87,8 @@
         "description": "How @kitr/* packages wrap upstream libraries, and the rules behind them."
       },
       {
-        "slug": "departures",
-        "source": "../../../docs/departures.md",
+        "slug": "design",
+        "source": "../../../docs/design.md",
         "title": "Design decisions",
         "description": "Where kitr deliberately differs from the obvious approach, and why."
       }

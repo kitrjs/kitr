@@ -35,7 +35,7 @@ async function boot(
     },
   } as never)
   await app.boot()
-  // Resolving analytics is what used to inject the script.
+  // Resolving analytics is what would inject the script.
   app.container.use('analytics')
   return app
 }

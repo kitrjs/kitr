@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test'
  * tests/e2e/prepare.mjs, so the examples stay untouched kit output).
  *
  *   dashboard       SPA production build served by `kitr start site`
- *   dashboard-dev   the same app on the Vite dev server (`kitr dev site`) with devtools added (a preview package)
+ *   dashboard-dev   the same app on the Vite dev server (`kitr dev site`) with devtools added
  *   fullstack       TanStack Start build served by `kitr start site` (SSR, API, WebSockets)
  *   saas            the saas kit (cookie sessions, server-rendered guards) behind `kitr start site`
  *   site            kitr.dev: site/dist/client served the way site/nginx.conf serves it

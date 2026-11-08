@@ -64,7 +64,7 @@ describe('Router', () => {
             .group('/deep', (d) => d.get('/x', () => 3, { name: 'x' })),
         ),
     )
-    expect(r.routes.map((x) => [x.method, x.path, x.name])).toEqual([
+    expect(r.entries.map((x) => [x.method, x.path, x.name])).toEqual([
       ['GET', '/a', 'GET /a'],
       ['GET', '/admin/stats', 'admin.stats'],
       ['GET', '/admin/deep/x', 'admin.x'],
@@ -73,22 +73,22 @@ describe('Router', () => {
 
   it('resource registers only the actions the controller has, honouring only/except/param', () => {
     const all = createRouter().resource('users', Users, { param: 'user' })
-    expect(all.routes.map((r) => `${r.method} ${r.path} ${r.name}`)).toEqual([
+    expect(all.entries.map((r) => `${r.method} ${r.path} ${r.name}`)).toEqual([
       'GET /users users.index',
       'GET /users/:user users.show',
       'PATCH /users/:user users.update',
     ])
-    expect(createRouter().resource('users', Users, { only: ['index'] }).routes).toHaveLength(1)
+    expect(createRouter().resource('users', Users, { only: ['index'] }).entries).toHaveLength(1)
     expect(
       createRouter()
         .resource('users', Users, { except: ['index', 'show'] })
-        .routes.map((r) => r.name),
+        .entries.map((r) => r.name),
     ).toEqual(['users.update'])
   })
 
   it('lazy controllers register every action and 404 the missing ones at runtime', async () => {
     const router = createRouter().resource('users', async () => ({ default: Users }))
-    expect(router.routes).toHaveLength(5)
+    expect(router.entries).toHaveLength(5)
     const server = serve(router)
     expect((await server.fetch(req('/users'))).status).toBe(200)
     const missing = await server.fetch(req('/users', json('POST', {})))
@@ -315,7 +315,7 @@ describe('middleware', () => {
     expect(open.headers.get('access-control-allow-origin')).toBe('*')
     expect(open.headers.get('access-control-allow-credentials')).toBeNull()
 
-    // Regression: the default used to be '*', and with credentials it reflected any origin.
+    // No default origin: with credentials, '*' would reflect any origin.
     const closed = await server.fetch(req('/closed', { headers: { origin: 'https://evil.dev' } }))
     expect(closed.headers.get('access-control-allow-origin')).toBeNull()
     expect(() => cors({ origin: '*', credentials: true })).toThrow(/list the origins instead/)
@@ -425,7 +425,7 @@ describe('group runtime matches the types', () => {
         api.group({ prefix: '/v1', as: 'v1' }, (v1) => v1.get('/me', () => 1, { name: 'me' })),
       ),
     )
-    expect(r.routes.map((x) => [x.name, x.path])).toEqual([['v1.me', '/api/v1/me']])
+    expect(r.entries.map((x) => [x.name, x.path])).toEqual([['v1.me', '/api/v1/me']])
   })
 })
 

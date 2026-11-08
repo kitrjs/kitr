@@ -5,7 +5,7 @@ description: Where kitr overlaps with Next.js, Remix and React Router, TanStack 
 
 # How kitr compares
 
-kitr is young. It is version 0.1, it is not on npm yet, and it has a small community. The frameworks below are older and better proven. This page says where kitr overlaps with each, where it differs, and when the other one is the better choice. If you are coming from Next.js, [Migrate from Next.js](/guides/migrate-from-nextjs) maps each Next.js idea to its kitr equivalent.
+kitr is young, and it has a small community. The frameworks below are older and better proven. This page says where kitr overlaps with each, where it differs, and when the other one is the better choice. If you are coming from Next.js, [Migrate from Next.js](/guides/migrate-from-nextjs) maps each Next.js idea to its kitr equivalent.
 
 ## Next.js
 
@@ -46,7 +46,6 @@ Cells for other frameworks are general. Check their own documentation for curren
 
 ## What kitr does not have
 
-- No published npm release yet.
 - No auth server. The `auth` package works with the one you run.
 - Native shells are web views, not React Native.
 - The stack is new, so there are fewer answers online and fewer people who know it.
@@ -54,6 +53,6 @@ Cells for other frameworks are general. Check their own documentation for curren
 ## Next steps
 
 - [What is kitr](/docs/what-is-kitr): the mental model.
-- [Getting started](/docs/getting-started): run it from a checkout.
+- [Getting started](/docs/getting-started): install kitr and create an app.
 - [Migrate from Next.js](/guides/migrate-from-nextjs): a step-by-step mapping.
-- [Design decisions](/docs/departures): where kitr deliberately differs from the obvious approach.
+- [Design decisions](/docs/design): where kitr deliberately differs from the obvious approach.

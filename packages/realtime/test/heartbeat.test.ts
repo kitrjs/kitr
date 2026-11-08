@@ -41,8 +41,8 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-// Regression: `heartbeat` in config/realtime.ts was read by nothing, so idle sockets were dropped
-// by proxies and a half-open connection was never noticed.
+// `heartbeat` in config/realtime.ts keeps idle sockets alive through proxies and notices
+// half-open connections.
 describe('websocket heartbeat', () => {
   it('pings on the interval while the server answers', () => {
     vi.useFakeTimers()

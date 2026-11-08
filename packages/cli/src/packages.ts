@@ -82,8 +82,7 @@ function hasKitrExport(ctx: ProjectContext, pkg: string): boolean {
 
 /**
  * Load a package's definition by short or full name. `undefined` when the package exists but
- * has no `./kitr` export (a legacy recipe may still handle it); throws when it cannot be
- * found anywhere.
+ * has no `./kitr` export; throws when it cannot be found anywhere.
  */
 export function loadPackage(ctx: ProjectContext, name: string): Promise<LoadedPackage | undefined> {
   const pkg = resolvePackageName(name)

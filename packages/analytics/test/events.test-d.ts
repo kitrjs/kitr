@@ -6,7 +6,6 @@ type AppEvents = {
   'signed.out': undefined
 }
 
-// Regression: an untyped overload accepted any name and props, so the event map checked nothing.
 describe('typed events', () => {
   it('accepts only names from the event map, with their props', () => {
     const analytics = {} as Analytics<AppEvents>

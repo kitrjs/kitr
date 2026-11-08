@@ -222,7 +222,7 @@ export default createServerEntry({
 })
 ```
 
-Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response. An older `app/server.ts` that calls `handler.fetch` for pages directly still works, but pages then get no shield headers at all: replace its `fetch` with the one above. Rate limiting and CSRF checks do not apply to pages (they are the renderer's); the CSRF cookie is still set on them so the first `POST` to your API has a token to send.
+Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response. An `app/server.ts` that calls `handler.fetch` for pages directly gets no shield headers on pages. Rate limiting and CSRF checks do not apply to pages (they are the renderer's); the CSRF cookie is still set on them so the first `POST` to your API has a token to send.
 
 Then the nonce reaches every inline tag without further code:
 

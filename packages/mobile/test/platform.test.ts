@@ -164,8 +164,7 @@ describe('mobile()', () => {
     )
   })
 
-  // Regression: `scheme` was recorded in kitrrc.ts and nothing else, so acme:// links never
-  // opened the app.
+  // `scheme` reaches the native projects, so acme:// links open the app.
   describe('scheme', () => {
     const plist = `<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
