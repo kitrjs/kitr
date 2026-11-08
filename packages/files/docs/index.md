@@ -466,7 +466,7 @@ For progress, size limits, retries or direct uploads to object storage, pass the
 
 ## Where it runs
 
-The service picks a driver once, the first time it is used. The table shows what each environment gets today:
+The service picks a driver once, the first time it is used. The table shows what each environment gets:
 
 | Where the app runs | Driver | Open | Save | `path` |
 | --- | --- | --- | --- | --- |

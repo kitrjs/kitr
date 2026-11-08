@@ -170,9 +170,7 @@ function Home() {
               Browse packages
             </Link>
           </div>
-          <p className="status-strip">
-            Web, server, desktop and mobile are ready.
-          </p>
+          <p className="status-strip">Web, server, desktop and mobile are ready.</p>
         </div>
         <div className="hero-platforms">
           <span className="label">Ships to</span>
