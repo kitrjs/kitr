@@ -8,8 +8,7 @@ import {
 
 export const meta = {
   title: 'A table that sorts by its headers',
-  description:
-    'Click a header to sort, again to reverse. Status is not sortable. The same column definitions drive a server-paged table in the guide.',
+  description: 'Click a header to sort, click again to reverse. Status is not sortable.',
   storage: false,
 }
 

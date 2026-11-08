@@ -2,8 +2,7 @@ import { ThemeProvider, useTheme } from '@kitr/theme'
 
 export const meta = {
   title: 'Light, dark or system, remembered',
-  description:
-    'Pick a theme and this frame switches: data-theme on <html> flips every token. The choice is saved under kitr-theme, so Reload keeps it.',
+  description: 'Pick a theme and the frame switches. Reload keeps your choice.',
 }
 
 function Picker() {

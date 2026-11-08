@@ -4,8 +4,7 @@ import type { Mesh } from 'three'
 
 export const meta = {
   title: 'A cube in the theme colour',
-  description:
-    'A turning cube lit from above, coloured from a CSS variable. Scroll it out of view and the frame loop pauses.',
+  description: 'A spinning cube coloured by a CSS variable. It pauses when scrolled out of view.',
   storage: false,
 }
 

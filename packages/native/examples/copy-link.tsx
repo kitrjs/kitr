@@ -6,7 +6,7 @@ import { useState } from 'react'
 export const meta = {
   title: 'Copy and share, with a confirmation',
   description:
-    'Copy puts the link on your clipboard and reads Copied for 1.5 seconds. Share opens the system share sheet where the browser has one, and hides itself where it does not.',
+    'Copy puts the link on your clipboard. Share opens the system share sheet when the browser has one.',
   storage: false,
 }
 

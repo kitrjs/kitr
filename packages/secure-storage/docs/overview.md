@@ -6,15 +6,11 @@ order: 0
 
 # Secure storage
 
-A session token, a refresh token, an API key someone pasted into settings: these shouldn't sit in `localStorage` as plain text, where anything that reads the disk or the page can copy them. Phones and computers have a proper vault for secrets, and each has a different API. The browser has none.
-
-`@kitr/secure-storage` gives you one async key-value service for secrets, backed by the platform's vault where there is one and by encryption where there is not.
-
 ## What it is
 
-`@kitr/secure-storage` is an async `secureStorage` key-value service, plus typed items defined with `defineSecureItem` and read in components with `useSecureItem`. A `secure` flag on every read says whether the value came from a real vault or the browser fallback, and a config switch refuses the fallback for apps that must never store secrets in a browser. Signing out clears every item.
+`@kitr/secure-storage` stores secrets such as tokens. Define an item with `defineSecureItem`, read it with `useSecureItem`. A `secure` flag says whether the value is in a real vault or the encrypted browser fallback, and a switch can refuse the fallback.
 
-It runs in the browser, in desktop and mobile shells, and on the server as an in-memory store. For values that are not secret, such as a theme or a draft order, use [storage](/packages/storage): it is synchronous and renders on the server.
+Runs in the browser and in native shells. For values that are not secret, use [storage](/packages/storage).
 
 ## Install
 
@@ -22,7 +18,7 @@ It runs in the browser, in desktop and mobile shells, and on the server as an in
 kitr add secure-storage
 ```
 
-This installs `@kitr/secure-storage` (with [storage](/packages/storage) as a dependency), registers the provider in `kitrrc.ts`, writes `config/secure-storage.ts` and `app/secure.ts` with one typed item. The guide's [Install](/packages/secure-storage/guide#install) section lists every change.
+Adds `@kitr/secure-storage`, its provider, `config/secure-storage.ts` and `app/secure.ts` with one item. [Every change](/packages/secure-storage/guide#install).
 
 ## Quick start
 
@@ -62,7 +58,7 @@ export function SessionStatus() {
 }
 ```
 
-Click **Sign in as Ada** and reload: the component shows "Signed in (browser storage)." In DevTools, `localStorage` holds `kitr:secure:session` with a value like `pV0q3m8nVJ2xY1aB.Zk9…`, which is the IV and the ciphertext, not the token. Register a vault driver for your shell and the same item lands in the Keychain or Keystore, with `secure` set to `true`. The guide continues from here: [Store your first secret](/packages/secure-storage/guide#store-your-first-secret).
+Click **Sign in as Ada** and reload: still signed in. `localStorage` holds ciphertext, not the token. With a vault driver, `secure` becomes `true`. Next in the guide: [Store your first secret](/packages/secure-storage/guide#store-your-first-secret).
 
 ## Built on
 
@@ -72,19 +68,19 @@ Click **Sign in as Ada** and reload: the component shows "Signed in (browser sto
 | Electron | [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage), through the [desktop](/packages/desktop) platform's driver. |
 | Browser and anywhere without a vault | AES-GCM through the [Web Crypto API](https://developer.mozilla.org/docs/Web/API/SubtleCrypto), under a key the browser keeps in IndexedDB and never lets out. |
 
-kitr adds the typed items with schema checks, the React hook, the `secure` flag, the switch that refuses the fallback, a memory driver for tests and the `SecureStorageDriver` interface.
+kitr adds typed items, schema checks, the hook, the `secure` flag, the fallback switch, a memory driver and the `SecureStorageDriver` interface.
 
 ## Problems it solves
 
-- **Tokens in plain `localStorage`.** Items go to the vault, or encrypted storage, never plain text. See [Store your first secret](/packages/secure-storage/guide#store-your-first-secret).
-- **Secrets with no shape.** Items are typed and validated on read. See [Validate what comes back](/packages/secure-storage/guide#validate-what-comes-back).
-- **Not knowing how safe the storage is.** The `secure` flag says vault or fallback, so you can warn or refuse. See [Refuse the browser fallback](/packages/secure-storage/guide#refuse-the-browser-fallback).
-- **Secrets left behind on sign-out.** Clear everything in one call. See [Clear secrets on sign-out](/packages/secure-storage/guide#clear-secrets-on-sign-out).
-- **A different API on every platform.** The same code reads the Keychain, `safeStorage` and the browser fallback. See [Where values are kept](/packages/secure-storage/guide#where-values-are-kept).
+- **Tokens in plain `localStorage`.** [Store your first secret](/packages/secure-storage/guide#store-your-first-secret).
+- **Secrets with no shape.** [Validate what comes back](/packages/secure-storage/guide#validate-what-comes-back).
+- **Not knowing how safe the storage is.** [Refuse the browser fallback](/packages/secure-storage/guide#refuse-the-browser-fallback).
+- **Secrets left behind on sign-out.** [Clear secrets on sign-out](/packages/secure-storage/guide#clear-secrets-on-sign-out).
+- **A different API on every platform.** [Where values are kept](/packages/secure-storage/guide#where-values-are-kept).
 
 ## Further reading
 
-- [Guide](/packages/secure-storage/guide): install, configure and every task.
-- [API reference](/packages/secure-storage/api): every export and type.
-- [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage) and [SubtleCrypto on MDN](https://developer.mozilla.org/docs/Web/API/SubtleCrypto): what each platform uses underneath.
-- [Storage](/packages/storage) and [Auth](/packages/auth): non-secret values, and the sessions whose tokens live here.
+- [Guide](/packages/secure-storage/guide).
+- [API reference](/packages/secure-storage/api).
+- [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage) and [SubtleCrypto on MDN](https://developer.mozilla.org/docs/Web/API/SubtleCrypto).
+- [Storage](/packages/storage) and [Auth](/packages/auth).

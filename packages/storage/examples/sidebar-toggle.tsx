@@ -4,7 +4,7 @@ import { useStorage } from '@kitr/storage/react'
 export const meta = {
   title: 'A preference that survives a reload',
   description:
-    'Collapse the sidebar and press Reload: the item is read back from localStorage as a versioned envelope, v for the version and d for the data.',
+    'Collapse the sidebar and press Reload. The setting is saved to localStorage with a version.',
 }
 
 const sidebar = defineStorage('sidebar', { default: { collapsed: false }, version: 1 })

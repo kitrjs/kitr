@@ -5,7 +5,7 @@ import { z } from 'zod'
 export const meta = {
   title: 'A form checked by its schema',
   description:
-    'Tab out of an empty field to see its message. Submit and the handler receives the parsed values: the amount is a number, not the input string.',
+    'Leave a field empty to see its error. Submit to get typed values, with the amount as a number.',
   storage: false,
 }
 

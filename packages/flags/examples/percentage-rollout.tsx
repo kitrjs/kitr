@@ -7,7 +7,7 @@ import { useState } from 'react'
 export const meta = {
   title: 'A redesign for 30% of users',
   description:
-    'Sign in as different people. The percentage provider answers from a hash of the user id, so each person always gets the same answer, and nobody signed out sees it.',
+    'Sign in as different users. Each user always gets the same answer for the 30% rollout.',
   storage: false,
 }
 

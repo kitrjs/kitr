@@ -3,8 +3,7 @@ import { useState } from 'react'
 
 export const meta = {
   title: 'A toast that rises in and falls away',
-  description:
-    'Send an invoice and the toast fades in while rising. Close it, or send another, and Motion runs the exit before React removes it.',
+  description: 'Send an invoice and a toast slides in. Close it and Motion plays the exit first.',
   storage: false,
 }
 

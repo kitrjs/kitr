@@ -2,8 +2,7 @@ import { createI18n, I18nextProvider, useTranslation } from '@kitr/i18n'
 
 export const meta = {
   title: 'One component, three languages',
-  description:
-    'The strings live in one bundle per language. Switch and every t() call re-renders; the name stays interpolated.',
+  description: 'Switch the language and every string updates.',
   storage: false,
 }
 
