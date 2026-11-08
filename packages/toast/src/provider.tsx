@@ -34,6 +34,7 @@ async function importSonner(): Promise<Sonner> {
 }
 
 /** Set when the provider boots in the browser. */
+// kitr-allow-module-state: the loaded sonner module, the same for every app in the page
 let sonner: Sonner | null = null
 
 type Theme = 'light' | 'dark' | 'system'
