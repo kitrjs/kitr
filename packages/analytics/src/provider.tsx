@@ -53,7 +53,7 @@ export const analyticsProvider = defineProvider({
       })
     })
   },
-  devtools: (app) => import('./devtools').then((m) => m.panels(app)),
+  devtools: (app, ui) => import('./devtools').then((m) => m.panels(app, ui)),
   wrap(children, app) {
     const config = app.config.get('analytics', {} as AnalyticsConfig)
     if (config.pageViews === false) return children

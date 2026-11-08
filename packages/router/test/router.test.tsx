@@ -143,7 +143,7 @@ describe('createKitrRouter', () => {
 
   it('logs navigations to devtools', async () => {
     const app = createApp()
-    const hub = { log: vi.fn() }
+    const hub = { log: vi.fn(), mark: vi.fn() }
     app.container.value('devtools', hub as any)
     await app.boot()
     const router = createKitrRouter({
@@ -156,7 +156,13 @@ describe('createKitrRouter', () => {
       render(<RouterProvider router={router} />)
       await router.load()
     })
-    expect(hub.log).toHaveBeenCalledWith('router', expect.stringMatching(/\/$/), expect.any(Object))
+    expect(hub.mark).toHaveBeenCalledWith(expect.stringMatching(/^navigated .*\/$/))
+    expect(hub.log).toHaveBeenCalledWith(
+      'router',
+      expect.stringMatching(/\/$/),
+      expect.any(Object),
+      'info',
+    )
   })
 })
 

@@ -173,11 +173,13 @@ export function createKitrRouter(
   app.container.value('router', router as unknown as AnyRouter)
   const hub = getDevtools(app)
   if (hub)
-    router.subscribe('onResolved', (e) =>
-      hub.log('router', `${e.pathChanged ? 'navigated' : 'resolved'} ${e.toLocation.pathname}`, {
-        from: e.fromLocation?.pathname,
-        search: e.toLocation.search,
-      }),
-    )
+    router.subscribe('onResolved', (e) => {
+      const pathname = e.toLocation.pathname
+      const data = { from: e.fromLocation?.pathname, search: e.toLocation.search }
+      if (e.pathChanged) {
+        hub.mark(`navigated ${pathname}`)
+        hub.log('router', `navigated ${pathname}`, data, 'info')
+      } else hub.log('router', `resolved ${pathname}`, data, 'debug')
+    })
   return router as unknown as Router<any, 'never', true>
 }

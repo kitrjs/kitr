@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.
+description: A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.
 order: 0
 ---
 
@@ -8,9 +8,9 @@ order: 0
 
 ## What it is
 
-`@kitr/devtools` is a panel in your app. It shows the route, the query cache, the session, stored values, errors, analytics calls and one log every kitr package writes to. Your own providers can add panels.
+`@kitr/devtools` is a window in your app. It shows the route, the network requests, the query cache, the session, stored values, errors, analytics calls and one log every kitr package writes to. Open it from a floating button, a keyboard shortcut or a three-finger long press, on a laptop or on a phone. Your own providers can add panels.
 
-Runs in the browser, in development. Set `enabled: true` in `config/devtools.ts` to use it in production too; otherwise production builds leave it out. The example above runs in production mode with it on.
+Runs in the browser, in development. Set `enabled: true` in `config/devtools.ts` to use it in production too; otherwise production builds leave it out.
 
 ## Install
 
@@ -22,7 +22,7 @@ Adds `@kitr/devtools`, its provider and `config/devtools.ts`. [Every change](/pa
 
 ## Quick start
 
-Run `kitr dev` and open the app. Click the "k" button in the corner, or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>, and the panel opens. If that shortcut clashes with your browser, change it:
+Run `kitr dev` and open the app. Tap the round button in the corner, press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>, or hold three fingers on a touch screen, and the window opens. If that shortcut clashes with your browser, change it:
 
 ```ts
 // config/devtools.ts
@@ -30,13 +30,13 @@ import { defineConfig } from '@kitr/devtools'
 
 export default defineConfig({
   position: 'bottom-right',
-  shortcutKey: 'j',
+  shortcut: ['Meta', 'Alt', 'D'],
   maxEntries: 500,
   openByDefault: true,
 })
 ```
 
-The panel now opens on <kbd>Shift</kbd> + <kbd>J</kbd>, sits bottom-right and starts open. Next in the guide: [Open the panel](/packages/devtools/guide#open-the-panel).
+The window now opens on <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd>, the button starts bottom-right and the window starts open. Next in the guide: [Open the panel](/packages/devtools/guide#open-the-panel), or [On a phone](/packages/devtools/guide#on-a-phone).
 
 ## Built on
 
@@ -45,6 +45,7 @@ It is a view onto kitr. Keep React Developer Tools and your browser's devtools n
 ## Problems it solves
 
 - **Guessing what the app is doing.** [Panels](/packages/devtools/guide#panels).
+- **Debugging on a phone.** [On a phone](/packages/devtools/guide#on-a-phone).
 - **Logs scattered across packages.** [Read the log](/packages/devtools/guide#read-the-log).
 - **Your own code invisible in the panel.** [Log from your code](/packages/devtools/guide#log-from-your-code).
 - **Reproducing a state by clicking through the app.** [Run an action from the command palette](/packages/devtools/guide#run-an-action-from-the-command-palette).

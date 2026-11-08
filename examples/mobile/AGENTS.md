@@ -90,9 +90,9 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: devtools
 
-- In development (or always, with `enabled: true` in config/devtools.ts) a "k" button (ctrl/cmd+shift+K) opens the kitr devtools: App, Router, Query, Auth, Storage, Errors, Analytics and Log panels, plus a command palette (ctrl/cmd+shift+P) with every package's actions.
-- Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` (`@kitr/devtools`); it is null when devtools is off, so the call costs nothing.
-- A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` (lazy-import the React parts); reuse `JsonView`, `KeyValue`, `LogList` from `@kitr/devtools/ui`.
+- In development (or always, with `enabled: true` in config/devtools.ts) the kitr devtools open from the trigger button or ctrl/cmd+shift+K, with a three-finger long press on touch screens, and ctrl/cmd+shift+P opens the command palette with every package's actions.
+- Log from anywhere with `getDevtools(app)?.log('channel', 'label', data)` and drop a divider with `getDevtools(app)?.mark('label')` (`@kitr/devtools`); it is null when devtools is off, so the call costs nothing.
+- A provider adds its own panel with a `devtools(app)` method returning `DevtoolsPanel[]` with `icon`, `group`, `badge` and `actions` (lazy-import the React parts); reuse the parts from `@kitr/devtools/ui`.
 
 ## kitr: vite
 

@@ -2,6 +2,7 @@ import { type DevtoolsPanel, defineProvider } from '@kitr/core'
 import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createDevtoolsHub, type DevtoolsConfig } from './index'
+import * as ui from './ui'
 
 const Overlay = lazy(() => import('./overlay').then((m) => ({ default: m.DevtoolsOverlay })))
 
@@ -47,7 +48,7 @@ export const devtoolsProvider = defineProvider({
     const contributions = await Promise.all(
       app.providers.map(async (p) => {
         try {
-          return (await p.devtools?.(app)) ?? []
+          return (await p.devtools?.(app, ui)) ?? []
         } catch (e) {
           hub.log('devtools', `${p.name}: devtools() failed`, e, 'error')
           return [] as DevtoolsPanel[]

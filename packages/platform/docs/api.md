@@ -672,7 +672,7 @@ so list them before this provider in kitrrc.ts; `kitr add` keeps that order.
 ### panels
 
 ```ts
-function panels(app: KitrApp): DevtoolsPanel[];
+function panels(app: KitrApp, ui: DevtoolsUi): DevtoolsPanel[];
 ```
 
 The Platform panel: active platform, OS and which package supplies each capability driver.

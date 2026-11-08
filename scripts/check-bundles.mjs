@@ -128,7 +128,8 @@ const budgets = {
   // The CLI is all its own source: commands, recipes, kits, stubs and the types runner.
   '@kitr/cli': 96 * 1024,
   '@kitr/vite': 30 * 1024,
-  '@kitr/devtools': 20 * 1024,
+  // The overlay ships its own shell, icons and the brand mark; the Vite plugin strips it from production builds.
+  '@kitr/devtools': 32 * 1024,
   '@kitr/desktop': 20 * 1024,
   '@kitr/tauri': 20 * 1024,
   '@kitr/web': 16 * 1024,

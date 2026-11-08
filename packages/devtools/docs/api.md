@@ -19,7 +19,8 @@ function createDevtoolsHub(options?: {
 ```
 
 The event bus and panel registry behind the overlay. The provider binds one per app in development;
-create your own in tests to assert on what code logs. Keeps `maxEntries` (default 500) per channel.
+create your own in tests to assert on what code logs. Keeps `maxEntries` (default 500) per channel
+and folds bursts of identical entries (same channel, level, label and data within 50ms) into one with a `count`.
 
 ### definePanel
 
@@ -53,14 +54,20 @@ interface DevtoolsAction {
   id: string;
   /** Button text and command palette label. */
   label: string;
-  /** Runs when the button or palette entry is chosen. */
-  run: (app: KitrApp) => MaybePromise<void>;
+  /** Short secondary text shown next to the label in menus and the command palette. */
+  hint?: string;
+  /** An icon for the button and palette entry. Typed `unknown` so core does not depend on an icon library; `@kitr/devtools` narrows it. */
+  icon?: unknown;
+  /** Destructive: shown in the error colour in menus and the palette. */
+  danger?: boolean;
+  /** Return false to hide the action for now. Re-read on every render. */
+  when?: (app: KitrApp) => boolean;
+  /** Runs when the button or palette entry is chosen. A returned string is logged as the result. */
+  run: (app: KitrApp) => MaybePromise<void | string>;
 }
 ```
 
-The devtools contract. Core only defines the shape; `@kitr/devtools` renders it.
-Any provider can contribute by adding a `devtools(app)` method that returns panels.
-The hub is bound on the client only when devtools is enabled (development by default).
+An entry in a panel's ⋯ menu and the command palette: a label, an optional hint and a `run` function.
 
 ### DevtoolsConfig
 
@@ -71,10 +78,28 @@ interface DevtoolsConfig {
    * or `false` to turn it off without removing the package.
    */
   enabled?: boolean;
-  /** Where the trigger button sits. Default `bottom-left`. */
+  /**
+   * The trigger button. `auto` shows it; `hover` shows it only
+   * while the pointer is near its corner; `hidden` removes it (use the shortcut, gesture or URL flag).
+   * Default `auto`.
+   */
+  trigger?: 'auto' | 'hover' | 'hidden';
+  /** Where the trigger button starts; it can be dragged afterwards. Default `bottom-left`. */
   position?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
-  /** Keyboard shortcut, as `key` with ctrl/cmd+shift. Default `k`. */
-  shortcutKey?: string;
+  /** Which edge the window docks to on desktop. Default `bottom`. */
+  dock?: 'bottom' | 'right';
+  /** Colour scheme. `auto` follows `data-theme` on `<html>` when set, else the system. Default `auto`. */
+  theme?: 'auto' | 'light' | 'dark';
+  /**
+   * Keyboard shortcut that toggles the overlay. A single string is the key with Ctrl/Cmd+Shift
+   * (`'k'`). An array is the full combination, where `'Meta'` means Ctrl or Cmd
+   * (`['Meta', 'Shift', 'K']`). Default `'k'`.
+   */
+  shortcut?: string | string[];
+  /** Open with a three-finger long press on touch screens. Default true. */
+  touchGesture?: boolean;
+  /** Query parameter that opens the overlay even when the trigger is hidden, or `false` to disable. Default `'kitr-devtools'`. */
+  urlFlag?: string | false;
   /** Entries kept per channel. Default 500. */
   maxEntries?: number;
   /** Open on first load. Default false. */
@@ -82,7 +107,7 @@ interface DevtoolsConfig {
 }
 ```
 
-Options for `config/devtools.ts`: whether the overlay is on, where its button sits, its shortcut and log size.
+Options for `config/devtools.ts`: whether the overlay is on, how it is opened, where it sits and how much it keeps.
 
 ### DevtoolsEntry
 
@@ -92,34 +117,46 @@ interface DevtoolsEntry {
   id: number;
   /** The channel it was logged under, such as `http`, `analytics` or `logs`. */
   channel: string;
-  /** `Date.now()` when it was logged. */
+  /** `Date.now()` when it was logged; for a collapsed burst, when the last repeat arrived. */
   time: number;
   /** Severity; the log view colours and filters by it. */
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: DevtoolsLevel;
   /** One-line summary shown in the list. */
   label: string;
   /** Anything extra, shown expanded under the line. */
   data?: unknown;
+  /** `mark` for a divider added with `hub.mark()`; absent for ordinary entries. */
+  kind?: 'mark';
+  /** How many identical entries arrived in a burst and were collapsed into this one. Default 1. */
+  count?: number;
 }
 ```
 
-One line in the devtools log, recorded with `hub.log()`.
+One line in the devtools log, recorded with `hub.log()` or `hub.mark()`.
 
 ### DevtoolsHub
 
 ```ts
 interface DevtoolsHub {
-  /** Every registered panel, in tab order. */
+  /** Every registered panel, in tab order (group, then registration order). */
   readonly panels: DevtoolsPanel[];
+  /** Bumps on every change (entry, panel, `notify()`); what a store hook reads to know when to re-render. */
+  readonly version: number;
   /** Add a panel at runtime (providers normally use the `devtools()` method instead). */
   register(panel: DevtoolsPanel): () => void;
   /** Record an event (an HTTP request, an analytics call, a log line) under a channel. */
-  log(channel: string, label: string, data?: unknown, level?: DevtoolsEntry['level']): void;
-  /** Logged entries, oldest first; pass a channel to filter. */
+  log(channel: string, label: string, data?: unknown, level?: DevtoolsLevel): void;
+  /** Add a divider to the log, such as "navigated /orders". Recorded as an `info` entry on the `devtools` channel. */
+  mark(label: string): void;
+  /** Logged entries, oldest first; pass a channel to filter. Treat the result as read-only: without a channel it is a cached view shared until the next write. */
   entries(channel?: string): DevtoolsEntry[];
+  /** Every channel logged to so far, in first-seen order. */
+  channels(): string[];
+  /** Entries currently kept per level, cheap enough to read on every render for badges. */
+  counts(): Record<DevtoolsLevel, number>;
   /** Empty the log, or one channel of it. */
   clear(channel?: string): void;
-  /** Notified on new entries, panel changes and `notify()`; the overlay re-renders. */
+  /** Notified (without arguments) on new entries, panel changes and `notify()`; the overlay re-renders. */
   subscribe(listener: () => void): () => void;
   /** Tell the overlay that something it shows (session, cache) changed. */
   notify(): void;
@@ -136,8 +173,15 @@ interface DevtoolsPanel {
   id: string;
   /** Tab label. */
   label: string;
-  /** Text or count shown next to the tab label. Re-read on every render. */
-  badge?: (app: KitrApp) => string | number | null | undefined;
+  /** The tab icon. Typed `unknown` so core does not depend on React or an icon library; `@kitr/devtools` accepts a hugeicons element or any React node. */
+  icon?: unknown;
+  /** Where the tab sits: `app`, `data`, `platform`, then `custom` (the default), each in registration order. */
+  group?: 'app' | 'data' | 'platform' | 'custom';
+  /** Text or count shown next to the tab label, optionally with a tone. Re-read on every render. */
+  badge?: (app: KitrApp) => string | number | null | undefined | {
+    value: string | number;
+    tone?: DevtoolsTone;
+  };
   /** The panel body. Return a React node; devtools re-renders it when the hub changes. */
   render: (app: KitrApp) => KitrNode;
   /** Buttons in the panel header and entries in the command palette. */
@@ -146,6 +190,23 @@ interface DevtoolsPanel {
 ```
 
 A tab in the devtools window, contributed by a provider's `devtools(app)` method or `hub.register()`.
+
+### DevtoolsLevel
+
+```ts
+/** Severity of a devtools entry; the log view colours and filters by it. */
+type DevtoolsLevel = 'debug' | 'info' | 'warn' | 'error';
+```
+
+Severity of a devtools entry; the log view colours and filters by it.
+
+### DevtoolsTone
+
+```ts
+type DevtoolsTone = 'ok' | 'warn' | 'error' | 'muted' | 'info';
+```
+
+Colour intent for a badge or status chip: `ok` green, `warn` amber, `error` red, `muted` grey, `info` blue.
 
 ## @kitr/devtools/provider
 
@@ -166,23 +227,63 @@ production build the kitr Vite plugin leaves this module out unless the config e
 ```ts
 function Badge({ children, tone }: {
   children: ReactNode;
-  tone?: 'ok' | 'warn' | 'error' | 'muted' | 'info';
+  tone?: Tone;
 }): import("react").JSX.Element;
 ```
 
-A small pill for counts and states. `tone` picks the colour: ok, warn, error, muted or info.
+A small pill for counts and states. `tone` picks the colour: ok, warn, error, info or muted.
 
 ### Button
 
 ```ts
-function Button({ children, onClick, title }: {
-  children: ReactNode;
+function Button({ children, onClick, title, danger, icon, disabled, 'aria-label': ariaLabel }: {
+  children?: ReactNode;
   onClick: () => void;
   title?: string;
+  danger?: boolean;
+  icon?: IconSvgElement;
+  disabled?: boolean;
+  'aria-label'?: string;
 }): import("react").JSX.Element;
 ```
 
-A small button in the overlay's style.
+A button in the overlay's style; with `icon` and no children it is a square icon button.
+
+### Chip
+
+```ts
+function Chip({ children, on, onClick, tone, count, icon }: {
+  children: ReactNode;
+  on?: boolean;
+  onClick?: () => void;
+  tone?: Tone;
+  count?: number;
+  icon?: IconSvgElement;
+}): import("react").JSX.Element;
+```
+
+A filter chip that toggles with `on`; `count` adds a muted number and `tone` colours it.
+
+### Chips
+
+```ts
+function Chips({ children }: {
+  children: ReactNode;
+}): import("react").JSX.Element;
+```
+
+A horizontally scrolling row of `Chip`s with a fade at the edge.
+
+### Empty
+
+```ts
+function Empty({ children, code }: {
+  children: ReactNode;
+  code?: string;
+}): import("react").JSX.Element;
+```
+
+One short empty-state line; pass `code` to show a command or snippet chip after it.
 
 ### JsonView
 
@@ -212,13 +313,82 @@ A two-column table of `[key, value]` rows; each value renders as a `JsonView`.
 ### LogList
 
 ```ts
-function LogList({ entries, empty }: {
+function LogList({ entries, empty, relative, onChannel }: {
   entries: DevtoolsEntry[];
   empty?: string;
+  relative?: boolean;
+  onChannel?: (channel: string) => void;
 }): import("react").JSX.Element;
 ```
 
-A list of hub entries, newest last, with the data expandable.
+A list of hub entries, newest last, one line each: time, channel, label and a data preview that
+expands to a full tree on click. `relative` shows deltas from the first entry; `onChannel` makes
+the channel chip a filter button.
+
+### Masked
+
+```ts
+function Masked({ value }: {
+  value: string;
+}): import("react").JSX.Element;
+```
+
+A sensitive value shown as dots until the reader presses the reveal button.
+
+### preview
+
+```ts
+function preview(value: unknown, max?: number): string;
+```
+
+Compact one-line JSON of any value, cut to `max` characters with an ellipsis.
+
+### Row
+
+```ts
+function Row({ head, children, open }: {
+  head: ReactNode;
+  children?: ReactNode;
+  open?: boolean;
+}): import("react").JSX.Element;
+```
+
+An expandable list row: `head` is always one line, `children` show when it is open.
+
+### Section
+
+```ts
+function Section({ title, children, open, count }: {
+  title: ReactNode;
+  children: ReactNode;
+  open?: boolean;
+  count?: number;
+}): import("react").JSX.Element;
+```
+
+A collapsible group built on `<details>`, with an optional count badge in the title.
+
+### Stat
+
+```ts
+function Stat({ label, value, tone }: {
+  label: string;
+  value: ReactNode;
+  tone?: Tone;
+}): import("react").JSX.Element;
+```
+
+A metric card: small label over a large value, tinted by `tone`.
+
+### Stats
+
+```ts
+function Stats({ children }: {
+  children: ReactNode;
+}): import("react").JSX.Element;
+```
+
+A grid of `Stat` cards.
 
 ### Toolbar
 
@@ -233,9 +403,33 @@ A row of buttons, spaced like a panel's action bar.
 ### styles
 
 ```ts
-const styles = "\n.kitr-dt{position:fixed;z-index:2147483000;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e5e7eb}\n.kitr-dt *{box-sizing:border-box}\n.kitr-dt-trigger{position:fixed;z-index:2147483000;width:36px;height:36px;border-radius:999px;border:1px solid #374151;background:#111827;color:#a5b4fc;font:700 12px ui-monospace,monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}\n.kitr-dt-trigger:hover{background:#1f2937}\n.kitr-dt-trigger-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;min-width:16px;height:16px;padding:0 4px;display:flex;align-items:center;justify-content:center}\n.kitr-dt-panel{position:fixed;left:0;right:0;bottom:0;height:var(--kitr-dt-height,45vh);background:#0b1020;border-top:1px solid #1f2937;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,.5)}\n.kitr-dt-resize{height:4px;cursor:ns-resize;background:transparent}\n.kitr-dt-resize:hover{background:#4f46e5}\n.kitr-dt-tabs{display:flex;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid #1f2937;overflow-x:auto}\n.kitr-dt-tab{background:transparent;border:0;color:#9ca3af;padding:4px 10px;border-radius:6px;cursor:pointer;font:inherit;white-space:nowrap;display:flex;gap:6px;align-items:center}\n.kitr-dt-tab:hover{color:#e5e7eb;background:#111827}\n.kitr-dt-tab-active{color:#fff;background:#1f2937}\n.kitr-dt-spacer{flex:1}\n.kitr-dt-body{flex:1;overflow:auto;padding:10px 12px}\n.kitr-dt-stack{display:flex;flex-direction:column;gap:14px}\n.kitr-dt-h{margin:0 0 6px;font-size:12px;color:#c7d2fe;text-transform:uppercase;letter-spacing:.04em}\n.kitr-dt-muted{color:#6b7280}\n.kitr-dt-table{border-collapse:collapse;width:100%}\n.kitr-dt-table td{padding:3px 8px 3px 0;vertical-align:top;border-bottom:1px solid #111827}\n.kitr-dt-key{color:#93c5fd;white-space:nowrap}\n.kitr-dt-table td.kitr-dt-key{width:1%;padding-right:16px}\n.kitr-dt-string{color:#86efac}.kitr-dt-number{color:#fcd34d}.kitr-dt-boolean{color:#f0abfc}.kitr-dt-undefined,.kitr-dt-object{color:#9ca3af}.kitr-dt-error{color:#fca5a5}\n.kitr-dt-toggle{background:none;border:0;color:#9ca3af;cursor:pointer;font:inherit;padding:0;display:inline-flex;align-items:center;gap:2px}\n.kitr-dt-indent{padding-left:14px;border-left:1px solid #1f2937;margin-left:3px}\n.kitr-dt-pre{margin:0;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow:auto;color:#d1d5db}\n.kitr-dt-btn{background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;cursor:pointer;font:inherit;display:inline-flex;align-items:center;gap:4px}\n.kitr-dt-btn:hover{background:#374151}\n.kitr-dt-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}\n.kitr-dt-input{background:#111827;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;font:inherit;min-width:160px}\n.kitr-dt-badge{display:inline-block;border-radius:999px;padding:0 6px;font-size:10px;line-height:16px;background:#374151;color:#e5e7eb}\n.kitr-dt-badge-ok{background:#065f46;color:#d1fae5}.kitr-dt-badge-warn{background:#78350f;color:#fef3c7}.kitr-dt-badge-error{background:#7f1d1d;color:#fee2e2}.kitr-dt-badge-info{background:#1e3a8a;color:#dbeafe}\n.kitr-dt-log{display:flex;flex-direction:column}\n.kitr-dt-row{display:grid;grid-template-columns:90px 90px 1fr;gap:8px;padding:2px 0;border-bottom:1px solid #111827;align-items:start}\n.kitr-dt-row .kitr-dt-data{grid-column:3;padding-left:12px}\n.kitr-dt-time{color:#6b7280}.kitr-dt-channel{color:#a5b4fc}\n.kitr-dt-level-warn .kitr-dt-label{color:#fcd34d}.kitr-dt-level-error .kitr-dt-label{color:#fca5a5}.kitr-dt-level-debug .kitr-dt-label{color:#9ca3af}\n.kitr-dt-palette{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:2147483001}\n.kitr-dt-palette-box{width:min(560px,90vw);background:#0b1020;border:1px solid #374151;border-radius:10px;overflow:hidden;color:#e5e7eb;font:13px ui-monospace,monospace}\n.kitr-dt-palette-box input{width:100%;background:#111827;border:0;border-bottom:1px solid #374151;color:#fff;padding:10px 12px;font:inherit;outline:none}\n.kitr-dt-palette-item{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between}\n.kitr-dt-palette-item:hover,.kitr-dt-palette-item-active{background:#1f2937}\n";
+const styles: string;
 ```
 
-The overlay's stylesheet as a string. The overlay injects it; panel bodies can use its `kitr-dt-*` classes.
+The overlay's stylesheet. It is injected inside a shadow root, so the variables live on `:host`
+and the root element, and the theme is picked by `data-theme` on that root element.
+Contributed panels can use every `kitr-dt-*` class and the `--dt-*` variables.
+
+### tones
+
+```ts
+const tones: readonly [
+  "ok",
+  "warn",
+  "error",
+  "info",
+  "muted"
+];
+```
+
+The five tones shared by badges, chips and stats.
+
+### Tone
+
+```ts
+type Tone = (typeof tones)[number];
+```
+
+One of `tones`.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

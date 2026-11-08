@@ -31,7 +31,10 @@ export {
   type DevtoolsAction,
   type DevtoolsEntry,
   type DevtoolsHub,
+  type DevtoolsLevel,
   type DevtoolsPanel,
+  type DevtoolsTone,
+  type DevtoolsUi,
   getDevtools,
 } from './devtools'
 export {

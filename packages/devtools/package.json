@@ -1,7 +1,7 @@
 {
   "name": "@kitr/devtools",
   "version": "0.1.0",
-  "description": "@kitr/devtools: the development overlay. Every provider can contribute panels, actions and event logs; left out of production builds unless enabled.",
+  "description": "@kitr/devtools: A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.",
   "keywords": [
     "kitr",
     "kitr-package"
@@ -59,12 +59,13 @@
     "react-dom": "^19.3.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@kitr/http": "workspace:*",
     "@kitr/react": "workspace:*"
   },
   "kitr": {
     "name": "devtools",
     "title": "Devtools",
-    "summary": "Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.",
+    "summary": "A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.",
     "category": "dev-tools",
     "runsOn": "client",
     "client": true,

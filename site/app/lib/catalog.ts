@@ -102,6 +102,7 @@ export interface PackageEntry {
     description?: string
     storage?: boolean
     height?: number
+    width?: number
   }>
 }
 

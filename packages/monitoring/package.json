@@ -73,7 +73,8 @@
     "@kitr/server": "workspace:*",
     "h3": "^2.0.8",
     "@types/node": "^22.19.0",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@kitr/devtools": "workspace:*"
   },
   "kitr": {
     "name": "monitoring",

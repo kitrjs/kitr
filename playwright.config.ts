@@ -9,6 +9,7 @@ import { defineConfig, devices } from '@playwright/test'
  *
  *   dashboard       SPA production build served by `kitr start site`
  *   dashboard-dev   the same app on the Vite dev server (`kitr dev site`) with devtools added
+ *   dashboard-dev-phone  that dev server again, driven as an iPhone 14
  *   fullstack       TanStack Start build served by `kitr start site` (SSR, API, WebSockets)
  *   saas            the saas kit (cookie sessions, server-rendered guards) behind `kitr start site`
  *   site            kitr.dev: site/dist/client served the way site/nginx.conf serves it
@@ -56,6 +57,17 @@ export default defineConfig({
       name: 'dashboard-dev',
       testMatch: 'devtools.spec.ts',
       use: { baseURL: `http://127.0.0.1:${ports.dashboardDev}` },
+    },
+    {
+      // The same dev server on an iPhone 14 (touch, the bottom sheet); the spec skips the desktop-only cases.
+      name: 'dashboard-dev-phone',
+      testMatch: 'devtools.spec.ts',
+      use: {
+        ...devices['iPhone 14'],
+        // The device preset asks for WebKit; the CDP touch gestures and the suite's browser are Chromium.
+        defaultBrowserType: 'chromium',
+        baseURL: `http://127.0.0.1:${ports.dashboardDev}`,
+      },
     },
     {
       name: 'fullstack',

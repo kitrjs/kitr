@@ -92,7 +92,7 @@ export const monitoringProvider = defineProvider({
       })
     })
   },
-  devtools: () => import('./devtools').then((m) => m.panels()),
+  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
   boot(app) {
     const config = app.config.get('monitoring', {} as MonitoringConfig)
     if (config.globalHandlers !== false && app.isClient)

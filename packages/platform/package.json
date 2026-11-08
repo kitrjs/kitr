@@ -82,7 +82,8 @@
     "@types/node": "^22.19.0",
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@kitr/devtools": "workspace:*"
   },
   "keywords": [
     "kitr",

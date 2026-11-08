@@ -1,8 +1,16 @@
 import type { DevtoolsEntry } from '@kitr/core'
 import { type ReactNode, useState } from 'react'
-import { Icon, icons } from './icon'
+import { Icon, type IconSvgElement, icons } from './icon'
+
+export { styles } from './styles'
 
 /* Small, dependency-free building blocks that contributed panels can reuse. */
+
+/** The five tones shared by badges, chips and stats. */
+export const tones = ['ok', 'warn', 'error', 'info', 'muted'] as const
+
+/** One of `tones`. */
+export type Tone = (typeof tones)[number]
 
 /** Any value as an expandable tree, styled like the built-in panels. `open` expands the first level. */
 export function JsonView({
@@ -16,7 +24,11 @@ export function JsonView({
 }) {
   const [expanded, setExpanded] = useState(open)
   if (value === null || typeof value !== 'object')
-    return <span className={`kitr-dt-${typeof value}`}>{format(value)}</span>
+    return (
+      <span className={`kitr-dt-${value === null ? 'undefined' : typeof value}`}>
+        {format(value)}
+      </span>
+    )
   if (value instanceof Date) return <span className="kitr-dt-string">{value.toISOString()}</span>
   if (value instanceof Error)
     return (
@@ -32,7 +44,12 @@ export function JsonView({
     return <span className="kitr-dt-muted">{Array.isArray(value) ? '[]' : '{}'}</span>
   return (
     <span>
-      <button type="button" className="kitr-dt-toggle" onClick={() => setExpanded((e) => !e)}>
+      <button
+        type="button"
+        className="kitr-dt-toggle"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((e) => !e)}
+      >
         <Icon icon={expanded ? icons.expanded : icons.collapsed} size={12} /> {label}
       </button>
       {expanded ? (
@@ -55,6 +72,18 @@ function format(value: unknown): string {
   return String(value)
 }
 
+/** Compact one-line JSON of any value, cut to `max` characters with an ellipsis. */
+export function preview(value: unknown, max = 80): string {
+  let text: string
+  try {
+    text =
+      typeof value === 'string' ? JSON.stringify(value) : (JSON.stringify(value) ?? String(value))
+  } catch {
+    text = String(value)
+  }
+  return text.length > max ? `${text.slice(0, max)}…` : text
+}
+
 /** A two-column table of `[key, value]` rows; each value renders as a `JsonView`. */
 export function KeyValue({ rows }: { rows: Array<[string, unknown]> }) {
   return (
@@ -73,14 +102,8 @@ export function KeyValue({ rows }: { rows: Array<[string, unknown]> }) {
   )
 }
 
-/** A small pill for counts and states. `tone` picks the colour: ok, warn, error, muted or info. */
-export function Badge({
-  children,
-  tone = 'muted',
-}: {
-  children: ReactNode
-  tone?: 'ok' | 'warn' | 'error' | 'muted' | 'info'
-}) {
+/** A small pill for counts and states. `tone` picks the colour: ok, warn, error, info or muted. */
+export function Badge({ children, tone = 'muted' }: { children: ReactNode; tone?: Tone }) {
   return <span className={`kitr-dt-badge kitr-dt-badge-${tone}`}>{children}</span>
 }
 
@@ -89,94 +112,260 @@ export function Toolbar({ children }: { children: ReactNode }) {
   return <div className="kitr-dt-toolbar">{children}</div>
 }
 
-/** A small button in the overlay's style. */
+/** A button in the overlay's style; with `icon` and no children it is a square icon button. */
 export function Button({
   children,
   onClick,
   title,
+  danger,
+  icon,
+  disabled,
+  'aria-label': ariaLabel,
 }: {
-  children: ReactNode
+  children?: ReactNode
   onClick: () => void
   title?: string
+  danger?: boolean
+  icon?: IconSvgElement
+  disabled?: boolean
+  'aria-label'?: string
 }) {
+  const cls = `kitr-dt-btn${danger ? ' kitr-dt-btn-danger' : ''}${
+    icon && children == null ? ' kitr-dt-btn-icon' : ''
+  }`
   return (
-    <button type="button" className="kitr-dt-btn" onClick={onClick} title={title}>
+    <button
+      type="button"
+      className={cls}
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+      aria-label={ariaLabel}
+    >
+      {icon ? <Icon icon={icon} size={14} /> : null}
       {children}
     </button>
   )
 }
 
-const time = (t: number) =>
-  `${new Date(t).toLocaleTimeString(undefined, { hour12: false })}.${String(t % 1000).padStart(3, '0')}`
-
-/** A list of hub entries, newest last, with the data expandable. */
-export function LogList({
-  entries,
-  empty = 'Nothing yet',
+/** A filter chip that toggles with `on`; `count` adds a muted number and `tone` colours it. */
+export function Chip({
+  children,
+  on,
+  onClick,
+  tone,
+  count,
+  icon,
 }: {
-  entries: DevtoolsEntry[]
-  empty?: string
+  children: ReactNode
+  on?: boolean
+  onClick?: () => void
+  tone?: Tone
+  count?: number
+  icon?: IconSvgElement
 }) {
-  if (!entries.length) return <p className="kitr-dt-muted">{empty}</p>
+  const cls = `kitr-dt-chip${on ? ' kitr-dt-chip-on' : ''}${tone ? ` kitr-dt-chip-${tone}` : ''}`
   return (
-    <div className="kitr-dt-log">
-      {entries.map((e) => (
-        <div key={e.id} className={`kitr-dt-row kitr-dt-level-${e.level}`}>
-          <span className="kitr-dt-time">{time(e.time)}</span>
-          <span className="kitr-dt-channel">{e.channel}</span>
-          <span className="kitr-dt-label">{e.label}</span>
-          {e.data !== undefined ? (
-            <span className="kitr-dt-data">
-              <JsonView value={e.data} open={false} />
-            </span>
-          ) : null}
-        </div>
-      ))}
+    <button type="button" className={cls} aria-pressed={on ?? false} onClick={onClick}>
+      {icon ? <Icon icon={icon} size={12} /> : null}
+      {children}
+      {count !== undefined ? <span className="kitr-dt-chip-count">{count}</span> : null}
+    </button>
+  )
+}
+
+/** A horizontally scrolling row of `Chip`s with a fade at the edge. */
+export function Chips({ children }: { children: ReactNode }) {
+  return <div className="kitr-dt-chips">{children}</div>
+}
+
+/** A metric card: small label over a large value, tinted by `tone`. */
+export function Stat({ label, value, tone }: { label: string; value: ReactNode; tone?: Tone }) {
+  return (
+    <div className={`kitr-dt-stat${tone ? ` kitr-dt-stat-${tone}` : ''}`}>
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   )
 }
 
-/** The overlay's stylesheet as a string. The overlay injects it; panel bodies can use its `kitr-dt-*` classes. */
-export const styles = `
-.kitr-dt{position:fixed;z-index:2147483000;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e5e7eb}
-.kitr-dt *{box-sizing:border-box}
-.kitr-dt-trigger{position:fixed;z-index:2147483000;width:36px;height:36px;border-radius:999px;border:1px solid #374151;background:#111827;color:#a5b4fc;font:700 12px ui-monospace,monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
-.kitr-dt-trigger:hover{background:#1f2937}
-.kitr-dt-trigger-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;min-width:16px;height:16px;padding:0 4px;display:flex;align-items:center;justify-content:center}
-.kitr-dt-panel{position:fixed;left:0;right:0;bottom:0;height:var(--kitr-dt-height,45vh);background:#0b1020;border-top:1px solid #1f2937;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,.5)}
-.kitr-dt-resize{height:4px;cursor:ns-resize;background:transparent}
-.kitr-dt-resize:hover{background:#4f46e5}
-.kitr-dt-tabs{display:flex;align-items:center;gap:2px;padding:4px 8px;border-bottom:1px solid #1f2937;overflow-x:auto}
-.kitr-dt-tab{background:transparent;border:0;color:#9ca3af;padding:4px 10px;border-radius:6px;cursor:pointer;font:inherit;white-space:nowrap;display:flex;gap:6px;align-items:center}
-.kitr-dt-tab:hover{color:#e5e7eb;background:#111827}
-.kitr-dt-tab-active{color:#fff;background:#1f2937}
-.kitr-dt-spacer{flex:1}
-.kitr-dt-body{flex:1;overflow:auto;padding:10px 12px}
-.kitr-dt-stack{display:flex;flex-direction:column;gap:14px}
-.kitr-dt-h{margin:0 0 6px;font-size:12px;color:#c7d2fe;text-transform:uppercase;letter-spacing:.04em}
-.kitr-dt-muted{color:#6b7280}
-.kitr-dt-table{border-collapse:collapse;width:100%}
-.kitr-dt-table td{padding:3px 8px 3px 0;vertical-align:top;border-bottom:1px solid #111827}
-.kitr-dt-key{color:#93c5fd;white-space:nowrap}
-.kitr-dt-table td.kitr-dt-key{width:1%;padding-right:16px}
-.kitr-dt-string{color:#86efac}.kitr-dt-number{color:#fcd34d}.kitr-dt-boolean{color:#f0abfc}.kitr-dt-undefined,.kitr-dt-object{color:#9ca3af}.kitr-dt-error{color:#fca5a5}
-.kitr-dt-toggle{background:none;border:0;color:#9ca3af;cursor:pointer;font:inherit;padding:0;display:inline-flex;align-items:center;gap:2px}
-.kitr-dt-indent{padding-left:14px;border-left:1px solid #1f2937;margin-left:3px}
-.kitr-dt-pre{margin:0;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow:auto;color:#d1d5db}
-.kitr-dt-btn{background:#1f2937;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;cursor:pointer;font:inherit;display:inline-flex;align-items:center;gap:4px}
-.kitr-dt-btn:hover{background:#374151}
-.kitr-dt-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-.kitr-dt-input{background:#111827;border:1px solid #374151;color:#e5e7eb;border-radius:5px;padding:2px 8px;font:inherit;min-width:160px}
-.kitr-dt-badge{display:inline-block;border-radius:999px;padding:0 6px;font-size:10px;line-height:16px;background:#374151;color:#e5e7eb}
-.kitr-dt-badge-ok{background:#065f46;color:#d1fae5}.kitr-dt-badge-warn{background:#78350f;color:#fef3c7}.kitr-dt-badge-error{background:#7f1d1d;color:#fee2e2}.kitr-dt-badge-info{background:#1e3a8a;color:#dbeafe}
-.kitr-dt-log{display:flex;flex-direction:column}
-.kitr-dt-row{display:grid;grid-template-columns:90px 90px 1fr;gap:8px;padding:2px 0;border-bottom:1px solid #111827;align-items:start}
-.kitr-dt-row .kitr-dt-data{grid-column:3;padding-left:12px}
-.kitr-dt-time{color:#6b7280}.kitr-dt-channel{color:#a5b4fc}
-.kitr-dt-level-warn .kitr-dt-label{color:#fcd34d}.kitr-dt-level-error .kitr-dt-label{color:#fca5a5}.kitr-dt-level-debug .kitr-dt-label{color:#9ca3af}
-.kitr-dt-palette{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:2147483001}
-.kitr-dt-palette-box{width:min(560px,90vw);background:#0b1020;border:1px solid #374151;border-radius:10px;overflow:hidden;color:#e5e7eb;font:13px ui-monospace,monospace}
-.kitr-dt-palette-box input{width:100%;background:#111827;border:0;border-bottom:1px solid #374151;color:#fff;padding:10px 12px;font:inherit;outline:none}
-.kitr-dt-palette-item{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between}
-.kitr-dt-palette-item:hover,.kitr-dt-palette-item-active{background:#1f2937}
-`
+/** A grid of `Stat` cards. */
+export function Stats({ children }: { children: ReactNode }) {
+  return <div className="kitr-dt-stats">{children}</div>
+}
+
+/** A collapsible group built on `<details>`, with an optional count badge in the title. */
+export function Section({
+  title,
+  children,
+  open = true,
+  count,
+}: {
+  title: ReactNode
+  children: ReactNode
+  open?: boolean
+  count?: number
+}) {
+  return (
+    <details className="kitr-dt-section" open={open}>
+      <summary>
+        {title}
+        {count !== undefined ? <Badge>{count}</Badge> : null}
+      </summary>
+      <div>{children}</div>
+    </details>
+  )
+}
+
+/** One short empty-state line; pass `code` to show a command or snippet chip after it. */
+export function Empty({ children, code }: { children: ReactNode; code?: string }) {
+  return (
+    <p className="kitr-dt-empty">
+      {children}
+      {code ? (
+        <>
+          {' '}
+          <code>{code}</code>
+        </>
+      ) : null}
+    </p>
+  )
+}
+
+/** An expandable list row: `head` is always one line, `children` show when it is open. */
+export function Row({
+  head,
+  children,
+  open = false,
+}: {
+  head: ReactNode
+  children?: ReactNode
+  open?: boolean
+}) {
+  const [expanded, setExpanded] = useState(open)
+  return (
+    <div className="kitr-dt-row">
+      <button
+        type="button"
+        className="kitr-dt-row-head"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((e) => !e)}
+      >
+        {head}
+      </button>
+      {expanded && children != null ? <div className="kitr-dt-row-body">{children}</div> : null}
+    </div>
+  )
+}
+
+/** A sensitive value shown as dots until the reader presses the reveal button. */
+export function Masked({ value }: { value: string }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <span className="kitr-dt-masked">
+      <span>{shown ? value : '••••••••'}</span>
+      <button
+        type="button"
+        className="kitr-dt-toggle"
+        aria-label={shown ? 'Hide value' : 'Reveal value'}
+        onClick={() => setShown((s) => !s)}
+      >
+        {shown ? 'hide' : 'show'}
+      </button>
+    </span>
+  )
+}
+
+/** `13:14:29` plus the milliseconds in their own span, which phones hide. */
+const clock = (t: number) => (
+  <>
+    {new Date(t).toLocaleTimeString(undefined, { hour12: false })}
+    <span className="kitr-dt-ms">.{String(t % 1000).padStart(3, '0')}</span>
+  </>
+)
+
+const delta = (t: number, base: number) => `+${((t - base) / 1000).toFixed(1)}s`
+
+/**
+ * A list of hub entries, newest last, one line each: time, channel, label and a data preview that
+ * expands to a full tree on click. `relative` shows deltas from the first entry; `onChannel` makes
+ * the channel chip a filter button.
+ */
+export function LogList({
+  entries,
+  empty = 'Nothing yet',
+  relative,
+  onChannel,
+}: {
+  entries: DevtoolsEntry[]
+  empty?: string
+  relative?: boolean
+  onChannel?: (channel: string) => void
+}) {
+  if (!entries.length) return <Empty>{empty}</Empty>
+  const base = entries[0]?.time ?? 0
+  return (
+    <div className="kitr-dt-log">
+      {entries.map((e) => {
+        if (e.kind === 'mark')
+          return (
+            <div key={e.id} className="kitr-dt-mark">
+              {e.label}
+            </div>
+          )
+        return <LogRow key={e.id} entry={e} base={base} relative={relative} onChannel={onChannel} />
+      })}
+    </div>
+  )
+}
+
+function LogRow({
+  entry: e,
+  base,
+  relative,
+  onChannel,
+}: {
+  entry: DevtoolsEntry
+  base: number
+  relative?: boolean
+  onChannel?: (channel: string) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const hasData = e.data !== undefined
+  return (
+    <div className={`kitr-dt-row kitr-dt-level-${e.level}`}>
+      <div className="kitr-dt-row-line">
+        <span className="kitr-dt-time">{relative ? delta(e.time, base) : clock(e.time)}</span>
+        {onChannel ? (
+          <button type="button" className="kitr-dt-channel" onClick={() => onChannel(e.channel)}>
+            {e.channel}
+          </button>
+        ) : (
+          <span className="kitr-dt-channel">{e.channel}</span>
+        )}
+        <button
+          type="button"
+          className="kitr-dt-row-head"
+          aria-expanded={hasData ? expanded : undefined}
+          onClick={() => hasData && setExpanded((x) => !x)}
+        >
+          <span className="kitr-dt-label">{e.label}</span>
+          {e.count && e.count > 1 ? <span className="kitr-dt-count">×{e.count}</span> : null}
+          {hasData && !expanded ? <span className="kitr-dt-preview">{preview(e.data)}</span> : null}
+        </button>
+      </div>
+      {hasData && expanded ? (
+        <div className="kitr-dt-row-body">
+          <JsonView value={e.data} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+declare module '@kitr/core' {
+  /** The kit, so a provider's `devtools(app, ui)` gets these parts typed without importing them. */
+  interface DevtoolsUi extends Kit {}
+}
+
+type Kit = typeof import('./ui')
