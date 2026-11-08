@@ -18,6 +18,20 @@ function address(input: Recipient): Address;
 
 Parse a recipient (`'Ada <ada@acme.com>'`, quoted names included) into an `Address`, trimming the email.
 
+### createDiscardTransport
+
+```ts
+function createDiscardTransport(options?: {
+  print?: boolean;
+}): MailTransport & {
+  count: number;
+};
+```
+
+Accepts every message and sends nothing, printing only the recipients and subject (never the
+body, so reset links stay out of logs). Allowed in production: for a preview deployment or a
+demo that has no mail provider yet. Set `MAIL_TRANSPORT=discard` in the generated config to use it.
+
 ### createLogTransport
 
 ```ts
