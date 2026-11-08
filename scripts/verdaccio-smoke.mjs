@@ -126,7 +126,7 @@ async function startRegistry() {
   copyFileSync(join(root, 'scripts/verdaccio.yaml'), join(dir, 'config.yaml'))
   verdaccio = spawn(
     win ? 'npx.cmd' : 'npx',
-    ['--yes', VERDACCIO, '--config', join(dir, 'config.yaml'), '--listen', String(port)],
+    ['--yes', VERDACCIO, '--config', join(dir, 'config.yaml'), '--listen', `127.0.0.1:${port}`],
     { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], shell: win },
   )
   const collect = (d) => {
