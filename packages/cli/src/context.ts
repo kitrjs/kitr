@@ -40,6 +40,7 @@ export interface RcPlatform {
   options?: Record<string, unknown>
 }
 
+// kitr-allow-module-state: CLI logger, stateless functions
 export const log = {
   info: (msg: string) => console.log(`${pc.cyan('ℹ')} ${msg}`),
   success: (msg: string) => console.log(`${pc.green('✔')} ${msg}`),

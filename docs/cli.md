@@ -19,7 +19,7 @@
 
 | Command | What it does |
 | --- | --- |
-| `kitr dev [names...]` | Runs every platform in `kitrrc.ts`, or the named ones, in development: `kitr dev`, `kitr dev site api`, `kitr dev site --port 4000`. |
+| `kitr dev [names...]` | Runs every platform in `kitrrc.ts`, or the named ones, in development: `kitr dev`, `kitr dev site api`, `kitr dev site --port 4000`. With more than one platform, each line is prefixed with the platform's name (`[site]`, `[api]`). |
 | `kitr build [names...]` | Production builds into `dist/<name>/`. |
 | `kitr start [names...]` | Serves the builds (`kitr serve` is an alias). |
 | `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms and their effective options; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
@@ -107,7 +107,7 @@ The default registry is kitr's own (`registry/dist` in this repo). Point `--regi
 | Generator | From | Writes |
 | --- | --- | --- |
 | `platforms` (built in) | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`: the `KitrPlatforms` augmentation, so `app.platform` and `usePlatform().name` are the project's names. |
-| `actions` (`@kitr/actions`) | `app/actions/**/*.ts` | `.kitr/actions.ts`: `operations` and `actions` maps and the `Operations` augmentation behind `useQuery('projects.list')`. |
+| `actions` (`@kitr/actions`) | `app/actions/**/*.ts` | `.kitr/actions.ts`: `operations` and `actions` maps and the `Operations` augmentation behind `useQuery('projects.list')`. Found with the TypeScript compiler: aliases and re-exports of `defineQuery` and `defineMutation` count, and a name that is not a string literal fails with `file:line`. |
 
 A package adds a generator with `defineTypes()` and points its setup module at it with the `types` hook (`types: () => import('./types')` in `src/kitr.ts`). A package without a setup module can still name the subpath in its manifest (`"kitr": { "types": "./types" }`), which the runner falls back to:
 

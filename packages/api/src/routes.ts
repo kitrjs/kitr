@@ -85,6 +85,7 @@ type Add<R extends TableMap, Name extends string, Route extends RouteType> = Pre
 >
 
 export type ResourceAction = 'index' | 'store' | 'show' | 'update' | 'destroy'
+// kitr-allow-module-state: constant list of resource action names, never mutated
 const resourceActions: Array<{ action: ResourceAction; method: HttpMethod; suffix: string }> = [
   { action: 'index', method: 'GET', suffix: '' },
   { action: 'store', method: 'POST', suffix: '' },

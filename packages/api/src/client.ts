@@ -227,7 +227,7 @@ export function registerRoutes(
  * Properties the runtime probes on any object: `then` (await, async return), `toJSON`
  * (JSON.stringify), `$$typeof` (React), `asymmetricMatch` (test matchers). They are never routes.
  */
-const nonRouteProps = new Set(['then', 'toJSON', '$$typeof', 'asymmetricMatch', 'nodeType'])
+const nonRouteProps = new Set(['then', 'toJSON', '$$typeof', 'asymmetricMatch', 'nodeType']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 function safeJson(text: string): unknown {
   try {

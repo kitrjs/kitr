@@ -9,6 +9,7 @@ import {
   type PlatformInstance,
 } from '@kitr/core'
 import { builders, generateCode, parseModule } from 'magicast'
+import pc from 'picocolors'
 import type { Codemods } from './codemods'
 import { configurePackages } from './configure'
 import { log, type ProjectContext } from './context'
@@ -127,6 +128,38 @@ function applyEnv(
   return Object.keys(overrides).length ? instance.with(overrides) : instance
 }
 
+/**
+ * Copy a child's output to `target` one line at a time, each line through `prefix`, so two
+ * platforms running side by side stay readable. A partial last line is held until it ends.
+ */
+export function pipeLines(
+  source: NodeJS.ReadableStream | null,
+  target: { write(chunk: string): unknown },
+  prefix: (line: string) => string,
+) {
+  if (!source) return
+  let rest = ''
+  source.on('data', (chunk: string | Buffer) => {
+    const lines = (rest + chunk.toString()).split(/\r?\n/)
+    rest = lines.pop() ?? ''
+    for (const line of lines) target.write(`${prefix(line)}\n`)
+  })
+  source.on('end', () => {
+    if (rest) target.write(`${prefix(rest)}\n`)
+    rest = ''
+  })
+}
+
+// kitr-allow-module-state: constant list of colour functions, never mutated
+const PREFIX_COLORS = [pc.cyan, pc.magenta, pc.yellow, pc.green, pc.blue, pc.red]
+
+/** `[name] ` in a colour that stays the same for a platform (plain when colours are off). */
+export function platformPrefix(name: string, index: number): (line: string) => string {
+  const colour = PREFIX_COLORS[index % PREFIX_COLORS.length]!
+  const label = colour(`[${name}]`)
+  return (line) => `${label} ${line}`
+}
+
 /** Pick platforms by name; no names means every platform. */
 export function selectPlatforms(
   all: Record<string, PlatformInstance>,
@@ -175,6 +208,8 @@ export function createPlatformContext(
     flags?: Flags
     signal?: AbortSignal
     env?: Record<string, string>
+    /** Put this label in front of every line the platform's processes print (`[site]`). */
+    prefix?: (line: string) => string
   } = { platforms: [] },
 ): PlatformContext {
   const baseEnv: Record<string, string | undefined> = {
@@ -189,13 +224,24 @@ export function createPlatformContext(
   ) =>
     new Promise<void>((resolveRun, reject) => {
       if (options.signal?.aborted) return resolveRun()
+      const prefix = options.prefix
       const child = spawn(command, args, {
         cwd: o.cwd ?? ctx.root,
-        stdio: 'inherit',
-        env: { ...baseEnv, ...o.env },
+        // With a prefix the output goes through us, line by line; input stays the terminal's.
+        stdio: prefix ? ['inherit', 'pipe', 'pipe'] : 'inherit',
+        env: {
+          // Piped output is not a terminal, so tools would drop their colours: ask for them.
+          ...(prefix && process.stdout.isTTY ? { FORCE_COLOR: '1' } : {}),
+          ...baseEnv,
+          ...o.env,
+        },
         signal: options.signal,
         shell: process.platform === 'win32',
       })
+      if (prefix) {
+        pipeLines(child.stdout, process.stdout, prefix)
+        pipeLines(child.stderr, process.stderr, prefix)
+      }
       child.on('error', (error) =>
         (error as NodeJS.ErrnoException).name === 'AbortError' ? resolveRun() : reject(error),
       )
@@ -485,7 +531,9 @@ export async function runPlatforms(
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)
   const everyInstance = Object.values(all)
-  const tasks = selected.map(([name, base]) => {
+  // Several platforms running at once print into one terminal: label each line with its platform.
+  const labelled = mode === 'parallel' && selected.length > 1 && hook !== 'scaffold'
+  const tasks = selected.map(([name, base], index) => {
     const { instance, flags: platformFlags } = withFlags(base, flags)
     const fn = instance[hook]
     return async () => {
@@ -500,6 +548,7 @@ export async function runPlatforms(
           platforms: everyInstance,
           flags: platformFlags,
           signal: controller.signal,
+          ...(labelled ? { prefix: platformPrefix(name, index) } : {}),
         }),
       )
     }

@@ -116,7 +116,7 @@ export const defineConfig = createDefineConfig<NotificationsConfig>()
 
 const MAX_TIMEOUT = 2 ** 31 - 1
 
-let counter = 0
+let counter = 0 // kitr-allow-module-state: only makes ids unique; sharing it between apps cannot collide
 /** A unique id such as `n-m5x2k1qz-0`, used when `show()` or `schedule()` gets none. */
 export function notificationId(): string {
   return `n-${Date.now().toString(36)}-${(counter++).toString(36)}`

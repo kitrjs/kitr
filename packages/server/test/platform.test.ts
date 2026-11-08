@@ -89,7 +89,7 @@ describe('server()', () => {
       const entry = f.files.get('server/main.ts')!
       expect(entry).toContain("import rc from '../kitrrc'")
       expect(entry).toContain("import { routes } from './routes'")
-      expect(entry).toContain('createServer({ providers: rc.providers, config, routes })')
+      expect(entry).toContain('createServer({ ...loadRc(rc, config), routes })')
       expect(entry).toContain('Number(process.env.PORT) || 4000')
       expect(entry).not.toMatch(/react/i)
       // An empty table: `kitr add api` / `kitr add realtime` extend it with their methods.
@@ -111,8 +111,9 @@ describe('server()', () => {
       api.scaffold!(f.ctx)
       expect(f.files.get('server/main.ts')).toContain("import { config } from '../config'")
       expect(f.files.get('server/main.ts')).toContain("import { routes } from '#server/routes'")
+      expect(f.files.get('server/main.ts')).toContain("import { loadRc } from 'kitr/app'")
       expect(f.files.get('server/main.ts')).toContain(
-        'createServer({ providers: rc.providers, config, routes })',
+        'createServer({ ...loadRc(rc, config), routes })',
       )
       const entry = f.files.get('app/server.ts')!
       expect(entry).toContain("from '@tanstack/react-start/server-entry'")
@@ -131,8 +132,9 @@ describe('server()', () => {
       })
       api.scaffold!(f.ctx)
       expect(f.files.get('server/main.ts')).not.toMatch(/realtime|attach/)
+      expect(f.files.get('server/main.ts')).toContain("import { loadRc } from 'kitr/app'")
       expect(f.files.get('server/main.ts')).toContain(
-        'createServer({ providers: rc.providers, config, routes })',
+        'createServer({ ...loadRc(rc, config), routes })',
       )
     })
 

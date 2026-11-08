@@ -164,3 +164,19 @@ describe('fork before boot', () => {
     expect(boots).toBe(1)
   })
 })
+
+describe('loadRc', () => {
+  it('turns the rc, its module namespace or just the providers, and the config, into createApp options', async () => {
+    const { loadRc } = await import('../src/rc')
+    const provider = defineProvider({ name: 'x' })
+    const config = { x: { on: true } }
+    expect(loadRc({ providers: [provider] }, config)).toEqual({ providers: [provider], config })
+    expect(loadRc({ default: { providers: [provider] } })).toEqual({
+      providers: [provider],
+      config: {},
+    })
+    const app = createApp({ ...loadRc({ providers: [provider] }, config) })
+    expect(app.config.get('x')).toEqual({ on: true })
+    expect(() => loadRc({} as never)).toThrow(/providers/)
+  })
+})

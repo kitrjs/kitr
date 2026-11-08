@@ -1,4 +1,5 @@
 /** Blessed upstream versions written by `kitr new` and `kitr add`. `kitr upgrade` bumps these together. */
+// kitr-allow-module-state: constant table of dependency versions, never mutated
 export const versions: Record<string, string> = {
   react: '^19.3.1',
   'react-dom': '^19.3.1',

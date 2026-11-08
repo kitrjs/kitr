@@ -20,6 +20,7 @@
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "check:bundles": "node scripts/check-bundles.mjs",
+    "check:module-state": "node scripts/check-module-state.mjs",
     "test:all": "pnpm test:coverage && pnpm test:integration && pnpm check:bundles && pnpm check:examples && pnpm test:e2e",
     "check:examples": "node scripts/sync-examples.mjs --check",
     "sync:examples": "node scripts/sync-examples.mjs",

@@ -16,6 +16,7 @@ export interface Kit extends KitPackage {
   package?: string
 }
 
+// kitr-allow-module-state: constant kit description, never mutated
 export const blankKit: Kit = {
   name: 'blank',
   description:
@@ -24,7 +25,7 @@ export const blankKit: Kit = {
 }
 
 /** The kits this CLI ships: `blank` first, then every official kit package. */
-export const kitNames: string[] = [blankKit.name, ...Object.keys(kitManifests)]
+export const kitNames: string[] = [blankKit.name, ...Object.keys(kitManifests)] // kitr-allow-module-state: constant list, never mutated
 
 /** The short names of a kit's packages, in order. */
 export const kitPackageNames = (kit: Kit): string[] =>

@@ -247,7 +247,7 @@ export function defineRouteExtension<const E extends RouteExtension>(extension: 
 
 type KeysOf<E extends readonly RouteExtension[]> = E[number]['key'] & ExtensionKey
 
-const RESERVED = new Set(['prefix', 'middleware', 'as'])
+const RESERVED = new Set(['prefix', 'middleware', 'as']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 export class RouteTable {
   readonly entries: RouteEntry[]

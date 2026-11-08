@@ -106,6 +106,7 @@ declare module '@kitr/core' {
 /** Type-checks `config/files.ts`. Returns the object unchanged. */
 export const defineConfig = createDefineConfig<FilesConfig>()
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const MIME: Record<string, string> = {
   txt: 'text/plain',
   md: 'text/markdown',

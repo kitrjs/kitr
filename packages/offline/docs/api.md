@@ -33,14 +33,15 @@ to storage on a throttle (and when the page is hidden), and can restore them int
 ### registerMutationDefaults
 
 ```ts
-function registerMutationDefaults(client: QueryClient): void;
+function registerMutationDefaults(client: QueryClient, operations: OperationRegistry): void;
 ```
 
 A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do
 not survive a reload. Give every named mutation (`defineMutation('projects.rename', ...)` in
-kitr/actions, or one registered in `operations`) its defaults by name, so a mutation paused
-offline still runs, with its cache effects, after the app restarts. Mutations without a name
-need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
+kitr/actions, or one registered in the app's `operations`) its defaults by name, so a mutation
+paused offline still runs, with its cache effects, after the app restarts. Mutations without a
+name need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
+`createOffline` does this from `app.operations` when it is given the app.
 
 ### useOffline
 

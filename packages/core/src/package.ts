@@ -237,6 +237,7 @@ export interface AddContext extends ProjectInfo {
 }
 
 /** Name casing helpers for generators and setup modules: `pascal('send-receipt')` is `SendReceipt`. */
+// kitr-allow-module-state: constant naming helpers, stateless
 export const naming = {
   pascal: (s: string): string =>
     s.replace(/(^|[-_/\s])(\w)/g, (_, __, c: string) => c.toUpperCase()).replace(/[^\w]/g, ''),

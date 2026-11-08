@@ -24,7 +24,7 @@ export default definePackage({
     )
     ctx.write(
       'app/app.ts',
-      `import { createApp } from 'kitr/app'\nimport { config } from 'virtual:kitr/config'\nimport { providers } from 'virtual:kitr/providers'\nimport { env } from './env'\n\n/** One app object: providers from kitrrc.ts, config from config/*.ts, both as static imports. */\nexport const app = createApp({ providers, config, env })\n`,
+      `import { createApp, loadRc } from 'kitr/app'\nimport { config } from 'virtual:kitr/config'\nimport { providers } from 'virtual:kitr/providers'\nimport { env } from './env'\n\n/** One app object: providers from kitrrc.ts, config from config/*.ts, both as static imports. */\nexport const app = createApp({ ...loadRc({ providers }, config), env })\n`,
     )
   },
   remove(ctx) {

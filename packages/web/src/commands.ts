@@ -29,6 +29,7 @@ function* walk(dir: string): Generator<string> {
   }
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const cssTypes = {
   meta: {
     name: 'css:types',

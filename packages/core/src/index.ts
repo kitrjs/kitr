@@ -104,6 +104,7 @@ export {
   defineWorkspace,
   type KitrRc,
   type KitrWorkspace,
+  loadRc,
 } from './rc'
 export {
   type AnyRouteTable,

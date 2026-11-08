@@ -49,7 +49,7 @@ export interface WebOptions {
   open: boolean
 }
 
-const MODES: WebMode[] = ['static', 'spa', 'ssr']
+const MODES: WebMode[] = ['static', 'spa', 'ssr'] // kitr-allow-module-state: constant list, never mutated
 
 /**
  * The web platform. List it in kitrrc.ts under `platforms`:

@@ -60,7 +60,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: seo
 
-- `head: () => seo({ title, description })` from `kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
+- `head: (ctx) => seo({ title, description }, ctx)` from `kitr/seo` writes title, Open Graph, Twitter and canonical tags; `jsonLd({...})` adds structured data. Site defaults live in `config/seo.ts`.
 - Use `...ssrRoute('data-only')` for heavy, non-SEO pages; `cacheHeaders({ sMaxAge })` for the CDN.
 
 ## kitr: api

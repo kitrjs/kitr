@@ -41,6 +41,8 @@ jobs:
       - run: pnpm -C site build
       - run: pnpm typecheck
       - run: pnpm lint
+      - name: No module-scope state in package sources
+        run: pnpm check:module-state
       - name: Examples are unmodified kit output
         run: pnpm check:examples
       - name: Production bundle checks

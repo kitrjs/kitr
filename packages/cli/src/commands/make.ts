@@ -14,6 +14,7 @@ export type StubFn = (vars: GeneratorVars) => string
  * writes (`make:route` from router, `make:job` from jobs...). A project overrides any stub with
  * `kitr eject stub <kind>`, which copies it to `stubs/<kind>.ts`.
  */
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const coreGenerators: Record<string, Generator> = {
   provider: {
     description: 'Create a kitr provider in app/providers',
