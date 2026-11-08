@@ -1,6 +1,6 @@
 import { defineKitrConfig } from 'kitr/app'
-import { web } from '@kitr/web'
-import { tauri } from '@kitr/tauri'
+import { web } from 'kitr/web'
+import { tauri } from 'kitr/tauri'
 
 /**
  * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every
@@ -8,44 +8,39 @@ import { tauri } from '@kitr/tauri'
  */
 export default defineKitrConfig({
   packages: [
-   '@kitr/react',
-   '@kitr/router',
-   '@kitr/platform',
-   '@kitr/storage',
-   '@kitr/query',
-   '@kitr/http',
-   '@kitr/forms',
-   '@kitr/table',
-   '@kitr/state',
-   '@kitr/tailwind',
-   '@kitr/theme',
-   '@kitr/auth',
-   '@kitr/mocks',
-   '@kitr/testing',
-   '@kitr/devtools',
-   '@kitr/secure-storage',
-   '@kitr/notifications',
-   '@kitr/vite',
-   '@kitr/web',
-   '@kitr/tauri',
+    '@kitr/react',
+    '@kitr/router',
+    '@kitr/platform',
+    '@kitr/storage',
+    '@kitr/query',
+    '@kitr/http',
+    '@kitr/forms',
+    '@kitr/table',
+    '@kitr/state',
+    '@kitr/tailwind',
+    '@kitr/theme',
+    '@kitr/auth',
+    '@kitr/mocks',
+    '@kitr/testing',
+    '@kitr/devtools',
+    '@kitr/vite',
+    '@kitr/web',
+    '@kitr/tauri',
   ],
   providers: [
-   () => import('@kitr/platform/provider'),
-   () => import('@kitr/storage/provider'),
-   () => import('@kitr/query/provider'),
-   () => import('@kitr/http/provider'),
-   () => import('@kitr/theme/provider'),
-   () => import('@kitr/auth/provider'),
-   // Development only: the kitr() Vite plugin strips this provider from production builds.
-   () => import('@kitr/devtools/provider'),
-   () => import('@kitr/secure-storage/provider'),
-   () => import('@kitr/notifications/provider'),
-   () => import('@kitr/web/provider'),
-   () => import('@kitr/tauri/provider'),
+    () => import('@kitr/platform/provider'),
+    () => import('@kitr/storage/provider'),
+    () => import('@kitr/query/provider'),
+    () => import('@kitr/http/provider'),
+    () => import('@kitr/theme/provider'),
+    () => import('@kitr/auth/provider'),
+    () => import('@kitr/devtools/provider'),
+    () => import('@kitr/web/provider'),
+    () => import('@kitr/tauri/provider'),
   ],
   platforms: {
-   site: web({ mode: 'spa' }),
-   app: tauri(),
+    site: web({ mode: 'spa' }),
+    app: tauri(),
   },
   directories: {
     app: 'app',

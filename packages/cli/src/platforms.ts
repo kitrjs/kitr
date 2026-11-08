@@ -8,13 +8,22 @@ import {
   type PlatformFactory,
   type PlatformInstance,
 } from '@kitr/core'
-import { builders, generateCode, parseModule } from 'magicast'
 import pc from 'picocolors'
 import type { Codemods } from './codemods'
 import { configurePackages } from './configure'
-import { log, type ProjectContext } from './context'
+import { log, type ProjectContext, readRcPlatforms } from './context'
 import { manifests } from './manifests.gen'
 import { ensureAvailable, loadPackage } from './packages'
+import {
+  addNamedImport,
+  addProperty,
+  fileQuote,
+  findOptionsObject,
+  findRcBlock,
+  insertEntry,
+  removeEntries,
+  removeNamedImport,
+} from './rc-text'
 
 /**
  * Platforms answer "where does this app run?". They are packages, listed by name in kitrrc.ts:
@@ -339,23 +348,24 @@ export async function loadFactory(
 }
 
 /** `{ mode: 'ssr', port: 3000 }` as source text, single quotes, no quoted keys. Biome reflows it. */
-export function literal(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map((v) => literal(v)).join(', ')}]`
+export function literal(value: unknown, quote = "'"): string {
+  if (Array.isArray(value)) return `[${value.map((v) => literal(v, quote)).join(', ')}]`
   if (value && typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>).filter(
       ([, v]) => v !== undefined,
     )
     if (!entries.length) return '{}'
-    return `{ ${entries.map(([k, v]) => `${/^[a-zA-Z_$][\w$]*$/.test(k) ? k : `'${k}'`}: ${literal(v)}`).join(', ')} }`
+    return `{ ${entries.map(([k, v]) => `${/^[a-zA-Z_$][\w$]*$/.test(k) ? k : `${quote}${k}${quote}`}: ${literal(v, quote)}`).join(', ')} }`
   }
-  if (typeof value === 'string') return `'${value.replace(/'/g, "\\'")}'`
+  if (typeof value === 'string') return `${quote}${value.split(quote).join(`\\${quote}`)}${quote}`
   return String(value)
 }
 
-function editRcSource(
-  ctx: ProjectContext,
-  edit: (mod: any, target: any, src: string, addImport: (line: string) => void) => void,
-) {
+/**
+ * Edit kitrrc.ts as text (see rc-text.ts): what is not the edit stays byte for byte. Creates the
+ * file when the project has none; does nothing on a dry run.
+ */
+function editRcText(ctx: ProjectContext, edit: (src: string) => string) {
   const rcPath = ctx.rcPath ?? ctx.path('kitrrc.ts')
   if (!existsSync(rcPath)) {
     ctx.write(
@@ -366,26 +376,21 @@ function editRcSource(
   }
   if (ctx.dryRun) return
   const src = readFileSync(rcPath, 'utf8')
-  const mod = parseModule(src)
-  const target =
-    mod.exports.default?.$type === 'function-call'
-      ? mod.exports.default.$args[0]
-      : mod.exports.default
-  if (!target || typeof target !== 'object')
+  if (findOptionsObject(src) === -1)
     throw new Error(`${rcPath}: expected \`export default defineKitrConfig({...})\``)
-  const imports: string[] = []
-  edit(mod, target, src, (line) => imports.push(line))
-  let code = generateCode(mod, { quote: 'single' }).code
-  if (imports.length) {
-    // Add imports as plain text after the last import so the file keeps its own style.
-    const lines = code.split('\n')
-    let last = -1
-    for (let i = 0; i < lines.length; i++) if (/^import\s/.test(lines[i]!)) last = i
-    lines.splice(last + 1, 0, ...imports)
-    code = lines.join('\n')
-  }
-  writeFileSync(rcPath, code)
+  const next = edit(src)
+  if (next === src) return
+  writeFileSync(rcPath, next)
   ctx.touched.add('kitrrc.ts')
+}
+
+/** The `name: factory(...)` entry of the platforms object, found in the text. */
+function platformEntry(src: string, name: string) {
+  const block = findRcBlock(src, 'platforms', '{')
+  const entry = block?.elements.find((el) =>
+    new RegExp(`^(['"]?)${name}\\1\\s*:`).test(src.slice(el.start, el.end)),
+  )
+  return { block, entry }
 }
 
 /** Write `platforms.<name> = <factory>({...})` into kitrrc.ts with its import. Replaces an existing entry. */
@@ -395,17 +400,14 @@ export function writeRcPlatform(
   info: Pick<PlatformTypeInfo, 'entry' | 'factory'>,
   options: Record<string, unknown>,
 ) {
-  editRcSource(ctx, (_mod, target, src, addImport) => {
-    if (
-      !new RegExp(
-        `import\\s*\\{[^}]*\\b${info.factory}\\b[^}]*\\}\\s*from\\s*['"]${info.entry}['"]`,
-      ).test(src)
-    )
-      addImport(`import { ${info.factory} } from '${info.entry}'`)
-    if (!target.platforms) target.platforms = {}
-    target.platforms[name] = builders.raw(
-      `${info.factory}(${Object.keys(options).length ? literal(options) : ''})`,
-    )
+  editRcText(ctx, (src) => {
+    const call = `${info.factory}(${Object.keys(options).length ? literal(options, fileQuote(src)) : ''})`
+    const { block, entry } = platformEntry(src, name)
+    let out: string
+    if (entry) out = `${src.slice(0, entry.start)}${name}: ${call}${src.slice(entry.end)}`
+    else if (block) out = insertEntry(src, block, `${name}: ${call}`)
+    else out = addProperty(src, 'platforms', `{ ${name}: ${call} }`)
+    return addNamedImport(out, info.factory, info.entry)
   })
 }
 
@@ -415,13 +417,19 @@ export function writeRcPlatform(
  */
 export function removeRcPlatform(ctx: ProjectContext, name: string): string | undefined {
   const platforms = ctx.readRc().platforms
-  const factory = platforms[name]?.factory
-  const stillUsed = Object.entries(platforms).some(([n, p]) => n !== name && p.factory === factory)
-  editRcSource(ctx, (mod, target) => {
-    if (target.platforms) delete target.platforms[name]
-    if (factory && !stillUsed && mod.imports[factory]) delete mod.imports[factory]
+  const gone = platforms[name]
+  const factory = gone?.factory
+  const local = gone?.local ?? factory
+  const others = Object.entries(platforms).filter(([n]) => n !== name)
+  // The type is still in use when another platform calls the same factory, whatever it is renamed to.
+  const typeUsed = others.some(([, p]) => p.factory === factory)
+  const importUsed = others.some(([, p]) => (p.local ?? p.factory) === local)
+  editRcText(ctx, (src) => {
+    const { block, entry } = platformEntry(src, name)
+    const out = block && entry ? removeEntries(src, block, [entry]) : src
+    return local && !importUsed ? removeNamedImport(out, local) : out
   })
-  return factory && !stillUsed ? factory : undefined
+  return factory && !typeUsed ? factory : undefined
 }
 
 /** Change one option of a platform in kitrrc.ts (`kitr config site port 4000`). `undefined` removes it. */
@@ -431,17 +439,17 @@ export function setRcPlatformOption(
   key: string,
   value: unknown,
 ) {
-  editRcSource(ctx, (_mod, target) => {
-    const call = target.platforms?.[name]
-    if (call?.$type !== 'function-call')
-      throw new Error(`kitrrc.ts: platforms.${name} is not a factory call`)
-    let arg = call.$args[0]
-    if (!arg) {
-      call.$args.push({})
-      arg = call.$args[0]
-    }
-    if (value === undefined) delete arg[key]
-    else arg[key] = value
+  editRcText(ctx, (src) => {
+    const { entry } = platformEntry(src, name)
+    const text = entry ? src.slice(entry.start, entry.end) : ''
+    const call = /^(['"]?)[\w$-]+\1\s*:\s*([\w$]+)\s*\(/.exec(text)
+    if (!entry || !call) throw new Error(`kitrrc.ts: platforms.${name} is not a factory call`)
+    const options = { ...readRcPlatforms(src)[name]?.options }
+    if (value === undefined) delete options[key]
+    else options[key] = value
+    const head = text.slice(0, call[0].length - 1 - call[2]!.length)
+    const replaced = `${head}${call[2]}(${Object.keys(options).length ? literal(options, fileQuote(src)) : ''})`
+    return src.slice(0, entry.start) + replaced + src.slice(entry.end)
   })
 }
 

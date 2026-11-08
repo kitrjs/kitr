@@ -17,6 +17,7 @@
     "release": "pnpm build && changeset publish",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "coverage:gate": "node scripts/coverage-gate.mjs",
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "test:electron": "playwright test -c playwright.electron.config.ts",

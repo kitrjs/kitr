@@ -51,7 +51,6 @@ export default defineConfig({
         'packages/desktop/src/index.ts',
         'packages/tauri/src/index.ts',
         'packages/mobile/src/index.ts',
-        'packages/web/src/index.ts',
       ],
       reporter: ['text-summary', 'html', 'json-summary'],
     },

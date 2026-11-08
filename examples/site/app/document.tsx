@@ -34,7 +34,7 @@ export function head(ctx: object) {
 export function RootDocument() {
   const locale = rootRoute.useLoaderData()
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <ThemeScript />
         <HeadContent />

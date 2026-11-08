@@ -159,6 +159,11 @@ export function LocaleProvider({ initial, children }: { initial: Locale; childre
     setLocaleState(localeCookie.get())
   }, [])
 
+  // The server renders <html lang> in the visitor's language; follow a switch made in the browser.
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+
   const value = useMemo<LocaleState>(
     () => ({
       locale,
@@ -397,7 +402,7 @@ function SiteFooter() {
   )
 }
 `,
-    }),
+    }).replace('<html lang="en"', '<html lang={locale}'),
   )
 
   write(
