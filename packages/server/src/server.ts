@@ -61,9 +61,9 @@ export interface KitrServer {
   /** Web-standard fetch handler: use inside TanStack Start, Nitro, Cloudflare, Bun, Deno. */
   fetch(request: Request): Promise<Response>
   /**
-   * Whether this server answers the request's path: an endpoint or socket from the route table,
-   * or the health check. A TanStack Start server entry asks before handing a request to the
-   * page renderer, so one process serves pages and `/api/*`.
+   * Whether this server answers the request's path: a route of the table, the health path, or
+   * anything under a top-level segment one of its routes lives in (`/api/*` once `/api/health`
+   * exists), so Start's entry hands it over and an unknown endpoint gets a JSON 404.
    */
   handles(request: Request | URL | string): boolean
   /** Mount an h3 app or any fetch handler under a base path. */
@@ -295,14 +295,31 @@ export function createServer(options: CreateServerOptions = {}): KitrServer {
   if (config.healthPath) h3.get(config.healthPath, () => ({ ok: true }))
   // Endpoints and sockets from the route table: each extension mounts its own kind.
   if (routes) routes.compile('h3', server)
-  // The paths this server answers, for `handles()`: every entry of an extension with an h3 target.
+  // The paths this server answers, for `handles()`: every entry of an extension with an h3 target,
+  // and everything under the first segment of such an entry (`/api/health` claims `/api/*`), so an
+  // unknown path next to the endpoints gets this server's JSON 404 rather than the app's HTML one.
   let matchers: Array<(pathname: string) => boolean> | undefined
-  const served = () =>
-    (matchers ??= (routes?.entries ?? [])
+  const served = () => {
+    if (matchers) return matchers
+    const paths = (routes?.entries ?? [])
       .filter((entry) =>
         routes!.extensions.some((ext) => ext.kinds.includes(entry.kind) && ext.targets?.h3),
       )
-      .map((entry) => pathMatcher(entry.path)))
+      .map((entry) => entry.path)
+    const prefixes = new Set(
+      paths
+        .map((path) => path.split('/')[1])
+        .filter((segment) => segment && !/^[:$*]/.test(segment)),
+    )
+    matchers = [
+      ...paths.map(pathMatcher),
+      ...[...prefixes].map(
+        (segment) => (pathname: string) =>
+          pathname === `/${segment}` || pathname.startsWith(`/${segment}/`),
+      ),
+    ]
+    return matchers
+  }
 
   return server
 }

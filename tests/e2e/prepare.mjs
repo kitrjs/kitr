@@ -63,14 +63,40 @@ for (let i = 0; i < flags.length; i++) {
 const fixtures = join(root, 'tests/e2e/fixtures', example)
 if (existsSync(fixtures)) cpSync(fixtures, join(target, 'app'), { recursive: true })
 
-// Fixture API route: lets a test push an event down a socket channel.
-const routesFile = join(target, 'server/routes.ts')
-if (existsSync(routesFile) && existsSync(join(target, 'server/realtime.ts'))) {
-  let src = readFileSync(routesFile, 'utf8')
-  src = `import { exampleChannel } from '#app/channels/example'\nimport { realtime } from '#server/realtime'\n${src}`
+// Fixture pages: the fixture ships page components under app/pages/e2e; link them into the
+// app's route table the way `kitr make:page` would, after the kit's own pages.
+const appRoutes = join(target, 'app/routes.ts')
+if (existsSync(appRoutes) && existsSync(join(target, 'app/pages/e2e'))) {
+  let src = readFileSync(appRoutes, 'utf8')
+  const anchor = ".page('/about', { lazy: () => import('./pages/about') })"
+  if (!src.includes(anchor))
+    throw new Error(`prepare: ${appRoutes} has no /about page to link after`)
+  src = `import { meQuery } from '#app/e2e/me-query'\n${src}`
   src = src.replace(
-    "api.get('/health'",
-    "api.post('/e2e/emit', async (ctx) => { const body = ctx.body as { room: string; text: string }; realtime.use(exampleChannel, { room: body.room }).emit('message', body.text); return { sent: true } }, { name: 'e2e.emit' })\n      .get('/health'",
+    anchor,
+    `${anchor}
+    .page('/e2e/counter', { lazy: () => import('./pages/e2e/counter') })
+    .page('/e2e/me', {
+      loader: ({ context }) => context.queryClient.ensureQueryData(meQuery),
+      lazy: () => import('./pages/e2e/me'),
+    })
+    .page('/e2e/socket', { lazy: () => import('./pages/e2e/socket') })`,
+  )
+  writeFileSync(appRoutes, src)
+}
+
+// Fixture API route: lets a test push an event down a socket channel through the realtime
+// server the table's `.ws` link binds in the container.
+const routesFile = join(target, 'server/routes.ts')
+if (existsSync(routesFile)) {
+  let src = readFileSync(routesFile, 'utf8')
+  const anchor = "r.get('/health'"
+  if (!src.includes(anchor))
+    throw new Error(`prepare: ${routesFile} has no /health route to link before`)
+  src = src.replace(
+    anchor,
+    `r.post('/e2e/emit', async (ctx) => { const body = ctx.body as { room: string; text: string }; ctx.app.container.use('realtime').use(exampleChannel, { room: body.room }).emit('message', body.text); return { sent: true } }, { name: 'e2e.emit' })
+      .get('/health'`,
   )
   writeFileSync(routesFile, src)
 }
