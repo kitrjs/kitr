@@ -63,6 +63,10 @@ html {
   scroll-padding-top: 88px;
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -77,8 +81,10 @@ a {
   color: var(--link);
   text-underline-offset: 3px;
 }
-a:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  a:hover {
+    color: var(--ink);
+  }
 }
 
 :focus-visible {
@@ -276,9 +282,11 @@ pre,
   color: var(--ink);
   cursor: pointer;
 }
-.icon-button:hover {
-  background: var(--raised);
-  color: var(--ink);
+@media (hover: hover) {
+  .icon-button:hover {
+    background: var(--raised);
+    color: var(--ink);
+  }
 }
 
 .search-button {
@@ -332,18 +340,35 @@ kbd {
   display: inline-flex;
   color: var(--ink);
 }
-.footer-maker {
+.maker-badge {
+  --plate-grid: rgb(255 255 255 / 0.14);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   align-self: flex-start;
-  min-height: 44px;
-  margin: -10px 0;
-  color: var(--muted);
+  height: 24px;
+  padding: 0 9px 0 7px;
+  border-radius: 6px;
+  color: #ffffff;
+  background-color: #002fa7;
+  background-image:
+    linear-gradient(var(--plate-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--plate-grid) 1px, transparent 1px);
+  background-size: 6px 6px;
+  background-position: -1px -1px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.02em;
   text-decoration: none;
+  transition: transform var(--dur-fast);
 }
-.footer-maker:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .maker-badge:hover {
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
 }
 .footer-col {
   display: flex;
@@ -357,9 +382,11 @@ kbd {
   color: var(--ink);
   text-decoration: none;
 }
-.footer-col a:hover {
-  color: var(--link);
-  text-decoration: underline;
+@media (hover: hover) {
+  .footer-col a:hover {
+    color: var(--link);
+    text-decoration: underline;
+  }
 }
 @media (max-width: 760px) {
   .footer {
@@ -385,18 +412,22 @@ kbd {
   text-decoration: none;
   font-weight: 600;
 }
-.button:hover {
-  background: var(--raised);
-  color: var(--ink);
+@media (hover: hover) {
+  .button:hover {
+    background: var(--raised);
+    color: var(--ink);
+  }
 }
 .button.primary {
   background: var(--blue);
   border-color: var(--blue);
   color: var(--on-brand);
 }
-.button.primary:hover {
-  background: #2457cc;
-  color: var(--on-brand);
+@media (hover: hover) {
+  .button.primary:hover {
+    background: #2457cc;
+    color: var(--on-brand);
+  }
 }
 
 .actions {
@@ -516,9 +547,11 @@ kbd {
   color: var(--muted);
   cursor: pointer;
 }
-.command-copy:hover {
-  background: var(--line);
-  color: var(--ink);
+@media (hover: hover) {
+  .command-copy:hover {
+    background: var(--line);
+    color: var(--ink);
+  }
 }
 .command-text {
   margin: 0;
@@ -611,9 +644,11 @@ kbd {
   font-weight: 500;
   transition: border-color 0.15s;
 }
-a.built-on-link:hover {
-  color: var(--ink);
-  border-color: var(--ink);
+@media (hover: hover) {
+  a.built-on-link:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
 }
 
 .terminal {
@@ -777,9 +812,11 @@ a.built-on-link:hover {
   color: var(--ink);
   text-decoration: none;
 }
-.kit-chip:hover {
-  border-color: var(--ink);
-  color: var(--ink);
+@media (hover: hover) {
+  .kit-chip:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
 }
 .kit-chip-dot {
   width: 9px;
@@ -858,9 +895,11 @@ a.built-on-link:hover {
   border-color: #ffffff;
   color: #0b121c;
 }
-.cta-button:hover {
-  background: #e3ebff;
-  color: #0b121c;
+@media (hover: hover) {
+  .cta-button:hover {
+    background: #e3ebff;
+    color: #0b121c;
+  }
 }
 
 /* 404 */
@@ -1074,8 +1113,10 @@ a.built-on-link:hover {
   text-align: left;
   white-space: nowrap;
 }
-.filter:hover {
-  background: var(--raised);
+@media (hover: hover) {
+  .filter:hover {
+    background: var(--raised);
+  }
 }
 .filter[aria-pressed="true"] {
   background: var(--raised);
@@ -1085,8 +1126,10 @@ a.built-on-link:hover {
   cursor: default;
   opacity: 0.4;
 }
-.filter:disabled:hover {
-  background: transparent;
+@media (hover: hover) {
+  .filter:disabled:hover {
+    background: transparent;
+  }
 }
 .filter-label {
   flex: 1 1 0;
@@ -1180,8 +1223,10 @@ a.built-on-link:hover {
 .dir-runs button .mono {
   font-size: 12px;
 }
-.dir-runs button:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .dir-runs button:hover {
+    color: var(--ink);
+  }
 }
 .dir-runs button[aria-pressed="true"] {
   background: var(--raised);
@@ -1232,12 +1277,19 @@ a.built-on-link:hover {
     box-shadow 0.15s,
     transform 0.15s;
 }
-a.dcard:hover,
 a.dcard:focus-visible {
   color: var(--ink);
   border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
   box-shadow: var(--shadow);
   transform: translateY(-1px);
+}
+@media (hover: hover) {
+  a.dcard:hover {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
 }
 .dcard-body {
   flex: 1 1 auto;
@@ -1361,12 +1413,19 @@ a.dcard:focus-visible {
     box-shadow 0.15s,
     transform 0.15s;
 }
-.guide-card:hover,
 .guide-card:focus-visible {
   color: var(--ink);
   border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
   box-shadow: var(--shadow);
   transform: translateY(-1px);
+}
+@media (hover: hover) {
+  .guide-card:hover {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
 }
 .guide-card-title {
   display: block;
@@ -1459,8 +1518,10 @@ a.dcard:focus-visible {
 .sidebar a.mono {
   font-size: 14px;
 }
-.sidebar a:hover {
-  background: var(--raised);
+@media (hover: hover) {
+  .sidebar a:hover {
+    background: var(--raised);
+  }
 }
 .sidebar a[aria-current="page"] {
   background: var(--raised);
@@ -1486,9 +1547,11 @@ a.dcard:focus-visible {
   color: var(--muted);
   font-weight: 400;
 }
-.sidebar .sidebar-back:hover {
-  background: none;
-  color: var(--ink);
+@media (hover: hover) {
+  .sidebar .sidebar-back:hover {
+    background: none;
+    color: var(--ink);
+  }
 }
 .sidebar .sidebar-package {
   display: flex;
@@ -1540,9 +1603,11 @@ a.dcard:focus-visible {
   padding-left: 25px;
   font-size: 13.5px;
 }
-.sidebar .sidebar-sections a:hover {
-  background: none;
-  color: var(--ink);
+@media (hover: hover) {
+  .sidebar .sidebar-sections a:hover {
+    background: none;
+    color: var(--ink);
+  }
 }
 .sidebar .sidebar-sections a[aria-current="location"] {
   color: var(--link);
@@ -1596,8 +1661,10 @@ a.dcard:focus-visible {
 .toc li[data-depth="3"] a {
   padding-left: 24px;
 }
-.toc li a:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .toc li a:hover {
+    color: var(--ink);
+  }
 }
 .toc-edit {
   display: flex;
@@ -1834,9 +1901,19 @@ a.dcard:focus-visible {
   opacity: 0;
   transition: opacity 0.15s;
 }
-.code:hover .code-copy,
 .code-copy:focus-visible {
   opacity: 1;
+}
+@media (hover: hover) {
+  .code:hover .code-copy {
+    opacity: 1;
+  }
+}
+/* Touch screens can't hover, so the copy button is always there. */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
 }
 
 /* ------------------------------------------------------------- live example */
@@ -2122,10 +2199,15 @@ a.dcard:focus-visible {
   font-size: 12px;
   cursor: pointer;
 }
-.search-close:hover,
 .search-close:focus-visible {
   color: var(--ink);
   border-color: var(--ink);
+}
+@media (hover: hover) {
+  .search-close:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
 }
 @media (pointer: coarse) {
   .search-close {
@@ -2171,8 +2253,10 @@ a.dcard:focus-visible {
   color: var(--ink);
   text-decoration: none;
 }
-.search-result:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .search-result:hover {
+    color: var(--ink);
+  }
 }
 .search-result[aria-current="true"] {
   background: var(--raised);
@@ -2320,9 +2404,11 @@ a.dcard:focus-visible {
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
   transition: transform 160ms ease;
 }
-.maker-plate:hover {
-  color: #ffffff;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .maker-plate:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
 }
 .maker-links {
   display: flex;
@@ -2543,9 +2629,9 @@ a.dcard:focus-visible {
   html:has(.docs-bar) {
     scroll-padding-top: 128px;
   }
-  /* Under the header, a bar with two buttons: the navigation, and the section you are reading,
-     which drops down the page's sections. While you scroll down the header slides away and the
-     bar takes the top of the screen; scrolling up brings the header back above it. */
+  /* Under the header, a bar with one button that opens the navigation. While you scroll down
+     the header slides away and the bar takes the top of the screen; scrolling up brings the
+     header back above it. */
   .site-header {
     transition: transform 0.2s ease;
   }
@@ -2569,13 +2655,9 @@ a.dcard:focus-visible {
   html.header-hidden .docs-bar {
     top: 0;
   }
-  .docs-bar-row {
+  .docs-bar-menu {
     display: flex;
-    gap: 8px;
-  }
-  .docs-bar-menu,
-  .docs-bar-toc {
-    display: flex;
+    width: 100%;
     align-items: center;
     gap: 8px;
     min-height: 40px;
@@ -2589,17 +2671,7 @@ a.dcard:focus-visible {
     text-align: left;
     cursor: pointer;
   }
-  .docs-bar-menu {
-    flex: 0 1 auto;
-    max-width: 45%;
-    min-width: 0;
-  }
-  .docs-bar-toc {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-  .docs-bar-menu[aria-expanded="true"],
-  .docs-bar-toc[aria-expanded="true"] {
+  .docs-bar-menu[aria-expanded="true"] {
     border-color: var(--blue);
   }
   /* One line that ends in an ellipsis when the page name is too long for the button. A block,
@@ -2618,59 +2690,6 @@ a.dcard:focus-visible {
     margin-left: 6px;
     color: var(--muted);
     font-weight: 500;
-  }
-  .docs-bar-section {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .docs-bar-chevron {
-    flex: none;
-    color: var(--muted);
-    transition: transform 0.15s ease;
-  }
-  .docs-bar-toc[aria-expanded="true"] .docs-bar-chevron {
-    transform: rotate(180deg);
-  }
-  .docs-sections {
-    position: absolute;
-    top: calc(100% + 1px);
-    left: 0;
-    right: 0;
-    max-height: min(65vh, 520px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 14px 16px 18px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
-    box-shadow: 0 16px 32px rgb(0 0 0 / 0.18);
-  }
-  .docs-sections .sidebar-sections {
-    margin-top: 8px;
-  }
-  .docs-sections .sidebar-sections a {
-    display: block;
-    margin-left: -1px;
-    padding: 7px 10px 7px 13px;
-    border-left: 2px solid transparent;
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 15px;
-    line-height: 22px;
-  }
-  .docs-sections .sidebar-sections ul a {
-    padding-left: 25px;
-    font-size: 14px;
-  }
-  .docs-sections .sidebar-sections a[aria-current="location"] {
-    color: var(--link);
-    border-left-color: var(--blue);
-    font-weight: 500;
-  }
-  .docs-sections .sidebar-sections ul a[aria-current="location"] {
-    border-left-color: transparent;
   }
   /* The sidebar becomes a full-screen drawer. */
   .docs-layout .sidebar {
@@ -2816,13 +2835,21 @@ a.dcard:focus-visible {
 .platform-tile-lg {
   aspect-ratio: 1 / 1.08;
 }
-.platform-tile:hover,
 .platform-tile:focus-visible {
   color: #0b121c;
   transform: translateY(-3px);
   box-shadow:
     inset 0 0 0 1px rgb(11 18 28 / 0.08),
     0 14px 28px -16px rgb(11 18 28 / 0.55);
+}
+@media (hover: hover) {
+  .platform-tile:hover {
+    color: #0b121c;
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 0 0 1px rgb(11 18 28 / 0.08),
+      0 14px 28px -16px rgb(11 18 28 / 0.55);
+  }
 }
 .platform-tile-top {
   display: flex;
@@ -2845,8 +2872,10 @@ a.dcard:focus-visible {
   opacity: 0.45;
   transition: opacity 0.18s;
 }
-.platform-tile:hover .platform-tile-marks {
-  opacity: 0.75;
+@media (hover: hover) {
+  .platform-tile:hover .platform-tile-marks {
+    opacity: 0.75;
+  }
 }
 .platform-tile-text {
   display: flex;
@@ -2879,12 +2908,19 @@ a.dcard:focus-visible {
     color-mix(in srgb, var(--raised) 70%, transparent) 10px 20px
   );
 }
-.platform-tile-own:hover,
 .platform-tile-own:focus-visible {
   color: var(--ink);
   box-shadow:
     inset 0 0 0 1.5px var(--ink),
     0 14px 28px -18px rgb(11 18 28 / 0.4);
+}
+@media (hover: hover) {
+  .platform-tile-own:hover {
+    color: var(--ink);
+    box-shadow:
+      inset 0 0 0 1.5px var(--ink),
+      0 14px 28px -18px rgb(11 18 28 / 0.4);
+  }
 }
 .platform-tile-own .platform-tile-icon {
   background: var(--bg);
@@ -2959,9 +2995,11 @@ a.dcard:focus-visible {
     background 0.15s,
     color 0.15s;
 }
-.builder-chip:hover {
-  border-color: var(--muted);
-  color: var(--ink);
+@media (hover: hover) {
+  .builder-chip:hover {
+    border-color: var(--muted);
+    color: var(--ink);
+  }
 }
 .builder-chip[aria-pressed="true"] {
   border-color: var(--ink);
@@ -3089,8 +3127,10 @@ a.dcard:focus-visible {
   font-weight: 600;
   white-space: nowrap;
 }
-.platform-row-name:hover {
-  color: var(--link);
+@media (hover: hover) {
+  .platform-row-name:hover {
+    color: var(--link);
+  }
 }
 .platform-table-note {
   margin: 0;
@@ -3136,8 +3176,10 @@ a.dcard:focus-visible {
 .crumbs a {
   color: var(--muted);
 }
-.crumbs a:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .crumbs a:hover {
+    color: var(--ink);
+  }
 }
 .platform-hero {
   display: grid;
@@ -3329,9 +3371,11 @@ a.dcard:focus-visible {
   text-decoration: none;
   transition: border-color 0.15s;
 }
-.learn-link:hover {
-  color: var(--ink);
-  border-color: var(--ink);
+@media (hover: hover) {
+  .learn-link:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
 }
 .learn-link strong {
   display: inline-flex;
@@ -3388,8 +3432,10 @@ a.dcard:focus-visible {
 }
 
 @media (max-width: 760px) {
+  /* Two columns on phones: three left each tile too narrow for its name and runtimes. */
   .platform-board {
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     max-width: none;
   }
   .platform-tile {
@@ -3397,7 +3443,7 @@ a.dcard:focus-visible {
     border-radius: 20px;
   }
   .platform-tile-lg {
-    aspect-ratio: 1 / 1.12;
+    aspect-ratio: 4 / 3;
   }
   .platform-tile-icon {
     width: 40px;
@@ -3412,12 +3458,12 @@ a.dcard:focus-visible {
     height: 14px;
   }
   .platform-tile-name {
-    font-size: 15px;
-    line-height: 20px;
+    font-size: 17px;
+    line-height: 22px;
   }
   .platform-tile-shell {
-    font-size: 10px;
-    line-height: 14px;
+    font-size: 11px;
+    line-height: 15px;
   }
   .platform-tile-sm {
     flex-basis: 140px;
@@ -3505,9 +3551,11 @@ a.dcard:focus-visible {
   color: var(--ink);
   text-decoration: none;
 }
-.package-row:hover {
-  color: var(--ink);
-  background: var(--raised);
+@media (hover: hover) {
+  .package-row:hover {
+    color: var(--ink);
+    background: var(--raised);
+  }
 }
 .package-row-text {
   display: flex;

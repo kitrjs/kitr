@@ -1,7 +1,7 @@
-import { useRouterState } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Page } from '#app/lib/content'
-import { exit, usePresence } from '#app/lib/motion'
+import { closeThenFollow, exit, usePresence } from '#app/lib/motion'
 import { Icon, icons } from './icons'
 
 type TocEntry = Page['toc'][number]
@@ -93,13 +93,12 @@ export function SectionList({
 
 /**
  * The left-hand navigation. On wide screens it is a sticky column. On phones it collapses into a
- * sticky bar: the left button opens the same navigation full-screen, the right one names the
- * section being read and drops down the page's sections to jump to.
+ * sticky bar whose button opens the same navigation full-screen; the page's sections are listed
+ * under the current page in there, so the bar needs no menu of its own for them.
  */
 export function Sidebar({
   label,
   where,
-  toc = [],
   active,
   children,
 }: {
@@ -107,46 +106,18 @@ export function Sidebar({
   label: string
   /** The page you are on, shown in the phone bar. */
   where: ReactNode
-  /** The page's headings: the phone bar's "On this page" menu lists them. */
-  toc?: TocEntry[]
   /** The heading being read, from useActiveHeading. */
   active?: string
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  const [sections, setSections] = useState(false)
   const drawer = usePresence(open, exit.drawer)
-  const popover = usePresence(sections, exit.popover)
   const nav = useRef<HTMLElement>(null)
   const path = useRouterState({ select: (s) => s.location.pathname })
-  const section = sectionOf(toc, active)?.text
+  const navigate = useNavigate()
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: close whenever the page changes
-  useEffect(() => {
-    setOpen(false)
-    setSections(false)
-  }, [path])
-
-  const bar = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!sections) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSections(false)
-    }
-    const onPointer = (e: PointerEvent) => {
-      if (!bar.current?.contains(e.target as Node)) setSections(false)
-    }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('pointerdown', onPointer)
-    // Open the list at the section being read.
-    const list = document.getElementById('docs-sections')
-    const current = list?.querySelector<HTMLElement>('[aria-current="location"]')
-    if (list && current) list.scrollTop = current.offsetTop - list.clientHeight / 3
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.removeEventListener('pointerdown', onPointer)
-    }
-  }, [sections])
+  useEffect(() => setOpen(false), [path])
 
   const menuButton = useRef<HTMLButtonElement>(null)
   // Closing from the keyboard or the close button hands focus back to the button that opened it;
@@ -194,55 +165,20 @@ export function Sidebar({
 
   return (
     <>
-      <div className="docs-bar" ref={bar}>
-        <div className="docs-bar-row">
-          <button
-            type="button"
-            ref={menuButton}
-            className="docs-bar-menu"
-            aria-expanded={open}
-            aria-controls="docs-sidebar"
-            aria-label={`${label} navigation`}
-            onClick={() => {
-              setSections(false)
-              setOpen(true)
-            }}
-          >
-            <Icon icon={icons.menu} size={18} />
-            <span className="docs-bar-where">{where}</span>
-          </button>
-          {toc.length > 0 && (
-            <button
-              type="button"
-              className="docs-bar-toc"
-              aria-expanded={sections}
-              aria-controls="docs-sections"
-              onClick={() => setSections((v) => !v)}
-            >
-              <span className="docs-bar-section">{section ?? 'On this page'}</span>
-              <Icon icon={icons.chevronDown} size={16} className="docs-bar-chevron" />
-            </button>
-          )}
-        </div>
-        {popover.mounted && (
-          <>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: closes the menu after a link inside it is followed; links handle their own keys */}
-            <nav
-              id="docs-sections"
-              className="docs-sections"
-              data-closing={popover.closing || undefined}
-              aria-label="On this page"
-              onClick={(e) => {
-                if ((e.target as HTMLElement).closest('a')) setSections(false)
-              }}
-            >
-              <span className="label">On this page</span>
-              <SectionList toc={toc} active={active} />
-            </nav>
-          </>
-        )}
+      <div className="docs-bar">
+        <button
+          type="button"
+          ref={menuButton}
+          className="docs-bar-menu"
+          aria-expanded={open}
+          aria-controls="docs-sidebar"
+          aria-label={`${label} navigation`}
+          onClick={() => setOpen(true)}
+        >
+          <Icon icon={icons.menu} size={18} />
+          <span className="docs-bar-where">{where}</span>
+        </button>
       </div>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: closes the drawer after a link inside it is followed; links handle their own keys */}
       <nav
         id="docs-sidebar"
         ref={nav}
@@ -255,9 +191,16 @@ export function Sidebar({
           } as CSSProperties
         }
         aria-label={label}
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest('a')) setOpen(false)
-        }}
+        // On phones the drawer slides away before the page changes under it.
+        onClickCapture={
+          drawer.mounted
+            ? closeThenFollow(
+                () => setOpen(false),
+                exit.drawer,
+                (href) => navigate({ href }),
+              )
+            : undefined
+        }
       >
         <div className="drawer-head">
           <span className="label">{label}</span>

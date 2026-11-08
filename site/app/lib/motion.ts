@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { type MouseEvent, useEffect, useState } from 'react'
 
 /**
  * How long each exit plays, in ms. They match the exit durations in motion.css, plus a frame, so
@@ -51,4 +51,31 @@ export function useSwapped(value: unknown): boolean {
   // Remembered, so changing back to the first value animates too.
   if (differs && !swapped) setSwapped(true)
   return swapped || differs
+}
+
+/**
+ * A click handler (for onClickCapture on a menu or drawer) that closes it first and follows the
+ * link once it has animated out. Navigating at once would swap the page while the panel is still
+ * on screen: the drawer's links re-render and shift as it slides away, and the header menu is
+ * caught in the route transition's snapshot and fades out over the new page. In-page hash links,
+ * new tabs and modified clicks just close the panel and go ahead as usual.
+ */
+export function closeThenFollow(
+  close: () => void,
+  duration: number,
+  navigate: (href: string) => void,
+) {
+  return (e: MouseEvent) => {
+    const a = (e.target as HTMLElement).closest('a')
+    if (!a) return
+    close()
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+      return
+    if ((a.target && a.target !== '_self') || a.origin !== window.location.origin) return
+    if (a.pathname === window.location.pathname) return
+    e.preventDefault()
+    const href = a.pathname + a.search + a.hash
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.setTimeout(() => navigate(href), reduced ? 0 : duration)
+  }
 }

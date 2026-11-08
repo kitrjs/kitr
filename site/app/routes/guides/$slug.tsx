@@ -34,7 +34,7 @@ function GuidePage() {
   const active = useActiveHeading(page.toc)
   return (
     <div className="container docs-layout">
-      <Sidebar label="Guides" where={page.title} toc={page.toc} active={active}>
+      <Sidebar label="Guides" where={page.title} active={active}>
         <div className="sidebar-group">
           <Link to="/guides" className="sidebar-home">
             All guides

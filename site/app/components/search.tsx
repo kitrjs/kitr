@@ -106,7 +106,13 @@ export function Search() {
   const results = search(entries, query)
   // The dialog stays open (and modal) while it fades out and unmounts when the exit is done. The
   // query is cleared then too, so the results don't collapse to the empty state mid-fade.
-  const close = () => setOpen(false)
+  const close = () => {
+    // Drop the keyboard now, while the dialog fades, rather than after: on phones it otherwise
+    // closes once the dialog has gone and the page jumps as the viewport grows back.
+    const focused = document.activeElement
+    if (focused instanceof HTMLElement && dialog.current?.contains(focused)) focused.blur()
+    setOpen(false)
+  }
   const go = (entry?: SearchEntry) => {
     if (!entry) return
     close()
