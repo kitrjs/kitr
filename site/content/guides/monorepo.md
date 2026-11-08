@@ -104,7 +104,7 @@ The CLI reads the file without running it, the same way it reads `kitrrc.ts`, so
 | `kitr workspace` | Lists the apps with their platforms and packages. |
 | `kitr dev` | Starts every app side by side: the web app on port 3000, the API on 3001. |
 | `kitr build`, `kitr types`, `kitr doctor` | Runs in each app, one after another, and stops at the first that fails. |
-| `kitr build api` | An app name selects that app: this builds the API only. |
+| `kitr build api` | An app name selects that app: this builds the API only. `--filter=api,web` picks several. |
 | `kitr --app api make:controller invoices --resource` | Runs any command inside one app without `cd`. |
 
 Inside `apps/web` or `apps/api` every command is that app's own, as if there were no workspace. Flags pass through, so `kitr doctor --strict` at the root checks both apps.
