@@ -247,6 +247,25 @@ export default defineKitrConfig({
     expect((core.resolveId as any)('react')).toBeNull()
     expect((core.load as any)('react')).toBeNull()
   })
+
+  // Regression: a missing optional peer failed as `"useQuery" is not exported by kitr/dist/query.js`,
+  // or, for a namespace import, built and threw in the browser.
+  it('names the package and the command when a kitr/* entry is not installed', async () => {
+    const root = project({ 'package.json': '{}' }, ['query'])
+    const { core } = await corePlugin(root)
+    const resolveId = (id: string, importer?: string) => (core.resolveId as any)(id, importer)
+    const importer = join(root, 'app/main.tsx')
+    expect(resolveId('kitr/query', importer)).toBeNull()
+    expect(resolveId('kitr/query/provider', importer)).toBeNull()
+    expect(resolveId('kitr', importer)).toBeNull()
+    expect(resolveId('kitr/env', importer)).toBeNull()
+    expect(() => resolveId('kitr/forms', importer)).toThrow(
+      'kitr/forms re-exports @kitr/forms, which is not installed. Run `kitr add forms`.',
+    )
+    expect(() => resolveId('kitr/forms/x', '\0virtual:kitr/providers')).toThrow('kitr add forms')
+    // A dependency's own imports are its business.
+    expect(resolveId('kitr/forms', join(root, 'node_modules/x/index.js'))).toBeNull()
+  })
 })
 
 // Regression: `robots` in config/seo.ts only fed `robotsTxt()`, and nothing wrote robots.txt.

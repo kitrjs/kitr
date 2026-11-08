@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { kitrEntryPackage } from '@kitr/core/package'
 import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createProjectInfo } from '../add-context'
@@ -82,10 +83,16 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
   const upstream: Record<string, string> = {}
   for (const def of definitions.values()) Object.assign(upstream, def.wraps)
   const appDir = ctx.path(rc.directories.app ?? 'app')
+  /** `kitr/<name>` imports whose `@kitr/<name>` is missing: the first file that needs each. */
+  const missing = new Map<string, string>()
   if (existsSync(appDir)) {
     for (const file of walk(appDir)) {
       if (!/\.(ts|tsx)$/.test(file) || file.endsWith('.gen.ts')) continue
       const src = readFileSync(file, 'utf8')
+      for (const [, id] of src.matchAll(/(?:from|import)\s*\(?\s*['"](kitr(?:\/[^'"]*)?)['"]/g)) {
+        const pkg = kitrEntryPackage(id!)
+        if (pkg && !(pkg in deps) && !missing.has(pkg)) missing.set(pkg, rel(ctx, file))
+      }
       const isRouteFile = file.includes(`/${rc.directories.routes ?? 'app/routes'}/`)
       for (const [lib, entry] of Object.entries(upstream)) {
         if (!new RegExp(`from ['"]${lib}['"]`).test(src)) continue
@@ -104,6 +111,13 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
         })
     }
   }
+
+  for (const [pkg, file] of missing)
+    out.push({
+      level: 'error',
+      message: `${file} imports kitr/${pkg.slice('@kitr/'.length)}, but ${pkg} is not installed`,
+      fix: `kitr add ${pkg.slice('@kitr/'.length)}`,
+    })
 
   // Server-only guard: React, and any package that needs it, must not be present.
   if (serverOnly) {

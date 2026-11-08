@@ -263,6 +263,28 @@ describe('doctor', () => {
       expect(f.fix, f.message).toBeTruthy()
   })
 
+  it('flags kitr/* imports whose @kitr package is not installed', () => {
+    const dir = project({
+      'package.json': JSON.stringify({ dependencies: { kitr: '1', '@kitr/query': '1' } }),
+      'kitrrc.ts': rc,
+      'src/a.tsx': [
+        "import { useQuery } from 'kitr/query'",
+        "import { Form } from 'kitr/forms'",
+        "import { defineConfig } from 'kitr'",
+        "import { env } from 'kitr/env'",
+        "const lazy = () => import('kitr/table')",
+      ].join('\n'),
+      'src/b.ts': "import { useForm } from 'kitr/forms'",
+    })
+    const missing = runChecks(createContext({ root: dir })).filter((f) =>
+      f.message.includes(' imports kitr/'),
+    )
+    expect(missing.map((f) => [f.message, f.fix])).toEqual([
+      ['src/a.tsx imports kitr/forms, but @kitr/forms is not installed', 'kitr add forms'],
+      ['src/a.tsx imports kitr/table, but @kitr/table is not installed', 'kitr add table'],
+    ])
+  })
+
   // Regression: `entry` and `preset` in config/tailwind.ts were read by nothing.
   it('checks config/tailwind.ts against the stylesheet it names', () => {
     const base = {

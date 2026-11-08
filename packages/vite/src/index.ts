@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { basename, dirname, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { PackageDefinition, PackageViteNeeds } from '@kitr/core/package'
-import { pickPackageDefinition, shortPackageName } from '@kitr/core/package'
+import { kitrEntryPackage, pickPackageDefinition, shortPackageName } from '@kitr/core/package'
 import type { Plugin, PluginOption } from 'vite'
 
 export interface KitrPluginOptions {
@@ -152,6 +152,20 @@ function pickPlatform(rc: RcInfo, wanted: string | undefined): ActivePlatform | 
   return { name, type: p.factory, mode, options }
 }
 
+const installedKitrPackages = new Set<string>()
+/** Whether `pkg` is in a node_modules folder at or above `from`. Yarn PnP has none, so it always passes. */
+function packageInstalled(pkg: string, from: string): boolean {
+  const key = `${from}\0${pkg}`
+  if (installedKitrPackages.has(key) || process.versions.pnp) return true
+  for (let dir = from; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, 'node_modules', pkg, 'package.json'))) {
+      installedKitrPackages.add(key)
+      return true
+    }
+    if (dirname(dir) === dir) return false
+  }
+}
+
 /**
  * The kitr() Vite plugin. It reads `kitrrc.ts` and the installed packages' `vite` declarations
  * at build time and:
@@ -232,8 +246,18 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         },
       }
     },
-    resolveId(id) {
+    resolveId(id, importer) {
       if (id === 'virtual:kitr/providers' || id === 'virtual:kitr/config') return `\0${id}`
+      // `kitr` lists every @kitr/* package as an optional peer. Without this check a missing one
+      // fails as "X is not exported by kitr/dist/query.js", or builds and throws in the browser.
+      const pkg = kitrEntryPackage(id)
+      if (pkg && !importer?.includes('/node_modules/')) {
+        const from = importer && isAbsolute(importer) ? dirname(importer) : root
+        if (!packageInstalled(pkg, from))
+          throw new Error(
+            `${id} re-exports ${pkg}, which is not installed. Run \`kitr add ${shortPackageName(pkg)}\`.`,
+          )
+      }
       return null
     },
     load(id, loadOptions) {

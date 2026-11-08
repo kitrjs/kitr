@@ -399,6 +399,20 @@ export function shortPackageName(name: string): string {
 }
 
 /**
+ * The `@kitr/*` package behind a `kitr/*` import: `kitr/query/provider` is `@kitr/query`. `kitr`,
+ * `kitr/app` and `kitr/env` come from `@kitr/core`, which every project has, so they map to null,
+ * as does anything that is not a `kitr` import. Every `kitr/<name>` entry re-exports `@kitr/<name>`
+ * (docs/entry-points.md), and `kitr` lists those as optional peers, so the package is only there
+ * once `kitr add <name>` installed it.
+ */
+export function kitrEntryPackage(id: string): string | null {
+  if (id !== 'kitr' && !id.startsWith('kitr/')) return null
+  const name = id.slice('kitr/'.length).split('/')[0] ?? ''
+  if (name === '' || name === 'app' || name === 'env' || name === 'package.json') return null
+  return `@kitr/${name}`
+}
+
+/**
  * The file that renders the HTML document: `app/document.tsx` with code-defined routes, or the
  * root route file of a project still on file routes. Packages that touch the document (theme,
  * tailwind, seo) edit whichever exists.

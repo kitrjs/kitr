@@ -9,7 +9,7 @@ Every `kitr/*` import maps to one `@kitr/*` package. The umbrella `kitr` package
 3. **Providers are subpaths.** `kitr/query/provider`, `kitr/http/provider`, `kitr/theme/provider`, `kitr/auth/provider` export a provider as `default`, so `kitrrc.ts` can lazy-import them without pulling the rest of the package into the boot path.
 4. **Server entries never import React.** `kitr/server`, `kitr/api`, `kitr/logger`, `kitr/realtime/server`, `kitr/realtime/socket.io/server`, `kitr/realtime/sse/server`, `kitr/auth/server`, `kitr/db` and `kitr/testing` are safe in a Node-only project. `kitr/testing/react` is where `renderWithKitr` lives.
 5. **Platforms are packages.** `kitr/web`, `kitr/server`, `kitr/desktop`, `kitr/tauri` and `kitr/mobile` each export a factory built with `definePlatform` from `@kitr/core`. The core knows the contract, never a platform.
-6. **Optional peers.** `kitr` lists every `@kitr/*` package as an optional peer. `kitr add <name>` installs the ones you use; importing an entry whose package is missing fails at build time with a clear module-not-found, not at runtime.
+6. **Optional peers.** `kitr` lists every `@kitr/*` package as an optional peer, so installing `kitr` installs none of them. `kitr add <name>` installs the ones you use. Importing an entry whose package is missing stops the Vite plugin in dev and build with `kitr/<name> re-exports @kitr/<name>, which is not installed. Run \`kitr add <name>\`.`, and `kitr doctor` reports the same. Without the plugin, Node says `Cannot find package '@kitr/<name>'`, and Vite on its own turns a missing optional peer into a misleading missing-export error or an error thrown in the browser, which is why the plugin checks first.
 
 ## Route-table extensions are subpaths
 
