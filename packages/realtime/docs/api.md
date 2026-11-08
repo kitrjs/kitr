@@ -596,8 +596,7 @@ A realtime adapter over Redis pub/sub, so an `emit` on any instance reaches the 
 every instance. Pass an ioredis client; the adapter opens one more connection for subscribing.
 
 ```ts
-import { Redis } from 'ioredis'
-const adapter = createRedisRealtimeAdapter(new Redis(process.env.REDIS_URL))
+const adapter = createRedisRealtimeAdapter(new Redis(process.env.REDIS_URL)) // Redis from ioredis
 r.ws('/ws', { channels: [projectChannel], adapter })
 ```
 Each instance subscribes only to the topics its own clients listen on, so traffic grows with
