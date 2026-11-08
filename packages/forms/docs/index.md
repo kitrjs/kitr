@@ -423,7 +423,7 @@ export function CancelLink() {
 
 ```tsx
 // app/components/invoices/new-invoice-panel.tsx
-import { toast } from '@kitr/theme'
+import { toast } from '@kitr/toast'
 import { Form, useSchemaForm } from '@kitr/forms'
 import { newInvoiceSchema } from '#app/validators/invoices'
 

@@ -68,6 +68,10 @@ export interface RedisPubSubClient {
   on(event: 'message', listener: (channel: string, message: string) => void): unknown
   /** A second connection with the same options, for subscriber mode. */
   duplicate(): RedisPubSubClient
+  /** ioredis: `'ready'` once connected and past its ready check. */
+  status?: string
+  /** ioredis emits `ready` when the connection can take commands. */
+  once?(event: 'ready', listener: () => void): unknown
   /** Close the connection. */
   quit(): Promise<unknown>
 }
@@ -106,6 +110,18 @@ export function createRedisRealtimeAdapter(
   const counts = new Map<string, number>()
   const ready = new Map<string, Promise<void>>()
 
+  // ioredis checks a new connection with INFO before it is ready. A SUBSCRIBE issued before then
+  // puts the client in subscriber mode first, the INFO is refused and the subscription is lost,
+  // so the first SUBSCRIBE waits for the connection to be ready.
+  let connected: Promise<void> | undefined
+  const whenReady = () => {
+    connected ??=
+      !subscriber.once || subscriber.status === undefined || subscriber.status === 'ready'
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => subscriber.once?.('ready', resolve))
+    return connected
+  }
+
   subscriber.on('message', (channel, message) => {
     if (!channel.startsWith(prefix)) return
     local.publish(channel.slice(prefix.length), message)
@@ -120,7 +136,9 @@ export function createRedisRealtimeAdapter(
       if (count === 1)
         ready.set(
           topic,
-          subscriber.subscribe(prefix + topic).then(() => undefined, report),
+          whenReady()
+            .then(() => subscriber.subscribe(prefix + topic))
+            .then(() => undefined, report),
         )
       // The caller confirms the subscription to its client after this resolves, so an event
       // published right after the confirmation is not lost to a SUBSCRIBE still in flight.

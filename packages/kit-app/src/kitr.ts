@@ -24,6 +24,7 @@ export default definePackage({
       'state',
       'tailwind',
       'theme',
+      'toast',
       'auth',
       'storage',
       'mocks',

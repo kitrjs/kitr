@@ -49,6 +49,7 @@
 "@kitr/tauri": minor
 "@kitr/testing": minor
 "@kitr/theme": minor
+"@kitr/toast": minor
 "@kitr/updater": minor
 "@kitr/uploads": minor
 "@kitr/vite": minor

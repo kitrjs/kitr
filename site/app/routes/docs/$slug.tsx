@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { DocBody, Toc } from '#app/components/doc-body'
-import { SectionList, Sidebar, useActiveHeading } from '#app/components/docs-nav'
+import { Reveal, SectionList, Sidebar, useActiveHeading } from '#app/components/docs-nav'
 import { Icon, icons } from '#app/components/icons'
 import { docsNav, loadPage } from '#app/lib/content'
 import { seo } from '#app/lib/seo'
@@ -48,9 +48,9 @@ function DocsPage() {
                   {item.title}
                 </Link>
                 {/* Below 1100px the "On this page" column is gone, so the sections sit here. */}
-                {item.slug === slug && (
+                <Reveal open={item.slug === slug}>
                   <SectionList toc={page.toc} active={active} className="narrow-only" />
-                )}
+                </Reveal>
               </div>
             ))}
           </div>

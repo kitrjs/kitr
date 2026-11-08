@@ -1,16 +1,16 @@
 ---
 title: Theme
-description: Light, dark and system themes with no flash on load, design tokens, toasts, and the components you copy into your app.
+description: Light, dark and system themes with no flash on load, design tokens, and the components you copy into your app.
 order: 1
 ---
 
 # Theme
 
-Users expect dark mode without a white flash on load. `@kitr/theme` gives you light, dark and system themes that remember the user's choice, design tokens as CSS variables, toasts, and the settings `kitr ui add` uses to copy components into your app. Toasts come from [sonner](https://sonner.emilkowal.ski), and components from [shadcn/ui](https://ui.shadcn.com)-compatible registries.
+Users expect dark mode without a white flash on load. `@kitr/theme` gives you light, dark and system themes that remember the user's choice, design tokens as CSS variables, and the settings `kitr ui add` uses to copy components into your app. Components come from [shadcn/ui](https://ui.shadcn.com)-compatible registries.
 
 It runs in the browser, and on the server during server rendering. For utility classes on top of the same tokens, add [tailwind](/packages/tailwind) as well; for a server-only project there is nothing to theme.
 
-This guide follows Acme's dashboard at `app.acme.com`: Ada adds a dark mode toggle, brands the colours, shows a toast when Grace saves an invoice, and copies in a few components.
+This guide follows Acme's dashboard at `app.acme.com`: Ada adds a dark mode toggle, brands the colours and copies in a few components. Toasts have their own package, [toast](/packages/toast).
 
 ## Install
 
@@ -67,8 +67,6 @@ export default defineConfig({
 | `attribute` | `'data-theme'` | The attribute set on `<html>` to `light` or `dark`. Pass the same value to `<ThemeScript>`. |
 | `colors.light` | none | `<meta name="theme-color">` while the light theme shows. Browsers and installed PWAs tint their chrome with it. |
 | `colors.dark` | none | The same, for the dark theme. |
-| `toaster.position` | `'bottom-right'` | Where toasts appear: `'top-right'`, `'top-center'`, `'bottom-right'` or `'bottom-center'`. |
-| `toaster.richColors` | `true` | Coloured success, error, info and warning toasts. |
 | `registry` | kitr's registry | Where `kitr ui add` and `kitr ui list` fetch components: a URL or a local directory. |
 | `componentsDir` | `app/components/ui` | Where `kitr ui add` writes components. |
 | `tokens.light`, `tokens.dark` | none | Typed slot for token overrides. Nothing reads it yet; override tokens in `app/styles/tokens.css` (see "Brand the colours"). |
@@ -530,102 +528,6 @@ export function Badge({
 
 With [tailwind](/packages/tailwind), use its `cn()` instead of `cx`, which also merges conflicting utility classes.
 
-## Show toasts
-
-`toast` shows a short message. Call it from anywhere: a component, an event handler or a package.
-
-```tsx
-// app/components/invoices/save-invoice-button.tsx
-import { toast, toastError } from '@kitr/theme'
-
-export function SaveInvoiceButton({ id }: { id: string }) {
-  async function save() {
-    try {
-      await fetch(`/api/invoices/${id}`, { method: 'PUT' })
-      toast.success(`Invoice ${id} saved`)
-    } catch (error) {
-      toastError(error)
-    }
-  }
-  return (
-    <button type="button" onClick={save}>
-      Save
-    </button>
-  )
-}
-```
-
-| Call | Shows |
-| --- | --- |
-| `toast(message, options?)` | A plain toast. `options` go to sonner, such as `{ description, duration }`. |
-| `toast.success(message)`, `.info()`, `.warning()`, `.error()` | A coloured toast of that kind. |
-| `toast.promise(promise, { loading, success, error })` | A loading toast that turns into success or error when the promise settles. Returns the promise. |
-| `toastError(error, fallback?)` | `toast.error` with the error's `message`, or `fallback` (default `'Something went wrong'`) when it has none. |
-
-`toast.promise` keeps the user informed during a slow save, and returns the same promise so you can still await it:
-
-```tsx
-// app/lib/invoices/send-invoice.ts
-import { toast } from '@kitr/theme'
-
-export function sendInvoice(id: string) {
-  return toast.promise(fetch(`/api/invoices/${id}/send`, { method: 'POST' }), {
-    loading: `Sending ${id} to grace@acme.com…`,
-    success: `Invoice ${id} sent`,
-    error: `Could not send ${id}`,
-  })
-}
-```
-
-Toasts are drawn by [sonner](https://sonner.emilkowal.ski), which is optional. Install it with the registry component:
-
-```sh
-kitr ui add sonner
-```
-
-Once `sonner` is installed, the theme provider loads it and mounts its `<Toaster />` on `document.body` after the first render, with `position` and `richColors` from `toaster` in `config/theme.ts`. You don't mount anything. The command also copies `app/components/ui/sonner.tsx`, a `Toaster` that follows the current theme; you only need it to render a toaster somewhere other than the provider's.
-
-Without sonner, every call goes to the console instead, so a package can call `toast` without making sonner a dependency:
-
-```ts
-import { toast, toastError } from '@kitr/theme'
-
-toast('Draft saved') // console.info('[toast] Draft saved')
-toast.success('Invoice inv_1 saved') // console.info('[toast:success] Invoice inv_1 saved')
-toast.warning('Invoice inv_2 is overdue') // console.warn('[toast:warning] Invoice inv_2 is overdue')
-toastError(new Error('Payment declined')) // console.error('[toast:error] Payment declined')
-```
-
-Calls made before sonner has loaded, such as during the first render, also go to the console.
-
-## Send toasts to another toast library
-
-`setToastImplementation` replaces what `toast` calls. Give it a function with `success`, `error`, `info`, `warning` and `promise` methods. The provider does this for sonner; do it yourself to route toasts to another library or to your own UI:
-
-```ts
-// app/providers/toast-provider.ts
-import { defineProvider } from 'kitr/app'
-import { setToastImplementation } from '@kitr/theme'
-import { notify } from '#app/components/notify'
-
-export default defineProvider({
-  name: 'toast',
-  boot() {
-    setToastImplementation(
-      Object.assign((message: string) => notify({ tone: 'neutral', message }), {
-        success: (message: string) => notify({ tone: 'success', message }),
-        error: (message: string) => notify({ tone: 'danger', message }),
-        info: (message: string) => notify({ tone: 'neutral', message }),
-        warning: (message: string) => notify({ tone: 'warning', message }),
-        promise: <T>(promise: Promise<T>) => promise,
-      }),
-    )
-  },
-})
-```
-
-`setToastImplementation(null)` goes back to the console fallback. If sonner is installed too, the theme provider sets sonner again when its toaster loads, so use one or the other.
-
 ## Add components
 
 `kitr ui add` copies components from a shadcn-compatible registry into `app/components/ui/`. The files are yours to edit; nothing is imported from a package at run time.
@@ -666,7 +568,6 @@ The components use the `--kitr-*` tokens and `cva`, so they follow the theme and
 | `input`, `label`, `select`, `textarea` | Form controls. |
 | `page-header` | Title, description and actions row for a page. |
 | `skeleton` | Loading placeholder. |
-| `sonner` | Toasts with sonner, themed by `@kitr/theme`. |
 | `theme-toggle` | Light and dark toggle using `useTheme`. |
 | `list-page` | A list route: page header, data table bound to search params, empty state. Writes a page, not a component. |
 | `sign-in-page` | A sign-in route using [forms](/packages/forms). Writes a page, not a component. |
@@ -863,35 +764,10 @@ export function prefersDark(dark: boolean) {
 }
 ```
 
-Toasts need no fake. Without sonner they log, so spy on the console, or install your own implementation and assert on it:
-
-```ts
-// app/lib/invoices/send-invoice.test.ts
-import { setToastImplementation, toastError } from '@kitr/theme'
-import { afterEach, expect, it, vi } from 'vitest'
-
-afterEach(() => setToastImplementation(null))
-
-it('shows the error message from a failed payment', () => {
-  const shown = Object.assign(vi.fn(), {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warning: vi.fn(),
-    promise: vi.fn(),
-  })
-  setToastImplementation(shown)
-
-  toastError(new Error('Payment declined'))
-
-  expect(shown.error).toHaveBeenCalledWith('Payment declined', undefined)
-})
-```
-
 ## Next steps
 
 - [API reference](/packages/theme/api): every export of `@kitr/theme`, `@kitr/theme/provider` and `@kitr/theme/server`.
 - [Tailwind](/packages/tailwind): the same tokens as utility classes, and `cn()`.
 - [Router](/packages/router): writes the `app/document.tsx` where `<ThemeScript />` and the stylesheet go.
-- [sonner](https://sonner.emilkowal.ski): toast options such as `description`, `action` and `duration`.
+- [Toast](/packages/toast): short messages like "Saved", which follow the theme.
 - [shadcn/ui](https://ui.shadcn.com/docs/registry): the registry format `kitr ui add` reads.

@@ -744,6 +744,10 @@ interface RedisPubSubClient {
   on(event: 'message', listener: (channel: string, message: string) => void): unknown;
   /** A second connection with the same options, for subscriber mode. */
   duplicate(): RedisPubSubClient;
+  /** ioredis: `'ready'` once connected and past its ready check. */
+  status?: string;
+  /** ioredis emits `ready` when the connection can take commands. */
+  once?(event: 'ready', listener: () => void): unknown;
   /** Close the connection. */
   quit(): Promise<unknown>;
 }

@@ -39,6 +39,38 @@ describe('memory adapter', () => {
   })
 })
 
+describe('redis adapter', () => {
+  it('waits for the subscriber connection to be ready before its first SUBSCRIBE', async () => {
+    // ioredis refuses its own ready check once a SUBSCRIBE has gone out, and drops the subscription.
+    const calls: string[] = []
+    let ready: () => void = () => {}
+    const subscriber: any = {
+      status: 'connecting',
+      once: (_: 'ready', l: () => void) => {
+        ready = l
+      },
+      on: () => {},
+      subscribe: async (channel: string) => calls.push(`subscribe ${channel}`),
+      unsubscribe: async () => {},
+      quit: async () => {},
+    }
+    const adapter = createRedisRealtimeAdapter(
+      { ...subscriber, duplicate: () => subscriber },
+      {
+        subscriber,
+        prefix: 'p:',
+      },
+    )
+    const subscribed = adapter.subscribe('board', () => {})
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(calls).toEqual([])
+    subscriber.status = 'ready'
+    ready()
+    await subscribed
+    expect(calls).toEqual(['subscribe p:board'])
+  })
+})
+
 describe('two WebSocket instances over Redis', () => {
   const prefix = uniquePrefix('rt')
   const adapters = [

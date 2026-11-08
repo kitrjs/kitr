@@ -6,7 +6,7 @@ import type { Page } from '#app/lib/content'
 import { upstream } from '#app/lib/upstream'
 import { Command } from './command'
 import { DocBody } from './doc-body'
-import { SectionList, Sidebar, useActiveHeading } from './docs-nav'
+import { Reveal, SectionList, Sidebar, useActiveHeading } from './docs-nav'
 import { Icon, icons } from './icons'
 import { LiveExample } from './live-example'
 import { CategoryBadge, RunsOnBadge, Tile } from './package-bits'
@@ -292,7 +292,9 @@ function PackageNav({
                 {p.title}
               </Link>
             )}
-            {current === p.slug && <SectionList toc={toc} active={active} />}
+            <Reveal open={current === p.slug}>
+              <SectionList toc={toc} active={active} />
+            </Reveal>
           </div>
         ))}
       </div>

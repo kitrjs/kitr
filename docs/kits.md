@@ -18,7 +18,7 @@ Every flag is listed under [Create a project](cli.md#create-a-project).
 | Kit | Platforms | Packages | Components |
 | --- | --- | --- | --- |
 | `blank` | none | none | none |
-| `app` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
+| `app` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing, devtools | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit without mocks, plus seo, actions, api, realtime | the app kit's eleven |
 | `server` | `api: server()` | logger, api, db, realtime, testing. No React. | none |
 
@@ -48,7 +48,7 @@ The presets are a base kit plus a small working app. Each one is also in [`examp
 | --- | --- | --- | --- |
 | `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, analytics, monitoring | sign-in, a guarded app shell, a projects page, an API test |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools | a prerendered site: home, pricing, a blog, a newsletter form, a test |
-| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, storage, seo, api, realtime, testing, devtools | a chat room with rooms in the URL, a test |
+| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing, devtools | a chat room with rooms in the URL, a test |
 | `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform | the app kit in Electron, with native dialogs |
 | `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform | the app kit in Tauri, with typed Rust commands |
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform | the app kit as an installable PWA and a Capacitor app |

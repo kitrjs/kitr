@@ -78,6 +78,7 @@
     "@kitr/tauri": "workspace:*",
     "@kitr/platform": "workspace:*",
     "@kitr/theme": "workspace:*",
+    "@kitr/toast": "workspace:*",
     "@kitr/seo": "workspace:*",
     "@kitr/realtime": "workspace:*",
     "@kitr/cache": "workspace:*",
