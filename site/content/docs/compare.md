@@ -29,7 +29,7 @@ kitr borrows a lot from Adonis: config-file wiring, providers, a container, cont
 
 ## Laravel
 
-Laravel has an answer for everything: queues, mail, auth, a command line, hosting. kitr shares the idea that conventions beat wiring libraries by hand, but it is TypeScript, younger, and some packages are previews. Pick Laravel for a proven PHP stack. Pick kitr for TypeScript end to end.
+Laravel has an answer for everything: queues, mail, auth, a command line, hosting. kitr shares the idea that conventions beat wiring libraries by hand, but it is TypeScript and much younger. Pick Laravel for a proven PHP stack. Pick kitr for TypeScript end to end.
 
 ## At a glance
 
