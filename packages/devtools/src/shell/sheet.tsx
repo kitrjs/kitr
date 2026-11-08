@@ -93,7 +93,9 @@ export function Sheet({
       }
     >
       <div
-        style={{ flex: 'none', touchAction: 'pan-x' }}
+        // touch-action none here, pan-x on the tab strip: Chromium otherwise cancels a vertical touch
+        // drag that starts on the handle or the header, and the sheet never sees it move.
+        style={{ flex: 'none', touchAction: 'none' }}
         onPointerDown={(e) => {
           velocity.current = { y: e.clientY, t: e.timeStamp, v: 0 }
           onDown(e)

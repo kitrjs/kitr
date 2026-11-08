@@ -21,13 +21,13 @@ export const styles = `
 .kitr-dt-panel{left:0;right:0;bottom:0;height:var(--kitr-dt-height,45vh);border-top:1px solid var(--dt-border)}
 .kitr-dt-panel[data-dock="right"]{left:auto;top:0;width:var(--kitr-dt-width,420px);height:auto;border-top:0;border-left:1px solid var(--dt-border)}
 .kitr-dt-sheet{left:0;right:0;bottom:0;height:var(--kitr-dt-height,50dvh);border:1px solid var(--dt-border);border-bottom:0;border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom);transition:height .2s ease}
-.kitr-dt-handle{flex:none;width:36px;height:5px;border-radius:99px;background:var(--dt-border);margin:8px auto 2px;touch-action:none;cursor:grab}
+.kitr-dt-handle{flex:none;height:22px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}.kitr-dt-handle::before{content:'';width:36px;height:5px;border-radius:99px;background:var(--dt-border)}
 .kitr-dt-resize{position:absolute;z-index:1;background:transparent;touch-action:none}
 .kitr-dt-resize:hover,.kitr-dt-resize:active{background:var(--dt-accent)}
 .kitr-dt-resize-y{left:0;right:0;top:-2px;height:5px;cursor:ns-resize}
 .kitr-dt-resize-x{top:0;bottom:0;left:-2px;width:5px;cursor:ew-resize}
 .kitr-dt-header{display:flex;align-items:center;gap:4px;padding:4px 8px;border-bottom:1px solid var(--dt-border);background:var(--dt-bg);flex:none}
-.kitr-dt-tabs{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:var(--f);mask-image:var(--f)}
+.kitr-dt-tabs{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;touch-action:pan-x;scrollbar-width:none;-webkit-mask-image:var(--f);mask-image:var(--f)}
 .kitr-dt-tabs::-webkit-scrollbar,.kitr-dt-chips::-webkit-scrollbar{display:none}
 .kitr-dt-tab{background:transparent;border:0;color:var(--dt-muted);padding:0 10px;min-height:var(--dt-hit);border-radius:var(--dt-radius);cursor:pointer;font:inherit;white-space:nowrap;display:flex;gap:6px;align-items:center;flex:none}
 .kitr-dt-tab:hover{color:var(--dt-fg);background:var(--dt-surface)}
