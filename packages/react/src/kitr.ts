@@ -20,11 +20,11 @@ export default definePackage({
     ctx.tsconfig.set('jsx', 'react-jsx')
     ctx.write(
       'app/env.ts',
-      `import { createEnv, env as e } from 'kitr/env'\n\n/** Validated at startup. Public vars (VITE_*) ship to the browser; server vars throw if read there. */\nexport const env = createEnv({\n  public: {\n    VITE_APP_NAME: e.string({ default: '${ctx.pkg.name ?? 'app'}' }),\n  },\n  server: {},\n})\n`,
+      `import { createEnv, env as e } from '@kitr/kitr/env'\n\n/** Validated at startup. Public vars (VITE_*) ship to the browser; server vars throw if read there. */\nexport const env = createEnv({\n  public: {\n    VITE_APP_NAME: e.string({ default: '${ctx.pkg.name ?? 'app'}' }),\n  },\n  server: {},\n})\n`,
     )
     ctx.write(
       'app/app.ts',
-      `import { createApp, loadRc } from 'kitr/app'\nimport { config } from 'virtual:kitr/config'\nimport { providers } from 'virtual:kitr/providers'\nimport { env } from './env'\n\n/** One app object: providers from kitrrc.ts, config from config/*.ts, both as static imports. */\nexport const app = createApp({ ...loadRc({ providers }, config), env })\n`,
+      `import { createApp, loadRc } from '@kitr/kitr/app'\nimport { config } from 'virtual:kitr/config'\nimport { providers } from 'virtual:kitr/providers'\nimport { env } from './env'\n\n/** One app object: providers from kitrrc.ts, config from config/*.ts, both as static imports. */\nexport const app = createApp({ ...loadRc({ providers }, config), env })\n`,
     )
   },
   remove(ctx) {

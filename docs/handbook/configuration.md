@@ -22,7 +22,7 @@ kitr config query staleTime 60000
 ## kitrrc.ts
 
 ```ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 
 export default defineKitrConfig({
   packages: ['@kitr/router', '@kitr/query', '@kitr/http', '@kitr/auth'],
@@ -70,7 +70,7 @@ Write your own with `kitr make:provider analytics`:
 
 ```ts
 // app/providers/analytics-provider.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 
 export default defineProvider({
   name: 'analytics',
@@ -86,7 +86,7 @@ The command also adds `() => import('#app/providers/analytics-provider')` to `pr
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 export const env = createEnv({
   public: {

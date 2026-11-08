@@ -507,7 +507,7 @@ Outside components, read the service from the app's container:
 
 ```ts
 // app/lib/orders/after-place.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useNative } from '@kitr/native'
 
 export async function afterOrderPlaced(app: KitrApp, orderId: string) {
@@ -769,7 +769,7 @@ Register a driver from a provider's `register()`, so it is in place before the s
 // app/providers/native-drivers-provider.ts
 import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import type { HapticKind, HapticsDriver } from '@kitr/native'
 
 const impacts = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy }

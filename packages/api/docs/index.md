@@ -48,7 +48,7 @@ The generated routes file:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import HealthController from '#server/controllers/health-controller'
 
@@ -122,7 +122,7 @@ A controller for orders. Each method receives the request context and returns th
 ```ts
 // server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 
 export interface Order {
   id: string
@@ -152,7 +152,7 @@ Register it in the routes file:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import HealthController from '#server/controllers/health-controller'
 import OrdersController from '#server/controllers/orders-controller'
@@ -186,7 +186,7 @@ One method per HTTP verb, each taking a path, a handler and options, and chainin
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import InvoicesController from '#server/controllers/invoices-controller'
 
@@ -223,7 +223,7 @@ Path parameters start with `:` and arrive as strings in `ctx.params`. A trailing
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import OrdersController from '#server/controllers/orders-controller'
 import TeamsController from '#server/controllers/teams-controller'
@@ -266,7 +266,7 @@ Narrow it with options:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import InvoicesController from '#server/controllers/invoices-controller'
 import ProjectsController from '#server/controllers/projects-controller'
@@ -295,7 +295,7 @@ Pass a function that imports the controller. It loads on the first request, whic
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 
 export const routes = defineRoutes([api], (router) =>
@@ -320,7 +320,7 @@ A controller is a plain class with a default export; `kitr make:controller order
 ```ts
 // server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { z } from 'zod'
 
 const createOrder = z.object({
@@ -453,7 +453,7 @@ For function handlers, pass `validate` in the route options. `params` and `query
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import { z } from 'zod'
 
@@ -566,12 +566,12 @@ Returning `undefined` or `null` answers `204` (or the status you set). You can a
 
 ## Return errors
 
-Throw a `KitrError` from `kitr/app` to answer with an error. The status follows the code:
+Throw a `KitrError` from `@kitr/kitr/app` to answer with an error. The status follows the code:
 
 ```ts
 // server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 
 export default class InvoicesController {
   async pay({ params }: HttpContext<{ id: string }>) {
@@ -612,7 +612,7 @@ export const audit = defineMiddleware(async (ctx, next) => {
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import InvitesController from '#server/controllers/invites-controller'
 import { audit } from '#server/middleware/audit'
@@ -635,7 +635,7 @@ Pass data to the handler through `ctx.locals`, and stop a request by throwing a 
 ```ts
 // server/middleware/require-team.ts
 import { defineMiddleware } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 
 export const requireTeam = defineMiddleware(async (ctx, next) => {
   const teamId = ctx.request.header('x-acme-team')
@@ -654,7 +654,7 @@ Middleware runs group first, then route, then the handler, and back out in rever
 ```ts
 // server/routes.ts
 import { cors } from '@kitr/api'
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import OrdersController from '#server/controllers/orders-controller'
 
@@ -691,7 +691,7 @@ kitr registers the `OPTIONS` route for every route behind `cors()`.
 ```ts
 // server/routes.ts
 import { rateLimit } from '@kitr/api'
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import InvitesController from '#server/controllers/invites-controller'
 
@@ -747,7 +747,7 @@ Use `inviteLimit` in the route's `middleware` list. The store needs [ioredis](ht
 ```ts
 // server/routes.ts
 import { requireJson } from '@kitr/api'
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import OrdersController from '#server/controllers/orders-controller'
 
@@ -871,7 +871,7 @@ Failed calls reject with a `KitrError` that carries the server's code, status an
 
 ```ts
 // app/lib/orders/create.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { api } from '#app/api/client'
 
 try {
@@ -978,7 +978,7 @@ Describe operations with `meta`:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import OrdersController from '#server/controllers/orders-controller'
 
@@ -1033,7 +1033,7 @@ Operations without `meta.tags` are tagged with the first part of the route name.
 ```ts
 // server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { z } from 'zod'
 
 const createOrders = z.object({ name: z.string().min(2) })

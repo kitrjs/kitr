@@ -331,7 +331,7 @@ Expand `{1}` to see `items: 1`. The fourth argument is the level, `'info'` by de
 ```ts
 // app/lib/orders/checkout.ts
 import { getDevtools } from '@kitr/devtools'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function reportCheckoutProblem(app: KitrApp, orderId: string, reason: string) {
   getDevtools(app)?.log('orders', `checkout blocked for ${orderId}`, { reason }, 'warn')
@@ -343,7 +343,7 @@ Logging is cheap enough to time slow work. Here the checkout logs how long the o
 ```ts
 // app/lib/orders/place-order.ts
 import { getDevtools } from '@kitr/devtools'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export async function placeOrder(app: KitrApp, orderId: string) {
   const started = performance.now()
@@ -371,7 +371,7 @@ To split a long log into stretches, drop a divider with `mark()`. The router doe
 ```ts
 // app/lib/orders/checkout.ts
 import { getDevtools } from '@kitr/devtools'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function startCheckout(app: KitrApp, orderId: string) {
   getDevtools(app)?.mark(`checkout ${orderId}`)
@@ -389,7 +389,7 @@ To check whether devtools is active, for example to skip building a costly debug
 ```ts
 // app/lib/orders/debug-summary.ts
 import { getDevtools } from '@kitr/devtools'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { cart } from './cart'
 
 export function logCartSummary(app: KitrApp) {
@@ -423,7 +423,7 @@ A provider contributes panels through a `devtools(app)` method that returns them
 
 ```ts
 // app/providers/orders.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 
 export default defineProvider({
   name: 'orders',
@@ -435,7 +435,7 @@ Register the provider in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 
 export default defineKitrConfig({
   // ...
@@ -600,7 +600,7 @@ export const cart = {
 
 ```ts
 // app/providers/orders.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import { getDevtools } from '@kitr/devtools'
 import { cart } from '#app/lib/orders/cart'
 
@@ -679,7 +679,7 @@ The hub is bound as `devtools` in the container while devtools is active. Beside
 ```ts
 // app/lib/orders/debug.ts
 import { getDevtools } from '@kitr/devtools'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function ordersLog(app: KitrApp) {
   const hub = getDevtools(app)
@@ -709,7 +709,7 @@ For a contributed panel that must re-render on hub changes, subscribe like this:
 // app/providers/orders-devtools.tsx
 import { getDevtools } from '@kitr/devtools'
 import { useSyncExternalStore } from 'react'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 
 export function OrdersErrors({ app }: { app: KitrApp }) {
   const hub = getDevtools(app)!
@@ -784,7 +784,7 @@ To check that a provider contributes its panel, boot the real devtools provider 
 
 ```ts
 // app/providers/orders.test.ts
-import { createApp, getDevtools } from 'kitr/app'
+import { createApp, getDevtools } from '@kitr/kitr/app'
 import { devtoolsProvider } from '@kitr/devtools/provider'
 import { expect, it } from 'vitest'
 import { cart } from '#app/lib/orders/cart'
@@ -867,7 +867,7 @@ Return it from any provider's `devtools()` method:
 
 ```ts
 // app/providers/invoices.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 
 export default defineProvider({
   name: 'invoices',

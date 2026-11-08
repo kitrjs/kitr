@@ -498,7 +498,7 @@ With no options it returns `{ 'cache-control': 'public' }`.
 
 ```ts
 // app/seo.test.ts
-import { createApp } from 'kitr/app'
+import { createApp } from '@kitr/kitr/app'
 import { robotsTxt, seo } from '@kitr/seo'
 import { describe, expect, it } from 'vitest'
 import seoConfig from '#config/seo'

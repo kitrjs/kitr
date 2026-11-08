@@ -26,7 +26,7 @@ A query has a **key**, its name in the cache, and a **fetch** function:
 
 ```ts
 // app/features/orders/queries.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { queryFrom } from '@kitr/query'
 
 export interface Order {

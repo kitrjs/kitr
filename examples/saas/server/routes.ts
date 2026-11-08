@@ -1,4 +1,4 @@
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { sessionMiddleware } from '@kitr/auth/server'
 import api from '@kitr/api/routes'
 import { auth } from '#server/auth'

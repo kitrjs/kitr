@@ -207,7 +207,7 @@ Three routes are enough: start a session, read it, end it. Put them in a control
 // server/controllers/session-controller.ts
 import { eq } from 'drizzle-orm'
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { currentUser } from '@kitr/auth/server'
 import { useDb } from '@kitr/db'
 import { z } from 'zod'
@@ -249,7 +249,7 @@ Register the routes, and read the cookie on every API request with `authMiddlewa
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import { authMiddleware, can } from '@kitr/auth/server'
 import { abilities, type User } from '#app/abilities'
@@ -330,7 +330,7 @@ The browser side of [Auth](/packages/auth) asks an adapter for the session. With
 ```ts
 // config/auth.ts
 import { createSession, customAdapter, defineConfig } from '@kitr/auth'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { abilities, type User } from '#app/abilities'
 
 type Credentials = { email: string; password: string }
@@ -510,7 +510,7 @@ Mutations check permissions the same way. Load the row, then ask the same `abili
 // app/actions/projects/rename.ts
 import { eq } from 'drizzle-orm'
 import { defineMutation, requireSession } from '@kitr/actions'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'

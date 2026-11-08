@@ -203,7 +203,7 @@ Outside components, `useFlags(app)` from `@kitr/flags` returns the service. Read
 
 ```ts
 // app/lib/invoices/validate-upload.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useFlags } from '@kitr/flags'
 import type { flags } from '#app/flags'
 

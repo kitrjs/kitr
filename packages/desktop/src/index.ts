@@ -235,7 +235,7 @@ export default defineConfig({
   preload: {
     root: __dirname,
     // A sandboxed preload can only require electron, so kitr is bundled into it.
-    plugins: [externalizeDepsPlugin({ exclude: ['kitr', '@kitr/desktop'] })],
+    plugins: [externalizeDepsPlugin({ exclude: ['@kitr/kitr', '@kitr/desktop'] })],
     // A sandboxed preload script cannot be an ES module, so it is built as CommonJS.
     build: {
       lib: { entry: 'preload.ts' },

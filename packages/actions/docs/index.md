@@ -301,7 +301,7 @@ export const timing = createMiddleware({ type: 'function' }).server(async ({ nex
 Throw a `KitrError` and the caller receives the same code, status, message and field errors:
 
 ```ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 
 handler: async ({ input }) => {
   const project = await db.projects.find(input.id)
@@ -382,7 +382,7 @@ kitr types
 
 ```ts
 // test/actions/rename.test.ts
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { describe, expect, it } from 'vitest'
 import { renameProject } from '#app/actions/projects/rename'
 

@@ -1,6 +1,6 @@
 import type { Session } from '@kitr/auth'
 import { dehydrate, hydrate, type DehydratedState } from '@kitr/query'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'

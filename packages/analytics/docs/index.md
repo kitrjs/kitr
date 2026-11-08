@@ -302,7 +302,7 @@ Outside React, `app.container.use('analytics')` returns the instance the compone
 ```ts
 // app/lib/projects/create-project.ts
 import type { Analytics } from '@kitr/analytics'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import type { AppEvents } from '#app/analytics'
 
 export async function createProject(app: KitrApp, name: string) {
@@ -424,7 +424,7 @@ Declare the key in `app/env.ts`:
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 export const env = createEnv({
   public: {

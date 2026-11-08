@@ -222,7 +222,7 @@ Outside a request, such as a scheduled [job](/packages/jobs), pass the root app 
 ```ts
 // server/services/revenue.ts
 import { eq, sum } from 'drizzle-orm'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import type { AppDb } from '#config/db'
 import { orders } from '#server/db/schema'
@@ -267,7 +267,7 @@ The provider resolves `connect` during `app.boot()`, so `useDb` is synchronous a
 
 ```ts
 // app/providers/project_stats.ts
-import { defineProvider } from 'kitr/app'
+import { defineProvider } from '@kitr/kitr/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
@@ -398,7 +398,7 @@ A missing `process.env.DATABASE_URL!` crashes deep inside the driver. Declare it
 
 ```ts
 // app/env.ts
-import { createEnv, env as e } from 'kitr/env'
+import { createEnv, env as e } from '@kitr/kitr/env'
 
 export const env = createEnv({
   public: {},
@@ -525,7 +525,7 @@ Transactions belong to your ORM; call its API on the client from `useDb`:
 ```ts
 // server/services/checkout.ts
 import { eq } from 'drizzle-orm'
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import type { AppDb } from '#config/db'
 import { orders, projects } from '#server/db/schema'

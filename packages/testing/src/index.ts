@@ -80,5 +80,5 @@ export function createTestClient(
   }
 }
 
-/** Re-exported from `kitr/app`: creates an app without booting it, for tests that boot it themselves. */
+/** Re-exported from `@kitr/kitr/app`: creates an app without booting it, for tests that boot it themselves. */
 export { createApp }

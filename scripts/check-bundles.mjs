@@ -121,7 +121,7 @@ const codegen = new Set([
   '@kitr/tauri',
   '@kitr/mobile',
   '@kitr/server',
-  'kitr',
+  '@kitr/kitr',
 ])
 const defaultBudget = 12 * 1024
 const budgets = {

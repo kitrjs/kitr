@@ -1,4 +1,4 @@
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 import { tauri } from '@kitr/tauri'
 

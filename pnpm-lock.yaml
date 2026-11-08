@@ -83,6 +83,9 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/query':
         specifier: workspace:*
         version: link:../../packages/query
@@ -119,9 +122,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -195,6 +195,9 @@ importers:
       '@kitr/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -210,9 +213,6 @@ importers:
       h3:
         specifier: ^2.0.8
         version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       srvx:
         specifier: ^1.0.8
         version: 1.0.8
@@ -241,7 +241,7 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../../packages/core
-      kitr:
+      '@kitr/kitr':
         specifier: workspace:*
         version: link:../../packages/kitr
     devDependencies:
@@ -278,6 +278,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
@@ -332,9 +335,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -441,6 +441,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
@@ -507,9 +510,6 @@ importers:
       electron-updater:
         specifier: ^6.8.11
         version: 6.8.11
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -646,6 +646,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/mobile':
         specifier: workspace:*
         version: link:../../packages/mobile
@@ -715,9 +718,6 @@ importers:
       electron-updater:
         specifier: ^6.8.11
         version: 6.8.11
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -836,6 +836,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -905,9 +908,6 @@ importers:
       h3:
         specifier: ^2.0.8
         version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -1062,6 +1062,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/mobile':
         specifier: workspace:*
         version: link:../../packages/mobile
@@ -1122,9 +1125,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -1222,6 +1222,9 @@ importers:
       '@kitr/forms':
         specifier: workspace:*
         version: link:../../packages/forms
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -1282,9 +1285,6 @@ importers:
       h3:
         specifier: ^2.0.8
         version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       partysocket:
         specifier: ^1.3.0
         version: 1.3.0(react@19.3.1)
@@ -1391,6 +1391,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -1463,9 +1466,6 @@ importers:
       h3:
         specifier: ^2.0.8
         version: 2.0.8(crossws@0.4.17(srvx@1.0.8))
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -1572,6 +1572,9 @@ importers:
       '@kitr/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -1626,9 +1629,6 @@ importers:
       i18next:
         specifier: ^27.0.0
         version: 27.0.0(typescript@5.9.3)
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -1732,6 +1732,9 @@ importers:
       '@kitr/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../../packages/kitr
       '@kitr/mocks':
         specifier: workspace:*
         version: link:../../packages/mocks
@@ -1831,9 +1834,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      kitr:
-        specifier: workspace:*
-        version: link:../../packages/kitr
       ky:
         specifier: ^2.2.0
         version: 2.2.0
@@ -3772,6 +3772,9 @@ importers:
       '@kitr/forms':
         specifier: workspace:*
         version: link:../packages/forms
+      '@kitr/kitr':
+        specifier: workspace:*
+        version: link:../packages/kitr
       '@kitr/router':
         specifier: workspace:*
         version: link:../packages/router
@@ -3793,9 +3796,6 @@ importers:
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
-      kitr:
-        specifier: workspace:*
-        version: link:../packages/kitr
       react:
         specifier: ^19.3.1
         version: 19.3.1

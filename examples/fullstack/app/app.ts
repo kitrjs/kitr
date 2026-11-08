@@ -1,4 +1,4 @@
-import { createApp, loadRc } from 'kitr/app'
+import { createApp, loadRc } from '@kitr/kitr/app'
 import { config } from 'virtual:kitr/config'
 import { providers } from 'virtual:kitr/providers'
 import { env } from './env'

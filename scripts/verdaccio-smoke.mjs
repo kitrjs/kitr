@@ -106,7 +106,7 @@ const published = workspace.filter((p) => !p.json.private)
 const privateNames = new Set(workspace.filter((p) => p.json.private).map((p) => p.json.name))
 const workspaceNames = new Set(workspace.map((p) => p.json.name))
 
-const umbrella = workspace.find((p) => p.json.name === 'kitr')
+const umbrella = workspace.find((p) => p.json.name === '@kitr/kitr')
 if (!umbrella) throw new Error('packages/kitr not found')
 for (const p of published) {
   if (!existsSync(join(p.dir, 'dist')))
@@ -246,7 +246,7 @@ async function checkResolvable() {
     return meta?.versions?.[version]
   }
   // Peers of the umbrella, as published (workspace:* became the smoke version).
-  const packed = await manifest('kitr')
+  const packed = await manifest('@kitr/kitr')
   const peers = packed?.peerDependencies ?? {}
   console.log(`kitr@${version} has ${Object.keys(peers).length} peer dependencies`)
   const skipped = []
@@ -268,7 +268,7 @@ async function checkResolvable() {
     published.map(async (p) => {
       const m = await manifest(p.json.name)
       for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
-        if (p.json.name === 'kitr' && field === 'peerDependencies') continue
+        if (p.json.name === '@kitr/kitr' && field === 'peerDependencies') continue
         for (const [name, range] of Object.entries(m?.[field] ?? {})) {
           if (privateNames.has(name)) {
             failures.push(`${p.json.name} ${field}: ${name} is private and cannot be installed`)

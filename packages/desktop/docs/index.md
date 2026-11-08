@@ -91,7 +91,7 @@ kitr new acme-orders --kit desktop
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { desktop } from '@kitr/desktop'
 import { web } from '@kitr/web'
 

@@ -26,7 +26,7 @@ Every page is a link on the chain:
 
 ```ts
 // app/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 

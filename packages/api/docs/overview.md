@@ -27,7 +27,7 @@ Write a controller. Each method receives the request context and returns the res
 ```ts
 // server/controllers/orders_controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 
 const orders = new Map([['ord_1042', { id: 'ord_1042', customer: 'Ada', total: 129, status: 'open' }]])
 
@@ -48,7 +48,7 @@ Register it as a resource:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import OrdersController from '#server/controllers/orders_controller'
 

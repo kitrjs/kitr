@@ -235,7 +235,7 @@ describe('kitr upgrade', () => {
     // The first pinned set: kitr 0.0.1 with an older minor of the libraries.
     project(
       pin({
-        kitr: '^0.0.1',
+        '@kitr/kitr': '^0.0.1',
         '@kitr/query': '^0.0.1',
         '@kitr/forms': '^0.0.2',
         '@tanstack/react-query': '^5.0.0',
@@ -246,11 +246,11 @@ describe('kitr upgrade', () => {
     const run = await kitr(dir, 'upgrade', '--to', '0.7.0', '--no-install')
     expect(run.code).toBeUndefined()
     expect(run.out).toMatch(/Upgrading to kitr 0\.7\.0/)
-    expect(run.out).toMatch(/kitr: \^0\.0\.1 → \^0\.7\.0/)
+    expect(run.out).toMatch(/@kitr\/kitr: \^0\.0\.1 → \^0\.7\.0/)
     expect(run.out).toMatch(/@tanstack\/react-query: \^5\.0\.0 →/)
     const after = pkg(dir)
     // Second pinned set: everything kitr is on 0.7.0, the tested upstream version is in.
-    expect(after.dependencies.kitr).toBe('^0.7.0')
+    expect(after.dependencies['@kitr/kitr']).toBe('^0.7.0')
     expect(after.dependencies['@kitr/query']).toBe('^0.7.0')
     expect(after.dependencies['@kitr/forms']).toBe('^0.7.0')
     expect(after.dependencies['@tanstack/react-query']).not.toBe('^5.0.0')
@@ -278,10 +278,10 @@ describe('kitr upgrade', () => {
   })
 
   it('--dry-run reports and writes nothing, and an up to date project says so', async () => {
-    const before = pin({ kitr: '^0.0.1' })
+    const before = pin({ '@kitr/kitr': '^0.0.1' })
     project(before)
     const dry = await kitr(dir, 'upgrade', '--to', '0.7.0', '--dry-run')
-    expect(dry.out).toMatch(/kitr: \^0\.0\.1 → \^0\.7\.0/)
+    expect(dry.out).toMatch(/@kitr\/kitr: \^0\.0\.1 → \^0\.7\.0/)
     expect(read(dir, 'package.json')).toBe(before)
     await kitr(dir, 'upgrade', '--to', '0.7.0', '--no-install')
     const again = await kitr(dir, 'upgrade', '--to', '0.7.0', '--no-install')

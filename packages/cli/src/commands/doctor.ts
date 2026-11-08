@@ -34,8 +34,12 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
       message: 'No kitrrc.ts found',
       fix: 'Run `kitr new` in an empty folder, or create kitrrc.ts with defineKitrConfig({ packages: [], providers: [] })',
     })
-  if (!('kitr' in deps))
-    out.push({ level: 'error', message: '`kitr` is not a dependency', fix: `${ctx.pm} add kitr` })
+  if (!('@kitr/kitr' in deps))
+    out.push({
+      level: 'error',
+      message: '`@kitr/kitr` is not a dependency',
+      fix: `${ctx.pm} add @kitr/kitr`,
+    })
 
   // Packages listed in kitrrc.ts must be installed, and installed @kitr/* packages should be listed.
   for (const name of rc.packages) {

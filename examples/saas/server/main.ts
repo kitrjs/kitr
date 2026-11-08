@@ -1,4 +1,4 @@
-import { loadRc } from 'kitr/app'
+import { loadRc } from '@kitr/kitr/app'
 import { createServer } from '@kitr/server'
 import { mailPreview } from '@kitr/mail'
 import { resetPasswordMail, verifyEmailMail } from './mail/auth'

@@ -73,7 +73,7 @@ A phone app has no cookie jar it can rely on across restarts, so it signs in wit
 ```ts
 // acme-billing-api/server/controllers/session-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { requireUser } from '@kitr/auth/server'
 import { z } from 'zod'
 import { type ApiUser, signInWith } from '#server/auth'
@@ -181,7 +181,7 @@ Put the API's endpoints in one file as queries and mutations. Pages and loaders 
 
 ```ts
 // app/queries/invoices.ts
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { app } from '#app/app'
@@ -232,7 +232,7 @@ On a phone, opening an invoice pushes it over the list. The list stays mounted u
 
 ```ts
 // app/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
 import { invoiceQuery, invoicesQuery } from '#app/queries/invoices'

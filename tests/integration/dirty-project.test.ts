@@ -10,7 +10,7 @@ import { bin, copyExample, kitr, linkPackages, remove, run, snapshot } from './h
  */
 
 /** A kitrrc.ts as a person leaves it after a few months: tabs, double quotes, semicolons. */
-const dirtyRc = `import { defineKitrConfig } from "kitr/app";
+const dirtyRc = `import { defineKitrConfig } from "@kitr/kitr/app";
 import { server as apiServer } from "@kitr/server";
 import { web as webPlatform } from "@kitr/web";
 

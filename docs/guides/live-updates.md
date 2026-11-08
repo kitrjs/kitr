@@ -94,7 +94,7 @@ Add the channel to the socket link on the server route table:
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { ordersChannel } from '#app/channels/orders'
@@ -129,7 +129,7 @@ export const server = createServer({ providers: rc.providers, config, routes })
 ```ts
 // server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { type Order, ordersChannel } from '#app/channels/orders'
 
 const orders = new Map<string, Order>([
@@ -247,7 +247,7 @@ Anyone who can open a WebSocket to your server could subscribe to any team's ord
 ```ts
 // server/routes.ts
 // ...
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { userFromSession } from '#server/sessions'
 
 export const routes = defineRoutes([api, realtime], (router) =>

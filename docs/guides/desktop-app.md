@@ -75,7 +75,7 @@ A desktop window is wide enough for the list and the selected invoice side by si
 
 ```ts
 // app/routes.ts
-import { defineRoutes } from 'kitr/app'
+import { defineRoutes } from '@kitr/kitr/app'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
 import { invoiceQuery, invoicesQuery } from '#app/queries/invoices'

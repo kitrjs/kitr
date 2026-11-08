@@ -27,7 +27,7 @@ Describe the endpoint once:
 ```ts
 // app/features/orders/queries.ts
 import { app } from '#app/app'
-import { createKeys } from 'kitr/app'
+import { createKeys } from '@kitr/kitr/app'
 import { httpQuery } from '@kitr/http'
 import { queryFrom } from '@kitr/query'
 

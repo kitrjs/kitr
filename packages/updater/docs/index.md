@@ -64,7 +64,7 @@ For the browser to have something to update, turn on the service worker in the w
 
 ```ts
 // kitrrc.ts
-import { defineKitrConfig } from 'kitr/app'
+import { defineKitrConfig } from '@kitr/kitr/app'
 import { web } from '@kitr/web'
 
 export default defineKitrConfig({
@@ -298,7 +298,7 @@ Outside components, read the service from the app's container with `useUpdater(a
 
 ```ts
 // app/lib/settings/updates-on-focus.ts
-import type { KitrApp } from 'kitr/app'
+import type { KitrApp } from '@kitr/kitr/app'
 import { useUpdater } from '@kitr/updater'
 
 export function checkWhenFocused(app: KitrApp) {

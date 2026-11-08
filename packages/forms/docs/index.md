@@ -338,7 +338,7 @@ For a rule the schema cannot check, such as "this customer exists", throw `KitrE
 ```ts
 // app/actions/invoices/create_invoice.ts
 import { defineMutation } from '@kitr/actions'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { newInvoiceSchema } from '#app/validators/invoices'
 
 const customers = new Set(['grace@acme.com', 'linus@acme.com'])
@@ -780,7 +780,7 @@ Forms run in a DOM test without an app, router or server. Render, type, submit; 
 ```tsx
 // app/components/invoices/new-invoice-form.test.tsx
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { KitrError } from 'kitr/app'
+import { KitrError } from '@kitr/kitr/app'
 import { describe, expect, it, vi } from 'vitest'
 import { NewInvoiceForm } from './new-invoice-form'
 

@@ -25,7 +25,7 @@ function project(files: Record<string, string>) {
 
 describe('kitrrc.ts lists are edited as text', () => {
   it('appends to a list written with tabs, double quotes and comments, in that style', () => {
-    const rc = `import { defineKitrConfig } from "kitr/app";
+    const rc = `import { defineKitrConfig } from "@kitr/kitr/app";
 
 export default defineKitrConfig({
 \tpackages: [
