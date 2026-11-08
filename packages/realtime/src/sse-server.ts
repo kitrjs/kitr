@@ -13,6 +13,8 @@ import {
   type ChannelDefinition,
   type ChannelParams,
   type ClientMessage,
+  type ConnectionIdentity,
+  ownedBy,
   type ServerMessage,
   topicFor,
 } from './protocol'
@@ -24,6 +26,8 @@ export interface SseServerOptions {
   channels: ChannelDefinition<any, any>[]
   /** Authenticate the stream request. Return per-connection context or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>
+  /** Who a stream belongs to, for `closeSessions(userId)`. Default: the context's `userId`, `user.id` or `id`. */
+  identify?: ConnectionIdentity
   /** Keep-alive comment interval in ms. Default 20 000. */
   keepAlive?: number
   /**
@@ -47,6 +51,8 @@ export interface SseServer {
   attach(server: KitrServer, path?: string): SseServer
   /** Number of open streams on this instance. */
   readonly connections: number
+  /** Close every stream of `userId` on this instance and return how many; see `SocketServer.closeSessions`. A client that reconnects is authorised again. */
+  closeSessions(userId: string | number): number
   /** The adapter emits and forwarded control messages travel through. */
   readonly adapter: RealtimeAdapter
 }
@@ -55,6 +61,8 @@ interface Connection {
   id: string
   ctx: unknown
   write(chunk: string): void
+  /** Ends the stream. */
+  close(): void
   subs: Map<string, string>
   /** Stops listening for control messages forwarded from other instances. */
   off?: Promise<(() => void) | undefined>
@@ -113,6 +121,12 @@ export function createSseServer(options: SseServerOptions): SseServer {
           write: (chunk) => {
             try {
               controller.enqueue(encoder.encode(chunk))
+            } catch {}
+          },
+          close: () => {
+            clearInterval(timer)
+            try {
+              controller.close()
             } catch {}
           },
         }
@@ -228,6 +242,16 @@ export function createSseServer(options: SseServerOptions): SseServer {
     adapter,
     get connections() {
       return connections.size
+    },
+    closeSessions(userId) {
+      let closed = 0
+      for (const conn of [...connections.values()]) {
+        if (!ownedBy(options.identify, conn.ctx, userId)) continue
+        closed++
+        drop(conn)
+        conn.close()
+      }
+      return closed
     },
     use(channel, params) {
       const topic = topicFor(channel.name, params)

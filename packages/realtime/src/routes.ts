@@ -144,6 +144,7 @@ const ws = defineRouteExtension({
             get connections() {
               return realtime.connections
             },
+            closeSessions: (userId) => realtime.closeSessions(userId),
           }
           server.app.container.value('realtime', bound)
         }

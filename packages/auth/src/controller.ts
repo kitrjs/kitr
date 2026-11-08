@@ -54,6 +54,12 @@ export interface SessionControllerOptions<TUser extends AuthUser> {
   /** Lifetime of the email links in seconds. Defaults: 24 hours to verify, 1 hour to reset. */
   tokenTtl?: { verifyEmail?: number; resetPassword?: number }
   /**
+   * Called with the user's id after every one of their sessions was revoked (sign out everywhere,
+   * password reset). Close the user's live connections here, since a socket is authorised when it
+   * opens: `onSessionsRevoked: (id) => realtime.closeSessions(id)`.
+   */
+  onSessionsRevoked?: (userId: string) => void | Promise<void>
+  /**
    * The double-submit CSRF check on every state-changing method, with shield's names by default
    * (`kitr-csrf` cookie, `x-csrf-token` header). The check is the controller's own, so it holds
    * with or without `shield(server)`; `false` turns it off.
@@ -309,6 +315,7 @@ export function createSessionController<TUser extends AuthUser>(
       if (!resolved) throw KitrError.unauthorized()
       const revoked = await sessions.revokeAll(resolved.user.id)
       await sessions.destroy(ctx.request.headers, ctx.event.res.headers)
+      await options.onSessionsRevoked?.(resolved.user.id)
       return { revoked }
     }
 
@@ -373,6 +380,7 @@ export function createSessionController<TUser extends AuthUser>(
       if (!id) throw new KitrError('BAD_REQUEST', 'This link is invalid or has expired')
       await users.setPasswordHash(id, await hashPassword(ctx.body.password))
       await sessions.revokeAll(id)
+      await options.onSessionsRevoked?.(id)
       ctx.response.status(204)
     }
   }

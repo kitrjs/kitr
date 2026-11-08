@@ -410,7 +410,7 @@ When every attempt fails, `run()` throws the last error. It waits the real backo
 
 ## Share the queue between processes
 
-With the memory driver, the queue lives inside one process: a job dispatched on one web server is never seen by another, and everything queued is lost on restart. On the server, `createRedisJobsDriver` keeps the queue in [Redis](https://redis.io) instead, so every web server can dispatch and every worker can run. Install a Redis client. The driver takes an [ioredis](https://github.com/redis/ioredis) client:
+With the memory driver, the queue lives inside one process: a job dispatched on one web server is never seen by another, and everything queued is lost on restart. A job it hands to the worker is reserved, not removed: it counts in `jobs.driver.size()` until the run finishes, and goes back to the queue if it is not acknowledged within `visibilityTimeout` (30 seconds by default, `createMemoryJobsDriver({ visibilityTimeout })`). Keep that above your longest job `timeout`, or a slow job runs twice. On the server, `createRedisJobsDriver` keeps the queue in [Redis](https://redis.io) instead, so every web server can dispatch and every worker can run. Install a Redis client. The driver takes an [ioredis](https://github.com/redis/ioredis) client:
 
 ```sh
 pnpm add ioredis
@@ -450,7 +450,7 @@ What the driver guarantees:
 - **Scheduled jobs queue once per run.** Before queuing a cron or interval job, each worker takes a Redis lock named after the job and the minute (or interval slot). One worker gets it.
 - **Retries keep their id.** A retry is queued under the same `jobId` with the next `attempt`, so `onFailed` and your logs see one job.
 
-The queue lives under three keys: `<prefix>queue` (a sorted set by `runAt`), `<prefix>reserved` and `<prefix>data`. `jobs.driver.size()` counts waiting jobs across every process.
+The queue lives under three keys: `<prefix>queue` (a sorted set by `runAt`), `<prefix>reserved` and `<prefix>data`. `jobs.driver.size()` counts the jobs waiting and the jobs reserved by a worker, across every process, so a worker that died mid-job does not read as an empty queue.
 
 ## Run the worker in its own process
 
@@ -708,7 +708,7 @@ A driver is where queued jobs wait. It has four methods and an optional fifth; t
 | --- | --- |
 | `push(job)` | Store a `QueuedJob`. Called by `dispatch()` and for every retry. |
 | `pull(now, limit)` | Return up to `limit` jobs whose `runAt` is at or before `now`, earliest first, and remove them so no other worker gets them. |
-| `size()` | Count the jobs waiting. |
+| `size()` | Count the jobs waiting, and the ones pulled but not yet acknowledged. |
 | `clear()` | Remove every job. |
 | `ack(job)` (optional) | Forget a job that has finished. With `ack`, `pull` can reserve jobs instead of deleting them, so a job whose worker died mid-run is pulled again. |
 | `claim(key, ttlMs)` (optional) | Take a lock for `ttlMs` and resolve `true` for exactly one caller. Workers call it before queuing a scheduled run, so the run is queued once however many workers poll. Without it, each worker queues its own copy. |

@@ -124,3 +124,27 @@ export function parseMessage<T>(raw: unknown): T | null {
   } catch {}
   return null
 }
+
+/**
+ * Who a connection belongs to, for `closeSessions(userId)`. `identify` reads it from the context
+ * `authorize` returned; the default takes `ctx.userId`, `ctx.user.id` or `ctx.id`, as a string.
+ */
+export type ConnectionIdentity = (ctx: unknown) => string | number | null | undefined
+
+/** The default `identify`: `userId`, `user.id` or `id` of the connection context. */
+export const defaultIdentity: ConnectionIdentity = (ctx) => {
+  if (!ctx || typeof ctx !== 'object') return undefined
+  const c = ctx as { userId?: unknown; user?: { id?: unknown } | null; id?: unknown }
+  const id = c.userId ?? c.user?.id ?? c.id
+  return typeof id === 'string' || typeof id === 'number' ? id : undefined
+}
+
+/** Whether a connection with this context belongs to `userId`. */
+export const ownedBy = (
+  identify: ConnectionIdentity | undefined,
+  ctx: unknown,
+  userId: string | number,
+) => {
+  const owner = (identify ?? defaultIdentity)(ctx)
+  return owner !== undefined && owner !== null && String(owner) === String(userId)
+}

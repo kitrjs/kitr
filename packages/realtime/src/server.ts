@@ -15,6 +15,8 @@ import {
   type ChannelDefinition,
   type ChannelParams,
   type ClientMessage,
+  type ConnectionIdentity,
+  ownedBy,
   parseMessage,
   type ServerMessage,
   topicFor,
@@ -27,6 +29,11 @@ export interface SocketServerOptions {
   channels: ChannelDefinition<any, any>[]
   /** Authenticate the upgrade. Return per-connection context (e.g. the user) or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>
+  /**
+   * Who a connection belongs to, read from the context `authorize` returned, so
+   * `closeSessions(userId)` can find it. Default: the context's `userId`, `user.id` or `id`.
+   */
+  identify?: ConnectionIdentity
   /**
    * Carries emits between server instances. Default: the memory adapter, which only reaches
    * clients connected to this process. Use `createRedisRealtimeAdapter` when you run more than one.
@@ -62,6 +69,14 @@ export interface SocketServer {
   attach(server: KitrServer, path?: string): SocketServer
   /** Number of open connections on this instance. */
   readonly connections: number
+  /**
+   * Close every connection of `userId` on this instance (code 4401, reason `Session revoked`) and
+   * return how many. Call it when the user's access ends: sign-out everywhere, a password reset, a
+   * ban. Authorisation happens when a connection opens and when it subscribes, so without this a
+   * revoked session keeps receiving events until its socket drops. Other instances are not reached:
+   * call it on each, or from a handler every instance runs.
+   */
+  closeSessions(userId: string | number): number
   /** The adapter emits travel through. */
   readonly adapter: RealtimeAdapter
 }
@@ -167,6 +182,21 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
     get connections() {
       return peers.size
     },
+    closeSessions(userId) {
+      let closed = 0
+      for (const [peer, state] of [...peers]) {
+        if (!ownedBy(options.identify, state.ctx, userId)) continue
+        closed++
+        try {
+          peer.close(4401, 'Session revoked')
+        } catch {}
+        // Do not wait for the close handshake to stop sending to it.
+        for (const { topic } of state.subs.values()) topics.leave(peer, topic)
+        state.subs.clear()
+        peers.delete(peer)
+      }
+      return closed
+    },
     use(channel, params) {
       const topic = topicFor(channel.name, params)
       return {
@@ -213,6 +243,11 @@ export interface RealtimeServer {
   attach(server: KitrServer, path?: string): RealtimeServer
   /** Number of open connections or streams. */
   readonly connections: number
+  /**
+   * Close every connection or stream of `userId` on this instance and return how many. Call it when
+   * the user's access ends (sign-out everywhere, password reset, a ban); see `SocketServer.closeSessions`.
+   */
+  closeSessions(userId: string | number): number
 }
 
 /**
@@ -237,12 +272,14 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       ? createSseServer({
           channels: options.channels,
           authorize: options.authorize,
+          identify: options.identify,
           keepAlive: options.keepAlive,
           adapter: options.adapter,
         })
       : createSocketServer({
           channels: options.channels,
           authorize: options.authorize,
+          identify: options.identify,
           adapter: options.adapter,
         })
   const realtime: RealtimeServer = {
@@ -255,6 +292,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     get connections() {
       return inner.connections
     },
+    closeSessions: (userId) => inner.closeSessions(userId),
   }
   return realtime
 }

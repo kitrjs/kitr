@@ -463,6 +463,47 @@ export function realtime(): SocketTransport {
 
 The `url` function runs again on every reconnect, so a refreshed token is picked up.
 
+## Close a revoked session
+
+Authorization happens when a connection opens (`authorize(request)`) and when it subscribes (the channel's `authorize(params, ctx)`). Nothing re-checks an open connection, so a user who signs out everywhere, resets their password or is banned keeps receiving the events of the topics they already joined until their socket drops. `closeSessions(userId)` on the realtime server ends that: it closes every connection of the user on this instance and returns how many:
+
+```ts
+// server/revoke.ts
+import { realtime } from '#server/realtime'
+
+export function revokeLiveAccess(userId: string) {
+  return realtime.closeSessions(userId)
+}
+```
+
+A WebSocket closes with code `4401` and reason `Session revoked`; an SSE stream ends; a Socket.IO socket disconnects. The client reconnects like it does after any drop, and the reconnect goes through `authorize(request)` again, so a revoked session is refused there. Which connections belong to the user comes from the context `authorize` returned: its `userId`, `user.id` or `id`. If yours is shaped differently, say how with `identify`:
+
+```ts
+// server/routes.ts
+r.ws('/ws', {
+  channels: [projectChannel],
+  authorize: async (request) => ({ account: await accountFromSession(request) }),
+  identify: (ctx) => (ctx as { account: { id: string } }).account.id,
+})
+```
+
+The session controller from [kitr/auth](/packages/auth) calls a hook after it revokes every session of a user (sign out everywhere, password reset), so one line connects the two:
+
+```ts
+// server/controllers/auth_controller.ts
+import { createSessionController } from 'kitr/auth/server'
+import { realtime } from '#server/realtime'
+import { sessions, users } from '#server/auth'
+
+export default createSessionController({
+  sessions,
+  users,
+  onSessionsRevoked: (userId) => realtime.closeSessions(userId),
+})
+```
+
+`closeSessions` reaches the connections on the instance that runs it. With more than one instance, call it where every instance hears about the revocation, for example from a handler of your Redis pub/sub, or accept that a connection on another instance lives until it drops. Anywhere you end a user's access outside the session controller (a ban in an admin screen), call it yourself.
+
 ## Authorize a subscription
 
 `authorize(params, ctx)` on the channel decides who may subscribe to which topic. `ctx` is what the server's `authorize(request)` returned. It also guards `send`.
