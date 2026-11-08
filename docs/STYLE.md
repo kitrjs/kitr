@@ -2,29 +2,7 @@
 
 The rulebook for every `packages/<name>/docs/` folder. The site builds those folders into kitr.dev, `llms.txt` and the search index, so the shape of each guide is the shape of the product. `node scripts/docs-rules.mjs` checks the mechanical rules; reviewers check the rest.
 
-The bar is the [AdonisJS mail guide](https://docs.adonisjs.com/guides/digging-deeper/mail) for coverage, and the [Coolify docs](https://coolify.io/docs) for readability: every task a reader will have, shown in code, in one place, in a predictable order, and each thing said once, in a paragraph of one or two sentences. A guide is as long as its tasks need and no longer.
-
-## What the research found
-
-Four documentation sets were studied: AdonisJS (mail, i18n), Laravel (mail), Stripe (accept a payment) and Tailwind (responsive design). They agree on more than they differ.
-
-**One page per package, in a fixed order.** AdonisJS and Laravel put everything about mail on one page, under 15 to 25 H2s. The order is the same on every page: what it is, install, configure, first use, then one H2 per task, then testing, then extending. Readers learn the order once and then jump by the table of contents.
-
-**Install says what it changed.** AdonisJS follows every `node ace add` with "See steps performed by the add command": installs the package, registers the provider, creates `config/mail.ts`, defines these env variables. Nothing happens to the project that the reader was not told about.
-
-**Configuration is a full file plus a table.** Every guide shows the complete `config/<name>.ts` as it is written to disk, then a table of every option with its default and one sentence. Per-driver setup follows an identical template each time: install, config snippet, `.env` snippet, link to the provider's own docs.
-
-**Every section is a task, and every task is code.** Headings are things a reader wants to do: "Queueing emails", "Embedding images", "Targeting a breakpoint range". Each starts with one to three sentences, then a 5 to 20 line example, then what happened. Tailwind follows each example with bullets that map one line of code to one effect, and names the wrong way next to the right way ("Don't use `sm:` to target mobile devices").
-
-**Examples are one running scenario.** Laravel uses `OrderShipped` and an `Order` model from the first section to the last. AdonisJS uses a `UsersController`, invoices under `storage/invoices/` and `orders@example.com`. A reader builds one mental model instead of a new one per section. No `foo`, `bar` or `MyThing`.
-
-**Testing and extending are top-level sections.** Mail fakes, assertion tables, custom transports and custom template engines each get an H2, so a reader finds them without reading the whole page.
-
-**Warnings only for risk.** Callouts mark data loss and security ("the in-memory messenger loses queued emails on restart"), not tips. Everything else is plain prose.
-
-**Reference content goes in tables.** Breakpoints, test card numbers, ICU patterns and options all sit in two or three column tables so they can be scanned. Stripe tags every heading with where the code runs ("[Server-side]", "[Client-side]") and gives concrete test values for every outcome.
-
-**The page ends by pointing somewhere.** Stripe ends with "See also", Laravel links upstream (Symfony Mailer) wherever it stops, AdonisJS links the config stub, the command reference and the events reference.
+A guide covers every task a reader will have, shown in code, in one place. Every package's guide follows the same order, so a reader learns it once and then jumps by the table of contents. Each thing is said once, in a paragraph of one or two sentences, and a guide is as long as its tasks need and no longer.
 
 ## The shape of a package's docs
 
@@ -136,7 +114,7 @@ Rules on top of the writing rules above:
 | `pnpm docs:api --check` | Generated api.md pages are up to date with the type definitions. | fails the build |
 | `pnpm docs:guides --strict` | The guide rules above: frontmatter, listed in `nav.json`, "Before you start" first and "Next steps" last, depth floors, placeholders, and links to packages, docs and guides that exist. | fails the build |
 
-Add a package name to `docs:rules` to check one: `node scripts/docs-rules.mjs mail --strict`. CI runs it with `--strict`, so every guide must pass.
+Add a package name to `docs:rules` to check one: `node scripts/docs-rules.mjs mail --strict`. CI runs it with `--strict`, so every guide must pass. `node scripts/docs-rules.mjs --gaps` prints a table of each package's prose words, code blocks and broken rules.
 
 ## Docs follow the setup module
 
@@ -148,55 +126,3 @@ Each package's setup lives in the package: `packages/<name>/src/kitr.ts` exports
 - **Remove is one sentence** at the end of Install: "`kitr remove <name>` reverses every step above", plus anything it leaves behind on purpose.
 - **Kits are packages** (`@kitr/kit-<name>`), documented together in `docs/kits.md`: one section per kit with its platforms, packages, components and a walkthrough of the pages, controllers and tests it scaffolds, instead of a guide per kit.
 - The platform packages (web, server, desktop, mobile) own their options, scaffold and tooling, so each platform's guide carries its full options table.
-
-
-## Gap list
-
-Generated by `node scripts/docs-rules.mjs --gaps`; refresh it when a guide changes. Word counts are prose only, code excluded. A package below the 600 word floor needs a rewrite to the section order above, not an edit. `cli`, `core` and `kitr` have no docs folder; `kitr` keeps its content in `docs/entry-points.md`.
-
-<!-- GAPS -->
-| Package | Words | Code blocks | Gaps |
-| --- | --- | --- | --- |
-| actions | 1684 | 22 | none |
-| analytics | 2790 | 35 | none |
-| api | 3637 | 47 | none |
-| auth | 2880 | 33 | none |
-| cache | 2660 | 27 | none |
-| consent | 2143 | 21 | none |
-| db | 1764 | 32 | none |
-| desktop | 4231 | 33 | none |
-| devtools | 2524 | 24 | none |
-| files | 2654 | 25 | none |
-| flags | 2663 | 28 | none |
-| forms | 2606 | 34 | none |
-| http | 2614 | 32 | none |
-| i18n | 2020 | 29 | none |
-| jobs | 3234 | 29 | none |
-| logger | 1856 | 26 | none |
-| mail | 3353 | 39 | none |
-| mobile | 2871 | 30 | none |
-| mocks | 2162 | 19 | none |
-| monitoring | 2304 | 30 | none |
-| native | 2623 | 25 | none |
-| notifications | 2084 | 19 | none |
-| offline | 2495 | 24 | none |
-| platform | 2460 | 24 | none |
-| query | 3171 | 36 | none |
-| react | 2090 | 28 | none |
-| realtime | 3321 | 45 | none |
-| router | 2778 | 32 | none |
-| secure-storage | 2292 | 18 | none |
-| seo | 2193 | 25 | none |
-| server | 3306 | 47 | none |
-| shield | 2921 | 30 | none |
-| state | 1960 | 24 | none |
-| storage | 3840 | 41 | none |
-| table | 2334 | 20 | none |
-| tailwind | 2114 | 25 | none |
-| tauri | 4047 | 38 | none |
-| testing | 2849 | 35 | none |
-| theme | 3246 | 45 | none |
-| updater | 2053 | 19 | none |
-| uploads | 2794 | 28 | none |
-| web | 3784 | 34 | none |
-<!-- /GAPS -->

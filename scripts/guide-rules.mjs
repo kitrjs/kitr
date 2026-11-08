@@ -69,7 +69,7 @@ for (const slug of [...guides].sort()) {
   else
     for (const key of ['title', 'description', 'time'])
       if (!fm[key]) problems.push(`frontmatter needs "${key}"`)
-  if (fm?.preview) problems.push('"preview" is gone from the frontmatter: every package ships')
+  if (fm?.preview) problems.push('"preview" is not a frontmatter field: remove it')
   for (const name of (fm?.packages ?? '')
     .split(',')
     .map((s) => s.trim())

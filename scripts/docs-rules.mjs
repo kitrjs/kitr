@@ -2,7 +2,7 @@
 // Checks every package guide (docs/index.md) against docs/STYLE.md: the required sections in
 // order, a config table, enough worked code, no placeholder names, and a doc comment on every
 // export in api.md. Prints warnings; --strict turns them into a failing exit code. --gaps prints
-// the per-package gap table in Markdown (the appendix of docs/STYLE.md is generated from it).
+// a Markdown table of every package's prose words, code blocks and broken rules.
 // Pass package names to check only those.
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
