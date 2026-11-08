@@ -70,7 +70,7 @@ export function createAddContext(
       },
     },
     provider: {
-      add: (spec) => codemods.addProvider(spec),
+      add: (spec, options) => codemods.addProvider(spec, options?.comment),
       remove: (spec) => codemods.removeProvider(spec),
     },
     config(name, source, options) {

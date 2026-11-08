@@ -32,11 +32,38 @@ export class Codemods {
   }
 
   /** Add a provider lazy import to kitrrc.ts (`() => import('x')`). Idempotent. */
-  addProvider(spec: string) {
+  addProvider(spec: string, comment?: string) {
     this.editRc((mod, src) => {
       if (hasImportOf(src, spec)) return
       ensureArray(mod, 'providers').push(builders.raw(`() => import('${spec}')`))
     })
+    if (comment) this.commentProvider(spec, comment)
+  }
+
+  /** A `// comment` line above the provider's lazy import, once. */
+  private commentProvider(spec: string, comment: string) {
+    const rcPath = this.ctx.rcPath ?? this.ctx.path('kitrrc.ts')
+    if (this.ctx.dryRun || !existsSync(rcPath)) return
+    const lines = readFileSync(rcPath, 'utf8').split('\n')
+    const at = lines.findIndex((line) => line.includes(`import('${spec}')`))
+    if (at < 0 || lines[at - 1]?.trim() === `// ${comment}`) return
+    const line = lines[at]!
+    const indent = /^\s*/.exec(line)![0]
+    // `providers: [() => import('x')]` on one line: open the array so the comment has a line of its own.
+    const inline = /^(\s*)providers:\s*\[(\(\) => import\('[^']+'\))\](,?)$/.exec(line)
+    if (inline) {
+      lines.splice(
+        at,
+        1,
+        `${indent}providers: [`,
+        `${indent}  // ${comment}`,
+        `${indent}  ${inline[2]},`,
+        `${indent}]${inline[3]}`,
+      )
+    } else if (/^\s*\(\) => import\(/.test(line)) {
+      lines.splice(at, 0, `${indent}// ${comment}`)
+    } else return
+    writeFileSync(rcPath, lines.join('\n'))
   }
   removeProvider(spec: string) {
     // Lazy imports are opaque to magicast's proxies, so match them by their generated source.
@@ -235,7 +262,7 @@ export class Codemods {
 
   /**
    * Make the project ready for `kitr types`: the `#kitr/*` path and `.kitr` include in
-   * tsconfig.json, `.kitr` in .gitignore, and `kitr types` before `tsc` in the typecheck script.
+   * tsconfig.json, `.kitr` in .gitignore, and the typecheck script going through `kitr typecheck`.
    * Projects from `kitr new` have all of it; this brings older ones up to date. Idempotent.
    */
   enableGeneratedTypes() {
@@ -269,8 +296,12 @@ export class Codemods {
     }
     const pkg = this.ctx.pkg
     const typecheck: string | undefined = pkg.scripts?.typecheck
-    if (typecheck && !typecheck.includes('kitr types'))
-      this.setScript('typecheck', `kitr types && ${typecheck}`)
+    // `kitr typecheck` generates, then runs tsc; a script already calling kitr is left alone.
+    if (typecheck && !/\bkitr (types|generate|typecheck)\b/.test(typecheck))
+      this.setScript(
+        'typecheck',
+        /^tsc( --noEmit)?$/.test(typecheck) ? 'kitr typecheck' : `kitr generate && ${typecheck}`,
+      )
     if (pkg.imports && !pkg.imports['#kitr/*']) {
       this.setPackageField('imports', { ...pkg.imports, '#kitr/*': './.kitr/*' })
     }

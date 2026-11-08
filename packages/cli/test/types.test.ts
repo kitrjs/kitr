@@ -135,6 +135,40 @@ describe('runTypes', () => {
 })
 
 describe('kitr add actions codemods', () => {
+  it('routes a plain typecheck script through kitr, and leaves one that already calls kitr', () => {
+    const typecheckOf = () =>
+      JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts.typecheck
+    const run = () => new Codemods(silent()).enableGeneratedTypes()
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({ name: 'app', scripts: { typecheck: 'tsc -b' } }),
+    )
+    run()
+    expect(typecheckOf()).toBe('kitr generate && tsc -b')
+    run()
+    expect(typecheckOf()).toBe('kitr generate && tsc -b')
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({ name: 'app', scripts: { typecheck: 'kitr types && tsc --noEmit' } }),
+    )
+    run()
+    expect(typecheckOf()).toBe('kitr types && tsc --noEmit')
+  })
+
+  it('comments a provider line once', () => {
+    const c = new Codemods(silent())
+    c.addProvider('@kitr/devtools/provider', 'Development only.')
+    c.addProvider('@kitr/devtools/provider', 'Development only.')
+    const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+    expect(rc.match(/\/\/ Development only\./g)).toHaveLength(1)
+    expect(rc).toMatch(/\/\/ Development only\.\n\s*\(\) => import\('@kitr\/devtools\/provider'\)/)
+    // A second provider keeps the first one's comment where it is.
+    c.addProvider('@kitr/theme/provider')
+    expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).toMatch(
+      /\/\/ Development only\.\n\s*\(\) => import\('@kitr\/devtools\/provider'\)/,
+    )
+  })
+
   it('enables generated types once and wires operations into app/app.ts', () => {
     writeFileSync(
       join(dir, 'tsconfig.json'),
@@ -155,7 +189,7 @@ describe('kitr add actions codemods', () => {
     expect(ts.include).toEqual(['app', '.kitr/**/*'])
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('node_modules\n.kitr\n')
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts.typecheck).toBe(
-      'kitr types && tsc --noEmit',
+      'kitr typecheck',
     )
     c.registerAppOption('operations', '#kitr/actions')
     c.registerAppOption('operations', '#kitr/actions')

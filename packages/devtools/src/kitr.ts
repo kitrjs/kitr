@@ -5,7 +5,10 @@ export default definePackage({
   name: 'devtools',
   client: true,
   add(ctx) {
-    ctx.provider.add('@kitr/devtools/provider')
+    ctx.provider.add('@kitr/devtools/provider', {
+      comment:
+        'Development only: the kitr() Vite plugin strips this provider from production builds.',
+    })
     ctx.config(
       'devtools',
       `import { defineConfig } from 'kitr/devtools'
