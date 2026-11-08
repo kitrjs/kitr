@@ -9,6 +9,7 @@ import {
 import type { KitrServer } from '@kitr/server'
 import type { Peer } from 'crossws'
 import { defineWebSocketHandler } from 'h3'
+import { createMemoryRealtimeAdapter, createTopicRouter, type RealtimeAdapter } from './adapter'
 import type { RealtimeConfig, RealtimeTransport } from './config'
 import {
   type ChannelDefinition,
@@ -26,11 +27,16 @@ export interface SocketServerOptions {
   channels: ChannelDefinition<any, any>[]
   /** Authenticate the upgrade. Return per-connection context (e.g. the user) or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>
+  /**
+   * Carries emits between server instances. Default: the memory adapter, which only reaches
+   * clients connected to this process. Use `createRedisRealtimeAdapter` when you run more than one.
+   */
+  adapter?: RealtimeAdapter
 }
 
 /** Publishes events to every subscriber of one channel topic, as `server.use(channel, params)` returns it. */
 export interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
-  /** Send an event to every connection subscribed to this topic. A topic with no subscribers is a no-op. */
+  /** Send an event to every connection subscribed to this topic, on every instance the adapter reaches. A topic with no subscribers is a no-op. */
   emit<E extends keyof C['events'] & string>(
     event: E,
     data: C['events'][E] extends { schema: infer S }
@@ -39,7 +45,7 @@ export interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
         : unknown
       : unknown,
   ): void
-  /** Subscriber count for this topic. */
+  /** Subscriber count for this topic on this instance. */
   readonly size: number
 }
 
@@ -54,8 +60,10 @@ export interface SocketServer {
   ): ChannelEmitter<C>
   /** Attach to a kitr server: registers the route and enables the upgrade. */
   attach(server: KitrServer, path?: string): SocketServer
-  /** Number of open connections. */
+  /** Number of open connections on this instance. */
   readonly connections: number
+  /** The adapter emits travel through. */
+  readonly adapter: RealtimeAdapter
 }
 
 interface PeerState {
@@ -69,7 +77,8 @@ interface PeerState {
  */
 export function createSocketServer(options: SocketServerOptions): SocketServer {
   const channels = new Map(options.channels.map((c) => [c.name, c]))
-  const topics = new Map<string, Set<Peer>>()
+  const adapter = options.adapter ?? createMemoryRealtimeAdapter()
+  const topics = createTopicRouter<Peer>(adapter, (peer, payload) => peer.send(payload))
   const peers = new Map<Peer, PeerState>()
 
   const send = (peer: Peer, msg: ServerMessage): void => {
@@ -95,7 +104,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
     close(peer) {
       const state = peers.get(peer)
       if (!state) return
-      for (const { topic } of state.subs.values()) leave(peer, topic)
+      for (const { topic } of state.subs.values()) topics.leave(peer, topic)
       peers.delete(peer)
     },
     async message(peer, message) {
@@ -107,7 +116,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
         const sub = state.subs.get(msg.id)
         if (sub) {
           state.subs.delete(msg.id)
-          leave(peer, sub.topic)
+          topics.leave(peer, sub.topic)
         }
         return
       }
@@ -136,14 +145,9 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
           const topic = topicFor(channel.name, params)
           // Re-using an id replaces that subscription; leave its old topic first.
           const previous = state.subs.get(msg.id)
-          if (previous && previous.topic !== topic) leave(peer, previous.topic)
+          if (previous && previous.topic !== topic) topics.leave(peer, previous.topic)
           state.subs.set(msg.id, { topic, channel, params })
-          let set = topics.get(topic)
-          if (!set) {
-            set = new Set()
-            topics.set(topic, set)
-          }
-          set.add(peer)
+          await topics.join(peer, topic)
           send(peer, { t: 'ok', id: msg.id, p: params ?? null })
         } else if (msg.t === 'msg') {
           await channel.onMessage?.(msg.ev, msg.d, params, state.ctx, socketServer)
@@ -157,15 +161,9 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
     },
   })
 
-  function leave(peer: Peer, topic: string) {
-    const set = topics.get(topic)
-    if (!set) return
-    set.delete(peer)
-    if (set.size === 0) topics.delete(topic)
-  }
-
   const socketServer: SocketServer = {
     handler,
+    adapter,
     get connections() {
       return peers.size
     },
@@ -173,7 +171,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
       const topic = topicFor(channel.name, params)
       return {
         get size() {
-          return topics.get(topic)?.size ?? 0
+          return topics.size(topic)
         },
         emit(event, data) {
           const payload = JSON.stringify({
@@ -183,7 +181,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
             ev: event,
             d: data,
           } satisfies ServerMessage)
-          for (const peer of topics.get(topic) ?? []) peer.send(payload)
+          topics.publish(topic, payload)
         },
       }
     },
@@ -240,8 +238,13 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
           channels: options.channels,
           authorize: options.authorize,
           keepAlive: options.keepAlive,
+          adapter: options.adapter,
         })
-      : createSocketServer({ channels: options.channels, authorize: options.authorize })
+      : createSocketServer({
+          channels: options.channels,
+          authorize: options.authorize,
+          adapter: options.adapter,
+        })
   const realtime: RealtimeServer = {
     transport,
     use: (channel, params) => inner.use(channel, params),
@@ -255,6 +258,14 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   }
   return realtime
 }
+
+export {
+  createMemoryRealtimeAdapter,
+  createRedisRealtimeAdapter,
+  type RealtimeAdapter,
+  type RedisPubSubClient,
+  type RedisRealtimeAdapterOptions,
+} from './adapter'
 
 declare module '@kitr/core' {
   interface ContainerBindings {

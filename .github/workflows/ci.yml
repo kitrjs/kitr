@@ -53,6 +53,19 @@ jobs:
       fail-fast: false
       matrix:
         node: [22, 24]
+    # The Redis adapter tests run against a real server here; locally they fall back to ioredis-mock.
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

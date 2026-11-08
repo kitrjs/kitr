@@ -558,7 +558,7 @@ All three transports implement one client interface and share the wire protocol,
 | `transport` | Client | Server | Use it when |
 | --- | --- | --- | --- |
 | `websocket` | `createSocketClient` (partysocket) | `createRealtimeServer`, which uses `createSocketServer` (crossws via h3) | The default. Two-way, low latency, runs on Node, Bun, Deno and Cloudflare. |
-| `socket.io` | `createSocketIoClient` | `attachSocketIo` | You need several server instances (Redis adapter) or already run Socket.IO. |
+| `socket.io` | `createSocketIoClient` | `attachSocketIo` | You already run Socket.IO or need its rooms and adapters. |
 | `sse` | `createSseTransport` (EventSource plus POST) | `createRealtimeServer`, which uses `createSseServer` | Your host or proxy does not allow WebSocket upgrades. |
 
 ### WebSocket
@@ -588,7 +588,7 @@ import rc from '../kitrrc'
 export const server = createServer({ providers: rc.providers, config, routes })
 ```
 
-`.ws(path, options)` takes `channels`, `authorize` and the other `createRealtimeServer` options. Mounting it registers the upgrade route on the server's h3 app and turns on `websocket` for `server.listen()`. Without `crossws` installed, `listen()` throws `[kitr/server] websocket: true needs the crossws package. Run kitr add socket.` See the [crossws docs](https://crossws.unjs.io) for runtime adapters.
+`.ws(path, options)` takes `channels`, `authorize`, `adapter` and the other `createRealtimeServer` options. Mounting it registers the upgrade route on the server's h3 app and turns on `websocket` for `server.listen()`. Without `crossws` installed, `listen()` throws `[kitr/server] websocket: true needs the crossws package. Run kitr add socket.` See the [crossws docs](https://crossws.unjs.io) for runtime adapters.
 
 ### Socket.IO
 
@@ -719,12 +719,72 @@ export function realtime(): SocketTransport {
 
 ## Run more than one server instance
 
-Each server keeps its subscriptions in memory. With two instances behind a load balancer, an `emit` on instance A reaches only the clients connected to A.
+On the server, each instance keeps its own connections. With two instances behind a load balancer, Ada's browser holds a socket to instance A and Linus's to instance B. To make an `emit` on either instance reach both, give the realtime server an **adapter**: the shared bus instances publish through. The default adapter is in memory and reaches only its own process; the Redis adapter reaches every instance connected to the same [Redis](https://redis.io).
 
 > **Warning**
-> With the WebSocket or SSE transport and several instances, clients on other instances silently miss events. Run one realtime instance, or use Socket.IO with an adapter.
+> With the WebSocket or SSE transport, several instances and the default memory adapter, clients on other instances silently miss events. Pass a Redis adapter before you scale past one instance.
 
-With Socket.IO, add the [Redis adapter](https://socket.io/docs/v4/redis-adapter/) and every instance's emits reach every room:
+Install a Redis client. kitr's Redis adapters take an [ioredis](https://github.com/redis/ioredis) client:
+
+```sh
+pnpm add ioredis
+```
+
+Create the adapter once, in its own file, and pass it to every realtime link on the route table:
+
+```ts
+// server/realtime_adapter.ts
+import { Redis } from 'ioredis'
+import { createRedisRealtimeAdapter } from 'kitr/realtime/server'
+
+export const realtimeAdapter = createRedisRealtimeAdapter(
+  new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379'),
+  { prefix: 'acme-app:rt:' },
+)
+```
+
+```ts
+// server/routes.ts
+import { defineRoutes } from 'kitr/app'
+import realtime from 'kitr/realtime/routes'
+import { projectChannel } from '#app/channels/projects'
+import { realtimeAdapter } from './realtime_adapter'
+
+export const routes = defineRoutes([realtime], (r) =>
+  r.ws('/api/ws', { channels: [projectChannel], adapter: realtimeAdapter }),
+)
+```
+
+Add the connection string to `.env`:
+
+```sh
+REDIS_URL=redis://localhost:6379
+```
+
+Nothing else changes. Grace's rename on instance A calls `realtime.use(projectChannel, { id: 'prj_1' }).emit('updated', project)` as before; the adapter publishes it on the Redis channel `acme-app:rt:projects:{"id":"prj_1"}`, and every instance with a subscriber for that topic writes it to its own sockets. Ada and Linus both see the new name.
+
+What the adapter does, and what stays per instance:
+
+| Behaviour | With the Redis adapter |
+| --- | --- |
+| `emit()` | Reaches subscribers on every instance. |
+| Redis subscriptions | One per topic per instance, made when the topic's first local client subscribes and dropped after the last leaves. Traffic follows what clients watch, not the instance count. |
+| `ok` reply to a subscribe | Sent once the Redis subscription is live, so an emit right after the reply is not lost. |
+| `use(channel, params).size` and `connections` | Count this instance only. |
+| SSE control `POST`s | A `POST` that the load balancer sends to another instance than the stream is forwarded through Redis to the instance that holds the stream. A connection id no instance holds still answers `410`, and the client opens a new stream. |
+| Channel `authorize` and `onMessage` | Run on the instance that holds the connection, with that connection's context. |
+
+The adapter takes these options:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `prefix` | `'kitr:rt:'` | Prepended to every Redis channel, so apps sharing one Redis stay apart. |
+| `subscriber` | `redis.duplicate()` | The connection that subscribes. A connection in subscriber mode runs no other command, so it must be a second one. |
+| `onError` | `console.error` | Called when Redis rejects a publish or subscribe. An `emit` never throws because of Redis. |
+
+WebSockets need no sticky sessions: a socket stays on the instance it opened on. SSE needs none either, because control `POST`s are forwarded. Close the adapter on shutdown with `await realtimeAdapter.close()`, for example in a provider's `shutdown()`. The [scaling guide](/guides/scale-out) runs the whole app on several instances.
+
+With Socket.IO, use Socket.IO's own [Redis adapter](https://socket.io/docs/v4/redis-adapter/) instead, and every instance's emits reach every room:
 
 ```ts
 // server/realtime.ts
@@ -956,6 +1016,52 @@ it('shows the renamed project', async () => {
 
 A real transport also resubscribes after reconnecting and calls `onError` with a kitr error shape. Read `createSseTransport` in the source for a short complete example, and see [`SocketTransport`](/packages/realtime/api) in the API reference.
 
+### Write a server adapter
+
+On the server, a `RealtimeAdapter` carries emits between instances. Implement it to use another bus, such as NATS or Postgres `LISTEN`/`NOTIFY`. It has two methods: `subscribe(topic, handler)` starts delivering a topic's messages to this process and returns (or resolves with) the function that stops it, and `publish(topic, payload)` sends a message to every instance and returns how many received it. This one wraps a Postgres client from [`pg`](https://node-postgres.com):
+
+```ts
+// server/realtime/postgres_adapter.ts
+import { createHash } from 'node:crypto'
+import type { RealtimeAdapter } from 'kitr/realtime/server'
+import type { Client } from 'pg'
+
+export function createPostgresAdapter(listen: Client, notify: Client): RealtimeAdapter {
+  const handlers = new Map<string, Set<(payload: string) => void>>()
+  // Postgres channel names are short identifiers: hash each topic into one.
+  const channel = (topic: string) => `rt_${createHash('sha1').update(topic).digest('hex')}`
+  const topics = new Map<string, string>()
+  listen.on('notification', (msg) => {
+    const topic = topics.get(msg.channel)
+    for (const handler of handlers.get(topic ?? '') ?? []) handler(msg.payload ?? '')
+  })
+  return {
+    name: 'postgres',
+    async subscribe(topic, handler) {
+      if (!handlers.has(topic)) {
+        handlers.set(topic, new Set())
+        topics.set(channel(topic), topic)
+        await listen.query(`LISTEN ${channel(topic)}`)
+      }
+      handlers.get(topic)!.add(handler)
+      return () => {
+        handlers.get(topic)?.delete(handler)
+        if (handlers.get(topic)?.size) return
+        handlers.delete(topic)
+        void listen.query(`UNLISTEN ${channel(topic)}`)
+      }
+    },
+    async publish(topic, payload) {
+      await notify.query('SELECT pg_notify($1, $2)', [channel(topic), payload])
+      // Postgres does not report receivers; 1 keeps SSE control forwarding working.
+      return 1
+    },
+  }
+}
+```
+
+Pass it as `adapter` on `.ws()` or `.sse()`, as with the Redis adapter. An adapter whose `publish` cannot count receivers should return `1`: the SSE server answers `410` only when `publish` returns `0`. See [`RealtimeAdapter`](/packages/realtime/api) in the API reference.
+
 ## Next steps
 
 - [API reference](/packages/realtime/api): every export of the seven entry points.
@@ -963,3 +1069,4 @@ A real transport also resubscribes after reconnecting and calls `onError` with a
 - [server](/packages/server): `createServer`, `listen` and shutdown.
 - [crossws](https://crossws.unjs.io) and [Socket.IO](https://socket.io/docs/v4/): the libraries underneath.
 - [Getting started](/docs/getting-started): the `realtime` kit, a chat room built on these pieces.
+- [Run on more than one instance](/guides/scale-out): Redis for sockets, cache, queue and limits.

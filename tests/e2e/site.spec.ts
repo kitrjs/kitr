@@ -16,7 +16,8 @@ function links(html: string): string[] {
   for (const [, href] of html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)) {
     if (!href || /^(https?:|mailto:|tel:|#|\/\/)/.test(href)) continue
     const path = href.split('#')[0]!.split('?')[0]!
-    if (path) out.add(path)
+    // Cloudflare rewrites mailto links to /cdn-cgi/l/email-protection on the live site.
+    if (path && !path.startsWith('/cdn-cgi/')) out.add(path)
   }
   return [...out]
 }

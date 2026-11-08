@@ -1,7 +1,7 @@
 {
   "name": "@kitr/cache",
   "version": "0.1.0",
-  "description": "kitr/cache: a tagged server cache with TTLs, a memory driver and a driver interface for Redis and friends; remember() around slow work.",
+  "description": "kitr/cache: a tagged server cache with TTLs, memory, Redis and unstorage drivers; remember() around slow work.",
   "keywords": [
     "kitr",
     "kitr-package"

@@ -45,7 +45,7 @@ export interface RateLimitOptions {
    * request and is never limited. Default false: the address of the connection.
    */
   trustProxy?: boolean
-  /** Where counters live. Default: this process. */
+  /** Where counters live. Default: this process, so each instance counts on its own; use `createRedisRateLimitStore` to share one limit. */
   store?: RateLimitStore
   /** Paths that are never limited. Prefix match. */
   ignore?: string[]
@@ -224,6 +224,52 @@ export function createMemoryRateLimitStore(): RateLimitStore {
       }
       entry.count++
       return entry
+    },
+  }
+}
+
+/**
+ * The part of an [ioredis](https://github.com/redis/ioredis) client the Redis rate-limit store
+ * uses. An ioredis `Redis` or `Cluster` fits as it is.
+ */
+export interface RedisRateLimitClient {
+  /** `SET key value PX ms NX`: starts a window only when none is open. */
+  set(key: string, value: string, px: 'PX', ms: number, nx: 'NX'): Promise<unknown>
+  /** `INCR`: keeps the key's expiry. */
+  incr(key: string): Promise<number>
+  /** `PTTL`: milliseconds left on the window. */
+  pttl(key: string): Promise<number>
+  /** `PEXPIRE`: repairs a counter that lost its window. */
+  pexpire(key: string, ms: number): Promise<number>
+}
+
+/**
+ * A rate-limit store over Redis, so every instance counts against the same limit. Each window
+ * is one key that Redis expires itself, so nothing needs sweeping:
+ *
+ *   rateLimit: { store: createRedisRateLimitStore(new Redis(process.env.REDIS_URL)) }
+ *
+ * Keys live under `prefix` (default `kitr:rl:`).
+ */
+export function createRedisRateLimitStore(
+  redis: RedisRateLimitClient,
+  options: { prefix?: string } = {},
+): RateLimitStore {
+  const prefix = options.prefix ?? 'kitr:rl:'
+  return {
+    async hit(key, windowMs) {
+      const k = prefix + key
+      // Open the window with its expiry first, so a crash between commands never leaves a
+      // counter without one; INCR then keeps that expiry.
+      await redis.set(k, '0', 'PX', windowMs, 'NX')
+      const count = await redis.incr(k)
+      let ttl = await redis.pttl(k)
+      // The window expired between SET and INCR, so INCR made a key with no expiry: give it one.
+      if (ttl < 0) {
+        await redis.pexpire(k, windowMs)
+        ttl = windowMs
+      }
+      return { count, resetAt: Date.now() + ttl }
     },
   }
 }
