@@ -7,11 +7,11 @@
 
 /** PBKDF2 iterations for new Web Crypto hashes, per OWASP's guidance for PBKDF2-HMAC-SHA256. */
 export const PBKDF2_ITERATIONS = 600_000
-const SCRYPT = { N: 2 ** 15, r: 8, p: 1, keylen: 64, maxmem: 64 * 1024 * 1024 }
+const SCRYPT = { N: 2 ** 15, r: 8, p: 1, keylen: 64, maxmem: 64 * 1024 * 1024 } // kitr-allow-module-state: immutable scrypt parameters
 const SALT_BYTES = 16
 
 type NodeCrypto = typeof import('node:crypto')
-let nodeCrypto: Promise<NodeCrypto | null> | undefined
+let nodeCrypto: Promise<NodeCrypto | null> | undefined // kitr-allow-module-state: memoised dynamic import of node:crypto
 /** `node:crypto` when this runtime has a working `scrypt`, else `null`. Resolved once. */
 function loadNodeCrypto(): Promise<NodeCrypto | null> {
   nodeCrypto ??= import('node:crypto')

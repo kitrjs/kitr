@@ -74,7 +74,7 @@ export interface CookieSessions {
 }
 
 const encoder = new TextEncoder()
-const keyCache = new Map<string, Promise<CryptoKey>>()
+const keyCache = new Map<string, Promise<CryptoKey>>() // kitr-allow-module-state: cache of imported HMAC keys per secret, pure derivation
 
 function hmacKey(secret: string): Promise<CryptoKey> {
   let key = keyCache.get(secret)

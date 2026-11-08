@@ -100,7 +100,7 @@ const looksLikeEmail = (value: string) =>
 const MAX_PASSWORD = 256
 
 /** A throwaway hash, verified against when the email is unknown so a miss takes as long as a hit. */
-let dummyHash: Promise<string> | undefined
+let dummyHash: Promise<string> | undefined // kitr-allow-module-state: one throwaway hash per process, computed once for constant-time misses
 
 /**
  * The cookie-session routes as a controller: the same shape as any `@kitr/api` controller, so the

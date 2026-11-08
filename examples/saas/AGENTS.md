@@ -94,7 +94,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 - Guard routes with `beforeLoad: requireAuth()` (from `kitr/router`) on a layout route; permissions with `can('projects.update', { subject })` or `useCan()` in components.
 - The session is `useSession()` / `useUser()` from `kitr/auth`. Abilities are plain functions in `app/abilities.ts`, shared with the API middleware (`kitr/auth/server`).
-- Server-rendered guards: `beforeLoad: async (ctx) => { await ensureSession(ctx); return requireAuth()(ctx) }` (`ensureSession` is from `kitr/auth`), so the session is read from the request during SSR and from `GET /api/auth/session` in the browser.
+- Server-rendered guards: `beforeLoad: async (ctx) => { await ensureSession(ctx); await requireAuth()(ctx) }` (`ensureSession` is from `kitr/auth`; drop the return value of the guard, it is not serializable), so the session is read from the request during SSR and from `GET /api/auth/session` in the browser.
 - Sessions are HttpOnly cookies: `server/auth.ts` holds the session service and the `UserProvider` (swap the in-memory users and store for your database and Redis), `server/controllers/auth_controller.ts` the routes. Pages render inside `runWithSession` (app/server.ts). Never put a token in localStorage.
 
 ## kitr: analytics
