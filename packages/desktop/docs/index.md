@@ -18,7 +18,7 @@ The examples on this page ship the Acme orders app to the desktop: Ada's warehou
 
 Use `@kitr/desktop` for most desktop apps. Electron ships Chromium inside the app, so the page your team tests is the page every user runs, on Windows 10, an old MacBook and a Linux kiosk alike. The main process is plain Node.js, so any npm package works there. Electron has the larger community, the most third-party guides and a mature toolchain for installers, auto-update and code signing.
 
-Use [Tauri](/packages/tauri) when download size and memory matter more than identical rendering. A Tauri app is a few megabytes because it uses the webview the OS already has (WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux). The trade-off is that those engines differ between platforms, and native code is written in Rust, so you need the Rust toolchain to build. Both platforms load the same client build and register the same `platform` and `storage` drivers, so the app code does not change when you switch.
+Use [Tauri](/packages/tauri) when download size matters more than identical rendering. A Tauri app is a few megabytes because it uses the system's webview, but those webviews differ between platforms and you need Rust to build. Your app code stays the same either way.
 
 ## Install
 
@@ -229,7 +229,9 @@ export const channels = {
 } satisfies Record<keyof Ipc | keyof IpcPush, true>
 ```
 
-`channels` is the same list at run time, for the preload script's allow list ([Limit which channels reach the window](#limit-which-channels-reach-the-window)). The `satisfies` makes a channel missing from it, or left over after you delete a command, a type error. Name channels `<area>.<verb>`, as above. Arguments and return values cross the process boundary through the [structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm): plain objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work, while functions, class instances and DOM nodes do not. A command may return a value or a promise; the window always gets a promise. Channels starting with `kitr:` are reserved for the ones `handleKitrIpc()` serves: storage, the app and shell calls, and the device packages (see [Run the device packages in Electron](#run-the-device-packages-in-electron)).
+`channels` is the same list at run time, for the preload script's [allow list](#limit-which-channels-reach-the-window). The `satisfies` makes a missing or left-over channel a type error. Name channels `<area>.<verb>`.
+
+Arguments and results must be plain data: objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work; functions and class instances do not. Channels starting with `kitr:` are reserved.
 
 ## Implement a command in the main process
 

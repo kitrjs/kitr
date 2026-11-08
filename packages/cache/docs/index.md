@@ -488,7 +488,7 @@ REDIS_URL=redis://localhost:6379
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `base` | `'kitr:cache:'` | Second argument, `{ base }`. Every key the driver writes starts with it: entries under `<base>e:`, tag sets under `<base>t:`, each entry's tag list under `<base>k:`. |
+| `base` | `'kitr:cache:'` | Prefix for every key the driver writes. Second argument: `{ base }`. |
 
 When Grace's invoice report is cached on instance A with `tags: ['team:team_acme']`, the entry lands at `kitr:cache:e:acme-app:report:invoices`. Instance B reads the same key, and `invalidateTags('team:team_acme')` on either instance removes it for both. As with the memory driver, setting a key again drops the old value's tags, so a stale tag never removes a fresh value.
 

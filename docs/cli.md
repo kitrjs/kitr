@@ -1,33 +1,66 @@
 # CLI
 
-`kitr` is installed with the `kitr` package (`pnpm add kitr`) and run as `pnpm kitr <command>` or `pnpm dlx kitr <command>`. Install it globally (`pnpm add -g kitr`) to type `kitr add ...` directly: inside a project that has its own `kitr`, the global binary hands over to that copy, so the version in `package.json` is always the one that edits your files (`KITR_GLOBAL=1` skips the handover). Every command runs from flags alone; nothing prompts.
+Run `kitr` with `pnpm kitr <command>`, or `pnpm dlx kitr <command>` without installing. Every command runs from flags alone; nothing prompts.
+
+A global install (`pnpm add -g kitr`) lets you type `kitr` directly. Inside a project it hands over to the project's own copy, so the version in `package.json` is the one that edits your files. `KITR_GLOBAL=1` skips the handover.
 
 ## Project commands
 
 | Command | What it does |
 | --- | --- |
-| `kitr new <dir> --kit <kit>` | Create a project. Base kits: `blank` (the wiring files only: no platform, no React, no server, no Vite; `kitr add <platform> <name>` brings each), `app`, `fullstack`, `server`. Presets with real pages, controllers and tests: `saas` (sign-in, guarded app shell, projects CRUD, analytics, monitoring), `site` (SSR + prerender, SEO, i18n en/de, blog, newsletter controller), `realtime` (chat over typed channels), `desktop` (the app kit in an Electron shell with typed IPC), `tauri` (the same in a Tauri shell with typed Rust commands), `mobile` (the app kit as a PWA and a Capacitor shell). `--platform site=web,api=server` replaces the kit's platforms; `--mode`, `--pwa`, `--runtime`, `--targets`, `--port` set their options. Every kit but `blank` is a package (`@kitr/kit-saas`); `--kit @acme/starter` runs a kit from any npm package. See [kits.md](kits.md). `--pm`, `--no-install`, `--no-git`, `--registry <url\|path>`, `--force`. It also writes `.vscode/extensions.json` recommending the kitr VS Code extension (`kitrjs.kitr`) when the project has none; `--no-vscode` skips it. |
-| `kitr add <pkg...>` | Install the package(s), ask each one's questions (every question is a flag: `kitr add jobs --no-worker`; `--yes` takes the defaults), register providers in `kitrrc.ts`, write `config/<pkg>.ts` and stubs, update `AGENTS.md`. Follows `requires` (adding `api` adds `server` and `logger`; adding `router` adds `react`). Any npm package that ships a kitr setup module works (`kitr add @acme/stripe`); see [package-contract.md](package-contract.md). `kitr add <pkg> --help` prints its questions. `--dry-run`, `--no-install`. |
-| `kitr <pkg>:<cmd>` | Commands the installed packages contribute (`kitr jobs:list`, `kitr jobs:work`). `kitr --help` lists them after the core commands. |
-| `kitr add <type> <name> [--option value]` | Adds a platform (`web`, `server`, `desktop`, `tauri`, `mobile`): `kitr add web admin --mode spa`, `kitr add desktop app --title Acme`. Installs the platform package and the packages it needs, writes `platforms.<name>` into `kitrrc.ts`, scaffolds `platforms/<name>/` for native shells and adds the `dev`/`build`/`start` scripts. See [platforms.md](platforms.md). |
-| `kitr remove <pkg...>` | Reverse of `add`: unregisters the provider and package, deletes `config/<pkg>.ts`, removes dependencies, then lists files that still import it. |
-| `kitr doctor` | Checks `kitrrc.ts` against `package.json`, providers that resolve, missing config files, direct upstream imports where an `@kitr/*` package re-exports them, server-only projects that pull React, version drift from the tested set. `--json`, `--strict`. Exit code 1 on errors. |
-| `kitr info` | JSON summary: version, package manager, packages, providers, platforms, directories, server-only or not. |
-| `kitr upgrade [--to x.y.z] [--majors]` | Moves `kitr` and every `@kitr/*` to one version and aligns upstream libraries with the versions that release was tested with. Major bumps are listed, not applied, unless `--majors`. |
+| `kitr new <dir> --kit <kit>` | Create a project from a kit: `kitr new my-app --kit app`. See [Create a project](#create-a-project). |
+| `kitr add <pkg...>` | Install a package and wire it into the project: `kitr add jobs`. See [Add a package](#add-a-package). |
+| `kitr add <type> <name>` | Add a platform: `kitr add web admin --mode spa`. See [Platforms](platforms.md). |
+| `kitr remove <pkg...>` | Undo `add`, then list the files that still import the package. |
+| `kitr <pkg>:<cmd>` | Run a command a package adds: `kitr jobs:work`. |
+| `kitr doctor` | Check the project for problems. Exits 1 on errors. |
+| `kitr info` | Print a JSON summary of the project. |
+| `kitr upgrade` | Move every kitr package to one version: `kitr upgrade --to 0.2.0`. |
+
+### Create a project
+
+Kits: `blank`, `app`, `fullstack`, `server`, and the presets `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile`. [Kits](kits.md) shows what each one writes.
+
+| Flag | What it does |
+| --- | --- |
+| `--kit <kit>` | The kit to start from. Any npm package that is a kit works: `--kit @acme/starter`. |
+| `--platform <name=type,...>` | Replace the kit's platforms: `--platform site=web,api=server`. |
+| `--mode`, `--pwa`, `--runtime`, `--targets`, `--port` | Set the platforms' options. |
+| `--pm <npm\|pnpm\|yarn\|bun>` | The package manager to use. |
+| `--no-install`, `--no-git` | Skip installing dependencies or creating a git repository. |
+| `--registry <url\|path>` | Copy components from another registry. |
+| `--force` | Write into a folder that is not empty. |
+| `--no-vscode` | Skip `.vscode/extensions.json`, which recommends the kitr extension. |
+
+### Add a package
+
+`kitr add` installs the package, registers its provider in `kitrrc.ts`, writes `config/<pkg>.ts` and updates `AGENTS.md`. It also adds the packages it needs: adding `api` adds `server` and `logger`.
+
+Questions a package asks are flags: `kitr add jobs --no-worker`. `--yes` takes the defaults, and `kitr add <pkg> --help` lists the questions. `--dry-run` shows the changes without writing them.
+
+Any npm package with a kitr setup module works: `kitr add @acme/stripe`. See [Package contract](package-contract.md).
+
+### Check and upgrade
+
+`kitr doctor` checks `kitrrc.ts` against `package.json`, missing config files, imports that should go through an `@kitr/*` package, and versions that drift from the tested set. `--json` prints the result for scripts; `--strict` turns warnings into errors.
+
+`kitr upgrade` also moves upstream libraries to the versions that kitr release was tested with. It lists major bumps without applying them; `--majors` applies them.
 
 ## Platforms
 
 | Command | What it does |
 | --- | --- |
-| `kitr dev [names...]` | Runs every platform in `kitrrc.ts`, or the named ones, in development: `kitr dev`, `kitr dev site api`, `kitr dev site --port 4000`. With more than one platform, each line is prefixed with the platform's name (`[site]`, `[api]`). |
-| `kitr build [names...]` | Production builds into `dist/<name>/`. |
-| `kitr start [names...]` | Serves the builds (`kitr serve` is an alias). |
-| `kitr platforms [types\|scaffold <name>\|remove <name>]` | Lists platforms and their effective options; lists the available types; rewrites a platform's scaffold; removes one from `kitrrc.ts`. |
-| `kitr config <name> [option] [value] [--unset]` | Reads or sets one platform option in `kitrrc.ts`, validated against the platform's schema: `kitr config site port 4000`. `KITR_<NAME>_<OPTION>` overrides any option at run time. |
+| `kitr dev [names...]` | Run every platform in development, or only the named ones: `kitr dev site`. |
+| `kitr build [names...]` | Build for production into `dist/<name>/`. |
+| `kitr start [names...]` | Serve the builds. `kitr serve` is an alias. |
+| `kitr platforms` | List platforms and their options. `types`, `scaffold <name>` and `remove <name>` are subcommands. |
+| `kitr config <name> [option] [value]` | Read or set one platform option: `kitr config site port 4000`. |
+
+With more than one platform, `kitr dev` prefixes each line with the platform's name (`[site]`). `KITR_<NAME>_<OPTION>` overrides any option at run time: `KITR_SITE_PORT=4000 kitr dev site`.
 
 ## Workspaces
 
-A monorepo with several kitr apps (an authed web app, a marketing site, a phone app) puts a `kitr.workspace.ts` at its root:
+A repository with several kitr apps lists them in `kitr.workspace.ts` at its root:
 
 ```ts
 // kitr.workspace.ts
@@ -38,27 +71,27 @@ export default defineWorkspace({
 })
 ```
 
-Each app is a complete kitr project with its own `kitrrc.ts`; shared code is ordinary workspace packages. The CLI reads the file statically, like `kitrrc.ts`.
+Each app is a complete kitr project with its own `kitrrc.ts`. Shared code goes in ordinary workspace packages.
 
 | Command | What it does |
 | --- | --- |
-| `kitr workspace [--json]` | Lists the apps with their platforms and packages. |
-| `kitr dev` / `kitr start` (at the root) | Runs the command in every app side by side. |
-| `kitr build` / `kitr generate` / `kitr typecheck` / `kitr types` / `kitr doctor` / `kitr platforms` / `kitr info` (at the root) | Runs the command in every app, one after another. Exit code 1 when any fails. |
-| `kitr build phone` | An app name as a word selects that app; the rest of the words are passed on (`kitr build phone ios` builds the `ios` platform of the `phone` app). |
-| `kitr --app phone add jobs` | Runs any command inside one app without `cd`. `KITR_APP=phone` does the same. |
+| `kitr workspace` | List the apps with their platforms and packages. |
+| `kitr dev`, `kitr start` | Run in every app at once. |
+| `kitr build`, `kitr generate`, `kitr typecheck`, `kitr doctor`, ... | Run in every app, one after another. Exits 1 if any fails. |
+| `kitr build phone` | Run in one app: `kitr build phone ios` builds its `ios` platform. |
+| `kitr --app phone <command>` | Run any command in one app without `cd`. `KITR_APP=phone` does the same. |
 
 Inside an app directory every command is the app's own, as if there were no workspace.
 
 ## Generators
 
-Every kind of file has one home; [Project structure](/docs/project-structure) explains them. `kitr make` lists the generators your project has, with the path each one writes (`--json` for scripts and agents). `kitr make:<kind> <name>` writes one file from a stub and registers it where the kind is registered. A nested name puts the file in a feature folder inside the kind's home: `make:controller admin/users` writes `server/controllers/admin/users-controller.ts`. File names are kebab-case whatever you type.
+`kitr make:<kind> <name>` writes one file and registers it where it belongs. `kitr make` lists the generators your project has.
 
-`--dry-run` prints what would be written and changed, `--force` overwrites an existing file, and a mistyped kind (`make:controler`) names the one you meant. Stubs can be customised per project: `kitr eject stub <kind>` copies it to `stubs/<kind>.ts`, and `make:*` prefers the ejected version.
+A nested name makes a folder: `make:controller admin/users` writes `server/controllers/admin/users-controller.ts`. `--dry-run` shows what would change, and `--force` overwrites a file. To change a template, `kitr eject stub <kind>` copies it to `stubs/<kind>.ts`. [Project structure](/docs/project-structure) explains where each kind of file lives.
 
 | Command | Writes |
 | --- | --- |
-| `make` | Nothing: lists every generator, its owner, the path it writes and what the kind is |
+| `make` | Nothing. Lists every generator and the path it writes. |
 | `make:page projects` | `app/pages/projects.tsx`, and `.page('/projects', { lazy })` appended to `app/routes.ts` |
 | `make:page projects/:id` | `app/pages/projects/id.tsx`, and `.page('/projects/$id', { lazy })` |
 | `make:layout admin` | `app/layouts/admin.tsx` with `<Outlet />`, and `.layout('_admin', { lazy }, (admin) => admin)` appended to `app/routes.ts` |
@@ -73,55 +106,52 @@ Every kind of file has one home; [Project structure](/docs/project-structure) ex
 | `make:exception payment-failed` | `app/exceptions/payment-failed-error.ts` (a `KitrError` subclass) |
 | `make:provider analytics` | `app/providers/analytics-provider.ts`, listed in `kitrrc.ts` `providers` |
 | `make:channel chat` | `app/channels/chat.ts` (`defineChannel`) |
-| `make:controller projects [--resource]` | `server/controllers/projects-controller.ts` (index/show/store/update/destroy with `--resource`); prints the route line for `server/routes.ts` |
+| `make:controller projects [--resource]` | `server/controllers/projects-controller.ts` (with all CRUD methods for `--resource`) |
 | `make:service billing` | `server/services/billing-service.ts` (a class to bind in a provider) |
 | `make:middleware audit` | `server/middleware/audit.ts` |
-| `make:job send-digest` | `server/jobs/send-digest.ts` (`defineJob` with a schema and retries; list it in `config/jobs.ts`). Contributed by the `jobs` package: present once it is added |
+| `make:job send-digest` | `server/jobs/send-digest.ts` (`defineJob`). Needs the `jobs` package. |
 | `make:mail welcome` | `server/mail/welcome.tsx` (`defineMail` with a preview) |
 | `make:test projects` | `test/projects.test.ts`, run by the project's vitest (`createTestApp`) |
 
-A package adds a generator with a `generators` entry in its `kitr.ts`; `generatorFile(project, 'server', 'controllers', name, { suffix: '-controller' })` from `@kitr/core/package` gives it the same naming and nesting as the core ones. See [Building packages](/docs/building-packages).
+A package can add its own generators. See [Building packages](/docs/building-packages).
 
 ## Components
 
 | Command | What it does |
 | --- | --- |
-| `kitr ui add <name...>` | Copies components from a shadcn-compatible registry into `app/components/ui` (and pages into `app/pages`), resolving `registryDependencies` and installing npm dependencies. `--registry`, `--overwrite`. |
-| `kitr ui list` | Lists the registry's items. |
+| `kitr ui add <name...>` | Copy components into `app/components/ui`: `kitr ui add button card`. |
+| `kitr ui list` | List the components in the registry. |
 
-The default registry is kitr's own (`registry/dist` in this repo). Point `--registry`, `config/theme.ts` or `KITR_REGISTRY` at any other shadcn-format registry, including a local folder.
+Components come from kitr's own registry. To use another shadcn-format registry, pass `--registry <url\|path>` or set `KITR_REGISTRY`.
 
 ## API and server
 
 | Command | What it does |
 | --- | --- |
-| `kitr api:sync` | Alias of the API step of `kitr generate`. Loads the routes file (`server/routes.ts`), writes `openapi.json` (OpenAPI 3.1; schemas from zod, valibot or arktype when present) and `routes.gen.ts`, a plain route table for clients that cannot import the server. `--file`, `--out`. |
-| `kitr routes:list` | Prints the route table: method, path, name. |
-| `kitr css:types` | Writes a `.d.ts` beside every `*.module.css`. `--check` fails when stale. |
+| `kitr api:sync` | Write `openapi.json` and `routes.gen.ts` from `server/routes.ts`. `kitr generate` runs it for you. |
+| `kitr routes:list` | Print every route: method, path, name. |
+| `kitr css:types` | Write a `.d.ts` beside every `*.module.css`. |
 
 ## Type generation
 
-`kitr generate` runs every generator. The type generators write the project's generated types under `.kitr/`, a folder that is ignored by git, included in `tsconfig.json` and reachable as `#kitr/*`. A package that writes files elsewhere declares a `generate` step in its setup module: `@kitr/api` runs `kitr api:sync`, which keeps `routes.gen.ts` and `openapi.json` fresh. `kitr dev` and `kitr build` run `kitr generate` first (a failing package step is a warning there, so a half-written route file does not stop the dev server), the Vite plugin reruns the type generator whose files changed while the dev server runs, and `kitr new` and `kitr add` run the type generators after installing.
-
-The kits' `typecheck` script is `kitr typecheck`, which generates and then runs `tsc --noEmit`, so a fresh clone or a CI job never type-checks against missing or stale generated files. `kitr types` and `kitr api:sync` stay as aliases for their half of the work.
+`kitr generate` writes the project's generated files: types under `.kitr/` (ignored by git) and each package's own files, such as the API route table. You rarely run it yourself: `kitr dev`, `kitr build`, `kitr new` and `kitr add` run it, and the dev server reruns it when a file changes.
 
 | Command | What it does |
 | --- | --- |
-| `kitr generate` | Runs every type generator, then every package's generate step (`api:sync` for `@kitr/api`). |
-| `kitr generate --check` | Lists stale type files and exits non-zero instead of writing. For CI. |
-| `kitr generate --watch` | Keeps running and regenerates what a changed file affects, for editors without the dev server. |
-| `kitr typecheck` | `kitr generate`, then `tsc --noEmit`. `--project <tsconfig>` checks another config. |
-| `kitr types` | Runs the type generators only and writes the files whose content changed. |
-| `kitr types --check` | Lists stale files and exits non-zero instead of writing. For CI. |
-| `kitr types --watch` | Keeps running and regenerates on change, for editors without the dev server. |
-| `kitr types --only actions` | Runs one generator by name. |
+| `kitr generate` | Write every generated file. |
+| `kitr generate --check` | Exit non-zero when a file is stale, without writing. For CI. |
+| `kitr generate --watch` | Regenerate on change, for editors without the dev server. |
+| `kitr typecheck` | `kitr generate`, then `tsc --noEmit`. The kits' `typecheck` script. |
+| `kitr types` | Write only the `.kitr/` types. Takes `--check`, `--watch` and `--only <name>`. |
 
-| Generator | From | Writes |
+| Generator | Reads | Writes |
 | --- | --- | --- |
-| `platforms` (built in) | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`: the `KitrPlatforms` augmentation, so `app.platform` and `usePlatform().name` are the project's names. |
-| `actions` (`@kitr/actions`) | `app/actions/**/*.ts` | `.kitr/actions.ts`: `operations` and `actions` maps and the `Operations` augmentation behind `useQuery('projects.list')`. Found with the TypeScript compiler: aliases and re-exports of `defineQuery` and `defineMutation` count, and a name that is not a string literal fails with `file:line`. |
+| `platforms` | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`, so `app.platform` has your platform names. |
+| `actions` | `app/actions/**/*.ts` | `.kitr/actions.ts`, so `useQuery('projects.list')` is typed. |
 
-A package adds a generator with `defineTypes()` and points its setup module at it with the `types` hook (`types: () => import('./types')` in `src/kitr.ts`). A package without a setup module names the subpath in its manifest (`"kitr": { "types": "./types" }`):
+### Add a type generator to a package
+
+A package adds a generator with `defineTypes()` and points its setup module at it with the `types` hook:
 
 ```ts
 // packages/<name>/src/types.ts
@@ -147,73 +177,8 @@ export default definePackage({
 })
 ```
 
-`generate` is pure: it returns `{ file, content }` pairs relative to `.kitr/` and the runner writes them. `watch` says which files re-run it in dev. `kitr doctor` warns when `.kitr/` is stale.
+`generate` returns `{ file, content }` pairs relative to `.kitr/`, and the runner writes them. `watch` lists the files that rerun it in dev.
 
 ## Leaving kitr
 
-`kitr eject stubs` copies every generator stub. `kitr eject all` also prints the import rewrites that remove kitr entirely: each `kitr/*` entry maps to the upstream package it re-exports.
-
-## CI and releases
-
-`.github/workflows/ci.yml` builds once and fans out. The `build` job installs, builds every package, the component registry, the examples and the docs site, and uploads the result as one artifact. Every other Linux job downloads it and skips the build, then runs in parallel:
-
-| Job | What it checks |
-| --- | --- |
-| `verify` | Generated manifests, READMEs and API pages, the docs rules, Biome, that the examples are unmodified kit output, the production bundle checks, and `pnpm versions:check`. |
-| `typecheck` | `pnpm typecheck` across every package and example. |
-| `unit` | `pnpm test:coverage` on Node 22 and 24, with a real Redis, then `pnpm coverage:gate` (per-package floors, see Tests). |
-| `integration` | `pnpm test:integration`: the CLI scaffolding every kit, generators, add and remove, the backend over the network. |
-| `e2e` | Playwright against production and dev builds, one project per kit (see Tests). |
-| `registry-smoke` | `pnpm smoke:registry`, below. |
-| `windows` | The CLI integration suite (`tests/integration/cli.test.ts`) on `windows-latest`. It builds for itself, since the artifact comes from Linux. |
-
-### The registry smoke test
-
-Nothing else in CI installs from a registry, so `scripts/verdaccio-smoke.mjs` does. It starts a throwaway [Verdaccio](https://verdaccio.org) (`scripts/verdaccio.yaml`), packs every public package under a prerelease version such as `0.1.0-smoke.1731000000000` and publishes them, then:
-
-- checks that every peer of the `kitr` package, every dependency of every package, every library pinned in `packages/cli/src/versions.ts` and every `builtOn` library can be installed from the registry,
-- installs the published `kitr` CLI, then runs `kitr new --kit app` and `--kit fullstack` against the registry, followed by `typecheck` and `build` in each project.
-
-Each kit runs on its own runner in CI. A peer that names a missing package or an unpublished version fails the run, and so does a setup module that adds one. Package files are bumped only while packing and restored afterwards, so versions and changesets stay as they are. On `main` the run adds `--all-packages`, which runs `kitr add` for every released package in one project.
-
-Run it locally after `pnpm build` and `pnpm -C registry build`: `pnpm smoke:registry`. Options: `--kits app,saas`, `--all-packages`, `--skip-projects` (publish and resolve checks only), `--keep` (keep the scratch directory), `--port`.
-
-### Upstream versions
-
-`packages/cli/src/versions.ts` is the set of upstream versions `kitr new` writes and `kitr upgrade` moves to. `pnpm versions:check` fails when a workspace `package.json` declares a range that cannot overlap the one in that file, when the lockfile resolved a version outside it, or when the lockfile no longer matches a manifest. `renovate.json` groups those libraries into a few weekly pull requests (TanStack, Vite and Vitest, Biome and TypeScript, the server runtime, React, Zod and ky, Tailwind, the native shells) and opens each major on its own. The examples are generated, so on a Renovate pull request that changes `versions.ts` run `pnpm sync:examples` and commit the result.
-
-### The nightly canary
-
-`.github/workflows/canary.yml` runs every night and on demand. It checks out `main`, runs `pnpm update --latest --recursive`, builds and runs the unit tests. Nothing is pushed. On a failure it opens one issue, "Canary: upstream update breaks the build" (label `canary`), with the failing step, the tail of its log and the dependency diff. Later failures update that issue, and a green run closes it.
-
-### Publishing
-
-`release.yml` runs Changesets on `main`: it opens a "Version packages" pull request and publishes to npm when that is merged. It needs an `NPM_TOKEN` secret and does nothing without it.
-
-## Tests
-
-Four layers, from fast to slow: unit tests next to the code (`pnpm test`), the integration suite (`pnpm test:integration`), Playwright (`pnpm test:e2e`), and the coverage gate that keeps the first from eroding.
-
-### One browser spec per kit
-
-`tests/e2e/` has a Playwright project for each kit, on its own port, each against a real build served by `kitr start site` (the project list and ports are in `playwright.config.ts`). The spec drives the app as a visitor would.
-
-| Project | Port | What the spec does |
-| --- | --- | --- |
-| `kit-site` | 4415 | Reads the prerendered `/`, `/pricing` and `/blog` with JavaScript disabled, switches the language and checks the page, `<html lang>` and the cookie across a reload and a navigation, and checks that a page rendered per request is in the cookie's language from the first byte. The kit switches language with a cookie on one URL, so there is nothing to put in `hreflang`; the spec asserts none is emitted. |
-| `kit-realtime`, `kit-realtime-sse` | 4416, 4417 | Two browser contexts join one room and exchange messages live, rooms stay separate, a late joiner sees the history, and the connection recovers after going offline. The same spec runs over the WebSocket the kit ships and over Server-Sent Events, and asserts which transport each page opened. |
-| `fullstack` | 4412 | Server rendering, per-request isolation, the API and WebSockets, plus a mutation: create a note through the form, read it back from the API, reload and find it in the server-rendered HTML. |
-| `dashboard` | 4410 | The SPA build, plus a mutation: add notes, reload, read them back. The dashboard has no server, so its record store is `localStorage`. |
-| `saas`, `site`, `dashboard-dev` | 4414, 4413, 4411 | Cookie sessions and guards, kitr.dev as built, and the devtools overlay on the Vite dev server. |
-
-`tests/e2e/prepare.mjs` builds each app from a copy of `examples/<kit>` in the system temp directory, so the examples stay untouched kit output. Files in `tests/e2e/fixtures/<kit>/` are copied into the copy's `app/` folder (a notes page, a store), and the fixture's `patch.mjs` links them into the route table and server routes the way `kitr make:page` would. A `variant-<name>.mjs` next to it rewires the kit for `--variant <name>`; `variant-sse.mjs` is the realtime kit switched to SSE in `config/realtime.ts`. Builds run a few at a time (`KITR_E2E_BUILDS`, default 3), because a prerender that cannot reach its own server in time fails the build.
-
-### The dirty-project fixture
-
-`tests/integration/dirty-project.test.ts` copies the fullstack example and edits it the way people do before `kitr add` and `kitr remove` ever run: providers reordered in `kitrrc.ts`, a platform factory imported under another name (`web as webPlatform`), comments between entries, tabs, double quotes and semicolons, and a user plugin in `vite.config.ts`. It then adds and removes packages, providers, commands and platforms, and checks that every hand edit survives byte for byte, that removing what was added restores the file exactly, and that the project still typechecks. The codemods that edit `kitrrc.ts` read and write it as text (`packages/cli/src/rc-text.ts`) for that reason: a printer that rebuilds the file moves comments and changes indentation.
-
-### The coverage gate
-
-`pnpm test:coverage` writes `coverage/coverage-summary.json`; `pnpm coverage:gate` (`scripts/coverage-gate.mjs`) reads it and prints a line coverage table per package. It exits 1 when a package is under its floor, and the CI `unit` job runs it right after the tests.
-
-Floors live in `coverage.floors.json`. The `default` is 80 for every published package. A package that cannot reach that is listed under `packages` with a `floor` and a `reason`: the native shells (`desktop`, `tauri`, `mobile`) and the packages that mostly wrap Electron, Tauri or a WebView sit at 60 because Node cannot run their code; a package that is simply behind is held at its coverage when the gate was added, minus two points. Raise a floor when coverage improves (the table says when a package is well above its floor), and give a reason in the same change if you ever lower one.
+`kitr eject stubs` copies every generator template into your project. `kitr eject all` also prints the import rewrites that remove kitr: each `kitr/*` import maps to the library it re-exports.

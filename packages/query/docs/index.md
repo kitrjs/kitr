@@ -590,7 +590,7 @@ export function OpenOrders() {
 const options = queryOptions(context.app, 'orders.list', { status: 'open' })
 ```
 
-The hooks look the name up in the registry of the app in React context (`useApp().operations`), so two apps, or two tests, never share operations; `queryOptions` and `call` run outside React and take the app as their first argument. The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[@kitr/query] "orders.lsit" is not registered` with the names that are.
+The hooks look the name up in the current app, so two apps or two tests never share operations. A misspelled name is a type error, and at run time it throws `[@kitr/query] "orders.lsit" is not registered`.
 
 `useMutation(name)` works the same way as `useMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
 
@@ -950,7 +950,7 @@ Throw a `KitrError` (or anything with `code`, `message` and `status`) so compone
 
 ## Devtools
 
-With [Devtools](/packages/devtools) installed, the provider adds a **Query** panel in development. Its badge shows how many queries are fetching (`2↻`) or, when idle, how many are cached. The panel lists every cached query, newest first, with its key, a status badge (`fetching`, `error`, `stale` or `fresh`), its observer count and how long ago it updated. Select a row to see its data or error, and to invalidate, refetch or remove that one entry. Two panel actions apply to the whole cache: **Invalidate all queries** and **Clear cache**.
+With [Devtools](/packages/devtools) installed, a **Query** panel lists every cached query with its status. Select one to see its data, or to invalidate, refetch or remove it.
 
 Failed mutations are logged to the Log panel under `query` as `mutation failed: <mutationKey>` with the error attached.
 

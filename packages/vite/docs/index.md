@@ -53,7 +53,7 @@ export default defineConfig({
 | `start` | what the packages ask (`router` asks for it) | `false` keeps the plain TanStack Router plugin without Start; an object passes options to `tanstackStart()`. |
 | `plugins` | every declared plugin | `{ tailwind: false }` leaves out the plugin a package declares, by its short name. |
 | `router` | `{}` | Extra options for `@tanstack/router-plugin`. |
-| `routesDirectory` | `directories.routes` | Where the route files are, for a project that still uses them. With the route table in `app/routes.ts` nothing is here and the plugin points Start at a stub in `.kitr/`. |
+| `routesDirectory` | `directories.routes` | Where route files are, for older projects that use them. |
 | `generatedRouteTree` | `<app>/routeTree.gen.ts`, or `.kitr/routeTree.gen.ts` with the table | Where TanStack's generator writes its tree. Unused by a table project; `createKitrRouter({ routes })` builds the tree. |
 | `devtools` | on, except in production builds without `enabled` in `config/devtools.ts` | `false` leaves every development-only provider out of this build too. `true` keeps them in production. |
 | `types` | `true` | Run `kitr types` on build start and on changes in dev. |

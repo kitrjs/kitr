@@ -870,7 +870,7 @@ kitr add auth --provider session
 
 | Use | When |
 | --- | --- |
-| `--provider token` (the default) | An SPA in front of an API that issues bearer tokens, a native shell, or a server you do not control. The bearer adapters (`tokenAdapter`, `localStorageTokens`) stay in the package. |
+| `--provider token` (the default) | A single-page app or native shell talking to an API that issues tokens. |
 | `--provider session` | The app has a kitr server (`kitr add server`) and server-rendered pages. The `saas` kit uses it. |
 | `--provider better-auth` | You want Better Auth's server, plugins and social sign-in. Its guards run in the browser only. |
 
@@ -888,7 +888,9 @@ export const sessions = createCookieSession({
 })
 ```
 
-The cookie holds a random session id signed with HMAC-SHA256 (Web Crypto, so it runs on Node, Bun, Deno and Workers). It is `HttpOnly`, `SameSite=Lax`, and `Secure` in production. Expiry slides: a session that is used refreshes, up to an absolute limit (`maxAge`, default seven days idle, `absoluteMaxAge`, default thirty days). Signing in rotates the id, so a cookie planted before sign-in is worthless. `sessions.revoke(id)` ends one session, `sessions.revokeAll(userId)` every session of a user. Pass `secret` as an array to rotate the secret: the first signs, all verify.
+The cookie holds a signed random session id. It is `HttpOnly`, `SameSite=Lax`, and `Secure` in production. A session lasts seven days without use (`maxAge`) and thirty days at most (`absoluteMaxAge`). Signing in issues a new id.
+
+`sessions.revoke(id)` ends one session and `sessions.revokeAll(userId)` ends all of a user's. To rotate the secret, pass an array: the first signs, all verify.
 
 Where sessions live is a `SessionStore`:
 
@@ -926,7 +928,9 @@ import { requireAuth } from '@kitr/router'
 })
 ```
 
-On the server `ensureSession` reads the session of the request being rendered (`runWithSession` in `app/server.ts` makes it available); in the browser it asks `GET /api/auth/session` through the query cache, so a client-side navigation costs no request while the cache is fresh, and signing in or out updates the cache. Do not return the guard's result from `beforeLoad` in a server-rendered route: it holds functions, which cannot be serialized into the page. `sessionMiddleware(auth)` protects API routes the same way and answers `401` without a session; `getRequestUser()` reads the user anywhere in the request.
+On the server, `ensureSession` reads the session of the request being rendered. In the browser it asks `GET /api/auth/session` once and caches the answer. Don't return the guard's result from `beforeLoad` in a server-rendered route: it holds functions, which cannot be sent to the page.
+
+For API routes, `sessionMiddleware(auth)` answers `401` without a session, and `getRequestUser()` reads the user anywhere in the request.
 
 ## Errors
 

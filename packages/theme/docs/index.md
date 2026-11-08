@@ -6,7 +6,7 @@ order: 1
 
 # Theme
 
-Users expect dark mode, a page that does not flash white before it turns dark, and buttons that look the same on every screen. `@kitr/theme` gives your app light, dark and system themes that follow the operating system and remember the user's choice, a set of design tokens as CSS variables, toasts, and the settings `kitr ui add` uses to copy ready-made components into your app. It is built on [CSS custom properties](https://developer.mozilla.org/docs/Web/CSS/Using_CSS_custom_properties), [sonner](https://sonner.emilkowal.ski) for toasts and [shadcn/ui](https://ui.shadcn.com)-compatible registries for components, and adds a theme provider, a no-flash script and typed token helpers on top.
+Users expect dark mode without a white flash on load. `@kitr/theme` gives you light, dark and system themes that remember the user's choice, design tokens as CSS variables, toasts, and the settings `kitr ui add` uses to copy components into your app. Toasts come from [sonner](https://sonner.emilkowal.ski), and components from [shadcn/ui](https://ui.shadcn.com)-compatible registries.
 
 It runs in the browser, and on the server during server rendering. For utility classes on top of the same tokens, add [tailwind](/packages/tailwind) as well; for a server-only project there is nothing to theme.
 
@@ -749,9 +749,9 @@ Don't render a second `ThemeProvider` inside a kitr app. The provider already wr
 
 | Command | What it does |
 | --- | --- |
-| `kitr ui add <names...>` | Copies components and their registry dependencies into `componentsDir`, and installs the npm packages they need. Flags: `--registry <url or dir>`, `--overwrite`, `--no-install`. |
+| `kitr ui add <names...>` | Copy components into your app: `kitr ui add button`. |
 | `kitr ui list` | Lists the components in the registry with a one-line description. Flag: `--registry`. |
-| `kitr css:types` | From the [web](/packages/web) platform, not theme: writes a typed `.d.ts` next to every `*.module.css` under `app`. Flags: `--dir <dir>`, `--check` to fail on stale files instead of writing. |
+| `kitr css:types` | Type CSS Module class names. Comes from [web](/packages/web). |
 
 ```sh
 kitr ui add theme-toggle

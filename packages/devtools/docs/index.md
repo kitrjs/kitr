@@ -6,7 +6,7 @@ order: 1
 
 # Devtools
 
-When a page shows stale data or a button does nothing, the first question is what the app is doing right now: which route matched, what is in the query cache, who is signed in, which request failed. `@kitr/devtools` answers it in the page itself. In development a small "k" button sits in a corner; open it and a panel shows the route, the cache, the session, saved values, errors, analytics calls and one log that every kitr package writes to. Your own providers can add panels and log lines with a few lines of code.
+When a page shows stale data or a button does nothing, you want to see what the app is doing: which route matched, what is cached, who is signed in, which request failed. `@kitr/devtools` shows that in the page itself. In development, click the small "k" button in a corner to open the panel.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` has a cart for orders, and Ada wants to see what is in it, log each change, and empty it from a button while she builds the checkout.
 
@@ -149,7 +149,7 @@ Three panels are always there. The others appear when their package is installed
 
 | Panel | Comes from | Shows | Actions |
 | --- | --- | --- | --- |
-| App | devtools | Mode, environment, boot status and installed packages; every provider with the hooks it implements (`register`, `boot`, `wrap`, `ready`, `shutdown`, `devtools`); every container binding; every config file; public env variables (`VITE_*`, `PUBLIC_*`). | Reload page |
+| App | devtools | Mode, packages, providers, container bindings, config and public env variables. | Reload page |
 | Router | devtools | The current pathname, search, hash and status; every matched route with its params and loader data; the navigation log. Shows "n/a" without a [router](/packages/router). | Invalidate router (re-run loaders), Navigate to / |
 | Log | devtools | Every entry every package logged, newest last, filterable by channel and text. | Clear log |
 | Query | [query](/packages/query) | Every cached query with its data and state. | Invalidate all queries, Clear cache |

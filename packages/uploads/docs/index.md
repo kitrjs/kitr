@@ -128,7 +128,7 @@ In a component, `useUpload(options)` returns the state and three functions:
 
 | Field | Description |
 | --- | --- |
-| `send(input)` | Takes a `FileList`, an array of `File`, one `File` or `null`. Checks, uploads, resolves with the stored files. `null` or an empty list resolves with `[]`. |
+| `send(input)` | Check and upload files, then resolve with the stored files. Takes a `FileList`, `File[]` or `File`. |
 | `cancel()` | Aborts the request in flight. `error` becomes `Upload cancelled`. |
 | `reset()` | Clears `files`, `progress` and `error`. |
 | `files` | The stored files from the last successful upload. |

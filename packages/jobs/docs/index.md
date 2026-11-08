@@ -63,7 +63,7 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `jobs` | `[]` | Every job the worker can run. A queued job whose name is not here, and was not dispatched by this process, is dropped with a warning. Schedules only run for jobs listed here or passed to `register()`. |
+| `jobs` | `[]` | Every job the worker can run. A queued job not listed here is dropped with a warning. |
 | `driver` | the memory driver | Where queued jobs wait. `createRedisJobsDriver(redis)` shares the queue between processes; see [Share the queue between processes](#share-the-queue-between-processes) and [Extend](#extend). |
 | `concurrency` | `5` | How many jobs run at once in each process. |
 | `pollInterval` | `500` | Milliseconds between checks of the queue. |
@@ -288,7 +288,7 @@ cronMatches('*/15 9-17 * * 1-5', new Date(2026, 10, 7, 9, 30)) // => false, a Sa
 parseInterval('5m') // => 300000
 ```
 
-Every process with a running worker checks the schedules. With the memory driver, each of them queues its own copy: two web servers that both run the worker run `prune_sessions` twice. With a driver that can lock (the [Redis driver](#share-the-queue-between-processes) can), each cron minute and each interval is queued once, by whichever worker claims it first. Interval runs then line up on fixed slots of the clock (every 5 minutes from midnight UTC for `'5m'`) instead of starting when the worker starts, so a deploy does not add an extra run. Cron expressions are read in each server's local time zone, so give every server the same `TZ`.
+Every running worker checks the schedules. With the memory driver, each worker queues its own copy, so two servers run `prune_sessions` twice. With the [Redis driver](#share-the-queue-between-processes), each run is queued once. Cron reads each server's local time, so give every server the same `TZ`.
 
 ## Retry a failing job
 
@@ -410,7 +410,9 @@ When every attempt fails, `run()` throws the last error. It waits the real backo
 
 ## Share the queue between processes
 
-With the memory driver, the queue lives inside one process: a job dispatched on one web server is never seen by another, and everything queued is lost on restart. A job it hands to the worker is reserved, not removed: it counts in `jobs.driver.size()` until the run finishes, and goes back to the queue if it is not acknowledged within `visibilityTimeout` (30 seconds by default, `createMemoryJobsDriver({ visibilityTimeout })`). Keep that above your longest job `timeout`, or a slow job runs twice. On the server, `createRedisJobsDriver` keeps the queue in [Redis](https://redis.io) instead, so every web server can dispatch and every worker can run. Install a Redis client. The driver takes an [ioredis](https://github.com/redis/ioredis) client:
+With the memory driver, the queue lives in one process: other servers never see its jobs, and a restart loses them. A job that is not finished within `visibilityTimeout` (30 seconds) goes back to the queue, so keep it above your longest job `timeout`.
+
+To share one queue between servers, use `createRedisJobsDriver` with an [ioredis](https://github.com/redis/ioredis) client:
 
 ```sh
 pnpm add ioredis
@@ -492,7 +494,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 ```
 
-Deploy the web servers with `JOBS_WORKER=off`, and start one or more workers next to them with `tsx server/worker.ts`. Or skip `server/worker.ts` and run `kitr jobs:work`, which boots the app and starts the worker the same way; it boots the app behind the `server` that `server/main.ts` exports. `kitr add jobs --no-worker` adds that command as the `worker` script. It calls `start()` itself, so the setting does not matter there; in development, with the variable unset, the web server runs the worker as before. `server/main.ts` only listens when it is the entry file, so importing it here boots the app without opening a port.
+Deploy the web servers with `JOBS_WORKER=off`, and run one or more workers beside them with `tsx server/worker.ts` or `kitr jobs:work`. In development, with the variable unset, the web server runs the worker itself.
 
 `jobs.stop()` stops polling and waits for running jobs. Each job waits at most its timeout. Set your platform's shutdown grace period above your longest job timeout.
 
@@ -537,7 +539,7 @@ export default class AdminJobsController {
 | Command | What it does |
 | --- | --- |
 | `kitr jobs:list` | Loads `config/jobs.ts` and prints each job's name, retries, timeout and schedule. `--json` prints the rows as JSON. |
-| `kitr jobs:work` | Boots the app from `server/main.ts` and runs the worker in this process until `SIGINT` or `SIGTERM`, then waits for running jobs. `--entry <file>` boots another file. |
+| `kitr jobs:work` | Run the worker until stopped, then finish running jobs. `--entry <file>` boots another file. |
 | `kitr make:job <name>` | Writes a job to `server/jobs/<name>.ts` (kebab-case, nested names allowed). `--force` overwrites an existing file. |
 | `kitr eject stub job` | Copies the generator's template to `stubs/job.ts`, so `make:job` writes your own starting point. |
 
@@ -710,8 +712,8 @@ A driver is where queued jobs wait. It has four methods and an optional fifth; t
 | `pull(now, limit)` | Return up to `limit` jobs whose `runAt` is at or before `now`, earliest first, and remove them so no other worker gets them. |
 | `size()` | Count the jobs waiting, and the ones pulled but not yet acknowledged. |
 | `clear()` | Remove every job. |
-| `ack(job)` (optional) | Forget a job that has finished. With `ack`, `pull` can reserve jobs instead of deleting them, so a job whose worker died mid-run is pulled again. |
-| `claim(key, ttlMs)` (optional) | Take a lock for `ttlMs` and resolve `true` for exactly one caller. Workers call it before queuing a scheduled run, so the run is queued once however many workers poll. Without it, each worker queues its own copy. |
+| `ack(job)` (optional) | Forget a finished job. With it, a job whose worker crashed runs again. |
+| `claim(key, ttlMs)` (optional) | Take a lock for `ttlMs`; `true` for one caller only. Stops several workers queuing the same scheduled run. |
 
 kitr ships a complete Redis driver (see [Share the queue between processes](#share-the-queue-between-processes)). To see the shape, here is the smallest driver that shares a queue: one [Redis](https://redis.io/docs/latest/develop/data-types/sorted-sets/) sorted set scored by `runAt`, with [ioredis](https://github.com/redis/ioredis). Each job is claimed with `ZREM`, so two workers never run the same one:
 
@@ -760,7 +762,7 @@ export default defineConfig({
 })
 ```
 
-Payloads pass through `JSON.stringify`, so keep them to plain JSON: a `Date` comes back as a string, and the schema check on pull catches the mismatch. Without `ack`, a job is removed from the queue when it is pulled, before it runs, so if the process dies mid-run the job is gone. A driver that must never lose work moves pulled jobs to a processing list in `pull`, deletes them in `ack`, and pushes back any that are not acknowledged in time, as `createRedisJobsDriver` does. A retry is a new `push`, so `ack` always means that run is over. This small driver has no `claim`, so each worker queues its own copy of a scheduled job; add one with `SET key 1 PX ttl NX` when several workers share it. The same four methods fit a database table: `pull` selects due rows and deletes them in one transaction.
+Keep payloads to plain JSON: a `Date` comes back as a string. Without `ack`, a job is removed when it is pulled, so it is lost if the process dies mid-run; `createRedisJobsDriver` shows how to keep it. Without `claim`, each worker queues its own copy of a scheduled job. The same methods also fit a database table.
 
 ## Next steps
 

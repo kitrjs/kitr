@@ -53,7 +53,7 @@ export default defineConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `icon` | none | Icon for browser notifications that don't set their own. A path under `public/` or a full URL. |
-| `requestOnBoot` | `false` | Ask for permission as the app starts in the browser. Browsers block or bury asks that don't follow a click, so leave it off for websites. |
+| `requestOnBoot` | `false` | Ask for permission at startup. Leave it off for websites: browsers block asks that don't follow a click. |
 | `driver` | registered, else the driver for the runtime | A `NotificationsDriver` that replaces the one the service would pick. For tests and custom shells. |
 | `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no notifications driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
@@ -167,7 +167,7 @@ export async function notifyShipped(notifications: Notifications, orderId: strin
 | `id` | generated | Your own id, to replace or cancel this notification later. |
 | `icon` | `config.icon` | The image beside the text. |
 | `data` | none | Extra values handed to tap listeners and passed to native drivers. |
-| `channel` | the id | A group. On the web it is the notification's `tag`, so a new one in the same channel replaces the old. On Android it is the notification channel. |
+| `channel` | the id | A group. A new notification replaces the old one in the same channel on the web. |
 | `silent` | `false` | Show it without sound or vibration. |
 
 On the web, `show()` does nothing while permission is not `'granted'`, and still resolves to an id. Check `permission` before you rely on a notification being seen.
@@ -424,7 +424,7 @@ In a desktop shell the service shows operating-system notifications instead of t
 
 ### Electron
 
-The driver asks the main process to create an Electron [`Notification`](https://www.electronjs.org/docs/latest/api/notification) over the `kitr:notify:*` channels that `handleKitrIpc(ipcMain, app)` serves. Clicking one restores and focuses the window and calls your `onTap` listeners with the `url` and `data` it was shown with, so the tap handler under [Open the right page when tapped](#open-the-right-page-when-tapped) works unchanged. Scheduled notifications wait in a timer in the main process: they survive a window reload, not quitting the app. The driver also sets the app badge (the dock on macOS, the launcher on Linux), which the service API has no call for, so import the driver:
+The driver shows an Electron [`Notification`](https://www.electronjs.org/docs/latest/api/notification). Clicking it focuses the window and calls your `onTap` listeners. Scheduled notifications survive a reload but not quitting the app. To set the app badge, import the driver:
 
 ```ts
 // app/orders/badge.ts
@@ -443,7 +443,7 @@ Requirements:
 
 ### Tauri
 
-The driver uses [`@tauri-apps/plugin-notification`](https://v2.tauri.app/plugin/notification/): `isPermissionGranted()` and `requestPermission()` for the permission (macOS and Windows may ask once), `sendNotification()` to show. The plugin has no scheduling on desktop, so `schedule()` waits in a timer in the window and shows the notification then; it is lost when the app quits. The plugin reports a tap only on mobile, so `onTap` listeners fire there and stay silent on desktop. `cancel(id)` stops a timer, and asks the system to withdraw the notification where the plugin can.
+The driver uses [`@tauri-apps/plugin-notification`](https://v2.tauri.app/plugin/notification/). Scheduled notifications wait in a timer and are lost when the app quits. Taps are reported on mobile only, so `onTap` does not fire on desktop.
 
 Requirements:
 

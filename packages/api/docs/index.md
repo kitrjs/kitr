@@ -96,12 +96,12 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `prefix` | none | The prefix every route shares, the part the web app forwards to the server. Set it on the routes with `router.group({ prefix: '/api' })` in `server/routes.ts`; `kitr api:sync` warns about any route outside it, because requests to it never reach the server. |
+| `prefix` | none | The path the web app forwards to the server, such as `'/api'`. `kitr api:sync` warns about routes outside it. |
 | `openapi.path` | `'openapi.json'` | Where `kitr api:sync` writes the OpenAPI document. |
 | `openapi.title` | `'<package name> API'` | `info.title` in the document. |
 | `openapi.version` | `package.json` version | `info.version` in the document. |
 | `openapi.description` | none | `info.description` in the document. |
-| `client.path` | `'app/api/client.ts'` | The typed client's file. `kitr api:sync` writes the route table, `routes.gen.ts`, next to it. Without it the table goes to `app/api/`, or `server/` in a project without one. |
+| `client.path` | `'app/api/client.ts'` | The typed client's file. `kitr api:sync` writes `routes.gen.ts` next to it. |
 
 `kitr api:sync` loads `config/api.ts` the way the app does, so the values can come from variables or imports. API routes add no environment variables.
 
@@ -661,9 +661,9 @@ export type ServerRoutes = typeof routes.$types
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `origin` | none | One origin, a list, a function `(origin) => boolean`, or `'*'` for a public API. With none, no cross-origin caller is allowed. `'*'` with `credentials` throws, because it would let any site act as the user. |
+| `origin` | none | Allowed origins: one, a list, a function, or `'*'` for a public API. Unset allows none. `'*'` with `credentials` throws. |
 | `methods` | `GET, POST, PUT, PATCH, DELETE, OPTIONS` | `access-control-allow-methods` on preflight. |
-| `headers` | `Content-Type, Authorization, X-CSRF-Token, X-Requested-With` | `access-control-allow-headers` on preflight. Earlier releases allowed only the first two, so a client that sent the CSRF header needed it listed. |
+| `headers` | `Content-Type, Authorization, X-CSRF-Token, X-Requested-With` | Request headers a cross-origin caller may send. |
 | `credentials` | `false` | Sends `access-control-allow-credentials: true`, needed for cookies. |
 | `maxAge` | `600` | Seconds a browser may cache the preflight. |
 

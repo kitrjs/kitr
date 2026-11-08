@@ -1,8 +1,8 @@
 # Kits
 
-A kit is what `kitr new <dir> --kit <name>` starts from: the platforms written to `kitrrc.ts`, the packages added (each through its own `kitr add`, with the kit's answers to its questions), the registry components copied into `app/components/ui`, and for the preset kits, real pages, controllers and tests to edit rather than delete. A kit runs once. Afterwards the project is ordinary: `kitrrc.ts` lists what was added, and `kitr add` or `kitr remove` changes it the same way as in a project that started blank.
+A kit is the starting point for `kitr new <dir> --kit <name>`. It sets up platforms, adds packages and copies components. The preset kits also add real pages, controllers and tests for you to edit.
 
-Every kit but `blank` is a package of its own, `@kitr/kit-<name>`, built on the [package contract](package-contract.md) with `kind: 'kit'`. The CLI resolves it like any setup module, so `kitr new my-app --kit @acme/starter` runs a kit from any npm package, and a kit never ends up in the project's dependencies: it is a template, not a runtime.
+A kit runs once. After that the project is ordinary, and `kitr add` and `kitr remove` change it as usual. Every kit but `blank` is an npm package (`@kitr/kit-<name>`), so `--kit @acme/starter` runs a kit from any package.
 
 ```sh
 kitr new my-app                      # blank
@@ -11,63 +11,77 @@ kitr new my-api --kit server
 kitr new my-saas --kit saas --platform site=web,api=server --mode ssr --runtime bun
 ```
 
-`--platform name=type,...` replaces the kit's platforms; `--mode`, `--pwa`, `--runtime`, `--targets` and `--port` set their options. `--no-install`, `--no-git`, `--pm`, `--registry` and `--force` are described in [cli.md](cli.md).
+Every flag is listed under [Create a project](cli.md#create-a-project).
 
 ## Base kits
 
 | Kit | Platforms | Packages | Components |
 | --- | --- | --- | --- |
 | `blank` | none | none | none |
-| `app` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools (and what they require: vite, react, router, query) | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
-| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit without mocks, plus seo, actions, api, realtime (and logger, server) | the app kit's eleven |
-| `server` | `api: server()` | logger, api, db, realtime, testing (and server). No React, no Vite. | none |
+| `app` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, devtools | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
+| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit without mocks, plus seo, actions, api, realtime | the app kit's eleven |
+| `server` | `api: server()` | logger, api, db, realtime, testing. No React. | none |
 
 ### blank
 
-Seven files: `package.json` (`typecheck`, `lint` and `kitr` scripts; `kitr` and `@kitr/core`; TypeScript, `@types/node` and Biome as dev dependencies), a Node-only `tsconfig.json`, `kitrrc.ts` with empty `packages`, `providers` and `platforms`, `biome.json`, `.gitignore`, `.env.example` and `AGENTS.md`. There is no `app/`, no `vite.config.ts`, no dev server and no React. `kitr add web site` is the usual next step: the web platform requires `vite`, `react` and `router`, so that one command writes `vite.config.ts`, `app/app.ts`, `app/env.ts`, `app/router.tsx`, `app/client.tsx`, the root, home and about routes, and the `dev`, `build` and `start` scripts. `kitr add server api` does the same for a backend.
+Only the config files: `package.json`, `tsconfig.json`, an empty `kitrrc.ts`, `biome.json`, `.gitignore`, `.env.example` and `AGENTS.md`. No app, no React, no dev server.
+
+The usual next step is `kitr add web site` for a UI or `kitr add server api` for a backend. Each writes the files and scripts it needs.
 
 ### app
 
-A single-page app against an API you already have. `app/document.tsx` renders the theme and the app shell, `app/routes.ts` lists the pages and `app/pages/home.tsx` is the home page, `config/http.ts` points at `VITE_API_URL` (data comes from `http`, because the backend already exists; see [Choosing a data source](/docs/data-sources)), `config/auth.ts` uses the token adapter, and `mocks` answers requests in development when `VITE_MOCKS=true`. The components come from kitr's registry and live in `app/components/ui`, yours to edit. The [dashboard guide](https://kitr.dev/guides/dashboard) builds on this kit.
+A single-page app for an API you already have. Data comes through `http`, pointed at `VITE_API_URL`. Sign-in uses tokens. Set `VITE_MOCKS=true` to fake the API while you build. The [dashboard guide](/guides/dashboard) builds on this kit.
 
 ### fullstack
 
-The app kit rendered through TanStack Start, with an API server beside it: `server/main.ts`, `server/routes.ts` and a health controller from `api`, `app/actions/` from `actions`, `app/channels/` from `realtime`, and `config/seo.ts` for heads and the prerender list. `kitr dev` runs both platforms; `kitr dev site` runs the UI alone. The UI calls its own server through actions, `api` serves outside clients, `http` reaches third-party APIs and `realtime` pushes updates; [Choosing a data source](/docs/data-sources) explains the split. The [full-stack guide](https://kitr.dev/guides/fullstack-app) walks through it.
+The app kit, rendered on the server, with an API server beside it. The UI calls its server through `actions` in `app/actions/`, and `api` routes in `server/routes.ts` serve other clients. `kitr dev` runs both. The [full-stack guide](/guides/fullstack-app) walks through it.
 
 ### server
 
-A backend with no React anywhere in the dependency graph: an h3 server with the kitr lifecycle, Adonis-style routes and controllers, `config/db.ts` for whichever ORM you connect, typed channels and a Vitest setup with `createTestClient`. Everything it exposes is an API route, and channels cover the push side ([Choosing a data source](/docs/data-sources)). The [API server guide](https://kitr.dev/guides/api-server) walks through it.
+A backend with no React: routes and controllers, a database hook for any ORM, live channels and tests. The [API server guide](/guides/api-server) walks through it.
 
 ## Preset kits
 
-The presets are the base kits plus a small, real application. `examples/` in the repository is generated from them unmodified, so each example is also the kit's documentation.
+The presets are a base kit plus a small working app. Each one is also in [`examples/`](https://github.com/kitrjs/kitr/tree/main/examples), unmodified.
 
 | Kit | Platforms | Packages | What it scaffolds |
 | --- | --- | --- | --- |
-| `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, cookie-session auth, analytics, monitoring | sign-in on `/sign-in`, password reset and email verification pages, a guarded `_app` layout rendered on the server, a projects CRUD with a data table, `auth` and `projects` controllers, an API test |
-| `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools | a prerendered marketing site: home, pricing, a blog from `app/content/posts.ts`, en/de locales, a newsletter form on a controller, a test |
-| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, storage, seo, api, realtime, testing, devtools | a chat room: a typed `chat` channel that feeds the query cache, a messages controller, rooms in the URL, a test |
-| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform | the app kit in an Electron shell: `platforms/app/` with the main process, a typed IPC contract and native dialogs from the home page |
-| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform | the same React app in a Tauri shell: `platforms/app/src-tauri/` with typed Rust commands and events called from the home page |
-| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform | an installable PWA and a Capacitor shell: online state, the install prompt and native lifecycle hooks on the home page |
+| `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, analytics, monitoring | sign-in, a guarded app shell, a projects page, an API test |
+| `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools | a prerendered site: home, pricing, a blog, a newsletter form, a test |
+| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, storage, seo, api, realtime, testing, devtools | a chat room with rooms in the URL, a test |
+| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the app kit plus platform | the app kit in Electron, with native dialogs |
+| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform | the app kit in Tauri, with typed Rust commands |
+| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform | the app kit as an installable PWA and a Capacitor app |
 
 ### saas
 
-`app/document.tsx` carries the theme script and the providers; `app/routes.ts` declares `/sign-in` and the `_app` layout `requireAuth()` guards, with `app/pages/overview.tsx` (the dashboard) and `app/pages/projects.tsx` (a `DataTable` over `projects.list`, a create form over `projects.create`). `server/routes.ts` is the server table (`defineRoutes([api], ...)`). Auth is `kitr add auth --provider session` ([cookie sessions](/packages/auth#cookie-sessions-with-a-server)): the session is an HttpOnly cookie, `server/auth.ts` holds the session service and a user provider with two demo accounts (`admin@example.com` and `member@example.com`, password `password`; in memory, swap it for your database), `server/controllers/auth-controller.ts` is the session, sign-in, sign-up, verification and reset controller, and `app/server.ts` renders pages inside the request's session, so guarded pages arrive with the signed-in user's data in the HTML. Shield's CSRF protects the auth routes and the typed client echoes the token. A production build needs `SESSION_SECRET` (at least 32 random characters) and a mail transport (`RESEND_API_KEY` or SMTP in `config/mail.ts`); development logs emails and previews them at `/_kitr/mail`. No token is kept in `localStorage`. `server/controllers/projects-controller.ts` is a resource controller with `static validation`. `app/validators/projects.ts` is the one zod schema the form, the controller and the test share. `app/api/client.ts` is the typed client with its route table; `kitr api:sync` rewrites the table and `openapi.json`. `test/api.test.ts` boots the server and calls it through `createTestClient`. Data goes through `api` and its typed client rather than actions, so a mobile app or an integration can call the same routes later ([Choosing a data source](/docs/data-sources)).
+A signed-in product on its own API. Sign in with `admin@example.com` or `member@example.com`, password `password`. The demo users live in memory; swap them for your database.
+
+| File | What it is |
+| --- | --- |
+| `app/routes.ts` | `/sign-in`, and the guarded `_app` layout with the overview and projects pages. |
+| `app/pages/projects.tsx` | A data table of projects with a create form. |
+| `server/auth.ts` | The cookie session and the demo users. |
+| `server/controllers/auth-controller.ts` | Sign-in, sign-up, email verification and password reset. |
+| `server/controllers/projects-controller.ts` | The projects API. |
+| `app/validators/projects.ts` | The schema the form, the controller and the test share. |
+| `test/api.test.ts` | Calls the API in a test. |
+
+Sessions are HttpOnly cookies, with CSRF protection on the auth routes. A production build needs `SESSION_SECRET` (32 or more random characters) and a mail transport. See [cookie sessions](/packages/auth#cookie-sessions-with-a-server).
 
 ### site
 
-`config/seo.ts` lists the prerendered paths and the sitemap; `app/routes.ts` declares `/`, `/pricing` and the `/blog` group with `seo()` heads, and `app/pages/` holds their components. `app/locales/en.ts` and `de.ts` hold the strings, `app/locale.tsx` switches them and stores the choice through `app/storage.ts`. `server/controllers/newsletter-controller.ts` takes the sign-up form, validated by `app/validators/newsletter.ts`, and `test/newsletter.test.ts` covers it. The one form posts to an `api` controller ([Choosing a data source](/docs/data-sources)).
+A prerendered marketing site: home, pricing and a blog, in English and German. `config/seo.ts` lists the pages to prerender. The newsletter form posts to `server/controllers/newsletter-controller.ts`, and `test/newsletter.test.ts` covers it.
 
 ### realtime
 
-`app/channels/chat.ts` defines the channel and its events with cache effects; `server/routes.ts` serves it with `.ws('/ws', { channels: [chatChannel] })` beside the endpoints, and `server/controllers/messages-controller.ts` emits through `app.container.use('realtime')`. `app/queries/chat.ts` lists and sends messages; `app/pages/chat.tsx` is the room, with the room name in the URL and the display name kept in `app/storage.ts`. `config/realtime.ts` picks the transport (`ws` by default; `socket.io` and `sse` are one option away). `test/messages.test.ts` posts a message through the API and reads it back. Messages travel through `api` and the channel feeds the same cache ([Choosing a data source](/docs/data-sources)).
+A chat room. `app/channels/chat.ts` defines the channel, `app/pages/chat.tsx` is the room, and `server/controllers/messages-controller.ts` sends new messages to everyone in it. `config/realtime.ts` picks the transport: WebSocket by default, or Socket.IO or server-sent events.
 
 ### desktop, tauri and mobile
 
-These three add a native shell to the app kit and replace the home page with one that exercises it: `usePlatform()`, native dialogs over typed IPC (Electron), typed Rust commands and events (Tauri), or the install prompt, online state and lifecycle hooks (PWA and Capacitor). The shell's own project lives in `platforms/<name>/` and is yours to edit; `kitr platforms scaffold <name>` rewrites it. The web platform stays, so `kitr dev site` runs the same app in a browser.
+The app kit in a native shell, with a home page that uses it. The shell's project lives in `platforms/<name>/`. The web platform stays, so `kitr dev site` still runs the app in a browser.
 
-Electron and Tauri are separate kits (and separate platform packages) on purpose: Electron ships its own browser, so what you test is what users run, which is why `desktop` is the recommended default; Tauri uses the system webview for a much smaller download at the cost of per-platform rendering differences. Both kits produce the same `app/`, so moving between them is `kitr add tauri app` or `kitr add desktop app` plus the shell-specific calls on the home page.
+Pick `desktop` (Electron) unless download size matters most. Electron ships its own browser, so every user sees what you tested. Tauri is much smaller but uses the system webview, which can render differently between machines.
 
 ## Writing a kit
 
@@ -93,4 +107,6 @@ export default definePackage({
 })
 ```
 
-`packages` are added in order after the platforms' own requirements, each with its questions answered from `answers` (or its defaults). `files` runs after the components with the same `ctx` a package's `add()` gets ([the contract](package-contract.md#what-ctx-can-do)), so a kit edits `package.json` scripts, `.env.example` or `AGENTS.md` through the same codemods, and `--dry-run` prints what it would do. The `kitr` block in `package.json` carries `"kind": "kit"` and `"category": "kits"`, and the package keeps the `kitr-package` keyword so the site can list it. `kitr new my-app --kit @acme/kit-starter` is all a user needs; the CLI installs the kit for the run when it cannot resolve it, and leaves no trace of it in the project.
+`packages` are added in order, with `answers` for their questions. `files` runs last, with the same `ctx` a package's `add()` gets ([the contract](package-contract.md#what-ctx-can-do)).
+
+Publish it with `"kind": "kit"` in the `kitr` block of `package.json`. Then `kitr new my-app --kit @acme/kit-starter` runs it.
