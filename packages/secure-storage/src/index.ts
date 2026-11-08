@@ -10,6 +10,7 @@ import type { StorageDriver } from '@kitr/storage'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createCapacitorDriver as createCapacitorSecureStorageDriver } from './drivers/capacitor'
 export { createMemorySecureStorageDriver } from './drivers/memory'
 export { createWebSecureStorageDriver } from './drivers/web'
 

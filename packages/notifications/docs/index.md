@@ -366,10 +366,57 @@ To build a service with no app, call `createNotifications(config)`. In a browser
 | --- | --- | --- |
 | Browser | `createWebNotificationsDriver()`, the Notification API | Fire only while the page is open. |
 | Chrome for Android | The same driver, through the service worker | The same. |
-| Desktop and mobile shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the web driver only with `fallbackToWeb: true` | The same as the web driver with the fallback, until a native driver is registered. |
+| Mobile shell (Capacitor) | `createCapacitorNotificationsDriver()`, the OS notification centre | Fire with the app closed. |
+| Desktop shells | A driver a provider registers, else `E_DRIVER_UNAVAILABLE`; the web driver only with `fallbackToWeb: true` | The same as the web driver with the fallback, until a native driver is registered. |
 | Server | Memory driver, permission `'unsupported'` | Nothing is shown. |
 
-Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers. To hand notifications to the operating system, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+Today [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) register only `platform` and `storage` drivers. To hand notifications to the operating system there, so scheduled ones fire with the app closed, register a `notifications` driver as shown under [Extend](#extend).
+
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell the service uses `@capacitor/local-notifications`, an optional peer dependency imported the first time a method runs. `kitr add notifications` installs it, and `@capacitor/push-notifications`, when the project has the mobile platform.
+
+| Service call | What the driver does |
+| --- | --- |
+| `permission()`, `request()` | `checkPermissions()` and `requestPermissions()`. Capacitor's `prompt-with-rationale` (Android, after one refusal) maps to `'prompt'`; `granted` and `denied` map to themselves. |
+| `show()` | Schedules with no time, so the OS shows it at once. `silent` hides it while the app is in the foreground (iOS). |
+| `schedule()` | The OS keeps the alarm, so it fires with the app closed or killed. |
+| `cancel(id)`, `cancelAll()` | Cancel the pending alarm and remove the delivered notification. |
+| `pending()` | The ids of the alarms the OS still holds, as the ids you used. |
+| `onTap()` | Fires for a tap on a local notification and on a push notification, with `id`, `url` and `data`. |
+| `channel` | On Android, creates a notification channel of that name (default importance) the first time it is used. iOS has no channels and ignores it. |
+
+Capacitor ids are 32-bit integers, so kitr hashes your string id to one and keeps the string in the notification's `extra`. Two different ids that hash to the same integer would replace each other; with a few hundred pending notifications the odds are negligible.
+
+Android 13 and later needs the `POST_NOTIFICATIONS` permission, which `request()` asks for. Exact-time alarms on Android 12 and later need the "Alarms & reminders" setting; without it the OS may delay a scheduled notification by several minutes.
+
+Push notifications are separate from the service, because they need a server to send them. `capacitorPush()` wraps `@capacitor/push-notifications`:
+
+```tsx
+// app/push.ts
+import { capacitorPush } from 'kitr/notifications'
+
+const push = capacitorPush()
+
+/** Ask once, register with FCM or APNs, and send the device token to Acme's server. */
+export async function enablePush(): Promise<string | null> {
+  if ((await push.request()) !== 'granted') return null
+  const token = await push.register()
+  await fetch('https://api.acme.com/devices', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token }),
+  })
+  return token
+}
+
+push.onReceived((message) => console.log('push while open:', message.title))
+push.onAction((tap) => console.log('opened from push:', tap.url, tap.actionId))
+// => push while open: Invoice paid
+```
+
+Taps from push notifications also reach `useNotificationTap()`, so one handler routes both. Push needs `google-services.json` in `android/app` (Firebase) and the Push Notifications capability in Xcode; without them `register()` rejects with the plugin's registration error.
+
 
 ## Errors
 

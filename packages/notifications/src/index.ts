@@ -3,6 +3,12 @@ import { runtimeOf } from '@kitr/platform'
 import { selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export {
+  type CapacitorPush,
+  capacitorPush,
+  createCapacitorDriver as createCapacitorNotificationsDriver,
+  type PushMessage,
+} from './drivers/capacitor'
 export { createMemoryNotificationsDriver } from './drivers/memory'
 export { createWebNotificationsDriver } from './drivers/web'
 

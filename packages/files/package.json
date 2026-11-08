@@ -69,10 +69,26 @@
     "@kitr/platform": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "@capacitor/core": ">=7.0.0",
+    "@capacitor/filesystem": ">=7.0.0",
+    "@capacitor/share": ">=7.0.0",
+    "@capawesome/capacitor-file-picker": ">=7.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "@capacitor/core": {
+      "optional": true
+    },
+    "@capacitor/filesystem": {
+      "optional": true
+    },
+    "@capacitor/share": {
+      "optional": true
+    },
+    "@capawesome/capacitor-file-picker": {
       "optional": true
     }
   },
@@ -82,7 +98,11 @@
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "react-dom": "^19.3.1",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
+    "@capawesome/capacitor-file-picker": "^8.1.1"
   },
   "kitr": {
     "name": "files",

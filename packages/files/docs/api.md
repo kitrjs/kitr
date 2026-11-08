@@ -18,6 +18,30 @@ function acceptFor(filters?: FileFilter[]): string;
 
 The `accept` string an `<input type="file">` needs for a set of filters.
 
+### capacitorFileStore
+
+```ts
+function capacitorFileStore(options?: {
+  directory?: CapacitorDirectory;
+}): CapacitorFileStore;
+```
+
+`@capacitor/filesystem` under one of the app's directories (`data` by default, which no other
+app can see). Paths are relative to that directory. For files the person chooses, use the
+`files` service's dialogs instead.
+
+### createCapacitorFilesDriver
+
+```ts
+function createCapacitorFilesDriver(_options?: DriverOptions): Driver;
+```
+
+Files driver for the Capacitor shell. `open()` shows the system document picker
+(`@capawesome/capacitor-file-picker`). Mobile has no "save as" dialog, so `save()` writes the
+file to the app's cache (`@capacitor/filesystem`) and opens the share sheet
+(`@capacitor/share`), where the person picks Save to Files, Drive, Mail and so on; it resolves
+to the file's URI, or null when the sheet is dismissed. `reveal()` hands a path to the share sheet.
+
 ### createFiles
 
 ```ts
@@ -99,6 +123,46 @@ const defineConfig: <const C extends FilesConfig>(config: C) => C;
 ```
 
 Type-checks `config/files.ts`. Returns the object unchanged.
+
+### CapacitorFileStore
+
+```ts
+interface CapacitorFileStore {
+  /** Read a file as UTF-8 text. */
+  readText(path: string): Promise<string>;
+  /** Read a file as bytes. */
+  readBytes(path: string): Promise<Uint8Array>;
+  /** Write (and replace) a file, creating parent folders. Resolves to its URI. */
+  write(path: string, data: FileData): Promise<string>;
+  /** Delete a file. */
+  remove(path: string): Promise<void>;
+  /** The entries of a folder (the directory's root by default). */
+  list(path?: string): Promise<FileEntry[]>;
+  /** Size, type and modification time of a file or folder. */
+  stat(path: string): Promise<FileEntry>;
+  /** Whether the path exists. */
+  exists(path: string): Promise<boolean>;
+}
+```
+
+Read, write, delete, list and stat under the app's own directories (no dialogs).
+
+### FileEntry
+
+```ts
+interface FileEntry {
+  name: string;
+  type: 'file' | 'directory';
+  /** Size in bytes. */
+  size: number;
+  /** Last change, in milliseconds since the epoch. */
+  modifiedAt: number;
+  /** A `file://` URI the system and other apps understand. */
+  uri: string;
+}
+```
+
+A file or folder in the app's storage, as `list()` and `stat()` report it.
 
 ### FileFilter
 
@@ -222,6 +286,14 @@ interface SaveOptions {
 ```
 
 Options for `save()`: the suggested name and, for the download fallback, the MIME type.
+
+### CapacitorDirectory
+
+```ts
+type CapacitorDirectory = 'data' | 'documents' | 'cache' | 'library' | 'external';
+```
+
+Which of the app's directories a path is under. `data` is private and backed up; `cache` may be cleared by the OS.
 
 ### Driver
 
@@ -365,15 +437,76 @@ to opt in to the WebView behaviour.
 
 ## kitr/files/drivers/capacitor
 
+### capacitorFileStore
+
+```ts
+function capacitorFileStore(options?: {
+  directory?: CapacitorDirectory;
+}): CapacitorFileStore;
+```
+
+`@capacitor/filesystem` under one of the app's directories (`data` by default, which no other
+app can see). Paths are relative to that directory. For files the person chooses, use the
+`files` service's dialogs instead.
+
 ### createCapacitorDriver
 
 ```ts
 function createCapacitorDriver(_options?: DriverOptions): Driver;
 ```
 
-The files driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/files` and `capacitor` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
-to opt in to the WebView behaviour.
+Files driver for the Capacitor shell. `open()` shows the system document picker
+(`@capawesome/capacitor-file-picker`). Mobile has no "save as" dialog, so `save()` writes the
+file to the app's cache (`@capacitor/filesystem`) and opens the share sheet
+(`@capacitor/share`), where the person picks Save to Files, Drive, Mail and so on; it resolves
+to the file's URI, or null when the sheet is dismissed. `reveal()` hands a path to the share sheet.
+
+### CapacitorFileStore
+
+```ts
+interface CapacitorFileStore {
+  /** Read a file as UTF-8 text. */
+  readText(path: string): Promise<string>;
+  /** Read a file as bytes. */
+  readBytes(path: string): Promise<Uint8Array>;
+  /** Write (and replace) a file, creating parent folders. Resolves to its URI. */
+  write(path: string, data: FileData): Promise<string>;
+  /** Delete a file. */
+  remove(path: string): Promise<void>;
+  /** The entries of a folder (the directory's root by default). */
+  list(path?: string): Promise<FileEntry[]>;
+  /** Size, type and modification time of a file or folder. */
+  stat(path: string): Promise<FileEntry>;
+  /** Whether the path exists. */
+  exists(path: string): Promise<boolean>;
+}
+```
+
+Read, write, delete, list and stat under the app's own directories (no dialogs).
+
+### FileEntry
+
+```ts
+interface FileEntry {
+  name: string;
+  type: 'file' | 'directory';
+  /** Size in bytes. */
+  size: number;
+  /** Last change, in milliseconds since the epoch. */
+  modifiedAt: number;
+  /** A `file://` URI the system and other apps understand. */
+  uri: string;
+}
+```
+
+A file or folder in the app's storage, as `list()` and `stat()` report it.
+
+### CapacitorDirectory
+
+```ts
+type CapacitorDirectory = 'data' | 'documents' | 'cache' | 'library' | 'external';
+```
+
+Which of the app's directories a path is under. `data` is private and backed up; `cache` may be cleared by the OS.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

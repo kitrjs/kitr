@@ -535,7 +535,42 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six, so creating the service in a shell throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use the native clipboard, Face ID or real haptics, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
+Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. In a Capacitor shell the [Capacitor drivers](#capacitor) answer. Today [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) register only `platform` and `storage` drivers, none of these six, so creating the service in those shells throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use the native clipboard, Face ID or real haptics, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
+
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the service uses the phone's own APIs through Capacitor plugins, named `'capacitor'` in `native.clipboard.name`. Each plugin is an optional peer dependency that the driver imports the first time a method runs, so the web build never loads them.
+
+| Capability | Plugin | Notes |
+| --- | --- | --- |
+| `clipboard` | `@capacitor/clipboard` | No permission prompt. iOS shows its "pasted from" banner on reads. |
+| `share` | `@capacitor/share` | `canShare()` is `false` for a payload with `files`: a `File` cannot cross the bridge, so save it with [Files](/packages/files) and share its `url`. A dismissed sheet resolves `false`. |
+| `haptics` | `@capacitor/haptics` | `light`, `medium` and `heavy` are impacts, `success`, `warning` and `error` are notifications, `selection` plays the selection start, change and end ticks. |
+| `geolocation` | `@capacitor/geolocation` | Asks for the permission before the first read and rejects with `kitr/native: location permission was denied` when refused. iOS needs `NSLocationWhenInUseUsageDescription` in `Info.plist`; Android needs `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` in the manifest. |
+| `camera`, `biometrics` | none | `supported: false`. Register a driver as shown under [Extend](#extend). |
+
+`kitr add native` installs the four plugins when the project has the mobile platform; `kitr new --kit mobile` installs all of them. Without the mobile platform, add them yourself:
+
+```sh
+pnpm add @capacitor/clipboard @capacitor/share @capacitor/haptics @capacitor/geolocation
+```
+
+A plugin that is not installed does not fall back to the webview. The call rejects with `E_DRIVER_UNAVAILABLE` and the package to install:
+
+```tsx
+// app/components/copy-link.tsx
+import { useClipboard } from 'kitr/native/react'
+
+export function CopyInvoiceLink({ url }: { url: string }) {
+  const clipboard = useClipboard()
+  return (
+    <button type="button" onClick={() => clipboard.writeText(url).catch((error) => console.warn(error.message))}>
+      Copy invoice link
+    </button>
+  )
+}
+// without @capacitor/clipboard => "@kitr/native has no capacitor driver: install @capacitor/clipboard. ..."
+```
 
 ## Errors
 

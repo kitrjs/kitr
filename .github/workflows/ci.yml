@@ -121,3 +121,23 @@ jobs:
           name: playwright-results
           path: test-results/
           retention-days: 7
+
+  # The Capacitor shell: builds the mobile example and runs `cap sync` for Android and iOS, so every
+  # plugin the device packages need reaches both native projects. Sync only, no native build:
+  # it needs neither the Android SDK nor Xcode (Capacitor 8 uses Swift Package Manager on iOS).
+  mobile-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C examples/mobile exec kitr build phone
+      - name: Plugins reached both native projects
+        run: |
+          grep -q capacitor-secure-storage examples/mobile/platforms/phone/android/capacitor.settings.gradle
+          grep -q capacitor-secure-storage examples/mobile/platforms/phone/ios/App/CapApp-SPM/Package.swift

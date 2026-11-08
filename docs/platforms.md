@@ -119,6 +119,18 @@ The matrix below is what each environment answers. `desktop()` and `tauri()` bot
 
 The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick their driver by `platform.runtime`: a driver in the config, else one a provider registered, else `selectDriver(runtime)`. The web runtime gets the browser driver (a memory driver on the server). A native runtime gets its own driver, and until that driver exists `selectDriver()` throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` naming the runtime and the package, instead of quietly running browser code in the webview. Set `fallbackToWeb: true` in the package's `config/<name>.ts` to keep the webview behaviour on purpose.
 
+What the Capacitor runtime (`mobile()`) gets, with each plugin an optional peer dependency that `kitr add` installs and the driver imports on first use:
+
+| Package | Capacitor driver | Plugins | Caveats |
+| --- | --- | --- | --- |
+| `native` | clipboard, share, haptics, geolocation | `@capacitor/clipboard`, `share`, `haptics`, `geolocation` | `camera` and `biometrics` are `supported: false`; sharing `File` objects is not possible |
+| `notifications` | OS-scheduled local notifications, Android channels; `capacitorPush()` for FCM and APNs | `@capacitor/local-notifications`, `push-notifications` | Push needs Firebase config on Android and the Push capability on iOS |
+| `files` | System picker; `save()` goes through the cache and the share sheet; `capacitorFileStore()` | `@capawesome/capacitor-file-picker`, `@capacitor/filesystem`, `@capacitor/share` | No "save as" dialog on mobile |
+| `secure-storage` | Keychain and Keystore | `@aparajita/capacitor-secure-storage` | The Keychain survives an uninstall on iOS |
+| `updater` | Play in-app updates on Android, the App Store page on iOS | `@capawesome/capacitor-app-update` | Play offers updates only to builds installed from Play |
+
+A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and `install <plugin>`; nothing falls back to the webview. Electron and Tauri keep throwing until their drivers land.
+
 ## Layout
 
 ```

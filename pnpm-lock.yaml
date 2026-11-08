@@ -655,21 +655,51 @@ importers:
 
   examples/mobile:
     dependencies:
+      '@aparajita/capacitor-secure-storage':
+        specifier: ^8.0.1
+        version: 8.0.1
       '@capacitor/android':
         specifier: ^8.6.0
         version: 8.6.0(@capacitor/core@8.6.0)
       '@capacitor/app':
         specifier: ^8.1.2
         version: 8.1.2(@capacitor/core@8.6.0)
+      '@capacitor/clipboard':
+        specifier: ^8.0.1
+        version: 8.0.1(@capacitor/core@8.6.0)
       '@capacitor/core':
         specifier: ^8.6.0
         version: 8.6.0
+      '@capacitor/filesystem':
+        specifier: ^8.1.5
+        version: 8.1.5(@capacitor/core@8.6.0)
+      '@capacitor/geolocation':
+        specifier: ^8.2.4
+        version: 8.2.4(@capacitor/core@8.6.0)
+      '@capacitor/haptics':
+        specifier: ^8.0.2
+        version: 8.0.2(@capacitor/core@8.6.0)
       '@capacitor/ios':
         specifier: ^8.6.0
         version: 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/local-notifications':
+        specifier: ^8.3.1
+        version: 8.3.1(@capacitor/core@8.6.0)
       '@capacitor/preferences':
         specifier: ^8.0.0
         version: 8.0.1(@capacitor/core@8.6.0)
+      '@capacitor/push-notifications':
+        specifier: ^8.1.3
+        version: 8.1.3(@capacitor/core@8.6.0)
+      '@capacitor/share':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.6.0)
+      '@capawesome/capacitor-app-update':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
+      '@capawesome/capacitor-file-picker':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
       '@hookform/resolvers':
         specifier: ^7.0.3
         version: 7.0.3(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(zod@4.6.7)
@@ -1904,6 +1934,18 @@ importers:
         specifier: workspace:*
         version: link:../platform
     devDependencies:
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/filesystem':
+        specifier: ^8.1.5
+        version: 8.1.5(@capacitor/core@8.6.0)
+      '@capacitor/share':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.6.0)
+      '@capawesome/capacitor-file-picker':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -2519,6 +2561,21 @@ importers:
         specifier: workspace:*
         version: link:../platform
     devDependencies:
+      '@capacitor/clipboard':
+        specifier: ^8.0.1
+        version: 8.0.1(@capacitor/core@8.6.0)
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/geolocation':
+        specifier: ^8.2.4
+        version: 8.2.4(@capacitor/core@8.6.0)
+      '@capacitor/haptics':
+        specifier: ^8.0.2
+        version: 8.0.2(@capacitor/core@8.6.0)
+      '@capacitor/share':
+        specifier: ^8.0.3
+        version: 8.0.3(@capacitor/core@8.6.0)
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -2547,6 +2604,15 @@ importers:
         specifier: workspace:*
         version: link:../platform
     devDependencies:
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capacitor/local-notifications':
+        specifier: ^8.3.1
+        version: 8.3.1(@capacitor/core@8.6.0)
+      '@capacitor/push-notifications':
+        specifier: ^8.1.3
+        version: 8.1.3(@capacitor/core@8.6.0)
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -2761,6 +2827,12 @@ importers:
         specifier: workspace:*
         version: link:../storage
     devDependencies:
+      '@aparajita/capacitor-secure-storage':
+        specifier: ^8.0.1
+        version: 8.0.1
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -3087,6 +3159,12 @@ importers:
         specifier: workspace:*
         version: link:../platform
     devDependencies:
+      '@capacitor/core':
+        specifier: ^8.6.0
+        version: 8.6.0
+      '@capawesome/capacitor-app-update':
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.0)
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -3376,6 +3454,10 @@ importers:
         version: 8.3.6(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
 packages:
+
+  '@aparajita/capacitor-secure-storage@8.0.1':
+    resolution: {integrity: sha512-NSYIQtH6TyBgL3myumQGcCE3iecq2PtGNFlGxl1fJKEU37Dv5DudzDlwg42cgbVxCm1ay72g4X7rTSAvKULsVg==}
+    engines: {node: '>=20.0.0'}
 
   '@apideck/better-ajv-errors@0.3.7':
     resolution: {integrity: sha512-TajUJwGWbDwkCx/CZi7tRE8PVB7simCvKJfHUsSdvps+aTM/PDPP4gkLmKnc+x3CE//y9i/nj74GqdL/hwk7Iw==}
@@ -3968,16 +4050,69 @@ packages:
     engines: {node: '>=22.0.0'}
     hasBin: true
 
+  '@capacitor/clipboard@8.0.1':
+    resolution: {integrity: sha512-iOlbTi8MojKyLnYE+M27priXid7vHd0PlDwyHohPzkuQ8Rkp6q7ykwZmPEUD+OnU/Ink7Qw/pUOfKgraKmA6Eg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/core@8.6.0':
     resolution: {integrity: sha512-9F2zzuGYTJu+wqmQSEmqnFBfGrhC/njjMCfmxbvg9mq8xJT4wNh5pxbMFZxvW/yDhYJWPEBFQxeqzfo1gKrvxg==}
+
+  '@capacitor/filesystem@8.1.5':
+    resolution: {integrity: sha512-m1RkI8L83NJeppEKyRWioK3MDp2vjlA+QfUQcF8/xRlcXNC2HYxqoyYJ+K4M0EcVovy+g+4F24S05+bhK4Vgdg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/geolocation@8.2.4':
+    resolution: {integrity: sha512-FDcUiPQc2AXSTAV61QSDPXml11guKBx5HPEkdWvUqw7kMqrc2Ucp0bsWngeLyRs/01a5aWBI0hEuvetuF3PsrQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/haptics@8.0.2':
+    resolution: {integrity: sha512-c2hZzRR5Fk1tbTvhG1jhh2XBAf3EhnIerMIb2sl7Mt41Gxx1fhBJFDa0/BI1IbY4loVepyyuqNC9820/GZuoWQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/ios@8.6.0':
     resolution: {integrity: sha512-Y2PE4zoBqMrSTWoVMJmX2byBznjn6egmATzoEUJiGVbVubkNpAvkF/tl0SBKDyP67ngyedTx1tQq5IGYIhby1A==}
     peerDependencies:
       '@capacitor/core': ^8.6.0
 
+  '@capacitor/keyboard@8.0.6':
+    resolution: {integrity: sha512-Bbe+9V0qaT6dzEFJEK7BUWR01l2+vZE8FM5ITF/WgKtx+G6eGZ6d5+YiSMRJBAK0VGjdO59v8yiQ10Doa5KyvQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/local-notifications@8.3.1':
+    resolution: {integrity: sha512-F7zu/+p/mIR958YP4axOkeI5hBKRaXDyYjbNPrAil2wWfd7OxScPSTvP9t85NpQ0eULVRu0/sntoxOg6ck477A==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/preferences@8.0.1':
     resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/push-notifications@8.1.3':
+    resolution: {integrity: sha512-UlOCTS3uiw8ZUJ1rkFKJgoqPADipHDNn0lq5mNRwtXALVxQXIeIoRd3iqpzC+962R2LpCRJRkCTjPX2OHK3tBA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/share@8.0.3':
+    resolution: {integrity: sha512-gnvZBV1NPu2B8vd1UKncR56G15ueHd0aZLqgDov++t3SmTBG9Q0VrAZ1VnHn5stxlmglVaTb4RwopMgbpLzroA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor/synapse@1.0.4':
+    resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
+
+  '@capawesome/capacitor-app-update@8.1.1':
+    resolution: {integrity: sha512-1TzM4hMN4wgCDu3O0UhaIIoVspUFNfNJ+q+K/EKSQRKkfCbG79S1Fn/sXwMdtMO1Me55LQxdjw1I9rctFtKBOQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capawesome/capacitor-file-picker@8.1.1':
+    resolution: {integrity: sha512-4zDRca+uQbhFkbASoRbMpvXRbuCVhmVATDYLL9MG5UvILer01uUcN7oQhuxpltVir2YnP+1O8LasnwYlqlLM5g==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -8988,6 +9123,14 @@ packages:
 
 snapshots:
 
+  '@aparajita/capacitor-secure-storage@8.0.1':
+    dependencies:
+      '@capacitor/android': 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/app': 8.1.2(@capacitor/core@8.6.0)
+      '@capacitor/core': 8.6.0
+      '@capacitor/ios': 8.6.0(@capacitor/core@8.6.0)
+      '@capacitor/keyboard': 8.0.6(@capacitor/core@8.6.0)
+
   '@apideck/better-ajv-errors@0.3.7(ajv@8.20.0)':
     dependencies:
       ajv: 8.20.0
@@ -9733,15 +9876,59 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@capacitor/clipboard@8.0.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
   '@capacitor/core@8.6.0':
     dependencies:
       tslib: 2.9.1
+
+  '@capacitor/filesystem@8.1.5(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+      '@capacitor/synapse': 1.0.4
+
+  '@capacitor/geolocation@8.2.4(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+      '@capacitor/synapse': 1.0.4
+
+  '@capacitor/haptics@8.0.2(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
 
   '@capacitor/ios@8.6.0(@capacitor/core@8.6.0)':
     dependencies:
       '@capacitor/core': 8.6.0
 
+  '@capacitor/keyboard@8.0.6(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/local-notifications@8.3.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
   '@capacitor/preferences@8.0.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/push-notifications@8.1.3(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/share@8.0.3(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capacitor/synapse@1.0.4': {}
+
+  '@capawesome/capacitor-app-update@8.1.1(@capacitor/core@8.6.0)':
+    dependencies:
+      '@capacitor/core': 8.6.0
+
+  '@capawesome/capacitor-file-picker@8.1.1(@capacitor/core@8.6.0)':
     dependencies:
       '@capacitor/core': 8.6.0
 

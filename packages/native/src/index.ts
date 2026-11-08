@@ -3,6 +3,13 @@ import { runtimeOf } from '@kitr/platform'
 import { type Driver, selectDriver } from './driver'
 
 export { type Driver, type DriverOptions, selectDriver } from './driver'
+export {
+  capacitorClipboard,
+  capacitorGeolocation,
+  capacitorHaptics,
+  capacitorShare,
+  createCapacitorDriver as createCapacitorNativeDrivers,
+} from './drivers/capacitor'
 export { createMemoryNativeDrivers } from './drivers/memory'
 export {
   webBiometrics,
