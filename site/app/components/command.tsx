@@ -32,8 +32,14 @@ export function Command({ cmd }: { cmd: string }) {
             </button>
           ))}
         </div>
-        <button type="button" className="command-copy" onClick={copy} aria-label="Copy command">
-          <Icon icon={copied ? icons.check : icons.copy} size={16} />
+        <button
+          type="button"
+          className="command-copy"
+          data-copied={copied || undefined}
+          onClick={copy}
+          aria-label="Copy command"
+        >
+          <Icon key={String(copied)} icon={copied ? icons.check : icons.copy} size={16} />
         </button>
       </div>
       <pre className="command-text">

@@ -5,6 +5,7 @@ import { Icon } from '#app/components/icons'
 import { PlatformBoard, PlatformBuilder } from '#app/components/platform-bits'
 import homeCode from '#app/generated/home-code.json'
 import { glyph, kits } from '#app/lib/catalog'
+import { useSwapped } from '#app/lib/motion'
 import { findPlatform } from '#app/lib/platforms'
 import { seo, siteUrl } from '#app/lib/seo'
 
@@ -133,6 +134,7 @@ const familiar = [
 
 function Home() {
   const [tab, setTab] = useState(0)
+  const tabSwapped = useSwapped(tab)
   const current = terminal[tab]!
   return (
     <main className="container home">
@@ -198,7 +200,7 @@ function Home() {
             no prompts, so agents and CI can run every command
           </span>
         </div>
-        <pre className="terminal-body mono">
+        <pre className={`terminal-body mono${tabSwapped ? ' swap-in' : ''}`} key={tab}>
           <span className="t-dim">~/code $</span> {current.cmd}
           {'\n'}
           {current.out.map(([tone, line]) => (

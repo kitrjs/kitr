@@ -1,6 +1,7 @@
 import { useRouterState } from '@tanstack/react-router'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Page } from '#app/lib/content'
+import { exit, usePresence } from '#app/lib/motion'
 import { Icon, icons } from './icons'
 
 type TocEntry = Page['toc'][number]
@@ -114,6 +115,8 @@ export function Sidebar({
 }) {
   const [open, setOpen] = useState(false)
   const [sections, setSections] = useState(false)
+  const drawer = usePresence(open, exit.drawer)
+  const popover = usePresence(sections, exit.popover)
   const nav = useRef<HTMLElement>(null)
   const path = useRouterState({ select: (s) => s.location.pathname })
   const section = sectionOf(toc, active)?.text
@@ -145,21 +148,34 @@ export function Sidebar({
     }
   }, [sections])
 
+  const menuButton = useRef<HTMLButtonElement>(null)
+  // Closing from the keyboard or the close button hands focus back to the button that opened it;
+  // otherwise it would drop to <body> when the drawer unmounts. Following a link closes it too,
+  // without moving focus, because the page is about to change.
+  const closeDrawer = () => {
+    setOpen(false)
+    menuButton.current?.focus({ preventScroll: true })
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: closeDrawer only touches state setters and refs
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') closeDrawer()
     }
     document.addEventListener('keydown', onKey)
-    document.documentElement.classList.add('drawer-open')
     nav.current?.querySelector<HTMLElement>('[aria-current="page"], a')?.focus({
       preventScroll: true,
     })
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.documentElement.classList.remove('drawer-open')
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [open])
+
+  // The scroll lock holds until the drawer has finished sliding out.
+  const locked = drawer.mounted
+  useEffect(() => {
+    if (!locked) return
+    document.documentElement.classList.add('drawer-open')
+    return () => document.documentElement.classList.remove('drawer-open')
+  }, [locked])
 
   // Keep the link for the section being read inside the sidebar's own scroll area.
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the reader moves
@@ -182,6 +198,7 @@ export function Sidebar({
         <div className="docs-bar-row">
           <button
             type="button"
+            ref={menuButton}
             className="docs-bar-menu"
             aria-expanded={open}
             aria-controls="docs-sidebar"
@@ -207,12 +224,13 @@ export function Sidebar({
             </button>
           )}
         </div>
-        {sections && (
+        {popover.mounted && (
           <>
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: closes the menu after a link inside it is followed; links handle their own keys */}
             <nav
               id="docs-sections"
               className="docs-sections"
+              data-closing={popover.closing || undefined}
               aria-label="On this page"
               onClick={(e) => {
                 if ((e.target as HTMLElement).closest('a')) setSections(false)
@@ -228,7 +246,14 @@ export function Sidebar({
       <nav
         id="docs-sidebar"
         ref={nav}
-        className={`sidebar${open ? ' is-open' : ''}`}
+        className={`sidebar${open ? ' is-open' : drawer.closing ? ' is-closing' : ''}`}
+        // Each section's sidebar has its own transition name: between two docs pages it stays put,
+        // between the docs and a guide it leaves and arrives with the page instead of overlapping.
+        style={
+          {
+            '--sidebar-vt': `sidebar-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          } as CSSProperties
+        }
         aria-label={label}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('a')) setOpen(false)
@@ -240,7 +265,7 @@ export function Sidebar({
             type="button"
             className="icon-button"
             aria-label="Close navigation"
-            onClick={() => setOpen(false)}
+            onClick={closeDrawer}
           >
             <Icon icon={icons.close} size={18} />
           </button>
