@@ -44,7 +44,7 @@ Each app is a complete kitr project with its own `kitrrc.ts`; shared code is ord
 | --- | --- |
 | `kitr workspace [--json]` | Lists the apps with their platforms and packages. |
 | `kitr dev` / `kitr start` (at the root) | Runs the command in every app side by side. |
-| `kitr build` / `kitr types` / `kitr doctor` / `kitr platforms` / `kitr info` (at the root) | Runs the command in every app, one after another. Exit code 1 when any fails. |
+| `kitr build` / `kitr generate` / `kitr typecheck` / `kitr types` / `kitr doctor` / `kitr platforms` / `kitr info` (at the root) | Runs the command in every app, one after another. Exit code 1 when any fails. |
 | `kitr build phone` | An app name as a word selects that app; the rest of the words are passed on (`kitr build phone ios` builds the `ios` platform of the `phone` app). |
 | `kitr --app phone add jobs` | Runs any command inside one app without `cd`. `KITR_APP=phone` does the same. |
 
@@ -89,17 +89,23 @@ The default registry is kitr's own (`registry/dist` in this repo). Point `--regi
 
 | Command | What it does |
 | --- | --- |
-| `kitr api:sync` | Loads the routes file (`server/routes.ts`), writes `openapi.json` (OpenAPI 3.1; schemas from zod, valibot or arktype when present) and `routes.gen.ts`, a plain route table for clients that cannot import the server. `--file`, `--out`. |
+| `kitr api:sync` | Alias of the API step of `kitr generate`. Loads the routes file (`server/routes.ts`), writes `openapi.json` (OpenAPI 3.1; schemas from zod, valibot or arktype when present) and `routes.gen.ts`, a plain route table for clients that cannot import the server. `--file`, `--out`. |
 | `kitr routes:list` | Prints the route table: method, path, name. |
 | `kitr css:types` | Writes a `.d.ts` beside every `*.module.css`. `--check` fails when stale. |
 
 ## Type generation
 
-`kitr types` writes the project's generated types under `.kitr/`, a folder that is ignored by git, included in `tsconfig.json` and reachable as `#kitr/*`. `kitr dev` and `kitr build` run it first, the Vite plugin reruns the generator whose files changed while the dev server runs, `kitr new` and `kitr add` run it after installing, and the kits' `typecheck` script is `kitr types && tsc --noEmit`.
+`kitr generate` runs every generator. The type generators write the project's generated types under `.kitr/`, a folder that is ignored by git, included in `tsconfig.json` and reachable as `#kitr/*`. A package that writes files elsewhere declares a `generate` step in its setup module: `@kitr/api` runs `kitr api:sync`, which keeps `routes.gen.ts` and `openapi.json` fresh. `kitr dev` and `kitr build` run `kitr generate` first (a failing package step is a warning there, so a half-written route file does not stop the dev server), the Vite plugin reruns the type generator whose files changed while the dev server runs, and `kitr new` and `kitr add` run the type generators after installing.
+
+The kits' `typecheck` script is `kitr typecheck`, which generates and then runs `tsc --noEmit`, so a fresh clone or a CI job never type-checks against missing or stale generated files. `kitr types` and `kitr api:sync` stay as aliases for their half of the work.
 
 | Command | What it does |
 | --- | --- |
-| `kitr types` | Runs every generator and writes the files whose content changed. |
+| `kitr generate` | Runs every type generator, then every package's generate step (`api:sync` for `@kitr/api`). |
+| `kitr generate --check` | Lists stale type files and exits non-zero instead of writing. For CI. |
+| `kitr generate --watch` | Keeps running and regenerates what a changed file affects, for editors without the dev server. |
+| `kitr typecheck` | `kitr generate`, then `tsc --noEmit`. `--project <tsconfig>` checks another config. |
+| `kitr types` | Runs the type generators only and writes the files whose content changed. |
 | `kitr types --check` | Lists stale files and exits non-zero instead of writing. For CI. |
 | `kitr types --watch` | Keeps running and regenerates on change, for editors without the dev server. |
 | `kitr types --only actions` | Runs one generator by name. |

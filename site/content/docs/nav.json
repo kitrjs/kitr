@@ -60,6 +60,12 @@
         "description": "Web, server, desktop and mobile platforms: options, commands and layout."
       },
       {
+        "slug": "data-sources",
+        "source": "../../../docs/data.md",
+        "title": "Choosing a data source",
+        "description": "Actions, API routes, HTTP or realtime: which one to use, what each kit chose and how they mix."
+      },
+      {
         "slug": "packages",
         "source": "../../../docs/packages.md",
         "title": "Packages",

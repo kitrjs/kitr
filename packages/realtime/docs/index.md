@@ -1070,3 +1070,4 @@ Pass it as `adapter` on `.ws()` or `.sse()`, as with the Redis adapter. An adapt
 - [crossws](https://crossws.unjs.io) and [Socket.IO](https://socket.io/docs/v4/): the libraries underneath.
 - [Getting started](/docs/getting-started): the `realtime` kit, a chat room built on these pieces.
 - [Run on more than one instance](/guides/scale-out): Redis for sockets, cache, queue and limits.
+- [Choosing a data source](/docs/data-sources): when to use realtime and when to use actions, API routes, HTTP or realtime.

@@ -1,6 +1,6 @@
 # Packages
 
-Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the router included, is added with `kitr add <name>`. "Client" packages are refused in server-only projects; the rest work anywhere.
+Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the router included, is added with `kitr add <name>`. "Client" packages are refused in server-only projects; the rest work anywhere. Four of them load data (`http`, `api`, `actions`, `realtime`); [Choosing a data source](/docs/data-sources) says which to use.
 
 ## Capabilities
 

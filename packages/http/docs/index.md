@@ -795,3 +795,4 @@ With [Devtools](/packages/devtools) installed, every request in development is l
 - [Auth](/packages/auth): sign-in and the token adapter that feeds `getToken` and `refresh`.
 - [Mocks](/packages/mocks): fake the API in tests and development.
 - [Loading and saving data](/docs/data): how HTTP fits beside API routes, actions and realtime.
+- [Choosing a data source](/docs/data-sources): when to use HTTP and when to use actions, API routes, HTTP or realtime.
