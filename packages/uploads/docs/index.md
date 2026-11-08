@@ -439,7 +439,8 @@ A driver decides where bytes live. Two ship with kitr; any other storage is a dr
 | --- | --- | --- |
 | Disk | `createDiskUploadsDriver` | The default. One server with a persistent disk. |
 | Memory | `createMemoryUploadsDriver` | Tests and demos. Files vanish on restart. |
-| S3, R2, GCS | your own `UploadsDriver` | Several servers, serverless hosts, a CDN. |
+| unstorage | `createUnstorageUploadsDriver` | Several servers or serverless hosts: S3, R2, Azure Blob, Vercel Blob, Netlify Blobs through [unstorage](https://unstorage.unjs.io). |
+| Anything else | your own `UploadsDriver` | A storage service unstorage has no driver for, or signed URLs from a CDN. |
 
 ### Disk
 
@@ -466,6 +467,56 @@ Each file is written next to a `<file>.meta.json` sidecar that keeps its type an
 
 > **Warning**
 > On hosts with an ephemeral filesystem (most containers, serverless platforms), files under `storage/uploads` are lost on every deploy or restart. Mount a persistent volume at `dir`, or use an object storage driver.
+
+> **Warning**
+> With more than one server instance, each instance has its own disk: a file Ada uploads through instance A is a 404 when Grace's request reaches instance B. Use one shared volume for every instance, or the [unstorage](#unstorage) driver with object storage.
+
+### unstorage
+
+`createUnstorageUploadsDriver` stores files through any [unstorage](https://unstorage.unjs.io) instance, so every server instance reads and writes the same bucket. Install unstorage and the client its driver needs. For S3 or Cloudflare R2, the `s3` driver needs no extra package:
+
+```sh
+pnpm add unstorage
+```
+
+```ts
+// config/uploads.ts
+import { defineConfig } from 'kitr/uploads'
+import { createUnstorageUploadsDriver } from 'kitr/uploads/server'
+import { createStorage } from 'unstorage'
+import s3Driver from 'unstorage/drivers/s3'
+
+const bucket = createStorage({
+  driver: s3Driver({
+    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+    endpoint: process.env.S3_ENDPOINT!,
+    bucket: 'acme-uploads',
+    region: 'auto',
+  }),
+})
+
+export default defineConfig({
+  driver: createUnstorageUploadsDriver(bucket, { publicPath: '/api/uploads' }),
+  maxSize: 10 * 1024 * 1024,
+  accept: ['image/png', 'image/jpeg', 'application/pdf'],
+})
+```
+
+Add the credentials to `.env`:
+
+```sh
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `base` | `'uploads'` | Second argument, `{ base }`. Files live under `<base>:files:`, their type and name under `<base>:meta:`. |
+| `publicPath` | none | Gives the driver a `url(key)` that returns `publicPath/key`. |
+
+Files are read back through the kitr route (`GET /api/uploads/:key`), so the bucket can stay private. Keys with an empty segment or `..` throw `FORBIDDEN` (`Bad upload key`). See the [unstorage S3 driver docs](https://unstorage.unjs.io/drivers/s3) for its options.
 
 ### Memory
 
@@ -691,3 +742,4 @@ Then call `uploads.mount(server)` in `server/main.ts` in place of `mountUploads(
 - [api](/packages/api): controllers and routes for files that belong to a record.
 - [forms](/packages/forms): show `fieldErrors` under the file input.
 - [MDN on FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData): what `upload()` sends.
+- [Run on more than one instance](/guides/scale-out): shared files, cache, queue and sockets.

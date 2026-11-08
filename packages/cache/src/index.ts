@@ -71,7 +71,7 @@ declare module '@kitr/core' {
 /** Type the default export of `config/cache.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<CacheConfig>()
 
-/** In-process cache with TTLs and tags. The default; fine for one server, wrong for several. */
+/** In-process cache with TTLs and tags. The default; fine for one server, wrong for several (use `createRedisCacheDriver`). */
 export function createMemoryCacheDriver(): CacheDriver {
   const entries = new Map<string, { value: string; expires?: number; tags?: string[] }>()
   const tags = new Map<string, Set<string>>()
@@ -232,6 +232,87 @@ export function createUnstorageCacheDriver(
     },
     async clear() {
       for (const key of await storage.getKeys(base)) await storage.removeItem(key)
+    },
+  }
+}
+
+/**
+ * The part of an [ioredis](https://github.com/redis/ioredis) client the Redis cache driver uses.
+ * An ioredis `Redis` fits as it is.
+ */
+export interface RedisCacheClient {
+  get(key: string): Promise<string | null>
+  set(key: string, value: string): Promise<unknown>
+  set(key: string, value: string, ex: 'EX', seconds: number): Promise<unknown>
+  del(...keys: string[]): Promise<number>
+  sadd(key: string, ...members: string[]): Promise<number>
+  smembers(key: string): Promise<string[]>
+  sismember(key: string, member: string): Promise<number>
+  pttl(key: string): Promise<number>
+  pexpire(key: string, ms: number): Promise<number>
+  scan(
+    cursor: string,
+    match: 'MATCH',
+    pattern: string,
+    count: 'COUNT',
+    n: number,
+  ): Promise<[string, string[]]>
+}
+
+/**
+ * A cache driver over Redis, so every instance reads and clears the same entries. Redis expires
+ * entries itself; tags are Redis sets, and a value set again starts untagged, as with the memory
+ * driver. Everything lives under `base` (default `kitr:cache:`), and `clear()` deletes only
+ * keys under it, never the whole database:
+ *
+ *   driver: createRedisCacheDriver(new Redis(process.env.REDIS_URL))
+ */
+export function createRedisCacheDriver(
+  redis: RedisCacheClient,
+  options: { base?: string } = {},
+): CacheDriver {
+  const base = options.base ?? 'kitr:cache:'
+  const entry = (key: string) => `${base}e:${key}`
+  const tagSet = (tag: string) => `${base}t:${tag}`
+  const keyTags = (key: string) => `${base}k:${key}`
+  return {
+    name: 'redis',
+    async get(key) {
+      return (await redis.get(entry(key))) ?? undefined
+    },
+    async set(key, value, ttl) {
+      if (ttl === undefined) await redis.set(entry(key), value)
+      else await redis.set(entry(key), value, 'EX', Math.max(1, Math.ceil(ttl)))
+      // A new value starts untagged: forget the old value's tags.
+      await redis.del(keyTags(key))
+    },
+    async delete(key) {
+      await redis.del(entry(key), keyTags(key))
+    },
+    async tag(key, list) {
+      if (!list.length) return
+      await redis.sadd(keyTags(key), ...list)
+      // The key's own tag list lives as long as the entry does.
+      const ttl = await redis.pttl(entry(key))
+      if (ttl > 0) await redis.pexpire(keyTags(key), ttl)
+      for (const t of list) await redis.sadd(tagSet(t), key)
+    },
+    async invalidateTags(list) {
+      for (const t of list) {
+        for (const key of await redis.smembers(tagSet(t))) {
+          // Only entries still carrying the tag: a key set again since keeps its new value.
+          if (await redis.sismember(keyTags(key), t)) await redis.del(entry(key), keyTags(key))
+        }
+        await redis.del(tagSet(t))
+      }
+    },
+    async clear() {
+      let cursor = '0'
+      do {
+        const [next, keys] = await redis.scan(cursor, 'MATCH', `${base}*`, 'COUNT', 500)
+        if (keys.length) await redis.del(...keys)
+        cursor = next
+      } while (cursor !== '0')
     },
   }
 }

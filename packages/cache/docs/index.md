@@ -415,7 +415,7 @@ A driver decides where entries live. The cache talks to it through six methods o
 | --- | --- | --- | --- |
 | Memory (default) | No | No | Development, tests, one server process |
 | unstorage (built in) | Yes | Yes | Production: Redis, Upstash, Cloudflare KV, Vercel KV or the filesystem |
-| Hand-written Redis | Yes | Yes | Full control over the Redis commands |
+| Redis (built in) | Yes | Yes | Production with a Redis server: native expiry, tag sets, a `clear()` that stays inside its prefix |
 
 ### Memory
 
@@ -460,53 +460,21 @@ Expiry is checked on every read, so drivers without native expiry work too; the 
 
 ### Redis
 
-To talk to Redis directly instead, write the driver yourself. Install a Redis client. This example uses [ioredis](https://github.com/redis/ioredis):
+`createRedisCacheDriver` talks to Redis directly: Redis expires entries itself, tags are Redis sets, and every instance reads and clears the same entries. Install a Redis client. The driver takes an [ioredis](https://github.com/redis/ioredis) client:
 
 ```sh
 pnpm add ioredis
-```
-
-Write the driver once, in its own file:
-
-```ts
-// server/cache/redis_driver.ts
-import type { CacheDriver } from 'kitr/cache'
-import { Redis } from 'ioredis'
-
-export function createRedisCacheDriver(url: string): CacheDriver {
-  const redis = new Redis(url)
-  return {
-    name: 'redis',
-    get: async (key) => (await redis.get(key)) ?? undefined,
-    async set(key, value, ttl) {
-      if (ttl) await redis.set(key, value, 'EX', ttl)
-      else await redis.set(key, value)
-    },
-    delete: async (key) => void (await redis.del(key)),
-    async tag(key, tags) {
-      await Promise.all(tags.map((t) => redis.sadd(`tag:${t}`, key)))
-    },
-    async invalidateTags(tags) {
-      for (const t of tags) {
-        const keys = await redis.smembers(`tag:${t}`)
-        if (keys.length) await redis.del(...keys)
-        await redis.del(`tag:${t}`)
-      }
-    },
-    clear: async () => void (await redis.flushdb()),
-  }
-}
 ```
 
 Use it in the config:
 
 ```ts
 // config/cache.ts
-import { defineConfig } from 'kitr/cache'
-import { createRedisCacheDriver } from '#server/cache/redis_driver'
+import { createRedisCacheDriver, defineConfig } from 'kitr/cache'
+import { Redis } from 'ioredis'
 
 export default defineConfig({
-  driver: createRedisCacheDriver(process.env.REDIS_URL ?? 'redis://localhost:6379'),
+  driver: createRedisCacheDriver(new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379')),
   prefix: 'acme-app:',
   defaultTtl: 300,
 })
@@ -518,16 +486,20 @@ Add the connection string to `.env`:
 REDIS_URL=redis://localhost:6379
 ```
 
-Redis expires keys itself with `EX`, so a Redis cache needs no sweeping. See the [ioredis docs](https://github.com/redis/ioredis#readme) for TLS, clusters and Sentinel.
+| Option | Default | Description |
+| --- | --- | --- |
+| `base` | `'kitr:cache:'` | Second argument, `{ base }`. Every key the driver writes starts with it: entries under `<base>e:`, tag sets under `<base>t:`, each entry's tag list under `<base>k:`. |
 
-> **Warning**
-> `clear()` on this driver runs `FLUSHDB`, which deletes every key in the Redis database, including other apps' entries and anything that is not a cache entry. Give the cache its own Redis database (`redis://localhost:6379/1`) or replace `clear` with a scan-and-delete over your prefix.
+When Grace's invoice report is cached on instance A with `tags: ['team:team_acme']`, the entry lands at `kitr:cache:e:acme-app:report:invoices`. Instance B reads the same key, and `invalidateTags('team:team_acme')` on either instance removes it for both. As with the memory driver, setting a key again drops the old value's tags, so a stale tag never removes a fresh value.
+
+`clear()` scans for keys under `base` and deletes them, so it never touches sessions, queues or anything else in the same Redis. On a large cache it is a slow scan; prefer tags for routine invalidation. See the [ioredis docs](https://github.com/redis/ioredis#readme) for TLS, clusters and Sentinel.
 
 The cache passes tag names to the driver with the prefix in front, as it does keys, so two apps that share one Redis and use the same tag name keep their entries apart.
 
 ## Use the cache in production
 
-- **More than one instance needs a shared driver.** With the memory driver, each instance has its own entries, and a tag cleared on one instance stays on the others.
+- **More than one instance needs a shared driver.** With the memory driver, each instance has its own entries, and a tag cleared on one instance stays on the others. Use the [Redis](#redis) or [unstorage](#unstorage) driver.
+- **`remember()` shares one run per instance, not per cluster.** Ten concurrent misses on one instance run `fn` once; the same miss on three instances at once runs it three times. For a very slow `fn`, warm the entry from a [job](/packages/jobs) instead of on the first request.
 - **The memory driver empties on deploy.** The first requests after a restart all miss. Warm the slowest entries from a job (see [Get the cache on the server](#get-the-cache-on-the-server)) if a cold start hurts.
 - **A cache is not a store.** Anything in it can vanish at any time: a restart, an eviction, a `clear()`. Never keep the only copy of data in the cache.
 - **Driver errors are not caught.** If Redis is down, `get()`, `set()` and `remember()` reject with the driver's error. Catch it in the caller when the page should still load without the cache.
@@ -617,7 +589,7 @@ A driver is an object that implements `CacheDriver`: a `name` and six async meth
 | `invalidateTags(tags)` | `invalidateTags` | Remove every key that carries any of `tags`. |
 | `clear()` | `clear` | Remove everything the driver holds. |
 
-The Redis driver under [Redis](#redis) is a complete example. Drivers also compose. This one wraps another driver and counts hits and misses, which helps tune ttls:
+`createRedisCacheDriver` in the source is a complete example over Redis. Drivers also compose. This one wraps another driver and counts hits and misses, which helps tune ttls:
 
 ```ts
 // server/cache/counting_driver.ts
@@ -667,4 +639,5 @@ export default defineConfig({
 - [Query](/packages/query): cache API responses in the browser.
 - [Jobs](/packages/jobs): warm slow entries on a schedule.
 - [Server](/packages/server): the runtime the cache provider binds into.
-- [ioredis](https://github.com/redis/ioredis): the Redis client used in the driver above.
+- [ioredis](https://github.com/redis/ioredis): the Redis client the Redis driver takes.
+- [Run on more than one instance](/guides/scale-out): the cache, queue, limits and sockets on shared Redis.

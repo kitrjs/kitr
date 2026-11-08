@@ -52,8 +52,8 @@
     "@kitr/core": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "h3": ">=2.0.0"
+    "h3": ">=2.0.0",
+    "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -64,16 +64,17 @@
     }
   },
   "devDependencies": {
+    "@kitr/logger": "workspace:*",
+    "@kitr/react": "workspace:*",
+    "@kitr/server": "workspace:*",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "h3": "^2.0.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
-    "react": "^19.3.1",
-    "@types/react": "^19.3.0",
-    "react-dom": "^19.3.1",
-    "@kitr/react": "workspace:*",
-    "h3": "^2.0.8",
-    "@types/node": "^22.19.0",
-    "@kitr/server": "workspace:*",
-    "@kitr/logger": "workspace:*"
+    "unstorage": "1.17.6"
   },
   "kitr": {
     "name": "uploads",

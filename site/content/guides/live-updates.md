@@ -301,7 +301,7 @@ Channels, effects, `useChannel` and `emit` are the same on every transport. What
 | --- | --- |
 | `websocket` | The default: two-way and low latency, on Node, Bun, Deno and Cloudflare. |
 | `sse` | A proxy or host does not allow WebSocket upgrades. Events stream over one long `GET`. |
-| `socket.io` | You run more than one server instance and need a Redis adapter to share events. |
+| `socket.io` | You already run Socket.IO or need its rooms and adapters. |
 
 Switching to SSE:
 
@@ -324,7 +324,7 @@ export default defineConfig({
 `.sse()` replaces `.ws()` on the table and serves `/api/events` over plain HTTP. `app/realtime.ts` reads the transport from the config and needs no change.
 
 > **Warning**
-> Each server instance keeps its subscriptions in memory. With the WebSocket or SSE transport behind a load balancer, an emit on one instance only reaches clients connected to that instance, and the others silently miss events. Run one realtime instance, or use Socket.IO with the [Redis adapter](/packages/realtime#run-more-than-one-server-instance).
+> By default each server instance keeps its subscriptions in memory. Behind a load balancer, an emit on one instance only reaches clients connected to that instance, and the others silently miss events. Before you run a second instance, pass a Redis adapter to the socket link: `.ws('/ws', { channels: [ordersChannel], adapter: createRedisRealtimeAdapter(redis) })`. [Run on more than one instance](/guides/scale-out) walks through it.
 
 ## Test the channel
 

@@ -561,6 +561,14 @@ What the `h3` target returns: the realtime servers by path.
 
 ## kitr/realtime/server
 
+### createMemoryRealtimeAdapter
+
+```ts
+function createMemoryRealtimeAdapter(): RealtimeAdapter;
+```
+
+Every handler for every topic, in this process only. The default; right for one instance.
+
 ### createRealtimeServer
 
 ```ts
@@ -577,6 +585,22 @@ realtime.attach(server) // at realtimeConfig.path
 ```
 Socket.IO needs a Socket.IO `Server`, so it throws here: use `attachSocketIo` from
 `kitr/realtime/socket.io/server` instead.
+
+### createRedisRealtimeAdapter
+
+```ts
+function createRedisRealtimeAdapter(redis: RedisPubSubClient, options?: RedisRealtimeAdapterOptions): RealtimeAdapter;
+```
+
+A realtime adapter over Redis pub/sub, so an `emit` on any instance reaches the clients on
+every instance. Pass an ioredis client; the adapter opens one more connection for subscribing.
+
+```ts
+const adapter = createRedisRealtimeAdapter(new Redis(process.env.REDIS_URL)) // Redis from ioredis
+r.ws('/ws', { channels: [projectChannel], adapter })
+```
+Each instance subscribes only to the topics its own clients listen on, so traffic grows with
+what is watched, not with the number of instances.
 
 ### createSocketServer
 
@@ -601,7 +625,7 @@ the provider has no server: call `app.container.use('realtime').attach(server)` 
 
 ```ts
 interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
-  /** Send an event to every connection subscribed to this topic. A topic with no subscribers is a no-op. */
+  /** Send an event to every connection subscribed to this topic, on every instance the adapter reaches. A topic with no subscribers is a no-op. */
   emit<E extends keyof C['events'] & string>(event: E, data: C['events'][E] extends {
     schema: infer S;
   } ? S extends {
@@ -611,12 +635,42 @@ interface ChannelEmitter<C extends ChannelDefinition<any, any>> {
       };
     };
   } ? O : unknown : unknown): void;
-  /** Subscriber count for this topic. */
+  /** Subscriber count for this topic on this instance. */
   readonly size: number;
 }
 ```
 
 Publishes events to every subscriber of one channel topic, as `server.use(channel, params)` returns it.
+
+### RealtimeAdapter
+
+```ts
+interface RealtimeAdapter {
+  /** Shown in logs, e.g. `memory` or `redis`. */
+  readonly name: string;
+  /**
+   * Start receiving messages published on `topic`, in this process. Several handlers may listen
+   * to one topic; the adapter subscribes upstream once and fans out. Returns (or resolves with,
+   * once the upstream subscription is live) the function that removes this handler again.
+   */
+  subscribe(topic: string, handler: (payload: string) => void): (() => void) | Promise<() => void>;
+  /**
+   * Deliver `payload` to every handler of `topic` on every instance, this one included.
+   * Resolves with the number of receivers when the backend reports it (Redis counts subscribed
+   * connections, the memory adapter counts local handlers), so `0` means nobody is listening.
+   */
+  publish(topic: string, payload: string): number | Promise<number>;
+  /** Close the adapter's connections. Called by you on shutdown, never by the server. */
+  close?(): Promise<void>;
+}
+```
+
+How realtime servers on several instances reach each other. Each server keeps its own
+connections; the adapter carries a published message to every instance that has a subscriber
+for its topic, and each instance writes it to its own connections.
+
+The memory adapter (the default) only reaches this process. `createRedisRealtimeAdapter`
+reaches every process connected to the same Redis.
 
 ### RealtimeServer
 
@@ -646,6 +700,46 @@ interface RealtimeServerOptions extends SocketServerOptions, RealtimeConfig {
 
 Options for `createRealtimeServer`: the channels, plus the transport and path from `config/realtime.ts`.
 
+### RedisPubSubClient
+
+```ts
+interface RedisPubSubClient {
+  /** `PUBLISH`: resolves with the number of subscribed connections that received it. */
+  publish(channel: string, message: string): Promise<number>;
+  /** `SUBSCRIBE`; puts the connection into subscriber mode. */
+  subscribe(...channels: string[]): Promise<unknown>;
+  /** `UNSUBSCRIBE`. */
+  unsubscribe(...channels: string[]): Promise<unknown>;
+  /** ioredis emits `message` with the channel and the payload. */
+  on(event: 'message', listener: (channel: string, message: string) => void): unknown;
+  /** A second connection with the same options, for subscriber mode. */
+  duplicate(): RedisPubSubClient;
+  /** Close the connection. */
+  quit(): Promise<unknown>;
+}
+```
+
+The part of an [ioredis](https://github.com/redis/ioredis) client the realtime adapter uses.
+An ioredis `Redis` or `Cluster` fits as it is.
+
+### RedisRealtimeAdapterOptions
+
+```ts
+interface RedisRealtimeAdapterOptions {
+  /**
+   * The connection that subscribes. A Redis connection in subscriber mode can run no other
+   * command, so it must not be the one you pass first. Default: `redis.duplicate()`.
+   */
+  subscriber?: RedisPubSubClient;
+  /** Prepended to every Redis channel, so apps sharing a Redis stay apart. Default `kitr:rt:`. */
+  prefix?: string;
+  /** Called when Redis rejects a publish or subscribe. Default: `console.error`. */
+  onError?: (error: unknown) => void;
+}
+```
+
+Options for `createRedisRealtimeAdapter`.
+
 ### SocketServer
 
 ```ts
@@ -656,8 +750,10 @@ interface SocketServer {
   use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): ChannelEmitter<C>;
   /** Attach to a kitr server: registers the route and enables the upgrade. */
   attach(server: KitrServer, path?: string): SocketServer;
-  /** Number of open connections. */
+  /** Number of open connections on this instance. */
   readonly connections: number;
+  /** The adapter emits travel through. */
+  readonly adapter: RealtimeAdapter;
 }
 ```
 
@@ -671,6 +767,11 @@ interface SocketServerOptions {
   channels: ChannelDefinition<any, any>[];
   /** Authenticate the upgrade. Return per-connection context (e.g. the user) or throw/return false to reject. */
   authorize?: (request: Request) => unknown | Promise<unknown>;
+  /**
+   * Carries emits between server instances. Default: the memory adapter, which only reaches
+   * clients connected to this process. Use `createRedisRealtimeAdapter` when you run more than one.
+   */
+  adapter?: RealtimeAdapter;
 }
 ```
 
@@ -842,8 +943,10 @@ interface SseServer {
   use<C extends ChannelDefinition<any, any>>(channel: C, params: ChannelParams<C>): ChannelEmitter<C>;
   /** Register GET and POST on `path` (default `/events`) of a kitr server. */
   attach(server: KitrServer, path?: string): SseServer;
-  /** Number of open streams. */
+  /** Number of open streams on this instance. */
   readonly connections: number;
+  /** The adapter emits and forwarded control messages travel through. */
+  readonly adapter: RealtimeAdapter;
 }
 ```
 
@@ -859,6 +962,12 @@ interface SseServerOptions {
   authorize?: (request: Request) => unknown | Promise<unknown>;
   /** Keep-alive comment interval in ms. Default 20 000. */
   keepAlive?: number;
+  /**
+   * Carries emits, and control POSTs that land on another instance than their stream, between
+   * server instances. Default: the memory adapter (this process only). Use
+   * `createRedisRealtimeAdapter` when you run more than one.
+   */
+  adapter?: RealtimeAdapter;
 }
 ```
 

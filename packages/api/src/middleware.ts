@@ -71,6 +71,15 @@ export function cors(options: CorsOptions = {}): Middleware {
   return Object.assign(middleware, { [handlesPreflight]: true })
 }
 
+/**
+ * Where rate-limit counters live. The same shape as `RateLimitStore` in `kitr/shield`, so
+ * `createRedisRateLimitStore` from there plugs in here too.
+ */
+export interface RateLimitStore {
+  /** Increment and return the count and when the window resets (ms epoch). */
+  hit(key: string, windowMs: number): Promise<{ count: number; resetAt: number }>
+}
+
 /** Options for `rateLimit()`. */
 export interface RateLimitOptions {
   /** Window length in ms. Default 60 000. */
@@ -79,27 +88,50 @@ export interface RateLimitOptions {
   max?: number
   /** Key a request; default is the client IP. */
   key?: (ctx: HttpContext) => string
+  /**
+   * Where counters live. Default: this process, so each instance counts on its own. Pass
+   * `createRedisRateLimitStore(redis)` from `kitr/shield` to share one limit across instances.
+   */
+  store?: RateLimitStore
 }
 
-/** In-memory token bucket per key. Fine for one process; swap for Redis behind the same signature when you scale out. */
-export function rateLimit(options: RateLimitOptions = {}): Middleware {
-  const { windowMs = 60_000, max = 100, key = (ctx) => ctx.request.ip() ?? 'unknown' } = options
+/** The default store: fixed windows per key in this process, pruned past 10,000 keys. */
+function memoryStore(): RateLimitStore {
   const buckets = new Map<string, { count: number; resetAt: number }>()
+  return {
+    async hit(key, windowMs) {
+      const now = Date.now()
+      let bucket = buckets.get(key)
+      if (!bucket || bucket.resetAt <= now) {
+        bucket = { count: 0, resetAt: now + windowMs }
+        buckets.set(key, bucket)
+        if (buckets.size > 10_000)
+          for (const [bk, b] of buckets) if (b.resetAt <= now) buckets.delete(bk)
+      }
+      bucket.count++
+      return { count: bucket.count, resetAt: bucket.resetAt }
+    },
+  }
+}
+
+/** Fixed-window rate limit per key, with `RateLimit-*` headers and a 429 past `max`. Counts in this process unless you pass a shared `store`. */
+export function rateLimit(options: RateLimitOptions = {}): Middleware {
+  const {
+    windowMs = 60_000,
+    max = 100,
+    key = (ctx) => ctx.request.ip() ?? 'unknown',
+    store = memoryStore(),
+  } = options
   return async (ctx, next) => {
-    const now = Date.now()
-    const k = key(ctx)
-    let bucket = buckets.get(k)
-    if (!bucket || bucket.resetAt <= now) {
-      bucket = { count: 0, resetAt: now + windowMs }
-      buckets.set(k, bucket)
-      if (buckets.size > 10_000)
-        for (const [bk, b] of buckets) if (b.resetAt <= now) buckets.delete(bk)
-    }
-    bucket.count++
+    const { count, resetAt } = await store.hit(key(ctx), windowMs)
+    const reset = String(Math.max(0, Math.ceil((resetAt - Date.now()) / 1000)))
     ctx.response.header('ratelimit-limit', String(max))
-    ctx.response.header('ratelimit-remaining', String(Math.max(0, max - bucket.count)))
-    ctx.response.header('ratelimit-reset', String(Math.ceil((bucket.resetAt - now) / 1000)))
-    if (bucket.count > max) throw new KitrError('RATE_LIMITED', 'Too many requests')
+    ctx.response.header('ratelimit-remaining', String(Math.max(0, max - count)))
+    ctx.response.header('ratelimit-reset', reset)
+    if (count > max) {
+      ctx.response.header('retry-after', reset)
+      throw new KitrError('RATE_LIMITED', 'Too many requests')
+    }
     return next()
   }
 }
