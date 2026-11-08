@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: Open a panel in development that shows what every package is doing. It is removed from production builds.
+description: Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.
 order: 0
 ---
 
@@ -8,9 +8,9 @@ order: 0
 
 ## What it is
 
-`@kitr/devtools` is a panel in your app in development. It shows the route, the query cache, the session, stored values, errors, analytics calls and one log every kitr package writes to. Your own providers can add panels.
+`@kitr/devtools` is a panel in your app. It shows the route, the query cache, the session, stored values, errors, analytics calls and one log every kitr package writes to. Your own providers can add panels.
 
-Runs in the browser, in development only. Production builds leave it out.
+Runs in the browser, in development. Set `enabled: true` in `config/devtools.ts` to use it in production too; otherwise production builds leave it out. The example above runs in production mode with it on.
 
 ## Install
 

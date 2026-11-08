@@ -15,12 +15,15 @@ export function LiveExample({
   title,
   description,
   storage,
+  height,
 }: {
   pkg: string
   example: string
   title?: string
   description?: string
   storage?: boolean
+  /** Frame height in pixels, for examples that need more than the default 300. */
+  height?: number
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
   const [nonce, setNonce] = useState(0)
@@ -79,13 +82,17 @@ export function LiveExample({
           <Icon icon={icons.external} size={15} />
         </a>
       </div>
-      <div className={`example-body${storage === false ? ' example-body-wide' : ''}`}>
+      <div
+        className={`example-body${storage === false ? ' example-body-wide' : ''}`}
+        style={height ? { minHeight: height } : undefined}
+      >
         <iframe
           ref={frame}
           key={nonce}
           src={src}
           title={title ?? `${pkg} example`}
           className="example-frame"
+          style={height ? { minHeight: height } : undefined}
           allow="clipboard-write"
           onLoad={read}
         />

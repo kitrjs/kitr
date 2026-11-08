@@ -3283,6 +3283,9 @@ importers:
       '@kitr/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../packages/devtools
       '@kitr/flags':
         specifier: workspace:*
         version: link:../packages/flags

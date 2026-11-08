@@ -21,6 +21,7 @@
     "@kitr/3d": "workspace:*",
     "@kitr/animation": "workspace:*",
     "@kitr/core": "workspace:*",
+    "@kitr/devtools": "workspace:*",
     "@kitr/flags": "workspace:*",
     "@kitr/forms": "workspace:*",
     "@kitr/i18n": "workspace:*",

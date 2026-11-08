@@ -95,7 +95,13 @@ export interface PackageEntry {
   description: string
   repo: string
   pages: Array<{ slug: string; title: string; order: number }>
-  examples: Array<{ slug: string; title?: string; description?: string; storage?: boolean }>
+  examples: Array<{
+    slug: string
+    title?: string
+    description?: string
+    storage?: boolean
+    height?: number
+  }>
 }
 
 export const packages = packagesJson as PackageEntry[]
