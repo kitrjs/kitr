@@ -2,6 +2,7 @@
   "name": "@kitr/registry",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "shadcn-compatible component registry for kitr. Components are copied into your app and owned by you.",
   "scripts": {
