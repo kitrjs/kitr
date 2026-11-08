@@ -213,7 +213,7 @@ export function Footer() {
           <p className="muted">One way to build everything. MIT licensed, built with kitr.</p>
           <a className="maker-badge" href={platonUrl} target="_blank" rel="noreferrer">
             <CreatorMark name="platon" size={12} />
-            <span>made by platpk</span>
+            <span>made by platon</span>
           </a>
         </div>
         {footerLinks.map((group) => (

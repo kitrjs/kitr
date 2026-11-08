@@ -343,7 +343,7 @@ test.describe('in the browser', () => {
       'https://platon.blue/kitr',
     )
     const credit = page.locator('.maker-badge')
-    await expect(credit).toHaveText('made by platpk')
+    await expect(credit).toHaveText('made by platon')
     await expect(credit).toHaveAttribute('href', 'https://platon.blue')
   })
 

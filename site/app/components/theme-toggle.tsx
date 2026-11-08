@@ -3,8 +3,35 @@ import { Icon, icons } from './icons'
 
 type Theme = 'light' | 'dark'
 
+/** The page background per theme: the browser's own bar (theme-color) is painted to match it. */
+const chrome = { light: '#ffffff', dark: '#0b121c' } as const
+
+/**
+ * Points the browser's bar (theme-color) and built-in controls (color-scheme) at the theme the
+ * site shows, which may not be the system's. The script below writes these two tags itself rather
+ * than the route's head(): the router renders its own copy of head tags on the client, and two
+ * theme-color tags disagreeing leave the browser picking one.
+ */
+const chromeScript = `var c=t==='dark'?'${chrome.dark}':'${chrome.light}';[['theme-color',c],['color-scheme',t]].forEach(function(p){var m=document.querySelector('meta[name="'+p[0]+'"]');if(!m){m=document.createElement('meta');m.name=p[0];document.head.appendChild(m)}m.content=p[1]})`
+
+function syncChrome(t: Theme) {
+  const tags: Array<[string, string]> = [
+    ['theme-color', chrome[t]],
+    ['color-scheme', t],
+  ]
+  for (const [name, content] of tags) {
+    let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = name
+      document.head.appendChild(meta)
+    }
+    meta.content = content
+  }
+}
+
 /** Runs before paint (inlined in <head>) so the page never flashes the wrong theme. */
-export const themeScript = `try{var t=localStorage.getItem('kitr:theme');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}`
+export const themeScript = `try{var t=localStorage.getItem('kitr:theme');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;${chromeScript}}catch(e){}`
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('light')
@@ -17,6 +44,7 @@ export function ThemeToggle() {
     const next = theme === 'light' ? 'dark' : 'light'
     const apply = (animate: boolean) => {
       root.dataset.theme = next
+      syncChrome(next)
       // Only the icon that appears in the new snapshot turns in; see motion.css.
       if (animate) root.classList.add('theme-swapped')
       try {

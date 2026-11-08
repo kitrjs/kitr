@@ -57,8 +57,9 @@ export function useSwapped(value: unknown): boolean {
  * A click handler (for onClickCapture on a menu or drawer) that closes it first and follows the
  * link once it has animated out. Navigating at once would swap the page while the panel is still
  * on screen: the drawer's links re-render and shift as it slides away, and the header menu is
- * caught in the route transition's snapshot and fades out over the new page. In-page hash links,
- * new tabs and modified clicks just close the panel and go ahead as usual.
+ * caught in the route transition's snapshot and fades out over the new page. A link to a section of
+ * the current page closes the panel and then scrolls there. New tabs and modified clicks just
+ * close the panel and go ahead as usual.
  */
 export function closeThenFollow(
   close: () => void,
@@ -72,10 +73,25 @@ export function closeThenFollow(
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
       return
     if ((a.target && a.target !== '_self') || a.origin !== window.location.origin) return
-    if (a.pathname === window.location.pathname) return
+    const samePage = a.pathname === window.location.pathname && a.search === window.location.search
+    if (samePage && !a.hash) return
     e.preventDefault()
-    const href = a.pathname + a.search + a.hash
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    window.setTimeout(() => navigate(href), reduced ? 0 : duration)
+    // A section on this page: jump once the panel has gone and the page can scroll again (the
+    // drawer locks it while open), a frame after the exit so the lock is off.
+    if (samePage)
+      window.setTimeout(() => requestAnimationFrame(() => jumpTo(a.hash)), reduced ? 0 : duration)
+    else window.setTimeout(() => navigate(a.pathname + a.search + a.hash), reduced ? 0 : duration)
   }
+}
+
+/**
+ * Scrolls to an in-page anchor the way a click on it would: smoothly unless reduced motion is on
+ * (motion.css sets scroll-behavior), stopping under the sticky header (scroll-padding-top), and
+ * putting the hash in the address bar. Setting the same hash again scrolls nowhere, so then it
+ * scrolls the heading into view itself.
+ */
+function jumpTo(hash: string) {
+  if (window.location.hash !== hash) window.location.hash = hash
+  else document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView()
 }

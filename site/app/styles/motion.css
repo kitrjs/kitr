@@ -72,10 +72,11 @@ html:active-view-transition-type(back)::view-transition-new(root) {
   animation-name: vt-in-down;
 }
 
-/* Header, sidebar, docs bar: never move. Their old and new pictures cross-fade with the browser's
-   own plus-lighter blend, so identical pixels stay exactly as they are and only what changed (the
-   current link) fades across. Rules naming the sidebar class are kept apart: a browser without
-   view-transition-class drops them and falls back to its default cross-fade. */
+/* Header, sidebar, docs bar: never move, and never fade. Only their old picture is dropped and the
+   new one shown live from the first frame, so the current link just switches. A cross-fade of
+   two near-identical pictures looked like a flash on phones: anti-aliased text drawn twice reads
+   brighter for a moment, and the outgoing page's section links ghosted over the new ones. Rules
+   naming the sidebar class are kept apart: a browser without view-transition-class drops them. */
 ::view-transition-group(site-header),
 ::view-transition-group(docs-bar),
 ::view-transition-group(docs-drawer) {
@@ -85,14 +86,18 @@ html:active-view-transition-type(back)::view-transition-new(root) {
   animation: none;
 }
 ::view-transition-old(site-header),
-::view-transition-new(site-header),
-::view-transition-old(docs-bar),
-::view-transition-new(docs-bar) {
-  animation-duration: var(--dur-base);
+::view-transition-old(docs-bar) {
+  display: none;
 }
-::view-transition-old(*.sidebar),
+::view-transition-new(site-header),
+::view-transition-new(docs-bar) {
+  animation: none;
+}
+::view-transition-old(*.sidebar) {
+  display: none;
+}
 ::view-transition-new(*.sidebar) {
-  animation-duration: var(--dur-base);
+  animation: none;
 }
 /* The header's picture has no backdrop blur, so its translucent background would show the page
    moving underneath unblurred. An opaque backing hides that for the few frames it lasts. */
@@ -101,12 +106,14 @@ html:active-view-transition-type(back)::view-transition-new(root) {
 }
 /* A sidebar or bar that only one of the two pages has leaves or arrives with the page. */
 ::view-transition-old(docs-bar):only-child {
+  display: block;
   animation: var(--dur-fast) linear both vt-out-up;
 }
 ::view-transition-new(docs-bar):only-child {
   animation: 260ms var(--ease-out) 40ms both vt-in-up;
 }
 ::view-transition-old(*.sidebar):only-child {
+  display: block;
   animation: var(--dur-fast) linear both vt-out-up;
 }
 ::view-transition-new(*.sidebar):only-child {
