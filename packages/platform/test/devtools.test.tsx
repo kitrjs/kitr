@@ -1,4 +1,5 @@
 import { createApp } from '@kitr/core'
+import * as ui from '@kitr/devtools/ui'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { panels } from '../src/devtools'
@@ -11,7 +12,7 @@ describe('platform panel', () => {
     const app = createApp({ providers: [platformProvider] })
     await app.boot()
     const platform = app.container.use('platform')
-    const panel = panels(app)[0]!
+    const panel = panels(app, ui)[0]!
     expect(panel.group).toBe('platform')
     render(panel.render(app) as any)
     expect(screen.getByText('OS')).toBeTruthy()

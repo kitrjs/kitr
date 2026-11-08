@@ -53,8 +53,7 @@
     "react": ">=18.0.0",
     "@tanstack/react-router": ">=1.120.0",
     "posthog-js": ">=1.200.0",
-    "@kitr/react": "workspace:*",
-    "@kitr/devtools": "workspace:*"
+    "@kitr/react": "workspace:*"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -67,9 +66,6 @@
       "optional": true
     },
     "@kitr/react": {
-      "optional": true
-    },
-    "@kitr/devtools": {
       "optional": true
     }
   },

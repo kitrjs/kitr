@@ -1,5 +1,6 @@
 import { createApp } from '@kitr/core'
 import { createDevtoolsHub } from '@kitr/devtools'
+import * as ui from '@kitr/devtools/ui'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { panels } from '../src/devtools'
@@ -10,7 +11,7 @@ function setup() {
   const app = createApp({ environment: 'test' })
   const hub = createDevtoolsHub()
   app.container.value('devtools', hub)
-  return { app, hub, panel: panels()[0]! }
+  return { app, hub, panel: panels(ui)[0]! }
 }
 
 describe('errors panel', () => {

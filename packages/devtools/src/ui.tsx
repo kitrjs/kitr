@@ -362,3 +362,10 @@ function LogRow({
     </div>
   )
 }
+
+declare module '@kitr/core' {
+  /** The kit, so a provider's `devtools(app, ui)` gets these parts typed without importing them. */
+  interface DevtoolsUi extends Kit {}
+}
+
+type Kit = typeof import('./ui')

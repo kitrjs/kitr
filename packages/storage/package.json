@@ -55,17 +55,13 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "h3": ">=2.0.0",
-    "@kitr/devtools": "workspace:*"
+    "h3": ">=2.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
     "h3": {
-      "optional": true
-    },
-    "@kitr/devtools": {
       "optional": true
     }
   },

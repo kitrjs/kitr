@@ -20,7 +20,7 @@ export const platformProvider = defineProvider({
       `running as ${platform.type} (${platform.os})${platform.native ? ', native' : ''}`,
     )
   },
-  devtools: (app) => import('./devtools').then((m) => m.panels(app)),
+  devtools: (app, ui) => import('./devtools').then((m) => m.panels(app, ui)),
 })
 
 export default platformProvider

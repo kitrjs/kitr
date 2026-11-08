@@ -64,7 +64,7 @@ export const defineConfig = createDefineConfig<HttpConfig>()
 /** Binds `http` (the ky client) into the container from `config/http.ts`. */
 export const httpProvider = defineProvider({
   name: 'http',
-  devtools: () => import('./devtools').then((m) => m.panels()),
+  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
   register(app) {
     // Scoped: on the server every request builds its own client, so one user's token never
     // reaches another's request. In the browser there is one container, so one client.

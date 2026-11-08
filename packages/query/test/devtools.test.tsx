@@ -1,5 +1,6 @@
 import { createApp } from '@kitr/core'
 import { createDevtoolsHub } from '@kitr/devtools'
+import * as ui from '@kitr/devtools/ui'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { queryProvider } from '../src'
@@ -19,7 +20,7 @@ describe('query devtools panel', () => {
     const app = await setup()
     const client = app.container.use('queryClient')
     client.setQueryData(['todos'], [{ id: 1 }])
-    const panel = panels()[0]
+    const panel = panels(ui)[0]
     expect(panel?.group).toBe('data')
     expect(panel?.badge?.(app)).toBeNull()
 
@@ -40,7 +41,7 @@ describe('query devtools panel', () => {
 
   it('shows an empty state', async () => {
     const app = await setup()
-    render(<div>{panels()[0]?.render(app)}</div>)
+    render(<div>{panels(ui)[0]?.render(app)}</div>)
     expect(screen.getByText('No queries')).toBeTruthy()
   })
 })

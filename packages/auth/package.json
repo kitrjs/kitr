@@ -61,8 +61,7 @@
     "@kitr/api": "workspace:*",
     "@kitr/http": "workspace:*",
     "ky": ">=1.7.0",
-    "@kitr/server": "workspace:*",
-    "@kitr/devtools": "workspace:*"
+    "@kitr/server": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@kitr/api": {
@@ -75,9 +74,6 @@
       "optional": true
     },
     "@kitr/server": {
-      "optional": true
-    },
-    "@kitr/devtools": {
       "optional": true
     }
   },

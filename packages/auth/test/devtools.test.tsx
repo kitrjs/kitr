@@ -1,5 +1,6 @@
 import { createApp } from '@kitr/core'
 import { createDevtoolsHub } from '@kitr/devtools'
+import * as ui from '@kitr/devtools/ui'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { customAdapter } from '../src'
@@ -25,7 +26,7 @@ async function setup(user: { id: string } | null) {
 
 describe('auth devtools panel', () => {
   it('badges in and out', async () => {
-    const panel = panels()[0]
+    const panel = panels(ui)[0]
     expect(panel?.group).toBe('app')
     expect(panel?.badge?.(await setup({ id: 'u1' }))).toEqual({ value: 'in', tone: 'ok' })
     expect(panel?.badge?.(await setup(null))).toEqual({ value: 'out', tone: 'muted' })
@@ -33,7 +34,7 @@ describe('auth devtools panel', () => {
 
   it('shows the user and signs out', async () => {
     const app = await setup({ id: 'u1' })
-    const panel = panels()[0]
+    const panel = panels(ui)[0]
     render(<div>{panel?.render(app)}</div>)
     expect(screen.getByText('authenticated')).toBeTruthy()
     expect(screen.getByText('"u1"')).toBeTruthy()

@@ -69,14 +69,10 @@
     "@kitr/react": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "@kitr/devtools": "workspace:*"
+    "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
-      "optional": true
-    },
-    "@kitr/devtools": {
       "optional": true
     }
   },

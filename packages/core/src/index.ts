@@ -34,6 +34,7 @@ export {
   type DevtoolsLevel,
   type DevtoolsPanel,
   type DevtoolsTone,
+  type DevtoolsUi,
   getDevtools,
 } from './devtools'
 export {

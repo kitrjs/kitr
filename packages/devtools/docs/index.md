@@ -478,6 +478,23 @@ export const panels = () => [
 
 Reload the app and an Orders tab appears after the built-in and package panels. The tab's badge shows the item count, and "Empty cart" is an entry in the tab's ⋯ menu and in the command palette. When the provider's `devtools()` method throws, the panel is skipped and the Log shows `orders: devtools() failed` with the error.
 
+A package that ships panels without depending on `@kitr/devtools` takes the same parts from the second argument of `devtools()` instead of importing them, so a project that leaves devtools out still builds. `@kitr/http`, `@kitr/query` and the other kitr packages do this:
+
+```ts
+// packages/orders/src/provider.ts
+devtools: (app, ui) => import('./devtools').then((m) => m.panels(ui)),
+```
+
+```tsx
+// packages/orders/src/devtools.tsx
+import type { DevtoolsPanel, DevtoolsUi } from '@kitr/core'
+
+export function panels(ui: DevtoolsUi): DevtoolsPanel[] {
+  const { Badge, KeyValue } = ui as typeof import('@kitr/devtools/ui')
+  // ...
+}
+```
+
 A panel can also say how it looks and where it sits. This version has an SVG icon, joins the data group and shows a tone on its badge:
 
 ```tsx

@@ -100,3 +100,10 @@ export interface DevtoolsHub {
 export function getDevtools(app: KitrApp): DevtoolsHub | null {
   return app.container.has('devtools') ? app.container.use('devtools') : null
 }
+
+/**
+ * The parts of `@kitr/devtools/ui`, as a provider's `devtools(app, ui)` receives them. Empty here;
+ * `@kitr/devtools` fills it in, so `const { Badge } = ui` is typed wherever its types are loaded.
+ */
+// biome-ignore lint/suspicious/noEmptyInterface: filled by module augmentation in @kitr/devtools
+export interface DevtoolsUi {}

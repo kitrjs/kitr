@@ -59,13 +59,9 @@
   },
   "peerDependencies": {
     "ky": ">=2.0.0",
-    "react": ">=18.0.0",
-    "@kitr/devtools": "workspace:*"
+    "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
-    "@kitr/devtools": {
-      "optional": true
-    },
     "react": {
       "optional": true
     }

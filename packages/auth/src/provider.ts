@@ -142,7 +142,7 @@ export const authProvider: KitrProvider = defineProvider({
     // On the server the session belongs to a request: guards load it per request (`ensureSession`).
     if (config.eager !== false && !app.isServer) await auth.load()
   },
-  devtools: () => import('./devtools').then((m) => m.panels()),
+  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
 })
 
 export default authProvider

@@ -77,7 +77,7 @@ export const queryProvider: KitrProvider = defineProvider({
     const client = app.container.use('queryClient')
     return <QueryClientProvider client={client}>{children as ReactNode}</QueryClientProvider>
   },
-  devtools: () => import('./devtools').then((m) => m.panels()),
+  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
 })
 
 export default queryProvider

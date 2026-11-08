@@ -1,5 +1,6 @@
 import { createApp } from '@kitr/core'
 import { createDevtoolsHub } from '@kitr/devtools'
+import * as ui from '@kitr/devtools/ui'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { panels, toCurl } from '../src/devtools'
@@ -47,7 +48,7 @@ describe('http devtools', () => {
 
   it('renders rows newest first and filters by status class', async () => {
     const { app } = await setup()
-    const [panel] = panels()
+    const [panel] = panels(ui)
     render(<div>{panel?.render(app)}</div>)
     expect(screen.getByText('/users')).toBeTruthy()
     expect(screen.getByText('/missing')).toBeTruthy()

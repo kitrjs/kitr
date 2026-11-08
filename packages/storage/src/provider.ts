@@ -35,7 +35,7 @@ export const storageProvider = defineProvider({
         hub.log('storage', `${key ?? 'storage'} changed outside this context`),
       )
   },
-  devtools: () => import('./devtools').then((m) => m.panels()),
+  devtools: (_app, ui) => import('./devtools').then((m) => m.panels(ui)),
 })
 
 export default storageProvider

@@ -1,5 +1,6 @@
 import { createApp } from '@kitr/core'
 import { createDevtoolsHub } from '@kitr/devtools'
+import * as ui from '@kitr/devtools/ui'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { panels } from '../src/devtools'
@@ -18,7 +19,7 @@ function setup() {
 
 describe('storage devtools panel', () => {
   it('badges the key count and clears when empty', () => {
-    const panel = panels()[0]
+    const panel = panels(ui)[0]
     expect(panel?.group).toBe('data')
     expect(panel?.badge?.(setup())).toBeNull()
     localStorage.setItem('a', '1')
@@ -29,7 +30,7 @@ describe('storage devtools panel', () => {
   it('saves and removes a key', () => {
     localStorage.setItem('theme', '"dark"')
     const app = setup()
-    render(<div>{panels()[0]?.render(app)}</div>)
+    render(<div>{panels(ui)[0]?.render(app)}</div>)
     fireEvent.click(screen.getByText('theme'))
     const area = screen.getByLabelText('Value of theme') as HTMLTextAreaElement
     expect(area.value).toBe('"dark"')
@@ -47,7 +48,7 @@ describe('storage devtools panel', () => {
     localStorage.setItem('x', '1')
     const app = setup()
     await act(async () => {
-      await panels()[0]
+      await panels(ui)[0]
         ?.actions?.find((a) => a.id === 'clear-local')
         ?.run(app)
     })

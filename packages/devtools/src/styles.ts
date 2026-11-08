@@ -3,7 +3,7 @@
  * and the root element, and the theme is picked by `data-theme` on that root element.
  * Contributed panels can use every `kitr-dt-*` class and the `--dt-*` variables.
  */
-export const styles = `
+export const styles: string = `
 :host,.kitr-dt{--dt-bg:#fcfcfd;--dt-surface:#f4f4f6;--dt-surface-2:#e9e9ed;--dt-border:#dcdce1;--dt-fg:#18181b;--dt-muted:#5f5f69;--dt-accent:#2368ee;--dt-accent-fg:#fff;--dt-ok:#12703a;--dt-warn:#8a5200;--dt-error:#c42323;--dt-info:#1f5fd0;--dt-string:#16703c;--dt-number:#9a4a00;--dt-boolean:#8a2fb0;--dt-null:#5f5f69;--dt-key:#1f5fd0;--dt-font-ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--dt-font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--dt-radius:8px;--dt-size:12px;--dt-hit:28px;--dt-shadow:0 8px 30px rgba(0,0,0,.18);--f:linear-gradient(90deg,#000 calc(100% - 20px),transparent)}
 [data-theme="dark"]{--dt-bg:#0f0f10;--dt-surface:#18181a;--dt-surface-2:#232326;--dt-border:#2c2c30;--dt-fg:#ededf0;--dt-muted:#9b9ba5;--dt-accent:#6e9bff;--dt-accent-fg:#0b0b0c;--dt-ok:#4cc57d;--dt-warn:#e8ac45;--dt-error:#ff7070;--dt-info:#7aa6ff;--dt-string:#6fd49a;--dt-number:#e8ac45;--dt-boolean:#d79bf2;--dt-null:#9b9ba5;--dt-key:#8db4ff;--dt-shadow:0 8px 30px rgba(0,0,0,.6)}
 @media (max-width:640px),(pointer:coarse) and (max-height:500px){:host,.kitr-dt{--dt-size:13px}}
