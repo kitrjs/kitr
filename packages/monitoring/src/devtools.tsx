@@ -1,25 +1,36 @@
-import type { DevtoolsPanel, KitrApp } from '@kitr/core'
+import type { DevtoolsEntry, DevtoolsPanel, KitrApp } from '@kitr/core'
+import { Badge, Button, Empty, JsonView, LogList, Row, Section } from '@kitr/devtools/ui'
+import { useState, useSyncExternalStore } from 'react'
+
+/** Breadcrumbs shown under an error are the ones from this long before it. */
+const crumbWindow = 30_000
 
 export function panels(): DevtoolsPanel[] {
   return [
     {
       id: 'errors',
       label: 'Errors',
-      badge: (app) =>
-        app.container
+      group: 'app',
+      badge: (app) => {
+        const n = app.container
           .use('devtools')
           .entries('errors')
-          .filter((e) => e.level === 'error').length || null,
+          .filter((e) => e.level === 'error').length
+        return n ? { value: n, tone: 'error' } : null
+      },
       render: (app) => <ErrorsPanel app={app} />,
       actions: [
         {
           id: 'clear',
-          label: 'Clear errors',
+          label: 'Clear',
+          hint: 'Remove captured errors',
+          danger: false,
           run: (app) => app.container.use('devtools').clear('errors'),
         },
         {
           id: 'throw',
-          label: 'Throw a test error',
+          label: 'Test error',
+          hint: 'throws in a timeout',
           run: () => {
             setTimeout(() => {
               throw new Error('kitr devtools test error')
@@ -31,45 +42,73 @@ export function panels(): DevtoolsPanel[] {
   ]
 }
 
+type ErrorData = { error?: unknown; source?: string; extra?: unknown }
+
 function ErrorsPanel({ app }: { app: KitrApp }) {
   const hub = app.container.use('devtools')
-  const errors = hub.entries('errors')
-  const crumbs = hub.entries('breadcrumbs').slice(-20)
+  useSyncExternalStore(
+    hub.subscribe,
+    () => hub.version,
+    () => 0,
+  )
+  const errors = hub.entries('errors').slice().reverse()
+  const crumbs = hub.entries('breadcrumbs')
   return (
     <div className="kitr-dt-stack">
-      <section>
-        <h4 className="kitr-dt-h">Captured ({errors.length})</h4>
-        {errors.length === 0 ? <p className="kitr-dt-muted">No errors reported</p> : null}
-        {errors
-          .slice()
-          .reverse()
-          .map((e) => {
-            const data = e.data as { error?: unknown; source?: string; extra?: unknown } | undefined
-            const stack = data?.error instanceof Error ? data.error.stack : undefined
-            return (
-              <details key={e.id} open={e === errors[errors.length - 1]}>
-                <summary>
-                  <span className="kitr-dt-muted">{new Date(e.time).toLocaleTimeString()}</span>{' '}
-                  <span className={e.level === 'error' ? 'kitr-dt-error' : ''}>{e.label}</span>{' '}
-                  {data?.source ? <span className="kitr-dt-badge">{data.source}</span> : null}
-                </summary>
-                {stack ? <pre className="kitr-dt-pre">{stack}</pre> : null}
-                {data?.extra ? (
-                  <pre className="kitr-dt-pre">{JSON.stringify(data.extra, null, 1)}</pre>
-                ) : null}
-              </details>
-            )
-          })}
-      </section>
-      <section>
-        <h4 className="kitr-dt-h">Breadcrumbs</h4>
-        {crumbs.length === 0 ? <p className="kitr-dt-muted">None</p> : null}
-        {crumbs.map((c) => (
-          <div key={c.id}>
-            <span className="kitr-dt-muted">{new Date(c.time).toLocaleTimeString()}</span> {c.label}
-          </div>
-        ))}
-      </section>
+      {errors.length === 0 ? (
+        <Empty>No errors</Empty>
+      ) : (
+        errors.map((e, i) => <ErrorRow key={e.id} entry={e} crumbs={crumbs} open={i === 0} />)
+      )}
+      <Section title="Breadcrumbs" open={false} count={crumbs.length}>
+        <LogList entries={crumbs.slice(-50)} empty="None" />
+      </Section>
+    </div>
+  )
+}
+
+function ErrorRow({
+  entry: e,
+  crumbs,
+  open,
+}: {
+  entry: DevtoolsEntry
+  crumbs: DevtoolsEntry[]
+  open: boolean
+}) {
+  const data = e.data as ErrorData | undefined
+  const stack = data?.error instanceof Error ? data.error.stack : undefined
+  const before = crumbs.filter((c) => c.time <= e.time && c.time >= e.time - crumbWindow)
+  return (
+    <Row
+      open={open}
+      head={
+        <>
+          <span className="kitr-dt-time">{new Date(e.time).toLocaleTimeString()}</span>
+          <span className="kitr-dt-error">{e.label}</span>
+          {data?.source ? <Badge>{data.source}</Badge> : null}
+        </>
+      }
+    >
+      {stack ? <Stack stack={stack} /> : null}
+      {data?.extra !== undefined ? <JsonView value={data.extra} /> : null}
+      {before.length ? <LogList entries={before} /> : null}
+    </Row>
+  )
+}
+
+/** The message and first frame stay visible; the remaining frames sit behind a toggle. */
+function Stack({ stack }: { stack: string }) {
+  const [all, setAll] = useState(false)
+  const lines = stack.split('\n')
+  const head = lines.slice(0, 2)
+  const rest = lines.slice(2)
+  return (
+    <div>
+      <pre className="kitr-dt-pre">{(all ? lines : head).join('\n')}</pre>
+      {rest.length ? (
+        <Button onClick={() => setAll((a) => !a)}>{all ? 'less' : 'more'}</Button>
+      ) : null}
     </div>
   )
 }

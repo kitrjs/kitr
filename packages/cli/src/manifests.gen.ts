@@ -167,7 +167,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "package": "@kitr/devtools",
     "name": "devtools",
     "title": "Devtools",
-    "summary": "Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.",
+    "summary": "Open a window that shows what every package is doing, from a floating button, a shortcut or a touch gesture. On in development; turn it on in production with one flag.",
     "category": "dev-tools",
     "runsOn": "client",
     "client": true,

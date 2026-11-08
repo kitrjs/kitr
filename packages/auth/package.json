@@ -61,7 +61,8 @@
     "@kitr/api": "workspace:*",
     "@kitr/http": "workspace:*",
     "ky": ">=1.7.0",
-    "@kitr/server": "workspace:*"
+    "@kitr/server": "workspace:*",
+    "@kitr/devtools": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@kitr/api": {
@@ -75,11 +76,15 @@
     },
     "@kitr/server": {
       "optional": true
+    },
+    "@kitr/devtools": {
+      "optional": true
     }
   },
   "devDependencies": {
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
+    "@kitr/devtools": "workspace:*",
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "@kitr/api": "workspace:*",

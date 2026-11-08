@@ -24,6 +24,7 @@
     "@kitr/devtools": "workspace:*",
     "@kitr/flags": "workspace:*",
     "@kitr/forms": "workspace:*",
+    "@kitr/http": "workspace:*",
     "@kitr/i18n": "workspace:*",
     "@kitr/native": "workspace:*",
     "@kitr/react": "workspace:*",

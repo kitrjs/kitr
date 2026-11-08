@@ -1861,6 +1861,9 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -1957,6 +1960,9 @@ importers:
       '@kitr/api':
         specifier: workspace:*
         version: link:../api
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@kitr/http':
         specifier: workspace:*
         version: link:../http
@@ -2153,6 +2159,9 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@kitr/http':
+        specifier: workspace:*
+        version: link:../http
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -2286,9 +2295,18 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
       ky:
         specifier: ^2.2.0
         version: 2.2.0
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@5.9.3)
@@ -2780,6 +2798,9 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@kitr/react':
         specifier: workspace:*
         version: link:../react
@@ -2931,6 +2952,9 @@ importers:
         specifier: workspace:*
         version: link:../react
     devDependencies:
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
@@ -2956,6 +2980,9 @@ importers:
         specifier: workspace:*
         version: link:../react
     devDependencies:
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@tanstack/react-query':
         specifier: ^5.107.1
         version: 5.107.1(@types/react@19.3.0)(react@19.3.1)
@@ -3205,6 +3232,9 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@kitr/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
@@ -3644,6 +3674,9 @@ importers:
       '@kitr/forms':
         specifier: workspace:*
         version: link:../packages/forms
+      '@kitr/http':
+        specifier: workspace:*
+        version: link:../packages/http
       '@kitr/i18n':
         specifier: workspace:*
         version: link:../packages/i18n

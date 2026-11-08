@@ -52,7 +52,8 @@
   "peerDependencies": {
     "react": ">=18.0.0",
     "@kitr/server": "workspace:*",
-    "h3": ">=2.0.0"
+    "h3": ">=2.0.0",
+    "@kitr/devtools": "workspace:*"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -62,6 +63,9 @@
       "optional": true
     },
     "h3": {
+      "optional": true
+    },
+    "@kitr/devtools": {
       "optional": true
     }
   },
@@ -73,7 +77,8 @@
     "@kitr/server": "workspace:*",
     "h3": "^2.0.8",
     "@types/node": "^22.19.0",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@kitr/devtools": "workspace:*"
   },
   "kitr": {
     "name": "monitoring",

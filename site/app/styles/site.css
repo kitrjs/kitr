@@ -1972,6 +1972,13 @@ a.dcard:focus-visible {
 .example-body-wide {
   grid-template-columns: minmax(0, 1fr);
 }
+.example-body-narrow {
+  justify-items: center;
+}
+.example-body-narrow .example-frame {
+  max-width: 100%;
+  border-inline: 1px solid var(--line);
+}
 .example-frame {
   width: 100%;
   height: 100%;

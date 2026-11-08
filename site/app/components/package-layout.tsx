@@ -27,7 +27,7 @@ export function PackageLayout({
   current: string
 }) {
   const overview = current === ''
-  const example = overview ? pkg.examples[0] : undefined
+  const examples = overview ? pkg.examples : []
   const toc = page?.toc ?? (overview ? builtOverviewToc(pkg) : [])
   const active = useActiveHeading(toc)
   const navigate = useNavigate()
@@ -79,16 +79,18 @@ export function PackageLayout({
           </header>
         )}
 
-        {example && (
+        {examples.map((example) => (
           <LiveExample
+            key={example.slug}
             pkg={pkg.name}
             example={example.slug}
             title={example.title}
             description={example.description}
             storage={example.storage}
             height={example.height}
+            width={example.width}
           />
-        )}
+        ))}
 
         {page ? <DocBody page={page} /> : overview ? <BuiltOverview pkg={pkg} /> : null}
         <PackagePager pkg={pkg} current={current} />

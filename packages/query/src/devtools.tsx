@@ -1,27 +1,46 @@
 import type { DevtoolsPanel, KitrApp } from '@kitr/core'
+import {
+  Badge,
+  Button,
+  Chip,
+  Chips,
+  Empty,
+  JsonView,
+  Row,
+  Stat,
+  Stats,
+  type Tone,
+  Toolbar,
+} from '@kitr/devtools/ui'
 import type { Query } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 export function panels(): DevtoolsPanel[] {
   return [
     {
       id: 'query',
       label: 'Query',
+      group: 'data',
       badge: (app) => {
         const all = app.container.use('queryClient').getQueryCache().getAll()
         const fetching = all.filter((q) => q.state.fetchStatus === 'fetching').length
-        return fetching ? `${fetching}↻` : all.length || null
+        if (fetching) return { value: `${fetching}↻`, tone: 'info' }
+        const errors = all.filter((q) => q.state.status === 'error').length
+        return errors ? { value: errors, tone: 'error' } : null
       },
       render: (app) => <QueryPanel app={app} />,
       actions: [
         {
           id: 'invalidate-all',
-          label: 'Invalidate all queries',
+          label: 'Invalidate all',
+          hint: 'marks every query stale',
           run: (app) => app.container.use('queryClient').invalidateQueries(),
         },
         {
           id: 'clear',
           label: 'Clear cache',
+          hint: 'removes every query',
+          danger: true,
           run: (app) => app.container.use('queryClient').clear(),
         },
       ],
@@ -29,105 +48,148 @@ export function panels(): DevtoolsPanel[] {
   ]
 }
 
-const tone = (q: Query): 'ok' | 'warn' | 'error' | 'info' | 'muted' => {
-  if (q.state.fetchStatus === 'fetching') return 'info'
+type Kind = 'fetching' | 'error' | 'stale' | 'fresh' | 'inactive'
+type Filter = 'all' | Kind
+
+const kindOf = (q: Query): Kind => {
+  if (q.state.fetchStatus === 'fetching') return 'fetching'
   if (q.state.status === 'error') return 'error'
-  if (q.isStale()) return 'warn'
-  if (!q.getObserversCount()) return 'muted'
-  return 'ok'
+  if (!q.getObserversCount()) return 'inactive'
+  return q.isStale() ? 'stale' : 'fresh'
 }
-const label = (q: Query) =>
-  q.state.fetchStatus === 'fetching'
-    ? 'fetching'
-    : q.state.status === 'error'
-      ? 'error'
-      : q.isStale()
-        ? 'stale'
-        : 'fresh'
+
+// kitr-allow-module-state: constant lookup, never mutated
+const toneOf: Record<Kind, Tone> = {
+  fetching: 'info',
+  error: 'error',
+  stale: 'warn',
+  fresh: 'ok',
+  inactive: 'muted',
+}
+
+// kitr-allow-module-state: constant list, never mutated
+const filters: Filter[] = ['all', 'fetching', 'stale', 'fresh', 'inactive', 'error']
+
+function age(updatedAt: number, now: number) {
+  if (!updatedAt) return 'never'
+  const s = Math.max(0, Math.round((now - updatedAt) / 1000))
+  if (s < 60) return `${s}s ago`
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  return `${Math.floor(s / 3600)}h ago`
+}
 
 function QueryPanel({ app }: { app: KitrApp }) {
+  const hub = app.container.use('devtools')
+  useSyncExternalStore(
+    hub.subscribe,
+    () => hub.version,
+    () => 0,
+  )
   const client = app.container.use('queryClient')
-  const [selected, setSelected] = useState<string | null>(null)
-  const queries = client
+  const [filter, setFilter] = useState<Filter>('all')
+  // Hashes whose loading state is forced from the panel, so a second click can restore them.
+  const [loading, setLoading] = useState<Set<string>>(() => new Set())
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const all = client
     .getQueryCache()
     .getAll()
     .slice()
     .sort((a, b) => (b.state.dataUpdatedAt ?? 0) - (a.state.dataUpdatedAt ?? 0))
-  const current = queries.find((q) => q.queryHash === selected)
+  const count = (f: Filter) =>
+    f === 'all' ? all.length : all.filter((q) => kindOf(q) === f).length
+  const shown = filter === 'all' ? all : all.filter((q) => kindOf(q) === filter)
+
+  const toggleLoading = (q: Query) => {
+    const next = new Set(loading)
+    if (next.has(q.queryHash)) {
+      next.delete(q.queryHash)
+      void client.invalidateQueries({ queryKey: q.queryKey, exact: true })
+    } else {
+      next.add(q.queryHash)
+      q.setState({ status: 'pending', fetchStatus: 'fetching', data: undefined })
+    }
+    setLoading(next)
+  }
+
+  if (!all.length) return <Empty>No queries</Empty>
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: current ? '1fr 1fr' : '1fr', gap: 12 }}>
-      <table className="kitr-dt-table">
-        <tbody>
-          {queries.length === 0 ? (
-            <tr>
-              <td className="kitr-dt-muted">No queries in the cache</td>
-            </tr>
-          ) : null}
-          {queries.map((q) => (
-            <tr key={q.queryHash}>
-              <td>
-                <span className={`kitr-dt-badge kitr-dt-badge-${tone(q)}`}>{label(q)}</span>
-              </td>
-              <td className="kitr-dt-key">
-                <button
-                  type="button"
-                  className="kitr-dt-toggle"
-                  onClick={() => setSelected(q.queryHash)}
-                >
-                  {JSON.stringify(q.queryKey)}
-                </button>
-              </td>
-              <td className="kitr-dt-muted">
-                {q.getObserversCount()} obs ·{' '}
-                {q.state.dataUpdatedAt
-                  ? `${Math.round((Date.now() - q.state.dataUpdatedAt) / 1000)}s ago`
-                  : 'never'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {current ? (
-        <div>
-          <div className="kitr-dt-toolbar">
-            <button
-              type="button"
-              className="kitr-dt-btn"
-              onClick={() =>
-                void client.invalidateQueries({ queryKey: current.queryKey, exact: true })
-              }
-            >
-              invalidate
-            </button>
-            <button type="button" className="kitr-dt-btn" onClick={() => void current.fetch()}>
-              refetch
-            </button>
-            <button
-              type="button"
-              className="kitr-dt-btn"
-              onClick={() => {
-                client.removeQueries({ queryKey: current.queryKey, exact: true })
-                setSelected(null)
-              }}
-            >
-              remove
-            </button>
-            <button type="button" className="kitr-dt-btn" onClick={() => setSelected(null)}>
-              close
-            </button>
-          </div>
-          <h4 className="kitr-dt-h">{JSON.stringify(current.queryKey)}</h4>
-          <p className="kitr-dt-muted">
-            status {current.state.status} · fetch {current.state.fetchStatus} · updated{' '}
-            {current.state.dataUpdateCount}× · errors {current.state.errorUpdateCount}
-          </p>
-          <pre className="kitr-dt-pre" style={{ maxHeight: 'none' }}>
-            {current.state.error
-              ? String(current.state.error)
-              : JSON.stringify(current.state.data, null, 1)}
-          </pre>
-        </div>
-      ) : null}
+    <div className="kitr-dt-stack">
+      <Chips>
+        {filters.map((f) => (
+          <Chip
+            key={f}
+            on={filter === f}
+            tone={f === 'all' ? undefined : toneOf[f]}
+            count={count(f)}
+            onClick={() => setFilter(f)}
+          >
+            {f}
+          </Chip>
+        ))}
+      </Chips>
+      {shown.length === 0 ? <Empty>No queries</Empty> : null}
+      {shown.map((q) => {
+        const kind = kindOf(q)
+        return (
+          <Row
+            key={q.queryHash}
+            head={
+              <>
+                <Badge tone={toneOf[kind]}>{kind}</Badge>
+                <span className="kitr-dt-preview kitr-dt-key">{JSON.stringify(q.queryKey)}</span>
+                <span className="kitr-dt-count">{q.getObserversCount()} obs</span>
+                <span className="kitr-dt-count">{age(q.state.dataUpdatedAt, now)}</span>
+              </>
+            }
+          >
+            <Stats>
+              <Stat label="status" value={q.state.status} />
+              <Stat label="fetchStatus" value={q.state.fetchStatus} />
+              <Stat label="updates" value={q.state.dataUpdateCount} />
+              <Stat
+                label="errors"
+                value={q.state.errorUpdateCount}
+                tone={q.state.errorUpdateCount ? 'error' : undefined}
+              />
+              <Stat label="observers" value={q.getObserversCount()} />
+            </Stats>
+            {q.state.error ? (
+              <JsonView value={q.state.error} />
+            ) : (
+              <JsonView value={q.state.data} open />
+            )}
+            <Toolbar>
+              <Button
+                onClick={() => void client.invalidateQueries({ queryKey: q.queryKey, exact: true })}
+              >
+                Invalidate
+              </Button>
+              <Button onClick={() => void q.fetch().catch(() => {})}>Refetch</Button>
+              <Button
+                danger
+                onClick={() => client.removeQueries({ queryKey: q.queryKey, exact: true })}
+              >
+                Remove
+              </Button>
+              <Button
+                onClick={() =>
+                  q.setState({ status: 'error', error: new Error('devtools'), fetchStatus: 'idle' })
+                }
+              >
+                Trigger error
+              </Button>
+              <Button onClick={() => toggleLoading(q)}>
+                {loading.has(q.queryHash) ? 'Restore' : 'Trigger loading'}
+              </Button>
+            </Toolbar>
+          </Row>
+        )
+      })}
     </div>
   )
 }

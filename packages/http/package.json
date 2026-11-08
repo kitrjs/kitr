@@ -58,12 +58,25 @@
     "@kitr/core": "workspace:*"
   },
   "peerDependencies": {
-    "ky": ">=2.0.0"
+    "ky": ">=2.0.0",
+    "react": ">=18.0.0",
+    "@kitr/devtools": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@kitr/devtools": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
-    "ky": "^2.2.0"
+    "ky": "^2.2.0",
+    "react": "^19.3.1",
+    "@types/react": "^19.3.0",
+    "@kitr/devtools": "workspace:*"
   },
   "keywords": [
     "kitr",

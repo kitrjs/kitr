@@ -16,6 +16,7 @@ export function LiveExample({
   description,
   storage,
   height,
+  width,
 }: {
   pkg: string
   example: string
@@ -24,6 +25,8 @@ export function LiveExample({
   storage?: boolean
   /** Frame height in pixels, for examples that need more than the default 300. */
   height?: number
+  /** Frame width in pixels, to show a narrow screen; the frame stays centered and never overflows. */
+  width?: number
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
   const [nonce, setNonce] = useState(0)
@@ -83,7 +86,7 @@ export function LiveExample({
         </a>
       </div>
       <div
-        className={`example-body${storage === false ? ' example-body-wide' : ''}`}
+        className={`example-body${storage === false ? ' example-body-wide' : ''}${width ? ' example-body-narrow' : ''}`}
         style={height ? { minHeight: height } : undefined}
       >
         <iframe
@@ -92,7 +95,7 @@ export function LiveExample({
           src={src}
           title={title ?? `${pkg} example`}
           className="example-frame"
-          style={height ? { minHeight: height } : undefined}
+          style={{ ...(height ? { minHeight: height } : {}), ...(width ? { width } : {}) }}
           allow="clipboard-write"
           onLoad={read}
         />

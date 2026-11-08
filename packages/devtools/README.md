@@ -1,6 +1,6 @@
 # @kitr/devtools
 
-**Devtools.** Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.
+**Devtools.** Open a window that shows what every package is doing, from a floating button, a shortcut or a touch gesture. On in development; turn it on in production with one flag.
 
 ```sh
 pnpm kitr add devtools

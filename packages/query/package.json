@@ -57,11 +57,13 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "@tanstack/react-query": ">=5.80.0"
+    "@tanstack/react-query": ">=5.80.0",
+    "@kitr/devtools": "workspace:*"
   },
   "devDependencies": {
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
+    "@kitr/devtools": "workspace:*",
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "@tanstack/react-query": "^5.107.1"
@@ -69,5 +71,10 @@
   "keywords": [
     "kitr",
     "kitr-package"
-  ]
+  ],
+  "peerDependenciesMeta": {
+    "@kitr/devtools": {
+      "optional": true
+    }
+  }
 }
