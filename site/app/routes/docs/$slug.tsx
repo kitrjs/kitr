@@ -34,7 +34,7 @@ function DocsPage() {
   const active = useActiveHeading(page.toc)
   return (
     <div className="container docs-layout">
-      <Sidebar label="Docs" where={page.title} toc={page.toc} active={active}>
+      <Sidebar label="Docs" where={page.title} active={active}>
         {docsNav.map((group) => (
           <div key={group.title} className="sidebar-group">
             <span className="label sidebar-title">{group.title}</span>

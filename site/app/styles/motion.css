@@ -245,6 +245,19 @@ html.theme-swapped .theme-icon,
     opacity: 0;
   }
 }
+/* On touch screens it only fades: with the keyboard folding away at the same time, a slide reads
+   as a jolt. */
+@media (hover: none) {
+  .search-dialog,
+  .search-dialog[data-closing] {
+    transform: none;
+  }
+  @starting-style {
+    .search-dialog {
+      transform: none;
+    }
+  }
+}
 .search-dialog[data-closing]::backdrop {
   opacity: 0;
   transition-duration: 140ms;
@@ -292,32 +305,8 @@ html.theme-swapped .theme-icon,
   }
 }
 
-/* Docs "On this page" popover. */
-.docs-sections {
-  opacity: 1;
-  transform: none;
-  transform-origin: top center;
-  transition:
-    opacity var(--dur-fast) var(--ease-out),
-    transform var(--dur-base) var(--ease-out);
-}
-@starting-style {
-  .docs-sections {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-  }
-}
-.docs-sections[data-closing] {
-  opacity: 0;
-  transform: translateY(-4px);
-  transition:
-    opacity 110ms linear,
-    transform 140ms var(--ease-in);
-}
-
 /* Something on its way out no longer takes clicks, so a tap during the exit reaches the page. */
 .nav-menu[data-closing],
-.docs-sections[data-closing],
 .sidebar.is-closing {
   pointer-events: none;
 }

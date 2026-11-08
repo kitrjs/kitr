@@ -286,19 +286,31 @@ test.describe('in the browser', () => {
     await page.waitForLoadState('networkidle')
     const sidebar = page.locator('#docs-sidebar')
     await expect(sidebar).toBeHidden()
+    // One button: the page's sections are in the drawer, so there is no second menu for them.
+    await expect(page.locator('.docs-bar button')).toHaveCount(1)
     await page.locator('.docs-bar-menu').click()
     await expect(sidebar).toBeVisible()
     await sidebar.locator('a[href="#configure"]').click()
     await expect(sidebar).toBeHidden()
-    await expect(page.locator('.docs-bar-section')).toHaveText('Configure')
+    await expect(page).toHaveURL(/#configure$/)
 
-    // The section button drops down the page's sections to jump between.
-    await page.locator('.docs-bar-toc').click()
-    const sections = page.locator('#docs-sections')
-    await expect(sections).toBeVisible()
-    await sections.locator('a[href="#testing"]').click()
-    await expect(sections).toBeHidden()
-    await expect(page.locator('.docs-bar-section')).toHaveText('Testing')
+    // A link to another page closes the drawer first, then navigates.
+    await page.locator('.docs-bar-menu').click()
+    await expect(sidebar).toBeVisible()
+    await sidebar.locator('a[href="/packages/mail/api"]').click()
+    await expect(page).toHaveURL(/\/packages\/mail\/api$/)
+    await expect(sidebar).toBeHidden()
+  })
+
+  test('on a phone, the header menu closes before the page changes', async ({ page }) => {
+    await isolate(page)
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.locator('.nav-menu-button').click()
+    await page.locator('#nav-menu a', { hasText: 'Guides' }).click()
+    await expect(page).toHaveURL(/\/guides$/)
+    await expect(page.locator('#nav-menu')).toHaveCount(0)
   })
 
   test('guide cards are styled like the package cards', async ({ page }) => {
@@ -330,8 +342,8 @@ test.describe('in the browser', () => {
       'href',
       'https://platon.blue/kitr',
     )
-    const credit = page.locator('.footer-maker')
-    await expect(credit).toHaveText('Made by Platon')
+    const credit = page.locator('.maker-badge')
+    await expect(credit).toHaveText('made by platpk')
     await expect(credit).toHaveAttribute('href', 'https://platon.blue')
   })
 
@@ -371,6 +383,9 @@ test.describe('in the browser', () => {
       const header = document.querySelector('.site-header')?.getBoundingClientRect()
       const bar = document.querySelector('.docs-bar')?.getBoundingClientRect()
       const where = document.querySelector<HTMLElement>('.docs-bar-where')
+      // The bar's button spans the screen, so no real page name overflows it today; a longer
+      // one stands in to check that it would end in an ellipsis rather than wrap or spill.
+      if (where) where.textContent = 'A much longer page name than any of the docs have yet'
       return {
         // The bar may tuck under the header, never leave a gap below it.
         gap: (bar?.top ?? 0) - (header?.bottom ?? 0),

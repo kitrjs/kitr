@@ -62,7 +62,6 @@ export function PackageLayout({
             <span className="docs-bar-page">{titleOf(pkg, current)}</span>
           </>
         }
-        toc={toc}
         active={active}
       >
         <PackageNav pkg={pkg} page={page} toc={toc} current={current} active={active} />

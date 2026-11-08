@@ -1,6 +1,6 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
-import { exit, usePresence, useSwapped } from '#app/lib/motion'
+import { closeThenFollow, exit, usePresence, useSwapped } from '#app/lib/motion'
 import { CreatorMark } from './creator-marks'
 import { Icon, icons } from './icons'
 import { Logo } from './logo'
@@ -85,6 +85,7 @@ export function Header() {
   useHideOnScroll(menu)
   const presence = usePresence(menu, exit.popover)
   const menuSwapped = useSwapped(menu)
+  const navigate = useNavigate()
 
   return (
     <header className="site-header" ref={header}>
@@ -130,7 +131,17 @@ export function Header() {
         </button>
       </nav>
       {presence.mounted && (
-        <div id="nav-menu" className="nav-menu" data-closing={presence.closing || undefined}>
+        <div
+          id="nav-menu"
+          className="nav-menu"
+          data-closing={presence.closing || undefined}
+          // The menu folds away before the page changes, so it is not caught in the transition.
+          onClickCapture={closeThenFollow(
+            () => setMenu(false),
+            exit.popover,
+            (href) => navigate({ href }),
+          )}
+        >
           <div className="container">
             {navItems.map((item, i) => (
               <Link
@@ -200,9 +211,9 @@ export function Footer() {
             <Logo />
           </Link>
           <p className="muted">One way to build everything. MIT licensed, built with kitr.</p>
-          <a className="footer-maker" href={platonUrl} target="_blank" rel="noreferrer">
-            <CreatorMark name="platon" size={16} />
-            Made by Platon
+          <a className="maker-badge" href={platonUrl} target="_blank" rel="noreferrer">
+            <CreatorMark name="platon" size={12} />
+            <span>made by platpk</span>
           </a>
         </div>
         {footerLinks.map((group) => (
