@@ -4,7 +4,7 @@
 
 **One way to build everything.**
 
-kitr gives you a React app with routing, data loading, forms, sign-in and a typed API server already wired together, from one CLI, and ships the same code to the web, a server, desktop and phones. It is for teams who want the decisions made and written down, with libraries they already know underneath.
+kitr is one TypeScript framework for the web, servers, desktop, Tauri, phones and platforms of your own. The tools are chosen and wired together behind one CLI, so you spend your time building instead of choosing, and coding agents follow the same written-down conventions you do.
 
 Every `kitr` and `@kitr/*` package shares one version. The web (`web()`) and server (`server()`) platforms are stable; desktop, Tauri and mobile (and the device packages behind them) are previews that `kitr add` and `kitr new` refuse without `--preview`.
 

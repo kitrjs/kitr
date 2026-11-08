@@ -157,12 +157,9 @@ function Home() {
         <div className="hero-copy">
           <h1 className="display hero-title">One way to build everything.</h1>
           <p className="lede">
-            A React app with routing, data, forms, sign-in and a typed API, wired together by one
-            CLI. Write it once, ship it to the web, a server, desktop and phones.
-          </p>
-          <p className="hero-sub muted">
-            Built on TanStack, React Hook Form, Zustand, h3 and Tailwind. Add each feature with one
-            command.
+            One framework for the web, servers, desktop, Tauri, phones and platforms of your own. The
+            tools are chosen and wired, so you spend your time building, and agents follow the same
+            conventions you do.
           </p>
           <Command cmd="kitr new my-app --kit app" />
           <div className="actions">
