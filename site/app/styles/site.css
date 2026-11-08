@@ -20,7 +20,12 @@
   --link: #2457cc;
   --ok: #157a3e;
   --warn: #c42626;
-  --blue: #2d6cf0;
+  /* Brand colours, the three pieces of the mark. Each carries --on-brand (white) at 4.9:1. */
+  --brand-blue: #2368ee;
+  --brand-green: #208046;
+  --brand-red: #d62d2c;
+  --on-brand: #ffffff;
+  --blue: var(--brand-blue);
   --code-bg: #f4f6f9;
   --shadow: 0 1px 2px rgb(15 27 43 / 0.06), 0 8px 24px rgb(15 27 43 / 0.08);
   /* Runs-on badges: soft tints with ink of the same hue, apart from the category fills. */
@@ -387,11 +392,11 @@ kbd {
 .button.primary {
   background: var(--blue);
   border-color: var(--blue);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 .button.primary:hover {
   background: #2457cc;
-  color: #ffffff;
+  color: var(--on-brand);
 }
 
 .actions {
@@ -637,9 +642,9 @@ a.built-on-link:hover {
   cursor: pointer;
 }
 .terminal-tab[aria-pressed="true"] {
-  background: #2d6cf0;
-  border-color: #2d6cf0;
-  color: #ffffff;
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--on-brand);
 }
 .terminal-note {
   margin-left: auto;
@@ -824,8 +829,8 @@ a.built-on-link:hover {
   align-items: center;
   padding: 48px;
   border-radius: 28px;
-  background: #2d6cf0;
-  color: #ffffff;
+  background: var(--brand-blue);
+  color: var(--on-brand);
 }
 .cta h2 {
   margin: 0 0 10px;
@@ -835,7 +840,7 @@ a.built-on-link:hover {
 .cta p:not(.command-note) {
   margin: 0;
   font-size: 18px;
-  color: #ffffff;
+  color: var(--on-brand);
 }
 .cta .command {
   background: var(--bg);
@@ -1984,7 +1989,7 @@ a.dcard:focus-visible {
 .demo-button.primary {
   background: var(--blue);
   border-color: var(--blue);
-  color: #ffffff;
+  color: var(--on-brand);
 }
 .demo-button:disabled {
   opacity: 0.5;
@@ -2245,6 +2250,7 @@ a.dcard:focus-visible {
 }
 .idea-tile {
   padding: 32px;
+  color: var(--on-brand);
   border-radius: 18px;
   min-height: 220px;
   display: flex;

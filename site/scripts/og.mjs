@@ -80,7 +80,7 @@ export function readCatalog(site) {
 }
 
 const INK = '#0B121C'
-const BLUE = '#2D6CF0'
+const BLUE = '#2368EE'
 
 /**
  * One card. `kind` is the small label above the title (Docs, Package...), `tile` an optional
@@ -108,8 +108,8 @@ export async function ogImage({ title, description, kind, tile, display = false 
       'div',
       { position: 'absolute', left: 0, right: 0, bottom: 0, height: 14, display: 'flex' },
       h('div', { flex: 1, background: BLUE }, ''),
-      h('div', { flex: 1, background: '#1FB25A' }, ''),
-      h('div', { flex: 1, background: '#EC3A3A' }, ''),
+      h('div', { flex: 1, background: '#208046' }, ''),
+      h('div', { flex: 1, background: '#D62D2C' }, ''),
     ),
     h(
       'div',
