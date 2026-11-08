@@ -1,8 +1,0 @@
-**/node_modules
-**/dist
-!registry/dist
-site/app/generated
-site/public/docs
-site/public/packages
-site/public/llms*.txt
-.git
