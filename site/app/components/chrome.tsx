@@ -1,11 +1,13 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
+import { CreatorMark } from './creator-marks'
 import { Icon, icons } from './icons'
 import { Logo } from './logo'
 import { Search } from './search'
 import { ThemeToggle } from './theme-toggle'
 
 export const repoUrl = 'https://github.com/kitrjs/kitr'
+export const platonUrl = 'https://platon.blue'
 
 const navItems: Array<{
   label: string
@@ -187,6 +189,10 @@ export function Footer() {
             <Logo />
           </Link>
           <p className="muted">One way to build everything. MIT licensed, built with kitr.</p>
+          <a className="footer-maker" href={platonUrl} target="_blank" rel="noreferrer">
+            <CreatorMark name="platon" size={16} />
+            Made by Platon
+          </a>
         </div>
         {footerLinks.map((group) => (
           <nav key={group.title} className="footer-col" aria-label={group.title}>

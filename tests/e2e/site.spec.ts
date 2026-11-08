@@ -319,6 +319,21 @@ test.describe('in the browser', () => {
     expect(style).toEqual({ border: '1px', radius: '12px', underline: 'none', stacked: true })
   })
 
+  test("the about page and the footer credit the maker with Platon's mark", async ({ page }) => {
+    await isolate(page)
+    await page.goto('/about')
+    const plate = page.locator('.maker-plate')
+    await expect(plate).toHaveAttribute('href', 'https://platon.blue')
+    await expect(plate.locator('svg path')).toHaveCount(2)
+    await expect(page.locator('.maker-links a').first()).toHaveAttribute(
+      'href',
+      'https://platon.blue/kitr',
+    )
+    const credit = page.locator('.footer-maker')
+    await expect(credit).toHaveText('Made by Platon')
+    await expect(credit).toHaveAttribute('href', 'https://platon.blue')
+  })
+
   test('on a phone, the package search stays flush under a header that stays put', async ({
     page,
   }) => {
