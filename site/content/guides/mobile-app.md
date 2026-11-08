@@ -79,7 +79,7 @@ cors({
 A phone app has no cookie jar it can rely on across restarts, so it signs in with a bearer token, which the API from the server guide already accepts. Give the API a route that trades an email and password for a token, and one that returns the user behind a token:
 
 ```ts
-// acme-billing-api/server/controllers/session_controller.ts
+// acme-billing-api/server/controllers/session-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { requireUser } from '@kitr/auth/server'
@@ -188,7 +188,7 @@ When the app starts, the auth provider reads the stored token, calls `/me` and r
 Put the API's endpoints in one file as queries and mutations. Pages and loaders read them through the query cache, so the list and the detail share data and a payment refreshes both:
 
 ```ts
-// app/features/invoices/queries.ts
+// app/queries/invoices.ts
 import { createKeys } from 'kitr/app'
 import { httpMutation, httpQuery } from '@kitr/http'
 import { mutationFrom, queryFrom } from '@kitr/query'
@@ -243,7 +243,7 @@ On a phone, opening an invoice pushes it over the list. The list stays mounted u
 import { defineRoutes } from 'kitr/app'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
-import { invoiceQuery, invoicesQuery } from '#app/features/invoices/queries'
+import { invoiceQuery, invoicesQuery } from '#app/queries/invoices'
 import { head, RootDocument } from './document'
 
 export const routes = defineRoutes([router], (r) =>
@@ -325,7 +325,7 @@ The list reads the cache the loader filled, so it renders without a spinner. The
 import { useSuspenseQuery } from '@kitr/query'
 import { Link } from '@kitr/router'
 import { useStorage } from '@kitr/storage/react'
-import { formatAmount, invoicesQuery } from '#app/features/invoices/queries'
+import { formatAmount, invoicesQuery } from '#app/queries/invoices'
 import { invoiceFilter } from '#app/storage'
 
 export default function InvoicesPage() {
@@ -368,8 +368,8 @@ The detail page has a back button only when there is a page to go back to, a pay
 import { useMutation, useSuspenseQuery } from '@kitr/query'
 import { getRouteApi } from '@kitr/router'
 import { useStack } from '@kitr/router/stack'
-import { formatAmount, invoiceQuery, payInvoice } from '#app/features/invoices/queries'
-import { shareInvoice } from '#app/features/invoices/share-invoice'
+import { formatAmount, invoiceQuery, payInvoice } from '#app/queries/invoices'
+import { shareInvoice } from '#app/lib/invoices/share-invoice'
 
 const route = getRouteApi('/_tabs/invoices/$id')
 
@@ -410,9 +410,9 @@ pnpm add @capacitor/share
 ```
 
 ```ts
-// app/features/invoices/share-invoice.ts
+// app/lib/invoices/share-invoice.ts
 import { nativeOnly } from '@kitr/mobile/client'
-import type { Invoice } from './queries'
+import type { Invoice } from '#app/queries/invoices'
 
 export async function shareInvoice(invoice: Invoice) {
   const url = `https://app.acme.com/invoices/${invoice.id}`
@@ -470,7 +470,7 @@ import { mobileProvider } from '@kitr/mobile/provider'
 import { platformProvider } from '@kitr/platform/provider'
 import { createTestApp } from '@kitr/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { shareInvoice } from '#app/features/invoices/share-invoice'
+import { shareInvoice } from '#app/lib/invoices/share-invoice'
 
 function fakeShell(os: 'ios' | 'android') {
   ;(globalThis as any).Capacitor = { getPlatform: () => os, isNativePlatform: () => true, isPluginAvailable: () => true }

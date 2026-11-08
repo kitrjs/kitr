@@ -290,7 +290,7 @@ Don't trust the arguments because they are typed. The types hold for your own co
 In the window, `ipc.invoke(channel, ...args)` sends the call and resolves with the handler's return value. The channel name autocompletes and the arguments are checked against `Ipc`:
 
 ```tsx
-// app/features/invoices/save-invoice-button.tsx
+// app/components/invoices/save-invoice-button.tsx
 import { useState } from 'react'
 import { ipc } from '#app/ipc'
 
@@ -344,7 +344,7 @@ export async function syncOrders(batches: string[][]) {
 `createIpcEmitter(target)` takes a function, not a window, so it finds the current window at send time. When it returns `undefined` (no window open yet, or all closed), `emit()` does nothing. In the window, `ipc.on()` returns the unsubscribe function, which fits `useEffect`:
 
 ```tsx
-// app/features/orders/sync-progress.tsx
+// app/components/orders/sync-progress.tsx
 import { useEffect, useState } from 'react'
 import { ipc } from '#app/ipc'
 
@@ -362,7 +362,7 @@ After the first of four batches the bar shows 25%, after the last one 100%. Outs
 `ipc.send(channel, ...args)` fires a one-way message, for things the window reports but does not wait on, such as analytics or log lines. It is not typed against `Ipc`, and `handleIpc()` does not receive it: listen with Electron's `ipcMain.on()` in main.
 
 ```ts
-// app/features/orders/log-view.ts
+// app/lib/orders/log-view.ts
 import { ipc } from '#app/ipc'
 
 export function logOrderViewed(orderId: string) {

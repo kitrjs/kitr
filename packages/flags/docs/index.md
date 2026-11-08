@@ -83,11 +83,11 @@ The env provider reads `process.env`, so it answers on the server. In the browse
 In a component, `useFlag` from `@kitr/flags/react` returns a flag's current value and re-renders when it changes:
 
 ```tsx
-// app/features/dashboard/dashboard_page.tsx
+// app/components/dashboard/dashboard-page.tsx
 import { useFlag } from '@kitr/flags/react'
 import type { flags } from '#app/flags'
-import { ClassicDashboard } from './classic_dashboard'
-import { NewDashboard } from './new_dashboard'
+import { ClassicDashboard } from '#app/components/dashboard/classic-dashboard'
+import { NewDashboard } from '#app/components/dashboard/new-dashboard'
 
 export function DashboardPage() {
   const redesigned = useFlag<typeof flags, 'new-dashboard'>('new-dashboard')
@@ -140,7 +140,7 @@ export function useAcmeFlag<K extends keyof AcmeFlags & string>(key: K) {
 ```
 
 ```tsx
-// app/features/invoices/upload_hint.tsx
+// app/components/invoices/upload-hint.tsx
 import { useAcmeFlag } from '#app/use_flag'
 
 export function UploadHint() {
@@ -157,7 +157,7 @@ Calling `useFlag('max-upload-mb')` with no type arguments also works, but the va
 `useFlags()` from `@kitr/flags/react` returns every flag as one object, for a settings page or a debug panel:
 
 ```tsx
-// app/features/settings/flags_panel.tsx
+// app/components/settings/flags-panel.tsx
 import { useFlags } from '@kitr/flags/react'
 import type { flags } from '#app/flags'
 
@@ -175,7 +175,7 @@ The object is frozen and stays the same object until the flags change, so it is 
 Outside components, get the service from the container with `useFlags(app)` from `@kitr/flags`. Its reads are synchronous and answer from the current snapshot:
 
 ```ts
-// app/features/invoices/validate_upload.ts
+// app/lib/invoices/validate-upload.ts
 import type { KitrApp } from 'kitr/app'
 import { useFlags } from '@kitr/flags'
 import type { flags } from '#app/flags'
@@ -205,7 +205,7 @@ export function checkUploadSize(app: KitrApp, file: File) {
 On the server, one process answers many users at once, so flags are resolved per request. `resolveFlags(app, event, context)` from `@kitr/flags/server` asks the providers for this request's user and caches the answer on the request:
 
 ```ts
-// server/controllers/dashboard_controller.ts
+// server/controllers/dashboard-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { resolveFlags } from '@kitr/flags/server'
 import type { flags } from '#app/flags'
@@ -222,7 +222,7 @@ export default class DashboardController {
 The user comes from `locals.user.id` when [auth](/packages/auth) middleware has set it, so a percentage rollout gives Ada the same answer on every request. Pass more context as the third argument; it is merged over the user id and every provider receives it:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { resolveFlags } from '@kitr/flags/server'
 import type { flags } from '#app/flags'
@@ -320,7 +320,7 @@ In a single-page app with no server rendering, there is nothing to embed. The pr
 In the browser, `resolve(context)` updates the snapshot, and every `useFlag` re-renders with the new answer. Call it once you know who the user is:
 
 ```tsx
-// app/features/auth/after_sign_in.tsx
+// app/components/auth/after-sign-in.tsx
 import { useApp } from '@kitr/react'
 import { useEffect } from 'react'
 
@@ -487,7 +487,7 @@ Every typed `useFlag<typeof flags, 'new-dashboard'>` and `resolveFlags<typeof fl
 `createFlags(definitions, config)` builds a flags service with no app. Give it a `staticFlagsProvider` to test both sides of a flag:
 
 ```ts
-// app/features/invoices/validate_upload.test.ts
+// app/lib/invoices/validate-upload.test.ts
 import { createFlags, staticFlagsProvider } from '@kitr/flags'
 import { describe, expect, it } from 'vitest'
 import { flags } from '#app/flags'
@@ -519,7 +519,7 @@ describe('upload limit flag', () => {
 To render a component with a flag set, boot a client app with the flags provider and render it with `renderWithKitr` from [testing](/packages/testing). The provider resolves at boot on the client, so the first render already has the value:
 
 ```tsx
-// app/features/dashboard/dashboard_page.test.tsx
+// app/components/dashboard/dashboard-page.test.tsx
 import { defineConfig, staticFlagsProvider } from '@kitr/flags'
 import flagsProvider from '@kitr/flags/provider'
 import { createTestApp } from '@kitr/testing'
@@ -527,7 +527,7 @@ import { renderWithKitr } from '@kitr/testing/react'
 import { screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { flags } from '#app/flags'
-import { DashboardPage } from './dashboard_page'
+import { DashboardPage } from './dashboard-page'
 
 // NewDashboard renders <h1>Your new dashboard</h1>.
 it('shows the new dashboard when the flag is on', async () => {

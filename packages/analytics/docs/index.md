@@ -100,7 +100,7 @@ export interface AppEvents extends EventMap {
 In a component, get the analytics service with `useAnalytics()` from `@kitr/analytics/react` and call `track()` after the thing happened:
 
 ```tsx
-// app/features/projects/new-project-button.tsx
+// app/components/projects/new-project-button.tsx
 import { useAnalytics } from '@kitr/analytics/react'
 import type { AppEvents } from '#app/analytics'
 
@@ -150,7 +150,7 @@ export interface AppEvents extends EventMap {
 `useAnalytics<AppEvents>()` gives your editor the list of names and the props for each, so `analytics.track('inv` completes to `'invoice.paid'` and shows its props:
 
 ```tsx
-// app/features/invoices/pay-button.tsx
+// app/components/invoices/pay-button.tsx
 import { useAnalytics } from '@kitr/analytics/react'
 import type { AppEvents } from '#app/analytics'
 
@@ -174,7 +174,7 @@ Name events `object.action` in the past tense (`project.created`, `invoice.paid`
 `defineEvents<AppEvents>()` ties the event map to a config object. It returns its input unchanged and exists for code that builds its own analytics instance:
 
 ```ts
-// app/features/onboarding/analytics.ts
+// app/lib/onboarding/analytics.ts
 import { consoleAdapter, createAnalytics, defineEvents } from '@kitr/analytics'
 import type { AppEvents } from '#app/analytics'
 
@@ -215,7 +215,7 @@ export default defineConfig({
 Then call `page()` where you decide a page was seen, for example when a wizard step changes but the URL does not:
 
 ```tsx
-// app/features/onboarding/step.tsx
+// app/components/onboarding/step.tsx
 import { useAnalytics } from '@kitr/analytics/react'
 import { useEffect } from 'react'
 
@@ -235,7 +235,7 @@ If you build the React tree by hand instead of through the provider, render `<Tr
 After sign-in, tell the services who the visitor is, so later events join up with their earlier ones. Pass a stable id, never an email address:
 
 ```tsx
-// app/features/auth/sign-in-form.tsx
+// app/components/auth/sign-in-form.tsx
 import { useAnalytics } from '@kitr/analytics/react'
 import type { AppEvents } from '#app/analytics'
 
@@ -255,7 +255,7 @@ Call the returned function when Grace's sign-in succeeds: `afterSignIn({ id: 'us
 Call `reset()` when the visitor signs out, so the next person on a shared computer is not counted as them:
 
 ```tsx
-// app/features/auth/sign-out-button.tsx
+// app/components/auth/sign-out-button.tsx
 import { useAnalytics } from '@kitr/analytics/react'
 
 export function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
@@ -298,7 +298,7 @@ A prop on the call wins over a global prop with the same name: `track('project.c
 Outside React, read the service from the container. In a store, a query hook or a provider, `app.container.use('analytics')` returns the same instance the components use:
 
 ```ts
-// app/features/projects/create-project.ts
+// app/lib/projects/create-project.ts
 import type { Analytics } from '@kitr/analytics'
 import type { KitrApp } from 'kitr/app'
 import type { AppEvents } from '#app/analytics'
@@ -541,7 +541,7 @@ The one exception is `analytics: false` in `config/consent.ts`, which tells cons
 `use()` adds an adapter after the app has started. If analytics is already enabled, the adapter's script loads at once; otherwise it loads on `enable()`. Use it for a service you only want for some visitors, such as session replay for Acme staff:
 
 ```tsx
-// app/features/staff/staff-tools.tsx
+// app/components/staff/staff-tools.tsx
 import { posthog } from '@kitr/analytics'
 import { useAnalytics } from '@kitr/analytics/react'
 import posthogJs from 'posthog-js'
@@ -592,7 +592,7 @@ Call `track()` from event handlers and effects, never during render or in a rout
 Pass `memoryAdapter()` in config and assert on its `calls`. Each call is recorded as `{ type, args }`, with `globalProps` already merged in. This test renders the button from [Track your first event](#track-your-first-event) inside a test app and checks the event it sends:
 
 ```tsx
-// app/features/projects/new-project-button.test.tsx
+// app/components/projects/new-project-button.test.tsx
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { memoryAdapter } from '@kitr/analytics'
 import { analyticsProvider } from '@kitr/analytics/provider'
@@ -625,7 +625,7 @@ describe('NewProjectButton', () => {
 For code outside components, build an instance with `createAnalytics()` and no app at all. This one checks the consent queue:
 
 ```ts
-// app/features/projects/analytics.test.ts
+// app/lib/projects/analytics.test.ts
 import { createAnalytics, memoryAdapter } from '@kitr/analytics'
 import { expect, it } from 'vitest'
 

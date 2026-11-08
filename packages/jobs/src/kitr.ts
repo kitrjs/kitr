@@ -1,4 +1,4 @@
-import { definePackage } from '@kitr/core/package'
+import { definePackage, generatorFile } from '@kitr/core/package'
 
 const pascal = (s: string) =>
   s.replace(/(^|[-_/\s])(\w)/g, (_, __, c: string) => c.toUpperCase()).replace(/[^\w]/g, '')
@@ -53,9 +53,9 @@ export default definePackage({
   generators: {
     job: {
       description: 'Create a background job in server/jobs',
-      target: (name, project) => ({
-        file: `${project.rc.directories.server ?? 'server'}/jobs/${snake(name)}.ts`,
-      }),
+      definition:
+        'A background unit of work with a payload schema, retries and an optional schedule.',
+      target: (name, project) => generatorFile(project, 'server', 'jobs', name),
       stub: ({ name }) => `import { defineJob } from '@kitr/jobs'
 import { z } from 'zod'
 

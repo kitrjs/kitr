@@ -323,7 +323,7 @@ async fn export_invoice(invoice_id: String, path: String) -> Result<String, Stri
 This example uses [reqwest](https://docs.rs/reqwest), which you add with `cargo add reqwest` in `platforms/app/src-tauri`. In the window, catch the rejection like any other:
 
 ```ts
-// app/features/invoices/export.ts
+// app/lib/invoices/export.ts
 import { commands } from '#app/commands'
 
 export async function exportInvoice(invoiceId: string, folder: string) {
@@ -344,7 +344,7 @@ The rejected value is the Rust error as serialised, a plain string here, not an 
 To cache a command's result, share it between components and refresh it after a change, wrap it with `commandQuery(command, name)` and pass the result to `queryFrom` from [Query](/packages/query):
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { queryFrom } from '@kitr/query'
 import { commandQuery } from '@kitr/tauri/client'
 import { commands } from '#app/commands'
@@ -360,7 +360,7 @@ r.page('/orders', { lazy: () => import('./pages/orders') })
 ```tsx
 // app/pages/orders.tsx
 import { useQuery } from '@kitr/query'
-import { ordersByStatus } from '#app/features/orders/queries'
+import { ordersByStatus } from '#app/queries/orders'
 
 export default function OrdersPage() {
   const { data: orders, isPending, error } = useQuery(ordersByStatus.options({ status: 'paid' }))
@@ -399,7 +399,7 @@ fn ship_order(id: String, carrier: String) -> Result<Order, String> {
 Then wrap it. The effects say which cached queries to refresh when it succeeds:
 
 ```ts
-// app/features/orders/mutations.ts
+// app/lib/orders/mutations.ts
 import { mutationFrom } from '@kitr/query'
 import { commandMutation } from '@kitr/tauri/client'
 import { commands } from '#app/commands'
@@ -412,9 +412,9 @@ export const shipOrder = mutationFrom(
 ```
 
 ```tsx
-// app/features/orders/ship-button.tsx
+// app/components/orders/ship-button.tsx
 import { useMutation } from '@kitr/query'
-import { shipOrder } from './mutations'
+import { shipOrder } from '#app/lib/orders/mutations'
 
 export function ShipButton({ id }: { id: string }) {
   const ship = useMutation(shipOrder)
@@ -449,7 +449,7 @@ async fn sync_orders(app: AppHandle) -> Result<(), String> {
 In a component, `useTauriEvent(event, handler)` subscribes for as long as the component is mounted and passes each event's payload to the handler:
 
 ```tsx
-// app/features/orders/sync-progress.tsx
+// app/components/orders/sync-progress.tsx
 import { useTauriEvent } from '@kitr/tauri/client'
 import { useCallback, useState } from 'react'
 import { commands } from '#app/commands'
@@ -473,7 +473,7 @@ Clicking "Sync orders" moves the bar to 25, 50, 75 and 100. The hook re-subscrib
 `emitTauri(event, payload)` sends an event to the Rust side and to every window. Use it for things the window reports and does not wait on. In a plain browser it resolves and does nothing.
 
 ```ts
-// app/features/orders/opened.ts
+// app/lib/orders/opened.ts
 import { emitTauri } from '@kitr/tauri/client'
 
 export function reportOrderOpened(orderId: string) {
@@ -523,9 +523,9 @@ The same `app/` ships to the browser through your web platform, where there is n
 So guard command calls, and offer the web alternative next to them:
 
 ```tsx
-// app/features/invoices/export-button.tsx
+// app/components/invoices/export-button.tsx
 import { isTauri } from '@kitr/tauri/client'
-import { exportInvoice } from './export'
+import { exportInvoice } from '#app/lib/invoices/export'
 
 export function ExportButton({ invoiceId }: { invoiceId: string }) {
   if (!isTauri()) return <a href={`/api/invoices/${invoiceId}.pdf`} download>Download invoice</a>
@@ -572,7 +572,7 @@ cd ../..
 Then call the plugin's JavaScript API, guarded like any Tauri call:
 
 ```ts
-// app/features/invoices/pick-folder.ts
+// app/lib/invoices/pick-folder.ts
 import { isTauri } from '@kitr/tauri/client'
 
 export async function pickExportFolder(): Promise<string | null> {
@@ -779,7 +779,7 @@ import { createTestApp } from '@kitr/testing'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { commands, type Order } from '#app/commands'
-import { ordersByStatus } from '#app/features/orders/queries'
+import { ordersByStatus } from '#app/queries/orders'
 
 const orders: Order[] = [
   { id: 'ord_1042', customer: 'Ada', totalCents: 12000, status: 'paid' },

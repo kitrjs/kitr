@@ -100,7 +100,7 @@ import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
-import ProjectsController from '#server/controllers/projects_controller'
+import ProjectsController from '#server/controllers/projects-controller'
 
 export const routes = defineRoutes([api, realtime], (root) =>
   root.group('/api', (r) =>
@@ -114,7 +114,7 @@ export type ServerRoutes = typeof routes.$types
 `.ws(path, options)` is a route like any other: `createServer({ routes })` in `server/main.ts` mounts the WebSocket server at `/api/ws` and binds it in the app container as `realtime`, so every controller, action and job reaches it through `app.container.use('realtime')`:
 
 ```ts
-// server/controllers/projects_controller.ts
+// server/controllers/projects-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { type Project, projectChannel } from '#app/channels/projects'
 
@@ -131,7 +131,7 @@ export default class ProjectsController {
 Subscribe in the component that shows the project:
 
 ```tsx
-// app/features/projects/project-title.tsx
+// app/components/projects/project-title.tsx
 import { useQuery } from '@kitr/query'
 import { useChannel } from '@kitr/realtime/react'
 import { type Project, projectChannel } from '#app/channels/projects'
@@ -185,7 +185,7 @@ On the server, `params` runs before anything else. Its output, not the raw input
 On the client, an event with a `schema` is validated before `effects` runs. A payload that fails is not applied; the subscription's error handler gets a `VALIDATION` error instead:
 
 ```ts
-// app/features/projects/project-errors.ts
+// app/lib/projects/project-errors.ts
 import { channel } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
@@ -268,7 +268,7 @@ export const renameProject = defineMutation('projects.rename', {
 The emitter also reports how many connections are listening, which helps you skip expensive work nobody will see:
 
 ```ts
-// server/jobs/project_stats.ts
+// server/jobs/project-stats.ts
 import { projectChannel } from '#app/channels/projects'
 import { server } from '#server/main'
 
@@ -287,7 +287,7 @@ Emit with the params as the server normalised them. With `z.string().trim()` abo
 In a component, `useChannel(transport, channel, params, options?)` from `@kitr/realtime/react` subscribes on mount, applies each event's `effects` to the query cache, and unsubscribes on unmount. It needs the [query](/packages/query) provider, which every kit with React includes.
 
 ```tsx
-// app/features/projects/project-board.tsx
+// app/components/projects/project-board.tsx
 import { useChannel } from '@kitr/realtime/react'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
@@ -324,7 +324,7 @@ Changing `params` resubscribes. `app/realtime.ts` opens the connection the first
 `channel(transport, definition)` binds a channel to a transport. Its `subscription()` is a kitr subscription contract, so `useSubscription` and `subscriptionFrom` from [query](/packages/query) take it directly. Use this when your queries file already holds the other contracts for a feature:
 
 ```ts
-// app/features/projects/queries.ts
+// app/queries/projects.ts
 import { subscriptionFrom } from '@kitr/query'
 import { channel } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
@@ -336,10 +336,10 @@ export const projectSubscription = () =>
 ```
 
 ```tsx
-// app/features/projects/project-live.tsx
+// app/components/projects/project-live.tsx
 import { useSubscription } from '@kitr/query'
 import { useMemo } from 'react'
-import { projectSubscription } from './queries'
+import { projectSubscription } from '#app/queries/projects'
 
 export function ProjectLive({ id }: { id: string }) {
   const subscription = useMemo(() => projectSubscription(), [])
@@ -406,7 +406,7 @@ r.ws('/ws', {
 ```
 
 ```tsx
-// app/features/projects/comment-box.tsx
+// app/components/projects/comment-box.tsx
 import { channel } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
@@ -856,7 +856,7 @@ Errors travel as kitr error shapes (`{ code, message, status }`) to the subscrip
 Server and client both run in Node, so a test can start the real server on a free port and subscribe with the real client. This checks the channel, the authorization and the emit together:
 
 ```ts
-// test/project_channel.test.ts
+// test/project-channel.test.ts
 import { defineRoutes } from 'kitr/app'
 import { silentLogger } from '@kitr/logger'
 import { channel, createSocketClient, type SocketTransport } from '@kitr/realtime'
@@ -914,7 +914,7 @@ describe('projects channel', () => {
 To test what the cache looks like after an event, call the subscription's `effects` directly. It is a plain function:
 
 ```ts
-// test/project_effects.test.ts
+// test/project-effects.test.ts
 import { channel, type SocketTransport } from '@kitr/realtime'
 import { expect, it } from 'vitest'
 import { projectChannel } from '#app/channels/projects'
@@ -975,7 +975,7 @@ export function createMemoryTransport() {
 Use it where the app expects a transport. `channel()`, `useChannel` and `useRealtimeStatus` only call these five members:
 
 ```tsx
-// app/features/projects/project-title.test.tsx
+// app/components/projects/project-title.test.tsx
 import { act, screen } from '@testing-library/react'
 import { queryProvider } from '@kitr/query'
 import { useChannel } from '@kitr/realtime/react'

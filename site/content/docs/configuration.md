@@ -57,6 +57,7 @@ A provider is how a package (or your own code) plugs into startup. It has up to 
 Write your own with `kitr make:provider analytics`:
 
 ```ts
+// app/providers/analytics-provider.ts
 import { defineProvider } from 'kitr/app'
 
 export default defineProvider({
@@ -67,7 +68,7 @@ export default defineProvider({
 })
 ```
 
-Then add `() => import('#app/providers/analytics')` to `providers` in `kitrrc.ts`. Anywhere in the app, `useService('analytics')` (from `@kitr/react`) or `app.container.use('analytics')` returns it.
+The command also adds `() => import('#app/providers/analytics-provider')` to `providers` in `kitrrc.ts`. Anywhere in the app, `useService('analytics')` (from `@kitr/react`) or `app.container.use('analytics')` returns it.
 
 ## Environment variables
 

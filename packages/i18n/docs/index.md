@@ -85,7 +85,7 @@ export default {
 In a component, `useTranslation()` from `@kitr/i18n` returns `t`, which looks a key up in the current language:
 
 ```tsx
-// app/features/orders/welcome.tsx
+// app/components/orders/welcome.tsx
 import { useTranslation } from '@kitr/i18n'
 
 export function Welcome({ name }: { name: string }) {
@@ -124,7 +124,7 @@ export default {
 Pass a namespace to `useTranslation` to make it the default for that component. Reach another namespace with a `namespace:` prefix, and nested keys with dots:
 
 ```tsx
-// app/features/orders/orders-header.tsx
+// app/components/orders/orders-header.tsx
 import { useTranslation } from '@kitr/i18n'
 
 export function OrdersHeader() {
@@ -146,7 +146,7 @@ That renders "Orders", "Open" and "Cancel". For a component that only reads one 
 Wrap a placeholder in double braces in the string, and pass the value under the same name:
 
 ```tsx
-// app/features/orders/assigned-to.tsx
+// app/components/orders/assigned-to.tsx
 import { useTranslation } from '@kitr/i18n'
 
 export function AssignedTo({ order }: { order: { id: string; owner: string } }) {
@@ -175,7 +175,7 @@ export default {
 ```
 
 ```tsx
-// app/features/orders/order-count.tsx
+// app/components/orders/order-count.tsx
 import { useTranslation } from '@kitr/i18n'
 
 export function OrderCount({ count }: { count: number }) {
@@ -205,7 +205,7 @@ export default {
 ```
 
 ```tsx
-// app/features/orders/order-summary.tsx
+// app/components/orders/order-summary.tsx
 import { useTranslation } from '@kitr/i18n'
 
 export function OrderSummary({ order }: { order: { total: number; placedAt: Date } }) {
@@ -238,7 +238,7 @@ export default {
 ```
 
 ```tsx
-// app/features/orders/welcome-back.tsx
+// app/components/orders/welcome-back.tsx
 import { Trans } from '@kitr/i18n'
 
 export function WelcomeBack({ name }: { name: string }) {
@@ -318,7 +318,7 @@ declare module 'i18next' {
 ```
 
 ```tsx
-// app/features/orders/orders-header.tsx
+// app/components/orders/orders-header.tsx
 import { useTranslation } from '@kitr/i18n'
 
 export function OrdersHeader() {
@@ -331,7 +331,7 @@ export function OrdersHeader() {
 When a component takes a key as a prop, type the prop with `TranslationKeys`. It flattens a namespace into its dotted key paths:
 
 ```tsx
-// app/features/orders/status-badge.tsx
+// app/components/orders/status-badge.tsx
 import { type TranslationKeys, useTranslation } from '@kitr/i18n'
 import type en from '#app/locales/en'
 
@@ -407,7 +407,7 @@ With `detect: true`, the provider picks the first language in this order:
 Matching tries each browser language in order. An exact match wins; otherwise the base language matches (`en-GB` matches `en`), and a base language matches a regional bundle (`pt` matches `pt-BR`). `detectLocale(supported, storageKey)` runs steps 2 and 3 on their own:
 
 ```ts
-// app/features/settings/language.ts
+// app/lib/settings/language.ts
 import { detectLocale } from '@kitr/i18n'
 
 detectLocale(['en', 'de'])
@@ -423,7 +423,7 @@ Detection runs once, when the provider creates the instance at startup. With `de
 On the server there is no `navigator` and no `localStorage`; the `Accept-Language` header carries the visitor's preference. `matchLocale()` parses it, quality values and all, and returns the best supported language:
 
 ```ts
-// server/controllers/locale_controller.ts
+// server/controllers/locale-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { matchLocale } from '@kitr/i18n'
 
@@ -451,7 +451,7 @@ It reads the languages in the order the header lists them and does not sort by `
 The provider binds the i18next instance as `i18n` in the container. Read it where there are no hooks, such as a toast after a mutation or a router loader:
 
 ```ts
-// app/features/orders/notify.ts
+// app/lib/orders/notify.ts
 import type { KitrApp } from 'kitr/app'
 
 export function orderSavedMessage(app: KitrApp, orderId: string) {
@@ -464,7 +464,7 @@ export function orderSavedMessage(app: KitrApp, orderId: string) {
 On the server, for an email in the customer's language, create an instance from the same config and take a fixed `t` per language. `getFixedT` does not change the instance's language, so concurrent requests can't affect each other:
 
 ```ts
-// server/mail/order_confirmation.ts
+// server/mail/order-confirmation.ts
 import { createI18n } from '@kitr/i18n'
 import i18nConfig from '#config/i18n'
 
@@ -484,7 +484,7 @@ The provider binds one i18next instance per request on the server, so `changeLan
 Every bundle in `resources` ships in the main JavaScript bundle. With many languages, load the rarely used ones when they are chosen, and list them in `locales` up front so they can be chosen:
 
 ```ts
-// app/features/settings/load-language.ts
+// app/lib/settings/load-language.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function useFrench(app: KitrApp) {
@@ -518,7 +518,7 @@ Without `fr` in `locales`, the bundle loads but `changeLanguage('fr')` stays on 
 A key that exists in English but not in German shows the English string. A key that exists nowhere shows the key itself, without its namespace:
 
 ```ts
-// app/features/orders/missing.ts
+// app/lib/orders/missing.ts
 import type { KitrApp } from 'kitr/app'
 
 export function demo(app: KitrApp) {
@@ -535,7 +535,7 @@ Typed keys catch this at compile time. To also catch it at run time, for example
 Render translated components with [testing](/packages/testing)'s `createTestApp` and `renderWithKitr`. Pass the i18n provider and your config with `detect: false`, so the browser language of the test runner doesn't decide the result. Pass `env: { locale }` to render another language:
 
 ```tsx
-// app/features/orders/orders-header.test.tsx
+// app/components/orders/orders-header.test.tsx
 import { screen } from '@testing-library/react'
 import { useTranslation } from '@kitr/i18n'
 import i18nProvider from '@kitr/i18n/provider'

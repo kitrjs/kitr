@@ -144,7 +144,7 @@ The `directories` block in `kitrrc.ts` names where the app lives, and the plugin
 ```ts
 // app/pages/orders.tsx
 import { OrderList } from '#components/order-list'
-import { ordersQuery } from '#app/features/orders/queries'
+import { ordersQuery } from '#app/queries/orders'
 import { Orders } from '#kitr/actions'
 import type { ServerRoutes } from '#server/routes'
 ```
@@ -221,7 +221,7 @@ kitr dev site
 ```
 
 ```ts
-// app/features/orders/queries.ts
+// app/queries/orders.ts
 import { Orders } from '#kitr/actions'   // typed from app/actions/orders.ts, always current
 
 export const ordersQuery = Orders.list

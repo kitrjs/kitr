@@ -173,10 +173,10 @@ The `files`, `native`, `notifications`, `offline`, `secure-storage` and `updater
 To see what your own code does, log to a channel of your own. `getDevtools(app)` returns the hub in development and `null` everywhere else, so the optional call costs nothing in production:
 
 ```tsx
-// app/features/orders/add-to-cart-button.tsx
+// app/components/orders/add-to-cart-button.tsx
 import { getDevtools } from '@kitr/devtools'
 import { useApp } from '@kitr/react'
-import { cart } from './cart'
+import { cart } from '#app/lib/orders/cart'
 
 export function AddToCartButton({ sku }: { sku: string }) {
   const app = useApp()
@@ -203,7 +203,7 @@ Click the button and the Log panel shows a new entry:
 Expand `{1}` to see `items: 1`. The fourth argument is the level, `'info'` by default:
 
 ```ts
-// app/features/orders/checkout.ts
+// app/lib/orders/checkout.ts
 import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 
@@ -215,7 +215,7 @@ export function reportCheckoutProblem(app: KitrApp, orderId: string, reason: str
 Logging is cheap enough to time slow work. Here the checkout logs how long the order request took, as an error when it fails:
 
 ```ts
-// app/features/orders/place-order.ts
+// app/lib/orders/place-order.ts
 import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 
@@ -245,7 +245,7 @@ Don't log with `console.log` and leave it in. Log calls through `getDevtools(app
 To check whether devtools is active, for example to skip building a costly debug summary, test the return value once:
 
 ```ts
-// app/features/orders/debug-summary.ts
+// app/lib/orders/debug-summary.ts
 import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 import { cart } from './cart'
@@ -300,7 +300,7 @@ Then write the panel. `definePanel()` gives it types; `KeyValue`, `Badge` and th
 // app/providers/orders-devtools.tsx
 import { definePanel } from '@kitr/devtools'
 import { Badge, KeyValue } from '@kitr/devtools/ui'
-import { cart } from '#app/features/orders/cart'
+import { cart } from '#app/lib/orders/cart'
 
 export const panels = () => [
   definePanel({
@@ -348,7 +348,7 @@ The built-in panels have icons in their tabs; panels you add show the label only
 The overlay re-renders when the hub changes: a new log entry, a panel added or removed, or a call to `notify()`. Data that changes without a log entry, such as the cart above, needs a `notify()`:
 
 ```ts
-// app/features/orders/cart.ts
+// app/lib/orders/cart.ts
 export interface CartItem {
   sku: string
   qty: number
@@ -378,7 +378,7 @@ export const cart = {
 ```ts
 // app/providers/orders.ts
 import { defineProvider, getDevtools } from 'kitr/app'
-import { cart } from '#app/features/orders/cart'
+import { cart } from '#app/lib/orders/cart'
 
 export default defineProvider({
   name: 'orders',
@@ -414,7 +414,7 @@ A panel that shows the orders log next to the cart:
 // app/providers/orders-devtools.tsx
 import { definePanel } from '@kitr/devtools'
 import { JsonView, LogList } from '@kitr/devtools/ui'
-import { cart } from '#app/features/orders/cart'
+import { cart } from '#app/lib/orders/cart'
 
 export const panels = () => [
   definePanel({
@@ -441,7 +441,7 @@ export const panels = () => [
 The hub is bound as `devtools` in the container while devtools is active. Besides `log()` and `notify()`, it can read and clear entries and register panels at run time:
 
 ```ts
-// app/features/orders/debug.ts
+// app/lib/orders/debug.ts
 import { getDevtools } from '@kitr/devtools'
 import type { KitrApp } from 'kitr/app'
 
@@ -502,7 +502,7 @@ The effect returns the function `register()` gave back, so the tab disappears wh
 Devtools is only active in the browser in development, so a test app built with `createTestApp()` has no hub and `getDevtools(app)` returns `null`. Code that logs keeps working in tests and logs nothing. To assert on what your code logs, bind a hub of your own with `createDevtoolsHub()`:
 
 ```ts
-// app/features/orders/checkout.test.ts
+// app/lib/orders/checkout.test.ts
 import { createDevtoolsHub, getDevtools } from '@kitr/devtools'
 import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
@@ -532,7 +532,7 @@ To check that a provider contributes its panel, boot the real devtools provider 
 import { createApp, getDevtools } from 'kitr/app'
 import { devtoolsProvider } from '@kitr/devtools/provider'
 import { expect, it } from 'vitest'
-import { cart } from '#app/features/orders/cart'
+import { cart } from '#app/lib/orders/cart'
 import ordersProvider from './orders'
 
 it('adds the Orders panel and empties the cart', async () => {

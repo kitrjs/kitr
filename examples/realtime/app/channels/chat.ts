@@ -1,5 +1,5 @@
 import { defineChannel } from '@kitr/realtime'
-import type { Message } from '#app/features/chat/schema'
+import type { Message } from '#app/validators/chat'
 
 /**
  * One definition for both ends: the server serves it from server/routes.ts and emits `message`

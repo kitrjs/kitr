@@ -32,7 +32,7 @@ const files = (ctx: AddContext, name: string) => {
 
   write(
     ctx,
-    'app/features/chat/schema.ts',
+    'app/validators/chat.ts',
     `import { z } from 'zod'
 
 export const sendMessageSchema = z.object({
@@ -58,7 +58,7 @@ export interface Message {
     ctx,
     'app/channels/chat.ts',
     `import { defineChannel } from '@kitr/realtime'
-import type { Message } from '#app/features/chat/schema'
+import type { Message } from '#app/validators/chat'
 
 /**
  * One definition for both ends: the server serves it from server/routes.ts and emits \`message\`
@@ -82,7 +82,7 @@ export const chatChannel = defineChannel<{ room: string }>({
 
   write(
     ctx,
-    'server/controllers/messages_controller.ts',
+    'server/controllers/messages-controller.ts',
     `import type { HttpContext } from '@kitr/api'
 import { chatChannel } from '#app/channels/chat'
 import {
@@ -90,7 +90,7 @@ import {
   type SendMessage,
   roomQuerySchema,
   sendMessageSchema,
-} from '#app/features/chat/schema'
+} from '#app/validators/chat'
 import type { z } from 'zod'
 
 type Ctx<Q = Record<string, string | string[]>, B = unknown> = HttpContext<Record<string, string>, Q, B>
@@ -151,8 +151,8 @@ export default class MessagesController {
 import api from '@kitr/api/routes'
 import realtime from '@kitr/realtime/routes'
 import { chatChannel } from '#app/channels/chat'
-import HealthController from '#server/controllers/health_controller'
-import MessagesController from '#server/controllers/messages_controller'
+import HealthController from '#server/controllers/health-controller'
+import MessagesController from '#server/controllers/messages-controller'
 
 /** Endpoints and the chat socket, served by \`createServer({ routes })\` in server/main.ts. */
 export const routes = defineRoutes([api, realtime], (root) =>
@@ -214,7 +214,7 @@ export function getSocket(): SocketTransport {
 
   write(
     ctx,
-    'app/features/chat/queries.ts',
+    'app/queries/chat.ts',
     `import { mutationFrom, queryFrom, subscriptionFrom } from '@kitr/query'
 import { channel } from '@kitr/realtime'
 import { api } from '#app/api/client'
@@ -291,7 +291,7 @@ export type AppRoutes = typeof routes.$types
 import { getRouteApi } from '@kitr/router'
 import { useStorage } from '@kitr/storage/react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { chatSubscription, messagesQuery, sendMessage } from '#app/features/chat/queries'
+import { chatSubscription, messagesQuery, sendMessage } from '#app/queries/chat'
 import { displayName } from '#app/storage'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'

@@ -115,8 +115,8 @@ export default defineKitrConfig({
     ],
     code: `// server/routes.ts
 import { defineRoutes } from '@kitr/api'
-import HealthController from '#server/controllers/health_controller'
-import OrdersController from '#server/controllers/orders_controller'
+import HealthController from '#server/controllers/health-controller'
+import OrdersController from '#server/controllers/orders-controller'
 
 export const routes = defineRoutes((router) =>
   router.group({ prefix: '/api' }, (api) =>

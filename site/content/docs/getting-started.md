@@ -15,6 +15,16 @@ You need [Node.js](https://nodejs.org) 22 or newer.
 npm install -g kitr
 ```
 
+> **Pre-release.** kitr is version 0.1 and is not on npm yet, so `npm install -g kitr` fails today, and a project made by `kitr new` cannot install its dependencies until the first release. To see kitr running now, clone the repository and start one of the examples, which are the exact output of `kitr new`:
+>
+> ```sh
+> git clone https://github.com/kitrjs/kitr && cd kitr
+> pnpm install && pnpm build
+> cd examples/dashboard && pnpm dev     # the app kit; see examples/README.md for the others
+> ```
+>
+> Everything below describes how it works once published.
+
 Now `kitr` works in any folder. Inside a project, the global command hands off to the project's own version of kitr, so everyone on the team runs the same one.
 
 Prefer not to install globally? Every command on this site has a picker to switch to `pnpm`, `npx`, `yarn` or `bunx`, and remembers your choice.
@@ -29,11 +39,13 @@ A **kit** is a starting set of platforms, packages and files. Pick the one close
 
 | Kit | For | Includes |
 | --- | --- | --- |
+| `app` (start here) | A logged-in app that talks to an existing API | A web platform with Vite, React and the router, plus HTTP, forms, tables, state, Tailwind, theme, auth, storage, mocks, testing and devtools |
 | `blank` | Starting from nothing | Seven wiring files. No platform, no React, no dev server: `kitr add web site` adds them |
-| `app` | A logged-in app that talks to an existing API | A web platform with Vite, React and the router, plus HTTP, forms, tables, state, Tailwind, theme, auth, storage, mocks, testing and devtools |
 | `fullstack` | An app with its own backend | The app kit plus server rendering, an API server, server actions, SEO and realtime channels |
 | `server` | An API with no React at all | Server, API routes, database, realtime channels, logger and testing |
 | `saas`, `site`, `realtime`, `desktop`, `tauri`, `mobile` | A real application to start from | The base kits plus pages, controllers and tests; see [Kits](/docs/kits) |
+
+`app` is the one to start with. `kitr new my-app` without `--kit` makes a `blank` project, which has no platform and no dev server, so `npm run dev` fails until you run `kitr add web site`.
 
 `kitr new` installs dependencies, sets up git and writes an `AGENTS.md` for coding assistants.
 
@@ -45,6 +57,8 @@ npm run dev
 ```
 
 Open the URL it prints. Edit `app/pages/home.tsx` and the page updates as you save.
+
+The starter page confirms the app is running, shows the next commands to try and links to these docs and to `AGENTS.md`. The project also has a `README.md` that says where everything lives.
 
 ## 4. Add a page
 
@@ -76,6 +90,8 @@ That one command installs the package, wires it up and notes the conventions in 
 
 ## What next
 
+- [What is kitr](/docs/what-is-kitr): the mental model, and a glossary of the words used here.
+- [How kitr compares](/docs/compare): kitr beside Next.js, Remix, Expo and others.
 - [Project structure](/docs/project-structure): where everything lives.
 - [Configuration](/docs/configuration): `kitrrc.ts`, `config/` and environment variables.
 - [Browse packages](/packages): find the pieces your app needs.

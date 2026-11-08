@@ -34,6 +34,8 @@ export interface KitrRc {
     server?: string
     /** Native projects, one folder per platform name. Default `platforms`. */
     platforms?: string
+    /** Server functions (`defineQuery`, `defineMutation`) `kitr types` scans. Default `app/actions`. */
+    actions?: string
   }
   /** Paths to preload on the server before the first request (server apps). */
   preloads?: Array<() => Promise<unknown>>

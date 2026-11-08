@@ -281,7 +281,7 @@ Mutations need no change either. TanStack Query's default `networkMode: 'online'
 Give each mutation a `mutationKey`, so it can be replayed after a reload (next section), and an optimistic `onMutate`, so the screen shows the change while it waits:
 
 ```ts
-// app/features/orders/use-create-order.ts
+// app/hooks/orders/use-create-order.ts
 import { mutationFrom, useMutation, useQueryClient } from '@kitr/query'
 
 export interface Order {
@@ -322,8 +322,8 @@ export function useCreateOrder() {
 ```
 
 ```tsx
-// app/features/orders/new-order-button.tsx
-import { useCreateOrder } from './use-create-order'
+// app/components/orders/new-order-button.tsx
+import { useCreateOrder } from '#app/hooks/orders/use-create-order'
 
 export function NewOrderButton() {
   const createOrder = useCreateOrder()
@@ -348,7 +348,7 @@ For a mutation without a name, register the function for its `mutationKey` with 
 ```ts
 // app/providers/offline-mutations.ts
 import { defineProvider } from 'kitr/app'
-import { createOrder } from '#app/features/orders/use-create-order'
+import { createOrder } from '#app/hooks/orders/use-create-order'
 
 export default defineProvider({
   name: 'offline-mutations',
@@ -391,7 +391,7 @@ Don't set the defaults in `boot()` or in a component. By then the mutation was r
 The provider saves on its own: one second after the last cache change, and right away when the page is hidden or closed, so a change made just before Linus locks the tablet is not lost. Outside React, the `offline` service gives you the same controls:
 
 ```ts
-// app/features/sync/sync-now.ts
+// app/lib/sync/sync-now.ts
 import { useOffline } from '@kitr/offline'
 import { app } from '#app/app'
 
@@ -457,7 +457,7 @@ TanStack's `onlineManager` is global, so the binding applies to every `QueryClie
 The provider only runs when the app's environment is `client`, so pass `environment: 'client'` to `createTestApp`. Give it an in-memory storage driver in config, seed a snapshot with `createOffline`, and boot: the cache holds the seeded data before any test code runs. TanStack's `onlineManager` lets you take the app offline:
 
 ```ts
-// app/features/orders/offline.test.ts
+// app/lib/orders/offline.test.ts
 import { createOffline } from '@kitr/offline'
 import offlineProvider from '@kitr/offline/provider'
 import { onlineManager, QueryClient } from '@kitr/query'

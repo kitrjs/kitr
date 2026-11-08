@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add mail`: emails as React components, sent through your provider, previewed in development. */
 export default definePackage({
@@ -52,9 +52,8 @@ export const welcomeMail = defineMail<WelcomeProps>('welcome', {
   generators: {
     mail: {
       description: 'Create an email template in server/mail',
-      target: (name, project) => ({
-        file: `${project.rc.directories.server ?? 'server'}/mail/${naming.snake(name)}.tsx`,
-      }),
+      definition: 'A React email template with its subject and preview props.',
+      target: (name, project) => generatorFile(project, 'server', 'mail', name, { ext: '.tsx' }),
       stub: ({ name }) => `import { defineMail } from '@kitr/mail'
 
 export interface ${naming.pascal(name)}Props {

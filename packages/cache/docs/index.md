@@ -72,7 +72,7 @@ export default defineConfig({
 On the server, get the cache with `useCache(app)` and wrap the slow call in `remember()`. This controller builds Acme's project report once every ten minutes:
 
 ```ts
-// server/controllers/reports_controller.ts
+// server/controllers/reports-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useCache } from '@kitr/cache'
 import { buildProjectReport } from '#server/reports/project_report'
@@ -93,7 +93,7 @@ Add the route next to the others:
 ```ts
 // server/routes.ts
 import { defineRoutes } from '@kitr/api'
-import ReportsController from '#server/controllers/reports_controller'
+import ReportsController from '#server/controllers/reports-controller'
 
 export const routes = defineRoutes((router) =>
   router.group({ prefix: '/api' }, (api) =>
@@ -109,7 +109,7 @@ The first `GET /api/projects/42/report` runs `buildProjectReport('42')`, stores 
 The provider binds one cache as `cache` in the container. `useCache(app)` reads it, typed:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useCache } from '@kitr/cache'
 
@@ -124,7 +124,7 @@ export default class InvoicesController {
 `app.container.use('cache')` returns the same object; `useCache` is a shorter, typed spelling. In a background job, the job context carries the app:
 
 ```ts
-// server/jobs/warm_reports.ts
+// server/jobs/warm-reports.ts
 import { useCache } from '@kitr/cache'
 import { defineJob } from '@kitr/jobs'
 import { buildProjectReport } from '#server/reports/project_report'
@@ -260,7 +260,7 @@ Pick the ttl from how stale the answer may be, not from how slow it is to build.
 Tag an entry with what it is about when you store it. After a write, clear the tag, and every entry about that thing is gone, whatever its key:
 
 ```ts
-// server/controllers/projects_controller.ts
+// server/controllers/projects-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useCache } from '@kitr/cache'
 import { updateProject } from '#server/repositories/projects'
@@ -277,7 +277,7 @@ export default class ProjectsController {
 The report under `report:project:42` and anything else tagged `project:42` are cleared. Entries tagged only `project:43` stay. `invalidateTags()` takes several tags at once and clears an entry that carries any of them:
 
 ```ts
-// server/controllers/invoices_controller.ts
+// server/controllers/invoices-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useCache } from '@kitr/cache'
 import { markInvoicePaid } from '#server/repositories/invoices'
@@ -317,7 +317,7 @@ export const exchangeRate = (cache: Cache) =>
 Call it with the app's cache wherever you need a rate:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 import { useCache } from '@kitr/cache'
 import { exchangeRate } from '#server/rates/exchange_rate'

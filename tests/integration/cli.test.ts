@@ -178,27 +178,55 @@ describe('make:* generators produce code that typechecks and builds', () => {
     ['make:page', 'reports', 'app/pages/reports.tsx'],
     ['make:query', 'projects/list', 'app/actions/projects/list.ts'],
     ['make:mutation', 'projects/archive', 'app/actions/projects/archive.ts'],
-    ['make:controller', 'invoices', 'server/controllers/invoices_controller.ts'],
-    ['make:middleware', 'audit', 'app/middleware/audit.ts'],
+    ['make:controller', 'invoices', 'server/controllers/invoices-controller.ts'],
+    ['make:controller', 'admin/users', 'server/controllers/admin/users-controller.ts'],
+    ['make:middleware', 'audit', 'server/middleware/audit.ts'],
     ['make:channel', 'presence', 'app/channels/presence.ts'],
     ['make:store', 'filters', 'app/stores/filters.ts'],
-    ['make:form', 'invite', 'app/components/forms/invite_form.tsx'],
-    ['make:queries', 'invoices', 'app/features/invoices/queries.ts'],
-    ['make:provider', 'flags', 'app/providers/flags_provider.ts'],
-    ['make:job', 'SendReceipt', 'server/jobs/send_receipt.ts'],
+    ['make:form', 'invite', 'app/components/forms/invite-form.tsx'],
+    ['make:queries', 'invoices', 'app/queries/invoices.ts'],
+    ['make:provider', 'flags', 'app/providers/flags-provider.ts'],
+    ['make:job', 'SendReceipt', 'server/jobs/send-receipt.ts'],
     ['make:mail', 'invoice', 'server/mail/invoice.tsx'],
-    ['make:service', 'billing', 'server/services/billing_service.ts'],
+    ['make:service', 'billing', 'server/services/billing-service.ts'],
     ['make:validator', 'project', 'app/validators/project.ts'],
     ['make:test', 'billing', 'test/billing.test.ts'],
     ['make:component', 'StatCard', 'app/components/stat-card.tsx'],
+    ['make:component', 'projects/ProjectCard', 'app/components/projects/project-card.tsx'],
     ['make:hook', 'disclosure', 'app/hooks/use-disclosure.ts'],
-    ['make:exception', 'QuotaExceeded', 'app/exceptions/quota_exceeded_error.ts'],
+    ['make:layout', 'admin', 'app/layouts/admin.tsx'],
+    ['make:exception', 'QuotaExceeded', 'app/exceptions/quota-exceeded-error.ts'],
   ]
 
   it.each(generators)('%s %s writes %s', (command, arg, file) => {
     const out = kitr(dir, command, arg)
     expect(out).toContain(`write ${file}`)
     expect(exists(dir, file)).toBe(true)
+  })
+
+  it('kitr make lists every generator with the path it writes', () => {
+    const out = kitr(dir, 'make')
+    expect(out).toMatch(/make:controller\s+server\/controllers\/<name>-controller\.ts/)
+    expect(out).toMatch(/make:layout\s+app\/layouts\/<name>\.tsx/)
+    expect(out).toMatch(/make:provider\s+app\/providers\/<name>-provider\.ts/)
+    const rows = JSON.parse(kitr(dir, 'make', '--json')) as Array<{ kind: string; owner: string }>
+    expect(rows.find((r) => r.kind === 'page')?.owner).toBe('@kitr/router')
+  })
+
+  it('make:provider lists the provider in kitrrc.ts, make:layout adds its route', () => {
+    expect(readFileSync(join(dir, 'kitrrc.ts'), 'utf8')).toContain(
+      "import('#app/providers/flags-provider')",
+    )
+    expect(readFileSync(join(dir, 'app/routes.ts'), 'utf8')).toContain(
+      ".layout('_admin', { lazy: () => import('./layouts/admin') }, (admin) => admin)",
+    )
+  })
+
+  it('--dry-run writes nothing, and a mistyped kind names the right one', () => {
+    const out = kitr(dir, 'make:store', 'drafts', '--dry-run')
+    expect(out).toContain('would write app/stores/drafts.ts')
+    expect(exists(dir, 'app/stores/drafts.ts')).toBe(false)
+    expect(() => kitr(dir, 'make:controler', 'x')).toThrow(/Did you mean make:controller\?/)
   })
 
   it('leaves an existing file alone without --force, and overwrites with it', () => {
@@ -225,7 +253,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
     linkPackages(dir, ['jobs', 'mail'])
     // make:service registers its binding: the container hands back the class, not `unknown`.
     writeFileSync(
-      join(dir, 'server/services/billing_usage.ts'),
+      join(dir, 'server/services/billing-usage.ts'),
       "import type { KitrApp } from 'kitr/app'\n\nexport const countInvoices = async (app: KitrApp) =>\n  (await app.container.use('billing').list()).length\n",
     )
     kitr(dir, 'build', 'site')
@@ -248,6 +276,10 @@ describe('make:* generators produce code that typechecks and builds', () => {
       'app/hooks',
       'app/exceptions',
       'app/components/stat-card.tsx',
+      'app/components/projects',
+      'app/layouts',
+      'server/controllers/admin',
+      'server/middleware',
     ])
   })
 

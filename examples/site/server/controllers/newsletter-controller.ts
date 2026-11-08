@@ -1,5 +1,5 @@
 import type { HttpContext } from '@kitr/api'
-import { type Subscribe, subscribeSchema } from '#app/features/newsletter/schema'
+import { type Subscribe, subscribeSchema } from '#app/validators/newsletter'
 
 /** In-memory for the demo; a real app would write to a database or an email provider. */
 const subscribers = new Set<string>()

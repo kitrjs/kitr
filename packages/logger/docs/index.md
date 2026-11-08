@@ -69,7 +69,7 @@ The default `format` reads `process.env.NODE_ENV`, not the app's mode. In the br
 In a controller, the logger is `ctx.logger`. It is a child of the app's logger that adds the request id to every line:
 
 ```ts
-// server/controllers/orders_controller.ts
+// server/controllers/orders-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class OrdersController {
@@ -110,7 +110,7 @@ Each level has a method. Lines below the configured `level` are dropped before t
 `silent` is a level for configuration only: it drops everything.
 
 ```ts
-// server/services/project_service.ts
+// server/services/project-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function syncProject(app: KitrApp, projectId: string) {
@@ -126,7 +126,7 @@ export async function syncProject(app: KitrApp, projectId: string) {
 Pass the `Error` itself to `error()` or `fatal()`. Its message becomes `msg`, and its name, message, stack and `code` are kept under `err`:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function generateInvoice(app: KitrApp, invoiceNumber: string) {
@@ -155,7 +155,7 @@ The server already logs every 5xx response at `error` level with the method, pat
 `child(bindings, name?)` returns a logger that adds `bindings` to every record. Use it to carry an id through a piece of work instead of repeating it in every call:
 
 ```ts
-// server/services/order_service.ts
+// server/services/order-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function shipOrder(app: KitrApp, orderId: string) {
@@ -199,7 +199,7 @@ On the server, every request gets its own child logger with `requestId`. The id 
 | Code that may run inside or outside a request | `tryUseRequest()?.logger ?? app.container.use('logger')` |
 
 ```ts
-// server/services/team_service.ts
+// server/services/team-service.ts
 import { useRequest } from '@kitr/server'
 
 export function inviteToTeam(teamId: string, email: string) {
@@ -223,7 +223,7 @@ Set `LOG_LEVEL=debug` to see these lines; at the default `info` they are dropped
 The provider binds the logger as `logger` in the container. Jobs, scripts and providers read it from there:
 
 ```ts
-// server/jobs/prune_sessions.ts
+// server/jobs/prune-sessions.ts
 import { defineJob } from '@kitr/jobs'
 
 export const pruneSessions = defineJob('prune_sessions', {
@@ -242,7 +242,7 @@ The server keeps the same logger as `server.logger`, after `server.boot()`. Befo
 The provider also runs in the browser. In a component, read the logger with `useService` from [`@kitr/react`](/packages/react):
 
 ```tsx
-// app/features/projects/project-actions.tsx
+// app/components/projects/project-actions.tsx
 import { useService } from '@kitr/react'
 
 export function ArchiveProjectButton({ projectId }: { projectId: string }) {
@@ -262,7 +262,7 @@ Browser lines go to the browser console as `console.info('[app] project archived
 `logger.time(msg, fn, fields?)` runs an async function, logs `msg` at `info` with `durationMs` when it settles, and returns its result:
 
 ```ts
-// server/services/invoice_service.ts
+// server/services/invoice-service.ts
 import type { KitrApp } from 'kitr/app'
 
 export async function renderInvoicePdf(app: KitrApp, invoiceNumber: string) {
@@ -286,7 +286,7 @@ The line is written even when the function throws, and then the error is rethrow
 `level` is a property you can set. Turn on debug output in a running process without a restart:
 
 ```ts
-// server/controllers/admin_controller.ts
+// server/controllers/admin-controller.ts
 import type { HttpContext } from '@kitr/api'
 
 export default class AdminController {
@@ -401,11 +401,11 @@ While devtools is active and you have not set `write`, every line goes to `conso
 `createLogger({ write })` lets a test collect records and assert on them. To test code that reads the logger from the container, boot an app with the provider and a `write` that collects:
 
 ```ts
-// test/ship_order.test.ts
+// test/ship-order.test.ts
 import { type LogRecord, loggerProvider } from '@kitr/logger'
 import { createTestApp } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
-import { shipOrder } from '#server/services/order_service'
+import { shipOrder } from '#server/services/order-service'
 
 describe('shipOrder', () => {
   it('logs each step with the order id', async () => {
@@ -444,7 +444,7 @@ Each record is a plain object, so assertions are on fields:
 To check the exact text a line produces, assert on the first argument of `write` instead of the record. To keep a noisy test quiet, configure `level: 'silent'` or pass `silentLogger`:
 
 ```ts
-// test/quiet_server.test.ts
+// test/quiet-server.test.ts
 import { silentLogger } from '@kitr/logger'
 import { createServer } from '@kitr/server'
 import { expect, it } from 'vitest'

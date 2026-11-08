@@ -231,7 +231,7 @@ A schema library works too: pass a [Zod](https://zod.dev) schema's `parse` as `v
 After a form submits or an action finishes, navigate with `useNavigate`:
 
 ```tsx
-// app/features/projects/archive-button.tsx
+// app/components/projects/archive-button.tsx
 import { useNavigate } from '@kitr/router'
 
 export function ArchiveButton({ id }: { id: string }) {
@@ -255,7 +255,7 @@ export function ArchiveButton({ id }: { id: string }) {
 A loader runs before the page renders, on the server during server rendering and in the browser on every navigation. With [query](/packages/query), the loader fills the cache and the component reads the same entry, so the page never shows a spinner on first load:
 
 ```ts
-// app/features/projects/queries.ts
+// app/queries/projects.ts
 import { createKeys } from 'kitr/app'
 import { queryFrom } from '@kitr/query'
 
@@ -278,7 +278,7 @@ export const projectQuery = queryFrom({
 
 ```ts
 // app/routes.ts
-import { projectQuery } from '#app/features/projects/queries'
+import { projectQuery } from '#app/queries/projects'
 
 r.page('/projects/$id', {
   loader: ({ context, params }) =>
@@ -291,7 +291,7 @@ r.page('/projects/$id', {
 // app/pages/project.tsx
 import { useSuspenseQuery } from '@kitr/query'
 import { getRouteApi, Link } from '@kitr/router'
-import { projectQuery } from '#app/features/projects/queries'
+import { projectQuery } from '#app/queries/projects'
 
 const route = getRouteApi('/projects/$id')
 
@@ -352,7 +352,7 @@ The router boots the app before the first loader runs, so every service is ready
 
 ```ts
 // app/routes.ts
-r.layout('_app', { lazy: () => import('./pages/app-layout') }, (app) =>
+r.layout('_app', { lazy: () => import('./layouts/app') }, (app) =>
   app
     .page('/dashboard', { lazy: () => import('./pages/dashboard') })
     .page('/projects', { lazy: () => import('./pages/projects') }),
@@ -360,7 +360,7 @@ r.layout('_app', { lazy: () => import('./pages/app-layout') }, (app) =>
 ```
 
 ```tsx
-// app/pages/app-layout.tsx
+// app/layouts/app.tsx
 import { Link, Outlet } from '@kitr/router'
 
 export default function AppLayout() {
@@ -490,7 +490,7 @@ r.page('/projects/$id', {
 // app/routes.ts
 import { requireAuth } from '@kitr/router'
 
-r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./layouts/app') }, (app) =>
   app.page('/dashboard', { lazy: () => import('./pages/dashboard') }),
 )
 ```
@@ -704,39 +704,54 @@ Use a getter when the value changes after the router is created. TanStack Start 
 
 In a phone app a tap on a list row pushes the detail over the list; the list stays where it was, scrolled to the same row, and swiping back reveals it. The browser's model is different: the list unmounts, the detail mounts, back mounts the list again from scratch. `<StackOutlet>` from `@kitr/router/stack` gives the router the native model. Put it where a layout renders its children instead of `<Outlet>`:
 
-```tsx
-// app/routes/_app.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { requireAuth } from '@kitr/router'
+
+r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+  app
+    .page('/chats', { lazy: () => import('./pages/chats') })
+    .page('/chats/$id', { lazy: () => import('./pages/chat') }),
+)
+```
+
+```tsx
+// app/pages/app-layout.tsx
 import { StackOutlet } from '@kitr/router/stack'
 
-export const Route = createFileRoute('/_app')({
-  beforeLoad: requireAuth(),
-  component: () => <StackOutlet />,
+export default function AppLayout() {
+  return <StackOutlet />
+}
+```
+
+Every page inside the `_app` layout is now a page in the stack. Navigating deeper pushes; the page beneath stays mounted with its state, scroll position and playing media; history back pops it with the matching animation. Nothing else changes: links, loaders, search params and guards work as before, and the same route tree renders as plain pages on the server, during hydration and in a static build.
+
+```ts
+// app/routes.ts (inside the _app layout)
+r.page('/chats', {
+  loader: ({ context }) => context.app.container.use('http').get<{ id: string; name: string }[]>('/chats'),
+  lazy: () => import('./pages/chats'),
 })
 ```
 
-Every route beneath `/_app` is now a page in the stack. Navigating deeper pushes; the page beneath stays mounted with its state, scroll position and playing media; history back pops it with the matching animation. Nothing else changes: links, loaders, search params and guards work as before, and the same route tree renders as plain pages on the server, during hydration and in a static build.
-
 ```tsx
-// app/routes/_app/chats/index.tsx
-import { createFileRoute, Link } from '@tanstack/react-router'
+// app/pages/chats.tsx
+import { getRouteApi, Link } from '@kitr/router'
 
-export const Route = createFileRoute('/_app/chats/')({
-  loader: ({ context }) => context.app.container.use('http').get<{ id: string; name: string }[]>('/chats'),
-  component: () => {
-    const chats = Route.useLoaderData()
-    return (
-      <ul>
-        {chats.map((chat) => (
-          <li key={chat.id}>
-            <Link to="/chats/$id" params={{ id: chat.id }}>{chat.name}</Link>
-          </li>
-        ))}
-      </ul>
-    )
-  },
-})
+const route = getRouteApi('/_app/chats')
+
+export default function ChatsPage() {
+  const chats = route.useLoaderData()
+  return (
+    <ul>
+      {chats.map((chat) => (
+        <li key={chat.id}>
+          <Link to="/chats/$id" params={{ id: chat.id }}>{chat.name}</Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
 ```
 
 Opening `/chats/7` from that list pushes the chat over it; opening `/chats/9` from inside chat 7 pushes a second chat page, and each keeps its own params and data. Back pops to chat 7, back again to the list, still scrolled to where it was.
@@ -752,15 +767,14 @@ The stack renders inside a `position: relative` box that fills its parent. Give 
 
 ## Choose how a page arrives
 
-A route says how it is presented through `staticData`. The stack reads `presentation`, `keepAlive` and `stackParent`:
+A page says how it is presented through the options on its link, which land in `staticData`. The stack reads `presentation`, `keepAlive` and `stackParent`:
 
-```tsx
-// app/routes/_app/compose.tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/_app/compose')({
-  staticData: { presentation: 'cover', stackParent: '/' },
-  component: ComposePage,
+```ts
+// app/routes.ts (inside the _app layout)
+r.page('/compose', {
+  presentation: 'cover',
+  stackParent: '/',
+  lazy: () => import('./pages/compose'),
 })
 ```
 
@@ -775,14 +789,9 @@ export const Route = createFileRoute('/_app/compose')({
 
 `stackParent` is for cold starts. When a notification opens `/chats/7` directly, there is no list beneath it; with `stackParent: '/chats'`, the stack puts the list under the chat on first render (the history gets both entries), so swipe back and the back button have somewhere to go. It applies only when the app started on that page; a push from inside the app already has its parent.
 
-```tsx
-// app/routes/_app/chats/$id.tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/_app/chats/$id')({
-  staticData: { stackParent: '/chats' },
-  component: ChatPage,
-})
+```ts
+// app/routes.ts (inside the _app layout)
+r.page('/chats/$id', { stackParent: '/chats', lazy: () => import('./pages/chat') })
 ```
 
 ## Swipe back and the back button
@@ -839,12 +848,11 @@ The back button needs the `platform` service from [`@kitr/platform`](/packages/p
 Tab bars in native apps keep a stack per tab: leave Home three pages deep, visit Search, come back and Home is still three pages deep. `<StackTabs>` does this over the same route tree, deciding which tab a URL belongs to by path:
 
 ```tsx
-// app/routes/_app.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/app-layout.tsx (the component of the _app layout)
 import { StackTabs } from '@kitr/router/stack'
 
-export const Route = createFileRoute('/_app')({
-  component: () => (
+export default function AppLayout() {
+  return (
     <StackTabs
       tabs={[
         { id: 'home', to: '/', match: ['/', '/chats'] },
@@ -867,8 +875,8 @@ export const Route = createFileRoute('/_app')({
         </nav>
       )}
     </StackTabs>
-  ),
-})
+  )
+}
 ```
 
 `select(tab)` opens the tab's last page, or its `to` the first time; selecting the current tab pops it to its root. `match` lists the paths a tab owns (a path and everything under it); by default a tab owns `to`. Pages of other tabs stay mounted and hidden, within the `keepAlive` limit per tab. The render prop draws the bar, so a phone gets a bottom bar and a desktop gets a sidebar from the same component.
@@ -878,34 +886,39 @@ export const Route = createFileRoute('/_app')({
 On a tablet or a desktop window the list and the detail fit side by side. `<SplitStack>` shows the list pane when the viewport is at least `minWidth` pixels wide and only the stack below that, so the phone keeps pushing the detail over the list:
 
 ```tsx
-// app/routes/_app/chats.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/chats-layout.tsx (the component of a `chats` layout)
 import { SplitStack, StackOutlet } from '@kitr/router/stack'
 import { ChatList } from '#app/components/chat-list'
 
-export const Route = createFileRoute('/_app/chats')({
-  component: () => (
+export default function ChatsLayout() {
+  return (
     <SplitStack master={<ChatList />} minWidth={768}>
       <StackOutlet />
     </SplitStack>
-  ),
-})
+  )
+}
 ```
 
-The index route under it is the list on a phone and a placeholder on a wide screen, because the list already shows on the left. `useSplitPane()` tells it which:
+```ts
+// app/routes.ts (inside the _app layout)
+r.layout('chats', { lazy: () => import('./pages/chats-layout') }, (chats) =>
+  chats
+    .page('/chats', { lazy: () => import('./pages/chats') })
+    .page('/chats/$id', { lazy: () => import('./pages/chat') }),
+)
+```
+
+The `/chats` page is the list on a phone and a placeholder on a wide screen, because the list already shows on the left. `useSplitPane()` tells it which:
 
 ```tsx
-// app/routes/_app/chats/index.tsx
-import { createFileRoute } from '@tanstack/react-router'
+// app/pages/chats.tsx
 import { useSplitPane } from '@kitr/router/stack'
 import { ChatList } from '#app/components/chat-list'
 
-export const Route = createFileRoute('/_app/chats/')({
-  component: () => {
-    const { split } = useSplitPane()
-    return split ? <p>Pick a chat</p> : <ChatList />
-  },
-})
+export default function ChatsPage() {
+  const { split } = useSplitPane()
+  return split ? <p>Pick a chat</p> : <ChatList />
+}
 ```
 
 `useSplitPane()` is `false` on the server and in the first client render, so the server output is the phone layout and the panes appear once the viewport is measured; nothing shifts for phones, which never split.
@@ -914,25 +927,19 @@ export const Route = createFileRoute('/_app/chats/')({
 
 An app that ships as a marketing site, an authed web app and a phone app shares one route tree, but not every route belongs everywhere: the pricing page exists on `www` only, the account pages on the authed builds. `onlyPlatform()` is a `beforeLoad` guard that renders not-found (or redirects) on the other platforms:
 
-```tsx
-// app/routes/pricing.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { onlyPlatform } from '@kitr/router'
-
-export const Route = createFileRoute('/pricing')({
-  beforeLoad: onlyPlatform('www'),
-  component: PricingPage,
-})
-```
-
-```tsx
-// app/routes/_app/billing.tsx
-import { createFileRoute } from '@tanstack/react-router'
+```ts
+// app/routes.ts
 import { guards, onlyPlatform, requireAuth } from '@kitr/router'
 
-export const Route = createFileRoute('/_app/billing')({
+r.page('/pricing', {
+  beforeLoad: onlyPlatform('www'),
+  lazy: () => import('./pages/pricing'),
+})
+
+// inside the _app layout
+r.page('/billing', {
   beforeLoad: guards(requireAuth(), onlyPlatform(['web', 'desktop'], { to: '/' })),
-  component: BillingPage,
+  lazy: () => import('./pages/billing'),
 })
 ```
 
@@ -1043,7 +1050,7 @@ When the same app has a [server](/packages/server) platform, `app/server.ts` is 
 `createKitrRouter` binds the router in the container as `router`, so code that is not a component can navigate without importing the table:
 
 ```ts
-// app/features/projects/open-project.ts
+// app/lib/projects/open-project.ts
 import { app } from '#app/app'
 
 export function openProject(id: string) {
@@ -1056,13 +1063,14 @@ The binding is typed as TanStack's `AnyRouter`, so `to` is not checked here. Ins
 
 ## Keep file routes
 
-A project that already has `app/routes/__root.tsx` keeps working: `@kitr/vite` sees the file and lets TanStack's route generator build `app/routeTree.gen.ts` as before, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line. New projects get the table; nothing forces a move, and the two can't mix in one app.
+This section is the one place that documents file routes. A project that already has `app/routes/__root.tsx` keeps working: `@kitr/vite` sees the file and lets TanStack's route generator build `app/routeTree.gen.ts` as before, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line. New projects get the table; nothing forces a move, and the two can't mix in one app.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
 | `kitr make:page <path>` | Writes `app/pages/<path>.tsx` with a component, and appends `.page('<path>', { lazy })` to `app/routes.ts`. |
+| `kitr make:layout <name>` | Writes `app/layouts/<name>.tsx`, a component around `<Outlet />`, and appends `.layout('_<name>', { lazy }, (<name>) => <name>)` to `app/routes.ts`. |
 
 ```sh
 kitr make:page 'projects/$id'
@@ -1153,7 +1161,7 @@ Testing with the app's own table from `app/routes.ts` works the same way; build 
 Guards are plain functions, so test them without rendering. A redirect is thrown, and `isRedirect` recognises it:
 
 ```ts
-// app/routes/guards.test.ts
+// app/guards.test.ts
 import { can, isRedirect, requireAuth } from '@kitr/router'
 import { describe, expect, it } from 'vitest'
 

@@ -256,7 +256,7 @@ export const getPost = (slug: string) => posts.find((p) => p.slug === slug)
 
   write(
     ctx,
-    'app/features/newsletter/schema.ts',
+    'app/validators/newsletter.ts',
     `import { z } from 'zod'
 
 export const subscribeSchema = z.object({ email: z.email('Enter a valid email') })
@@ -265,9 +265,9 @@ export type Subscribe = z.infer<typeof subscribeSchema>
   )
   write(
     ctx,
-    'server/controllers/newsletter_controller.ts',
+    'server/controllers/newsletter-controller.ts',
     `import type { HttpContext } from '@kitr/api'
-import { type Subscribe, subscribeSchema } from '#app/features/newsletter/schema'
+import { type Subscribe, subscribeSchema } from '#app/validators/newsletter'
 
 /** In-memory for the demo; a real app would write to a database or an email provider. */
 const subscribers = new Set<string>()
@@ -288,8 +288,8 @@ export default class NewsletterController {
     'server/routes.ts',
     `import { defineRoutes } from 'kitr/app'
 import api from '@kitr/api/routes'
-import HealthController from '#server/controllers/health_controller'
-import NewsletterController from '#server/controllers/newsletter_controller'
+import HealthController from '#server/controllers/health-controller'
+import NewsletterController from '#server/controllers/newsletter-controller'
 
 /** Endpoints of this app, served by \`createServer({ routes })\` in server/main.ts. */
 export const routes = defineRoutes([api], (root) =>
@@ -454,7 +454,7 @@ import { mutationFrom } from '@kitr/query'
 import { Link } from '@kitr/router'
 import { useState } from 'react'
 import { api } from '#app/api/client'
-import { subscribeSchema } from '#app/features/newsletter/schema'
+import { subscribeSchema } from '#app/validators/newsletter'
 import { buttonVariants } from '#components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 import { FieldInput, Form, FormField, FormMessage, SubmitButton } from '#components/ui/form'

@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `kitr add http`: the ky client with auth headers, token refresh and kitr error normalisation. */
 export default definePackage({
@@ -30,10 +30,10 @@ export default definePackage({
   },
   generators: {
     queries: {
-      description: 'Create a feature queries file in app/features/<name>/queries.ts',
-      target: (name, project) => ({
-        file: `${project.rc.directories.app ?? 'app'}/features/${naming.snake(name)}/queries.ts`,
-      }),
+      description: 'Create the typed queries and mutations of one HTTP resource in app/queries',
+      definition:
+        'Typed query and mutation contracts for an external HTTP API, one file per resource.',
+      target: (name, project) => generatorFile(project, 'app', 'queries', name),
       stub: ({ name }) => `import { createKeys } from 'kitr/app'
 import { mutationFrom, queryFrom } from '@kitr/query'
 import { httpMutation, httpQuery } from '@kitr/http'

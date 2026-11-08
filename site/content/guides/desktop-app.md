@@ -66,7 +66,7 @@ kitr config app minWidth 900
 
 ## Bring the data layer
 
-The desktop app reads the same API as the phone app, with the same token sign-in. Copy these four files from [Build a phone app](/guides/mobile-app) unchanged: `app/storage.ts`, `config/auth.ts`, `config/http.ts` and `app/features/invoices/queries.ts`, plus the sign-in page. None of them mention a platform. On the desktop, kitr stores the token and the filter in a JSON file in the app's data folder instead of in Chromium's `localStorage`, so they survive a cleared cache and an app update.
+The desktop app reads the same API as the phone app, with the same token sign-in. Copy these four files from [Build a phone app](/guides/mobile-app) unchanged: `app/storage.ts`, `config/auth.ts`, `config/http.ts` and `app/queries/invoices.ts`, plus the sign-in page. None of them mention a platform. On the desktop, kitr stores the token and the filter in a JSON file in the app's data folder instead of in Chromium's `localStorage`, so they survive a cleared cache and an app update.
 
 Set the API address in `.env`:
 
@@ -86,7 +86,7 @@ A desktop window is wide enough for the list and the selected invoice side by si
 import { defineRoutes } from 'kitr/app'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
-import { invoiceQuery, invoicesQuery } from '#app/features/invoices/queries'
+import { invoiceQuery, invoicesQuery } from '#app/queries/invoices'
 import { head, RootDocument } from './document'
 
 export const routes = defineRoutes([router], (r) =>
@@ -98,7 +98,7 @@ export const routes = defineRoutes([router], (r) =>
       }),
       lazy: () => import('./pages/sign-in'),
     })
-    .layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
+    .layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./layouts/app') }, (app) =>
       app.layout(
         '_invoices',
         {
@@ -262,8 +262,8 @@ export function MenuCommands() {
 ```tsx
 // app/components/export-button.tsx
 import { useState } from 'react'
-import { invoicesToCsv } from '#app/features/invoices/csv'
-import type { Invoice } from '#app/features/invoices/queries'
+import { invoicesToCsv } from '#app/lib/invoices/csv'
+import type { Invoice } from '#app/queries/invoices'
 import { ipc } from '#app/ipc'
 
 export function ExportButton({ invoices }: { invoices: Invoice[] }) {
@@ -285,7 +285,7 @@ export function ExportButton({ invoices }: { invoices: Invoice[] }) {
 }
 ```
 
-`invoicesToCsv()` is a plain function in `app/features/invoices/csv.ts` that quotes every cell and doubles any quote inside it, so a customer name with a comma does not break the columns. Keeping it out of `main.ts` lets a unit test cover it without Electron.
+`invoicesToCsv()` is a plain function in `app/lib/invoices/csv.ts` that quotes every cell and doubles any quote inside it, so a customer name with a comma does not break the columns. Keeping it out of `main.ts` lets a unit test cover it without Electron.
 
 ## Use the platform service
 
@@ -329,7 +329,7 @@ import { createIpcClient, IPC_BRIDGE_KEY } from '@kitr/desktop/client'
 import { handleIpc } from '@kitr/desktop/main'
 import { exposeIpc } from '@kitr/desktop/preload'
 import { afterEach, describe, expect, it } from 'vitest'
-import { invoicesToCsv } from '#app/features/invoices/csv'
+import { invoicesToCsv } from '#app/lib/invoices/csv'
 import type { Ipc, IpcPush } from '../platforms/app/ipc'
 
 type Handler = (event: unknown, ...args: any[]) => unknown

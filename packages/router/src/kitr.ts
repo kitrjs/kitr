@@ -1,4 +1,4 @@
-import { definePackage, naming } from '@kitr/core/package'
+import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
 /** `app/document.tsx`: the HTML shell and head tags every page renders inside. */
 function documentFile(cssImports: string[]): string {
@@ -111,10 +111,7 @@ export default definePackage({
     ctx.write('app/routes.ts', routesFile)
     // Idempotent: a table another package created first gets the pages methods added to its list.
     ctx.routes.extend('@kitr/router/routes')
-    ctx.write(
-      'app/pages/home.tsx',
-      `export default function HomePage() {\n  return (\n    <main style={{ padding: 24 }}>\n      <h1>${ctx.pkg.name ?? 'app'}</h1>\n      <p>Edit <code>app/pages/home.tsx</code>. Add a page with <code>kitr make:page</code>.</p>\n    </main>\n  )\n}\n`,
-    )
+    ctx.write('app/pages/home.tsx', homePage(ctx.pkg.name ?? 'app'))
     ctx.write(
       'app/pages/about.tsx',
       `export default function AboutPage() {\n  return <main style={{ padding: 24 }}>About</main>\n}\n`,
@@ -157,6 +154,8 @@ export default definePackage({
   generators: {
     page: {
       description: 'Create a page in app/pages and add it to app/routes.ts',
+      definition: 'The component a route renders; the file path is the URL path.',
+      usage: '<path>',
       target: (name, project) => {
         // `projects/$id` → app/pages/projects/id.tsx, route path '/projects/$id'. `:id` works too.
         const path = `/${name
@@ -191,8 +190,97 @@ export default function ${naming.pascal(name)}Page() {
         )
       },
     },
+    layout: {
+      description: 'Create a pathless layout in app/layouts and add it to app/routes.ts',
+      definition:
+        'A component that wraps a group of pages through <Outlet />; guards go on its route.',
+      target: (name, project) => {
+        const out = generatorFile(project, 'app', 'layouts', name, { ext: '.tsx' })
+        const rel = [out.vars.dir, out.vars.kebab].filter(Boolean).join('/')
+        // `_admin` for admin, `_settings-billing` for settings/billing: pathless ids are unique.
+        const id = `_${rel.replace(/\//g, '-')}`
+        return { file: out.file, vars: { ...out.vars, id, module: `./layouts/${rel}` } }
+      },
+      stub: ({ name, id }) => `import { Outlet } from '@kitr/router'
+
+/**
+ * Wraps every page inside \`.layout('${id}', ...)\` in app/routes.ts. Guards (\`beforeLoad\`) and
+ * loaders shared by those pages go on that route; move pages into its callback to wrap them.
+ */
+export default function ${naming.pascal(name)}Layout() {
+  return (
+    <div>
+      <Outlet />
+    </div>
+  )
+}
+`,
+      after(ctx, { vars }) {
+        const camel = naming.camel(vars.name)
+        const link = `.layout('${vars.id}', { lazy: () => import('${vars.module}') }, (${camel}) => ${camel})`
+        const added = ctx.routes.append(link, {
+          table: 'app',
+          skipIf: new RegExp(`\\.layout\\(\\s*['"]${vars.id}['"]`),
+        })
+        if (!added)
+          ctx.log.warn(`app/routes.ts is not a method chain; add \`${link}\` to it by hand.`)
+        else
+          ctx.log.step(`add pages inside the ${vars.id} layout: (${camel}) => ${camel}.page(...)`)
+      },
+    },
   },
   wraps: { '@tanstack/react-router': '@kitr/router' },
   eject: { '@kitr/router': '@tanstack/react-router (+ your own context/guards)' },
   vite: { start: true, optimizeDeps: ['@tanstack/react-router', '@tanstack/react-start'] },
 })
+
+/**
+ * The first screen a new project shows. Inline styles only: it is written before Tailwind or the
+ * UI registry may exist, so it must stand alone. System colours keep it readable in light and dark.
+ */
+const homePage = (name: string) => `const commands = [
+  ['kitr make:page <path>', 'add a page'],
+  ['kitr add <package>', 'add sign-in, forms, an API and more'],
+  ['kitr doctor', 'check the wiring'],
+]
+
+export default function HomePage() {
+  return (
+    <main
+      style={{
+        colorScheme: 'light dark',
+        maxWidth: 640,
+        margin: '0 auto',
+        padding: 24,
+        lineHeight: 1.5,
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
+      <h1>${JSON.stringify(name)
+        .slice(1, -1)
+        .replace(/[<>{}`$\\]/g, '')} is running</h1>
+      <p>
+        This page is <code>app/pages/home.tsx</code>.
+      </p>
+      <p>
+        Pages are listed in <code>app/routes.ts</code>.
+      </p>
+      <h2>Next</h2>
+      <ul>
+        {commands.map(([command, note]) => (
+          <li key={command}>
+            <code>{command}</code>: {note}
+          </li>
+        ))}
+      </ul>
+      <p>
+        <a href="https://kitr.dev/docs/getting-started">Getting started</a> |{' '}
+        <a href="https://kitr.dev/packages">Packages</a>
+      </p>
+      <p>
+        <code>AGENTS.md</code> in this folder describes the conventions for coding assistants.
+      </p>
+    </main>
+  )
+}
+`
