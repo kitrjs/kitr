@@ -112,8 +112,11 @@ export const writeReadme = (ctx: ProjectContext, name: string, kit: string) => {
     ['config/', 'one file per package'],
     ['app/routes.ts', 'the page list'],
     ['app/pages/', 'page components'],
-    ['app/features/', 'feature code'],
-    ['server/', 'server code'],
+    ['app/layouts/', 'components that wrap groups of pages'],
+    ['app/components/', 'reusable components'],
+    ['app/queries/', 'data the app reads and writes'],
+    ['app/validators/', 'zod schemas shared with the server'],
+    ['server/', 'server code: controllers, services, middleware'],
     ['AGENTS.md', 'conventions for coding assistants'],
   ]
     .filter(([p]) => ['kitrrc.ts', 'AGENTS.md'].includes(p as string) || ctx.exists(p as string))
@@ -140,11 +143,13 @@ ${places.join('\n')}
 
 - \`kitr add <package>\`: add sign-in, forms, an API and more
 - \`kitr make:page <path>\`: add a page
+- \`kitr make\`: every kind of file you can generate, and where each one goes
 - \`kitr ui add <component>\`: add a UI component
 
 Run \`kitr --help\` for every command.
 
 Docs: https://kitr.dev/docs/getting-started
+Project structure: https://kitr.dev/docs/project-structure
 Packages: https://kitr.dev/packages
 `,
   )
