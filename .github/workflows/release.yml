@@ -44,12 +44,14 @@ jobs:
         if: env.NPM_TOKEN != ''
       - run: pnpm build
         if: env.NPM_TOKEN != ''
+      # `pnpm run`, not `pnpm version`: the bare form is pnpm's own command, which only prints
+      # Node's versions, so the version PR came out empty.
       - name: Version or publish
         if: env.NPM_TOKEN != ''
         uses: changesets/action@v1
         with:
-          version: pnpm version
-          publish: pnpm release
+          version: pnpm run version
+          publish: pnpm run release
           commit: "Version packages"
           title: "Version packages"
         env:
