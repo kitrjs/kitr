@@ -28,10 +28,6 @@ Cursor, Codex, Copilot and other agents that read the open `SKILL.md` format can
 npx skills add kitrjs/kitr
 ```
 
-## The VS Code extension
-
-A kitr extension for VS Code shows the project's platforms, packages, routes and generators in a sidebar, and runs `kitr make`, `kitr add` and `kitr doctor` from the command palette. [Install it in VS Code](vscode:extension/kitrjs.kitr); projects made by `kitr new` recommend it when you open them.
-
 ## What the agent gets
 
 **An `AGENTS.md` that stays current.** `kitr new` writes it with the conventions and the project structure. Every `kitr add` appends that package's rules, such as "import from `@kitr/query`, never from `@tanstack/react-query`" or "mutations declare effects; never invalidate inline", and `kitr remove` takes them out again. Claude Code, Cursor, Copilot and Codex read `AGENTS.md` without setup.
