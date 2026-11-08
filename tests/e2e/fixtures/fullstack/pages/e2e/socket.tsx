@@ -1,11 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { channel, createSocketClient } from 'kitr/realtime'
 import { useEffect, useState } from 'react'
 import { exampleChannel } from '#app/channels/example'
 
-export const Route = createFileRoute('/e2e/socket')({ component: SocketPage })
-
-function SocketPage() {
+export default function SocketPage() {
   const [status, setStatus] = useState('connecting')
   const [messages, setMessages] = useState<Array<{ id: number; text: string }>>([])
   useEffect(() => {

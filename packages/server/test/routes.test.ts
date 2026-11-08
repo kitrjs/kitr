@@ -62,11 +62,16 @@ describe('createServer({ routes })', () => {
     expect(server.handles('/api/projects/42')).toBe(true)
     expect(server.handles('/api/files/a/b/c.png')).toBe(true)
     expect(server.handles(new URL('http://x/healthz'))).toBe(true)
-    // Pages are not the server's, nor are paths nothing registered.
+    // Anything under a segment the table lives in is the server's too, so an unknown endpoint
+    // gets its JSON 404 instead of the page renderer's not-found page.
+    expect(server.handles('/api')).toBe(true)
+    expect(server.handles('/api/projects')).toBe(true)
+    expect(server.handles('/api/does-not-exist')).toBe(true)
+    // Pages are not the server's, nor are paths under a segment with no route.
     expect(server.handles('/')).toBe(false)
     expect(server.handles('/projects/42')).toBe(false)
-    expect(server.handles('/api/projects')).toBe(false)
-    expect(server.handles('/api/nope')).toBe(false)
+    expect(server.handles('/nope/nothing')).toBe(false)
+    expect(server.handles('/apis/health')).toBe(false)
   })
 
   it('answers nothing but the health check without a table', () => {

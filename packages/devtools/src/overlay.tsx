@@ -175,7 +175,7 @@ function Tab({
       onClick={onClick}
     >
       {panelIcons[panel.id] ? <Icon icon={panelIcons[panel.id]!} /> : null}
-      {panel.label}
+      <span className="kitr-dt-tab-label">{panel.label}</span>
       {badge}
     </button>
   )
