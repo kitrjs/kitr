@@ -9,7 +9,11 @@ export {
   createCapacitorDriver as createCapacitorNotificationsDriver,
   type PushMessage,
 } from './drivers/capacitor'
+  createElectronDriver as createElectronNotificationsDriver,
+  type ElectronNotificationsDriver,
+} from './drivers/electron'
 export { createMemoryNotificationsDriver } from './drivers/memory'
+export { createTauriDriver as createTauriNotificationsDriver } from './drivers/tauri'
 export { createWebNotificationsDriver } from './drivers/web'
 
 /**

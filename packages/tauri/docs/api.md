@@ -166,6 +166,18 @@ function tauriStoreDriver(file?: string): StorageDriver;
 
 `@tauri-apps/plugin-store` (`kitr.json` in the app data dir) as a kitr storage driver.
 
+### tauriPluginLoaders
+
+```ts
+const tauriPluginLoaders: Record<string, ModuleLoader>;
+```
+
+The Tauri plugin packages the device drivers (`@kitr/secure-storage`, `@kitr/notifications`,
+`@kitr/files`, `@kitr/updater`, `@kitr/native`) load by name. Each is a literal `import()` so the
+app's bundler finds and bundles it; the provider registers them with `registerShellModules()`, so
+the device packages never name an optional package in code a web build bundles. The Tauri
+platform installs them all (`kitr add tauri`).
+
 ### tauriProvider
 
 ```ts

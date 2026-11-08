@@ -17,6 +17,7 @@ export default defineConfig({
   external: [
     'react',
     'electron',
+    'electron-updater',
     '@kitr/core',
     '@kitr/core/package',
     '@kitr/platform',

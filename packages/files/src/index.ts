@@ -10,7 +10,12 @@ export {
   createCapacitorDriver as createCapacitorFilesDriver,
   type FileEntry,
 } from './drivers/capacitor'
+  createElectronDriver as createElectronFilesDriver,
+  type ElectronFilesDriver,
+  type PickedFolder,
+} from './drivers/electron'
 export { createMemoryFilesDriver } from './drivers/memory'
+export { createTauriDriver as createTauriFilesDriver } from './drivers/tauri'
 export { createWebFilesDriver } from './drivers/web'
 export { acceptFor, fromFile, mimeFor, toBlob } from './helpers'
 

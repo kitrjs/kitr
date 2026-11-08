@@ -78,6 +78,9 @@ export const desktop = definePlatform<DesktopOptions>(
         { name: 'electron', dev: true },
         { name: 'electron-vite', dev: true },
         { name: 'electron-builder', dev: true },
+        // The updater package's driver imports it in the main process; a runtime dependency so
+        // electron-builder packs it into the installer.
+        { name: 'electron-updater' },
       ],
       scaffold(ctx) {
         scaffoldElectron(ctx, options)
@@ -108,6 +111,12 @@ export const desktop = definePlatform<DesktopOptions>(
         await ctx.exec('electron', [ctx.root])
       },
       doctor: {
+        // electron-updater is only needed once the updater package is used, so doctor leaves it out.
+        dependencies: [
+          { name: 'electron', dev: true },
+          { name: 'electron-vite', dev: true },
+          { name: 'electron-builder', dev: true },
+        ],
         files: (ctx) => [{ path: `platforms/${ctx.name}/main.ts` }],
         extra: (ctx, pkg) =>
           pkg.main === `dist/${ctx.name}/electron/main/index.js`
@@ -214,12 +223,22 @@ export default defineConfig({
   main: {
     root: __dirname,
     plugins: [externalizeDepsPlugin()],
-    build: { lib: { entry: 'main.ts' }, outDir: '../../dist/${ctx.name}/electron/main' },
+    build: {
+      lib: { entry: 'main.ts' },
+      outDir: '../../dist/${ctx.name}/electron/main',
+      rollupOptions: { output: { entryFileNames: 'index.js' } },
+    },
   },
   preload: {
     root: __dirname,
-    plugins: [externalizeDepsPlugin()],
-    build: { lib: { entry: 'preload.ts' }, outDir: '../../dist/${ctx.name}/electron/preload' },
+    // A sandboxed preload can only require electron, so kitr is bundled into it.
+    plugins: [externalizeDepsPlugin({ exclude: ['kitr', '@kitr/desktop'] })],
+    // A sandboxed preload script cannot be an ES module, so it is built as CommonJS.
+    build: {
+      lib: { entry: 'preload.ts' },
+      outDir: '../../dist/${ctx.name}/electron/preload',
+      rollupOptions: { output: { format: 'cjs', entryFileNames: 'index.js' } },
+    },
   },
 })
 `,
@@ -252,8 +271,9 @@ export const ipc = createIpcClient<Ipc, IpcPush>()
 `,
   )
   const main = `dist/${ctx.name}/electron/main/index.js`
-  if (pkg.main !== main) {
+  if (pkg.main !== main || !pkg.version) {
     pkg.main = main
+    pkg.version ??= '0.0.0' // electron-builder refuses a package.json without one
     ctx.write('package.json', `${JSON.stringify(pkg, null, 2)}\n`, { overwrite: true })
   }
 }

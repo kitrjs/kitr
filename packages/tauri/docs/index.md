@@ -583,7 +583,27 @@ export async function pickExportFolder(): Promise<string | null> {
 }
 ```
 
-Import the plugin lazily, as above, so the web build never loads it. If `tauri add` cannot edit `lib.rs` because you changed its shape, it prints the line to add by hand.
+Import the plugin lazily, as above, so the web build never loads it. The plugins that kitr's device packages use are already installed and registered; see [Run the device packages in Tauri](#run-the-device-packages-in-tauri). If `tauri add` cannot edit `lib.rs` because you changed its shape, it prints the line to add by hand.
+
+## Run the device packages in Tauri
+
+[Secure storage](/packages/secure-storage), [Notifications](/packages/notifications), [Files](/packages/files), [Updater](/packages/updater) and [Native](/packages/native) each have a Tauri driver built on the official plugins. The scaffold installs, registers and permits all of them, so a new app only has to call the kitr service:
+
+| Package | Plugin (JavaScript and Rust) | Permissions in `capabilities/default.json` |
+| --- | --- | --- |
+| `secure-storage` | `@tauri-apps/plugin-stronghold`, `tauri-plugin-stronghold`; `keyring` and `rand` for the vault password | `stronghold:default` |
+| `notifications` | `@tauri-apps/plugin-notification`, `tauri-plugin-notification` | `notification:default` |
+| `files` | `@tauri-apps/plugin-dialog` and `plugin-fs`, `tauri-plugin-dialog` and `tauri-plugin-fs`; `plugin-opener` for `reveal()` | `dialog:default`, `fs:allow-read-file`, `fs:allow-write-file`, `fs:allow-stat`, `fs:allow-read-dir`, `opener:allow-open-path` (scoped to `$HOME/**`) |
+| `updater` | `@tauri-apps/plugin-updater` and `plugin-process`, `tauri-plugin-updater` and `tauri-plugin-process` | `updater:default`, `process:default` |
+| `native` | `@tauri-apps/plugin-clipboard-manager`, `plugin-os` and `plugin-opener`, with the matching crates | `clipboard-manager:allow-read-text`, `clipboard-manager:allow-write-text`, `os:default`, `opener:default` |
+
+Each driver imports its plugin the first time it is used. A missing JavaScript package rejects with `E_DRIVER_UNAVAILABLE` naming it, and a missing crate or permission shows as Tauri's own error naming the command, so a web build never loads a plugin it does not use. The provider registers a loader for each plugin, so your bundler sees a literal `import()` and bundles it; that is why the Tauri platform installs all of them, even those you have not used yet. Three choices to know:
+
+- **Secure storage uses Stronghold, not the store plugin.** The store plugin keeps plain JSON in the app data folder, which is what `kitr/storage` already uses. Stronghold is an encrypted snapshot, opened with a random secret the scaffolded `kitr_vault_key` command keeps in the operating system's keyring. Every script in the window can call that command, so keep a strict `csp`.
+- **Files stay inside what the person picked.** The scaffold grants read, write, stat and list on the fs plugin without a static scope; the dialog plugin adds each chosen path to the scope for the session.
+- **The updater plugin is registered only when `tauri.conf.json` has `plugins.updater`.** The plugin refuses to start without a public key, so `lib.rs` checks for the config first. Add the key and endpoints (see [Updater](/packages/updater#use-it-in-electron-and-tauri)) and restart.
+
+An app created before this version has none of that. Install the packages (`kitr add secure-storage`, `kitr add files` and the other device packages add the ones they need), then add the crates to `src-tauri/Cargo.toml`, the `.plugin()` calls and the `kitr_vault_key` command to `lib.rs`, and the permissions above to `capabilities/default.json`; compare with a fresh `kitr new --kit tauri`.
 
 ## Keep data on the user's machine
 
@@ -755,6 +775,7 @@ For the system libraries and webview versions, run `pnpm exec tauri info`.
 | --- | --- | --- |
 | The Rust error value, such as `Could not save inv_2041: ...` | A command returned `Err`. The promise rejects with that value. | Handle it where you call the command; read it with `String(error)`. |
 | A message naming a plugin command and the permissions that allow it | The window called a plugin command its capability does not grant. | Add one of the named permissions to `capabilities/default.json`. |
+| `@kitr/<package> has no tauri driver: @tauri-apps/plugin-<name> is not installed` (`E_DRIVER_UNAVAILABLE`) | A device package called a plugin whose JavaScript package is not in `package.json`. | Run the `npm install` line in the message; for an app created before this version, add the crate, the `.plugin()` call and the permission too. |
 | A `TypeError` from `@tauri-apps/api` | A command ran outside Tauri, in a browser or a test without mocks. | Guard with `isTauri()`. In tests, use `mockIPC()`. |
 | `Platform name "<name>" must be a short identifier (site, api, app, phone...)` | `kitr add tauri` got a name with spaces or symbols. | Use letters, digits, `-` and `_`. |
 | `tauri has no option "<flag>" (options: port, title, width, height, minWidth, minHeight, appId, devtools)` | `kitr add tauri` got an unknown flag. | Use one of the listed options; names are camelCase. |

@@ -263,6 +263,8 @@ jobs:
   # plugin the device packages need reaches both native projects. Sync only, no native build:
   # it needs neither the Android SDK nor Xcode (Capacitor 8 uses Swift Package Manager on iOS).
   mobile-sync:
+  # The Electron and Tauri drivers against the real runtimes (secure storage, notifications, plugins).
+  desktop:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -278,3 +280,40 @@ jobs:
         run: |
           grep -q capacitor-secure-storage examples/mobile/platforms/phone/android/capacitor.settings.gradle
           grep -q capacitor-secure-storage examples/mobile/platforms/phone/ios/App/CapApp-SPM/Package.swift
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: examples/tauri/platforms/app/src-tauri
+      - name: Linux libraries for Electron, its keyring, and Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0 \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C registry build
+      # electron-builder --dir stops at the unpacked app; the smoke test launches it with Playwright.
+      - name: Build the Electron example
+        run: pnpm -C examples/desktop exec kitr build app
+      - name: Electron smoke test (secure storage round trip, notification call)
+        run: tests/electron/run.sh
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-results
+          path: test-results/
+          retention-days: 7
+      # cargo check compiles the scaffold's Rust against every plugin crate without bundling.
+      - name: Tauri scaffold compiles
+        working-directory: examples/tauri/platforms/app/src-tauri
+        run: |
+          mkdir -p ../../../dist/app/client && echo '<!doctype html>' > ../../../dist/app/client/index.html
+          python3 - <<'PY'
+          import struct, zlib
+          raw = b''.join(b'\x00' + b'\x20\x60\xc0\xff' * 512 for _ in range(512))
+          def chunk(t, d): return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+          png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 512, 512, 8, 6, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+          open('/tmp/app-icon.png', 'wb').write(png)
+          PY
+          npx --yes @tauri-apps/cli@2 icon /tmp/app-icon.png
+          cargo check

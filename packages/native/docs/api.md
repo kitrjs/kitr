@@ -10,49 +10,21 @@ Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, `kit
 
 ## kitr/native
 
-### capacitorClipboard
+### createElectronNativeDriver
 
 ```ts
-function capacitorClipboard(): ClipboardDriver;
+function createElectronNativeDriver(_options?: DriverOptions): ElectronNativeDriver;
 ```
 
-Clipboard on `@capacitor/clipboard`: the OS pasteboard, with no permission prompt.
+The native driver for the Electron shell, served over the `kitr:native:*` and `kitr:shell:open`
+channels of `handleKitrIpc()`. Capabilities: `clipboard` (Electron's `clipboard`) and `biometrics`
+(Touch ID on macOS; `available()` is false elsewhere). `share`, `haptics`, `geolocation` and
+`camera` are `null`: a desktop has no share sheet or haptic motor, and the Chromium
+geolocation needs a Google key, so those report `supported: false` rather than pretend.
+`driver.system` has what desktop apps want beyond them: `openExternal`, `appVersion`,
+`platform`, the system theme, online status and `powerMonitor` events.
 
-### capacitorGeolocation
-
-```ts
-function capacitorGeolocation(): GeolocationDriver;
-```
-
-Location on `@capacitor/geolocation` (Core Location, Fused Location). Asks for the location
-permission first, as Android needs; rejects when it is refused.
-
-### capacitorHaptics
-
-```ts
-function capacitorHaptics(): HapticsDriver;
-```
-
-Haptics on `@capacitor/haptics`: the Taptic Engine on iOS, the vibrator on Android.
-
-### capacitorShare
-
-```ts
-function capacitorShare(): ShareDriver;
-```
-
-Share sheet on `@capacitor/share`. Resolves false when dismissed. `File` objects cannot cross the
-bridge, so a payload with `files` is not shareable here: save the file with `@kitr/files` and share its `url`.
-
-### createCapacitorNativeDrivers
-
-```ts
-function createCapacitorNativeDrivers(_options?: DriverOptions): Driver;
-```
-
-The native drivers for the Capacitor shell: clipboard, share sheet, haptics and geolocation on the
-official plugins, each imported on first use. Camera and biometrics have no Capacitor driver yet
-(`supported: false`); register one with `app.drivers.register()`.
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ### createMemoryNativeDrivers
 
@@ -82,6 +54,20 @@ Build the `native` service. Per capability it uses `config.drivers`, else the dr
 registered on `app`, else the one `selectDriver()` picks for the runtime (the web drivers in a
 browser; in a native shell `E_DRIVER_UNAVAILABLE` unless `fallbackToWeb` is set), else an
 unsupported stand-in.
+
+### createTauriNativeDriver
+
+```ts
+function createTauriNativeDriver(_options?: DriverOptions): TauriNativeDriver;
+```
+
+The native driver for the Tauri shell. `clipboard` is `@tauri-apps/plugin-clipboard-manager`;
+`share`, `haptics`, `geolocation`, `camera` and `biometrics` are `null` (the matching Tauri
+plugins are mobile-only, and a Tauri mobile build runs under Capacitor's driver set instead of
+this one). `driver.system` has `openExternal` (`@tauri-apps/plugin-opener`), `platform`
+(`@tauri-apps/plugin-os`), `appVersion` and the system theme (`@tauri-apps/api`) and online
+status. Each plugin is imported on first use and is an optional peer: a missing one makes the
+call that needs it reject with `E_DRIVER_UNAVAILABLE`.
 
 ### selectDriver
 
@@ -233,6 +219,27 @@ interface ClipboardDriver {
 
 Reads and writes plain text on the system clipboard.
 
+### DesktopSystem
+
+```ts
+interface DesktopSystem {
+  /** The operating system: `darwin`, `win32`, `linux` (Electron) or `macos`, `windows`, `linux` (Tauri). */
+  platform(): Promise<string>;
+  /** The app's version from `package.json` / `tauri.conf.json`. */
+  appVersion(): Promise<string>;
+  /** Open a link in the default browser. Only `http:`, `https:`, `mailto:` and `tel:` are allowed. */
+  openExternal(url: string): Promise<void>;
+  /** Whether the system is in dark mode. */
+  isDark(): Promise<boolean>;
+  /** Listen for the system switching between light and dark. Returns the unsubscribe function. */
+  onTheme(listener: (dark: boolean) => void): () => void;
+  /** Whether the machine has a network connection. */
+  isOnline(): Promise<boolean>;
+}
+```
+
+What a desktop shell knows that the six capabilities do not cover.
+
 ### Driver
 
 ```ts
@@ -250,6 +257,22 @@ interface Driver {
 
 What one runtime supplies for the `native` service: a driver per capability, or `null` where
 the runtime has none (the capability then reports `supported: false`).
+
+### ElectronNativeDriver
+
+```ts
+interface ElectronNativeDriver extends Driver {
+  /** Desktop-only helpers; also `onPower` and `isOnBattery`, which only Electron has. */
+  system: DesktopSystem & {
+    /** Suspend, resume and battery/AC changes from Electron's `powerMonitor`. */
+    onPower(listener: (event: PowerEvent) => void): () => void;
+    /** Whether the computer runs on battery now. */
+    isOnBattery(): Promise<boolean>;
+  };
+}
+```
+
+The Electron driver: the capabilities Electron has plus the `system` helpers.
 
 ### GeolocationDriver
 
@@ -394,6 +417,17 @@ interface SharePayload {
 
 What to hand to the share sheet. Every field is optional; most targets use `url` or `text`.
 
+### TauriNativeDriver
+
+```ts
+interface TauriNativeDriver extends Driver {
+  /** Desktop-only helpers, the same as on Electron except for power events, which Tauri has no plugin for. */
+  system: DesktopSystem;
+}
+```
+
+The Tauri driver: the capabilities the plugins cover plus the `system` helpers.
+
 ### DriverOptions
 
 ```ts
@@ -417,6 +451,14 @@ type NativeCapability = 'clipboard' | 'share' | 'haptics' | 'geolocation' | 'cam
 ```
 
 The name of one of the six capabilities, as used in `supported()` and `app.drivers.register()`.
+
+### PowerEvent
+
+```ts
+type PowerEvent = 'suspend' | 'resume' | 'battery' | 'ac';
+```
+
+A change in how the computer is powered, as `system.onPower` reports it.
 
 ## kitr/native/react
 
@@ -579,62 +621,92 @@ Share driver on Web Share. Resolves false when dismissed; null where `navigator.
 ### createElectronDriver
 
 ```ts
-function createElectronDriver(_options?: DriverOptions): Driver;
+function createElectronDriver(_options?: DriverOptions): ElectronNativeDriver;
 ```
 
-The native driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/native` and `electron` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts`
-to opt in to the WebView behaviour.
+The native driver for the Electron shell, served over the `kitr:native:*` and `kitr:shell:open`
+channels of `handleKitrIpc()`. Capabilities: `clipboard` (Electron's `clipboard`) and `biometrics`
+(Touch ID on macOS; `available()` is false elsewhere). `share`, `haptics`, `geolocation` and
+`camera` are `null`: a desktop has no share sheet or haptic motor, and the Chromium
+geolocation needs a Google key, so those report `supported: false` rather than pretend.
+`driver.system` has what desktop apps want beyond them: `openExternal`, `appVersion`,
+`platform`, the system theme, online status and `powerMonitor` events.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
+### DesktopSystem
+
+```ts
+interface DesktopSystem {
+  /** The operating system: `darwin`, `win32`, `linux` (Electron) or `macos`, `windows`, `linux` (Tauri). */
+  platform(): Promise<string>;
+  /** The app's version from `package.json` / `tauri.conf.json`. */
+  appVersion(): Promise<string>;
+  /** Open a link in the default browser. Only `http:`, `https:`, `mailto:` and `tel:` are allowed. */
+  openExternal(url: string): Promise<void>;
+  /** Whether the system is in dark mode. */
+  isDark(): Promise<boolean>;
+  /** Listen for the system switching between light and dark. Returns the unsubscribe function. */
+  onTheme(listener: (dark: boolean) => void): () => void;
+  /** Whether the machine has a network connection. */
+  isOnline(): Promise<boolean>;
+}
+```
+
+What a desktop shell knows that the six capabilities do not cover.
+
+### ElectronNativeDriver
+
+```ts
+interface ElectronNativeDriver extends Driver {
+  /** Desktop-only helpers; also `onPower` and `isOnBattery`, which only Electron has. */
+  system: DesktopSystem & {
+    /** Suspend, resume and battery/AC changes from Electron's `powerMonitor`. */
+    onPower(listener: (event: PowerEvent) => void): () => void;
+    /** Whether the computer runs on battery now. */
+    isOnBattery(): Promise<boolean>;
+  };
+}
+```
+
+The Electron driver: the capabilities Electron has plus the `system` helpers.
+
+### PowerEvent
+
+```ts
+type PowerEvent = 'suspend' | 'resume' | 'battery' | 'ac';
+```
+
+A change in how the computer is powered, as `system.onPower` reports it.
 
 ## kitr/native/drivers/tauri
 
 ### createTauriDriver
 
 ```ts
-function createTauriDriver(_options?: DriverOptions): Driver;
+function createTauriDriver(_options?: DriverOptions): TauriNativeDriver;
 ```
 
-The native driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/native` and `tauri` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts`
-to opt in to the WebView behaviour.
+The native driver for the Tauri shell. `clipboard` is `@tauri-apps/plugin-clipboard-manager`;
+`share`, `haptics`, `geolocation`, `camera` and `biometrics` are `null` (the matching Tauri
+plugins are mobile-only, and a Tauri mobile build runs under Capacitor's driver set instead of
+this one). `driver.system` has `openExternal` (`@tauri-apps/plugin-opener`), `platform`
+(`@tauri-apps/plugin-os`), `appVersion` and the system theme (`@tauri-apps/api`) and online
+status. Each plugin is imported on first use and is an optional peer: a missing one makes the
+call that needs it reject with `E_DRIVER_UNAVAILABLE`.
+
+### TauriNativeDriver
+
+```ts
+interface TauriNativeDriver extends Driver {
+  /** Desktop-only helpers, the same as on Electron except for power events, which Tauri has no plugin for. */
+  system: DesktopSystem;
+}
+```
+
+The Tauri driver: the capabilities the plugins cover plus the `system` helpers.
 
 ## kitr/native/drivers/capacitor
-
-### capacitorClipboard
-
-```ts
-function capacitorClipboard(): ClipboardDriver;
-```
-
-Clipboard on `@capacitor/clipboard`: the OS pasteboard, with no permission prompt.
-
-### capacitorGeolocation
-
-```ts
-function capacitorGeolocation(): GeolocationDriver;
-```
-
-Location on `@capacitor/geolocation` (Core Location, Fused Location). Asks for the location
-permission first, as Android needs; rejects when it is refused.
-
-### capacitorHaptics
-
-```ts
-function capacitorHaptics(): HapticsDriver;
-```
-
-Haptics on `@capacitor/haptics`: the Taptic Engine on iOS, the vibrator on Android.
-
-### capacitorShare
-
-```ts
-function capacitorShare(): ShareDriver;
-```
-
-Share sheet on `@capacitor/share`. Resolves false when dismissed. `File` objects cannot cross the
-bridge, so a payload with `files` is not shareable here: save the file with `@kitr/files` and share its `url`.
 
 ### createCapacitorDriver
 
@@ -642,8 +714,9 @@ bridge, so a payload with `files` is not shareable here: save the file with `@ki
 function createCapacitorDriver(_options?: DriverOptions): Driver;
 ```
 
-The native drivers for the Capacitor shell: clipboard, share sheet, haptics and geolocation on the
-official plugins, each imported on first use. Camera and biometrics have no Capacitor driver yet
-(`supported: false`); register one with `app.drivers.register()`.
+The native driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/native` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

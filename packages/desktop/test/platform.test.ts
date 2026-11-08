@@ -18,6 +18,7 @@ describe('desktop()', () => {
       ['electron', true],
       ['electron-vite', true],
       ['electron-builder', true],
+      ['electron-updater', undefined],
     ])
   })
 

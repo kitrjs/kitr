@@ -87,6 +87,17 @@ function isDriverUnavailable(error: unknown): error is KitrError;
 
 Whether `error` is a `driverUnavailable()` error.
 
+### loadShellModule
+
+```ts
+function loadShellModule<T = unknown>(specifier: string): Promise<T>;
+```
+
+Load an optional module by specifier: through the loader a shell registered, else a plain
+dynamic `import()` (which works under Node and in tests, and fails in a bundled page where
+nothing registered it). Rejects when the module cannot be loaded; callers turn that into
+`driverUnavailable()` with the install instructions.
+
 ### osFromUserAgent
 
 ```ts
@@ -139,6 +150,17 @@ function readFormFactor(win: Pick<Window, 'innerWidth' | 'innerHeight' | 'matchM
 ```
 
 The form factor a browser window reports right now. Not for the server: use `fallbackFormFactor()` there.
+
+### registerShellModules
+
+```ts
+function registerShellModules(loaders: Record<string, ModuleLoader>): void;
+```
+
+Register loaders for the optional packages a native shell's drivers import lazily (the Tauri
+plugins, say). A shell's provider calls this with literal `import('...')` expressions, so the
+app's bundler sees and bundles them; the device packages then ask for them by name with
+`loadShellModule()` and never name an optional package in code that every app bundles.
 
 ### runtimeOf
 
@@ -410,6 +432,14 @@ type InputKind = 'touch' | 'pointer';
 ```
 
 The primary input: a finger or a mouse/trackpad.
+
+### ModuleLoader
+
+```ts
+type ModuleLoader = () => Promise<unknown>;
+```
+
+Loads one optional module, such as `() => import('@tauri-apps/plugin-dialog')`.
 
 ### Orientation
 

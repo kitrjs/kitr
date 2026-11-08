@@ -10,25 +10,20 @@ Every export of `kitr/notifications`, `kitr/notifications/react`, `kitr/notifica
 
 ## kitr/notifications
 
-### capacitorPush
+### createElectronNotificationsDriver
 
 ```ts
-function capacitorPush(): CapacitorPush;
+function createElectronNotificationsDriver(_options?: DriverOptions): ElectronNotificationsDriver;
 ```
 
-Push notifications through `@capacitor/push-notifications`. Needs Firebase on Android
-(`google-services.json`) and the Push Notifications capability on iOS; see the package docs.
+The notifications driver for the Electron shell. Notifications are Electron `Notification`s
+shown by the main process over the `kitr:notify:*` channels of `handleKitrIpc()`: no permission
+prompt on desktop, so `permission()` and `request()` answer `granted` (or `unsupported` where the
+OS has no notification service). Scheduled notifications live in the main process, so they
+survive a window reload but not quitting the app. Clicking one focuses the window and calls
+`onTap` with the `url` and `data` it was shown with. `setBadge(count)` sets the app badge.
 
-### createCapacitorNotificationsDriver
-
-```ts
-function createCapacitorNotificationsDriver(_options?: DriverOptions): Driver;
-```
-
-Notifications on `@capacitor/local-notifications`: the OS schedules and shows them, so scheduled
-ones survive the app closing (the web driver's timers do not). On Android a `channel` becomes a
-notification channel, created on first use. Taps from `@capacitor/push-notifications` reach
-`onTap` too when that plugin is installed; its token and listeners are in `capacitorPush()`.
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ### createMemoryNotificationsDriver
 
@@ -55,6 +50,19 @@ function createNotifications(config?: NotificationsConfig, app?: KitrApp): Notif
 Build the `notifications` service. The driver is `config.driver`, else the one registered on
 `app`, else `selectDriver()` for the runtime: the web driver in a browser, a memory driver (`unsupported`)
 on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
+
+### createTauriNotificationsDriver
+
+```ts
+function createTauriNotificationsDriver(_options?: DriverOptions): Driver;
+```
+
+The notifications driver for the Tauri shell, on `@tauri-apps/plugin-notification` (imported on
+first use, an optional peer: methods reject with `E_DRIVER_UNAVAILABLE` when it is missing).
+Permission is read and asked through the plugin. The desktop plugin shows a notification at once
+and cannot schedule one, so `schedule()` waits in a timer inside the window (lost when the app
+quits) and shows it then; on mobile the same timer applies. The plugin reports a tap only on
+mobile, so `onTap` listeners fire there and stay silent on desktop.
 
 ### createWebNotificationsDriver
 
@@ -102,27 +110,6 @@ const defineConfig: <const C extends NotificationsConfig>(config: C) => C;
 
 Types `config/notifications.ts`. Returns the object unchanged.
 
-### CapacitorPush
-
-```ts
-interface CapacitorPush {
-  /** The permission to receive push notifications. */
-  permission(): Promise<NotificationPermission>;
-  /** Ask for it. */
-  request(): Promise<NotificationPermission>;
-  /** Register with FCM or APNs and resolve to the device token to send to your server. */
-  register(): Promise<string>;
-  /** Called with each push that arrives while the app is open. */
-  onReceived(listener: (message: PushMessage) => void): () => void;
-  /** Called when a push is tapped, with its `url` (from `data.url` or `link`) when it has one. */
-  onAction(listener: (tap: NotificationTap & {
-    actionId: string;
-  }) => void): () => void;
-}
-```
-
-Remote (FCM and APNs) notifications on `@capacitor/push-notifications`.
-
 ### DriverOptions
 
 ```ts
@@ -133,6 +120,17 @@ interface DriverOptions extends SelectDriverOptions {
 ```
 
 Options of `selectDriver()`.
+
+### ElectronNotificationsDriver
+
+```ts
+interface ElectronNotificationsDriver extends Driver {
+  /** Set the app badge count (dock on macOS, launcher on Linux); 0 clears it. */
+  setBadge(count: number): Promise<void>;
+}
+```
+
+The Electron driver, with the dock/taskbar badge that only desktop shells have.
 
 ### NotificationOptions
 
@@ -252,19 +250,6 @@ interface NotificationTap {
 
 What a tap listener receives: the notification's id and the `url` and `data` it was shown with.
 
-### PushMessage
-
-```ts
-interface PushMessage {
-  id: string;
-  title?: string;
-  body?: string;
-  data: Record<string, unknown>;
-}
-```
-
-A push message, in the fields apps use.
-
 ### ScheduleOptions
 
 ```ts
@@ -383,13 +368,28 @@ the page closes. Falls back to the service worker where the constructor is not a
 ### createElectronDriver
 
 ```ts
-function createElectronDriver(_options?: DriverOptions): Driver;
+function createElectronDriver(_options?: DriverOptions): ElectronNotificationsDriver;
 ```
 
-The notifications driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/notifications` and `electron` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
-to opt in to the WebView behaviour.
+The notifications driver for the Electron shell. Notifications are Electron `Notification`s
+shown by the main process over the `kitr:notify:*` channels of `handleKitrIpc()`: no permission
+prompt on desktop, so `permission()` and `request()` answer `granted` (or `unsupported` where the
+OS has no notification service). Scheduled notifications live in the main process, so they
+survive a window reload but not quitting the app. Clicking one focuses the window and calls
+`onTap` with the `url` and `data` it was shown with. `setBadge(count)` sets the app badge.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
+### ElectronNotificationsDriver
+
+```ts
+interface ElectronNotificationsDriver extends Driver {
+  /** Set the app badge count (dock on macOS, launcher on Linux); 0 clears it. */
+  setBadge(count: number): Promise<void>;
+}
+```
+
+The Electron driver, with the dock/taskbar badge that only desktop shells have.
 
 ## kitr/notifications/drivers/tauri
 
@@ -399,21 +399,22 @@ to opt in to the WebView behaviour.
 function createTauriDriver(_options?: DriverOptions): Driver;
 ```
 
-The notifications driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/notifications` and `tauri` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
-to opt in to the WebView behaviour.
+The notifications driver for the Tauri shell, on `@tauri-apps/plugin-notification` (imported on
+first use, an optional peer: methods reject with `E_DRIVER_UNAVAILABLE` when it is missing).
+Permission is read and asked through the plugin. The desktop plugin shows a notification at once
+and cannot schedule one, so `schedule()` waits in a timer inside the window (lost when the app
+quits) and shows it then; on mobile the same timer applies. The plugin reports a tap only on
+mobile, so `onTap` listeners fire there and stay silent on desktop.
 
-## kitr/notifications/drivers/capacitor
-
-### capacitorPush
+### numericId
 
 ```ts
-function capacitorPush(): CapacitorPush;
+function numericId(id: string): number;
 ```
 
-Push notifications through `@capacitor/push-notifications`. Needs Firebase on Android
-(`google-services.json`) and the Push Notifications capability on iOS; see the package docs.
+The plugin wants a 32-bit integer id; the service's ids are strings.
+
+## kitr/notifications/drivers/capacitor
 
 ### createCapacitorDriver
 
@@ -421,60 +422,9 @@ Push notifications through `@capacitor/push-notifications`. Needs Firebase on An
 function createCapacitorDriver(_options?: DriverOptions): Driver;
 ```
 
-Notifications on `@capacitor/local-notifications`: the OS schedules and shows them, so scheduled
-ones survive the app closing (the web driver's timers do not). On Android a `channel` becomes a
-notification channel, created on first use. Taps from `@capacitor/push-notifications` reach
-`onTap` too when that plugin is installed; its token and listeners are in `capacitorPush()`.
-
-### nativeId
-
-```ts
-function nativeId(id: string): number;
-```
-
-Capacitor ids are 32-bit integers; kitr ids are strings. A stable FNV-1a hash maps one to the other.
-
-### toPermission
-
-```ts
-function toPermission(state: string): NotificationPermission;
-```
-
-Capacitor reports `granted`, `denied`, `prompt` and `prompt-with-rationale` (Android, after a
-first refusal). The last is still a question the app may ask again, so it maps to `prompt`.
-
-### CapacitorPush
-
-```ts
-interface CapacitorPush {
-  /** The permission to receive push notifications. */
-  permission(): Promise<NotificationPermission>;
-  /** Ask for it. */
-  request(): Promise<NotificationPermission>;
-  /** Register with FCM or APNs and resolve to the device token to send to your server. */
-  register(): Promise<string>;
-  /** Called with each push that arrives while the app is open. */
-  onReceived(listener: (message: PushMessage) => void): () => void;
-  /** Called when a push is tapped, with its `url` (from `data.url` or `link`) when it has one. */
-  onAction(listener: (tap: NotificationTap & {
-    actionId: string;
-  }) => void): () => void;
-}
-```
-
-Remote (FCM and APNs) notifications on `@capacitor/push-notifications`.
-
-### PushMessage
-
-```ts
-interface PushMessage {
-  id: string;
-  title?: string;
-  body?: string;
-  data: Record<string, unknown>;
-}
-```
-
-A push message, in the fields apps use.
+The notifications driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/notifications` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/notifications.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

@@ -18,29 +18,19 @@ function acceptFor(filters?: FileFilter[]): string;
 
 The `accept` string an `<input type="file">` needs for a set of filters.
 
-### capacitorFileStore
+### createElectronFilesDriver
 
 ```ts
-function capacitorFileStore(options?: {
-  directory?: CapacitorDirectory;
-}): CapacitorFileStore;
+function createElectronFilesDriver(_options?: DriverOptions): ElectronFilesDriver;
 ```
 
-`@capacitor/filesystem` under one of the app's directories (`data` by default, which no other
-app can see). Paths are relative to that directory. For files the person chooses, use the
-`files` service's dialogs instead.
+The files driver for the Electron shell. Dialogs are Electron's `dialog.showOpenDialog` and
+`showSaveDialog`, run in the main process; the chosen files are read and written there with
+`fs/promises`. The window can only reach paths the person picked in a dialog this session
+(and anything inside a picked folder): main refuses every other path, so a compromised page
+cannot read your disk. Served over the `kitr:files:*` channels of `handleKitrIpc()`.
 
-### createCapacitorFilesDriver
-
-```ts
-function createCapacitorFilesDriver(_options?: DriverOptions): Driver;
-```
-
-Files driver for the Capacitor shell. `open()` shows the system document picker
-(`@capawesome/capacitor-file-picker`). Mobile has no "save as" dialog, so `save()` writes the
-file to the app's cache (`@capacitor/filesystem`) and opens the share sheet
-(`@capacitor/share`), where the person picks Save to Files, Drive, Mail and so on; it resolves
-to the file's URI, or null when the sheet is dismissed. `reveal()` hands a path to the share sheet.
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ### createFiles
 
@@ -65,6 +55,19 @@ function createMemoryFilesDriver(queue?: PickedFile[]): FilesDriver & {
 ```
 
 A driver for tests and the server: `open` returns what you queue, `save` records what was written.
+
+### createTauriFilesDriver
+
+```ts
+function createTauriFilesDriver(_options?: DriverOptions): Driver;
+```
+
+The files driver for the Tauri shell, on `@tauri-apps/plugin-dialog` (the dialogs) and
+`@tauri-apps/plugin-fs` (reading and writing what was chosen), with `@tauri-apps/plugin-opener`
+for `reveal()`. The plugins are imported on first use and are optional peers; a missing one
+makes the method that needs it reject with `E_DRIVER_UNAVAILABLE`. The dialog plugin adds each
+chosen path to the fs scope for the session, so the window reaches only what the person picked
+unless your capability file grants more.
 
 ### createWebFilesDriver
 
@@ -124,45 +127,18 @@ const defineConfig: <const C extends FilesConfig>(config: C) => C;
 
 Type-checks `config/files.ts`. Returns the object unchanged.
 
-### CapacitorFileStore
+### ElectronFilesDriver
 
 ```ts
-interface CapacitorFileStore {
-  /** Read a file as UTF-8 text. */
-  readText(path: string): Promise<string>;
-  /** Read a file as bytes. */
-  readBytes(path: string): Promise<Uint8Array>;
-  /** Write (and replace) a file, creating parent folders. Resolves to its URI. */
-  write(path: string, data: FileData): Promise<string>;
-  /** Delete a file. */
-  remove(path: string): Promise<void>;
-  /** The entries of a folder (the directory's root by default). */
-  list(path?: string): Promise<FileEntry[]>;
-  /** Size, type and modification time of a file or folder. */
-  stat(path: string): Promise<FileEntry>;
-  /** Whether the path exists. */
-  exists(path: string): Promise<boolean>;
+interface ElectronFilesDriver extends Driver {
+  /** Show the folder dialog. Resolves to the chosen folder, or null when cancelled. */
+  openDirectory(options?: {
+    title?: string;
+  }): Promise<PickedFolder | null>;
 }
 ```
 
-Read, write, delete, list and stat under the app's own directories (no dialogs).
-
-### FileEntry
-
-```ts
-interface FileEntry {
-  name: string;
-  type: 'file' | 'directory';
-  /** Size in bytes. */
-  size: number;
-  /** Last change, in milliseconds since the epoch. */
-  modifiedAt: number;
-  /** A `file://` URI the system and other apps understand. */
-  uri: string;
-}
-```
-
-A file or folder in the app's storage, as `list()` and `stat()` report it.
+The Electron driver, with the folder dialog and directory calls only a desktop shell has.
 
 ### FileFilter
 
@@ -270,6 +246,21 @@ interface PickedFile {
 
 A file the person chose, the same shape on every platform. Its content is read on demand.
 
+### PickedFolder
+
+```ts
+interface PickedFolder {
+  /** Absolute path of the folder. */
+  path: string;
+  /** Its name. */
+  name: string;
+  /** The folder's entries; each file reads and writes like a picked one. Folders come back with `size` 0. */
+  list(): Promise<PickedFile[]>;
+}
+```
+
+A folder the person chose: list it, then read the files in it.
+
 ### SaveOptions
 
 ```ts
@@ -286,14 +277,6 @@ interface SaveOptions {
 ```
 
 Options for `save()`: the suggested name and, for the download fallback, the MIME type.
-
-### CapacitorDirectory
-
-```ts
-type CapacitorDirectory = 'data' | 'documents' | 'cache' | 'library' | 'external';
-```
-
-Which of the app's directories a path is under. `data` is private and backed up; `cache` may be cleared by the OS.
 
 ### Driver
 
@@ -414,13 +397,44 @@ File System Access API when available, `<input type="file">` and a download link
 ### createElectronDriver
 
 ```ts
-function createElectronDriver(_options?: DriverOptions): Driver;
+function createElectronDriver(_options?: DriverOptions): ElectronFilesDriver;
 ```
 
-The files driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/files` and `electron` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
-to opt in to the WebView behaviour.
+The files driver for the Electron shell. Dialogs are Electron's `dialog.showOpenDialog` and
+`showSaveDialog`, run in the main process; the chosen files are read and written there with
+`fs/promises`. The window can only reach paths the person picked in a dialog this session
+(and anything inside a picked folder): main refuses every other path, so a compromised page
+cannot read your disk. Served over the `kitr:files:*` channels of `handleKitrIpc()`.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
+### ElectronFilesDriver
+
+```ts
+interface ElectronFilesDriver extends Driver {
+  /** Show the folder dialog. Resolves to the chosen folder, or null when cancelled. */
+  openDirectory(options?: {
+    title?: string;
+  }): Promise<PickedFolder | null>;
+}
+```
+
+The Electron driver, with the folder dialog and directory calls only a desktop shell has.
+
+### PickedFolder
+
+```ts
+interface PickedFolder {
+  /** Absolute path of the folder. */
+  path: string;
+  /** Its name. */
+  name: string;
+  /** The folder's entries; each file reads and writes like a picked one. Folders come back with `size` 0. */
+  list(): Promise<PickedFile[]>;
+}
+```
+
+A folder the person chose: list it, then read the files in it.
 
 ## kitr/files/drivers/tauri
 
@@ -430,24 +444,14 @@ to opt in to the WebView behaviour.
 function createTauriDriver(_options?: DriverOptions): Driver;
 ```
 
-The files driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/files` and `tauri` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
-to opt in to the WebView behaviour.
+The files driver for the Tauri shell, on `@tauri-apps/plugin-dialog` (the dialogs) and
+`@tauri-apps/plugin-fs` (reading and writing what was chosen), with `@tauri-apps/plugin-opener`
+for `reveal()`. The plugins are imported on first use and are optional peers; a missing one
+makes the method that needs it reject with `E_DRIVER_UNAVAILABLE`. The dialog plugin adds each
+chosen path to the fs scope for the session, so the window reaches only what the person picked
+unless your capability file grants more.
 
 ## kitr/files/drivers/capacitor
-
-### capacitorFileStore
-
-```ts
-function capacitorFileStore(options?: {
-  directory?: CapacitorDirectory;
-}): CapacitorFileStore;
-```
-
-`@capacitor/filesystem` under one of the app's directories (`data` by default, which no other
-app can see). Paths are relative to that directory. For files the person chooses, use the
-`files` service's dialogs instead.
 
 ### createCapacitorDriver
 
@@ -455,58 +459,9 @@ app can see). Paths are relative to that directory. For files the person chooses
 function createCapacitorDriver(_options?: DriverOptions): Driver;
 ```
 
-Files driver for the Capacitor shell. `open()` shows the system document picker
-(`@capawesome/capacitor-file-picker`). Mobile has no "save as" dialog, so `save()` writes the
-file to the app's cache (`@capacitor/filesystem`) and opens the share sheet
-(`@capacitor/share`), where the person picks Save to Files, Drive, Mail and so on; it resolves
-to the file's URI, or null when the sheet is dismissed. `reveal()` hands a path to the share sheet.
-
-### CapacitorFileStore
-
-```ts
-interface CapacitorFileStore {
-  /** Read a file as UTF-8 text. */
-  readText(path: string): Promise<string>;
-  /** Read a file as bytes. */
-  readBytes(path: string): Promise<Uint8Array>;
-  /** Write (and replace) a file, creating parent folders. Resolves to its URI. */
-  write(path: string, data: FileData): Promise<string>;
-  /** Delete a file. */
-  remove(path: string): Promise<void>;
-  /** The entries of a folder (the directory's root by default). */
-  list(path?: string): Promise<FileEntry[]>;
-  /** Size, type and modification time of a file or folder. */
-  stat(path: string): Promise<FileEntry>;
-  /** Whether the path exists. */
-  exists(path: string): Promise<boolean>;
-}
-```
-
-Read, write, delete, list and stat under the app's own directories (no dialogs).
-
-### FileEntry
-
-```ts
-interface FileEntry {
-  name: string;
-  type: 'file' | 'directory';
-  /** Size in bytes. */
-  size: number;
-  /** Last change, in milliseconds since the epoch. */
-  modifiedAt: number;
-  /** A `file://` URI the system and other apps understand. */
-  uri: string;
-}
-```
-
-A file or folder in the app's storage, as `list()` and `stat()` report it.
-
-### CapacitorDirectory
-
-```ts
-type CapacitorDirectory = 'data' | 'documents' | 'cache' | 'library' | 'external';
-```
-
-Which of the app's directories a path is under. `data` is private and backed up; `cache` may be cleared by the OS.
+The files driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/files` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

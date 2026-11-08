@@ -10,7 +10,16 @@ export {
   capacitorShare,
   createCapacitorDriver as createCapacitorNativeDrivers,
 } from './drivers/capacitor'
+  createElectronDriver as createElectronNativeDriver,
+  type DesktopSystem,
+  type ElectronNativeDriver,
+  type PowerEvent,
+} from './drivers/electron'
 export { createMemoryNativeDrivers } from './drivers/memory'
+export {
+  createTauriDriver as createTauriNativeDriver,
+  type TauriNativeDriver,
+} from './drivers/tauri'
 export {
   webBiometrics,
   webCamera,

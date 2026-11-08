@@ -10,17 +10,21 @@ Every export of `kitr/updater`, `kitr/updater/react`, `kitr/updater/provider`, `
 
 ## kitr/updater
 
-### createCapacitorUpdaterDriver
+### createElectronUpdaterDriver
 
 ```ts
-function createCapacitorUpdaterDriver(_options?: DriverOptions): Driver;
+function createElectronUpdaterDriver(_options?: DriverOptions): Driver;
 ```
 
-Updater for the Capacitor shell on `@capawesome/capacitor-app-update`, which asks the store
-rather than a server of yours. Android uses Play in-app updates: a flexible update downloads in
-the background with progress and restarts on `apply()`, and a high-priority update (4 or 5) or a
-device that only allows it uses the immediate, full-screen flow. iOS cannot install in place, so
-`apply()` opens the App Store page. The service-worker path stays web-only.
+The updater driver for the Electron shell, on `electron-updater` in the main process (served
+over the `kitr:updater:*` channels of `handleKitrIpc()`). `check()` asks the update feed in
+`electron-builder.yml`'s `publish` block, `apply()` downloads the installer, reports progress
+and restarts into it with `quitAndInstall()`, and `onAvailable` fires when main finds an update
+on its own. `electron-updater` is an optional peer, imported by main on first use: when it is
+missing every method rejects with `E_DRIVER_UNAVAILABLE`. It only updates packaged apps; in
+development `check()` resolves to null.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ### createMemoryUpdaterDriver
 
@@ -52,6 +56,18 @@ function createServiceWorkerUpdaterDriver(options?: {
 
 Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
 to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
+
+### createTauriUpdaterDriver
+
+```ts
+function createTauriUpdaterDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Tauri shell, on `@tauri-apps/plugin-updater` (find and install the
+signed update `tauri.conf.json`'s `plugins.updater` points at) and `@tauri-apps/plugin-process`
+(relaunch into it). Both are imported on first use and are optional peers: a missing one makes
+the method that needs it reject with `E_DRIVER_UNAVAILABLE`. `apply()` reports the download as a
+fraction when the server sends a content length.
 
 ### createUpdater
 
@@ -311,10 +327,15 @@ to skip waiting and reloads. `version` is the running build; the update is repor
 function createElectronDriver(_options?: DriverOptions): Driver;
 ```
 
-The updater driver for the Electron shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/updater` and `electron` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts`
-to opt in to the WebView behaviour.
+The updater driver for the Electron shell, on `electron-updater` in the main process (served
+over the `kitr:updater:*` channels of `handleKitrIpc()`). `check()` asks the update feed in
+`electron-builder.yml`'s `publish` block, `apply()` downloads the installer, reports progress
+and restarts into it with `quitAndInstall()`, and `onAvailable` fires when main finds an update
+on its own. `electron-updater` is an optional peer, imported by main on first use: when it is
+missing every method rejects with `E_DRIVER_UNAVAILABLE`. It only updates packaged apps; in
+development `check()` resolves to null.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ## kitr/updater/drivers/tauri
 
@@ -324,10 +345,11 @@ to opt in to the WebView behaviour.
 function createTauriDriver(_options?: DriverOptions): Driver;
 ```
 
-The updater driver for the Tauri shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
-naming `@kitr/updater` and `tauri` instead of quietly running the web driver in the WebView.
-Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts`
-to opt in to the WebView behaviour.
+The updater driver for the Tauri shell, on `@tauri-apps/plugin-updater` (find and install the
+signed update `tauri.conf.json`'s `plugins.updater` points at) and `@tauri-apps/plugin-process`
+(relaunch into it). Both are imported on first use and are optional peers: a missing one makes
+the method that needs it reject with `E_DRIVER_UNAVAILABLE`. `apply()` reports the download as a
+fraction when the server sends a content length.
 
 ## kitr/updater/drivers/capacitor
 
@@ -337,10 +359,9 @@ to opt in to the WebView behaviour.
 function createCapacitorDriver(_options?: DriverOptions): Driver;
 ```
 
-Updater for the Capacitor shell on `@capawesome/capacitor-app-update`, which asks the store
-rather than a server of yours. Android uses Play in-app updates: a flexible update downloads in
-the background with progress and restarts on `apply()`, and a high-priority update (4 or 5) or a
-device that only allows it uses the immediate, full-screen flow. iOS cannot install in place, so
-`apply()` opens the App Store page. The service-worker path stays web-only.
+The updater driver for the Capacitor shell. Not implemented yet: it throws `E_DRIVER_UNAVAILABLE`
+naming `@kitr/updater` and `capacitor` instead of quietly running the web driver in the WebView.
+Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts`
+to opt in to the WebView behaviour.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

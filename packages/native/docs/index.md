@@ -572,6 +572,58 @@ export function CopyInvoiceLink({ url }: { url: string }) {
 // without @capacitor/clipboard => "@kitr/native has no capacitor driver: install @capacitor/clipboard. ..."
 ```
 
+Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have drivers for the capabilities a desktop has, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers none of these six, so creating the service in a Capacitor shell throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use Face ID or real haptics there, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
+
+## Use it in Electron and Tauri
+
+A desktop has a clipboard and, on a Mac, Touch ID, but no share sheet, haptic motor or GPS. The desktop drivers supply what exists and leave the rest `null`, so `native.share.supported` is `false` and `native.haptics.impact('success')` rejects with `UnsupportedError`, the same as in a browser without the API. Check `supported` before showing the control.
+
+| Capability | Electron | Tauri |
+| --- | --- | --- |
+| `clipboard` | Electron `clipboard` in the main process | `@tauri-apps/plugin-clipboard-manager` |
+| `biometrics` | Touch ID on macOS (`systemPreferences.promptTouchID`); `available()` is `false` elsewhere | `null` (the biometric plugin is mobile-only) |
+| `share`, `haptics`, `geolocation`, `camera` | `null` | `null` |
+
+Both drivers also carry a `system` object with what desktop apps want beyond the six capabilities. The service API has no call for it, so import the driver:
+
+```ts
+// app/system.ts
+import { createElectronNativeDriver } from 'kitr/native'
+
+const { system } = createElectronNativeDriver()
+
+/** Open Acme's docs in the browser, follow dark mode and pause syncing on battery. */
+export async function watchTheMachine() {
+  await system.openExternal('https://acme.com/docs') // http, https, mailto and tel only
+  console.log(await system.platform(), await system.appVersion(), await system.isDark()) // => linux 1.4.0 true
+  const stopTheme = system.onTheme((dark) => console.log(dark ? 'dark' : 'light'))
+  const stopPower = system.onPower((event) => console.log(event)) // 'suspend' | 'resume' | 'battery' | 'ac'
+  return () => {
+    stopTheme()
+    stopPower()
+  }
+}
+```
+
+| `system` member | Electron | Tauri |
+| --- | --- | --- |
+| `openExternal(url)` | `shell.openExternal` through `kitr:shell:open` | `plugin-opener`'s `openUrl` |
+| `platform()` | `process.platform`: `darwin`, `win32`, `linux` | `plugin-os`'s `platform()`: `macos`, `windows`, `linux` |
+| `appVersion()` | `app.getVersion()` | `@tauri-apps/api/app` |
+| `isDark()`, `onTheme(listener)` | `nativeTheme` | The window's `theme()` and `onThemeChanged` |
+| `isOnline()` | `net.isOnline()` | `navigator.onLine` |
+| `onPower(listener)`, `isOnBattery()` | `powerMonitor`: suspend, resume, battery, AC | Not available |
+
+`openExternal` refuses anything but `http:`, `https:`, `mailto:` and `tel:` links, so a page cannot launch `file:` or custom handlers. In Electron, pass `externalProtocols` to `handleKitrIpc()` to allow more.
+
+### Electron
+
+Requirements: `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script, which a desktop project already has. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`. Touch ID needs a Mac with Touch ID and a signed app.
+
+### Tauri
+
+Requirements: `@tauri-apps/plugin-clipboard-manager`, `@tauri-apps/plugin-os`, `@tauri-apps/plugin-opener` and `@tauri-apps/api` in `package.json`; `kitr add tauri` and `kitr add native` in a Tauri project install them. Each is imported on first use; when one is missing, the call that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package. In `src-tauri`, the matching crates and `.plugin(...)` calls, and the permissions `clipboard-manager:allow-read-text`, `clipboard-manager:allow-write-text`, `os:default` and `opener:default`, which the Tauri scaffold writes.
+
 ## Errors
 
 | Error | When | What to do |

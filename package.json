@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
+    "test:electron": "playwright test -c playwright.electron.config.ts",
     "check:bundles": "node scripts/check-bundles.mjs",
     "check:module-state": "node scripts/check-module-state.mjs",
     "smoke:registry": "node scripts/verdaccio-smoke.mjs",
