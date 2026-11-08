@@ -1,10 +1,12 @@
 import {
   type CacheEffect,
+  KitrError,
   type KitrErrorShape,
   type QueryKey,
   type SubscriptionContract,
   validateSync,
 } from '@kitr/core'
+import { keyFor, toEnvelope } from '@kitr/core/request'
 import ReconnectingWebSocket from 'partysocket/ws'
 import {
   type ChannelDefinition,
@@ -208,7 +210,8 @@ export function channel<C extends ChannelDefinition<any, any>>(
   transport: SocketTransport,
   definition: C,
 ): ChannelHandle<C> {
-  const key = (params: ChannelParams<C>): QueryKey => ['realtime', definition.name, params ?? null]
+  const key = (params: ChannelParams<C>): QueryKey =>
+    keyFor('realtime', definition.name, params ?? null)
   return {
     key,
     send: (params, event, data) => transport.send(definition.name, params, event, data),
@@ -227,12 +230,14 @@ export function channel<C extends ChannelDefinition<any, any>>(
             if (def.schema) {
               const result = validateSync(def.schema, data)
               if (!result.success) {
-                handlers.error?.({
-                  code: 'VALIDATION',
-                  message: `Invalid payload for ${definition.name}.${event}`,
-                  status: 422,
-                  fieldErrors: result.fieldErrors,
-                })
+                handlers.error?.(
+                  toEnvelope(
+                    KitrError.validation(
+                      result.fieldErrors,
+                      `Invalid payload for ${definition.name}.${event}`,
+                    ),
+                  ),
+                )
                 return
               }
               payload = result.data
