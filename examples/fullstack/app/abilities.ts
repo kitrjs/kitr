@@ -1,4 +1,4 @@
-import { defineAbilities } from 'kitr/auth'
+import { defineAbilities } from '@kitr/auth'
 
 export interface User {
   id: string

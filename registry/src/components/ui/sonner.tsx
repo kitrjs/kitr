@@ -1,4 +1,4 @@
-import { useTheme } from 'kitr/theme'
+import { useTheme } from '@kitr/theme'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
 /** Mount once in the root route; call `toast()` from `sonner` anywhere. Follows the kitr theme. */

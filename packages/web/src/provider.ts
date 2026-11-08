@@ -2,7 +2,7 @@ import { defineProvider } from '@kitr/core'
 
 /**
  * Runtime provider of the web platform. Registers the `platform` driver that tells
- * `kitr/platform` the app runs in a browser (or on the server rendering for one).
+ * `@kitr/platform` the app runs in a browser (or on the server rendering for one).
  */
 export const webProvider = defineProvider({
   name: 'web',

@@ -1,5 +1,5 @@
 /*
- * kitr/animation/page-transitions.css: the page animations `pageTransitions()` asks for.
+ * @kitr/animation/page-transitions.css: the page animations `pageTransitions()` asks for.
  * Import it once, in app/router.tsx or app/styles/app.css. Every rule sits behind
  * prefers-reduced-motion, so visitors who ask for less motion get an instant change even if
  * `reducedMotion: 'never'` is passed to pageTransitions().

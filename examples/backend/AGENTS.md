@@ -4,7 +4,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: conventions
 
-- Import framework code from `kitr/*` entry points (`kitr/router`, `kitr/query`, ...). They re-export the upstream library unchanged plus kitr helpers.
+- Import framework code from the `@kitr/*` package that `kitr add` installed (`@kitr/router`, `@kitr/query`, ...). Each re-exports the upstream library unchanged plus kitr helpers. `kitr` itself is the CLI and the `kitrrc.ts` config (`kitr/app`, `kitr/env`).
 - Where the app runs is a platform in `kitrrc.ts` (`platforms: { site: web({...}), api: server({...}) }`). `kitr dev <name>` / `kitr build <name>` / `kitr start <name>` run one or all; `kitr config <name> <option> <value>` edits options; native projects live in `platforms/<name>/`.
 - Wiring lives in `kitrrc.ts` and `config/*.ts`; server code in `server/`. Every package brings its own generators (`kitr make:<kind>`, see `kitr --help`). Generated types live in `.kitr/` (`kitr types`, also run by `kitr dev` and `kitr build`); import them from `#kitr/*`. Run `kitr doctor` after changes.
 
@@ -19,7 +19,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: api
 
-- Endpoints: `server/routes.ts` (`defineRoutes([api], ...)` with `.get/.post/.resource` from `kitr/api/routes`; realtime adds `.ws` to the same table), controllers in `server/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
+- Endpoints: `server/routes.ts` (`defineRoutes([api], ...)` with `.get/.post/.resource` from `@kitr/api/routes`; realtime adds `.ws` to the same table), controllers in `server/controllers/<name>_controller.ts` (`kitr make:controller <name> --resource`). Validators go in `static validation = { store: { body: schema } }`.
 - Actions are for this app's own UI; API routes are for anything else (mobile, partners, webhooks) or when you want REST + OpenAPI.
 - The client is typed from `ServerRoutes` (`typeof routes.$types`); call `registerRoutes(api, routes.toJSON())` or use `kitr api:sync` to write the route table and openapi.json.
 
@@ -29,12 +29,12 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: realtime
 
-- Channels are defined once in `app/channels/*.ts` with `defineChannel` and served by `.ws(path, { channels })` (or `.sse`) on the server route table (`server/routes.ts`, methods from `kitr/realtime/routes`). The server emits with `app.container.use('realtime').use(channel, params).emit(event, data)` (`{ app }` is on every HttpContext and job); components subscribe with `useChannel(realtime(), channel, params)` from `kitr/realtime/react` and events update the query cache via `effects`.
-- Switch transports in `config/realtime.ts`: `socket.io` (rooms, adapters; client from `kitr/realtime/socket.io`) or `sse` (plain HTTP, no upgrade; server from `kitr/realtime/sse/server`).
+- Channels are defined once in `app/channels/*.ts` with `defineChannel` and served by `.ws(path, { channels })` (or `.sse`) on the server route table (`server/routes.ts`, methods from `@kitr/realtime/routes`). The server emits with `app.container.use('realtime').use(channel, params).emit(event, data)` (`{ app }` is on every HttpContext and job); components subscribe with `useChannel(realtime(), channel, params)` from `@kitr/realtime/react` and events update the query cache via `effects`.
+- Switch transports in `config/realtime.ts`: `socket.io` (rooms, adapters; client from `@kitr/realtime/socket.io`) or `sse` (plain HTTP, no upgrade; server from `@kitr/realtime/sse/server`).
 
 ## kitr: testing
 
-- `pnpm test` runs Vitest. Components: `renderWithKitr(<X />, { app, queryData })` from `kitr/testing/react`. APIs: `createTestClient(server).get('/api/x')`. No running backend is needed.
+- `pnpm test` runs Vitest. Components: `renderWithKitr(<X />, { app, queryData })` from `@kitr/testing/react`. APIs: `createTestClient(server).get('/api/x')`. No running backend is needed.
 
 ## kitr: platform api
 

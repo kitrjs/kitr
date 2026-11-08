@@ -33,7 +33,7 @@ What `kitr add realtime` sets up:
 | File | What it is |
 | --- | --- |
 | `config/realtime.ts` | The transport (`websocket`) and the path (`/api/ws`) |
-| `server/routes.ts` | Gains `realtime` from `kitr/realtime/routes` and a `.ws('/api/ws', { channels })` link |
+| `server/routes.ts` | Gains `realtime` from `@kitr/realtime/routes` and a `.ws('/api/ws', { channels })` link |
 | `app/realtime.ts` | `realtime()`: one connection per browser tab, opened on first use |
 | `app/channels/example.ts` | A sample channel to copy |
 
@@ -45,7 +45,7 @@ A channel has a name, the params a subscriber picks, and the events the server c
 
 ```ts
 // app/channels/orders.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const orderSchema = z.object({
@@ -95,8 +95,8 @@ Add the channel to the socket link on the server route table:
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
 import { ordersChannel } from '#app/channels/orders'
 // ...controllers
 
@@ -113,7 +113,7 @@ export const routes = defineRoutes([api, realtime], (router) =>
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { routes } from './routes'
@@ -128,7 +128,7 @@ export const server = createServer({ providers: rc.providers, config, routes })
 
 ```ts
 // server/controllers/orders_controller.ts
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { type Order, ordersChannel } from '#app/channels/orders'
 
@@ -159,7 +159,7 @@ The same call works in a server action, a scheduled task or a webhook handler: a
 
 ```tsx
 // app/features/orders/live-orders.tsx
-import { useChannel } from 'kitr/realtime/react'
+import { useChannel } from '@kitr/realtime/react'
 import { ordersChannel } from '#app/channels/orders'
 import { realtime } from '#app/realtime'
 
@@ -177,7 +177,7 @@ Render `<LiveOrders teamId="team_acme" />` on the orders page. The socket only e
 
 ```ts
 // app/routes.ts
-import { ssrRoute } from 'kitr/seo'
+import { ssrRoute } from '@kitr/seo'
 import { ordersQuery } from '#app/features/orders/queries'
 
 r.page('/orders', {
@@ -189,7 +189,7 @@ r.page('/orders', {
 
 ```tsx
 // app/pages/orders.tsx
-import { useSuspenseQuery } from 'kitr/query'
+import { useSuspenseQuery } from '@kitr/query'
 import { LiveOrders } from '#app/features/orders/live-orders'
 import { ordersQuery } from '#app/features/orders/queries'
 
@@ -228,7 +228,7 @@ Both windows change "Ada: paid" to "Ada: shipped" within a moment. The server se
 
 ```tsx
 // app/components/connection-badge.tsx
-import { useRealtimeStatus } from 'kitr/realtime/react'
+import { useRealtimeStatus } from '@kitr/realtime/react'
 import { realtime } from '#app/realtime'
 
 export function ConnectionBadge() {
@@ -274,7 +274,7 @@ Then the channel's `authorize(params, ctx)` decides who may subscribe to which t
 
 ```ts
 // app/channels/orders.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 // ...orderSchema as before
@@ -307,7 +307,7 @@ Switching to SSE:
 
 ```ts
 // config/realtime.ts
-import { defineConfig } from 'kitr/realtime'
+import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   transport: 'sse',
@@ -332,7 +332,7 @@ The effects are plain functions, so the most useful test needs no socket at all:
 
 ```ts
 // app/channels/orders.test.ts
-import { channel, type SocketTransport } from 'kitr/realtime'
+import { channel, type SocketTransport } from '@kitr/realtime'
 import { expect, it } from 'vitest'
 import { ordersChannel } from './orders'
 

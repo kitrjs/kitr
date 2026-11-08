@@ -9,7 +9,7 @@ export const shieldProvider = defineProvider({
     const config = app.config.get('shield', {} as ShieldConfig)
     if (config.cors && config.cors.origin === '*' && config.cors.credentials)
       throw new Error(
-        '[kitr/shield] cors.origin "*" cannot be combined with credentials; list the origins instead.',
+        '[@kitr/shield] cors.origin "*" cannot be combined with credentials; list the origins instead.',
       )
   },
 })

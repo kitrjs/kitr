@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/secure-storage, with its signature.
+description: Every export of @kitr/secure-storage, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/secure-storage`, `kitr/secure-storage/react`, `kitr/secure-storage/provider`, read from the published type definitions. The [guide](/packages/secure-storage/guide) shows them in use.
+Every export of `@kitr/secure-storage`, `@kitr/secure-storage/react`, `@kitr/secure-storage/provider`, read from the published type definitions. The [guide](/packages/secure-storage/guide) shows them in use.
 
-## kitr/secure-storage
+## @kitr/secure-storage
 
 ### createMemorySecureStorageDriver
 
@@ -158,7 +158,7 @@ interface SecureStorageDriver {
 
 What a vault implements. Keys arrive with the service's prefix already added.
 
-## kitr/secure-storage/react
+## @kitr/secure-storage/react
 
 ### useSecureItem
 
@@ -184,7 +184,7 @@ function useSecureStorage(): SecureStorage;
 
 The app's `secureStorage` service in a component.
 
-## kitr/secure-storage/provider
+## @kitr/secure-storage/provider
 
 ### secureStorageProvider
 

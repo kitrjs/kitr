@@ -66,7 +66,7 @@ const terminal = [
       ['ok', '✓ kitrrc.ts matches package.json'],
       ['ok', '✓ every provider resolves'],
       ['warn', '! app/routes/index.tsx imports @tanstack/react-query directly'],
-      ['dim', '  use kitr/query instead'],
+      ['dim', '  use @kitr/query instead'],
     ],
   },
   {
@@ -74,8 +74,8 @@ const terminal = [
     cmd: 'kitr eject all',
     out: [
       ['dim', 'To remove kitr, rewrite these imports:'],
-      ['info', '  kitr/router → @tanstack/react-router'],
-      ['info', '  kitr/query  → @tanstack/react-query'],
+      ['info', '  @kitr/router → @tanstack/react-router'],
+      ['info', '  @kitr/query  → @tanstack/react-query'],
       ['dim', '  …and 10 more'],
     ],
   },
@@ -84,7 +84,7 @@ const terminal = [
 const ideas = [
   {
     title: 'Re-export, never re-implement',
-    text: 'kitr/router is TanStack Router with a few helpers. Their docs still apply, and leaving kitr is a find-and-replace of imports.',
+    text: '@kitr/router is TanStack Router with a few helpers. Their docs still apply, and leaving kitr is a find-and-replace of imports.',
   },
   {
     title: 'One data contract',

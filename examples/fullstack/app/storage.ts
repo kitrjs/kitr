@@ -1,8 +1,8 @@
-import { defineCookie, defineStorage } from 'kitr/storage'
+import { defineCookie, defineStorage } from '@kitr/storage'
 
 /**
  * Every persisted value, in one file, typed. Components read them with
- * `useStorage(item)` / `useCookie(item)` from kitr/storage/react; plain code with `item.get()`.
+ * `useStorage(item)` / `useCookie(item)` from @kitr/storage/react; plain code with `item.get()`.
  */
 export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
 

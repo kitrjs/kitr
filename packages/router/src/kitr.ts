@@ -4,7 +4,7 @@ import { definePackage, naming } from '@kitr/core/package'
 function documentFile(cssImports: string[]): string {
   const imports = cssImports.map((c, i) => `import css${i} from '${c}?url'`).join('\n')
   const links = cssImports.map((_, i) => `{ rel: 'stylesheet', href: css${i} }`).join(', ')
-  return `import { HeadContent, Link, Outlet, Scripts } from 'kitr/router'
+  return `import { HeadContent, Link, Outlet, Scripts } from '@kitr/router'
 ${imports}
 
 /** Head tags for every page. Pages add their own through \`head\` in their route options. */
@@ -38,7 +38,7 @@ export function RootDocument() {
 
 /** `app/routes.ts`: the route table with the first pages. */
 const routesFile = `import { defineRoutes } from 'kitr/app'
-import router from 'kitr/router/routes'
+import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 
 /**
@@ -56,7 +56,7 @@ export type AppRoutes = typeof routes.$types
 `
 
 /** `app/router.tsx`: the TanStack router built from the table, registered for typed links. */
-const routerFile = `import { createKitrRouter } from 'kitr/router'
+const routerFile = `import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { routes } from './routes'
 
@@ -92,14 +92,14 @@ app.boot().then(() => {
 
 /**
  * `kitr add router`: pages on the kitr route table (`.root`, `.page`, `.layout` from
- * `kitr/router/routes`), compiled to a TanStack Router tree and rendered by TanStack Start on
+ * `@kitr/router/routes`), compiled to a TanStack Router tree and rendered by TanStack Start on
  * every UI platform. No route files, no generated tree: `app/routes.ts` is the whole router.
  */
 export default definePackage({
   name: 'router',
   requires: ['react'],
   client: true,
-  routes: 'kitr/router/routes',
+  routes: '@kitr/router/routes',
   add(ctx) {
     ctx.deps.add(
       '@tanstack/react-router',
@@ -107,10 +107,10 @@ export default definePackage({
       { name: '@tanstack/router-plugin', dev: true },
       { name: '@tanstack/react-router-devtools', dev: true },
     )
-    ctx.write('app/document.tsx', documentFile(['kitr/theme/styles.css']))
+    ctx.write('app/document.tsx', documentFile(['@kitr/theme/styles.css']))
     ctx.write('app/routes.ts', routesFile)
     // Idempotent: a table another package created first gets the pages methods added to its list.
-    ctx.routes.extend('kitr/router/routes')
+    ctx.routes.extend('@kitr/router/routes')
     ctx.write('app/pages/home.tsx', homePage(ctx.pkg.name ?? 'app'))
     ctx.write(
       'app/pages/about.tsx',
@@ -120,7 +120,7 @@ export default definePackage({
     ctx.write('app/client.tsx', clientFile)
     ctx.agents.add(
       'router',
-      `- Routes are code: \`app/routes.ts\` is one \`defineRoutes([router], (r) => r.root(...).page(...))\` chain. \`.page(path, { lazy })\` adds a page, \`.group(prefix, ...)\` nests paths, \`.layout(id, options, ...)\` wraps pages without a path segment. \`kitr make:page <path>\` writes the page file and appends the link.\n- Page components live in \`app/pages/\` and export a default component (or \`definePage({ component, pendingComponent })\`). Loaders, \`beforeLoad\` and \`head\` go on the route options in \`app/routes.ts\`; read loader data with \`getRouteApi('<path>')\` from \`kitr/router\`.\n- \`app/document.tsx\` renders the HTML document: TanStack Start streams it on the server (web \`ssr\`), prerenders it (\`static\`) or ships one shell (\`spa\`, desktop, mobile). Keep it platform-neutral.\n- There is no \`app/routes/\` directory and no \`routeTree.gen.ts\`; \`kitr/vite\` tells Start the tree comes from \`app/routes.ts\`.`,
+      `- Routes are code: \`app/routes.ts\` is one \`defineRoutes([router], (r) => r.root(...).page(...))\` chain. \`.page(path, { lazy })\` adds a page, \`.group(prefix, ...)\` nests paths, \`.layout(id, options, ...)\` wraps pages without a path segment. \`kitr make:page <path>\` writes the page file and appends the link.\n- Page components live in \`app/pages/\` and export a default component (or \`definePage({ component, pendingComponent })\`). Loaders, \`beforeLoad\` and \`head\` go on the route options in \`app/routes.ts\`; read loader data with \`getRouteApi('<path>')\` from \`@kitr/router\`.\n- \`app/document.tsx\` renders the HTML document: TanStack Start streams it on the server (web \`ssr\`), prerenders it (\`static\`) or ships one shell (\`spa\`, desktop, mobile). Keep it platform-neutral.\n- There is no \`app/routes/\` directory and no \`routeTree.gen.ts\`; \`@kitr/vite\` tells Start the tree comes from \`app/routes.ts\`.`,
     )
   },
   remove(ctx) {
@@ -130,7 +130,7 @@ export default definePackage({
       '@tanstack/router-plugin',
       '@tanstack/react-router-devtools',
     )
-    ctx.routes.remove('kitr/router/routes')
+    ctx.routes.remove('@kitr/router/routes')
     const table = ctx.rc.directories.routeTable ?? `${ctx.rc.directories.app ?? 'app'}/routes.ts`
     if (ctx.exists(table) && /\.(root|page|layout)\(/.test(ctx.read(table)))
       ctx.log.warn(
@@ -171,7 +171,7 @@ export default definePackage({
         path,
         name,
       }) => `// Route options (loader, beforeLoad, head) go on the \`.page('${path}', ...)\` link in app/routes.ts.
-// Read what the loader returned: \`const route = getRouteApi('${path}')\` from 'kitr/router', then \`route.useLoaderData()\`.
+// Read what the loader returned: \`const route = getRouteApi('${path}')\` from '@kitr/router', then \`route.useLoaderData()\`.
 
 export default function ${naming.pascal(name)}Page() {
   return (
@@ -189,8 +189,8 @@ export default function ${naming.pascal(name)}Page() {
       },
     },
   },
-  wraps: { '@tanstack/react-router': 'kitr/router' },
-  eject: { 'kitr/router': '@tanstack/react-router (+ your own context/guards)' },
+  wraps: { '@tanstack/react-router': '@kitr/router' },
+  eject: { '@kitr/router': '@tanstack/react-router (+ your own context/guards)' },
   vite: { start: true, optimizeDeps: ['@tanstack/react-router', '@tanstack/react-start'] },
 })
 

@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/native, with its signature.
+description: Every export of @kitr/native, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/native`, `kitr/native/react`, `kitr/native/provider`, read from the published type definitions. The [guide](/packages/native/guide) shows them in use.
+Every export of `@kitr/native`, `@kitr/native/react`, `@kitr/native/provider`, read from the published type definitions. The [guide](/packages/native/guide) shows them in use.
 
-## kitr/native
+## @kitr/native
 
 ### createMemoryNativeDrivers
 
@@ -331,7 +331,7 @@ type NativeCapability = 'clipboard' | 'share' | 'haptics' | 'geolocation' | 'cam
 
 The name of one of the six capabilities, as used in `supported()` and `app.drivers.register()`.
 
-## kitr/native/react
+## @kitr/native/react
 
 ### useClipboard
 
@@ -381,7 +381,7 @@ function useShare(): {
 
 `const { share, canShare } = useShare()`: the share sheet, with a flag to hide the button where there is none.
 
-## kitr/native/provider
+## @kitr/native/provider
 
 ### nativeProvider
 

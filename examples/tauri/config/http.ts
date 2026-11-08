@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({

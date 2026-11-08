@@ -25,8 +25,8 @@ beforeEach(() => {
   writeFileSync(
     join(dir, 'kitrrc.ts'),
     `import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
-import { server } from 'kitr/server'
+import { web } from '@kitr/web'
+import { server } from '@kitr/server'
 export default defineKitrConfig({
   packages: [],
   providers: [],

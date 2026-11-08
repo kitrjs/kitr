@@ -1,5 +1,5 @@
 import { HugeiconsIcon, type HugeiconsIconProps, type IconSvgElement } from '@hugeicons/react'
-import { cn } from 'kitr/tailwind'
+import { cn } from '@kitr/tailwind'
 
 export type { IconSvgElement }
 

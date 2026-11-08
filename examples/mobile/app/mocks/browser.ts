@@ -1,4 +1,4 @@
-import { setupBrowserMocks } from 'kitr/mocks'
+import { setupBrowserMocks } from '@kitr/mocks'
 import { handlers } from './handlers'
 
 /**

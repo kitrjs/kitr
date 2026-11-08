@@ -1,5 +1,5 @@
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons'
-import { definePage, getRouteApi, Link } from 'kitr/router'
+import { definePage, getRouteApi, Link } from '@kitr/router'
 import { Icon } from '#components/ui/icon'
 
 const route = getRouteApi('/blog/$slug')

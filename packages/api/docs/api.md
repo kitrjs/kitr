@@ -1,6 +1,6 @@
 ---
 title: API reference
-description: Every export of kitr/api and kitr/api/client.
+description: Every export of @kitr/api and @kitr/api/client.
 order: 2
 ---
 
@@ -84,7 +84,7 @@ defineConfig({
 
 Read by `kitr api:sync`.
 
-## kitr/api/client
+## @kitr/api/client
 
 ```ts
 createApiClient<AppRoutes>({

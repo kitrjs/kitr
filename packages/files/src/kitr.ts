@@ -9,11 +9,11 @@ export default definePackage({
     ctx.provider.add('@kitr/files/provider')
     ctx.config(
       'files',
-      `import { defineConfig } from 'kitr/files'\n\nexport default defineConfig({\n  // Filters added to every open/save dialog.\n  filters: [],\n})\n`,
+      `import { defineConfig } from '@kitr/files'\n\nexport default defineConfig({\n  // Filters added to every open/save dialog.\n  filters: [],\n})\n`,
     )
     ctx.agents.add(
       'files',
-      `- Open, pick and save files with \`useFileDialogs()\` from \`kitr/files/react\` (or \`app.container.use('files')\`). Never build \`<input type="file">\` or download links by hand: the service shows native dialogs on desktop/mobile and falls back on the web. A cancelled dialog resolves to \`[]\`/\`null\`.`,
+      `- Open, pick and save files with \`useFileDialogs()\` from \`@kitr/files/react\` (or \`app.container.use('files')\`). Never build \`<input type="file">\` or download links by hand: the service shows native dialogs on desktop/mobile and falls back on the web. A cancelled dialog resolves to \`[]\`/\`null\`.`,
     )
   },
   remove(ctx) {

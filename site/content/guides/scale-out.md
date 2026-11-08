@@ -10,7 +10,7 @@ preview: true
 # Run on more than one instance
 
 > **Preview**
-> The background jobs (`kitr/jobs`) and file uploads (`kitr/uploads`) steps use packages that are not published to npm yet. Try them from a kitr checkout with `KITR_PREVIEW=1`; every other step uses released packages.
+> The background jobs (`@kitr/jobs`) and file uploads (`@kitr/uploads`) steps use packages that are not published to npm yet. Try them from a kitr checkout with `KITR_PREVIEW=1`; every other step uses released packages.
 
 One instance is the right way to start, and a kitr app runs on one without any of this. The day you add a second, for uptime during deploys or for load, everything a package kept in the memory of its process starts to disagree: Ada's live update reaches only the clients on her instance, a rate limit lets a client through three times, a cached report cleared on one instance is still served by the other, a nightly job runs once per instance, and an upload saved to one disk is a 404 on the next request.
 
@@ -47,7 +47,7 @@ Every package that keeps state starts with a store in memory, and each has a sha
 | [Realtime](/packages/realtime) | Which clients watch which topic | `createRedisRealtimeAdapter` | `adapter` on `.ws()` and `.sse()` |
 | [Cache](/packages/cache) | Cached entries and their tags | `createRedisCacheDriver` | `driver` in `config/cache.ts` |
 | [Shield](/packages/shield) | Rate-limit counters | `createRedisRateLimitStore` | `rateLimit.store` in `config/shield.ts` |
-| [API](/packages/api) | Counters of a route's `rateLimit()` | `createRedisRateLimitStore` from `kitr/shield` | `store` on `rateLimit()` |
+| [API](/packages/api) | Counters of a route's `rateLimit()` | `createRedisRateLimitStore` from `@kitr/shield` | `store` on `rateLimit()` |
 | [Jobs](/packages/jobs) | The queue, and which worker runs a schedule | `createRedisJobsDriver` | `driver` in `config/jobs.ts` |
 | [Uploads](/packages/uploads) | Files on this machine's disk | `createUnstorageUploadsDriver` | `driver` in `config/uploads.ts` |
 
@@ -95,7 +95,7 @@ Grace's projects page subscribes to `teamProjectsChannel`, and Ada's action emit
 
 ```ts
 // server/realtime_adapter.ts
-import { createRedisRealtimeAdapter } from 'kitr/realtime/server'
+import { createRedisRealtimeAdapter } from '@kitr/realtime/server'
 import { redis } from '#server/redis'
 
 export const realtimeAdapter = createRedisRealtimeAdapter(redis, { prefix: 'acme-projects:rt:' })
@@ -128,7 +128,7 @@ A cached report on instance A is a miss on instance B, and `invalidateTags()` on
 
 ```ts
 // config/cache.ts
-import { createRedisCacheDriver, defineConfig } from 'kitr/cache'
+import { createRedisCacheDriver, defineConfig } from '@kitr/cache'
 import { redis } from '#server/redis'
 
 export default defineConfig({
@@ -146,7 +146,7 @@ In development, keep the memory driver by choosing on the environment:
 
 ```ts
 // config/cache.ts
-import { createMemoryCacheDriver, createRedisCacheDriver, defineConfig } from 'kitr/cache'
+import { createMemoryCacheDriver, createRedisCacheDriver, defineConfig } from '@kitr/cache'
 import { redis } from '#server/redis'
 
 export default defineConfig({
@@ -161,7 +161,7 @@ With three instances, each counts on its own, so a client gets three times the l
 
 ```ts
 // config/shield.ts
-import { createRedisRateLimitStore, defineConfig } from 'kitr/shield'
+import { createRedisRateLimitStore, defineConfig } from '@kitr/shield'
 import { redis } from '#server/redis'
 
 export default defineConfig({
@@ -184,7 +184,7 @@ With the memory driver, a job dispatched on instance A runs on A or not at all, 
 
 ```ts
 // config/jobs.ts
-import { createRedisJobsDriver, defineConfig } from 'kitr/jobs'
+import { createRedisJobsDriver, defineConfig } from '@kitr/jobs'
 import { redis } from '#server/redis'
 import { generateInvoice } from '#server/jobs/generate_invoice'
 import { pruneSessions } from '#server/jobs/prune_sessions'
@@ -209,8 +209,8 @@ pnpm add unstorage
 
 ```ts
 // config/uploads.ts
-import { defineConfig } from 'kitr/uploads'
-import { createUnstorageUploadsDriver } from 'kitr/uploads/server'
+import { defineConfig } from '@kitr/uploads'
+import { createUnstorageUploadsDriver } from '@kitr/uploads/server'
 import { createStorage } from 'unstorage'
 import s3Driver from 'unstorage/drivers/s3'
 

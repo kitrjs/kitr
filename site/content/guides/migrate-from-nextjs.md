@@ -37,8 +37,8 @@ Decide what you are migrating for before you start. kitr fits when you want type
 | `middleware.ts` | `beforeLoad` on a layout route, and server middleware | Page guards and API middleware are separate. |
 | `export const metadata`, `generateMetadata` | `head: () => seo({...})` from [SEO](/packages/seo) | `head` can read loader data. |
 | `generateStaticParams` | `web({ mode: 'static' })` with prerendering | Every linked route is rendered at build time. |
-| `next/link` | `Link` from `kitr/router` | `href` becomes `to` plus `params`. |
-| `useRouter().push` | `useNavigate()` from `kitr/router` | |
+| `next/link` | `Link` from `@kitr/router` | `href` becomes `to` plus `params`. |
+| `useRouter().push` | `useNavigate()` from `@kitr/router` | |
 | `useSearchParams` | `validateSearch` on the page link plus `getRouteApi(path).useSearch()` | Search params are parsed and typed. |
 | `NEXT_PUBLIC_*` | `VITE_*`, declared in `app/env.ts` | |
 | `next.config.js` | `kitrrc.ts`, `vite.config.ts` and `config/*.ts` | |
@@ -70,7 +70,7 @@ Then replace `@/components/` with `#components/` across the copied files with yo
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Link, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Link, Outlet, Scripts } from '@kitr/router'
 import appCss from '#app/styles/app.css?url'
 
 export function head() {
@@ -102,7 +102,7 @@ export function RootDocument() {
 ```ts
 // app/routes.ts
 import { defineRoutes } from 'kitr/app'
-import router from 'kitr/router/routes'
+import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 
 export const routes = defineRoutes([router], (r) =>
@@ -134,7 +134,7 @@ In kitr, the query becomes a server action, and the page loads it in its `loader
 
 ```ts
 // app/actions/projects/list.ts
-import { defineQuery } from 'kitr/actions'
+import { defineQuery } from '@kitr/actions'
 import { db } from '#server/db'
 
 export const listProjects = defineQuery('projects.list', {
@@ -144,8 +144,8 @@ export const listProjects = defineQuery('projects.list', {
 
 ```ts
 // app/routes.ts
-import { queryOptions } from 'kitr/query'
-import { seo } from 'kitr/seo'
+import { queryOptions } from '@kitr/query'
+import { seo } from '@kitr/seo'
 
 r.page('/projects', {
   loader: ({ context }) => context.queryClient.ensureQueryData(queryOptions('projects.list')),
@@ -156,7 +156,7 @@ r.page('/projects', {
 
 ```tsx
 // app/pages/projects/index.tsx
-import { useSuspenseQuery } from 'kitr/query'
+import { useSuspenseQuery } from '@kitr/query'
 
 export default function ProjectsPage() {
   const { data: projects } = useSuspenseQuery('projects.list')
@@ -178,9 +178,9 @@ Keep the database client you had: Prisma, Drizzle, a plain driver. Move `lib/db.
 
 ```ts
 // app/routes.ts
-import { queryOptions } from 'kitr/query'
-import { notFound } from 'kitr/router'
-import { seo } from 'kitr/seo'
+import { queryOptions } from '@kitr/query'
+import { notFound } from '@kitr/router'
+import { seo } from '@kitr/seo'
 
 r.page('/projects/$id', {
   loader: async ({ context, params }) => {
@@ -195,8 +195,8 @@ r.page('/projects/$id', {
 
 ```tsx
 // app/pages/projects/id.tsx
-import { useSuspenseQuery } from 'kitr/query'
-import { getRouteApi } from 'kitr/router'
+import { useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/projects/$id')
 
@@ -209,7 +209,7 @@ export default function ProjectPage() {
 
 ```ts
 // app/actions/projects/show.ts
-import { defineQuery } from 'kitr/actions'
+import { defineQuery } from '@kitr/actions'
 import { z } from 'zod'
 import { db } from '#server/db'
 
@@ -253,7 +253,7 @@ In kitr it is a mutation with a schema, and the cache refresh is declared next t
 
 ```ts
 // app/actions/projects/create.ts
-import { defineMutation } from 'kitr/actions'
+import { defineMutation } from '@kitr/actions'
 import { z } from 'zod'
 import { db } from '#server/db'
 
@@ -266,8 +266,8 @@ export const createProject = defineMutation('projects.create', {
 
 ```tsx
 // app/features/projects/new-project-form.tsx
-import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
-import { useMutation } from 'kitr/query'
+import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
+import { useMutation } from '@kitr/query'
 import { z } from 'zod'
 
 const schema = z.object({ name: z.string().trim().min(2, 'Give the project a name of at least two letters') })
@@ -322,7 +322,7 @@ export default class ProjectsController {
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
+import api from '@kitr/api/routes'
 import ProjectsController from '#server/controllers/projects_controller'
 
 export const routes = defineRoutes([api], (router) =>
@@ -342,7 +342,7 @@ Pages: guard a layout route in `beforeLoad`. Every route under it inherits the g
 
 ```ts
 // app/routes.ts
-import { requireAuth } from 'kitr/router'
+import { requireAuth } from '@kitr/router'
 
 r.layout('_app', {
   beforeLoad: requireAuth(),
@@ -351,7 +351,7 @@ r.layout('_app', {
 
 Move the guarded `.page()` links inside the layout's callback: `app.page('/projects', ...)` still answers `/projects`, because `_app` adds no URL segment. An anonymous visitor goes to `/sign-in?redirect=/projects`.
 
-The API and actions: use server middleware. `authMiddleware` from `kitr/auth/server` on API route groups, and `requireSession` from `kitr/actions` on actions. [Add sign-in, end to end](/guides/authentication) wires both to one session.
+The API and actions: use server middleware. `authMiddleware` from `@kitr/auth/server` on API route groups, and `requireSession` from `@kitr/actions` on actions. [Add sign-in, end to end](/guides/authentication) wires both to one session.
 
 Redirects and rewrites that `next.config.js` or middleware did for SEO belong in the host (nginx, your CDN) or in a `beforeLoad` that throws `redirect({ to })`.
 

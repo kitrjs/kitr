@@ -16,11 +16,11 @@ export default definePackage({
     )
     ctx.config(
       'http',
-      `import { defineConfig } from 'kitr/http'\nimport { env } from '#app/env'\n\nexport default defineConfig({\n  baseUrl: env.VITE_API_URL,\n  // getToken: () => auth.getToken(), refresh: () => auth.refresh(),\n})\n`,
+      `import { defineConfig } from '@kitr/http'\nimport { env } from '#app/env'\n\nexport default defineConfig({\n  baseUrl: env.VITE_API_URL,\n  // getToken: () => auth.getToken(), refresh: () => auth.refresh(),\n})\n`,
     )
     ctx.agents.add(
       'http',
-      `- The HTTP client is \`app.container.use('http')\` (a ky instance). Wrap endpoints with \`httpQuery\`/\`httpMutation\` from \`kitr/http\` and pass them to \`queryFrom\`/\`mutationFrom\`.\n- Errors are already \`KitrError\`; a 422 with \`fieldErrors\` maps onto form fields through \`<Form>\`.`,
+      `- The HTTP client is \`app.container.use('http')\` (a ky instance). Wrap endpoints with \`httpQuery\`/\`httpMutation\` from \`@kitr/http\` and pass them to \`queryFrom\`/\`mutationFrom\`.\n- Errors are already \`KitrError\`; a 422 with \`fieldErrors\` maps onto form fields through \`<Form>\`.`,
     )
   },
   remove(ctx) {
@@ -35,8 +35,8 @@ export default definePackage({
         file: `${project.rc.directories.app ?? 'app'}/features/${naming.snake(name)}/queries.ts`,
       }),
       stub: ({ name }) => `import { createKeys } from 'kitr/app'
-import { mutationFrom, queryFrom } from 'kitr/query'
-import { httpMutation, httpQuery } from 'kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
+import { httpMutation, httpQuery } from '@kitr/http'
 import { app } from '#app/app'
 
 // A function: this file loads with the route table, before the app has booted.
@@ -66,7 +66,7 @@ export const update${naming.pascal(name)} = mutationFrom(
 `,
     },
   },
-  wraps: { ky: 'kitr/http' },
-  eject: { 'kitr/http': 'ky' },
+  wraps: { ky: '@kitr/http' },
+  eject: { '@kitr/http': 'ky' },
   vite: { optimizeDeps: ['ky'] },
 })

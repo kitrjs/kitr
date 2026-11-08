@@ -231,13 +231,13 @@ export function tailwindChecks(ctx: ProjectContext): Finding[] {
     out.push({
       level: 'warn',
       message: `${entry} does not import kitr's preset, so utilities like bg-background have no tokens`,
-      fix: `Add @import 'kitr/tailwind/preset.css'; after Tailwind, or set preset: false`,
+      fix: `Add @import '@kitr/tailwind/preset.css'; after Tailwind, or set preset: false`,
     })
   if (!preset && hasPreset)
     out.push({
       level: 'warn',
       message: `config/tailwind.ts sets preset: false, but ${entry} still imports it`,
-      fix: `Remove the kitr/tailwind/preset.css import, or set preset: true`,
+      fix: `Remove the @kitr/tailwind/preset.css import, or set preset: true`,
     })
   return out
 }
@@ -290,10 +290,9 @@ export async function platformChecks(ctx: ProjectContext): Promise<Finding[]> {
   return out
 }
 
-/** `kitr/web` → `@kitr/web`; `@acme/shell` or `@acme/shell/platform` → `@acme/shell`; a relative path → none. */
+/** `@kitr/web` or `@kitr/web/client` → `@kitr/web`; `@acme/shell` or `@acme/shell/platform` → `@acme/shell`; a relative path → none. */
 function platformPackage(source: string | undefined): string | undefined {
   if (!source || source.startsWith('.') || source.startsWith('#')) return undefined
-  if (source.startsWith('kitr/')) return `@kitr/${source.split('/')[1]}`
   return source.startsWith('@') ? source.split('/').slice(0, 2).join('/') : source.split('/')[0]
 }
 

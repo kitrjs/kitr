@@ -72,7 +72,7 @@ export function createSseServer(options: SseServerOptions): SseServer {
   const adapter = options.adapter ?? createMemoryRealtimeAdapter()
   const connections = new Map<string, Connection>()
   const encoder = new TextEncoder()
-  const report = (error: unknown) => console.error('[kitr/realtime]', error)
+  const report = (error: unknown) => console.error('[@kitr/realtime]', error)
 
   const frame = (data: string, event?: string) =>
     `${event ? `event: ${event}\n` : ''}data: ${data}\n\n`

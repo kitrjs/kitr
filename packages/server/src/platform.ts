@@ -99,7 +99,7 @@ export type ServerRoutes = typeof routes.$types
       const routesSpec = react ? '#server/routes' : relativeImport(options.entry, table)
       ctx.write(
         options.entry,
-        `import { createServer } from 'kitr/server'
+        `import { createServer } from '@kitr/server'
 import { routes } from '${routesSpec}'
 import { config } from '../config'
 import rc from '../kitrrc'

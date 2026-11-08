@@ -290,11 +290,11 @@ describe('setup module', () => {
       'config animation true',
       'agents animation',
     ])
-    expect(animationConfig).toContain("import { defineConfig, transitions } from 'kitr/animation'")
+    expect(animationConfig).toContain("import { defineConfig, transitions } from '@kitr/animation'")
     expect(animation.requires).toEqual(['react'])
     expect(animation.wraps).toEqual({
-      'motion/react': 'kitr/animation',
-      'framer-motion': 'kitr/animation',
+      'motion/react': '@kitr/animation',
+      'framer-motion': '@kitr/animation',
     })
   })
 })

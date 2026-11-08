@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/realtime, with its signature.
+description: Every export of @kitr/realtime, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/realtime`, `kitr/realtime/client`, `kitr/realtime/routes`, `kitr/realtime/server`, `kitr/realtime/socket.io`, `kitr/realtime/socket.io/server`, `kitr/realtime/sse`, `kitr/realtime/sse/server`, `kitr/realtime/react`, read from the published type definitions. The [guide](/packages/realtime/guide) shows them in use.
+Every export of `@kitr/realtime`, `@kitr/realtime/client`, `@kitr/realtime/routes`, `@kitr/realtime/server`, `@kitr/realtime/socket.io`, `@kitr/realtime/socket.io/server`, `@kitr/realtime/sse`, `@kitr/realtime/sse/server`, `@kitr/realtime/react`, read from the published type definitions. The [guide](/packages/realtime/guide) shows them in use.
 
-## kitr/realtime
+## @kitr/realtime
 
 ### channel
 
@@ -26,7 +26,7 @@ function createRealtimeClient(config?: RealtimeConfig): SocketTransport;
 ```
 
 Creates the client transport `config/realtime.ts` names: websocket (default) or sse here; socket.io loads its
-client from `kitr/realtime/socket.io` so the dependency stays optional.
+client from `@kitr/realtime/socket.io` so the dependency stays optional.
 
 ```ts
 let transport: SocketTransport | undefined
@@ -162,7 +162,7 @@ One event a channel carries: an optional payload schema and the cache effects it
 
 ```ts
 interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
+  /** A subscription contract for `useSubscription` (@kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
@@ -375,7 +375,7 @@ type SocketStatus = 'connecting' | 'open' | 'closed';
 
 The connection state a transport reports: connecting, open or closed.
 
-## kitr/realtime/client
+## @kitr/realtime/client
 
 ### channel
 
@@ -407,7 +407,7 @@ The native WebSocket transport (same as `createSocketClient`).
 
 ```ts
 interface ChannelHandle<C extends ChannelDefinition<any, any>> {
-  /** A subscription contract for `useSubscription` (kitr/query) or `subscriptionFrom`. */
+  /** A subscription contract for `useSubscription` (@kitr/query) or `subscriptionFrom`. */
   subscription(): SubscriptionContract<ChannelParams<C>, ChannelEventUnion<C>>;
   /** Send a client event up the channel. */
   send<E extends keyof C['events'] & string>(params: ChannelParams<C>, event: E, data: unknown): void;
@@ -488,7 +488,7 @@ type SocketStatus = 'connecting' | 'open' | 'closed';
 
 The connection state a transport reports: connecting, open or closed.
 
-## kitr/realtime/routes
+## @kitr/realtime/routes
 
 ### ws
 
@@ -513,7 +513,7 @@ The realtime extension: `.ws` and `.sse` on the route table, mounted by
 
 ```ts
 import { defineRoutes } from 'kitr/app'
-import ws from 'kitr/realtime/routes'
+import ws from '@kitr/realtime/routes'
 export const routes = defineRoutes([ws], (r) => r.ws('/ws', { channels: [chatChannel] }))
 ```
 
@@ -559,7 +559,7 @@ type MountedSockets = Record<string, SocketServer | SseServer>;
 
 What the `h3` target returns: the realtime servers by path.
 
-## kitr/realtime/server
+## @kitr/realtime/server
 
 ### createMemoryRealtimeAdapter
 
@@ -584,7 +584,7 @@ export const realtime = createRealtimeServer({ ...realtimeConfig, channels: [cha
 realtime.attach(server) // at realtimeConfig.path
 ```
 Socket.IO needs a Socket.IO `Server`, so it throws here: use `attachSocketIo` from
-`kitr/realtime/socket.io/server` instead.
+`@kitr/realtime/socket.io/server` instead.
 
 ### createRedisRealtimeAdapter
 
@@ -777,7 +777,7 @@ interface SocketServerOptions {
 
 Options for `createSocketServer`: the channels it serves and how it authenticates connections.
 
-## kitr/realtime/socket.io
+## @kitr/realtime/socket.io
 
 ### channel
 
@@ -796,8 +796,7 @@ function createSocketIoClient(options?: SocketIoClientOptions): SocketTransport 
 };
 ```
 
-Creates the same `SocketTransport` as kitr/realtime, over Socket.IO; `.socket` is the raw socket.io-client socket. Use it with `channel()`
-from kitr/realtime/socket.io; the channel definitions and `useSubscription` don't change.
+Creates the same `SocketTransport` as
 
 ### defineChannel
 
@@ -839,7 +838,7 @@ interface SocketIoClientOptions extends Partial<ManagerOptions & SocketOptions> 
 
 Options for `createSocketIoClient`: any socket.io-client option plus the server URL and an error handler.
 
-## kitr/realtime/socket.io/server
+## @kitr/realtime/socket.io/server
 
 ### attachSocketIo
 
@@ -887,7 +886,7 @@ interface SocketIoServerOptions {
 
 Options for `attachSocketIo`: the channels to serve, connection auth and an optional namespace.
 
-## kitr/realtime/sse
+## @kitr/realtime/sse
 
 ### createSseTransport
 
@@ -914,7 +913,7 @@ interface SseTransportOptions {
 
 Options for `createSseTransport`, the Server-Sent Events client.
 
-## kitr/realtime/sse/server
+## @kitr/realtime/sse/server
 
 ### createSseServer
 
@@ -973,7 +972,7 @@ interface SseServerOptions {
 
 Options for `createSseServer`: the channels to serve, stream auth and the keep-alive interval.
 
-## kitr/realtime/react
+## @kitr/realtime/react
 
 ### useChannel
 

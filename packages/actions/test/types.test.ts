@@ -13,7 +13,7 @@ const ctx = {
 describe('scanActions', () => {
   it('finds exported defineQuery and defineMutation calls, ignoring comments and strings', () => {
     const src = `
-import { defineMutation, defineQuery } from 'kitr/actions'
+import { defineMutation, defineQuery } from '@kitr/actions'
 // export const old = defineQuery('projects.old', { handler: () => 1 })
 /* export const older = defineMutation('projects.older', { handler: () => 1 }) */
 const note = "export const fake = defineQuery('nope'"

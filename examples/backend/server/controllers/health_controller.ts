@@ -1,4 +1,4 @@
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 
 export default class HealthController {
   async show({ requestId }: HttpContext) {

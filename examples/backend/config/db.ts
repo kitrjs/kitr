@@ -1,4 +1,4 @@
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 
 // Example with Drizzle + postgres.js: `pnpm add drizzle-orm postgres`
 // import { drizzle } from 'drizzle-orm/postgres-js'

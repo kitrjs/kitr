@@ -55,7 +55,7 @@
       "name": "data-table",
       "type": "registry:ui",
       "title": "Data table",
-      "description": "TanStack Table with sorting, pagination and URL-bound state via kitr/table.",
+      "description": "TanStack Table with sorting, pagination and URL-bound state via @kitr/table.",
       "registryDependencies": [
         "button",
         "icon"
@@ -84,7 +84,7 @@
       "name": "form",
       "type": "registry:ui",
       "title": "Form",
-      "description": "Styled FormField, FormMessage and SubmitButton over kitr/forms.",
+      "description": "Styled FormField, FormMessage and SubmitButton over @kitr/forms.",
       "registryDependencies": [
         "button",
         "input",
@@ -152,7 +152,7 @@
       "name": "sign-in-page",
       "type": "registry:page",
       "title": "Sign-in page",
-      "description": "A sign-in route using kitr/forms and the form components.",
+      "description": "A sign-in route using @kitr/forms and the form components.",
       "registryDependencies": [
         "form",
         "card",
@@ -173,7 +173,7 @@
       "name": "sonner",
       "type": "registry:ui",
       "title": "Toaster",
-      "description": "Toasts with sonner, themed by kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
+      "description": "Toasts with sonner, themed by @kitr/theme. Mount <Toaster /> once, call toast() anywhere.",
       "registryDependencies": [],
       "dependencies": [
         "sonner"
@@ -191,7 +191,7 @@
       "name": "theme-toggle",
       "type": "registry:ui",
       "title": "Theme toggle",
-      "description": "Light/dark toggle using kitr/theme's useTheme.",
+      "description": "Light/dark toggle using @kitr/theme's useTheme.",
       "registryDependencies": [
         "button",
         "icon"

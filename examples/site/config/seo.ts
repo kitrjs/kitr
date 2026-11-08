@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   ssr: true,

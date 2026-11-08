@@ -10,7 +10,7 @@ const files = (ctx: AddContext, name: string) => {
   write(
     ctx,
     'app/pages/home.tsx',
-    `import { isTauri, useTauriEvent } from 'kitr/tauri/client'
+    `import { isTauri, useTauriEvent } from '@kitr/tauri/client'
 import { useCallback, useState } from 'react'
 import { commands } from '#app/commands'
 import { Badge } from '#components/ui/badge'

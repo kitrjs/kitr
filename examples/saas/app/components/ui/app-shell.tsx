@@ -1,6 +1,6 @@
 import { Menu01Icon } from '@hugeicons/core-free-icons'
-import { Link } from 'kitr/router'
-import { cn } from 'kitr/tailwind'
+import { Link } from '@kitr/router'
+import { cn } from '@kitr/tailwind'
 import { type ReactNode, useState } from 'react'
 import { Button } from '#components/ui/button'
 import { Icon } from '#components/ui/icon'

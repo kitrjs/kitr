@@ -9,7 +9,7 @@ export default definePackage({
     ctx.provider.add('@kitr/native/provider')
     ctx.agents.add(
       'native',
-      `- Clipboard, share, haptics, geolocation, camera and biometrics come from \`useNative()\` / \`useClipboard()\` / \`useShare()\` / \`useGeolocation()\` in \`kitr/native/react\`. Check \`.supported\` (or \`canShare\`) before showing a button; calling an unsupported capability rejects with \`UnsupportedError\`.`,
+      `- Clipboard, share, haptics, geolocation, camera and biometrics come from \`useNative()\` / \`useClipboard()\` / \`useShare()\` / \`useGeolocation()\` in \`@kitr/native/react\`. Check \`.supported\` (or \`canShare\`) before showing a button; calling an unsupported capability rejects with \`UnsupportedError\`.`,
     )
   },
   remove(ctx) {

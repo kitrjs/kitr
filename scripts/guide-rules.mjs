@@ -113,8 +113,8 @@ for (const slug of [...guides].sort()) {
 
   const ph = src.match(PLACEHOLDERS)
   if (ph) problems.push(`placeholder name "${ph[0]}"`)
-  if (/from '@kitr\/(?!core|testing)[\w-]+/.test(src.replace(/^```json[\s\S]*?```/gm, '')))
-    problems.push("app code imports from '@kitr/<name>'; use the 'kitr/<name>' entry")
+  if (/from 'kitr\/(?!app'|env')[\w-]+/.test(src))
+    problems.push("app code imports from 'kitr/<name>'; packages are imported as '@kitr/<name>'")
 
   const href = src.match(/href="\/(?!packages\/|docs\/|guides\/)[^"]*"/)
   if (href) problems.push(`${href[0]} would be crawled as a site page; use <Link to> or a full URL`)

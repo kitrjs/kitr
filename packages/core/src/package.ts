@@ -221,7 +221,7 @@ export interface AddContext extends ProjectInfo {
     removeOption(name: string, from: string): void
   }
   /**
-   * Replace one side-effect import (`import 'kitr/theme/styles.css'`) with another in a file,
+   * Replace one side-effect import (`import '@kitr/theme/styles.css'`) with another in a file,
    * or add `to` after the first import when neither is present. Skipped when the file is missing.
    */
   replaceImport(file: string, from: string | undefined, to: string): void
@@ -290,7 +290,7 @@ export interface CommandLike {
 }
 
 /**
- * What a package needs from the Vite build, declared on its setup module and read by `kitr/vite`
+ * What a package needs from the Vite build, declared on its setup module and read by `@kitr/vite`
  * at config time, so the plugin knows no package by name.
  */
 export interface PackageViteNeeds {
@@ -309,9 +309,9 @@ export interface PackageViteNeeds {
 export interface PlatformPackage {
   /** The `definePlatform` factory kitrrc.ts calls. */
   factory: PlatformFactory<any>
-  /** The export name kitrrc.ts imports (`web` in `import { web } from 'kitr/web'`). */
+  /** The export name kitrrc.ts imports (`web` in `import { web } from '@kitr/web'`). */
   export: string
-  /** Where kitrrc.ts imports it from. Default: `kitr/<name>` for `@kitr/*`, the package name otherwise. */
+  /** Where kitrrc.ts imports it from. Default: the package name. */
   from?: string
   /** The name `kitr add <type>` suggests (`site`, `api`, `app`, `phone`). Default: the type. */
   defaultName?: string
@@ -351,7 +351,7 @@ export interface PackageDefinition {
   doctor?(project: ProjectInfo): MaybePromise<Finding[]>
   /**
    * Upstream libraries this package re-exports, by the kitr entry to import instead:
-   * `{ '@tanstack/react-query': 'kitr/query' }`. `kitr doctor` flags direct imports of them.
+   * `{ '@tanstack/react-query': '@kitr/query' }`. `kitr doctor` flags direct imports of them.
    */
   wraps?: Record<string, string>
   /** Type generation this package runs on `kitr types` (`defineTypes`). Lazy, like `commands`. */
@@ -363,7 +363,7 @@ export interface PackageDefinition {
   kit?: KitPackage
   /** Module exporting this package's route-table extension (`@kitr/api/routes`). */
   routes?: string
-  /** Import rewrites `kitr eject` prints: `{ 'kitr/router': '@tanstack/react-router' }`. */
+  /** Import rewrites `kitr eject` prints: `{ '@kitr/router': '@tanstack/react-router' }`. */
   eject?: Record<string, string>
 }
 
@@ -435,8 +435,8 @@ export interface StartDocumentOptions {
  * Shared so the saas, site and realtime kits stay identical where they agree.
  */
 export const startDocument = (options: StartDocumentOptions): string =>
-  `import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
+  `import { HeadContent, Outlet, Scripts } from '@kitr/router'
+import { ThemeScript } from '@kitr/theme'
 import css from '#app/styles/app.css?url'
 ${options.imports}
 /** Head tags for every page. Pages add their own with \`head\` on their route in app/routes.ts. */

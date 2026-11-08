@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/logger'
+import { defineConfig } from '@kitr/logger'
 
 export default defineConfig({
   name: 'app',

@@ -1,4 +1,4 @@
-import { defineConfig, localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { defineConfig, localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 

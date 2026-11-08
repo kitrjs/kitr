@@ -52,9 +52,9 @@ type MaybeOptional<I> = {} extends I ? [input?: I] : [input: I]
 /** One typed route on the client: call it, or take its query and mutation contracts, key and URL. */
 export interface Endpoint<R extends RouteType> {
   (...args: MaybeOptional<InputFor<R>>): Promise<R['output']>
-  /** Query contract for `queryFrom` (kitr/query). Input is the request input. */
+  /** Query contract for `queryFrom` (@kitr/query). Input is the request input. */
   query(): Omit<QueryContract<InputFor<R>, R['output']>, 'kind'>
-  /** Mutation contract for `mutationFrom` (kitr/query). */
+  /** Mutation contract for `mutationFrom` (@kitr/query). */
   mutation(options?: {
     effects?: CacheEffect | ((result: R['output'], input: InputFor<R>) => CacheEffect)
   }): Omit<MutationContract<InputFor<R>, R['output']>, 'kind'>
@@ -182,7 +182,7 @@ export function createApiClient<R extends Record<string, unknown>>(
     if (m) return [m[1]!, m[2]!]
     throw new KitrError(
       'INTERNAL',
-      `[kitr/api] Unknown route "${name}". Pass \`routes\` to createApiClient or use "METHOD /path" names.`,
+      `[@kitr/api] Unknown route "${name}". Pass \`routes\` to createApiClient or use "METHOD /path" names.`,
     )
   }
 

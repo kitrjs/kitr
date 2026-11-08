@@ -1,4 +1,4 @@
-import { defineCommands } from 'kitr/tauri/client'
+import { defineCommands } from '@kitr/tauri/client'
 
 /** Mirrors the `#[tauri::command]` functions in platforms/app/src-tauri/src/lib.rs. */
 export type Commands = {

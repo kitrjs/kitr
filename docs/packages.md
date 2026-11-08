@@ -15,19 +15,19 @@ Packages marked **Preview** are not published yet: they don't meet the release b
 | `forms` | `@kitr/forms` | client | | React Hook Form, `useSchemaForm(schema)` for any Standard Schema library, `<Form>` that maps server `fieldErrors`, headless `<FormField>`. |
 | `table` | `@kitr/table` | client | | TanStack Table v9 (feature-sliced), `dataTableFeatures`, `useUrlTableState` for shareable sort/page/filter URLs. |
 | `animation` | `@kitr/animation` | client | react | Motion for React, a provider that applies `config/animation.ts` (reduced motion, default transition, instant under Vitest), shared `transitions` and `presets`, `<Reveal>` for scroll-in content, `pageTransitions()` for slide and fade page changes through view transitions. |
-| `3d` | `@kitr/3d` | client | react | React Three Fiber and drei (`kitr/3d/drei`), `<Scene>` (client-only, WebGL fallback and error boundary, pauses off screen and in the background, reduced motion, adaptive resolution), `useModel` with a self-hosted Draco decoder, `useThemeColor`, `kitr 3d:decoders`. |
+| `3d` | `@kitr/3d` | client | react | React Three Fiber and drei (`@kitr/3d/drei`), `<Scene>` (client-only, WebGL fallback and error boundary, pauses off screen and in the background, reduced motion, adaptive resolution), `useModel` with a self-hosted Draco decoder, `useThemeColor`, `kitr 3d:decoders`. |
 | `state` | `@kitr/state` | client | | Zustand, `createKitrStore` returning `[useStore, StoreProvider, store]` with per-request stores on the server. |
 | `tailwind` | `@kitr/tailwind` | client | | Tailwind v4 via Vite, `cn()`, the preset that exposes kitr tokens as `@theme` so `bg-background` and friends work. |
 | `theme` | `@kitr/theme` | client | | Design tokens (`defineTokens`, oklch defaults with a dark set, `app/styles/tokens.css`), `ThemeProvider`/`useTheme` (system/light/dark, cookie for SSR, `meta[name=theme-color]`), `toast` over sonner, `cva`/`clsx`, and the registry settings `kitr ui add` reads from `config/theme.ts`. |
-| `auth` | `@kitr/auth` | client | | `createAuth(adapter)` with token, Better Auth and custom adapters, `defineAbilities`, router guards, `useAuth`/`useCan`; `kitr/auth/server` middleware for the API. |
+| `auth` | `@kitr/auth` | client | | `createAuth(adapter)` with token, Better Auth and custom adapters, `defineAbilities`, router guards, `useAuth`/`useCan`; `@kitr/auth/server` middleware for the API. |
 | `logger` | `@kitr/logger` | any | | Structured logger, levels, children, request ids, pretty in dev and JSON in production. |
-| `server` | `@kitr/server` | any | logger | h3 server with the kitr app lifecycle, request-scoped container, health route, graceful shutdown. Standalone via srvx, or a `fetch` handler inside Start. `kitr/server/platform` is the `server()` platform factory. |
+| `server` | `@kitr/server` | any | logger | h3 server with the kitr app lifecycle, request-scoped container, health route, graceful shutdown. Standalone via srvx, or a `fetch` handler inside Start. `@kitr/server/platform` is the `server()` platform factory. |
 | `api` | `@kitr/api` | any | server | Adonis-style router (groups, resources, middleware) in `server/routes.ts`, controllers in `server/controllers/` with `static validation`, typed client with no codegen, OpenAPI. |
 | `actions` | `@kitr/actions` | client | server, query | `defineQuery` and `defineMutation` over Start server functions: input schema, middleware, one error shape, cache effects. `kitr types` registers every name, so `useQuery('projects.list')` is typed. |
 | `seo` | `@kitr/seo` | client | | `seo()` head tags, `jsonLd()`, `ssrRoute()`, `cacheHeaders()`, `robotsTxt()`; `config/seo.ts` drives the web platform's prerender list and sitemap. |
-| `realtime` | `@kitr/realtime` | any | server | Typed channels over one of three transports chosen in `config/realtime.ts`: `ws` (partysocket client, crossws server), `socket.io` (rooms), `sse` (EventSource plus a POST control channel). Events apply cache effects; `kitr/realtime/react` has `useChannel`. |
+| `realtime` | `@kitr/realtime` | any | server | Typed channels over one of three transports chosen in `config/realtime.ts`: `ws` (partysocket client, crossws server), `socket.io` (rooms), `sse` (EventSource plus a POST control channel). Events apply cache effects; `@kitr/realtime/react` has `useChannel`. |
 | `db` | `@kitr/db` | any | server | `defineDb({ connect, disconnect })` so any ORM joins the lifecycle and is available as `ctx.db`. |
-| `testing` | `@kitr/testing` | any | | Vitest config, `createTestApp`, `createTestClient(server)`; `kitr/testing/react` for `renderWithKitr`. |
+| `testing` | `@kitr/testing` | any | | Vitest config, `createTestApp`, `createTestClient(server)`; `@kitr/testing/react` for `renderWithKitr`. |
 | `mocks` | `@kitr/mocks` | client | | MSW handlers from kitr route tables and contracts, for dev without a backend and for tests. |
 | `i18n` | `@kitr/i18n` | client | | react-i18next, typed keys from your resource files, locale detection. |
 | `analytics` | `@kitr/analytics` | client | | `page`/`track`/`identify` behind one API with Google Analytics, Plausible, PostHog and console adapters; page views from the router; queue-until-consent; typed event map. |
@@ -57,11 +57,11 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 | Type | Package | Entry points | Needs |
 | --- | --- | --- | --- |
-| `web` | `@kitr/web` | `kitr/web` (`web()`), `kitr/web/client` (`useInstallPrompt`, `useServiceWorker`), `kitr/web/vite` | router |
-| `server` | `@kitr/server` | `kitr/server` (`server()` beside `createServer`), `kitr/server/platform` | server |
-| `desktop` | `@kitr/desktop` | **Preview.** `kitr/desktop` (`desktop()`, Electron), `kitr/desktop/client`, `kitr/desktop/main`, `kitr/desktop/preload`, `kitr/desktop/provider` | router, platform, storage |
-| `tauri` | `@kitr/tauri` | **Preview.** `kitr/tauri` (`tauri()`), `kitr/tauri/client`, `kitr/tauri/provider` | router, platform, storage |
-| `mobile` | `@kitr/mobile` | **Preview.** `kitr/mobile` (`mobile()`), `kitr/mobile/client`, `kitr/mobile/provider` | router, platform, storage |
+| `web` | `@kitr/web` | `@kitr/web` (`web()`), `@kitr/web/client` (`useInstallPrompt`, `useServiceWorker`), `@kitr/web/vite` | router |
+| `server` | `@kitr/server` | `@kitr/server` (`server()` beside `createServer`), `@kitr/server/platform` | server |
+| `desktop` | `@kitr/desktop` | **Preview.** `@kitr/desktop` (`desktop()`, Electron), `@kitr/desktop/client`, `@kitr/desktop/main`, `@kitr/desktop/preload`, `@kitr/desktop/provider` | router, platform, storage |
+| `tauri` | `@kitr/tauri` | **Preview.** `@kitr/tauri` (`tauri()`), `@kitr/tauri/client`, `@kitr/tauri/provider` | router, platform, storage |
+| `mobile` | `@kitr/mobile` | **Preview.** `@kitr/mobile` (`mobile()`), `@kitr/mobile/client`, `@kitr/mobile/provider` | router, platform, storage |
 
 ## Devtools
 

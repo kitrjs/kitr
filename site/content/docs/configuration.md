@@ -35,7 +35,7 @@ Each package with options reads them from `config/<name>.ts`:
 
 ```ts
 // config/query.ts
-import { defineConfig } from 'kitr/query'
+import { defineConfig } from '@kitr/query'
 
 export default defineConfig({ staleTime: 60_000 })
 ```
@@ -67,7 +67,7 @@ export default defineProvider({
 })
 ```
 
-Then add `() => import('#app/providers/analytics')` to `providers` in `kitrrc.ts`. Anywhere in the app, `useService('analytics')` (from `kitr/react`) or `app.container.use('analytics')` returns it.
+Then add `() => import('#app/providers/analytics')` to `providers` in `kitrrc.ts`. Anywhere in the app, `useService('analytics')` (from `@kitr/react`) or `app.container.use('analytics')` returns it.
 
 ## Environment variables
 
@@ -94,4 +94,4 @@ Values come from `.env` files and the process environment. The app refuses to st
 kitr doctor
 ```
 
-Compares `kitrrc.ts` with `package.json`, checks every provider resolves, finds missing config files and flags direct imports of upstream libraries where a `kitr/*` entry exists. It exits with code 1 on errors, so you can run it in CI.
+Compares `kitrrc.ts` with `package.json`, checks every provider resolves, finds missing config files and flags direct imports of upstream libraries where an `@kitr/*` package re-exports them. It exits with code 1 on errors, so you can run it in CI.

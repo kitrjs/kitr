@@ -6,7 +6,7 @@ order: 1
 
 # Updater
 
-You ship a fix, but Ada keeps a tab on `app.acme.com` open all week and never reloads it. Installed apps are worse: they run the old version until someone thinks to update. `kitr/updater` notices when a new version is ready, tells people with a banner, and updates the app in place when they click it.
+You ship a fix, but Ada keeps a tab on `app.acme.com` open all week and never reloads it. Installed apps are worse: they run the old version until someone thinks to update. `@kitr/updater` notices when a new version is ready, tells people with a banner, and updates the app in place when they click it.
 
 It is one `check()` and `apply()` flow with one status, whatever does the updating. In the browser the driver watches the [service worker](https://developer.mozilla.org/docs/Web/API/Service_Worker_API) that the [Web](/packages/web) platform's `pwa` option builds with [vite-plugin-pwa](https://vite-pwa-org.netlify.app/); applying activates the new worker and reloads. Desktop and mobile shells plug in their own updater as a driver. kitr adds the status machine, periodic checks, "remind me later", a React hook, a ready-made banner and a memory driver for tests.
 
@@ -26,7 +26,7 @@ What `kitr add` does:
 - Adds `() => import('@kitr/updater/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/updater.ts` (shown under [Configure](#configure)).
 - Writes `app/components/update-banner.tsx`, a banner that stays hidden until an update is ready (shown under [Show your first update banner](#show-your-first-update-banner)).
-- Adds a `## kitr: updater` section to `AGENTS.md`: `useUpdate()` from `kitr/updater/react` drives the banner, which is mounted once in the root layout; status runs idle, checking, available, downloading, ready; the web driver watches the service worker and desktop and mobile packages register theirs.
+- Adds a `## kitr: updater` section to `AGENTS.md`: `useUpdate()` from `@kitr/updater/react` drives the banner, which is mounted once in the root layout; status runs idle, checking, available, downloading, ready; the web driver watches the service worker and desktop and mobile packages register theirs.
 
 It adds no environment variables or scripts. `kitr add updater` asks no questions, and no kit includes it. To preview the changes:
 
@@ -34,7 +34,7 @@ It adds no environment variables or scripts. `kitr add updater` asks no question
 kitr add updater --dry-run
 ```
 
-`kitr remove updater` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/updater.ts`. It leaves `app/components/update-banner.tsx` because you may have edited it, and lists the files that still import `kitr/updater`.
+`kitr remove updater` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/updater.ts`. It leaves `app/components/update-banner.tsx` because you may have edited it, and lists the files that still import `@kitr/updater`.
 
 ## Configure
 
@@ -42,7 +42,7 @@ kitr add updater --dry-run
 
 ```ts
 // config/updater.ts
-import { defineConfig } from 'kitr/updater'
+import { defineConfig } from '@kitr/updater'
 
 export default defineConfig({
   checkOnBoot: true,
@@ -65,7 +65,7 @@ For the browser to have something to update, turn on the service worker in the w
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   // ...
@@ -81,7 +81,7 @@ export default defineKitrConfig({
 
 ```tsx
 // app/components/update-banner.tsx
-import { useUpdate } from 'kitr/updater/react'
+import { useUpdate } from '@kitr/updater/react'
 
 /** Mount once in the root layout. Hidden until the updater has something ready. */
 export function UpdateBanner() {
@@ -105,7 +105,7 @@ Mount it once, in the root route:
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { UpdateBanner } from '#app/components/update-banner'
 
 export function RootDocument() {
@@ -166,7 +166,7 @@ Add a "Check for updates" item to a settings page. `check()` resolves to the upd
 
 ```tsx
 // app/features/settings/check-for-updates.tsx
-import { useUpdate } from 'kitr/updater/react'
+import { useUpdate } from '@kitr/updater/react'
 
 export function CheckForUpdates() {
   const { status, check, currentVersion } = useUpdate()
@@ -190,7 +190,7 @@ When something is found, `status` becomes `available` and the banner from the ro
 
 ```tsx
 // app/features/settings/update-now.tsx
-import { useUpdate } from 'kitr/updater/react'
+import { useUpdate } from '@kitr/updater/react'
 
 export function UpdateNow() {
   const { status, update, progress, apply } = useUpdate()
@@ -218,7 +218,7 @@ Applying reloads or restarts the app, so anything not saved is lost. Don't call 
 
 ```tsx
 // app/features/settings/remind-me-later.tsx
-import { useUpdate } from 'kitr/updater/react'
+import { useUpdate } from '@kitr/updater/react'
 
 export function RemindMeLater() {
   const { update, dismiss } = useUpdate()
@@ -239,7 +239,7 @@ For a kiosk, a wall display or a dashboard nobody touches, set `auto: true`. Eve
 
 ```ts
 // config/updater.ts
-import { defineConfig } from 'kitr/updater'
+import { defineConfig } from '@kitr/updater'
 
 export default defineConfig({
   checkOnBoot: true,
@@ -258,7 +258,7 @@ Set the driver yourself in the config, from the version Vite builds in:
 
 ```ts
 // config/updater.ts
-import { createServiceWorkerUpdaterDriver, defineConfig } from 'kitr/updater'
+import { createServiceWorkerUpdaterDriver, defineConfig } from '@kitr/updater'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -279,7 +279,7 @@ Neither `check()` nor `apply()` throws. A failure sets `status: 'error'` and kee
 
 ```tsx
 // app/features/settings/update-error.tsx
-import { useUpdate } from 'kitr/updater/react'
+import { useUpdate } from '@kitr/updater/react'
 
 export function UpdateError() {
   const { status, error, check } = useUpdate()
@@ -299,12 +299,12 @@ A later `check()` clears `error`. A non-`Error` rejection from the driver, such 
 
 ## Use it outside React
 
-Outside components, read the service from the app's container. `useUpdater(app)` from `kitr/updater` does the same:
+Outside components, read the service from the app's container. `useUpdater(app)` from `@kitr/updater` does the same:
 
 ```ts
 // app/features/settings/updates-on-focus.ts
 import type { KitrApp } from 'kitr/app'
-import { useUpdater } from 'kitr/updater'
+import { useUpdater } from '@kitr/updater'
 
 export function checkWhenFocused(app: KitrApp) {
   const updater = useUpdater(app) // same as app.container.use('updater')
@@ -351,10 +351,10 @@ The provider only binds the updater in the browser environment, so create the te
 ```tsx
 // app/components/update-banner.test.tsx
 import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { createMemoryUpdaterDriver } from 'kitr/updater'
-import { updaterProvider } from 'kitr/updater/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createMemoryUpdaterDriver } from '@kitr/updater'
+import { updaterProvider } from '@kitr/updater/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
 import { UpdateBanner } from './update-banner'
 
@@ -418,7 +418,7 @@ The smallest useful driver for the web reads a `version.json` that each deploy w
 
 ```ts
 // app/updater/version-file-driver.ts
-import type { UpdateInfo, UpdaterDriver } from 'kitr/updater'
+import type { UpdateInfo, UpdaterDriver } from '@kitr/updater'
 
 export function versionFileDriver(running: string): UpdaterDriver {
   return {
@@ -440,7 +440,7 @@ export function versionFileDriver(running: string): UpdaterDriver {
 
 ```ts
 // config/updater.ts
-import { defineConfig } from 'kitr/updater'
+import { defineConfig } from '@kitr/updater'
 import { env } from '#app/env'
 import { versionFileDriver } from '#app/updater/version-file-driver'
 
@@ -460,7 +460,7 @@ For the Electron shell, run [electron-updater](https://www.electron.build/auto-u
 // platforms/app/main.ts
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import { handleIpc } from 'kitr/desktop/main'
+import { handleIpc } from '@kitr/desktop/main'
 
 autoUpdater.autoDownload = false
 
@@ -489,8 +489,8 @@ autoUpdater.on('download-progress', (p) => {
 ```ts
 // app/providers/electron_updater_provider.ts
 import { defineProvider } from 'kitr/app'
-import { createIpcClient } from 'kitr/desktop/client'
-import type { UpdaterDriver } from 'kitr/updater'
+import { createIpcClient } from '@kitr/desktop/client'
+import type { UpdaterDriver } from '@kitr/updater'
 
 type UpdaterIpc = {
   'updater.check': () => { version: string; notes?: string } | null

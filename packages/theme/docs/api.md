@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/theme, with its signature.
+description: Every export of @kitr/theme, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/theme`, `kitr/theme/provider`, `kitr/theme/server`, read from the published type definitions. The [guide](/packages/theme/guide) shows them in use.
+Every export of `@kitr/theme`, `@kitr/theme/provider`, `@kitr/theme/server`, read from the published type definitions. The [guide](/packages/theme/guide) shows them in use.
 
-## kitr/theme
+## @kitr/theme
 
 Re-exports `class-variance-authority`, `clsx` unchanged, plus the following.
 
@@ -97,7 +97,7 @@ function tokenCss(tokens: {
 }, attribute?: string): string;
 ```
 
-The CSS for `config/theme.ts` tokens. `:root:root` outranks `kitr/theme/styles.css` (`:root`,
+The CSS for `config/theme.ts` tokens. `:root:root` outranks `@kitr/theme/styles.css` (`:root`,
 `[data-theme="dark"]`) wherever the stylesheet loads. `<` is escaped so a value cannot close the tag.
 
 ### useTheme
@@ -136,7 +136,7 @@ const darkTokens: DefineTokensResult<{
 }>;
 ```
 
-kitr's dark colour tokens, the values `kitr/theme/styles.css` sets under `[data-theme="dark"]`. Radius, font and shadow are shared with the light set.
+kitr's dark colour tokens, the values `@kitr/theme/styles.css` sets under `[data-theme="dark"]`. Radius, font and shadow are shared with the light set.
 
 ### defaultTokens
 
@@ -170,7 +170,7 @@ const defaultTokens: DefineTokensResult<{
 }>;
 ```
 
-kitr's light (default) tokens, the values `kitr/theme/styles.css` sets on `:root`. Override them in `app/styles/tokens.css`.
+kitr's light (default) tokens, the values `@kitr/theme/styles.css` sets on `:root`. Override them in `app/styles/tokens.css`.
 
 ### defineConfig
 
@@ -335,7 +335,7 @@ type TokenPath<T, Prefix extends string = ''> = {
 
 Every dotted path to a leaf of a token tree (`'color.primary'`), so token names are checked at compile time.
 
-## kitr/theme/provider
+## @kitr/theme/provider
 
 ### themeProvider
 
@@ -346,7 +346,7 @@ const themeProvider: import("@kitr/core").KitrProvider;
 Wraps the app in ThemeProvider with `config/theme.ts` and mounts the toaster (sonner, if installed).
 Listed in kitrrc.ts as `() => import('@kitr/theme/provider')`. Pair with `<ThemeScript />` in the document head.
 
-## kitr/theme/server
+## @kitr/theme/server
 
 ### themeFromCookie
 

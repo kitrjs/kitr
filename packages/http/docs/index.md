@@ -6,7 +6,7 @@ order: 1
 
 # HTTP client
 
-If your app talks to a backend that already exists, such as a Laravel, Rails, Adonis or Go API, you need a client that adds the user's login token to every request, tries once to refresh it when it expires, and turns every kind of failure into one predictable error. `kitr/http` is that client.
+If your app talks to a backend that already exists, such as a Laravel, Rails, Adonis or Go API, you need a client that adds the user's login token to every request, tries once to refresh it when it expires, and turns every kind of failure into one predictable error. `@kitr/http` is that client.
 
 It is [ky](https://github.com/sindresorhus/ky#readme), re-exported, plus `createHttpClient`, which adds the token, refresh, CSRF and error handling, and two helpers, `httpQuery` and `httpMutation`, that turn endpoints into [Query](/packages/query) contracts. The app gets one client, bound in the container as `http`.
 
@@ -16,7 +16,7 @@ This guide follows Acme's order screen at `app.acme.com` talking to an API at `a
 
 ## When to use it
 
-Use `kitr/http` when the API lives outside this app: a separate backend, a vendor's REST API, a service another team owns. You describe each endpoint once with `httpQuery` or `httpMutation`, and components read it through queries like any other source.
+Use `@kitr/http` when the API lives outside this app: a separate backend, a vendor's REST API, a service another team owns. You describe each endpoint once with `httpQuery` or `httpMutation`, and components read it through queries like any other source.
 
 Use [API](/packages/api) when you write the endpoints in this app's `server/` folder, because its client gets the routes, inputs and outputs from your code with no hand-written types. Use [Actions](/packages/actions) for a server function you call from a form or button without designing a URL.
 
@@ -42,7 +42,7 @@ What `kitr add` does:
 kitr add http --dry-run
 ```
 
-`kitr remove http` removes the provider, the `packages` entry, the `ky` and `@kitr/http` dependencies, the `AGENTS.md` section and `config/http.ts`. It leaves `VITE_API_URL` in `app/env.ts` and `.env.example`, and lists the files that still import `kitr/http`.
+`kitr remove http` removes the provider, the `packages` entry, the `ky` and `@kitr/http` dependencies, the `AGENTS.md` section and `config/http.ts`. It leaves `VITE_API_URL` in `app/env.ts` and `.env.example`, and lists the files that still import `@kitr/http`.
 
 ## Configure
 
@@ -50,7 +50,7 @@ kitr add http --dry-run
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -87,7 +87,7 @@ Because `config/http.ts` is a module, you can compute options in it. This config
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -106,8 +106,8 @@ Describe the endpoint once in the feature's `queries.ts`. `httpQuery` turns it i
 // app/features/orders/queries.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
-import { httpQuery } from 'kitr/http'
-import { queryFrom } from 'kitr/query'
+import { httpQuery } from '@kitr/http'
+import { queryFrom } from '@kitr/query'
 
 export interface Order {
   id: string
@@ -143,7 +143,7 @@ r.page('/orders', {
 
 ```tsx
 // app/pages/orders.tsx
-import { useSuspenseQuery } from 'kitr/query'
+import { useSuspenseQuery } from '@kitr/query'
 import { ordersQuery } from '#app/features/orders/queries'
 
 export default function OrdersPage() {
@@ -179,11 +179,11 @@ export async function downloadInvoice(id: string) {
 }
 ```
 
-In a component, read it with `useService` from `kitr/react`:
+In a component, read it with `useService` from `@kitr/react`:
 
 ```tsx
 // app/features/invoices/download-button.tsx
-import { useService } from 'kitr/react'
+import { useService } from '@kitr/react'
 
 export function DownloadButton({ id }: { id: string }) {
   const http = useService('http')
@@ -243,8 +243,8 @@ export const billing = app.container.use('http').extend({
 // app/features/orders/queries.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
-import { httpQuery } from 'kitr/http'
-import { queryFrom } from 'kitr/query'
+import { httpQuery } from '@kitr/http'
+import { queryFrom } from '@kitr/query'
 import type { Order } from './types'
 
 const http = () => app.container.use('http')
@@ -286,8 +286,8 @@ An API you don't control can change shape. Give `httpQuery` or `httpMutation` a 
 // app/features/invoices/queries.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
-import { httpQuery } from 'kitr/http'
-import { queryFrom } from 'kitr/query'
+import { httpQuery } from '@kitr/http'
+import { queryFrom } from '@kitr/query'
 import { z } from 'zod'
 
 const http = () => app.container.use('http')
@@ -324,8 +324,8 @@ The key is the path to the bad value (`0.total`: the first invoice's `total`). T
 ```ts
 // app/features/orders/queries.ts
 import { app } from '#app/app'
-import { httpMutation } from 'kitr/http'
-import { mutationFrom } from 'kitr/query'
+import { httpMutation } from '@kitr/http'
+import { mutationFrom } from '@kitr/query'
 import { orderKeys } from './keys'
 import type { Order } from './types'
 
@@ -353,7 +353,7 @@ export const shipOrder = mutationFrom(
 
 ```tsx
 // app/features/orders/ship-button.tsx
-import { useMutation } from 'kitr/query'
+import { useMutation } from '@kitr/query'
 import { shipOrder } from './queries'
 
 export function ShipButton({ id }: { id: string }) {
@@ -383,8 +383,8 @@ export function ShipButton({ id }: { id: string }) {
 // app/features/projects/queries.ts
 import { app } from '#app/app'
 import { createKeys } from 'kitr/app'
-import { httpMutation } from 'kitr/http'
-import { mutationFrom } from 'kitr/query'
+import { httpMutation } from '@kitr/http'
+import { mutationFrom } from '@kitr/query'
 
 const http = () => app.container.use('http')
 export const projectKeys = createKeys('projects')
@@ -419,7 +419,7 @@ export const renameProject = mutationFrom(
 ```ts
 // app/features/invoices/import.ts
 import { app } from '#app/app'
-import { mutationFrom } from 'kitr/query'
+import { mutationFrom } from '@kitr/query'
 import { invoiceKeys } from './queries'
 
 const http = app.container.use('http')
@@ -443,7 +443,7 @@ Don't set `content-type` yourself for `FormData`: the browser adds the boundary 
 
 ```ts
 // app/auth/adapter.ts
-import { localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { env } from '#app/env'
 
 export const authAdapter = tokenAdapter<{ id: string; email: string }>({
@@ -466,7 +466,7 @@ export const authAdapter = tokenAdapter<{ id: string; email: string }>({
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { authAdapter } from '#app/auth/adapter'
 import { env } from '#app/env'
 
@@ -484,7 +484,7 @@ An API that expects a key in its own header gets the raw token. This config send
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -507,7 +507,7 @@ Several requests that fail at the same moment share one `refresh()` call. When G
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -531,7 +531,7 @@ Queries add their own retries on top: [Query](/packages/query) retries failed qu
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -546,8 +546,8 @@ For one slow endpoint, pass `options` to the contract instead of changing every 
 ```ts
 // app/features/reports/queries.ts
 import { app } from '#app/app'
-import { httpQuery } from 'kitr/http'
-import { queryFrom } from 'kitr/query'
+import { httpQuery } from '@kitr/http'
+import { queryFrom } from '@kitr/query'
 
 const http = () => app.container.use('http')
 
@@ -566,7 +566,7 @@ ky [hooks](https://github.com/sindresorhus/ky#hooks) run around every request. P
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -628,7 +628,7 @@ A `422` whose `fieldErrors` reach a [Forms](/packages/forms) `<Form>` shows each
 
 | Command | What it does |
 | --- | --- |
-| `kitr make:queries <name>` | Writes `app/features/<name>/queries.ts` with keys, a list query, a detail query and an update mutation over `kitr/http`. |
+| `kitr make:queries <name>` | Writes `app/features/<name>/queries.ts` with keys, a list query, a detail query and an update mutation over `@kitr/http`. |
 
 ```sh
 kitr make:queries orders
@@ -639,8 +639,8 @@ It writes `app/features/orders/queries.ts`:
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { mutationFrom, queryFrom } from 'kitr/query'
-import { httpMutation, httpQuery } from 'kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
+import { httpMutation, httpQuery } from '@kitr/http'
 import { app } from '#app/app'
 
 const http = () => app.container.use('http')
@@ -690,7 +690,7 @@ Names come from the argument as given, so pass the singular (`kitr make:queries 
 
 ```ts
 // app/lib/errors.ts
-import { normaliseHttpError } from 'kitr/http'
+import { normaliseHttpError } from '@kitr/http'
 
 export async function describeError(error: unknown) {
   const kitrError = await normaliseHttpError(error)
@@ -706,7 +706,7 @@ export async function describeError(error: unknown) {
 ```ts
 // app/features/orders/queries.test.ts
 import { createKeys } from 'kitr/app'
-import { createHttpClient, httpMutation, httpQuery } from 'kitr/http'
+import { createHttpClient, httpMutation, httpQuery } from '@kitr/http'
 import { describe, expect, it, vi } from 'vitest'
 
 interface Order {
@@ -763,8 +763,8 @@ To test with the app's own provider and config, boot a test app and pass the fak
 
 ```ts
 // app/features/orders/provider.test.ts
-import { httpProvider } from 'kitr/http'
-import { createTestApp } from 'kitr/testing'
+import { httpProvider } from '@kitr/http'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 
 it('binds a client with the base URL', async () => {

@@ -1,5 +1,5 @@
 {
   "title": "Data table",
-  "description": "TanStack Table with sorting, pagination and URL-bound state via kitr/table.",
+  "description": "TanStack Table with sorting, pagination and URL-bound state via @kitr/table.",
   "registryDependencies": ["button", "icon"]
 }

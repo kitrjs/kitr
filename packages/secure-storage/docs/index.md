@@ -6,7 +6,7 @@ order: 1
 
 # Secure storage
 
-A session token, a refresh token, an API key someone pasted into settings: these shouldn't sit in `localStorage` as plain text, where anything that reads the disk or the page can copy them. Phones and computers have a proper vault for secrets, and each has a different API. `kitr/secure-storage` gives you one async key-value service, `secureStorage`, and typed items on top of it, so the code that keeps Ada's session reads the same wherever the app runs.
+A session token, a refresh token, an API key someone pasted into settings: these shouldn't sit in `localStorage` as plain text, where anything that reads the disk or the page can copy them. Phones and computers have a proper vault for secrets, and each has a different API. `@kitr/secure-storage` gives you one async key-value service, `secureStorage`, and typed items on top of it, so the code that keeps Ada's session reads the same wherever the app runs.
 
 A platform registers its vault as a driver: the iOS Keychain, the Android Keystore or Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage). In the browser, and anywhere no vault is registered, a fallback encrypts each value with AES-GCM through the [Web Crypto API](https://developer.mozilla.org/docs/Web/API/SubtleCrypto), under a key the browser keeps in IndexedDB and never lets out. kitr adds typed items with schema checks, a React hook, a `secure` flag that says which one you got, a switch that refuses the fallback, and a memory driver for tests.
 
@@ -32,7 +32,7 @@ What `kitr add` does:
 - Adds `() => import('@kitr/secure-storage/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/secure-storage.ts` (shown under [Configure](#configure)).
 - Writes `app/secure.ts` with one typed item, `sessionItem` (shown under [Store your first secret](#store-your-first-secret)).
-- Adds a `## kitr: secure-storage` section to `AGENTS.md`: tokens and secrets go through `kitr/secure-storage` and `app/secure.ts`, never `defineStorage` or `localStorage`; `useSecureItem(item)` returns `[value, set, { loading, secure }]` and the value is `undefined` until the vault answers.
+- Adds a `## kitr: secure-storage` section to `AGENTS.md`: tokens and secrets go through `@kitr/secure-storage` and `app/secure.ts`, never `defineStorage` or `localStorage`; `useSecureItem(item)` returns `[value, set, { loading, secure }]` and the value is `undefined` until the vault answers.
 
 It adds no environment variables or scripts. `kitr add secure-storage` asks no questions, and no kit includes it. To preview the changes:
 
@@ -40,7 +40,7 @@ It adds no environment variables or scripts. `kitr add secure-storage` asks no q
 kitr add secure-storage --dry-run
 ```
 
-`kitr remove secure-storage` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/secure-storage.ts`. It leaves `app/secure.ts` because you may have added items to it, and lists the files that still import `kitr/secure-storage`. Values already stored stay in the vault or in local storage.
+`kitr remove secure-storage` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/secure-storage.ts`. It leaves `app/secure.ts` because you may have added items to it, and lists the files that still import `@kitr/secure-storage`. Values already stored stay in the vault or in local storage.
 
 ## Configure
 
@@ -48,7 +48,7 @@ kitr add secure-storage --dry-run
 
 ```ts
 // config/secure-storage.ts
-import { defineConfig } from 'kitr/secure-storage'
+import { defineConfig } from '@kitr/secure-storage'
 
 export default defineConfig({
   // OS vault on mobile/desktop; AES-GCM in the browser. true refuses the browser fallback.
@@ -69,7 +69,7 @@ A stricter setup for a banking-grade desktop build:
 
 ```ts
 // config/secure-storage.ts
-import { defineConfig } from 'kitr/secure-storage'
+import { defineConfig } from '@kitr/secure-storage'
 
 export default defineConfig({
   prefix: 'acme:secure:',
@@ -83,7 +83,7 @@ export default defineConfig({
 
 ```ts
 // app/secure.ts
-import { defineSecureItem } from 'kitr/secure-storage'
+import { defineSecureItem } from '@kitr/secure-storage'
 
 /** Secrets, typed once: `useSecureItem(sessionItem)` in components, `sessionItem(storage).get()` elsewhere. */
 export const sessionItem = defineSecureItem<{ token: string; expiresAt: number }>('session')
@@ -93,7 +93,7 @@ Read and write it in a component with `useSecureItem`:
 
 ```tsx
 // app/features/account/session-status.tsx
-import { useSecureItem } from 'kitr/secure-storage/react'
+import { useSecureItem } from '@kitr/secure-storage/react'
 import { sessionItem } from '#app/secure'
 
 export function SessionStatus() {
@@ -140,8 +140,8 @@ To act after the write, await `set`:
 
 ```tsx
 // app/features/account/sign-in-form.tsx
-import { useSecureItem } from 'kitr/secure-storage/react'
-import { useNavigate } from 'kitr/router'
+import { useSecureItem } from '@kitr/secure-storage/react'
+import { useNavigate } from '@kitr/router'
 import { sessionItem } from '#app/secure'
 
 export function SignInForm() {
@@ -171,7 +171,7 @@ Pass a `schema` to check the stored value on every read. Any [Standard Schema](h
 
 ```ts
 // app/secure.ts
-import { defineSecureItem } from 'kitr/secure-storage'
+import { defineSecureItem } from '@kitr/secure-storage'
 import { z } from 'zod'
 
 export const sessionItem = defineSecureItem('session', {
@@ -189,7 +189,7 @@ Items serialise with `JSON.stringify` and `JSON.parse` by default. Pass a `codec
 
 ```ts
 // app/secure.ts
-import { defineSecureItem } from 'kitr/secure-storage'
+import { defineSecureItem } from '@kitr/secure-storage'
 
 export const lastUnlockItem = defineSecureItem<Date>('last-unlock', {
   codec: {
@@ -203,12 +203,12 @@ export const lastUnlockItem = defineSecureItem<Date>('last-unlock', {
 
 ## Use secrets outside React
 
-An item is a function that binds it to a `SecureStorage` service. Get the service from the app's container, or with `useSecureStorage(app)` from `kitr/secure-storage`:
+An item is a function that binds it to a `SecureStorage` service. Get the service from the app's container, or with `useSecureStorage(app)` from `@kitr/secure-storage`:
 
 ```ts
 // app/features/account/session.ts
 import type { KitrApp } from 'kitr/app'
-import { useSecureStorage } from 'kitr/secure-storage'
+import { useSecureStorage } from '@kitr/secure-storage'
 import { sessionItem } from '#app/secure'
 
 export async function currentToken(app: KitrApp): Promise<string | null> {
@@ -224,7 +224,7 @@ A bound item has `key`, `get()`, `set(value)`, `remove()` and `subscribe(listene
 
 ```ts
 // app/features/account/watch-session.ts
-import type { SecureStorage } from 'kitr/secure-storage'
+import type { SecureStorage } from '@kitr/secure-storage'
 import { sessionItem } from '#app/secure'
 
 export function watchSession(storage: SecureStorage, onSignOut: () => void) {
@@ -236,7 +236,7 @@ export function watchSession(storage: SecureStorage, onSignOut: () => void) {
 }
 ```
 
-Make writes through the returned `session` so the listener hears them. In a component, `useSecureStorage()` from `kitr/secure-storage/react` returns the same service.
+Make writes through the returned `session` so the listener hears them. In a component, `useSecureStorage()` from `@kitr/secure-storage/react` returns the same service.
 
 ## Use the key-value API
 
@@ -244,7 +244,7 @@ Under the items is a plain async key-value API of strings. Use it for secrets yo
 
 ```ts
 // app/features/integrations/api-keys.ts
-import type { SecureStorage } from 'kitr/secure-storage'
+import type { SecureStorage } from '@kitr/secure-storage'
 
 export async function saveIntegrationKey(storage: SecureStorage, integration: string, key: string) {
   await storage.set(`integration:${integration}`, key)
@@ -278,7 +278,7 @@ Keys are given without the prefix; the service adds it.
 
 ```ts
 // app/features/account/sign-out.ts
-import type { SecureStorage } from 'kitr/secure-storage'
+import type { SecureStorage } from '@kitr/secure-storage'
 
 export async function signOut(storage: SecureStorage) {
   await fetch('/api/auth/sign-out', { method: 'POST' })
@@ -294,14 +294,14 @@ Set `requireSecure: true` when a secret must never be stored outside an OS vault
 
 ```ts
 // app/features/account/remember-device.ts
-import type { SecureStorage } from 'kitr/secure-storage'
+import type { SecureStorage } from '@kitr/secure-storage'
 
 export async function rememberDevice(storage: SecureStorage, deviceToken: string) {
   if (!storage.secure) return false
   await storage.set('device', deviceToken)
   return true
   // without the check, under requireSecure:
-  // throws Error: kitr/secure-storage: no secure vault on this platform (requireSecure is on)
+  // throws Error: @kitr/secure-storage: no secure vault on this platform (requireSecure is on)
 }
 ```
 
@@ -324,7 +324,7 @@ The key and the ciphertext live in the same browser profile, so the fallback sto
 
 Clearing site data deletes the key, and every stored value then reads as `null`. Treat secrets in the fallback as something the person may lose.
 
-`createWebSecureStorageDriver(storage)` builds the fallback yourself, over any [Storage](/packages/storage) driver. Without Web Crypto, its first write rejects with `kitr/secure-storage: Web Crypto is not available`.
+`createWebSecureStorageDriver(storage)` builds the fallback yourself, over any [Storage](/packages/storage) driver. Without Web Crypto, its first write rejects with `@kitr/secure-storage: Web Crypto is not available`.
 
 ## Use it on the server
 
@@ -348,9 +348,9 @@ Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mob
 
 | Error | When | What to do |
 | --- | --- | --- |
-| `kitr/secure-storage: no secure vault on this platform (requireSecure is on)` | `set()` under `requireSecure: true` with no vault. | Check `storage.secure` first, or register a vault driver. |
-| `kitr/secure-storage: Web Crypto is not available` | The browser fallback's first use, without `crypto.subtle` (a plain `http://` page other than `localhost`). | Serve the app over HTTPS. |
-| `kitr/secure-storage: could not store the encryption key` | IndexedDB refused the new key and holds none. | Rare; usually storage is full or blocked in a private window. |
+| `@kitr/secure-storage: no secure vault on this platform (requireSecure is on)` | `set()` under `requireSecure: true` with no vault. | Check `storage.secure` first, or register a vault driver. |
+| `@kitr/secure-storage: Web Crypto is not available` | The browser fallback's first use, without `crypto.subtle` (a plain `http://` page other than `localhost`). | Serve the app over HTTPS. |
+| `@kitr/secure-storage: could not store the encryption key` | IndexedDB refused the new key and holds none. | Rare; usually storage is full or blocked in a private window. |
 
 A value that fails to decrypt, parse or validate is not an error: it is removed and reads as missing.
 
@@ -361,10 +361,10 @@ A value that fails to decrypt, parse or validate is not an error: it is removed 
 ```tsx
 // app/features/account/session-status.test.tsx
 import { fireEvent, screen } from '@testing-library/react'
-import { createMemorySecureStorageDriver } from 'kitr/secure-storage'
-import { secureStorageProvider } from 'kitr/secure-storage/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { createMemorySecureStorageDriver } from '@kitr/secure-storage'
+import { secureStorageProvider } from '@kitr/secure-storage/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { describe, expect, it } from 'vitest'
 import { sessionItem } from '#app/secure'
 import { SessionStatus } from './session-status'
@@ -436,7 +436,7 @@ This driver keeps secrets in Electron's [`safeStorage`](https://www.electronjs.o
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, ipcMain, safeStorage } from 'electron'
-import { handleIpc } from 'kitr/desktop/main'
+import { handleIpc } from '@kitr/desktop/main'
 
 const vaultFile = () => join(app.getPath('userData'), 'vault.json')
 const load = async (): Promise<Record<string, string>> =>
@@ -471,8 +471,8 @@ handleIpc<{
 ```ts
 // app/providers/vault_provider.ts
 import { defineProvider } from 'kitr/app'
-import { createIpcClient } from 'kitr/desktop/client'
-import type { SecureStorageDriver } from 'kitr/secure-storage'
+import { createIpcClient } from '@kitr/desktop/client'
+import type { SecureStorageDriver } from '@kitr/secure-storage'
 
 const ipc = createIpcClient<{
   'vault.get': (key: string) => string | null

@@ -1,4 +1,4 @@
-import { useTranslation } from 'kitr/i18n'
+import { useTranslation } from '@kitr/i18n'
 import { useLocale } from '#app/locale'
 import { Button } from '#components/ui/button'
 

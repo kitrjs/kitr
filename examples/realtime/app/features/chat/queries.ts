@@ -1,5 +1,5 @@
-import { mutationFrom, queryFrom, subscriptionFrom } from 'kitr/query'
-import { channel } from 'kitr/realtime'
+import { mutationFrom, queryFrom, subscriptionFrom } from '@kitr/query'
+import { channel } from '@kitr/realtime'
 import { api } from '#app/api/client'
 import { chatChannel } from '#app/channels/chat'
 import { getSocket } from '#app/realtime'

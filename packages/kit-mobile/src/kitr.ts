@@ -10,8 +10,8 @@ const files = (ctx: AddContext, name: string) => {
   write(
     ctx,
     'app/document.tsx',
-    `import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
+    `import { HeadContent, Outlet, Scripts } from '@kitr/router'
+import { ThemeScript } from '@kitr/theme'
 import css from '#app/styles/app.css?url'
 import { PwaUpdate } from '#app/components/pwa-update'
 
@@ -48,7 +48,7 @@ export function RootDocument() {
   write(
     ctx,
     'app/components/pwa-update.tsx',
-    `import { useServiceWorker } from 'kitr/web/client'
+    `import { useServiceWorker } from '@kitr/web/client'
 
 /** Registers the service worker and shows a one-line banner when a new version is waiting. */
 export function PwaUpdate() {
@@ -68,8 +68,8 @@ export function PwaUpdate() {
   write(
     ctx,
     'app/pages/home.tsx',
-    `import { useAppState, useBackButton, useOnline, usePlatform } from 'kitr/platform/react'
-import { useInstallPrompt } from 'kitr/web/client'
+    `import { useAppState, useBackButton, useOnline, usePlatform } from '@kitr/platform/react'
+import { useInstallPrompt } from '@kitr/web/client'
 import { useCallback, useState } from 'react'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
@@ -78,7 +78,7 @@ import { PageHeader } from '#components/ui/page-header'
 
 /**
  * One page, three homes: the browser, the installed PWA, and the Capacitor shell on iOS/Android.
- * Everything below works in all three; \`kitr/platform\` answers the same way everywhere.
+ * Everything below works in all three; \`@kitr/platform\` answers the same way everywhere.
  */
 export default function HomePage() {
   const platform = usePlatform()

@@ -15,8 +15,8 @@ export interface SocketIoClientOptions extends Partial<ManagerOptions & SocketOp
 }
 
 /**
- * Creates the same `SocketTransport` as kitr/realtime, over Socket.IO; `.socket` is the raw socket.io-client socket. Use it with `channel()`
- * from kitr/realtime/socket.io; the channel definitions and `useSubscription` don't change.
+ * Creates the same `SocketTransport` as @kitr/realtime, over Socket.IO; `.socket` is the raw socket.io-client socket. Use it with `channel()`
+ * from @kitr/realtime/socket.io; the channel definitions and `useSubscription` don't change.
  */
 export function createSocketIoClient(
   options: SocketIoClientOptions = {},

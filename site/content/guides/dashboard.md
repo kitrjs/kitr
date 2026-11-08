@@ -66,7 +66,7 @@ Every request goes through one HTTP client, configured in `config/http.ts`. It r
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { env } from '#app/env'
 
 export default defineConfig({
@@ -91,7 +91,7 @@ With `VITE_MOCKS=true`, [MSW](https://mswjs.io) answers requests in the browser 
 ```ts
 // app/mocks/handlers.ts
 import { KitrError } from 'kitr/app'
-import { HttpResponse, http, kitrErrorResponse } from 'kitr/mocks'
+import { HttpResponse, http, kitrErrorResponse } from '@kitr/mocks'
 
 const orders = [
   { id: 'ord_1042', customer: 'Ada', total: 129, status: 'paid', placedAt: '2026-10-02' },
@@ -163,7 +163,7 @@ Two pieces of the app need the session: [Auth](/packages/auth), which signs user
 
 ```ts
 // app/auth/adapter.ts
-import { localStorageTokens, tokenAdapter } from 'kitr/auth'
+import { localStorageTokens, tokenAdapter } from '@kitr/auth'
 import { type User, abilities } from '#app/abilities'
 import { env } from '#app/env'
 
@@ -188,7 +188,7 @@ export const authAdapter = tokenAdapter<User>({
 
 ```ts
 // config/auth.ts
-import { defineConfig } from 'kitr/auth'
+import { defineConfig } from '@kitr/auth'
 import { authAdapter } from '#app/auth/adapter'
 
 export default defineConfig({ adapter: authAdapter, signInPath: '/sign-in' })
@@ -196,7 +196,7 @@ export default defineConfig({ adapter: authAdapter, signInPath: '/sign-in' })
 
 ```ts
 // config/http.ts
-import { defineConfig } from 'kitr/http'
+import { defineConfig } from '@kitr/http'
 import { authAdapter } from '#app/auth/adapter'
 import { env } from '#app/env'
 
@@ -223,8 +223,8 @@ r.page('/sign-in', {
 
 ```tsx
 // app/pages/sign-in.tsx
-import { useAuth } from 'kitr/auth'
-import { getRouteApi, useNavigate } from 'kitr/router'
+import { useAuth } from '@kitr/auth'
+import { getRouteApi, useNavigate } from '@kitr/router'
 import { type FormEvent, useState } from 'react'
 import type { User } from '#app/abilities'
 
@@ -265,7 +265,7 @@ export default function SignInPage() {
 
 ```ts
 // app/routes.ts
-import { requireAuth } from 'kitr/router'
+import { requireAuth } from '@kitr/router'
 
 r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
   app
@@ -276,8 +276,8 @@ r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-la
 
 ```tsx
 // app/pages/app-layout.tsx
-import { useAuth, useUser } from 'kitr/auth'
-import { Outlet } from 'kitr/router'
+import { useAuth, useUser } from '@kitr/auth'
+import { Outlet } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { AppShell } from '#components/ui/app-shell'
 
@@ -318,9 +318,9 @@ It writes `app/features/orders/queries.ts` with a list query, a detail query and
 ```ts
 // app/features/orders/queries.ts
 import { createKeys } from 'kitr/app'
-import { httpMutation, httpQuery } from 'kitr/http'
-import { mutationFrom, queryFrom } from 'kitr/query'
-import type { TableSearch } from 'kitr/table'
+import { httpMutation, httpQuery } from '@kitr/http'
+import { mutationFrom, queryFrom } from '@kitr/query'
+import type { TableSearch } from '@kitr/table'
 import { app } from '#app/app'
 
 const http = () => app.container.use('http')
@@ -372,7 +372,7 @@ Columns describe what each cell shows. Keep them outside the component so the ta
 
 ```tsx
 // app/features/orders/columns.tsx
-import type { ColumnDef, DataTableFeatures } from 'kitr/table'
+import type { ColumnDef, DataTableFeatures } from '@kitr/table'
 import type { Order } from './queries'
 
 export const columns: ColumnDef<DataTableFeatures, Order>[] = [
@@ -392,7 +392,7 @@ The page validates the search params, loads the matching page before it renders,
 
 ```ts
 // app/routes.ts
-import { parseTableSearch } from 'kitr/table'
+import { parseTableSearch } from '@kitr/table'
 import { ordersPageQuery } from '#app/features/orders/queries'
 
 app.page('/orders', {
@@ -405,9 +405,9 @@ app.page('/orders', {
 
 ```tsx
 // app/pages/orders/index.tsx
-import { getRouteApi, Link } from 'kitr/router'
-import { useSuspenseQuery } from 'kitr/query'
-import { useUrlTableState } from 'kitr/table'
+import { getRouteApi, Link } from '@kitr/router'
+import { useSuspenseQuery } from '@kitr/query'
+import { useUrlTableState } from '@kitr/table'
 import { DataTable } from '#components/ui/data-table'
 import { columns } from '#app/features/orders/columns'
 import { ordersPageQuery } from '#app/features/orders/queries'
@@ -464,9 +464,9 @@ app.page('/orders/new', { lazy: () => import('./pages/orders/new') })
 
 ```tsx
 // app/pages/orders/new.tsx
-import { useNavigate } from 'kitr/router'
-import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from 'kitr/forms'
-import { useMutation } from 'kitr/query'
+import { useNavigate } from '@kitr/router'
+import { FieldInput, Form, FormField, SubmitButton, useSchemaForm } from '@kitr/forms'
+import { useMutation } from '@kitr/query'
 import { createOrder } from '#app/features/orders/queries'
 import { newOrderSchema } from '#app/features/orders/schema'
 
@@ -508,12 +508,12 @@ The kit includes [Testing](/packages/testing) and a `vitest.config.ts`. A compon
 ```tsx
 // app/features/orders/orders-table.test.tsx
 import { screen } from '@testing-library/react'
-import httpProvider from 'kitr/http/provider'
-import { setupNodeMocks } from 'kitr/mocks'
-import { useSuspenseQuery } from 'kitr/query'
-import queryProvider from 'kitr/query/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import httpProvider from '@kitr/http/provider'
+import { setupNodeMocks } from '@kitr/mocks'
+import { useSuspenseQuery } from '@kitr/query'
+import queryProvider from '@kitr/query/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { Suspense } from 'react'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { handlers } from '#app/mocks/handlers'

@@ -7,6 +7,6 @@ export default definePackage({
   kind: 'platform',
   client: true,
   requires: ['vite', 'router', 'platform', 'storage'],
-  platform: { factory: mobile, export: 'mobile', from: 'kitr/mobile', defaultName: 'phone' },
-  eject: { 'kitr/mobile': '@capacitor/core + @capacitor/app + @capacitor/preferences' },
+  platform: { factory: mobile, export: 'mobile', from: '@kitr/mobile', defaultName: 'phone' },
+  eject: { '@kitr/mobile': '@capacitor/core + @capacitor/app + @capacitor/preferences' },
 })

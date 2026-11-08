@@ -1,5 +1,5 @@
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
-import { ThemeScript } from 'kitr/theme'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
+import { ThemeScript } from '@kitr/theme'
 import css from '#app/styles/app.css?url'
 import { PwaUpdate } from '#app/components/pwa-update'
 

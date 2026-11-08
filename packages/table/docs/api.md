@@ -1,12 +1,12 @@
 ---
 title: API reference
-description: Every export of kitr/table.
+description: Every export of @kitr/table.
 order: 2
 ---
 
 # API reference
 
-`kitr/table` re-exports everything from `@tanstack/react-table` v9 and adds the following.
+`@kitr/table` re-exports everything from `@tanstack/react-table` v9 and adds the following.
 
 ## useUrlTableState
 

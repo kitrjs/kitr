@@ -6,7 +6,7 @@
 pnpm kitr add i18n
 ```
 
-`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `kitr/i18n`.
+`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `@kitr/i18n`.
 
 Built on react-i18next.
 

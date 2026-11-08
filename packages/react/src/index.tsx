@@ -36,7 +36,7 @@ export function KitrProvider({ app, children }: KitrProviderProps) {
  */
 export function useApp(): KitrApp {
   const app = useContext(KitrContext)
-  if (!app) throw new Error('[kitr/react] useApp() must be used inside <KitrProvider>.')
+  if (!app) throw new Error('[@kitr/react] useApp() must be used inside <KitrProvider>.')
   return app
 }
 

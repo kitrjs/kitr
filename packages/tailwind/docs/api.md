@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/tailwind, with its signature.
+description: Every export of @kitr/tailwind, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/tailwind`, `kitr/tailwind/vite`, read from the published type definitions. The [guide](/packages/tailwind/guide) shows them in use.
+Every export of `@kitr/tailwind`, `@kitr/tailwind/vite`, read from the published type definitions. The [guide](/packages/tailwind/guide) shows them in use.
 
-## kitr/tailwind
+## @kitr/tailwind
 
 Re-exports `clsx`, `tailwind-merge` unchanged, plus the following.
 
@@ -35,14 +35,14 @@ Types `config/tailwind.ts` against `TailwindConfig` and returns the object uncha
 interface TailwindConfig {
   /** Entry stylesheet relative to the project root. Default `app/styles/app.css`. `kitr doctor` checks it exists and imports Tailwind. */
   entry?: string;
-  /** Use kitr's preset (`kitr/tailwind/preset.css`). Default true. `kitr doctor` checks the entry imports it exactly when this is on. */
+  /** Use kitr's preset (`@kitr/tailwind/preset.css`). Default true. `kitr doctor` checks the entry imports it exactly when this is on. */
   preset?: boolean;
 }
 ```
 
 Options of `config/tailwind.ts`: how the project's stylesheet is set up. The build reads the CSS itself; `kitr doctor` checks the two agree.
 
-## kitr/tailwind/vite
+## @kitr/tailwind/vite
 
 ### kitrTailwind
 

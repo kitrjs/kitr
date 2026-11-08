@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/realtime'
+import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   path: '/api/ws',

@@ -2,7 +2,7 @@
   "name": "@kitr/notifications",
   "version": "0.1.0",
   "private": true,
-  "description": "kitr/notifications: permission, local and scheduled notifications with a tap that opens the right page, on the web and in native shells.",
+  "description": "@kitr/notifications: permission, local and scheduled notifications with a tap that opens the right page, on the web and in native shells.",
   "keywords": [
     "kitr",
     "kitr-package"

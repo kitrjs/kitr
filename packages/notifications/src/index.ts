@@ -292,7 +292,7 @@ export function createNotifications(
     async schedule(options) {
       if (Number.isNaN(new Date(options.at).getTime()))
         throw new Error(
-          `[kitr/notifications] schedule() needs a valid \`at\`, got ${String(options.at)}`,
+          `[@kitr/notifications] schedule() needs a valid \`at\`, got ${String(options.at)}`,
         )
       const id = options.id ?? notificationId()
       await driver.schedule({ ...options, id })

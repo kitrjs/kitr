@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/devtools'
+import { defineConfig } from '@kitr/devtools'
 
 /** Development only. The kitr() Vite plugin drops the provider from production builds. */
 export default defineConfig({

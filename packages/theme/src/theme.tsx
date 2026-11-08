@@ -120,7 +120,7 @@ export function ThemeProvider({
  */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('[kitr/theme] useTheme() must be used inside <ThemeProvider>.')
+  if (!ctx) throw new Error('[@kitr/theme] useTheme() must be used inside <ThemeProvider>.')
   return ctx
 }
 
@@ -154,7 +154,7 @@ export function ThemeScript(props: {
 }
 
 /**
- * The CSS for `config/theme.ts` tokens. `:root:root` outranks `kitr/theme/styles.css` (`:root`,
+ * The CSS for `config/theme.ts` tokens. `:root:root` outranks `@kitr/theme/styles.css` (`:root`,
  * `[data-theme="dark"]`) wherever the stylesheet loads. `<` is escaped so a value cannot close the tag.
  */
 export function tokenCss(

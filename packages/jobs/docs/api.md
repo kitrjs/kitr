@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/jobs, with its signature.
+description: Every export of @kitr/jobs, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/jobs`, `kitr/jobs/provider`, read from the published type definitions. The [guide](/packages/jobs/guide) shows them in use.
+Every export of `@kitr/jobs`, `@kitr/jobs/provider`, read from the published type definitions. The [guide](/packages/jobs/guide) shows them in use.
 
-## kitr/jobs
+## @kitr/jobs
 
 ### createJobs
 
@@ -280,7 +280,7 @@ interface RedisJobsDriverOptions {
 
 Options for `createRedisJobsDriver`.
 
-## kitr/jobs/provider
+## @kitr/jobs/provider
 
 ### jobsProvider
 

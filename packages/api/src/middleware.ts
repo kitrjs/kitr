@@ -43,7 +43,7 @@ export function cors(options: CorsOptions = {}): Middleware {
   } = options
   if (origin === '*' && credentials)
     throw new Error(
-      '[kitr/api] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
+      '[@kitr/api] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
     )
   const allow = (reqOrigin: string | null): string | null => {
     if (!origin) return null
@@ -72,7 +72,7 @@ export function cors(options: CorsOptions = {}): Middleware {
 }
 
 /**
- * Where rate-limit counters live. The same shape as `RateLimitStore` in `kitr/shield`, so
+ * Where rate-limit counters live. The same shape as `RateLimitStore` in `@kitr/shield`, so
  * `createRedisRateLimitStore` from there plugs in here too.
  */
 export interface RateLimitStore {
@@ -90,7 +90,7 @@ export interface RateLimitOptions {
   key?: (ctx: HttpContext) => string
   /**
    * Where counters live. Default: this process, so each instance counts on its own. Pass
-   * `createRedisRateLimitStore(redis)` from `kitr/shield` to share one limit across instances.
+   * `createRedisRateLimitStore(redis)` from `@kitr/shield` to share one limit across instances.
    */
   store?: RateLimitStore
 }
@@ -154,7 +154,7 @@ export function compose(middleware: Middleware[]): Middleware {
   return (ctx, final) => {
     let index = -1
     const dispatch = async (i: number): Promise<unknown> => {
-      if (i <= index) throw new Error('[kitr/api] next() called more than once')
+      if (i <= index) throw new Error('[@kitr/api] next() called more than once')
       index = i
       const fn = middleware[i]
       if (!fn) return final()
