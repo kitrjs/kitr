@@ -6,8 +6,9 @@ WORKDIR /repo
 ENV CI=true
 RUN corepack enable
 # Fetch the store from the lockfile alone, so this layer is reused until the lockfile changes
-# and a source-only commit no longer re-downloads every dependency.
-COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+# and a source-only commit no longer re-downloads every dependency. The root package.json
+# comes too: it pins pnpm (packageManager) and holds pnpm.overrides, which the lockfile records.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm fetch
 COPY . .
 RUN pnpm install --offline --frozen-lockfile
