@@ -49,7 +49,7 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links before routing, such as `'/open'` for `acme://open/orders/1042`. The scheme and host are always dropped first. `useDeepLink()` and `platform.linkPath()` apply them, as shown in "Route deep links". |
+| `deepLinkPrefixes` | `[]` | Path prefixes to strip from deep links: `'/open'` turns `acme://open/orders/1042` into `/orders/1042`. |
 
 `useDeepLink()` and `platform.linkPath(url)` apply `deepLinkPrefixes` for you. `deepLinkPath(url, prefixes)` is the same function without the config, for tests and code outside the app.
 

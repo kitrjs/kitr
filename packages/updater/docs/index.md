@@ -341,7 +341,7 @@ In the [Mobile](/packages/mobile) shell the service asks the store, not a server
 | Call | Android | iOS |
 | --- | --- | --- |
 | `check()` | Asks Google Play. An update is available when Play reports one; `version` is its version name (or code). | Looks the app up in the App Store by its bundle id. |
-| `apply()` | A priority 4 or 5 update, or a device that allows only that flow, runs Play's full-screen immediate update, which restarts the app. Otherwise a flexible update downloads in the background, reports `progress` from 0 to 1, then restarts into the new version. If Play allows neither, it opens the store page. | Opens the App Store page: iOS cannot install in place. |
+| `apply()` | Downloads in the background and restarts. Priority 4 and 5 updates use Play's full-screen flow. | Opens the App Store page: iOS cannot install in place. |
 | `currentVersion()` | The installed version name. | The installed version. |
 
 The driver sets no `onAvailable`, so the banner appears after `check()`, which `checkOnBoot` and `interval` run. Play only offers an update to an app installed from Play: a debug build or a sideloaded APK always checks as up to date.
@@ -411,7 +411,7 @@ Requirements:
 
 | Error | When | What to do |
 | --- | --- | --- |
-| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no updater driver is registered. Thrown when the service is created, so at boot with the provider. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/updater.ts` to run the service-worker driver inside the webview. |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | A native shell has no updater driver. Thrown at boot. | Register a driver, or set `fallbackToWeb: true`. |
 
 A failed check or apply is not thrown: it sets `status` to `'error'` and `error` on the state.
 

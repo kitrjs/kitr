@@ -543,7 +543,7 @@ In a desktop shell the service shows the operating system's dialogs, reads and w
 
 ### Electron
 
-`open()` runs Electron's [`dialog.showOpenDialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process; `save()` runs `showSaveDialog` and writes the bytes with `fs/promises`. Main remembers each path a dialog returned this session and refuses `kitr:files:read`, `write`, `stat`, `list` and `reveal` for any other path, including `..` out of a picked folder. A file's content is read on demand when you call `text()`, `bytes()` or `blob()`. `reveal(path)` opens a chosen file with the default app. The driver also picks folders, which the service API has no call for, so import the driver:
+`open()` and `save()` use Electron's [file dialogs](https://www.electronjs.org/docs/latest/api/dialog). For safety, the window can only read and write paths a dialog returned in this session. File content is read when you call `text()`, `bytes()` or `blob()`. To pick a folder, import the driver:
 
 ```ts
 // app/invoices/folder.ts

@@ -91,7 +91,7 @@ export default defineConfig({
 | `shouldReport(error, context)` | `defaultShouldReport` | Return `false` to drop an error. The default drops kitr errors with a status below 500 and `AbortError`s. Applies to `captureException` only. |
 | `globalHandlers` | `true` | In the browser, report uncaught errors and unhandled promise rejections. |
 | `tags` | none | Tags added to every exception and message. The provider adds `environment` (the app's mode: `development`, `production` or `test`) under yours. |
-| `debug` | in development, when `reporters` is set | Also print each exception and message to the console with a `[monitoring]` prefix. Off when the provider falls back to the console reporter, which already prints them. |
+| `debug` | `true` in development | Also print each error to the console. |
 
 | Variable | Used for |
 | --- | --- |

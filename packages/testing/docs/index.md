@@ -223,7 +223,7 @@ it('returns the new order as JSON', async () => {
 | --- | --- |
 | `status` | The HTTP status code. |
 | `headers` | The response `Headers`. |
-| `body` | The body parsed as JSON. When the body is not JSON it is the raw text (`'plain words'`); when it is empty, as in a `204`, it is `undefined`. |
+| `body` | The body as JSON, else as text, or `undefined` when empty. |
 | `response` | The raw `Response`, for anything else. Its body is already consumed, so don't call `.json()` on it again. |
 
 The type argument (`post<{ id: string }>`) types `body` only. It does not check the response at run time, so assert the fields you care about.

@@ -16,6 +16,8 @@ const only = new Set(args.filter((a) => !a.startsWith('--')))
 export const REQUIRED = ['Install', 'Configure', 'Testing', 'Next steps']
 export const MIN_WORDS = 1200
 export const MIN_CODE_BLOCKS = 15
+/** A table cell is one short sentence and at most one example. Detail goes in a section below. */
+export const MAX_CELL_WORDS = 30
 // "bar" alone is a real word (title bar, status bar), so it only counts as code or next to foo.
 export const PLACEHOLDERS = /\b(foo|baz|qux|quux|asdf|lorem ipsum)\b|[`./]bar\b|\bbar[(:`]/i
 
@@ -37,8 +39,29 @@ const section = (src, name) => {
   return m ? m[1] : null
 }
 
+/** Table cells (outside code blocks) longer than MAX_CELL_WORDS, as "line N" labels. */
+export const longCells = (src) => {
+  const found = []
+  let fenced = false
+  for (const [i, line] of src.split('\n').entries()) {
+    if (line.startsWith('```')) fenced = !fenced
+    if (fenced || !line.startsWith('|')) continue
+    const cells = line.split(/(?<!\\)\|/).slice(1, -1)
+    if (cells.some((cell) => cell.trim().split(/\s+/).length > MAX_CELL_WORDS))
+      found.push(`line ${i + 1}`)
+  }
+  return found
+}
+const longCellProblem = (src) => {
+  const lines = longCells(src)
+  return lines.length
+    ? `table cells over ${MAX_CELL_WORDS} words (${lines.slice(0, 4).join(', ')}${lines.length > 4 ? ', …' : ''}); keep one sentence and move detail below the table`
+    : null
+}
+
 const rows = []
 let failures = 0
+let pageFailures = 0
 for (const { dir, pkg } of pkgs) {
   const docsDir = join('packages', dir, pkg.kitr.docs ?? 'docs')
   const guide = join(docsDir, 'index.md')
@@ -100,6 +123,10 @@ for (const { dir, pkg } of pkgs) {
   const href = src.match(/href="\/(?!packages\/|docs\/)[^"]*"/)
   if (href) problems.push(`${href[0]} would be crawled as a site page; use <Link to> or a full URL`)
 
+  // Short table cells.
+  const long = longCellProblem(src)
+  if (long) problems.push(long)
+
   // Testing section shows real code.
   const testing = section(src, 'Testing')
   if (testing !== null && !/```/.test(testing)) problems.push('Testing section has no code')
@@ -121,6 +148,25 @@ for (const { dir, pkg } of pkgs) {
   if (problems.length) failures += 1
 }
 
+// The reference pages and site docs follow the same table rule.
+if (!only.size) {
+  const pages = [
+    ...readdirSync('docs')
+      .filter((f) => f.endsWith('.md') && f !== 'STYLE.md')
+      .map((f) => join('docs', f)),
+    ...readdirSync(join('site', 'content', 'docs'))
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => join('site', 'content', 'docs', f)),
+  ]
+  for (const file of pages) {
+    const long = longCellProblem(readFileSync(file, 'utf8'))
+    if (!long) continue
+    pageFailures += 1
+    if (strict) console.error(`${file}: ${long}`)
+    else console.warn(`${file}: ${long}`)
+  }
+}
+
 if (gaps) {
   console.log('| Package | Words | Code blocks | Gaps |')
   console.log('| --- | --- | --- | --- |')
@@ -134,4 +180,4 @@ if (gaps) {
   }
   console.log(`${pkgs.length - failures} of ${pkgs.length} package guides follow docs/STYLE.md`)
 }
-if (strict && failures) process.exit(1)
+if (strict && (failures || pageFailures)) process.exit(1)

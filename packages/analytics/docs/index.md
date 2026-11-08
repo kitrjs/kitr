@@ -6,7 +6,7 @@ order: 1
 
 # Analytics
 
-Sooner or later someone asks how many people created a project this week, or which page they left from. `@kitr/analytics` gives you four calls (`page`, `track`, `identify` and `reset`) and sends each one to the services you configure: [Google Analytics](https://developers.google.com/analytics/devguides/collection/ga4), [Plausible](https://plausible.io/docs), [PostHog](https://posthog.com/docs/libraries/js), or several at once. Page views are counted for you on every route change, every vendor call is wrapped so a blocked script never breaks a button, and calls can wait in a queue until the visitor agrees to tracking.
+Sooner or later someone asks how many people created a project this week. `@kitr/analytics` gives you four calls, `page`, `track`, `identify` and `reset`, and sends them to [Google Analytics](https://developers.google.com/analytics/devguides/collection/ga4), [Plausible](https://plausible.io/docs), [PostHog](https://posthog.com/docs/libraries/js) or several at once. Page views are counted for you, and calls can wait until the visitor agrees to tracking.
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` counts how often Ada creates a project, which plan Grace's team is on, and when Linus pays an invoice.
 
@@ -69,10 +69,10 @@ With `VITE_GA_MEASUREMENT_ID` empty the `adapters` list is empty, and the provid
 | Option | Default | Description |
 | --- | --- | --- |
 | `adapters` | `[]` | Where calls go. Each entry is an adapter such as `googleAnalytics()` or `plausible()`. When empty, the provider uses `consoleAdapter()` in development and nothing in production. |
-| `enabled` | `true` | Start sending at once. `false` queues every call (up to 100) until `analytics.enable()`. With the [consent](/packages/consent) provider installed, analytics always starts disabled and consent enables it. |
+| `enabled` | `true` | Send at once. `false` queues up to 100 calls until `analytics.enable()`. With [consent](/packages/consent), it waits for consent. |
 | `pageViews` | `true` | Send `page()` on every route change. `false` leaves page views to you. |
 | `globalProps` | none | Props merged into every `page()` and `track()` call, such as the app name or build id. Props on the call win. |
-| `debug` | development, when `adapters` is set and [devtools](/packages/devtools) is not installed | Print every call with `console.info('[analytics]', ...)` and print adapter errors with `console.warn`. Off when the provider falls back to the console adapter, which already prints each call. |
+| `debug` | `true` in development | Print every call and adapter error to the console. Off when devtools is installed. |
 | `events` | none | A type-only field that carries your event map. You never set it at run time. |
 
 | Variable | Used for |

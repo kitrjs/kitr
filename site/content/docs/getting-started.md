@@ -5,7 +5,7 @@ description: Install kitr, create your first app and add a package, in about fiv
 
 # Getting started
 
-kitr is a framework made of small packages you add as you need them. A new project is the wiring files and nothing else; `kitr add web site` brings Vite, React and a router, and `kitr add forms` or `kitr add auth` come when your app needs forms or sign-in. Each package is a popular library you may already know (TanStack Query, React Hook Form, Zustand...) with the setup done for you.
+kitr is made of small packages you add as you need them, such as `kitr add forms` or `kitr add auth`. Each one is a popular library, like TanStack Query or React Hook Form, with the setup done for you.
 
 You need [Node.js](https://nodejs.org) 22 or newer.
 

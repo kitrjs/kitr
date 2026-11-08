@@ -82,7 +82,7 @@ These apply to every sentence and every code block.
 3. **Show the result.** After a call, show what comes back: a `// => { id: 'msg_1' }` comment, the log line, the HTTP response, the thrown error with its code. A reader should never have to run it to find out.
 4. **Say what happens, then why.** A section opens with what the reader wants ("To send without making the request wait, dispatch a job"), shows the code, then explains the mechanism in one or two sentences. Mechanism before motive loses beginners.
 5. **Headings are tasks or nouns a reader would search for.** "Send from a job", "Transports", "Rate limits in production". Not "Advanced", "Misc", "Other features", "Usage". The headings are the table of contents, the search index and the `llms.txt` outline, so each must make sense out of context.
-6. **Tables for anything with more than three rows.** Options, env variables, errors, commands, drivers, flags, events, hooks. Columns are `Thing | Default | Description` or `Thing | Description`. Code in tables is in backticks.
+6. **Tables for anything with more than three rows.** Options, env variables, errors, commands, drivers, flags, events, hooks. Columns are `Thing | Default | Description` or `Thing | Description`. Code in tables is in backticks. A description cell is one short sentence plus at most one example. Anything longer goes in a section under the table. The checker fails a cell over 30 words.
 7. **Name the wrong way next to the right way** when there is a common mistake: "Don't call `queryClient.invalidateQueries` in the component; declare the effect on the mutation."
 8. **Warnings are for risk only.** A `> **Warning**` blockquote marks data loss, security and production refusal ("production refuses to boot without a transport"). Tips and notes are plain sentences in the flow.
 9. **Where it runs is always stated.** Every section that only works on one side says so in its first sentence: "On the server, ...", "In a component, ...". Packages that run on both sides have their server half under its own H2s, tagged in the heading when it helps ("Cookies on the server").
@@ -131,7 +131,7 @@ Rules on top of the writing rules above:
 | Command | What it checks | In CI |
 | --- | --- | --- |
 | `pnpm docs:check --strict` | Frontmatter, summary match, links between packages, every package has docs. | fails the build |
-| `pnpm docs:rules` | This file's mechanical rules: required sections and order, config block and table, depth floors, placeholders, a test in Testing, Commands when the package ships commands, doc comments in api.md. | fails the build |
+| `pnpm docs:rules` | The mechanical rules above, plus short table cells in the guides, `docs/` and the site docs. | fails the build |
 | `pnpm docs:api --check` | Generated api.md pages are up to date with the type definitions. | fails the build |
 | `pnpm docs:guides --strict` | The guide rules above: frontmatter, listed in `nav.json`, "Before you start" first and "Next steps" last, depth floors, placeholders, and links to packages, docs and guides that exist. | fails the build |
 

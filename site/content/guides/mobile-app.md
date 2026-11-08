@@ -8,7 +8,7 @@ time: 45 min
 
 # Build a phone app
 
-Acme's finance team chases unpaid invoices from wherever they are, and a web page in a phone browser does not cut it: no icon on the home screen, a back gesture that reloads the list, and a sign-in that is gone every time iOS clears the browser's storage. You will build Acme Billing, an iPhone and Android app for the invoices API from [Build an API server without React](/guides/api-server). It has a tab bar, an invoice list that stays where you left it when you open an invoice, a sheet for new invoices, sign-in with a token kept in native storage, the system share sheet and `acme://` links that open an invoice.
+Acme's finance team chases unpaid invoices from their phones. You will build Acme Billing for iPhone and Android, on the API from [Build an API server without React](/guides/api-server): a tab bar, an invoice list, a sheet for new invoices, sign-in kept in secure storage, the share sheet and `acme://` links.
 
 The app is the same React code that runs in a browser. kitr wraps it in a [Capacitor](https://capacitorjs.com) shell, and while it runs inside the shell, the kitr packages that have a native version switch to it: storage moves to native preferences, the platform hooks get the hardware back button and the app's lifecycle, and links to other sites open in the system browser.
 

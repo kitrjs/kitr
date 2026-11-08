@@ -92,7 +92,7 @@ export const routes = defineRoutes([router], (r) =>
 )
 ```
 
-The other builds leave `/download` out of their route tree, so in the phone app it is a 404 like any unknown path. Its chunk is still in their bundles, unused; the section on keeping code out of a bundle covers code that must not ship at all. `<Link to="/download">` still type-checks everywhere, because the type of the table is the same on every platform; render such a link only where the page exists, as the next sections show. A layout whose pages are all left out is left out too.
+The other builds leave `/download` out, so in the phone app it is a 404. `<Link to="/download">` still type-checks everywhere, so only render it where the page exists, as the next sections show.
 
 When the guard should depend on more than the build, such as the operating system or whether the app runs in a native shell, use `onlyPlatform()` from `@kitr/router` as the page's `beforeLoad` instead. Its keys can be platform names, types, operating systems or `native`, and it can redirect instead of rendering not-found: `beforeLoad: onlyPlatform(['site', 'desk'], { to: '/' })` keeps a page off phones and sends them home.
 

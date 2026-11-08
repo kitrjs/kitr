@@ -6,7 +6,7 @@ order: 1
 
 # 3D
 
-Product pages that let you turn the item around, a configurator that recolours it, a hero scene on the landing page: 3D is now an ordinary part of web and app interfaces. `@kitr/3d` renders those scenes so they behave like the rest of the page: nothing during server rendering, a fallback image when the device has no WebGL, no drawing while the scene is off screen or the app is in the background, a still scene for visitors who ask for less motion, and a lower resolution when a phone starts dropping frames.
+Product viewers, configurators and hero scenes are now ordinary parts of a page. `@kitr/3d` renders them so they behave like the rest of it: nothing during server rendering, a fallback without WebGL, no drawing off screen, a still scene for reduced motion, and a lower resolution when a phone slows down.
 
 It is [React Three Fiber](https://r3f.docs.pmnd.rs) and [drei](https://drei.docs.pmnd.rs), re-exported unchanged, on top of [three.js](https://threejs.org). Meshes, lights, `useFrame`, `useThree` and every drei helper work exactly as their docs show. kitr adds `<Scene>`, a `<Canvas>` with the behaviour above; `useModel()`, which loads compressed models with a decoder your app serves itself instead of a CDN; `useThemeColor()`, which hands three.js the colours of your theme; and `kitr 3d:decoders` with a `kitr doctor` check to keep that decoder in place.
 
@@ -60,7 +60,7 @@ export function HeadsetViewer() {
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `fallback` | nothing | Shown instead of the canvas when the device has no WebGL or the scene throws (a missing model, a lost GPU). An image of the scene is the usual choice |
+| `fallback` | nothing | Shown instead when there is no WebGL or the scene fails, such as an image of the scene |
 | `loading` | nothing | 3D content shown while models and textures load, such as drei's `<Html>` with a message |
 | `frameloop` | `'always'` | `'always'` draws every frame; `'demand'` draws only after something changes |
 | `pauseWhenHidden` | `true` | Stop drawing while the scene is scrolled out of view, or the tab or app is in the background |

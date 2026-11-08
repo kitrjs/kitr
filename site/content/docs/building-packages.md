@@ -33,7 +33,7 @@ Every package on this site, official or not, is an ordinary npm package with thr
 | `name` | yes | The short name people type: `kitr add stripe`. |
 | `title` | yes | Display name on this site. |
 | `summary` | yes | One sentence, 140 characters at most, on what it does for the app. See below. |
-| `category` | yes | One of `data-fetching`, `app-state`, `backend`, `realtime`, `interface`, `forms`, `auth`, `pages`, `platforms`, `device`, `insights`, `dev-tools`, `kits`. Sets the colour and filter on the packages page. |
+| `category` | yes | Where the package is listed: `data-fetching`, `app-state`, `backend`, `realtime`, `interface`, `forms`, `auth`, `pages`, `platforms`, `device`, `insights`, `dev-tools` or `kits`. |
 | `kind` | | `package` (default), `platform` (added as `kitr add <type> <name>`) or `kit` (run by `kitr new --kit <name>`). |
 | `runsOn` | yes | `client`, `server` or `both`. Shown as a badge. |
 | `builtOn` | | Upstream libraries it wraps, shown as "Built on". |
@@ -146,7 +146,7 @@ const webhook = {
 }
 ```
 
-Every question is also a flag (`kitr add stripe --mode embedded`), so agents and CI never see a prompt. `add` and `remove` get codemods for the files kitr owns: `kitrrc.ts` providers, `config/<name>.ts`, `package.json` scripts and dependencies, `.env.example`, `AGENTS.md`, `tsconfig.json`, `vite.config.ts` and the route table; `ctx.write` and `ctx.edit` cover anything else. Add `"setup": "./kitr"` to the manifest and build the module beside your runtime code. The full contract, with every `ctx` method, is in the [package contract](/docs/package-contract) reference.
+Every question is also a flag: `kitr add stripe --mode embedded`. `add` and `remove` get helpers for the files kitr owns, such as `kitrrc.ts`, `config/<name>.ts` and `package.json`; `ctx.write` and `ctx.edit` cover anything else. Add `"setup": "./kitr"` to the manifest. Every `ctx` method is in the [package contract](/docs/package-contract).
 
 A platform or a kit is the same package with a `kind`: a platform adds a `platform` block with its `definePlatform` factory, a kit adds a `kit` block naming the platforms, packages, components and files `kitr new --kit` sets up. The [kits](/docs/kits) page shows a complete kit.
 

@@ -1,57 +1,59 @@
 # Packages
 
-Every app starts with `@kitr/core` and the `kitr` CLI. Everything else, the router included, is added with `kitr add <name>`. "Client" packages are refused in server-only projects; the rest work anywhere. Four of them load data (`http`, `api`, `actions`, `realtime`); [Choosing a data source](/docs/data-sources) says which to use.
+Every app starts with `@kitr/core` and the `kitr` CLI. You add everything else with `kitr add <name>`. "Client" packages need a UI, so a server-only project refuses them.
+
+Four packages load data: `http`, `api`, `actions` and `realtime`. [Choosing a data source](/docs/data-sources) says which to use.
 
 ## Capabilities
 
-| Name | Package | Scope | Needs | Provides |
+| Name | Package | Scope | Needs | What it does |
 | --- | --- | --- | --- | --- |
-| `react` | `@kitr/react` | client | | `<KitrProvider>`, `useApp()`, `useService()`, `useConfig()`. Added by `router`. |
-| `router` | `@kitr/router` | client | react | TanStack Router, `createKitrRouter`, `requireAuth()`, `can()`, default pending/error/404 routes, `app/router.tsx` and `app/client.tsx`. Every UI platform needs it. |
-| `query` | `@kitr/query` | client | | TanStack Query, `queryFrom`/`mutationFrom`/`subscriptionFrom`, cache effects, `useSubscription`, a provider with sane defaults (30s stale, no retry on 4xx). |
-| `http` | `@kitr/http` | client | query | ky with bearer auth, refresh-once on 401, kitr/Adonis error normalisation; `httpQuery`/`httpMutation` contracts. |
-| `forms` | `@kitr/forms` | client | | React Hook Form, `useSchemaForm(schema)` for any Standard Schema library, `<Form>` that maps server `fieldErrors`, headless `<FormField>`. |
-| `table` | `@kitr/table` | client | | TanStack Table v9 (feature-sliced), `dataTableFeatures`, `useUrlTableState` for shareable sort/page/filter URLs. |
-| `animation` | `@kitr/animation` | client | react | Motion for React, a provider that applies `config/animation.ts` (reduced motion, default transition, instant under Vitest), shared `transitions` and `presets`, `<Reveal>` for scroll-in content, `pageTransitions()` for slide and fade page changes through view transitions. |
-| `3d` | `@kitr/3d` | client | react | React Three Fiber and drei (`@kitr/3d/drei`), `<Scene>` (client-only, WebGL fallback and error boundary, pauses off screen and in the background, reduced motion, adaptive resolution), `useModel` with a self-hosted Draco decoder, `useThemeColor`, `kitr 3d:decoders`. |
-| `state` | `@kitr/state` | client | | Zustand, `createKitrStore` returning `[useStore, StoreProvider, store]` with per-request stores on the server. |
-| `tailwind` | `@kitr/tailwind` | client | | Tailwind v4 via Vite, `cn()`, the preset that exposes kitr tokens as `@theme` so `bg-background` and friends work. |
-| `theme` | `@kitr/theme` | client | | Design tokens (`defineTokens`, oklch defaults with a dark set, `app/styles/tokens.css`), `ThemeProvider`/`useTheme` (system/light/dark, cookie for SSR, `meta[name=theme-color]`), `toast` over sonner, `cva`/`clsx`, and the registry settings `kitr ui add` reads from `config/theme.ts`. |
-| `auth` | `@kitr/auth` | client | | `createAuth(adapter)` with token, Better Auth and custom adapters, `defineAbilities`, router guards, `useAuth`/`useCan`; `@kitr/auth/server` middleware for the API. |
-| `logger` | `@kitr/logger` | any | | Structured logger, levels, children, request ids, pretty in dev and JSON in production. |
-| `server` | `@kitr/server` | any | logger | h3 server with the kitr app lifecycle, request-scoped container, health route, graceful shutdown. Standalone via srvx, or a `fetch` handler inside Start. `@kitr/server/platform` is the `server()` platform factory. |
-| `api` | `@kitr/api` | any | server | Adonis-style router (groups, resources, middleware) in `server/routes.ts`, controllers in `server/controllers/` with `static validation`, typed client with no codegen, OpenAPI. |
-| `actions` | `@kitr/actions` | client | server, query | `defineQuery` and `defineMutation` over Start server functions: input schema, middleware, one error shape, cache effects. `kitr types` registers every name, so `useQuery('projects.list')` is typed. |
-| `seo` | `@kitr/seo` | client | | `seo()` head tags, `jsonLd()`, `ssrRoute()`, `cacheHeaders()`, `robotsTxt()`; `config/seo.ts` drives the web platform's prerender list and sitemap. |
-| `realtime` | `@kitr/realtime` | any | server | Typed channels over one of three transports chosen in `config/realtime.ts`: `ws` (partysocket client, crossws server), `socket.io` (rooms), `sse` (EventSource plus a POST control channel). Events apply cache effects; `@kitr/realtime/react` has `useChannel`. |
-| `db` | `@kitr/db` | any | server | `defineDb({ connect, disconnect })` so any ORM joins the lifecycle and is available as `ctx.db`. |
-| `testing` | `@kitr/testing` | any | | Vitest config, `createTestApp`, `createTestClient(server)`; `@kitr/testing/react` for `renderWithKitr`. |
-| `mocks` | `@kitr/mocks` | client | | MSW handlers from kitr route tables and contracts, for dev without a backend and for tests. |
-| `i18n` | `@kitr/i18n` | client | | react-i18next, typed keys from your resource files, locale detection. |
-| `analytics` | `@kitr/analytics` | client | | `page`/`track`/`identify` behind one API with Google Analytics, Plausible, PostHog and console adapters; page views from the router; queue-until-consent; typed event map. |
-| `monitoring` | `@kitr/monitoring` | any | | `captureException`, breadcrumbs, user context behind one API; Sentry and console reporters; window handlers, an error boundary, `reportErrors` h3 middleware. Drops expected 4xx by default. |
-| `offline` | `@kitr/offline` | client | query, storage | Persists successful queries and paused mutations to the app's storage driver, restores them before the first render and replays mutations on reconnect; `useOffline()` for `{ online, pending, restored }`. |
-| `flags` | `@kitr/flags` | any | | `defineFlags` with typed defaults, ordered providers (env, percentage rollout, OpenFeature for any vendor), per-request `resolveFlags` on the server embedded with `<FlagsScript />`, `useFlag()` in components. |
-| `consent` | `@kitr/consent` | client | storage | One consent record by category in a cookie the server can read; analytics and (optionally) monitoring wait for their category; `useConsent()` drives the banner. |
-| `secure-storage` | `@kitr/secure-storage` | any | storage | Secrets in the OS vault (Keychain, Keystore, safeStorage) with an AES-GCM web fallback; `defineSecureItem` for typed, validated items; `useSecureItem()`. |
-| `files` | `@kitr/files` | client | platform | `open`/`pick`/`save` with native dialogs on desktop and mobile, the File System Access API in the browser and a download fallback; `useFileDialogs()`, `useDropFiles()`. |
-| `notifications` | `@kitr/notifications` | client | platform | Permission, `show`, `schedule`, `cancel` and a tap listener that carries the page to open; web Notification API or the platform's driver. |
-| `native` | `@kitr/native` | client | platform | Clipboard, share sheet, haptics, geolocation, camera and biometrics, each a separate capability with a web driver and a `supported` flag; `useClipboard()`, `useShare()`, `useGeolocation()`. |
-| `updater` | `@kitr/updater` | client | platform | One `check`/`apply` state machine over the service worker on the web and the platform updaters on desktop and mobile; `useUpdate()` for the banner. |
-| `cache` | `@kitr/cache` | any | server | `remember`, tags and `cached()` over a `CacheDriver` (in-memory shipped, Redis-shaped interface), with in-flight de-duplication. |
-| `shield` | `@kitr/shield` | any | server | Security headers, CORS, per-IP rate limiting with RateLimit-* headers and double-submit CSRF as h3 middlewares; `shield(server)` reads `config/shield.ts`. |
-| `mail` | `@kitr/mail` | any | server | React email templates (`defineMail`), log, Resend and SMTP transports, text alternatives, and `/_kitr/mail` previews in development. |
-| `jobs` | `@kitr/jobs` | any | server | `defineJob` with a payload schema, retries with backoff, timeouts and cron or interval schedules; an in-process worker over a `JobsDriver` (in-memory shipped). |
-| `uploads` | `@kitr/uploads` | any | | Client `upload()` with progress and typed errors plus `useUpload()`; server `receive()`/`mount()` that parses multipart per size and type rules into a disk or custom driver. |
-| `platform` | `@kitr/platform` | client | | One API for where the app runs: `platform()`, `isNative()`, `perPlatform()`, and the hooks `usePlatform`, `useOnline`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`. A driver registry the desktop and mobile packages fill; the browser is the default driver. |
-| `storage` | `@kitr/storage` | any | | `defineStorage` (typed local/session items with schema, version+migrate, ttl, cross-tab sync) and `defineCookie` readable on both sides; `useStorage`/`useCookie` hydration-safe hooks; `cookies(event)` on the server. Native drivers (Tauri store, Electron IPC, Capacitor Preferences) come from the platform packages. |
-| `devtools` | `@kitr/devtools` | client | | The development overlay: App, Router, Query, Auth, Storage, Platform, Errors, Analytics and Log panels, a command palette, and a hub any package logs to. Providers add panels with a `devtools()` method. Dropped from production builds unless `enabled: true`. |
+| `react` | `@kitr/react` | client |  | React with the kitr app in context, so every component can reach services and config. |
+| `router` | `@kitr/router` | client | react | Pages on the kitr route table, rendered by TanStack Router: typed links, loaders and guards. Web, desktop and mobile apps get it free. |
+| `query` | `@kitr/query` | client |  | Load data from your API, keep it cached, and refresh it when something changes. |
+| `http` | `@kitr/http` | client | query | Call a REST API with login tokens added for you and errors in one shape. |
+| `forms` | `@kitr/forms` | client |  | Build forms with validation, and show server errors next to the right field. |
+| `table` | `@kitr/table` | client |  | Show rows of data with sorting, paging and filters that stay in the URL. |
+| `animation` | `@kitr/animation` | client | react | Animate components and page changes, and respect the visitor's reduced-motion setting. |
+| `3d` | `@kitr/3d` | client | react | Render 3D scenes and models that stay smooth on phones and fall back when WebGL is missing. |
+| `state` | `@kitr/state` | client |  | Keep app-wide values like a cart or settings, and optionally save them in the browser. |
+| `tailwind` | `@kitr/tailwind` | client |  | Style with Tailwind CSS classes, already set up with kitr's colours. |
+| `theme` | `@kitr/theme` | client |  | Light, dark and system themes with no flash on load, design tokens, toasts, and the components you copy into your app. |
+| `auth` | `@kitr/auth` | client |  | Sign users in and out, protect pages, and check who can do what. |
+| `logger` | `@kitr/logger` | any |  | Write readable logs in development and structured logs in production. |
+| `server` | `@kitr/server` | any | logger | Run a Node server that starts, logs and shuts down cleanly. |
+| `api` | `@kitr/api` | any | server | Build JSON API routes with validation, and call them from the browser fully typed. |
+| `actions` | `@kitr/actions` | client | server, query | Call server code straight from a component, like a form submit, without writing an API route. |
+| `seo` | `@kitr/seo` | client |  | Give every page a title, a share preview and a sitemap entry so search engines and chat apps show it well. |
+| `realtime` | `@kitr/realtime` | any | server | Define a live channel once and push updates to every open screen, over WebSockets, Socket.IO or server events. |
+| `db` | `@kitr/db` | any | server | Connect your database so every request can use it. |
+| `testing` | `@kitr/testing` | any |  | Test components and API routes with everything already wired up. |
+| `mocks` | `@kitr/mocks` | client |  | Fake your API while you build the frontend or run tests. |
+| `i18n` | `@kitr/i18n` | client |  | Translate your app into several languages with typed keys. |
+| `analytics` | `@kitr/analytics` | client |  | Count page views and button clicks, and send them to the analytics service you choose. |
+| `monitoring` | `@kitr/monitoring` | any |  | Catch errors in the browser and on the server, and see which user hit them and what they did first. |
+| `offline` | `@kitr/offline` | client | query, storage | Keep showing loaded data with no connection, and send queued changes when the network comes back. |
+| `flags` | `@kitr/flags` | any |  | Turn features on for some users and off for others, with the same answer on the server and in the browser. |
+| `consent` | `@kitr/consent` | client | storage | Ask for cookie and tracking consent once, and hold analytics and error reports until people agree. |
+| `secure-storage` | `@kitr/secure-storage` | any | storage | Keep login tokens and secrets in the phone or computer's secure vault instead of plain storage. |
+| `files` | `@kitr/files` | client | platform | Let people open, save and pick files on any platform, with a download fallback in older browsers. |
+| `notifications` | `@kitr/notifications` | client | platform | Ask for permission and show local or scheduled notifications that open the right page when tapped. |
+| `native` | `@kitr/native` | client | platform | Clipboard, share sheet, haptics, location, camera and fingerprint unlock, each with a web fallback. |
+| `updater` | `@kitr/updater` | client | platform | Tell people a new version is ready and update the app in place, on the web, desktop and mobile. |
+| `cache` | `@kitr/cache` | any | server | Remember slow results on the server and clear them by tag when the data changes. |
+| `shield` | `@kitr/shield` | any | server | Turn on the security basics every API needs: CORS, CSRF protection, safe headers and rate limits. |
+| `mail` | `@kitr/mail` | any | server | Write emails as React components, send them through your provider, and preview them in development. |
+| `jobs` | `@kitr/jobs` | any | server | Run work in the background or on a schedule, with retries when it fails. |
+| `uploads` | `@kitr/uploads` | any |  | Accept file uploads with size limits, store them on disk or in the cloud, and show progress in the browser. |
+| `platform` | `@kitr/platform` | client |  | Know where your app is running, whether it is online or in the background, and handle the back button and deep links. |
+| `storage` | `@kitr/storage` | any |  | Save small values in the browser or in cookies with types, and read the same cookies on the server. |
+| `devtools` | `@kitr/devtools` | client |  | Open a panel that shows what every package is doing. On in development; turn it on in production with one flag. |
 
 Always present: `@kitr/core` (app, container, providers, config, env, errors, contracts, validation, the `definePlatform` contract), `@kitr/vite` in projects with a UI platform, `@kitr/cli` through the `kitr` binary.
 
 ## Platforms
 
-Platforms are packages too, added with `kitr add <type> <name>` and configured in `kitrrc.ts` under `platforms`. See [platforms.md](platforms.md).
+Platforms are packages too, added with `kitr add <type> <name>` and configured in `kitrrc.ts` under `platforms`. See [Platforms](platforms.md).
 
 | Type | Package | Entry points | Needs |
 | --- | --- | --- | --- |
@@ -63,16 +65,16 @@ Platforms are packages too, added with `kitr add <type> <name>` and configured i
 
 ## Devtools
 
-`kitr add devtools` (not in the kits) mounts a bottom panel in development: ctrl/cmd+shift+K toggles it, ctrl/cmd+shift+P opens a command palette with every package's actions. Each package contributes its own panel through the provider's `devtools(app)` method, and logs through `getDevtools(app)?.log(channel, label, data)`, which is `null` in production. Out of the box: App (mode, providers, container, config, env), Router (location, matches, loader data, navigation log), Query (cache with invalidate/refetch/remove), Auth (session, sign out), Storage (local/session/cookies with remove), Platform (type, OS, drivers, app state), Errors (captured exceptions and breadcrumbs), Analytics (events, enable/disable) and Log (http requests, logger records, every channel). The kitr Vite plugin leaves the provider out of production builds unless `config/devtools.ts` sets `enabled: true`.
+`kitr add devtools` adds a panel at the bottom of the page in development. Ctrl/Cmd+Shift+K opens it. Each package adds its own tab, such as Router, Query or Auth. See [devtools](/packages/devtools).
 
 ## Kits
 
-The full walkthrough of every kit is in [kits.md](kits.md).
+The full walkthrough of every kit is in [Kits](kits.md).
 
 | Kit | Platforms | Packages |
 | --- | --- | --- |
-| `blank` | none | none: `package.json`, `tsconfig.json`, `kitrrc.ts`, `biome.json`, `.gitignore`, `.env.example`, `AGENTS.md`. `kitr add web site` (or any platform) brings Vite, React and the router. |
-| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing, plus eleven registry components (including `icon`, Hugeicons stroke-rounded) |
+| `blank` | none | none. `kitr add web site` adds Vite, React and the router. |
+| `app` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, auth, storage, mocks, testing |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the app kit plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |
 | `saas` | `site` (ssr), `api` | the fullstack set with analytics and monitoring; sign-in, guarded shell, projects CRUD, tests |
@@ -82,10 +84,8 @@ The full walkthrough of every kit is in [kits.md](kits.md).
 | `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the app kit plus platform; Tauri, typed Rust commands and events |
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the app kit plus platform; installable PWA and the Capacitor shell |
 
-`kitr new <dir> --platform admin=web,api=server --mode spa --runtime bun` replaces a kit's platforms; `--targets`, `--pwa` and `--port` set the first platform's options.
-
-Every kit but `blank` is a package of its own (`@kitr/kit-saas`, `@kitr/kit-server`), a setup module with `kind: 'kit'` that names the platforms, the packages with their answers, the registry components and the files to write. The CLI loads it the way it loads any setup module, runs it once and never lists it in the project: a kit is a template, not a dependency. `kitr new my-app --kit @acme/starter` runs a kit from any npm package the same way.
+Every kit but `blank` is a package, such as `@kitr/kit-saas`. It runs once when the project is created and is not a dependency afterwards. `kitr new my-app --kit @acme/starter` runs a kit from any npm package.
 
 ## Roadmap
 
-Later: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce. Each lands as a package with its own setup module, docs and a `make:*` command where one fits.
+Planned packages: local-db, payments, better-auth, ai, push, sync, search, media, admin, workflow, audit, tenancy, cms, graphql, commerce.

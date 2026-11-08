@@ -140,7 +140,7 @@ export default function ProjectsPage() {
 
 Run `kitr dev` and open `/projects`. You see the two projects as links (the `/projects/$id` link is a type error until the next section adds that page).
 
-`lazy` points at the page module, which loads on first visit, so a page's components never weigh on another page's bundle. Its default export is the component, or `definePage({ component, pendingComponent, errorComponent, notFoundComponent })` when the page brings its own screens. Everything that is not a component, such as the loader, `beforeLoad`, `validateSearch` and `head`, goes on the link in `app/routes.ts`, which is a `.ts` file and holds no JSX. For a page that must be in the first bundle, pass `component` instead of `lazy` and import it at the top of `app/routes.ts`.
+`lazy` loads the page module on first visit, so each page has its own bundle. Its default export is the component, or `definePage({ component, pendingComponent, errorComponent })` for its own loading and error screens. Loaders, `beforeLoad` and `head` stay in `app/routes.ts`. To put a page in the first bundle, pass `component` instead of `lazy`.
 
 `routes.$types` names every page by its link (`'page /projects'`) and carries TanStack's route type for it. The table is the one place that lists what the app renders; `kitr routes:list` (from [api](/packages/api)) prints it.
 
@@ -796,7 +796,7 @@ r.page('/chats/$id', { stackParent: '/chats', lazy: () => import('./pages/chat')
 
 ## Swipe back and the back button
 
-On iOS, dragging from the left edge pulls the page away and shows the one beneath, with the system's parallax; letting go past 30% of the width (or flicking) pops, letting go earlier snaps back. Covers and sheets dismiss with a downward drag, but only when the content inside is scrolled to the top, so a long list scrolls before it dismisses. Android gets the same gestures without the edge requirement for sheets, and its hardware back button follows the platform's order:
+On iOS, drag from the left edge to go back, and drag a sheet down to close it. Android gets the same gestures, and its back button closes things in this order:
 
 1. Handlers registered with `useBackHandler()`, newest first. A dialog registers one while it is open so back closes it.
 2. The stack pops a page when the current tab holds more than one.
@@ -943,7 +943,7 @@ r.page('/billing', {
 })
 ```
 
-Keys are platform names from `kitrrc.ts` (`www`, `phone`), platform types (`web`, `mobile`, `desktop`), OS names (`ios`) or `native`. The guard reads `context.platform` (the service from `@kitr/platform`, which `createKitrRouter` puts in the router context when the package is installed) and falls back to the build's `KITR_PLATFORM` and `KITR_PLATFORM_TYPE`, so it works in a project with no platform package. Because the platform of a build is a constant, the bundler also drops a component that branches on `import.meta.env.KITR_PLATFORM` from the builds where it never runs.
+Keys are platform names (`www`, `phone`), platform types (`web`, `mobile`), OS names (`ios`) or `native`. It works with or without the platform package. Code that branches on `import.meta.env.KITR_PLATFORM` is dropped from builds where it never runs.
 
 | Guard | Where the route exists |
 | --- | --- |
@@ -978,7 +978,7 @@ The link takes a few options of kitr's own next to TanStack's. They land in the 
 | Option | Description |
 | --- | --- |
 | `lazy` | The page module, loaded on first visit. |
-| `platforms` | The platforms (names from `kitrrc.ts`) that ship this page. The others drop it from their tree and bundle; a layout with no page left is dropped too. Default: all. |
+| `platforms` | The platforms that ship this page, by name. Others leave it out. Default: all. |
 | `render` | Render mode on the web platform, overriding its `mode`: `'ssr'`, `'client'` or `'static'`. Native platforms always render on the client. |
 | `presentation` | How the page enters a stack outlet on desktop and mobile: `'push'` (default), `'cover'`, `'sheet'` or `'fullscreen'`. |
 | `keepAlive` | Keep the page mounted (state, scroll, media) when another page covers it. |
