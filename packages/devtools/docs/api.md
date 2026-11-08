@@ -35,7 +35,7 @@ Returns the panel unchanged, typed as a `DevtoolsPanel`. Use it in the module a 
 function getDevtools(app: KitrApp): DevtoolsHub | null;
 ```
 
-The hub when devtools are active (development, client, `@kitr/devtools` added), else null.
+The hub when devtools are active (`@kitr/devtools` added and enabled, on the client), else null.
 
 ### defineConfig
 
@@ -66,7 +66,10 @@ Nothing here runs in production: the hub is only bound in development on the cli
 
 ```ts
 interface DevtoolsConfig {
-  /** Default: development on the client. Set false to disable without removing the package. */
+  /**
+   * Show the overlay. Default: in development only. Set `true` to ship it in production too,
+   * or `false` to turn it off without removing the package.
+   */
   enabled?: boolean;
   /** Where the trigger button sits. Default `bottom-left`. */
   position?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
@@ -123,7 +126,7 @@ interface DevtoolsHub {
 }
 ```
 
-The devtools service bound as `devtools` in development on the client: panels plus a shared event log.
+The devtools service bound as `devtools` on the client when devtools is enabled: panels plus a shared event log.
 
 ### DevtoolsPanel
 
@@ -152,9 +155,9 @@ A tab in the devtools window, contributed by a provider's `devtools(app)` method
 const devtoolsProvider: import("@kitr/core").KitrProvider;
 ```
 
-Development only. Binds the `devtools` hub, collects every provider's `devtools()` panels
-and mounts the overlay. In production `register`/`wrap` are no-ops, and the kitr Vite plugin
-aliases this module away entirely so nothing of it ships.
+Binds the `devtools` hub, collects every provider's `devtools()` panels and mounts the overlay,
+when `enabled` (default: development). Otherwise `register`/`wrap` are no-ops, and in a
+production build the kitr Vite plugin leaves this module out unless the config enables it.
 
 ## @kitr/devtools/ui
 

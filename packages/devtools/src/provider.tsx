@@ -18,15 +18,19 @@ function BodyPortal({ children }: { children: ReactNode }) {
     : null
 }
 
+/** `enabled` from config/devtools.ts, defaulting to development. */
+function enabled(app: { isDevelopment: boolean; config: { get: any } }): boolean {
+  return app.config.get('devtools', {} as DevtoolsConfig).enabled ?? app.isDevelopment
+}
+
 function active(app: { isDevelopment: boolean; isClient: boolean; config: { get: any } }) {
-  const config = app.config.get('devtools', {} as DevtoolsConfig)
-  return config.enabled ?? (app.isDevelopment && app.isClient)
+  return app.isClient && enabled(app)
 }
 
 /**
- * Development only. Binds the `devtools` hub, collects every provider's `devtools()` panels
- * and mounts the overlay. In production `register`/`wrap` are no-ops, and the kitr Vite plugin
- * aliases this module away entirely so nothing of it ships.
+ * Binds the `devtools` hub, collects every provider's `devtools()` panels and mounts the overlay,
+ * when `enabled` (default: development). Otherwise `register`/`wrap` are no-ops, and in a
+ * production build the kitr Vite plugin leaves this module out unless the config enables it.
  */
 export const devtoolsProvider = defineProvider({
   name: 'devtools',
@@ -54,8 +58,7 @@ export const devtoolsProvider = defineProvider({
   },
   wrap(children, app) {
     // Same tree shape on the server and the client (useId depends on it); the portal mounts client-side only.
-    const config = app.config.get('devtools', {} as DevtoolsConfig)
-    if (!(config.enabled ?? app.isDevelopment)) return children
+    if (!enabled(app)) return children
     return (
       <>
         {children as ReactNode}

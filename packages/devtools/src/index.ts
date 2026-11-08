@@ -10,7 +10,10 @@ export { getDevtools } from '@kitr/core'
 
 /** Options for `config/devtools.ts`: whether the overlay is on, where its button sits, its shortcut and log size. */
 export interface DevtoolsConfig {
-  /** Default: development on the client. Set false to disable without removing the package. */
+  /**
+   * Show the overlay. Default: in development only. Set `true` to ship it in production too,
+   * or `false` to turn it off without removing the package.
+   */
   enabled?: boolean
   /** Where the trigger button sits. Default `bottom-left`. */
   position?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'

@@ -55,7 +55,7 @@ export default defineConfig({
 | `router` | `{}` | Extra options for `@tanstack/router-plugin`. |
 | `routesDirectory` | `directories.routes` | Where the route files are, for a project that still uses them. With the route table in `app/routes.ts` nothing is here and the plugin points Start at a stub in `.kitr/`. |
 | `generatedRouteTree` | `<app>/routeTree.gen.ts`, or `.kitr/routeTree.gen.ts` with the table | Where TanStack's generator writes its tree. Unused by a table project; `createKitrRouter({ routes })` builds the tree. |
-| `devtools` | on, except in production builds | `false` leaves every development-only provider out of this build too. |
+| `devtools` | on, except in production builds without `enabled` in `config/devtools.ts` | `false` leaves every development-only provider out of this build too. `true` keeps them in production. |
 | `types` | `true` | Run `kitr types` on build start and on changes in dev. |
 
 The platform in `kitrrc.ts` sets the rest. `web({ port: 3000 })` becomes `server.port` with `strictPort`, and `kitr build site` writes `dist/site`:
@@ -94,7 +94,7 @@ The browser opens `http://localhost:3000` with the pages from `app/routes.ts`. `
 
 ## Let a package configure the build
 
-A package tells the plugin what it needs through the `vite` field of its setup module, so adding the package is the whole setup. `@kitr/tailwind` declares its plugin and the dependencies to pre-bundle; `@kitr/server` keeps `config/server.ts` out of the browser bundle; `@kitr/devtools` drops its provider from production builds; `@kitr/router` turns TanStack Start on:
+A package tells the plugin what it needs through the `vite` field of its setup module, so adding the package is the whole setup. `@kitr/tailwind` declares its plugin and the dependencies to pre-bundle; `@kitr/server` keeps `config/server.ts` out of the browser bundle; `@kitr/devtools` drops its provider from production builds unless its config enables it; `@kitr/router` turns TanStack Start on:
 
 ```ts
 // packages/tailwind/src/kitr.ts (excerpt)

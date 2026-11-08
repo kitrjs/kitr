@@ -149,6 +149,26 @@ describe('kitr() plugin', () => {
     expect(forcedOff.load('virtual:kitr/providers')).not.toContain('devtools')
   })
 
+  it('keeps a development-only provider in production when its config enables it', async () => {
+    const prodBuild = { command: 'build', mode: 'production' } as any
+    const config = (body: string) =>
+      project({ 'kitrrc.ts': rc, 'settings/devtools.ts': body }, linked)
+    const on = await corePlugin(config('export default defineConfig({ enabled: true })'), prodBuild)
+    expect(on.load('virtual:kitr/providers')).toContain('devtools/provider')
+    const decidedAtRuntime = await corePlugin(
+      config(`export default defineConfig({ enabled: import.meta.env.VITE_DEBUG === '1' })`),
+      prodBuild,
+    )
+    expect(decidedAtRuntime.load('virtual:kitr/providers')).toContain('devtools/provider')
+    const off = await corePlugin(
+      config('export default defineConfig({\n  // enabled: true,\n  enabled: false })'),
+      prodBuild,
+    )
+    expect(off.load('virtual:kitr/providers')).not.toContain('devtools')
+    const forced = await corePlugin(config('export default {}'), prodBuild, { devtools: true })
+    expect(forced.load('virtual:kitr/providers')).toContain('devtools/provider')
+  })
+
   it('loads the plugins packages declare and lets `plugins` leave one out', async () => {
     const root = project(
       {

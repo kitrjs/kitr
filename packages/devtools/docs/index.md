@@ -1,6 +1,6 @@
 ---
 title: Devtools
-description: Open a panel in development that shows what every package is doing. It is removed from production builds.
+description: Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.
 order: 1
 ---
 
@@ -10,7 +10,7 @@ When a page shows stale data or a button does nothing, the first question is wha
 
 The examples on this page follow one scenario: Acme's app at `app.acme.com` has a cart for orders, and Ada wants to see what is in it, log each change, and empty it from a button while she builds the checkout.
 
-`@kitr/devtools` runs in the browser, in development only. It renders nothing on the server, binds nothing in production, and the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users. It is a view onto kitr; for React component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it.
+`@kitr/devtools` runs in the browser, in development by default. It renders nothing on the server, and unless you set `enabled: true` the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users. It is a view onto kitr; for React component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it.
 
 ## Install
 
@@ -43,8 +43,9 @@ Every kit except `blank` and `server` includes devtools: `app`, `fullstack`, `sa
 // config/devtools.ts
 import { defineConfig } from '@kitr/devtools'
 
-/** Development only. The kitr() Vite plugin drops the provider from production builds. */
 export default defineConfig({
+  // Default: development only. true also ships it in production builds.
+  // enabled: true,
   position: 'bottom-left',
   // ctrl/cmd+shift+<key> toggles the overlay; ctrl/cmd+shift+P opens the command palette.
   shortcutKey: 'k',
@@ -54,7 +55,7 @@ export default defineConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `enabled` | on in development in the browser | `false` turns devtools off without removing the package. `true` turns it on in any mode, but production builds still leave the provider out. |
+| `enabled` | on in development | `true` turns it on in production too. `false` turns it off without removing the package. |
 | `position` | `'bottom-left'` | The corner for the "k" button: `'bottom-left'`, `'bottom-right'`, `'top-left'` or `'top-right'`. |
 | `shortcutKey` | `'k'` | The key that toggles the panel together with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd>. |
 | `maxEntries` | `500` | Log entries kept per channel. When a channel is full, its oldest entry is dropped. |
@@ -78,11 +79,26 @@ export default defineConfig({
 })
 ```
 
-The package stays installed, so the panels come back when you remove the line. To keep a longer history while chasing a bug that takes many steps to reproduce, raise `maxEntries` instead; each channel keeps that many entries.
+The package stays installed, so the panels come back when you remove the line.
+
+### Turn it on in production
+
+Set `enabled: true` and production builds include the panel:
+
+```ts
+// config/devtools.ts
+import { defineConfig } from '@kitr/devtools'
+
+export default defineConfig({
+  enabled: true,
+})
+```
+
+To decide at runtime, use an expression such as `enabled: import.meta.env.VITE_DEBUG === '1'`. The panel ships in the build and shows only when the expression is true. To keep a longer history while chasing a bug that takes many steps to reproduce, raise `maxEntries` instead; each channel keeps that many entries.
 
 ### Leave devtools out of a development build
 
-The `kitr()` Vite plugin decides whether the provider is in the bundle at all. Production builds (`kitr build`, `vite build`) never include it. To leave it out in development too, for example while profiling, pass `devtools: false`:
+The `kitr()` Vite plugin decides whether the provider is in the bundle at all. Production builds (`kitr build`, `vite build`) leave it out unless `config/devtools.ts` sets `enabled`. To leave it out in development too, for example while profiling, pass `devtools: false`:
 
 ```ts
 // vite.config.ts
@@ -170,7 +186,7 @@ The `files`, `native`, `notifications`, `offline`, `secure-storage` and `updater
 
 ## Log from your code
 
-To see what your own code does, log to a channel of your own. `getDevtools(app)` returns the hub in development and `null` everywhere else, so the optional call costs nothing in production:
+To see what your own code does, log to a channel of your own. `getDevtools(app)` returns the hub when devtools is on and `null` otherwise, so the optional call costs nothing in production:
 
 ```tsx
 // app/components/orders/add-to-cart-button.tsx

@@ -4,7 +4,7 @@ import type { KitrNode, MaybePromise } from './types'
 /**
  * The devtools contract. Core only defines the shape; `@kitr/devtools` renders it.
  * Any provider can contribute by adding a `devtools(app)` method that returns panels.
- * Nothing here runs in production: the hub is only bound in development on the client.
+ * The hub is bound on the client only when devtools is enabled (development by default).
  */
 export interface DevtoolsAction {
   /** Unique id, used as the React key and in the command palette. */
@@ -45,7 +45,7 @@ export interface DevtoolsEntry {
   data?: unknown
 }
 
-/** The devtools service bound as `devtools` in development on the client: panels plus a shared event log. */
+/** The devtools service bound as `devtools` on the client when devtools is enabled: panels plus a shared event log. */
 export interface DevtoolsHub {
   /** Every registered panel, in tab order. */
   readonly panels: DevtoolsPanel[]
@@ -63,7 +63,7 @@ export interface DevtoolsHub {
   notify(): void
 }
 
-/** The hub when devtools are active (development, client, `@kitr/devtools` added), else null. */
+/** The hub when devtools are active (`@kitr/devtools` added and enabled, on the client), else null. */
 export function getDevtools(app: KitrApp): DevtoolsHub | null {
   return app.container.has('devtools') ? app.container.use('devtools') : null
 }
