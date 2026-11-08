@@ -144,7 +144,8 @@ const importRe =
   /(?:^|[\s;}])(?:import|export)\s*(?:[^'"`;]*?\sfrom\s*)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/gm
 
 function specifiers(file) {
-  const src = readFileSync(file, 'utf8')
+  // Doc comments quote import lines in their examples; only code counts.
+  const src = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
   return [...src.matchAll(importRe)].map((m) => m[1] ?? m[2])
 }
 const packageName = (spec) =>

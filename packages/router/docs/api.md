@@ -160,6 +160,9 @@ const pages: {
 };
 ```
 
+The pages extension for `defineRoutes([pages], ...)`: `.page()`, `.layout()`, `.group()` and
+the root document, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
+
 ### CompileTreeOptions
 
 ```ts
@@ -486,6 +489,9 @@ const pages: {
   };
 };
 ```
+
+The pages extension for `defineRoutes([pages], ...)`: `.page()`, `.layout()`, `.group()` and
+the root document, compiled to a TanStack Router tree by `createKitrRouter({ routes })`.
 
 ### CompileTreeOptions
 
