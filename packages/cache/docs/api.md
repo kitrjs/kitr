@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/cache, with its signature.
+description: Every export of @kitr/cache, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/cache`, `kitr/cache/provider`, read from the published type definitions. The [guide](/packages/cache/guide) shows them in use.
+Every export of `@kitr/cache`, `@kitr/cache/provider`, read from the published type definitions. The [guide](/packages/cache/guide) shows them in use.
 
-## kitr/cache
+## @kitr/cache
 
 ### cached
 
@@ -201,7 +201,7 @@ interface UnstorageLike {
 The part of an [unstorage](https://unstorage.unjs.io) `Storage` the cache uses. Any unstorage
 instance fits, whatever its driver: Redis, Upstash, Cloudflare KV, Vercel KV, the filesystem.
 
-## kitr/cache/provider
+## @kitr/cache/provider
 
 ### cacheProvider
 

@@ -3,7 +3,7 @@ import { createPlatform } from './index'
 
 /**
  * Binds the `platform` service from the active platform driver. Platform packages
- * (`kitr/mobile/provider`, `kitr/desktop/provider`...) register their driver in `register()`,
+ * (`@kitr/mobile/provider`, `@kitr/desktop/provider`...) register their driver in `register()`,
  * so list them before this provider in kitrrc.ts; `kitr add` keeps that order.
  */
 export const platformProvider = defineProvider({

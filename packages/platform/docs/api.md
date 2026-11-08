@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/platform, with its signature.
+description: Every export of @kitr/platform, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/platform`, `kitr/platform/react`, `kitr/platform/provider`, `kitr/platform/devtools`, read from the published type definitions. The [guide](/packages/platform/guide) shows them in use.
+Every export of `@kitr/platform`, `@kitr/platform/react`, `@kitr/platform/provider`, `@kitr/platform/devtools`, read from the published type definitions. The [guide](/packages/platform/guide) shows them in use.
 
-## kitr/platform
+## @kitr/platform
 
 ### createPlatform
 
@@ -270,7 +270,7 @@ interface PlatformDriver {
 }
 ```
 
-What a platform package implements so `kitr/platform` can answer for it. Register one with
+What a platform package implements so `@kitr/platform` can answer for it. Register one with
 `app.drivers.register('platform', driver)`; every optional member falls back to a browser default.
 
 ### SafeArea
@@ -339,7 +339,7 @@ type WidthClass = 'compact' | 'medium' | 'expanded';
 
 The width class of the viewport: a phone, a small tablet or a large window.
 
-## kitr/platform/react
+## @kitr/platform/react
 
 ### Except
 
@@ -483,7 +483,7 @@ interface PlatformMatch {
 What `<Only>` and `<Except>` match on. Every prop is optional and all given props must match
 (a logical AND). An array matches any of its values.
 
-## kitr/platform/provider
+## @kitr/platform/provider
 
 ### platformProvider
 
@@ -492,10 +492,10 @@ const platformProvider: import("@kitr/core").KitrProvider;
 ```
 
 Binds the `platform` service from the active platform driver. Platform packages
-(`kitr/mobile/provider`, `kitr/desktop/provider`...) register their driver in `register()`,
+(`@kitr/mobile/provider`, `@kitr/desktop/provider`...) register their driver in `register()`,
 so list them before this provider in kitrrc.ts; `kitr add` keeps that order.
 
-## kitr/platform/devtools
+## @kitr/platform/devtools
 
 ### panels
 

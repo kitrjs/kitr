@@ -14,7 +14,7 @@ export function cn(...inputs: ClassValue[]): string {
 export interface TailwindConfig {
   /** Entry stylesheet relative to the project root. Default `app/styles/app.css`. `kitr doctor` checks it exists and imports Tailwind. */
   entry?: string
-  /** Use kitr's preset (`kitr/tailwind/preset.css`). Default true. `kitr doctor` checks the entry imports it exactly when this is on. */
+  /** Use kitr's preset (`@kitr/tailwind/preset.css`). Default true. `kitr doctor` checks the entry imports it exactly when this is on. */
   preset?: boolean
 }
 

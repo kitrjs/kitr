@@ -1,4 +1,4 @@
-import { Link } from 'kitr/router'
+import { Link } from '@kitr/router'
 import { posts } from '#app/content/posts'
 import { PageHeader } from '#components/ui/page-header'
 

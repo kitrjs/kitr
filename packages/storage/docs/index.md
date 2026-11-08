@@ -6,7 +6,7 @@ order: 1
 
 # Storage
 
-Every app remembers a few things between visits: a collapsed sidebar, the last orders someone searched for, the language they picked. `kitr/storage` lets you declare each of those values once, with a type and a default, and then read and write it anywhere without touching `localStorage` or `document.cookie` yourself. Bad, old or missing values fall back to the default, other tabs stay in sync, and server rendering never breaks.
+Every app remembers a few things between visits: a collapsed sidebar, the last orders someone searched for, the language they picked. `@kitr/storage` lets you declare each of those values once, with a type and a default, and then read and write it anywhere without touching `localStorage` or `document.cookie` yourself. Bad, old or missing values fall back to the default, other tabs stay in sync, and server rendering never breaks.
 
 It is built on [Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) and [HTTP cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies), and adds types, schema validation, versions with migrations, expiry, hydration-safe React hooks, and a native store on desktop and mobile. Storage items run in the browser; cookies run on both sides. For a value every request on the server shares, use [cache](/packages/cache).
 
@@ -43,11 +43,11 @@ The generated `app/storage.ts` in a project with React:
 
 ```ts
 // app/storage.ts
-import { defineCookie, defineStorage } from 'kitr/storage'
+import { defineCookie, defineStorage } from '@kitr/storage'
 
 /**
  * Every persisted value, in one file, typed. Components read them with
- * `useStorage(item)` / `useCookie(item)` from kitr/storage/react; plain code with `item.get()`.
+ * `useStorage(item)` / `useCookie(item)` from @kitr/storage/react; plain code with `item.get()`.
  */
 export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
 
@@ -61,7 +61,7 @@ export const recentSearches = defineStorage<string[]>('recent-searches', {
 export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
 ```
 
-`kitr remove storage` reverses every step above and deletes `config/storage.ts`. It leaves `app/storage.ts`, because you have probably edited it, and lists the files that still import `kitr/storage` so you can remove them by hand.
+`kitr remove storage` reverses every step above and deletes `config/storage.ts`. It leaves `app/storage.ts`, because you have probably edited it, and lists the files that still import `@kitr/storage` so you can remove them by hand.
 
 ## Configure
 
@@ -69,7 +69,7 @@ export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 *
 
 ```ts
 // config/storage.ts
-import { defineConfig } from 'kitr/storage'
+import { defineConfig } from '@kitr/storage'
 
 export default defineConfig({
   // Prefixes every storage key and cookie name so several apps on one origin never collide.
@@ -90,7 +90,7 @@ export default defineConfig({
 | `cookie.httpOnly` | `false` | Hide the cookie from browser scripts. Only cookies set by the server can be `httpOnly`. |
 | `cookie.sameSite` | `'lax'` | `'lax'`, `'strict'` or `'none'`. |
 
-`kitr/storage` adds no environment variables. `import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
+`@kitr/storage` adds no environment variables. `import.meta.env?.PROD` is Vite's production flag, so cookies are `Secure` in production builds and work over plain `http://localhost` in development.
 
 The provider applies this file in `register()`: it sets the prefix and the cookie defaults. It switches storage items to the platform's native store when a platform registered one, and checks again in `boot()` for a platform provider listed after it. Items read the prefix every time they touch storage, so values defined before the provider ran still pick it up.
 
@@ -102,7 +102,7 @@ Read and write a value from a component with `useStorage`. It returns the value,
 
 ```tsx
 // app/components/sidebar-toggle.tsx
-import { useStorage } from 'kitr/storage/react'
+import { useStorage } from '@kitr/storage/react'
 import { sidebar } from '#app/storage'
 
 export function SidebarToggle() {
@@ -166,7 +166,7 @@ stop()
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 // Survives restarts: a preference.
 export const ordersPageSize = defineStorage('orders-page-size', { default: 25 })
@@ -187,7 +187,7 @@ Anything in storage can be edited by the user, an old version of your app or a b
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 import { z } from 'zod'
 
 const orderFilters = z.object({
@@ -215,7 +215,7 @@ When you change the shape of a stored value, old browsers still hold the old sha
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 // Version 1 stored { collapsed: boolean }. Version 2 also remembers the width.
 export const sidebar = defineStorage('sidebar', {
@@ -244,7 +244,7 @@ Don't change the shape of `default` without bumping `version`. The old values wo
 
 ```ts
 // app/storage.ts
-import { defineStorage } from 'kitr/storage'
+import { defineStorage } from '@kitr/storage'
 
 const sevenDays = 7 * 24 * 60 * 60 * 1000
 
@@ -269,7 +269,7 @@ When Ada collapses the sidebar in one tab, every other tab of `app.acme.com` upd
 
 ```tsx
 // app/components/sidebar.tsx
-import { useStorage } from 'kitr/storage/react'
+import { useStorage } from '@kitr/storage/react'
 import type { ReactNode } from 'react'
 import { sidebar } from '#app/storage'
 
@@ -292,7 +292,7 @@ r.page('/orders', { lazy: () => import('./pages/orders') })
 
 ```tsx
 // app/pages/orders.tsx
-import { useStorage } from 'kitr/storage/react'
+import { useStorage } from '@kitr/storage/react'
 import { ordersPageSize } from '#app/storage'
 
 export default function OrdersPage() {
@@ -334,7 +334,7 @@ A cookie is the one value both the browser and the server can read, so it is the
 
 ```ts
 // app/storage.ts
-import { defineCookie } from 'kitr/storage'
+import { defineCookie } from '@kitr/storage'
 
 export type Locale = 'en' | 'de' | 'fr'
 
@@ -361,7 +361,7 @@ In a component, `useCookie` works like `useStorage`:
 
 ```tsx
 // app/components/locale-switch.tsx
-import { useCookie } from 'kitr/storage/react'
+import { useCookie } from '@kitr/storage/react'
 import { type Locale, localeCookie } from '#app/storage'
 
 export function LocaleSwitch() {
@@ -400,7 +400,7 @@ If other code writes `document.cookie`, for example a consent banner from a vend
 
 ```ts
 // app/lib/vendor-banner.ts
-import { notifyCookiesChanged } from 'kitr/storage'
+import { notifyCookiesChanged } from '@kitr/storage'
 
 window.addEventListener('vendor:consent-saved', () => notifyCookiesChanged())
 ```
@@ -420,8 +420,8 @@ r.root({ head, loader: () => readCookieHeader(), component: RootDocument })
 // app/document.tsx
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
-import { getRouteApi, HeadContent, Outlet, Scripts } from 'kitr/router'
-import { CookieHeader } from 'kitr/storage/react'
+import { getRouteApi, HeadContent, Outlet, Scripts } from '@kitr/router'
+import { CookieHeader } from '@kitr/storage/react'
 
 export const readCookieHeader = createServerFn({ method: 'GET' }).handler(() =>
   getRequest().headers.get('cookie'),
@@ -467,12 +467,12 @@ localeCookie.get(null) // => 'en'
 
 ## Read and set cookies on the server
 
-On the server, `cookies()` from `kitr/storage/server` gives typed access to one request's cookies. Pass it the h3 event in a controller or middleware. Reads come from the request's `Cookie` header; writes append a `Set-Cookie` header to the response:
+On the server, `cookies()` from `@kitr/storage/server` gives typed access to one request's cookies. Pass it the h3 event in a controller or middleware. Reads come from the request's `Cookie` header; writes append a `Set-Cookie` header to the response:
 
 ```ts
 // server/controllers/settings_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { cookies } from 'kitr/storage/server'
+import type { HttpContext } from '@kitr/api'
+import { cookies } from '@kitr/storage/server'
 import { type Locale, localeCookie } from '#app/storage'
 
 export default class SettingsController {
@@ -501,7 +501,7 @@ Where you only have Fetch primitives, such as a Cloudflare Worker or a plain `fe
 
 ```ts
 // server/edge/locale.ts
-import { cookies } from 'kitr/storage/server'
+import { cookies } from '@kitr/storage/server'
 import { localeCookie } from '#app/storage'
 
 export function handleLocale(request: Request): Response {
@@ -519,7 +519,7 @@ A cookie the browser's scripts must never read, such as an opaque session id, is
 
 ```ts
 // server/auth/session-cookie.ts
-import { defineCookie } from 'kitr/storage'
+import { defineCookie } from '@kitr/storage'
 
 export const sessionCookie = defineCookie('sid', {
   default: '',
@@ -532,8 +532,8 @@ export const sessionCookie = defineCookie('sid', {
 
 ```ts
 // server/controllers/sessions_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { cookies } from 'kitr/storage/server'
+import type { HttpContext } from '@kitr/api'
+import { cookies } from '@kitr/storage/server'
 import { sessionCookie } from '#server/auth/session-cookie'
 
 export default class SessionsController {
@@ -565,7 +565,7 @@ To read one cookie on `acme.com`, `app.acme.com` and `billing.acme.com`, set `do
 
 ```ts
 // config/storage.ts
-import { defineConfig } from 'kitr/storage'
+import { defineConfig } from '@kitr/storage'
 
 export default defineConfig({
   prefix: 'acme:',
@@ -586,7 +586,7 @@ Every `Set-Cookie` now ends with `Domain=.acme.com; Path=/; ...`. A cookie set w
 
 ```ts
 // server/lib/referrer.ts
-import { parseCookies, serializeCookie } from 'kitr/storage'
+import { parseCookies, serializeCookie } from '@kitr/storage'
 
 parseCookies('acme:locale=de; utm_source=newsletter; broken')
 // => { 'acme:locale': 'de', utm_source: 'newsletter' }
@@ -616,7 +616,7 @@ Storage items use the platform's own store when a platform registers a driver, a
 
 The storage provider looks for a registered driver in its own `register()` step and again in `boot()`, after every provider has registered. So the platform's provider (`@kitr/desktop/provider`, `@kitr/tauri/provider` or `@kitr/mobile/provider`) can be listed before or after `@kitr/storage/provider` in `kitrrc.ts`.
 
-On native platforms `session` items use an in-memory driver. Writes to a native store happen in the background after the in-memory copy updates; a failed write is logged as `[kitr/storage] <driver>: <error>` and the in-memory value stays.
+On native platforms `session` items use an in-memory driver. Writes to a native store happen in the background after the in-memory copy updates; a failed write is logged as `[@kitr/storage] <driver>: <error>` and the in-memory value stays.
 
 ### Browser
 
@@ -629,7 +629,7 @@ There is nothing to set up. Without a platform driver, `local` items use `localS
 ```ts
 // platforms/app/main.ts
 import { app, ipcMain } from 'electron'
-import { handleKitrIpc } from 'kitr/desktop/main'
+import { handleKitrIpc } from '@kitr/desktop/main'
 
 app.whenReady().then(() => {
   handleKitrIpc(ipcMain, app)
@@ -653,15 +653,15 @@ Storage items are module-level values, so a test reads and writes them directly.
 
 ```ts
 // app/storage.test.ts
-import { createTestApp } from 'kitr/testing'
+import { createTestApp } from '@kitr/testing'
 import {
   createMemoryStorageDriver,
   getStorageDriver,
   setStorageDriver,
   setStoragePrefix,
-} from 'kitr/storage'
-import storageProvider from 'kitr/storage/provider'
-import { cookies } from 'kitr/storage/server'
+} from '@kitr/storage'
+import storageProvider from '@kitr/storage/provider'
+import { cookies } from '@kitr/storage/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { localeCookie, recentSearches, sidebar } from '#app/storage'
 
@@ -750,7 +750,7 @@ Most native stores are async. `createAsyncStorageDriver` wraps one: `load` fills
 ```ts
 // app/providers/idb-storage.ts
 import { defineProvider } from 'kitr/app'
-import { createAsyncStorageDriver } from 'kitr/storage'
+import { createAsyncStorageDriver } from '@kitr/storage'
 import { createStore, del, entries, set } from 'idb-keyval'
 
 const store = createStore('acme', 'storage')

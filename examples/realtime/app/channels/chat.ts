@@ -1,4 +1,4 @@
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import type { Message } from '#app/features/chat/schema'
 
 /**

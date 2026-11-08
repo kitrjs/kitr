@@ -1,7 +1,7 @@
 {
   "name": "@kitr/mocks",
   "version": "0.1.0",
-  "description": "kitr/mocks: MSW handlers from kitr contracts, for dev and tests.",
+  "description": "@kitr/mocks: MSW handlers from kitr contracts, for dev and tests.",
   "kitr": {
     "name": "mocks",
     "title": "Mocks",

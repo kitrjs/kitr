@@ -3,7 +3,18 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { bin, copyExample, exists, kitr, kitrBin, remove, root, run, snapshot } from './helpers'
+import {
+  bin,
+  copyExample,
+  exists,
+  kitr,
+  kitrBin,
+  linkPackages,
+  remove,
+  root,
+  run,
+  snapshot,
+} from './helpers'
 
 describe('examples are the unmodified output of the kits', () => {
   it('sync-examples --check reports no drift', () => {
@@ -156,9 +167,7 @@ describe('make:* generators produce code that typechecks and builds', () => {
     expect(kitr(dir, 'jobs:list')).toMatch(/example\s+3/)
   })
 
-  let serverMain: string
   it('kitr add mail mounts the preview on the server and brings the make:mail generator', () => {
-    serverMain = readFileSync(join(dir, 'server/main.ts'), 'utf8')
     const out = kitr(dir, 'add', 'mail', '--no-install')
     expect(out).toMatch(/config\/mail\.ts/)
     expect(readFileSync(join(dir, 'server/main.ts'), 'utf8')).toContain('mailPreview(server')
@@ -211,11 +220,9 @@ describe('make:* generators produce code that typechecks and builds', () => {
   })
 
   it('the project still builds and typechecks with every generated file', () => {
-    // The example copy has no @kitr/jobs or @kitr/mail installed (only its own dependencies are
-    // linked), so drop the package wiring first; the generated files stay and import through `kitr/*`.
-    kitr(dir, 'remove', 'jobs', '--no-install')
-    kitr(dir, 'remove', 'mail', '--no-install')
-    writeFileSync(join(dir, 'server/main.ts'), serverMain)
+    // `kitr add jobs mail --no-install` left both out of node_modules: link the workspace copies,
+    // as an install would. The generated files import `@kitr/jobs` and `@kitr/mail` directly.
+    linkPackages(dir, ['jobs', 'mail'])
     // make:service registers its binding: the container hands back the class, not `unknown`.
     writeFileSync(
       join(dir, 'server/services/billing_usage.ts'),
@@ -380,7 +387,7 @@ describe('kitr add / remove', () => {
         kitr(project, 'remove', pkg, '--no-install')
         const rc = readFileSync(join(project, 'kitrrc.ts'), 'utf8')
         expect(rc).not.toContain(`@kitr/${pkg}/provider`)
-        expect(rc).not.toContain(`kitr/${pkg}'`)
+        expect(rc).not.toContain(`'@kitr/${pkg}'`)
         expect(rc).not.toMatch(new RegExp(`\\b${pkg}\\(`))
       } finally {
         remove(project)

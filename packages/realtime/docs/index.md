@@ -6,9 +6,9 @@ order: 1
 
 # Realtime
 
-A chat, a notification bell, a project board that updates while you look at it: all of them need the server to push to screens that are already open. `kitr/realtime` lets you define a typed **channel** once, emit events on it from the server, and have every subscribed screen update its query cache. It runs over [crossws](https://crossws.unjs.io) WebSockets by default, or [Socket.IO](https://socket.io/docs/v4/) or Server-Sent Events, and the channel code stays the same on all three.
+A chat, a notification bell, a project board that updates while you look at it: all of them need the server to push to screens that are already open. `@kitr/realtime` lets you define a typed **channel** once, emit events on it from the server, and have every subscribed screen update its query cache. It runs over [crossws](https://crossws.unjs.io) WebSockets by default, or [Socket.IO](https://socket.io/docs/v4/) or Server-Sent Events, and the channel code stays the same on all three.
 
-It runs on both sides: the server half (`kitr/realtime/server`) accepts connections and emits; the client half (`kitr/realtime`, `kitr/realtime/react`) subscribes. For one-off server calls that return a value, use [actions](/packages/actions) or [api](/packages/api) instead; realtime is for events the server sends when something changes.
+It runs on both sides: the server half (`@kitr/realtime/server`) accepts connections and emits; the client half (`@kitr/realtime`, `@kitr/realtime/react`) subscribes. For one-off server calls that return a value, use [actions](/packages/actions) or [api](/packages/api) instead; realtime is for events the server sends when something changes.
 
 This guide follows Acme's project board at `app.acme.com`. When Grace renames a project, Ada and Linus see the new name without reloading.
 
@@ -25,7 +25,7 @@ What `kitr add` does:
 - Adds `'@kitr/realtime'` to `packages` in `kitrrc.ts`. Realtime registers no provider.
 - Writes `config/realtime.ts` (shown under Configure).
 - Writes `app/channels/example.ts`, a sample channel named `example` with one `message` event.
-- Adds `realtime` from `kitr/realtime/routes` to the extension list of the server route table (`server/routes.ts`, created with an empty table when missing) and appends `.ws('<path>', { channels: [exampleChannel] })` to it, with the path from `config/realtime.ts`. The table is what `createServer({ routes })` in `server/main.ts` serves; a `server/main.ts` written before the table existed gets the `routes` option added.
+- Adds `realtime` from `@kitr/realtime/routes` to the extension list of the server route table (`server/routes.ts`, created with an empty table when missing) and appends `.ws('<path>', { channels: [exampleChannel] })` to it, with the path from `config/realtime.ts`. The table is what `createServer({ routes })` in `server/main.ts` serves; a `server/main.ts` written before the table existed gets the `routes` option added.
 - In a React app, writes `app/realtime.ts`, which opens one client connection per tab on first use.
 - Regenerates `config/index.ts`, the config list the standalone server imports.
 - Adds a `## kitr: realtime` section to `AGENTS.md` that says where channels live, how the server emits and how components subscribe, and how to switch transports.
@@ -44,7 +44,7 @@ In a React app, `kitr add realtime` writes this file:
 
 ```ts
 // config/realtime.ts
-import { defineConfig } from 'kitr/realtime'
+import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   // websocket (default), socket.io or sse: the channels and hooks stay the same.
@@ -74,7 +74,7 @@ Define the channel. `zod` is used for schemas here (`pnpm add zod`); any [Standa
 
 ```ts
 // app/channels/projects.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const projectSchema = z.object({ id: z.string(), name: z.string(), teamId: z.string() })
@@ -97,8 +97,8 @@ Serve the channel from the server route table, then emit from the controller tha
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
-import realtime from 'kitr/realtime/routes'
+import api from '@kitr/api/routes'
+import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
 import ProjectsController from '#server/controllers/projects_controller'
 
@@ -115,7 +115,7 @@ export type ServerRoutes = typeof routes.$types
 
 ```ts
 // server/controllers/projects_controller.ts
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { type Project, projectChannel } from '#app/channels/projects'
 
 export default class ProjectsController {
@@ -132,8 +132,8 @@ Subscribe in the component that shows the project:
 
 ```tsx
 // app/features/projects/project-title.tsx
-import { useQuery } from 'kitr/query'
-import { useChannel } from 'kitr/realtime/react'
+import { useQuery } from '@kitr/query'
+import { useChannel } from '@kitr/realtime/react'
 import { type Project, projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
 
@@ -152,7 +152,7 @@ A channel is a name, the params a subscriber picks, and the events the server se
 
 ```ts
 // app/channels/projects.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const projectSchema = z.object({ id: z.string(), name: z.string(), teamId: z.string() })
@@ -186,7 +186,7 @@ On the client, an event with a `schema` is validated before `effects` runs. A pa
 
 ```ts
 // app/features/projects/project-errors.ts
-import { channel } from 'kitr/realtime'
+import { channel } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
 
@@ -213,7 +213,7 @@ Events the channel does not declare are dropped on the client without an error.
 
 ```ts
 // app/channels/projects.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 const projectSchema = z.object({ id: z.string(), name: z.string(), teamId: z.string() })
@@ -249,7 +249,7 @@ On the server, `realtime.use(channel, params)` returns an emitter for one topic.
 
 ```ts
 // app/actions/projects/rename.ts
-import { defineMutation } from 'kitr/actions'
+import { defineMutation } from '@kitr/actions'
 import { z } from 'zod'
 import { projectChannel } from '#app/channels/projects'
 import { server } from '#server/main'
@@ -284,11 +284,11 @@ Emit with the params as the server normalised them. With `z.string().trim()` abo
 
 ## Subscribe in a component
 
-In a component, `useChannel(transport, channel, params, options?)` from `kitr/realtime/react` subscribes on mount, applies each event's `effects` to the query cache, and unsubscribes on unmount. It needs the [query](/packages/query) provider, which every kit with React includes.
+In a component, `useChannel(transport, channel, params, options?)` from `@kitr/realtime/react` subscribes on mount, applies each event's `effects` to the query cache, and unsubscribes on unmount. It needs the [query](/packages/query) provider, which every kit with React includes.
 
 ```tsx
 // app/features/projects/project-board.tsx
-import { useChannel } from 'kitr/realtime/react'
+import { useChannel } from '@kitr/realtime/react'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
 
@@ -325,8 +325,8 @@ Changing `params` resubscribes. `app/realtime.ts` opens the connection the first
 
 ```ts
 // app/features/projects/queries.ts
-import { subscriptionFrom } from 'kitr/query'
-import { channel } from 'kitr/realtime'
+import { subscriptionFrom } from '@kitr/query'
+import { channel } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
 
@@ -337,7 +337,7 @@ export const projectSubscription = () =>
 
 ```tsx
 // app/features/projects/project-live.tsx
-import { useSubscription } from 'kitr/query'
+import { useSubscription } from '@kitr/query'
 import { useMemo } from 'react'
 import { projectSubscription } from './queries'
 
@@ -356,7 +356,7 @@ The handle's `key(params)` is `['realtime', 'projects', { id: 'prj_1' }]`. It na
 
 ```tsx
 // app/components/connection-badge.tsx
-import { useRealtimeStatus } from 'kitr/realtime/react'
+import { useRealtimeStatus } from '@kitr/realtime/react'
 import { realtime } from '#app/realtime'
 
 export function ConnectionBadge() {
@@ -376,7 +376,7 @@ The channel declares the `typing` event, so clients can receive it:
 
 ```ts
 // app/channels/projects.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const projectChannel = defineChannel({
@@ -407,7 +407,7 @@ r.ws('/ws', {
 
 ```tsx
 // app/features/projects/comment-box.tsx
-import { channel } from 'kitr/realtime'
+import { channel } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 import { realtime } from '#app/realtime'
 
@@ -445,7 +445,7 @@ r.ws('/ws', {
 
 ```ts
 // app/realtime.ts
-import { createSocketClient, type SocketTransport } from 'kitr/realtime'
+import { createSocketClient, type SocketTransport } from '@kitr/realtime'
 import realtimeConfig from '#config/realtime'
 
 let transport: SocketTransport | undefined
@@ -469,7 +469,7 @@ The `url` function runs again on every reconnect, so a refreshed token is picked
 
 ```ts
 // app/channels/projects.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 type Ctx = { user: { id: string; teamIds: string[] } }
@@ -490,7 +490,7 @@ Errors reach the most specific handler. Subscription errors (bad params, `FORBID
 
 ```ts
 // app/realtime.ts
-import { createSocketClient, type SocketTransport } from 'kitr/realtime'
+import { createSocketClient, type SocketTransport } from '@kitr/realtime'
 import realtimeConfig from '#config/realtime'
 
 let transport: SocketTransport | undefined
@@ -524,7 +524,7 @@ When the realtime server runs on its own host, set `url` in config. The client u
 
 ```ts
 // config/realtime.ts
-import { defineConfig } from 'kitr/realtime'
+import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   transport: 'websocket',
@@ -537,7 +537,7 @@ From a Node script or a test, there is no page origin. Call `createSocketClient`
 
 ```ts
 // scripts/watch_project.ts
-import { channel, createSocketClient } from 'kitr/realtime'
+import { channel, createSocketClient } from '@kitr/realtime'
 import { projectChannel } from '#app/channels/projects'
 
 const transport = createSocketClient({ url: 'ws://localhost:3001/ws' })
@@ -549,7 +549,7 @@ channel(transport, projectChannel)
 
 ## The server in the container
 
-The first `.ws()` or `.sse()` link on the table binds its server in the app container as `realtime`, as the transport-neutral `RealtimeServer` (`use`, `attach`, `connections`). That is the one controllers, actions and jobs emit through, and a second link's server is reachable only through what `routes.compile('h3', server)` returned. To run a realtime server you build yourself, outside the table, `createRealtimeServer(options)` from `kitr/realtime/server` still returns one with `attach(server, path)`, and `realtimeProvider(options)` binds one as `realtime` without a route; `sseProvider` from `kitr/realtime/sse/server` does the same for SSE. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener.
+The first `.ws()` or `.sse()` link on the table binds its server in the app container as `realtime`, as the transport-neutral `RealtimeServer` (`use`, `attach`, `connections`). That is the one controllers, actions and jobs emit through, and a second link's server is reachable only through what `routes.compile('h3', server)` returned. To run a realtime server you build yourself, outside the table, `createRealtimeServer(options)` from `@kitr/realtime/server` still returns one with `attach(server, path)`, and `realtimeProvider(options)` binds one as `realtime` without a route; `sseProvider` from `@kitr/realtime/sse/server` does the same for SSE. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener.
 
 ## Transports
 
@@ -568,7 +568,7 @@ The default. `kitr add realtime` sets it up: `crossws` on the server, `partysock
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import realtime from 'kitr/realtime/routes'
+import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
 import realtimeConfig from '../config/realtime'
 
@@ -580,7 +580,7 @@ export const routes = defineRoutes([realtime], (r) =>
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { routes } from './routes'
 import { config } from '../config'
 import rc from '../kitrrc'
@@ -588,7 +588,7 @@ import rc from '../kitrrc'
 export const server = createServer({ providers: rc.providers, config, routes })
 ```
 
-`.ws(path, options)` takes `channels`, `authorize`, `adapter` and the other `createRealtimeServer` options. Mounting it registers the upgrade route on the server's h3 app and turns on `websocket` for `server.listen()`. Without `crossws` installed, `listen()` throws `[kitr/server] websocket: true needs the crossws package. Run kitr add socket.` See the [crossws docs](https://crossws.unjs.io) for runtime adapters.
+`.ws(path, options)` takes `channels`, `authorize`, `adapter` and the other `createRealtimeServer` options. Mounting it registers the upgrade route on the server's h3 app and turns on `websocket` for `server.listen()`. Without `crossws` installed, `listen()` throws `[@kitr/server] websocket: true needs the crossws package. Run kitr add socket.` See the [crossws docs](https://crossws.unjs.io) for runtime adapters.
 
 ### Socket.IO
 
@@ -602,7 +602,7 @@ Set the transport and path in config:
 
 ```ts
 // config/realtime.ts
-import { defineConfig } from 'kitr/realtime'
+import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   transport: 'socket.io',
@@ -615,7 +615,7 @@ On the server, create a Socket.IO server and serve your channels on it with `att
 ```ts
 // server/realtime.ts
 import { KitrError } from 'kitr/app'
-import { attachSocketIo } from 'kitr/realtime/socket.io/server'
+import { attachSocketIo } from '@kitr/realtime/socket.io/server'
 import { Server } from 'socket.io'
 import { projectChannel } from '#app/channels/projects'
 import { userFromToken } from '#server/auth'
@@ -637,7 +637,7 @@ Bind it to the HTTP server once the kitr server is listening:
 ```ts
 // server/main.ts
 import type { Server as HttpServer } from 'node:http'
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { io } from './realtime'
@@ -648,12 +648,12 @@ const listening = await server.listen({ port: 3001 })
 io.attach(listening.node as HttpServer)
 ```
 
-In the browser, `createRealtimeClient` refuses `socket.io` so that `socket.io-client` stays out of bundles that don't use it. Create the client from `kitr/realtime/socket.io`, which also exports `channel` and `defineChannel`:
+In the browser, `createRealtimeClient` refuses `socket.io` so that `socket.io-client` stays out of bundles that don't use it. Create the client from `@kitr/realtime/socket.io`, which also exports `channel` and `defineChannel`:
 
 ```ts
 // app/realtime.ts
-import type { SocketTransport } from 'kitr/realtime'
-import { createSocketIoClient } from 'kitr/realtime/socket.io'
+import type { SocketTransport } from '@kitr/realtime'
+import { createSocketIoClient } from '@kitr/realtime/socket.io'
 import realtimeConfig from '#config/realtime'
 
 let transport: SocketTransport | undefined
@@ -675,7 +675,7 @@ SSE needs no extra packages. The server streams events over one long `GET`; the 
 
 ```ts
 // config/realtime.ts
-import { defineConfig } from 'kitr/realtime'
+import { defineConfig } from '@kitr/realtime'
 
 export default defineConfig({
   transport: 'sse',
@@ -694,7 +694,7 @@ The `app/realtime.ts` that `kitr add` wrote already works: `createRealtimeClient
 
 ```ts
 // app/realtime.ts
-import { createSseTransport, type SocketTransport } from 'kitr/realtime'
+import { createSseTransport, type SocketTransport } from '@kitr/realtime'
 
 let transport: SocketTransport | undefined
 
@@ -735,7 +735,7 @@ Create the adapter once, in its own file, and pass it to every realtime link on 
 ```ts
 // server/realtime_adapter.ts
 import { Redis } from 'ioredis'
-import { createRedisRealtimeAdapter } from 'kitr/realtime/server'
+import { createRedisRealtimeAdapter } from '@kitr/realtime/server'
 
 export const realtimeAdapter = createRedisRealtimeAdapter(
   new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379'),
@@ -746,7 +746,7 @@ export const realtimeAdapter = createRedisRealtimeAdapter(
 ```ts
 // server/routes.ts
 import { defineRoutes } from 'kitr/app'
-import realtime from 'kitr/realtime/routes'
+import realtime from '@kitr/realtime/routes'
 import { projectChannel } from '#app/channels/projects'
 import { realtimeAdapter } from './realtime_adapter'
 
@@ -789,7 +789,7 @@ With Socket.IO, use Socket.IO's own [Redis adapter](https://socket.io/docs/v4/re
 ```ts
 // server/realtime.ts
 import { createAdapter } from '@socket.io/redis-adapter'
-import { attachSocketIo } from 'kitr/realtime/socket.io/server'
+import { attachSocketIo } from '@kitr/realtime/socket.io/server'
 import { createClient } from 'redis'
 import { Server } from 'socket.io'
 import { projectChannel } from '#app/channels/projects'
@@ -816,7 +816,7 @@ kitr make:channel invoices
 
 ```ts
 // app/channels/invoices.ts
-import { defineChannel } from 'kitr/realtime'
+import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const invoicesChannel = defineChannel({
@@ -849,7 +849,7 @@ Errors travel as kitr error shapes (`{ code, message, status }`) to the subscrip
 | HTTP `401` | The server's `authorize(request)` returned `false` or threw. The connection never opens. | Sign in, or send the cookie or token. |
 | HTTP `410` | SSE only: a control `POST` named a connection the server no longer has. | The client reconnects and resubscribes on its own. |
 | `NETWORK` | SSE only: a control `POST` failed. | Check the network; the subscription is not active. |
-| `[kitr/realtime] transport "socket.io": create the client with createSocketIoClient() from kitr/realtime/socket.io` | `createRealtimeClient` with `transport: 'socket.io'`. | Use `createSocketIoClient` in `app/realtime.ts`. |
+| `[@kitr/realtime] transport "socket.io": create the client with createSocketIoClient() from @kitr/realtime/socket.io` | `createRealtimeClient` with `transport: 'socket.io'`. | Use `createSocketIoClient` in `app/realtime.ts`. |
 
 ## Testing
 
@@ -858,10 +858,10 @@ Server and client both run in Node, so a test can start the real server on a fre
 ```ts
 // test/project_channel.test.ts
 import { defineRoutes } from 'kitr/app'
-import { silentLogger } from 'kitr/logger'
-import { channel, createSocketClient, type SocketTransport } from 'kitr/realtime'
-import ws from 'kitr/realtime/routes'
-import { createServer } from 'kitr/server'
+import { silentLogger } from '@kitr/logger'
+import { channel, createSocketClient, type SocketTransport } from '@kitr/realtime'
+import ws from '@kitr/realtime/routes'
+import { createServer } from '@kitr/server'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { projectChannel } from '#app/channels/projects'
 
@@ -915,7 +915,7 @@ To test what the cache looks like after an event, call the subscription's `effec
 
 ```ts
 // test/project_effects.test.ts
-import { channel, type SocketTransport } from 'kitr/realtime'
+import { channel, type SocketTransport } from '@kitr/realtime'
 import { expect, it } from 'vitest'
 import { projectChannel } from '#app/channels/projects'
 
@@ -937,8 +937,8 @@ Every client is a `SocketTransport`. Implement it to put channels on another ser
 
 ```ts
 // test/memory-transport.ts
-import type { SocketStatus, SocketTransport } from 'kitr/realtime'
-import { topicFor } from 'kitr/realtime'
+import type { SocketStatus, SocketTransport } from '@kitr/realtime'
+import { topicFor } from '@kitr/realtime'
 
 type Handler = (event: string, data: unknown) => void
 
@@ -977,10 +977,10 @@ Use it where the app expects a transport. `channel()`, `useChannel` and `useReal
 ```tsx
 // app/features/projects/project-title.test.tsx
 import { act, screen } from '@testing-library/react'
-import { queryProvider } from 'kitr/query'
-import { useChannel } from 'kitr/realtime/react'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { queryProvider } from '@kitr/query'
+import { useChannel } from '@kitr/realtime/react'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { expect, it } from 'vitest'
 import { projectChannel } from '#app/channels/projects'
 import { createMemoryTransport } from '../../../test/memory-transport'
@@ -1023,7 +1023,7 @@ On the server, a `RealtimeAdapter` carries emits between instances. Implement it
 ```ts
 // server/realtime/postgres_adapter.ts
 import { createHash } from 'node:crypto'
-import type { RealtimeAdapter } from 'kitr/realtime/server'
+import type { RealtimeAdapter } from '@kitr/realtime/server'
 import type { Client } from 'pg'
 
 export function createPostgresAdapter(listen: Client, notify: Client): RealtimeAdapter {

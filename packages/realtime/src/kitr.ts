@@ -4,26 +4,26 @@ import { definePackage, naming } from '@kitr/core/package'
 export default definePackage({
   name: 'realtime',
   requires: ['server'],
-  routes: 'kitr/realtime/routes',
+  routes: '@kitr/realtime/routes',
   add(ctx) {
     const serverOnly = !(ctx.has('react') || ctx.hasPackage('react'))
     const path = serverOnly ? '/ws' : '/api/ws'
     ctx.deps.add('crossws', ...(serverOnly ? [] : ['partysocket']))
     ctx.config(
       'realtime',
-      `import { defineConfig } from 'kitr/realtime'\n\nexport default defineConfig({\n  // websocket (default), socket.io or sse: the channels and hooks stay the same.\n  transport: 'websocket',\n  path: '${path}',\n})\n`,
+      `import { defineConfig } from '@kitr/realtime'\n\nexport default defineConfig({\n  // websocket (default), socket.io or sse: the channels and hooks stay the same.\n  transport: 'websocket',\n  path: '${path}',\n})\n`,
     )
     ctx.write(
       'app/channels/example.ts',
-      `import { defineChannel } from 'kitr/realtime'\n\n/** One definition for both ends. The client applies \`effects\`; the server checks \`authorize\`. */\nexport const exampleChannel = defineChannel<{ room: string }>({\n  name: 'example',\n  events: {\n    message: { effects: () => ({ invalidate: [['messages']] }) },\n  },\n  authorize: () => true,\n})\n`,
+      `import { defineChannel } from '@kitr/realtime'\n\n/** One definition for both ends. The client applies \`effects\`; the server checks \`authorize\`. */\nexport const exampleChannel = defineChannel<{ room: string }>({\n  name: 'example',\n  events: {\n    message: { effects: () => ({ invalidate: [['messages']] }) },\n  },\n  authorize: () => true,\n})\n`,
     )
-    // The socket is a route on the server table: `.ws(path, { channels })` from kitr/realtime/routes.
+    // The socket is a route on the server table: `.ws(path, { channels })` from @kitr/realtime/routes.
     // `createServer({ routes })` mounts it, and binds the first socket server as `realtime` in the
     // container, so controllers and jobs emit through `app.container.use('realtime')`.
     const configuredPath = ctx.exists('config/realtime.ts')
       ? (ctx.read('config/realtime.ts').match(/path\s*:\s*['"]([^'"]+)['"]/)?.[1] ?? path)
       : path
-    ctx.routes.extend('kitr/realtime/routes', { table: 'server' })
+    ctx.routes.extend('@kitr/realtime/routes', { table: 'server' })
     const link = `.ws('${configuredPath}', { channels: [exampleChannel] /* , authorize: (request) => ... */ })`
     if (
       !ctx.routes.append(link, {
@@ -36,15 +36,15 @@ export default definePackage({
     if (!serverOnly)
       ctx.write(
         'app/realtime.ts',
-        `import { createRealtimeClient, type SocketTransport } from 'kitr/realtime'\nimport realtimeConfig from '#config/realtime'\n\nlet transport: SocketTransport | undefined\n\n/** One connection per tab, opened on first use (so nothing connects during SSR). */\nexport function realtime(): SocketTransport {\n  transport ??= createRealtimeClient(realtimeConfig)\n  return transport\n}\n`,
+        `import { createRealtimeClient, type SocketTransport } from '@kitr/realtime'\nimport realtimeConfig from '#config/realtime'\n\nlet transport: SocketTransport | undefined\n\n/** One connection per tab, opened on first use (so nothing connects during SSR). */\nexport function realtime(): SocketTransport {\n  transport ??= createRealtimeClient(realtimeConfig)\n  return transport\n}\n`,
       )
     ctx.agents.add(
       'realtime',
-      `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\` and served by \`.ws(path, { channels })\` (or \`.sse\`) on the server route table (\`server/routes.ts\`, methods from \`kitr/realtime/routes\`). The server emits with \`app.container.use('realtime').use(channel, params).emit(event, data)\` (\`{ app }\` is on every HttpContext and job); components subscribe with \`useChannel(realtime(), channel, params)\` from \`kitr/realtime/react\` and events update the query cache via \`effects\`.\n- Switch transports in \`config/realtime.ts\`: \`socket.io\` (rooms, adapters; client from \`kitr/realtime/socket.io\`) or \`sse\` (plain HTTP, no upgrade; server from \`kitr/realtime/sse/server\`).`,
+      `- Channels are defined once in \`app/channels/*.ts\` with \`defineChannel\` and served by \`.ws(path, { channels })\` (or \`.sse\`) on the server route table (\`server/routes.ts\`, methods from \`@kitr/realtime/routes\`). The server emits with \`app.container.use('realtime').use(channel, params).emit(event, data)\` (\`{ app }\` is on every HttpContext and job); components subscribe with \`useChannel(realtime(), channel, params)\` from \`@kitr/realtime/react\` and events update the query cache via \`effects\`.\n- Switch transports in \`config/realtime.ts\`: \`socket.io\` (rooms, adapters; client from \`@kitr/realtime/socket.io\`) or \`sse\` (plain HTTP, no upgrade; server from \`@kitr/realtime/sse/server\`).`,
     )
   },
   remove(ctx) {
-    ctx.routes.remove('kitr/realtime/routes', { table: 'server' })
+    ctx.routes.remove('@kitr/realtime/routes', { table: 'server' })
     const table =
       ctx.rc.directories.serverRouteTable ?? `${ctx.rc.directories.server ?? 'server'}/routes.ts`
     if (ctx.exists(table) && /\.(ws|sse)\(/.test(ctx.read(table)))
@@ -58,7 +58,7 @@ export default definePackage({
       target: (name, project) => ({
         file: `${project.rc.directories.app ?? 'app'}/channels/${naming.snake(name)}.ts`,
       }),
-      stub: ({ name }) => `import { defineChannel } from 'kitr/realtime'
+      stub: ({ name }) => `import { defineChannel } from '@kitr/realtime'
 import { z } from 'zod'
 
 export const ${naming.camel(name)}Channel = defineChannel({
@@ -77,6 +77,6 @@ export const ${naming.camel(name)}Channel = defineChannel({
 `,
     },
   },
-  eject: { 'kitr/realtime': 'partysocket + crossws (or socket.io, or EventSource)' },
+  eject: { '@kitr/realtime': 'partysocket + crossws (or socket.io, or EventSource)' },
   vite: { optimizeDeps: ['partysocket/ws', 'socket.io-client'] },
 })

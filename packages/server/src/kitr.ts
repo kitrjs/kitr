@@ -10,12 +10,12 @@ export default definePackage({
   name: 'server',
   kind: 'platform',
   requires: ['logger'],
-  platform: { factory: server, export: 'server', from: 'kitr/server', defaultName: 'api' },
+  platform: { factory: server, export: 'server', from: '@kitr/server', defaultName: 'api' },
   add(ctx) {
     ctx.deps.add('h3', 'srvx')
     ctx.config(
       'server',
-      `import { defineConfig } from 'kitr/server'\n\nexport default defineConfig({\n  healthPath: '/healthz',\n  bodyLimit: 1024 * 1024,\n})\n`,
+      `import { defineConfig } from '@kitr/server'\n\nexport default defineConfig({\n  healthPath: '/healthz',\n  bodyLimit: 1024 * 1024,\n})\n`,
     )
     ctx.env.add({ LOG_LEVEL: 'info' }, 'Server')
     // With React, `kitr add react` wrote app/env.ts; a pure backend gets its typed env here.
@@ -35,7 +35,7 @@ export default definePackage({
     ctx.deps.remove('h3', 'srvx')
     ctx.agents.remove('server')
   },
-  wraps: { h3: 'kitr/server' },
-  eject: { 'kitr/server': 'h3 + srvx' },
+  wraps: { h3: '@kitr/server' },
+  eject: { '@kitr/server': 'h3 + srvx' },
   vite: { serverOnlyConfig: true },
 })

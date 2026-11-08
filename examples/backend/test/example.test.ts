@@ -1,4 +1,4 @@
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '../server/main'
 

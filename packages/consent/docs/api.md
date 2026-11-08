@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/consent, with its signature.
+description: Every export of @kitr/consent, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/consent`, `kitr/consent/react`, `kitr/consent/provider`, read from the published type definitions. The [guide](/packages/consent/guide) shows them in use.
+Every export of `@kitr/consent`, `@kitr/consent/react`, `@kitr/consent/provider`, read from the published type definitions. The [guide](/packages/consent/guide) shows them in use.
 
-## kitr/consent
+## @kitr/consent
 
 ### createConsent
 
@@ -25,7 +25,7 @@ logging); tests and server code can call it without one.
 function useConsent(app: KitrApp): Consent;
 ```
 
-The consent service from an app's container. Not a hook; components use `useConsent()` from `kitr/consent/react`.
+The consent service from an app's container. Not a hook; components use `useConsent()` from `@kitr/consent/react`.
 
 ### defineConfig
 
@@ -108,7 +108,7 @@ type ConsentCategory = 'necessary' | 'analytics' | 'marketing' | 'preferences' |
 
 A consent category. `necessary` is always granted; the others are whatever `config.categories` lists.
 
-## kitr/consent/react
+## @kitr/consent/react
 
 ### useConsent
 
@@ -129,7 +129,7 @@ The consent record and the actions a banner needs; re-renders when the choice ch
 server cannot read the choice, so the server render and the hydrating render both see
 "undecided", and the stored choice arrives right after: no hydration mismatch.
 
-## kitr/consent/provider
+## @kitr/consent/provider
 
 ### consentProvider
 

@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/query'
+import { defineConfig } from '@kitr/query'
 
 export default defineConfig({
   // Navigating back within 30s never refetches.

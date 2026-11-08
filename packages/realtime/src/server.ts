@@ -157,7 +157,7 @@ export function createSocketServer(options: SocketServerOptions): SocketServer {
       }
     },
     error(peer, error) {
-      console.error('[kitr/realtime] peer error', peer.id, error)
+      console.error('[@kitr/realtime] peer error', peer.id, error)
     },
   })
 
@@ -224,13 +224,13 @@ export interface RealtimeServer {
  *   realtime.attach(server) // at realtimeConfig.path
  *
  * Socket.IO needs a Socket.IO `Server`, so it throws here: use `attachSocketIo` from
- * `kitr/realtime/socket.io/server` instead.
+ * `@kitr/realtime/socket.io/server` instead.
  */
 export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServer {
   const transport = options.transport ?? 'websocket'
   if (transport === 'socket.io')
     throw new Error(
-      '[kitr/realtime] transport "socket.io": serve channels with attachSocketIo(io, { channels }) from kitr/realtime/socket.io/server',
+      '[@kitr/realtime] transport "socket.io": serve channels with attachSocketIo(io, { channels }) from @kitr/realtime/socket.io/server',
     )
   const inner =
     transport === 'sse'

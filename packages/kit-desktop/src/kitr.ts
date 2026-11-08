@@ -10,7 +10,7 @@ const files = (ctx: AddContext, name: string) => {
   write(
     ctx,
     'app/pages/home.tsx',
-    `import { isElectron } from 'kitr/desktop/client'
+    `import { isElectron } from '@kitr/desktop/client'
 import { useEffect, useState } from 'react'
 import { ipc } from '#app/ipc'
 import { Badge } from '#components/ui/badge'

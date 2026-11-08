@@ -6,11 +6,11 @@ order: 1
 
 # Web
 
-A marketing page that must load fast from a CDN, a dashboard behind a login, a store that needs every product page indexed: each one ships to the browser in a different way. `kitr/web` is the web platform. One line in `kitrrc.ts` says whether your `app/` builds to prerendered HTML, a single-page app or a server-rendered app, and whether people can install it to their home screen.
+A marketing page that must load fast from a CDN, a dashboard behind a login, a store that needs every product page indexed: each one ships to the browser in a different way. `@kitr/web` is the web platform. One line in `kitrrc.ts` says whether your `app/` builds to prerendered HTML, a single-page app or a server-rendered app, and whether people can install it to their home screen.
 
 It is built on [Vite](https://vite.dev) and [TanStack Start](https://tanstack.com/start/latest), with [vite-plugin-pwa](https://vite-pwa-org.netlify.app) for installable apps. kitr adds the platform contract on top: `kitr dev`, `kitr build` and `kitr start` know how to run each mode, `kitr config` edits the options, and `kitr doctor` checks the setup.
 
-The platform options run in the CLI and the Vite plugin; the hooks in `kitr/web/client` run in the browser. To ship the same app as a native iOS or Android app, add the [Mobile](/packages/mobile) platform next to this one. For a desktop window, use [Desktop](/packages/desktop), which ships the app in Electron; [Tauri](/packages/tauri) is the lighter alternative that uses the operating system's webview. For an API with no UI, use the [Server](/packages/server) platform.
+The platform options run in the CLI and the Vite plugin; the hooks in `@kitr/web/client` run in the browser. To ship the same app as a native iOS or Android app, add the [Mobile](/packages/mobile) platform next to this one. For a desktop window, use [Desktop](/packages/desktop), which ships the app in Electron; [Tauri](/packages/tauri) is the lighter alternative that uses the operating system's webview. For an API with no UI, use the [Server](/packages/server) platform.
 
 The examples on this page build the Acme orders app at `app.acme.com`: Ada's team lists orders and invoices in the browser, and later makes the app installable.
 
@@ -29,12 +29,12 @@ What `kitr add web site` does, in order:
 - Adds `@kitr/web` to `packages` in `kitrrc.ts` and installs it. The web package requires [Router](/packages/router), which requires [React](/packages/react), so `kitr add` runs their setup first when they are missing. Together they write `app/app.ts`, `app/client.tsx`, `app/router.tsx` and the starter routes.
 - Installs `@tanstack/react-start`, and `vite`, `@vitejs/plugin-react` and `@tanstack/router-plugin` as dev dependencies. With `--pwa` it adds `vite-plugin-pwa` (dev). With `--mode ssr` it adds `srvx`.
 - Adds `() => import('@kitr/web/provider')` to `providers` in `kitrrc.ts`.
-- Writes `site: web({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { web } from 'kitr/web'`.
+- Writes `site: web({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { web } from '@kitr/web'`.
 - Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
 - With `--pwa`, writes `public/icons/README.md`, a note naming the two icons the manifest points at. `--no-scaffold` skips this step.
 - Adds a `## kitr: platform site` section to `AGENTS.md`. It tells agents how `kitr dev`, `kitr build` and `kitr start` behave for the chosen mode, and with `pwa` to render an update banner once.
 
-`kitr/web` writes no `config/*.ts` file and adds no env variables.
+`@kitr/web` writes no `config/*.ts` file and adds no env variables.
 
 Platform options are flags on the same command. A flag without a value means `true`:
 
@@ -66,12 +66,12 @@ kitr new acme-orders --kit app --mode ssr --pwa --port 3000
 
 ## Configure
 
-`kitr/web` has no config file. Its options live on the `web()` call in `kitrrc.ts`:
+`@kitr/web` has no config file. Its options live on the `web()` call in `kitrrc.ts`:
 
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
@@ -197,14 +197,14 @@ In `ssr` mode every page renders on the server by default. To keep one page clie
 
 ```ts
 // app/routes.ts
-import { ssrRoute } from 'kitr/seo'
+import { ssrRoute } from '@kitr/seo'
 
 r.page('/orders/$orderId/edit', { ...ssrRoute(false), lazy: () => import('./pages/edit-order') })
 ```
 
 ```tsx
 // app/pages/edit-order.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders/$orderId/edit')
 
@@ -222,7 +222,7 @@ A `static` platform prerenders `/` and every page linked from it. To add pages t
 
 ```ts
 // config/seo.ts
-import { defineConfig } from 'kitr/seo'
+import { defineConfig } from '@kitr/seo'
 
 export default defineConfig({
   site: { name: 'Acme', url: 'https://app.acme.com' },
@@ -241,7 +241,7 @@ Names are yours, so one project can hold several web platforms. Each one gets it
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
@@ -309,7 +309,7 @@ When the app lives at `acme.com/orders/` instead of its own domain, set `base`:
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
@@ -338,7 +338,7 @@ The manifest uses the app name from `package.json`. To set it yourself, pass an 
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
@@ -358,7 +358,7 @@ Put the two icons the manifest points at in `public/icons/`: `icon-192.png` (192
 
 ```ts
 // scripts/print-manifest.ts
-import { pwaManifest, web } from 'kitr/web'
+import { pwaManifest, web } from '@kitr/web'
 
 const site = web({ pwa: { name: 'Acme Orders', shortName: 'Orders', themeColor: '#0b5fff' } })
 console.log(pwaManifest(site.options, 'Acme'))
@@ -381,11 +381,11 @@ The service worker is emitted by `kitr build` only. It precaches the client buil
 
 ## Show your own install button
 
-Browsers that support installation fire `beforeinstallprompt` once. `useInstallPrompt()` from `kitr/web/client` keeps that event so you can show the dialog from your own button:
+Browsers that support installation fire `beforeinstallprompt` once. `useInstallPrompt()` from `@kitr/web/client` keeps that event so you can show the dialog from your own button:
 
 ```tsx
 // app/components/install-button.tsx
-import { useInstallPrompt } from 'kitr/web/client'
+import { useInstallPrompt } from '@kitr/web/client'
 
 export function InstallButton() {
   const { canInstall, installed, install } = useInstallPrompt()
@@ -420,7 +420,7 @@ With the default `registerType: 'prompt'`, a new service worker waits until you 
 
 ```tsx
 // app/components/pwa-update.tsx
-import { useServiceWorker } from 'kitr/web/client'
+import { useServiceWorker } from '@kitr/web/client'
 
 export function PwaUpdate() {
   const { needRefresh, update } = useServiceWorker()
@@ -438,7 +438,7 @@ export function PwaUpdate() {
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Outlet, Scripts } from 'kitr/router'
+import { HeadContent, Outlet, Scripts } from '@kitr/router'
 import { PwaUpdate } from '#app/components/pwa-update'
 
 export function head() {
@@ -483,7 +483,7 @@ To run code when an update arrives, pass `onNeedRefresh`. Wrap it in `useCallbac
 ```tsx
 // app/components/pwa-update-toast.tsx
 import { useCallback } from 'react'
-import { useServiceWorker } from 'kitr/web/client'
+import { useServiceWorker } from '@kitr/web/client'
 
 export function PwaUpdateToast({ notify }: { notify: (message: string) => void }) {
   const onNeedRefresh = useCallback(() => notify('Acme Orders has an update.'), [notify])
@@ -501,7 +501,7 @@ The worker is off under `kitr dev` so stale caches never hide your edits. To deb
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
@@ -521,7 +521,7 @@ Anything kitr does not expose goes in `pwa.plugin`. It is merged last into the [
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/web'],
@@ -542,13 +542,13 @@ export default defineKitrConfig({
 
 ## Use the PWA plugin in a custom Vite setup
 
-The `kitr()` Vite plugin adds the PWA plugin when the platform it builds has `pwa` on. If you build without `kitr()`, add it yourself with `kitrPwa()` from `kitr/web/vite`:
+The `kitr()` Vite plugin adds the PWA plugin when the platform it builds has `pwa` on. If you build without `kitr()`, add it yourself with `kitrPwa()` from `@kitr/web/vite`:
 
 ```ts
 // vite.config.ts
 import { defineConfig } from 'vite'
-import { web } from 'kitr/web'
-import { kitrPwa } from 'kitr/web/vite'
+import { web } from '@kitr/web'
+import { kitrPwa } from '@kitr/web/vite'
 
 const site = web({ pwa: { name: 'Acme Orders' } })
 
@@ -580,11 +580,11 @@ Without `KITR_PLATFORM` (a plain `vite` run), the plugin builds the first web pl
 
 ## Detect the browser at run time
 
-`kitr/web/provider` registers the `platform` driver for the browser: type `web`, not native, the OS read from the user agent, and `standalone` when the app runs installed. Read it through [Platform](/packages/platform):
+`@kitr/web/provider` registers the `platform` driver for the browser: type `web`, not native, the OS read from the user agent, and `standalone` when the app runs installed. Read it through [Platform](/packages/platform):
 
 ```tsx
 // app/components/install-hint.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function InstallHint() {
   const platform = usePlatform()
@@ -639,7 +639,7 @@ For `spa`, tell the host to answer unknown paths with `index.html` (on Netlify, 
 
 ## Commands
 
-`kitr/web` adds no generators. The web platform answers these commands:
+`@kitr/web` adds no generators. The web platform answers these commands:
 
 | Command | What it does |
 | --- | --- |
@@ -674,8 +674,8 @@ For `spa`, tell the host to answer unknown paths with `index.html` (on Netlify, 
 | `dist/site/client not found. Run `kitr build site` first.` | `kitr start` ran before a build. | Run `kitr build site`. |
 | `dist/site/server/server.js not found. Run `kitr build site` first.` | `ssr` mode, but the last build was `spa` or `static`. | Build again after changing the mode. |
 | `dist/site/server/server.js does not export a fetch handler` | The server bundle is not a TanStack Start build. | Rebuild with the `kitr()` Vite plugin. |
-| `[kitr/vite] KITR_PLATFORM=<name> is not a platform in kitrrc.ts (have: ...)` | Vite ran with a platform name that `kitrrc.ts` does not have. | Run through `kitr dev <name>`, or fix the variable. |
-| `[kitr/vite] site: pwa is on but vite-plugin-pwa could not load (...)` | A warning: the build continues without a service worker. | `pnpm add -D vite-plugin-pwa`. |
+| `[@kitr/vite] KITR_PLATFORM=<name> is not a platform in kitrrc.ts (have: ...)` | Vite ran with a platform name that `kitrrc.ts` does not have. | Run through `kitr dev <name>`, or fix the variable. |
+| `[@kitr/vite] site: pwa is on but vite-plugin-pwa could not load (...)` | A warning: the build continues without a service worker. | `pnpm add -D vite-plugin-pwa`. |
 | `Port 3000 is already in use` | Another process has the port, and `--strictPort` refuses to move. | Stop it or pass `--port`. |
 
 ## Testing
@@ -684,7 +684,7 @@ Platform options are plain values, so a test can load `kitrrc.ts` and check them
 
 ```ts
 // test/platforms.test.ts
-import { pwaManifest } from 'kitr/web'
+import { pwaManifest } from '@kitr/web'
 import { describe, expect, it } from 'vitest'
 import rc from '../kitrrc'
 
@@ -701,7 +701,7 @@ describe('the site platform', () => {
 })
 ```
 
-The hooks in `kitr/web/client` read browser events, so a test fires those events itself. This test renders the install button from "Show your own install button" with a fake `beforeinstallprompt` event, in Vitest's `happy-dom` environment:
+The hooks in `@kitr/web/client` read browser events, so a test fires those events itself. This test renders the install button from "Show your own install button" with a fake `beforeinstallprompt` event, in Vitest's `happy-dom` environment:
 
 ```tsx
 // test/install-button.test.tsx

@@ -6,7 +6,7 @@ order: 1
 
 # Tables
 
-Admin screens, dashboards and reports all need the same thing: a table people can sort, page through and filter. Grace sorts Acme's orders by total, filters to the open ones, goes to page 3, and sends Linus the link. `kitr/table` keeps those choices in the page's URL, so the view survives a reload, works with the back button, and opens the same for Linus.
+Admin screens, dashboards and reports all need the same thing: a table people can sort, page through and filter. Grace sorts Acme's orders by total, filters to the open ones, goes to page 3, and sends Linus the link. `@kitr/table` keeps those choices in the page's URL, so the view survives a reload, works with the back button, and opens the same for Linus.
 
 It is [TanStack Table](https://tanstack.com/table/latest) v9, re-exported unchanged, so `useTable`, column definitions and every feature work as TanStack documents them. On top it adds `useUrlTableState()`, which binds sorting, pagination and column filters to search params; `parseTableSearch()`, which validates those params from an untrusted URL; and `dataTableFeatures`, the feature set kitr's `<DataTable>` component expects.
 
@@ -36,15 +36,15 @@ kitr ui add data-table
 
 That writes `app/components/ui/data-table.tsx`, plus the `button` and `icon` components it uses.
 
-`kitr remove table` takes `'@kitr/table'` out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `kitr/table`. It leaves `data-table.tsx` in place.
+`kitr remove table` takes `'@kitr/table'` out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `@kitr/table`. It leaves `data-table.tsx` in place.
 
 ## Configure
 
-`kitr/table` has no config file. Each table is configured where you call `useUrlTableState`:
+`@kitr/table` has no config file. Each table is configured where you call `useUrlTableState`:
 
 ```ts
 // app/routes.ts
-import { parseTableSearch } from 'kitr/table'
+import { parseTableSearch } from '@kitr/table'
 
 r.page('/orders', {
   validateSearch: parseTableSearch,
@@ -54,8 +54,8 @@ r.page('/orders', {
 
 ```tsx
 // app/pages/orders/index.tsx
-import { useUrlTableState } from 'kitr/table'
-import { getRouteApi } from 'kitr/router'
+import { useUrlTableState } from '@kitr/table'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders')
 
@@ -102,7 +102,7 @@ Three pieces: column definitions, a route that accepts table params, and the tab
 
 ```tsx
 // app/features/orders/columns.tsx
-import type { ColumnDef, DataTableFeatures } from 'kitr/table'
+import type { ColumnDef, DataTableFeatures } from '@kitr/table'
 
 export interface Order {
   id: string
@@ -132,7 +132,7 @@ Then the page. `validateSearch: parseTableSearch` makes `page`, `size`, `sort` a
 
 ```ts
 // app/routes.ts
-import { parseTableSearch } from 'kitr/table'
+import { parseTableSearch } from '@kitr/table'
 import { ordersPageQuery } from '#app/features/orders/queries'
 
 r.page('/orders', {
@@ -145,12 +145,12 @@ r.page('/orders', {
 
 ```tsx
 // app/pages/orders/index.tsx
-import { useSuspenseQuery } from 'kitr/query'
-import { useUrlTableState } from 'kitr/table'
+import { useSuspenseQuery } from '@kitr/query'
+import { useUrlTableState } from '@kitr/table'
 import { DataTable } from '#components/ui/data-table'
 import { columns } from '#app/features/orders/columns'
 import { ordersPageQuery } from '#app/features/orders/queries'
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders')
 
@@ -176,7 +176,7 @@ A column needs an id and a header. `accessorKey` reads a field of the row and do
 
 ```tsx
 // app/features/orders/columns.tsx
-import type { ColumnDef, DataTableFeatures } from 'kitr/table'
+import type { ColumnDef, DataTableFeatures } from '@kitr/table'
 import { Badge } from '#components/ui/badge'
 import { Button } from '#components/ui/button'
 import type { Order } from './types'
@@ -212,7 +212,7 @@ For a typed `getValue()` in each cell, use TanStack's column helper with the sam
 
 ```tsx
 // app/features/orders/columns.tsx
-import { createColumnHelper, type DataTableFeatures } from 'kitr/table'
+import { createColumnHelper, type DataTableFeatures } from '@kitr/table'
 import type { Order } from './types'
 
 const column = createColumnHelper<DataTableFeatures, Order>()
@@ -261,7 +261,7 @@ Anyone can edit a URL, so every search param is untrusted. `parseTableSearch` ke
 
 ```ts
 // app/features/orders/search.ts
-import { parseTableSearch } from 'kitr/table'
+import { parseTableSearch } from '@kitr/table'
 
 parseTableSearch({ page: '2', size: '50', sort: '-total,customer', filter: { status: 'open' } })
 // => { page: 2, size: 50, sort: '-total,customer', filter: { status: 'open' } }
@@ -284,7 +284,7 @@ To add params of your own, such as a search box, call it inside your own `valida
 
 ```ts
 // app/routes.ts
-import { parseTableSearch } from 'kitr/table'
+import { parseTableSearch } from '@kitr/table'
 
 r.page('/orders', {
   validateSearch: (raw: Record<string, unknown>) => ({
@@ -297,7 +297,7 @@ r.page('/orders', {
 
 ```tsx
 // app/pages/orders/index.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders')
 
@@ -315,8 +315,8 @@ The sort pattern allows dotted ids such as `customer.name`, so a column can sort
 
 ```ts
 // app/features/orders/queries.ts
-import { queryFrom } from 'kitr/query'
-import type { TableSearch } from 'kitr/table'
+import { queryFrom } from '@kitr/query'
+import type { TableSearch } from '@kitr/table'
 import type { Order } from './columns'
 
 export interface OrdersPage {
@@ -342,8 +342,8 @@ The whole `search` object is in the key, so every view is cached on its own and 
 
 ```ts
 // server/controllers/orders_controller.ts
-import type { HttpContext } from 'kitr/api'
-import { parseSort } from 'kitr/table'
+import type { HttpContext } from '@kitr/api'
+import { parseSort } from '@kitr/table'
 import { type Order, orders } from '#server/orders/data'
 
 const sorters = {
@@ -371,7 +371,7 @@ export default class OrdersController {
 }
 ```
 
-`parseSort('-total,customer')` returns `[{ id: 'total', desc: true }, { id: 'customer', desc: false }]`, and `formatSort()` turns that back into the string. Use the same page size default on both sides, or pass `size` always. Only ids in `sorters` are used, so a hand-edited `?sort=password` sorts nothing. With a database, build the `ORDER BY` from such an allow-list, never from the raw string. `kitr/table` imports React, so in a server without React, split the string yourself.
+`parseSort('-total,customer')` returns `[{ id: 'total', desc: true }, { id: 'customer', desc: false }]`, and `formatSort()` turns that back into the string. Use the same page size default on both sides, or pass `size` always. Only ids in `sorters` are used, so a hand-edited `?sort=password` sorts nothing. With a database, build the `ORDER BY` from such an allow-list, never from the raw string. `@kitr/table` imports React, so in a server without React, split the string yourself.
 
 Pass the total as `rowCount`. Without it, a manually paged table cannot know how many pages there are, and Next stays disabled.
 
@@ -381,7 +381,7 @@ A filter is a column id and a string value. Set it from any input with `column.s
 
 ```tsx
 // app/features/orders/status-filter.tsx
-import type { DataTableFeatures, ReactTable } from 'kitr/table'
+import type { DataTableFeatures, ReactTable } from '@kitr/table'
 import type { Order } from './columns'
 
 export function StatusFilter({ table }: { table: ReactTable<DataTableFeatures, Order> }) {
@@ -405,7 +405,7 @@ export function StatusFilter({ table }: { table: ReactTable<DataTableFeatures, O
 
 ```ts
 // app/routes.ts
-import { parseTableSearch } from 'kitr/table'
+import { parseTableSearch } from '@kitr/table'
 
 r.page('/orders', {
   validateSearch: parseTableSearch,
@@ -415,7 +415,7 @@ r.page('/orders', {
 
 ```tsx
 // app/pages/orders/index.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/orders')
 
@@ -455,7 +455,7 @@ Filter values are always strings in the URL. A number filter (`minTotal=100`) ar
 
 ```tsx
 // app/features/orders/page-size.tsx
-import type { DataTableFeatures, ReactTable } from 'kitr/table'
+import type { DataTableFeatures, ReactTable } from '@kitr/table'
 import type { Order } from './columns'
 
 export function PageSize({ table }: { table: ReactTable<DataTableFeatures, Order> }) {
@@ -497,7 +497,7 @@ import {
   tableFeatures,
   useTable,
   useUrlTableState,
-} from 'kitr/table'
+} from '@kitr/table'
 import type { Order } from './columns'
 
 const clientFeatures = tableFeatures({
@@ -538,7 +538,7 @@ Given Grace's 120, Ada's 80 and Linus's 300 and `?sort=-total`, the rows come ou
 
 Turning the flags off is not enough on its own. `dataTableFeatures` has no row models, so without `sortedRowModel` and the rest the table keeps the rows in the order you passed them, whatever the URL says. TanStack v9 only ships the code for what you register, which is why kitr's default set is small.
 
-`clientTableFeatures` from `kitr/table` is that feature set ready-made, with the sort and filter functions TanStack's `auto` picks. With it, `useUrlTableState({ search, setSearch, manual: false })` is all a client-side table needs, and the `data-table` component does both when you pass `clientSide`: `<DataTable columns={columns} data={rows} clientSide {...tableState} />`.
+`clientTableFeatures` from `@kitr/table` is that feature set ready-made, with the sort and filter functions TanStack's `auto` picks. With it, `useUrlTableState({ search, setSearch, manual: false })` is all a client-side table needs, and the `data-table` component does both when you pass `clientSide`: `<DataTable columns={columns} data={rows} clientSide {...tableState} />`.
 
 ## Hide columns
 
@@ -554,7 +554,7 @@ import {
   useTable,
   useUrlTableState,
   type VisibilityState,
-} from 'kitr/table'
+} from '@kitr/table'
 import { useState } from 'react'
 import type { Order } from './columns'
 
@@ -607,7 +607,7 @@ import {
   rowSelectionFeature,
   tableFeatures,
   useTable,
-} from 'kitr/table'
+} from '@kitr/table'
 import { useState } from 'react'
 import type { Order } from './columns'
 
@@ -661,7 +661,7 @@ import {
   type TableSearch,
   useTable,
   useUrlTableState,
-} from 'kitr/table'
+} from '@kitr/table'
 import type { Order } from './columns'
 
 export function OrdersGrid(props: {
@@ -732,7 +732,7 @@ With 45 orders and the default size of 20, `table.getPageCount()` is `3`. `aria-
 
 ```tsx
 // app/features/orders/pick-order-dialog.tsx
-import { type ColumnDef, type DataTableFeatures, type TableSearch, useUrlTableState } from 'kitr/table'
+import { type ColumnDef, type DataTableFeatures, type TableSearch, useUrlTableState } from '@kitr/table'
 import { useState } from 'react'
 import { DataTable } from '#components/ui/data-table'
 import type { Order } from './columns'
@@ -764,7 +764,7 @@ import {
   type TableSearch,
   useTable,
   useUrlTableState,
-} from 'kitr/table'
+} from '@kitr/table'
 import { describe, expect, it, vi } from 'vitest'
 
 interface Order {
@@ -850,8 +850,8 @@ To test the route's own `validateSearch`, call `parseTableSearch` with the raw p
 
 ## Next steps
 
-- [API reference](/packages/table/api): every export of `kitr/table`.
-- [TanStack Table docs](https://tanstack.com/table/latest): features, row models and column options, imported from `kitr/table`.
+- [API reference](/packages/table/api): every export of `@kitr/table`.
+- [TanStack Table docs](https://tanstack.com/table/latest): features, row models and column options, imported from `@kitr/table`.
 - [Router](/packages/router): `validateSearch`, `loaderDeps` and `navigate`, which the URL state uses.
 - [Query](/packages/query): cache each page of rows by its search params.
 - [Testing](/packages/testing): render tables inside your app's providers.

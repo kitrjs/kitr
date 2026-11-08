@@ -302,8 +302,8 @@ export default defineKitrConfig({
   providers: [],
 })
 `
-  const web = { entry: 'kitr/web', factory: 'web' }
-  const server = { entry: 'kitr/server', factory: 'server' }
+  const web = { entry: '@kitr/web', factory: 'web' }
+  const server = { entry: '@kitr/server', factory: 'server' }
   function rcProject(source = base) {
     const dir = mkdtempSync(join(tmpdir(), 'kitr-platforms-'))
     dirs.push(dir)
@@ -322,7 +322,7 @@ export default defineKitrConfig({
     writeRcPlatform(ctx, 'admin', web, {})
     writeRcPlatform(ctx, 'site', web, { mode: 'static', port: 4000 })
     const src = read()
-    expect(src.match(/import \{ web \} from 'kitr\/web'/g)).toHaveLength(1)
+    expect(src.match(/import \{ web \} from '@kitr\/web'/g)).toHaveLength(1)
     expect(src).toMatch(/site: web\(\{ mode: 'static', port: 4000 \}\)/)
     expect(src).toMatch(/admin: web\(\)/)
     expect(src).toContain("packages: ['@kitr/react']")
@@ -357,9 +357,9 @@ export default defineKitrConfig({
     writeRcPlatform(ctx, 'site', web, {})
     writeRcPlatform(ctx, 'admin', web, {})
     expect(removeRcPlatform(ctx, 'site')).toBeUndefined()
-    expect(read()).toMatch(/import \{ web \} from 'kitr\/web'/)
+    expect(read()).toMatch(/import \{ web \} from '@kitr\/web'/)
     expect(removeRcPlatform(ctx, 'admin')).toBe('web')
-    expect(read()).not.toMatch(/kitr\/web/)
+    expect(read()).not.toMatch(/@kitr\/web/)
   })
 
   it('creates kitrrc.ts when there is none', () => {
@@ -370,7 +370,7 @@ export default defineKitrConfig({
     const ctx = createContext({ root: dir })
     writeRcPlatform(ctx, 'site', web, { mode: 'spa' })
     const src = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
-    expect(src).toContain("import { web } from 'kitr/web'")
+    expect(src).toContain("import { web } from '@kitr/web'")
     expect(src).toMatch(/site: web\(\{ mode: 'spa' \}\)/)
   })
 

@@ -1,4 +1,4 @@
-import { useServiceWorker } from 'kitr/web/client'
+import { useServiceWorker } from '@kitr/web/client'
 
 /** Registers the service worker and shows a one-line banner when a new version is waiting. */
 export function PwaUpdate() {

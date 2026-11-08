@@ -272,8 +272,7 @@ export async function resolvePlatformType(
     throw new Error(
       `"${type}" is not a platform type. Types: ${platformTypeNames.join(', ')}, or a package whose setup module declares kind: 'platform'.`,
     )
-  const entry =
-    def.platform.from ?? (loaded.package.startsWith('@kitr/') ? `kitr/${def.name}` : loaded.package)
+  const entry = def.platform.from ?? loaded.package
   return {
     package: loaded.package,
     entry,

@@ -5,9 +5,9 @@ Where an app runs is a **platform**: a named entry in `kitrrc.ts` built by a fac
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
-import { server } from 'kitr/server'
-import { desktop } from 'kitr/desktop'
+import { web } from '@kitr/web'
+import { server } from '@kitr/server'
+import { desktop } from '@kitr/desktop'
 
 export default defineKitrConfig({
   platforms: {
@@ -24,11 +24,11 @@ Names are yours. One project can hold several platforms of the same type (`admin
 
 | Type | Package | Factory | What it builds |
 | --- | --- | --- | --- |
-| `web` | `@kitr/web` | `web()` from `kitr/web` | A browser app through TanStack Start: `static` (prerendered pages), `spa`, or `ssr`. `pwa: true` adds the manifest and service worker. |
-| `server` | `@kitr/server` | `server()` from `kitr/server` | The h3 server in `server/main.ts` on Node, Bun, Deno or Cloudflare Workers. |
-| `desktop` | `@kitr/desktop` | `desktop()` from `kitr/desktop` | An Electron shell around the SPA build: Chromium ships with the app. Main and preload in `platforms/<name>/`. |
-| `tauri` | `@kitr/tauri` | `tauri()` from `kitr/tauri` | A Tauri shell around the SPA build: a small Rust binary on the OS webview. Rust project in `platforms/<name>/src-tauri`. |
-| `mobile` | `@kitr/mobile` | `mobile()` from `kitr/mobile` | A Capacitor shell for iOS and Android. Native project in `platforms/<name>/`. |
+| `web` | `@kitr/web` | `web()` from `@kitr/web` | A browser app through TanStack Start: `static` (prerendered pages), `spa`, or `ssr`. `pwa: true` adds the manifest and service worker. |
+| `server` | `@kitr/server` | `server()` from `@kitr/server` | The h3 server in `server/main.ts` on Node, Bun, Deno or Cloudflare Workers. |
+| `desktop` | `@kitr/desktop` | `desktop()` from `@kitr/desktop` | An Electron shell around the SPA build: Chromium ships with the app. Main and preload in `platforms/<name>/`. |
+| `tauri` | `@kitr/tauri` | `tauri()` from `@kitr/tauri` | A Tauri shell around the SPA build: a small Rust binary on the OS webview. Rust project in `platforms/<name>/src-tauri`. |
+| `mobile` | `@kitr/mobile` | `mobile()` from `@kitr/mobile` | A Capacitor shell for iOS and Android. Native project in `platforms/<name>/`. |
 
 ## Commands
 
@@ -54,7 +54,7 @@ Every option can be overridden at run time without touching the file: `KITR_SITE
 | `mode` | `spa` | `static`: prerender every route to HTML. `spa`: one shell, client routing. `ssr`: render on request through TanStack Start. |
 | `port` | `3000` | Dev and production port. |
 | `host` | | Bind address (localhost in dev, `0.0.0.0` in production). |
-| `pwa` | `false` | `true` or `{ name, shortName, themeColor, ... }`: web manifest, service worker (vite-plugin-pwa, autoUpdate), `useInstallPrompt`, `useServiceWorker` from `kitr/web/client`. |
+| `pwa` | `false` | `true` or `{ name, shortName, themeColor, ... }`: web manifest, service worker (vite-plugin-pwa, autoUpdate), `useInstallPrompt`, `useServiceWorker` from `@kitr/web/client`. |
 | `base` | `/` | Public base path. |
 | `open` | `false` | Open the browser on `kitr dev`. |
 
@@ -78,11 +78,11 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 | `appId` | | Bundle identifier. |
 | `devtools` | `true` | Open devtools in dev. |
 
-electron-vite builds `platforms/<name>/{main,preload,ipc}.ts`; electron-builder packages installers. `kitr/desktop/client` has the typed IPC bridge (`createIpcClient`, `isElectron`), `kitr/desktop/main` and `kitr/desktop/preload` serve the other two processes, and `kitr/desktop/provider` registers the `platform` and `storage` drivers. Electron is the recommended desktop shell for most setups: it ships a browser with the app, so what you test is what every user runs.
+electron-vite builds `platforms/<name>/{main,preload,ipc}.ts`; electron-builder packages installers. `@kitr/desktop/client` has the typed IPC bridge (`createIpcClient`, `isElectron`), `@kitr/desktop/main` and `@kitr/desktop/preload` serve the other two processes, and `@kitr/desktop/provider` registers the `platform` and `storage` drivers. Electron is the recommended desktop shell for most setups: it ships a browser with the app, so what you test is what every user runs.
 
 **tauri** (`@kitr/tauri`)
 
-Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri` and needs the Rust toolchain; the window is the webview the operating system provides, so downloads are small but rendering can differ between machines. `kitr/tauri/client` has `isTauri`, `defineCommands`, `commandQuery`, `commandMutation`, `useTauriEvent` and `emitTauri`; `kitr/tauri/provider` registers the `platform` and `storage` drivers on the Tauri APIs and the store plugin. Pick one of `desktop` and `tauri` per project; neither installs the other's tooling.
+Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri` and needs the Rust toolchain; the window is the webview the operating system provides, so downloads are small but rendering can differ between machines. `@kitr/tauri/client` has `isTauri`, `defineCommands`, `commandQuery`, `commandMutation`, `useTauriEvent` and `emitTauri`; `@kitr/tauri/provider` registers the `platform` and `storage` drivers on the Tauri APIs and the store plugin. Pick one of `desktop` and `tauri` per project; neither installs the other's tooling.
 
 **mobile** (`@kitr/mobile`)
 
@@ -93,7 +93,7 @@ Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri
 | `scheme` | | Custom URL scheme for deep links. |
 | `port` | `3100` | Dev server for live reload on the device. |
 
-`kitr/mobile/provider` registers the Capacitor drivers; `kitr/platform/react` (`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) and `kitr/storage` then answer the same way in the browser and in the shell.
+`@kitr/mobile/provider` registers the Capacitor drivers; `@kitr/platform/react` (`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) and `@kitr/storage` then answer the same way in the browser and in the shell.
 
 ## Layout
 
@@ -118,12 +118,12 @@ A product that ships as a marketing site, an authed web app, a phone app and a d
 
 | Need | Tool |
 | --- | --- |
-| A route that exists on some platforms only | `onlyPlatform('www')` guard in `kitr/router` |
-| Server rendering on the site, client rendering in the shells | `ssrRoute({ www: true, default: false })` in `kitr/seo` |
-| A guest landing and a member feed on the same URL | `authBranch()`, `<Authed>`, `<Guest>` in `kitr/auth` |
-| A different adapter, implementation or layout per platform | `forPlatform()` (build time) and `perPlatform()` (run time) in `kitr/platform` |
-| A piece of UI on some platforms or form factors | `<Only>`, `<Except>`, `useFormFactor()` in `kitr/platform/react` |
-| Native stack navigation: push, swipe back, tabs, sheets | `<StackOutlet>`, `<StackTabs>`, `<SplitStack>` in `kitr/router/stack` |
+| A route that exists on some platforms only | `onlyPlatform('www')` guard in `@kitr/router` |
+| Server rendering on the site, client rendering in the shells | `ssrRoute({ www: true, default: false })` in `@kitr/seo` |
+| A guest landing and a member feed on the same URL | `authBranch()`, `<Authed>`, `<Guest>` in `@kitr/auth` |
+| A different adapter, implementation or layout per platform | `forPlatform()` (build time) and `perPlatform()` (run time) in `@kitr/platform` |
+| A piece of UI on some platforms or form factors | `<Only>`, `<Except>`, `useFormFactor()` in `@kitr/platform/react` |
+| Native stack navigation: push, swipe back, tabs, sheets | `<StackOutlet>`, `<StackTabs>`, `<SplitStack>` in `@kitr/router/stack` |
 | Compile-time branches on the build | `import.meta.env.KITR_PLATFORM`, typed after `kitr types` |
 
 When the apps are separate projects in one repository, `kitr.workspace.ts` names them and the CLI fans out from the root; see [Workspaces](cli.md#workspaces).
@@ -153,4 +153,4 @@ export const kiosk = definePlatform<{ port?: number }>(
 )
 ```
 
-`ctx` carries the platform name, the project root, the resolved options, the package manager, the other platforms, the flags from the command line, an abort signal and `log`, `run` and `exec` helpers that resolve `node_modules/.bin`. `kitr/vite` reads `import.meta.env.KITR_PLATFORM` and `KITR_PLATFORM_TYPE` so app code can branch per platform at build time.
+`ctx` carries the platform name, the project root, the resolved options, the package manager, the other platforms, the flags from the command line, an abort signal and `log`, `run` and `exec` helpers that resolve `node_modules/.bin`. `@kitr/vite` reads `import.meta.env.KITR_PLATFORM` and `KITR_PLATFORM_TYPE` so app code can branch per platform at build time.

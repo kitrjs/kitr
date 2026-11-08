@@ -145,18 +145,18 @@ const lineBreak = /[\r\n]/
 
 function checkAddress(a: Address, field: string): Address {
   if (lineBreak.test(a.email) || (a.name && lineBreak.test(a.name)))
-    throw new Error(`[kitr/mail] Line break in ${field} address.`)
+    throw new Error(`[@kitr/mail] Line break in ${field} address.`)
   if (!/^[^\s@<>,;"]+@[^\s@<>,;"]+$/.test(a.email))
-    throw new Error(`[kitr/mail] "${a.email}" in ${field} is not an email address.`)
+    throw new Error(`[@kitr/mail] "${a.email}" in ${field} is not an email address.`)
   return a
 }
 
 function checkHeaders(headers: Record<string, string> | undefined) {
   for (const [name, value] of Object.entries(headers ?? {})) {
     if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name))
-      throw new Error(`[kitr/mail] Bad header name "${name}".`)
+      throw new Error(`[@kitr/mail] Bad header name "${name}".`)
     if (lineBreak.test(String(value)))
-      throw new Error(`[kitr/mail] Line break in header "${name}".`)
+      throw new Error(`[@kitr/mail] Line break in header "${name}".`)
   }
 }
 
@@ -209,7 +209,7 @@ export function createLogTransport(options: { print?: boolean } = {}): MailTrans
       messages.push(message)
       if (options.print !== false)
         console.info(
-          `[kitr/mail] to ${message.to.map(formatAddress).join(', ')}: ${message.subject}\n${message.text}`,
+          `[@kitr/mail] to ${message.to.map(formatAddress).join(', ')}: ${message.subject}\n${message.text}`,
         )
       return { id: `log-${messages.length}` }
     },
@@ -256,7 +256,7 @@ export function createResendTransport(options: {
           })),
         }),
       })
-      if (!res.ok) throw new Error(`[kitr/mail] Resend ${res.status}: ${await res.text()}`)
+      if (!res.ok) throw new Error(`[@kitr/mail] Resend ${res.status}: ${await res.text()}`)
       const data = (await res.json()) as { id?: string }
       return { id: data.id }
     },
@@ -330,10 +330,10 @@ export function createMailer(options: CreateMailerOptions = {}): Mailer {
     async render(template, props, send = {}) {
       const from = send.from ?? options.from
       if (!from)
-        throw new Error('[kitr/mail] No sender: set `from` in config/mail.ts or in send().')
+        throw new Error('[@kitr/mail] No sender: set `from` in config/mail.ts or in send().')
       const subject =
         typeof template.subject === 'function' ? template.subject(props) : template.subject
-      if (lineBreak.test(subject)) throw new Error('[kitr/mail] Line break in the subject.')
+      if (lineBreak.test(subject)) throw new Error('[@kitr/mail] Line break in the subject.')
       checkHeaders(send.headers)
       const html = await renderHtml(template.render(props))
       const doc =
@@ -353,7 +353,7 @@ export function createMailer(options: CreateMailerOptions = {}): Mailer {
     },
     async send(template, props, send) {
       const message = await mailer.render(template, props, send)
-      if (!message.to.length) throw new Error('[kitr/mail] No recipient.')
+      if (!message.to.length) throw new Error('[@kitr/mail] No recipient.')
       const { id } = await transport.send(message)
       return { id: id ?? crypto.randomUUID(), transport: transport.name }
     },

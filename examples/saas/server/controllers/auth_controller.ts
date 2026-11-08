@@ -1,4 +1,4 @@
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { KitrError } from 'kitr/app'
 import { z } from 'zod'
 import type { User } from '#app/abilities'

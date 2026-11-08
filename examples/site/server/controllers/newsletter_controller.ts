@@ -1,4 +1,4 @@
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { type Subscribe, subscribeSchema } from '#app/features/newsletter/schema'
 
 /** In-memory for the demo; a real app would write to a database or an email provider. */

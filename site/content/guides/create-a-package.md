@@ -341,7 +341,7 @@ Use the service from a controller:
 
 ```ts
 // server/controllers/invoices_controller.ts
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 
 export default class InvoicesController {
   async pay({ app, params }: HttpContext<{ id: string }>) {
@@ -400,7 +400,7 @@ describe('@acme/slack', () => {
 })
 ```
 
-Packages import `@kitr/testing` directly; apps import the same helpers as `kitr/testing`.
+Packages import `@kitr/testing` directly; apps import the same helpers as `@kitr/testing`.
 
 ## Write the docs
 

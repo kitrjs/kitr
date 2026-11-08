@@ -6,7 +6,7 @@ order: 1
 
 # Database
 
-Orders, invoices, projects, teams: almost every app keeps its data in a database. `kitr/db` opens the connection when your app starts, hands the same client to every controller, action and job, and closes it cleanly when the server stops. It ships no ORM. You bring [Drizzle](https://orm.drizzle.team), [Prisma](https://www.prisma.io/docs), [Kysely](https://kysely.dev) or a plain [`pg`](https://node-postgres.com) pool, and kitr runs it inside the [app lifecycle](/docs/configuration).
+Orders, invoices, projects, teams: almost every app keeps its data in a database. `@kitr/db` opens the connection when your app starts, hands the same client to every controller, action and job, and closes it cleanly when the server stops. It ships no ORM. You bring [Drizzle](https://orm.drizzle.team), [Prisma](https://www.prisma.io/docs), [Kysely](https://kysely.dev) or a plain [`pg`](https://node-postgres.com) pool, and kitr runs it inside the [app lifecycle](/docs/configuration).
 
 It runs on the server only. If you only need to keep data in the browser or on a device, use [storage](/packages/storage) instead.
 
@@ -21,7 +21,7 @@ kitr add db
 What `kitr add` does:
 
 - Adds the [server](/packages/server) package first if the project does not have it yet.
-- Installs `@kitr/db` (you use it through `kitr/db`).
+- Installs `@kitr/db` (you use it through `@kitr/db`).
 - Adds `'@kitr/db'` to `packages` and `() => import('@kitr/db')` to `providers` in `kitrrc.ts`.
 - Appends `DATABASE_URL=postgres://localhost:5432/app` under a `# Database` comment to `.env.example`, and to `.env` when it exists.
 - Writes `config/db.ts` (shown under Configure). An existing file is left alone.
@@ -38,7 +38,7 @@ The `server` kit (`kitr new acme-api --kit server`) already includes db. `kitr r
 
 ```ts
 // config/db.ts
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 
 // Example with Drizzle + postgres.js: `pnpm add drizzle-orm postgres`
 // import { drizzle } from 'drizzle-orm/postgres-js'
@@ -66,7 +66,7 @@ export default defineDb({
 | --- | --- |
 | `DATABASE_URL` | The connection string your `connect` reads. `kitr add` writes `postgres://localhost:5432/app` as the example value. |
 
-`kitr/db` also exports `defineConfig`, the same identity helper every package has. Prefer `defineDb`: it infers the client type from `connect`, so `disconnect` and `onReady` receive a typed `db`.
+`@kitr/db` also exports `defineConfig`, the same identity helper every package has. Prefer `defineDb`: it infers the client type from `connect`, so `disconnect` and `onReady` receive a typed `db`.
 
 ## Connect with Drizzle
 
@@ -104,7 +104,7 @@ Then fill in `config/db.ts`. Export the client type as `AppDb` so the rest of th
 // config/db.ts
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import * as schema from '#server/db/schema'
 
 const createDb = () => drizzle(postgres(process.env.DATABASE_URL!), { schema })
@@ -133,8 +133,8 @@ In a controller, `ctx.app` is the app for the current request. Pass it to `useDb
 ```ts
 // server/controllers/orders_controller.ts
 import { desc, eq } from 'drizzle-orm'
-import type { HttpContext } from 'kitr/api'
-import { useDb } from 'kitr/db'
+import type { HttpContext } from '@kitr/api'
+import { useDb } from '@kitr/db'
 import type { AppDb } from '#config/db'
 import { orders } from '#server/db/schema'
 
@@ -154,7 +154,7 @@ Register the route as usual with [api](/packages/api):
 
 ```ts
 // server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from '@kitr/api'
 import OrdersController from '#server/controllers/orders_controller'
 
 export const routes = defineRoutes((router) =>
@@ -176,15 +176,15 @@ The request app is a fork of the root app. It shares the root's singletons, so e
 
 ## Query from an action
 
-On the server, an [action](/packages/actions) handler has no `ctx`. Get the request's app with `useRequestApp` from `kitr/server`, falling back to the root app:
+On the server, an [action](/packages/actions) handler has no `ctx`. Get the request's app with `useRequestApp` from `@kitr/server`, falling back to the root app:
 
 ```ts
 // app/actions/projects/rename.ts
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { defineMutation } from 'kitr/actions'
-import { useDb } from 'kitr/db'
-import { useRequestApp } from 'kitr/server'
+import { defineMutation } from '@kitr/actions'
+import { useDb } from '@kitr/db'
+import { useRequestApp } from '@kitr/server'
 import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
@@ -214,7 +214,7 @@ Code that runs outside a request, such as a scheduled [job](/packages/jobs) or a
 // server/services/revenue.ts
 import { eq, sum } from 'drizzle-orm'
 import type { KitrApp } from 'kitr/app'
-import { useDb } from 'kitr/db'
+import { useDb } from '@kitr/db'
 import type { AppDb } from '#config/db'
 import { orders } from '#server/db/schema'
 
@@ -237,7 +237,7 @@ Taking `app` as a parameter keeps the function testable: a test passes an app wi
 
 ```ts
 // server/controllers/health_controller.ts
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 
 export default class HealthController {
   async show({ app }: HttpContext) {
@@ -288,7 +288,7 @@ pnpm add -D prisma
 ```ts
 // config/db.ts
 import { PrismaClient } from '@prisma/client'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 
 const createDb = () => new PrismaClient()
 export type AppDb = ReturnType<typeof createDb>
@@ -316,7 +316,7 @@ pnpm add -D @types/pg
 // config/db.ts
 import { Kysely, PostgresDialect } from 'kysely'
 import { Pool } from 'pg'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import type { Database } from '#server/db/types'
 
 export type AppDb = Kysely<Database>
@@ -342,7 +342,7 @@ pnpm add -D @types/pg
 ```ts
 // config/db.ts
 import { Pool } from 'pg'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 
 export type AppDb = Pool
 
@@ -369,7 +369,7 @@ pnpm add -D @types/better-sqlite3
 // config/db.ts
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import * as schema from '#server/db/schema'
 
 const createDb = () => drizzle(new Database(process.env.DATABASE_URL ?? 'acme.db'), { schema })
@@ -403,7 +403,7 @@ export const env = createEnv({
 // config/db.ts
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import { env } from '#app/env'
 import * as schema from '#server/db/schema'
 
@@ -426,7 +426,7 @@ See [configuration](/docs/configuration) for how `createEnv` reads `.env` files.
 // config/db.ts
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import * as schema from '#server/db/schema'
 
 const createDb = (production: boolean) =>
@@ -456,7 +456,7 @@ export default defineDb({
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { defineDb } from 'kitr/db'
+import { defineDb } from '@kitr/db'
 import * as schema from '#server/db/schema'
 
 const createDb = () => drizzle(postgres(process.env.DATABASE_URL!), { schema })
@@ -519,7 +519,7 @@ Transactions belong to your ORM. Get the client with `useDb` and call its own AP
 // server/services/checkout.ts
 import { eq } from 'drizzle-orm'
 import type { KitrApp } from 'kitr/app'
-import { useDb } from 'kitr/db'
+import { useDb } from '@kitr/db'
 import type { AppDb } from '#config/db'
 import { orders, projects } from '#server/db/schema'
 
@@ -545,8 +545,8 @@ When the server receives `SIGINT` or `SIGTERM`, it stops accepting requests, the
 
 ```ts
 // server/main.ts
-import { mountRoutes } from 'kitr/api'
-import { createServer } from 'kitr/server'
+import { mountRoutes } from '@kitr/api'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 import { routes } from './routes'
@@ -579,8 +579,8 @@ This tests `teamRevenue` from "Query from a service or job" against a fake clien
 
 ```ts
 // server/services/revenue.test.ts
-import { dbProvider, defineDb } from 'kitr/db'
-import { createTestApp } from 'kitr/testing'
+import { dbProvider, defineDb } from '@kitr/db'
+import { createTestApp } from '@kitr/testing'
 import { describe, expect, it, vi } from 'vitest'
 import type { AppDb } from '#config/db'
 import { teamRevenue } from '#server/services/revenue'
@@ -611,8 +611,8 @@ To replace the client in an app that has already booted, bind a value over it. E
 
 ```ts
 // test/orders.test.ts
-import { dbProvider, defineDb, useDb } from 'kitr/db'
-import { createTestApp } from 'kitr/testing'
+import { dbProvider, defineDb, useDb } from '@kitr/db'
+import { createTestApp } from '@kitr/testing'
 import { expect, it } from 'vitest'
 
 it('uses the stub bound after boot', async () => {

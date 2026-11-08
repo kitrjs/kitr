@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { kitr } from 'kitr/vite'
+import { kitr } from '@kitr/vite'
 
 export default defineConfig({
   plugins: [kitr({ plugins: { tailwind: false } })],

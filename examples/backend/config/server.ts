@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/server'
+import { defineConfig } from '@kitr/server'
 
 export default defineConfig({
   healthPath: '/healthz',

@@ -1,5 +1,5 @@
 import { defineRoutes } from 'kitr/app'
-import api from 'kitr/api/routes'
+import api from '@kitr/api/routes'
 import AuthController from '#server/controllers/auth_controller'
 import HealthController from '#server/controllers/health_controller'
 import ProjectsController from '#server/controllers/projects_controller'

@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/api'
+import { defineConfig } from '@kitr/api'
 
 export default defineConfig({
   prefix: '/api',

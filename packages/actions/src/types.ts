@@ -60,12 +60,12 @@ export function renderActions(found: FoundOperation[], ctx: Pick<GenerateContext
   for (const op of found) {
     if (!NAME.test(op.name))
       throw new Error(
-        `[kitr/actions] "${op.name}" in ${op.file} is not a valid name: use dotted identifiers like projects.update`,
+        `[@kitr/actions] "${op.name}" in ${op.file} is not a valid name: use dotted identifiers like projects.update`,
       )
     const other = byName.get(op.name)
     if (other)
       throw new Error(
-        `[kitr/actions] "${op.name}" is defined twice: ${other.file} (${other.exportName}) and ${op.file} (${op.exportName})`,
+        `[@kitr/actions] "${op.name}" is defined twice: ${other.file} (${other.exportName}) and ${op.file} (${op.exportName})`,
       )
     byName.set(op.name, op)
   }
@@ -74,7 +74,7 @@ export function renderActions(found: FoundOperation[], ctx: Pick<GenerateContext
     for (const candidate of names)
       if (candidate.startsWith(`${name}.`))
         throw new Error(
-          `[kitr/actions] "${name}" cannot be both an operation and a group: "${candidate}" is nested under it`,
+          `[@kitr/actions] "${name}" cannot be both an operation and a group: "${candidate}" is nested under it`,
         )
   const files = [...new Set(found.map((op) => op.file))].sort()
   const alias = new Map(files.map((file, i) => [file, `m${i}`]))

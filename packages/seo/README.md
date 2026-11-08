@@ -6,7 +6,7 @@
 pnpm kitr add seo
 ```
 
-`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `kitr/seo`.
+`kitr add` installs the package and wires it into your app: the provider in `kitrrc.ts`, its config file and its `AGENTS.md` section. Import it from `@kitr/seo`.
 
 Read the guide at https://kitr.dev/packages/seo.
 

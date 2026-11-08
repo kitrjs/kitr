@@ -135,7 +135,7 @@ export function cors(options: CorsOptions = {}): Middleware {
   // Reflecting any origin with credentials lets every site make authenticated requests as the user.
   if (origin === '*' && credentials)
     throw new Error(
-      '[kitr/shield] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
+      '[@kitr/shield] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
     )
   const allow = (from: string | null): string | null => {
     if (!origin) return null
@@ -179,7 +179,7 @@ function readCookie(event: H3Event, name: string): string | undefined {
 
 /**
  * Double-submit cookie CSRF: a readable cookie carries a token the browser must echo in a header
- * (`fetch` from another origin cannot read the cookie, so it cannot forge the header). kitr/http
+ * (`fetch` from another origin cannot read the cookie, so it cannot forge the header). @kitr/http
  * sends the header automatically.
  */
 export function csrf(options: CsrfOptions = {}): Middleware {

@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/analytics, with its signature.
+description: Every export of @kitr/analytics, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/analytics`, `kitr/analytics/provider`, `kitr/analytics/react`, read from the published type definitions. The [guide](/packages/analytics/guide) shows them in use.
+Every export of `@kitr/analytics`, `@kitr/analytics/provider`, `@kitr/analytics/react`, read from the published type definitions. The [guide](/packages/analytics/guide) shows them in use.
 
-## kitr/analytics
+## @kitr/analytics
 
 ### consoleAdapter
 
@@ -220,7 +220,7 @@ type Track<E extends EventMap> = string extends keyof E ? (event: string, props?
 
 `track()`'s signature: checked against the event map when there is one.
 
-## kitr/analytics/provider
+## @kitr/analytics/provider
 
 ### analyticsProvider
 
@@ -232,7 +232,7 @@ Binds `analytics` into the container from `config/analytics.ts` and, on the clie
 tracks route changes. With no adapters configured, development logs to the console
 and production sends nothing.
 
-## kitr/analytics/react
+## @kitr/analytics/react
 
 ### TrackPageViews
 

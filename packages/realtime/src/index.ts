@@ -13,7 +13,7 @@ import { createSseTransport } from './sse'
 
 /**
  * Creates the client transport `config/realtime.ts` names: websocket (default) or sse here; socket.io loads its
- * client from `kitr/realtime/socket.io` so the dependency stays optional.
+ * client from `@kitr/realtime/socket.io` so the dependency stays optional.
  *
  *   let transport: SocketTransport | undefined
  *   export const realtime = () => (transport ??= createRealtimeClient(realtimeConfig))
@@ -24,7 +24,7 @@ export function createRealtimeClient(config: RealtimeConfig = {}): SocketTranspo
   const transport = config.transport ?? 'websocket'
   if (transport === 'socket.io')
     throw new Error(
-      '[kitr/realtime] transport "socket.io": create the client with createSocketIoClient() from kitr/realtime/socket.io',
+      '[@kitr/realtime] transport "socket.io": create the client with createSocketIoClient() from @kitr/realtime/socket.io',
     )
   if (transport === 'sse')
     return createSseTransport({ url: config.url ?? config.path ?? '/events' })

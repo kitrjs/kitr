@@ -6,11 +6,11 @@ order: 1
 
 # Server
 
-API routes, webhooks from a payment provider, a realtime channel for order updates: anything that runs outside the browser needs a server underneath. `kitr/server` is that server. It boots your providers in order, gives every request an id and a logger, turns thrown errors into clean JSON, and waits for in-flight requests before it shuts down.
+API routes, webhooks from a payment provider, a realtime channel for order updates: anything that runs outside the browser needs a server underneath. `@kitr/server` is that server. It boots your providers in order, gives every request an id and a logger, turns thrown errors into clean JSON, and waits for in-flight requests before it shuts down.
 
 It is built on [h3](https://h3.dev) and served by [srvx](https://srvx.h3.dev), so the same server runs on Node, Bun, Deno and Cloudflare Workers, standalone or inside TanStack Start. It never imports React, so a pure backend built with kitr ships none.
 
-`kitr/server` runs on the server only. It is also a platform: `server()` in `kitrrc.ts` tells `kitr dev`, `kitr build` and `kitr start` how to run it. To define routes and controllers on top of it, add [API routes](/packages/api); for functions your own React UI calls, use [Actions](/packages/actions).
+`@kitr/server` runs on the server only. It is also a platform: `server()` in `kitrrc.ts` tells `kitr dev`, `kitr build` and `kitr start` how to run it. To define routes and controllers on top of it, add [API routes](/packages/api); for functions your own React UI calls, use [Actions](/packages/actions).
 
 The examples on this page build the Acme order service at `app.acme.com`: a server that answers `/api/orders`, logs each request with its id, and closes its database pool on shutdown.
 
@@ -53,7 +53,7 @@ kitr add server api --runtime bun --port 4000
 | `--entry` | `server/main.ts` | The entry file the platform runs. |
 | `--no-scaffold` | | Register the platform without writing files. |
 
-The `fullstack`, `server`, `saas`, `site` and `realtime` kits already include a server platform named `api`. `kitr platforms remove api` takes the platform out of `kitrrc.ts`; `kitr remove server` reverses the package steps: it removes `@kitr/server`, `h3` and `srvx` from `package.json` and `kitrrc.ts`, deletes `config/server.ts` and drops the `AGENTS.md` section. It leaves `server/main.ts`, `server/routes.ts` and `app/server.ts` in place, because you have likely edited them, and lists the files that still import `kitr/server`.
+The `fullstack`, `server`, `saas`, `site` and `realtime` kits already include a server platform named `api`. `kitr platforms remove api` takes the platform out of `kitrrc.ts`; `kitr remove server` reverses the package steps: it removes `@kitr/server`, `h3` and `srvx` from `package.json` and `kitrrc.ts`, deletes `config/server.ts` and drops the `AGENTS.md` section. It leaves `server/main.ts`, `server/routes.ts` and `app/server.ts` in place, because you have likely edited them, and lists the files that still import `@kitr/server`.
 
 ## Configure
 
@@ -61,7 +61,7 @@ The `fullstack`, `server`, `saas`, `site` and `realtime` kits already include a 
 
 ```ts
 // config/server.ts
-import { defineConfig } from 'kitr/server'
+import { defineConfig } from '@kitr/server'
 
 export default defineConfig({
   healthPath: '/healthz',
@@ -87,7 +87,7 @@ You can also pass server options in code, which overrides `config/server.ts`:
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 
@@ -112,7 +112,7 @@ The platform lives in `kitrrc.ts`. Its options decide how `kitr dev`, `kitr buil
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { server } from 'kitr/server'
+import { server } from '@kitr/server'
 
 export default defineKitrConfig({
   packages: ['@kitr/logger', '@kitr/server', '@kitr/api'],
@@ -149,7 +149,7 @@ The environment form is `KITR_<NAME>_<OPTION>`, with the platform name upper-cas
 
 ```ts
 // server/main.ts
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { config } from '../config'
 import rc from '../kitrrc'
 
@@ -352,7 +352,7 @@ Every request runs inside a context you can read from any function on the server
 
 ```ts
 // server/services/payments.ts
-import { useRequest } from 'kitr/server'
+import { useRequest } from '@kitr/server'
 
 export async function chargeOrder(orderId: string, amount: number) {
   const { logger, requestId } = useRequest()
@@ -370,11 +370,11 @@ export async function chargeOrder(orderId: string, amount: number) {
 | `startedAt` | `performance.now()` when the request arrived. |
 | `locals` | A free-form object for middleware. [Auth](/packages/auth) puts `user` here. |
 
-`useRequest()` outside a request throws `[kitr/server] useRequest() called outside a request.` In code that runs both inside and outside requests, such as a job or a script, use `tryUseRequest()`, which returns `undefined` instead:
+`useRequest()` outside a request throws `[@kitr/server] useRequest() called outside a request.` In code that runs both inside and outside requests, such as a job or a script, use `tryUseRequest()`, which returns `undefined` instead:
 
 ```ts
 // server/services/audit.ts
-import { tryUseRequest } from 'kitr/server'
+import { tryUseRequest } from '@kitr/server'
 
 export function auditLabel() {
   return tryUseRequest()?.requestId ?? 'background'
@@ -387,7 +387,7 @@ Each request gets its own fork of the app container. A service bound per request
 
 ```ts
 // server/services/orders.ts
-import { useRequestApp } from 'kitr/server'
+import { useRequestApp } from '@kitr/server'
 
 export async function findOrder(id: string) {
   const db = useRequestApp().container.use('db')
@@ -395,11 +395,11 @@ export async function findOrder(id: string) {
 }
 ```
 
-Outside a request `useRequestApp()` throws `[kitr/server] useRequestApp() called outside a request and no fallback given.` Pass the server's app as a fallback for code that also runs in jobs:
+Outside a request `useRequestApp()` throws `[@kitr/server] useRequestApp() called outside a request and no fallback given.` Pass the server's app as a fallback for code that also runs in jobs:
 
 ```ts
 // server/services/orders.ts
-import { useRequestApp } from 'kitr/server'
+import { useRequestApp } from '@kitr/server'
 import { server } from '#server/main'
 
 export function ordersDb() {
@@ -449,7 +449,7 @@ Pass the id on when you call another Acme service, so both logs share it:
 
 ```ts
 // server/services/invoices.ts
-import { useRequest } from 'kitr/server'
+import { useRequest } from '@kitr/server'
 
 export async function fetchInvoice(id: string) {
   const { requestId } = useRequest()
@@ -504,7 +504,7 @@ To build the same response yourself, in custom middleware or a mounted handler, 
 ```ts
 // server/main.ts
 import { KitrError } from 'kitr/app'
-import { errorToResponse } from 'kitr/server'
+import { errorToResponse } from '@kitr/server'
 // ...
 server.use((event) => {
   if (event.url.pathname.startsWith('/api/admin') && !event.req.headers.get('authorization'))
@@ -520,7 +520,7 @@ server.use((event) => {
 
 ```ts
 // config/server.ts
-import { defineConfig } from 'kitr/server'
+import { defineConfig } from '@kitr/server'
 
 export default defineConfig({
   healthPath: '/healthz',
@@ -536,7 +536,7 @@ To raise the limit for one part of the API only, set `bodyLimits` by path prefix
 
 ```ts
 // config/server.ts
-import { defineConfig } from 'kitr/server'
+import { defineConfig } from '@kitr/server'
 
 export default defineConfig({
   healthPath: '/healthz',
@@ -558,7 +558,7 @@ The server answers `GET /healthz` with `{ "ok": true }` and status `200` as soon
 
 ```ts
 // config/server.ts
-import { defineConfig } from 'kitr/server'
+import { defineConfig } from '@kitr/server'
 
 export default defineConfig({
   healthPath: '/up', // or false to remove it
@@ -620,7 +620,7 @@ If that takes longer than `shutdownTimeout` seconds, the process exits with code
 
 ```ts
 // config/server.ts
-import { defineConfig } from 'kitr/server'
+import { defineConfig } from '@kitr/server'
 
 export default defineConfig({
   healthPath: '/healthz',
@@ -656,11 +656,11 @@ Set `websocket: true` to accept WebSocket upgrades through [crossws](https://cro
 export const server = createServer({ providers: rc.providers, config, server: { websocket: true } })
 ```
 
-Without the `crossws` package installed, `listen()` throws `[kitr/server] websocket: true needs the crossws package.` Run `kitr add realtime`, which installs it.
+Without the `crossws` package installed, `listen()` throws `[@kitr/server] websocket: true needs the crossws package.` Run `kitr add realtime`, which installs it.
 
 ## Commands
 
-`kitr/server` adds no generators of its own. The server platform answers these commands:
+`@kitr/server` adds no generators of its own. The server platform answers these commands:
 
 | Command | What it does |
 | --- | --- |
@@ -696,9 +696,9 @@ These are thrown as plain errors, not JSON responses:
 
 | Message | When | What to do |
 | --- | --- | --- |
-| `[kitr/server] useRequest() called outside a request.` | `useRequest()` ran in a job, script or module scope. | Use `tryUseRequest()`, or move the call into the handler. |
-| `[kitr/server] useRequestApp() called outside a request and no fallback given.` | Same, for `useRequestApp()`. | Pass a fallback: `useRequestApp(server.app)`. |
-| `[kitr/server] websocket: true needs the crossws package.` | `websocket: true` without `crossws`. | `kitr add realtime`. |
+| `[@kitr/server] useRequest() called outside a request.` | `useRequest()` ran in a job, script or module scope. | Use `tryUseRequest()`, or move the call into the handler. |
+| `[@kitr/server] useRequestApp() called outside a request and no fallback given.` | Same, for `useRequestApp()`. | Pass a fallback: `useRequestApp(server.app)`. |
+| `[@kitr/server] websocket: true needs the crossws package.` | `websocket: true` without `crossws`. | `kitr add realtime`. |
 
 ## Testing
 
@@ -706,7 +706,7 @@ Tests call `server.fetch()` with a `Request`. No port is opened. Import the serv
 
 ```ts
 // test/orders.test.ts
-import { createTestClient } from 'kitr/testing'
+import { createTestClient } from '@kitr/testing'
 import { expect, it } from 'vitest'
 import { server } from '#server/main'
 
@@ -724,9 +724,9 @@ To test server behaviour in isolation, build a server in the test. Pass `silentL
 ```ts
 // test/server.test.ts
 import { KitrError } from 'kitr/app'
-import { silentLogger } from 'kitr/logger'
-import { createServer, useRequest } from 'kitr/server'
-import { createTestClient } from 'kitr/testing'
+import { silentLogger } from '@kitr/logger'
+import { createServer, useRequest } from '@kitr/server'
+import { createTestClient } from '@kitr/testing'
 import { describe, expect, it } from 'vitest'
 
 function buildServer() {

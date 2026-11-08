@@ -13,11 +13,11 @@ export default definePackage({
     )
     ctx.config(
       'i18n',
-      `import { defineConfig } from 'kitr/i18n'\nimport en from '#app/locales/en'\n\nexport default defineConfig({\n  resources: { en },\n  defaultLocale: 'en',\n  defaultNS: 'common',\n})\n`,
+      `import { defineConfig } from '@kitr/i18n'\nimport en from '#app/locales/en'\n\nexport default defineConfig({\n  resources: { en },\n  defaultLocale: 'en',\n  defaultNS: 'common',\n})\n`,
     )
     ctx.agents.add(
       'i18n',
-      `- Strings live in \`app/locales/<lang>.ts\`. Components: \`const { t } = useTranslation()\` from \`kitr/i18n\`; keys are typed from the English bundle.`,
+      `- Strings live in \`app/locales/<lang>.ts\`. Components: \`const { t } = useTranslation()\` from \`@kitr/i18n\`; keys are typed from the English bundle.`,
     )
   },
   remove(ctx) {
@@ -25,7 +25,7 @@ export default definePackage({
     ctx.deps.remove('i18next', 'react-i18next')
     ctx.agents.remove('i18n')
   },
-  wraps: { 'react-i18next': 'kitr/i18n' },
-  eject: { 'kitr/i18n': 'react-i18next' },
+  wraps: { 'react-i18next': '@kitr/i18n' },
+  eject: { '@kitr/i18n': 'react-i18next' },
   vite: { optimizeDeps: ['i18next', 'react-i18next'] },
 })

@@ -2,7 +2,7 @@
   "name": "@kitr/tauri",
   "version": "0.1.0",
   "private": true,
-  "description": "kitr/tauri: the desktop platform with a Tauri shell. Rust project in platforms/<name>/src-tauri, typed commands and events, storage drivers, installers.",
+  "description": "@kitr/tauri: the desktop platform with a Tauri shell. Rust project in platforms/<name>/src-tauri, typed commands and events, storage drivers, installers.",
   "kitr": {
     "name": "tauri",
     "kind": "platform",

@@ -6,9 +6,9 @@ order: 1
 
 # Platform
 
-An app that ships to the browser, a phone and a desktop window keeps asking the same questions: where am I running, am I online, did the user press back, which link opened me, how big is the notch. `kitr/platform` answers them once, with one `platform` service and a set of React hooks, so components never sniff user agents or check for `window.Capacitor`.
+An app that ships to the browser, a phone and a desktop window keeps asking the same questions: where am I running, am I online, did the user press back, which link opened me, how big is the notch. `@kitr/platform` answers them once, with one `platform` service and a set of React hooks, so components never sniff user agents or check for `window.Capacitor`.
 
-It is built on the kitr driver registry: each platform package registers a `PlatformDriver` for the place it runs, and `kitr/platform` wraps whichever one is active, filling every gap with a browser default. [Web](/packages/web) registers the browser driver, [Mobile](/packages/mobile) the Capacitor driver, [Desktop](/packages/desktop) the Electron driver and [Tauri](/packages/tauri) the Tauri driver.
+It is built on the kitr driver registry: each platform package registers a `PlatformDriver` for the place it runs, and `@kitr/platform` wraps whichever one is active, filling every gap with a browser default. [Web](/packages/web) registers the browser driver, [Mobile](/packages/mobile) the Capacitor driver, [Desktop](/packages/desktop) the Electron driver and [Tauri](/packages/tauri) the Tauri driver.
 
 It runs on both sides. In the browser and in native shells it reports the real device; during server rendering it returns safe defaults (online, in the foreground, no insets), so the first render matches the HTML. For device features such as the camera, biometrics or haptics, use [Native](/packages/native) instead.
 
@@ -25,13 +25,13 @@ What `kitr add platform` does, in order:
 - Installs `@kitr/platform` and adds it to `packages` in `kitrrc.ts`. Platform requires [React](/packages/react), so `kitr add` runs its setup first when it is missing.
 - Adds `() => import('@kitr/platform/provider')` to `providers` in `kitrrc.ts`.
 - Writes `config/platform.ts` (shown under Configure) and regenerates `config/index.ts`.
-- Adds a `## kitr: platform` section to `AGENTS.md`: use the hooks from `kitr/platform/react` instead of user agents or `window.__TAURI__`, `platform.is()` to match a type or an OS, and the web, desktop, tauri and mobile providers register the drivers.
+- Adds a `## kitr: platform` section to `AGENTS.md`: use the hooks from `@kitr/platform/react` instead of user agents or `window.__TAURI__`, `platform.is()` to match a type or an OS, and the web, desktop, tauri and mobile providers register the drivers.
 
 `kitr add platform` asks no questions and adds no env variables.
 
 You rarely run it by hand. `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it for you, because those platforms need it, and the `mobile` and `desktop` kits include it.
 
-`kitr remove platform` reverses every step above: it removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/platform.ts`, then lists the files that still import `kitr/platform`.
+`kitr remove platform` reverses every step above: it removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/platform.ts`, then lists the files that still import `@kitr/platform`.
 
 ## Configure
 
@@ -39,7 +39,7 @@ You rarely run it by hand. `kitr add mobile`, `kitr add desktop` and `kitr add t
 
 ```ts
 // config/platform.ts
-import { defineConfig } from 'kitr/platform'
+import { defineConfig } from '@kitr/platform'
 
 export default defineConfig({
   // Deep links are routed after stripping these prefixes.
@@ -58,8 +58,8 @@ The `platform` service has no other options. Which driver it wraps depends on th
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { mobile } from 'kitr/mobile'
-import { web } from 'kitr/web'
+import { mobile } from '@kitr/mobile'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/platform', '@kitr/storage', '@kitr/web', '@kitr/mobile'],
@@ -84,7 +84,7 @@ The `platform` service is created the first time something reads it, after every
 
 ```tsx
 // app/components/platform-badge.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function PlatformBadge() {
   const platform = usePlatform()
@@ -180,7 +180,7 @@ The listeners fire with the new value only; read the current one with `platform.
 
 ```tsx
 // app/components/open-in-app.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function OpenInApp() {
   const platform = usePlatform()
@@ -216,7 +216,7 @@ When the same action works differently in each place, `perPlatform()` picks the 
 ```ts
 // app/features/invoices/save-invoice.ts
 import { app } from '#app/app'
-import { perPlatform } from 'kitr/platform'
+import { perPlatform } from '@kitr/platform'
 
 export function saveInvoice(invoiceId: string) {
   const platform = app.container.use('platform')
@@ -246,7 +246,7 @@ Phones, tablets and desktop windows differ in more than the OS: how wide the vie
 
 ```tsx
 // app/components/inbox.tsx
-import { useFormFactor } from 'kitr/platform/react'
+import { useFormFactor } from '@kitr/platform/react'
 
 export function Inbox() {
   const { width, input, orientation, ready } = useFormFactor()
@@ -271,7 +271,7 @@ Before the first measurement (the server, the first client render) the hook retu
 
 ```ts
 // config/platform.ts
-import { defineConfig } from 'kitr/platform'
+import { defineConfig } from '@kitr/platform'
 
 export default defineConfig({
   formFactor: {
@@ -289,7 +289,7 @@ export default defineConfig({
 
 ```tsx
 // app/components/install-hint.tsx
-import { Except, Only } from 'kitr/platform/react'
+import { Except, Only } from '@kitr/platform/react'
 
 export function InstallHint() {
   return (
@@ -327,7 +327,7 @@ export function InstallHint() {
 
 ```ts
 // app/features/share.ts
-import { forPlatform } from 'kitr/platform'
+import { forPlatform } from '@kitr/platform'
 
 // Resolved at build time: the phone build contains only the share-sheet branch.
 export const share = forPlatform({
@@ -348,7 +348,7 @@ export function isPhoneBuild() {
 
 ```tsx
 // app/components/offline-banner.tsx
-import { useOnline } from 'kitr/platform/react'
+import { useOnline } from '@kitr/platform/react'
 
 export function OfflineBanner() {
   const online = useOnline()
@@ -365,7 +365,7 @@ The hook is hydration-safe: the server and the first client render say online, a
 
 ```tsx
 // app/features/orders/live-orders.tsx
-import { useAppState } from 'kitr/platform/react'
+import { useAppState } from '@kitr/platform/react'
 import { useEffect } from 'react'
 
 export function LiveOrders({ poll }: { poll: () => void }) {
@@ -387,7 +387,7 @@ It starts as `true`, so the server render and the first client render agree.
 
 ```tsx
 // app/components/order-sheet.tsx
-import { useBackButton, usePlatform } from 'kitr/platform/react'
+import { useBackButton, usePlatform } from '@kitr/platform/react'
 import { useCallback } from 'react'
 
 export function OrderSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -415,7 +415,7 @@ Wrap the handler in `useCallback`: the hook subscribes again whenever the functi
 ```tsx
 // app/components/deep-links.tsx
 import { useNavigate } from '@tanstack/react-router'
-import { useDeepLink } from 'kitr/platform/react'
+import { useDeepLink } from '@kitr/platform/react'
 import { useCallback } from 'react'
 
 export function DeepLinks() {
@@ -430,7 +430,7 @@ Render `<DeepLinks />` once in the root route. Outside React, `app.container.use
 
 ```ts
 // app/features/links.ts
-import { deepLinkPath } from 'kitr/platform'
+import { deepLinkPath } from '@kitr/platform'
 
 deepLinkPath('acme://orders/1042') // => '/orders/1042'
 deepLinkPath('https://app.acme.com/orders/1042?tab=invoices#notes') // => '/orders/1042?tab=invoices#notes'
@@ -447,7 +447,7 @@ For a custom scheme, the part after `://` up to the next `/` is the URL's host, 
 
 ```tsx
 // app/components/tab-bar.tsx
-import { useSafeArea } from 'kitr/platform/react'
+import { useSafeArea } from '@kitr/platform/react'
 
 export function TabBar() {
   const insets = useSafeArea()
@@ -463,7 +463,7 @@ Inside a native shell a plain link replaces the app's own page. `platform.openEx
 
 ```tsx
 // app/components/status-link.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function StatusLink() {
   const platform = usePlatform()
@@ -510,7 +510,7 @@ export async function signOutAndExit() {
 
 ```tsx
 // app/components/store-badge.tsx
-import { usePlatform } from 'kitr/platform/react'
+import { usePlatform } from '@kitr/platform/react'
 
 export function StoreBadge() {
   const platform = usePlatform()
@@ -523,7 +523,7 @@ export function StoreBadge() {
 
 ## Render on the server
 
-During server rendering there is no `window`, so the default driver reports type `server`, OS `server`, online, and zero insets. With `kitr/web/provider` registered, the type is `web` and the OS is still `server`. Every hook starts from a value the server can produce:
+During server rendering there is no `window`, so the default driver reports type `server`, OS `server`, online, and zero insets. With `@kitr/web/provider` registered, the type is `web` and the OS is still `server`. Every hook starts from a value the server can produce:
 
 | Hook | Server and first render |
 | --- | --- |
@@ -540,10 +540,10 @@ Platform providers register a driver for the `platform` capability. The registry
 
 | Provider | Registers when | Type | Priority |
 | --- | --- | --- | --- |
-| `kitr/web/provider` | always | `web` | 0 |
-| `kitr/mobile/provider` | inside Capacitor | `mobile` | 10 |
-| `kitr/desktop/provider` | inside Electron | `desktop` | 10 |
-| `kitr/tauri/provider` | inside Tauri | `desktop` | 10 |
+| `@kitr/web/provider` | always | `web` | 0 |
+| `@kitr/mobile/provider` | inside Capacitor | `mobile` | 10 |
+| `@kitr/desktop/provider` | inside Electron | `desktop` | 10 |
+| `@kitr/tauri/provider` | inside Tauri | `desktop` | 10 |
 | none | no driver registered | `web` in a browser, `server` without `window` | |
 
 So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A driver may leave methods out; the service fills them in:
@@ -564,7 +564,7 @@ So the same bundle answers `web` in a browser and `mobile` in the iOS shell. A d
 | Message | When | What to do |
 | --- | --- | --- |
 | `[kitr] No binding named "platform". Did you add the package that provides it?` | `use('platform')` in an app without `@kitr/platform/provider`, or before boot. | `kitr add platform`, or read it after `app.boot()`. |
-| `[kitr/react] useApp() must be used inside <KitrProvider>.` | A hook from `kitr/platform/react` rendered outside the kitr provider tree. | Render inside `KitrProvider`, or use `renderWithKitr` in tests. |
+| `[@kitr/react] useApp() must be used inside <KitrProvider>.` | A hook from `@kitr/platform/react` rendered outside the kitr provider tree. | Render inside `KitrProvider`, or use `renderWithKitr` in tests. |
 | `[kitr] Missing config "platform". Create config/platform.ts or pass it to createApp().` | `useConfig('platform')` without `config/platform.ts`. | Run `kitr add platform`, or read it with `useApp().config.get('platform', { deepLinkPrefixes: [] })`. |
 
 ## Testing
@@ -575,10 +575,10 @@ Tests replace the driver. Register a fake one from a small provider, then render
 // test/order-sheet.test.tsx
 import { act, screen } from '@testing-library/react'
 import { defineProvider } from 'kitr/app'
-import type { PlatformDriver } from 'kitr/platform'
-import { platformProvider } from 'kitr/platform/provider'
-import { usePlatform, useBackButton } from 'kitr/platform/react'
-import { createTestApp, renderWithKitr } from 'kitr/testing/react'
+import type { PlatformDriver } from '@kitr/platform'
+import { platformProvider } from '@kitr/platform/provider'
+import { usePlatform, useBackButton } from '@kitr/platform/react'
+import { createTestApp, renderWithKitr } from '@kitr/testing/react'
 import { useCallback, useState } from 'react'
 import { describe, expect, it } from 'vitest'
 
@@ -636,7 +636,7 @@ The driver above leaves out everything the test does not need; the service fills
 
 ```ts
 // test/save-invoice.test.ts
-import { perPlatform } from 'kitr/platform'
+import { perPlatform } from '@kitr/platform'
 import { describe, expect, it } from 'vitest'
 
 const impls = {
@@ -663,7 +663,7 @@ A new place to run (a kiosk browser, a TV, a browser extension) gets its own dri
 ```ts
 // app/providers/kiosk-platform.ts
 import { defineProvider } from 'kitr/app'
-import type { PlatformDriver } from 'kitr/platform'
+import type { PlatformDriver } from '@kitr/platform'
 
 /** The order-pickup kiosks in Acme warehouses run the web build in a locked-down browser. */
 function kioskDriver(): PlatformDriver {
@@ -699,7 +699,7 @@ List it in `kitrrc.ts` next to the other providers:
 ```ts
 // kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   packages: ['@kitr/react', '@kitr/router', '@kitr/platform', '@kitr/web'],

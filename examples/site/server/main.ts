@@ -1,4 +1,4 @@
-import { createServer } from 'kitr/server'
+import { createServer } from '@kitr/server'
 import { routes } from '#server/routes'
 import { config } from '../config'
 import rc from '../kitrrc'

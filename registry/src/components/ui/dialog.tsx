@@ -1,4 +1,4 @@
-import { cn } from 'kitr/tailwind'
+import { cn } from '@kitr/tailwind'
 import { type ComponentProps, type ReactNode, useEffect, useRef } from 'react'
 
 export interface DialogProps extends Omit<ComponentProps<'dialog'>, 'open'> {

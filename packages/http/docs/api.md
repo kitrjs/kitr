@@ -1,12 +1,12 @@
 ---
 title: API reference
-description: Every export of kitr/http.
+description: Every export of @kitr/http.
 order: 2
 ---
 
 # API reference
 
-`kitr/http` re-exports everything from `ky` and adds the following.
+`@kitr/http` re-exports everything from `ky` and adds the following.
 
 ## createHttpClient
 

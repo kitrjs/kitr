@@ -8,11 +8,11 @@ export default definePackage({
     ctx.deps.add({ name: 'msw', dev: true })
     ctx.write(
       'app/mocks/handlers.ts',
-      `import { HttpResponse, http } from 'kitr/mocks'\n\nexport const handlers = [\n  http.get('*/me', () => HttpResponse.json({ id: 'u1', email: 'dev@example.com', role: 'admin' })),\n]\n`,
+      `import { HttpResponse, http } from '@kitr/mocks'\n\nexport const handlers = [\n  http.get('*/me', () => HttpResponse.json({ id: 'u1', email: 'dev@example.com', role: 'admin' })),\n]\n`,
     )
     ctx.write(
       'app/mocks/browser.ts',
-      `import { setupBrowserMocks } from 'kitr/mocks'\nimport { handlers } from './handlers'\n\n/**\n * \`await enableMocks()\` in the client entry. Env values are strings, so only \`VITE_MOCKS=true\`\n * turns mocks on (\`false\` would be truthy), and only in dev.\n */\nexport async function enableMocks() {\n  if (import.meta.env.DEV && import.meta.env.VITE_MOCKS === 'true') await setupBrowserMocks(handlers)\n}\n`,
+      `import { setupBrowserMocks } from '@kitr/mocks'\nimport { handlers } from './handlers'\n\n/**\n * \`await enableMocks()\` in the client entry. Env values are strings, so only \`VITE_MOCKS=true\`\n * turns mocks on (\`false\` would be truthy), and only in dev.\n */\nexport async function enableMocks() {\n  if (import.meta.env.DEV && import.meta.env.VITE_MOCKS === 'true') await setupBrowserMocks(handlers)\n}\n`,
     )
     // MSW serves from a worker script in public/: `msw init` writes it, and msw's postinstall
     // refreshes it from this field on every install.
@@ -30,5 +30,5 @@ export default definePackage({
     ctx.scripts.remove('mocks:init', 'msw init public')
     ctx.agents.remove('mocks')
   },
-  eject: { 'kitr/mocks': 'msw' },
+  eject: { '@kitr/mocks': 'msw' },
 })

@@ -6,7 +6,7 @@ order: 1
 
 # Animation
 
-A toast slides in when Ada sends an invoice, a dialog grows out of the button that opened it, and the project list fills in row by row. Small movements like these tell people what just changed. `kitr/animation` gives every component in the app the same timings, turns movement off for visitors who ask their operating system for less of it, and animates page changes like a native app, with the back button sliding the other way.
+A toast slides in when Ada sends an invoice, a dialog grows out of the button that opened it, and the project list fills in row by row. Small movements like these tell people what just changed. `@kitr/animation` gives every component in the app the same timings, turns movement off for visitors who ask their operating system for less of it, and animates page changes like a native app, with the back button sliding the other way.
 
 It is [Motion](https://motion.dev/docs/react) for React, re-exported unchanged, so `motion.div`, `AnimatePresence`, `useScroll`, layout animations and gestures work exactly as Motion documents them. On top it adds a provider that applies `config/animation.ts` to the whole app, `transitions` and `presets` so durations and easings are shared instead of guessed, `<Reveal>` for content that appears as it scrolls into view, and `pageTransitions()` for animated route changes through the browser's View Transitions API.
 
@@ -25,13 +25,13 @@ What `kitr add` does:
 - Adds `@kitr/animation` and `motion` to `dependencies` and installs them. Pass `--no-install` to skip the install.
 - Adds `'@kitr/animation/provider'` to `providers` in `kitrrc.ts`.
 - Writes `config/animation.ts`, shown under [Configure](#configure). An existing file is left alone.
-- Adds a `## kitr: animation` section to `AGENTS.md`: import from `kitr/animation`, never `framer-motion` or `motion/react` directly; spread `presets` for enter and exit; use `<Reveal>` for scroll-in sections and `pageTransitions()` for page changes; leave reduced motion to the config.
+- Adds a `## kitr: animation` section to `AGENTS.md`: import from `@kitr/animation`, never `framer-motion` or `motion/react` directly; spread `presets` for enter and exit; use `<Reveal>` for scroll-in sections and `pageTransitions()` for page changes; leave reduced motion to the config.
 
 It adds no env variables or scripts and asks no questions. Animation needs React, so `kitr add` adds the [react](/packages/react) package first when the project has none, and refuses in a server-only project. No kit includes it; add it to any kit that has a client.
 
-`kitr remove animation` takes the provider out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, then lists files that still import `kitr/animation`. It leaves `config/animation.ts` in place.
+`kitr remove animation` takes the provider out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, then lists files that still import `@kitr/animation`. It leaves `config/animation.ts` in place.
 
-`kitr doctor` flags imports from `motion/react` and `framer-motion` and suggests `kitr/animation`, so every component goes through the same provider.
+`kitr doctor` flags imports from `motion/react` and `framer-motion` and suggests `@kitr/animation`, so every component goes through the same provider.
 
 ## Configure
 
@@ -39,7 +39,7 @@ It adds no env variables or scripts and asks no questions. Animation needs React
 
 ```ts
 // config/animation.ts
-import { defineConfig, transitions } from 'kitr/animation'
+import { defineConfig, transitions } from '@kitr/animation'
 
 export default defineConfig({
   // 'user' follows the visitor's "reduce motion" setting: movement stops, fades still run.
@@ -68,7 +68,7 @@ A toast that rises in when Ada sends an invoice and falls away when it closes. W
 
 ```tsx
 // app/components/invoice-sent-toast.tsx
-import { AnimatePresence, motion, presets } from 'kitr/animation'
+import { AnimatePresence, motion, presets } from '@kitr/animation'
 
 export function InvoiceSentToast({ invoice, onClose }: { invoice: string | null; onClose: () => void }) {
   return (
@@ -102,7 +102,7 @@ Every duration in the app comes from `transitions`, so a menu, a dialog and a to
 
 ```tsx
 // app/components/project-card.tsx
-import { motion, transitions } from 'kitr/animation'
+import { motion, transitions } from '@kitr/animation'
 
 export function ProjectCard({ name }: { name: string }) {
   return (
@@ -144,7 +144,7 @@ Each exits the way it came in, with `transitions.exit`. A dialog that grows in f
 
 ```tsx
 // app/components/new-project-dialog.tsx
-import { AnimatePresence, motion, presets } from 'kitr/animation'
+import { AnimatePresence, motion, presets } from '@kitr/animation'
 
 export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
@@ -180,7 +180,7 @@ To change one part of a preset, override it after the spread. A toast that waits
 
 ```tsx
 // app/components/project-row.tsx
-import { AnimatePresence, motion, presets } from 'kitr/animation'
+import { AnimatePresence, motion, presets } from '@kitr/animation'
 import { useState } from 'react'
 
 export function ProjectRow({ name, invoices }: { name: string; invoices: string[] }) {
@@ -212,7 +212,7 @@ export function ProjectRow({ name, invoices }: { name: string; invoices: string[
 
 ```tsx
 // app/routes/index.tsx
-import { Reveal } from 'kitr/animation'
+import { Reveal } from '@kitr/animation'
 
 export function Features() {
   return (
@@ -228,7 +228,7 @@ To bring a list in one item after another, set `stagger` to the seconds between 
 
 ```tsx
 // app/components/project-grid.tsx
-import { Reveal, RevealItem } from 'kitr/animation'
+import { Reveal, RevealItem } from '@kitr/animation'
 
 export function ProjectGrid({ projects }: { projects: Array<{ id: string; name: string }> }) {
   return (
@@ -264,9 +264,9 @@ Content inside `<Reveal>` starts hidden in the server-rendered HTML and appears 
 
 ```tsx
 // app/router.tsx
-import { pageTransitions } from 'kitr/animation'
-import 'kitr/animation/page-transitions.css'
-import { createKitrRouter } from 'kitr/router'
+import { pageTransitions } from '@kitr/animation'
+import '@kitr/animation/page-transitions.css'
+import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { routeTree } from './routeTree.gen'
 
@@ -297,7 +297,7 @@ By default the whole page slides. To keep the app's header and navigation in pla
 
 ```tsx
 // app/routes/__root.tsx
-import { Outlet } from 'kitr/router'
+import { Outlet } from '@kitr/router'
 
 export function RootLayout() {
   return (
@@ -329,11 +329,11 @@ Use `<ProjectCover>` in both the list and the project page. Only one element per
 
 ## Animate layout changes
 
-When the project list is re-sorted, filtered or an item is removed, `layout` animates every item to its new position instead of jumping. This is Motion's own feature, imported from `kitr/animation`:
+When the project list is re-sorted, filtered or an item is removed, `layout` animates every item to its new position instead of jumping. This is Motion's own feature, imported from `@kitr/animation`:
 
 ```tsx
 // app/components/sorted-projects.tsx
-import { AnimatePresence, motion, presets, transitions } from 'kitr/animation'
+import { AnimatePresence, motion, presets, transitions } from '@kitr/animation'
 
 export function SortedProjects({ projects }: { projects: Array<{ id: string; name: string }> }) {
   return (
@@ -358,7 +358,7 @@ The provider handles `motion` elements. For anything else that moves, such as a 
 
 ```tsx
 // app/components/hero-video.tsx
-import { useReducedMotionConfig } from 'kitr/animation'
+import { useReducedMotionConfig } from '@kitr/animation'
 
 export function HeroVideo() {
   const reduce = useReducedMotionConfig()
@@ -374,9 +374,9 @@ Under Vitest the provider sets `skipAnimations`, so every animation jumps to its
 
 ```tsx
 // app/components/invoice-sent-toast.test.tsx
-import { animationProvider } from 'kitr/animation/provider'
-import { createTestApp } from 'kitr/testing'
-import { renderWithKitr } from 'kitr/testing/react'
+import { animationProvider } from '@kitr/animation/provider'
+import { createTestApp } from '@kitr/testing'
+import { renderWithKitr } from '@kitr/testing/react'
 import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { InvoiceSentToast } from './invoice-sent-toast'
@@ -420,7 +420,7 @@ For page transitions, test the types your router will ask for by calling the fun
 
 ```ts
 // app/router.test.ts
-import { pageTransitions } from 'kitr/animation'
+import { pageTransitions } from '@kitr/animation'
 import { expect, it } from 'vitest'
 
 it('slides back on the back button', () => {
@@ -437,8 +437,8 @@ In Playwright, pass `reducedMotion: 'reduce'` to the browser context to check th
 
 ## Next steps
 
-- [API reference](/packages/animation/api): every export kitr adds to `kitr/animation`.
-- [Motion for React](https://motion.dev/docs/react): gestures, scroll-linked animation, layout animation and everything else re-exported from `kitr/animation`.
+- [API reference](/packages/animation/api): every export kitr adds to `@kitr/animation`.
+- [Motion for React](https://motion.dev/docs/react): gestures, scroll-linked animation, layout animation and everything else re-exported from `@kitr/animation`.
 - [Router](/packages/router): `createKitrRouter` and the `viewTransition` option on links.
 - [3D](/packages/3d): scenes and models, with the same reduced-motion rules.
 - [Testing](/packages/testing): `createTestApp` and `renderWithKitr`.

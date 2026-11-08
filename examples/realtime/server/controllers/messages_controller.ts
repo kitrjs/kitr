@@ -1,4 +1,4 @@
-import type { HttpContext } from 'kitr/api'
+import type { HttpContext } from '@kitr/api'
 import { chatChannel } from '#app/channels/chat'
 import {
   type Message,

@@ -1,4 +1,4 @@
-import { type SocketTransport, createSocketClient } from 'kitr/realtime'
+import { type SocketTransport, createSocketClient } from '@kitr/realtime'
 import realtimeConfig from '#config/realtime'
 
 let transport: SocketTransport | undefined

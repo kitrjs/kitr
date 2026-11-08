@@ -1,4 +1,4 @@
-import { createKitrStore } from 'kitr/state'
+import { createKitrStore } from '@kitr/state'
 
 export const managers = {
   kitr: { label: 'global', prefix: 'kitr', create: 'kitr' },

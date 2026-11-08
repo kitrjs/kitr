@@ -9,7 +9,7 @@ export default definePackage({
     ctx.provider.add('@kitr/notifications/provider')
     ctx.config(
       'notifications',
-      `import { defineConfig } from 'kitr/notifications'\n\nexport default defineConfig({\n  icon: '/icon-192.png',\n  // Ask from a click (browsers block unprompted asks); true asks at boot instead.\n  requestOnBoot: false,\n})\n`,
+      `import { defineConfig } from '@kitr/notifications'\n\nexport default defineConfig({\n  icon: '/icon-192.png',\n  // Ask from a click (browsers block unprompted asks); true asks at boot instead.\n  requestOnBoot: false,\n})\n`,
     )
     ctx.agents.add(
       'notifications',

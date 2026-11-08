@@ -6,11 +6,11 @@ order: 1
 
 # Router
 
-Every app has pages: a dashboard, a list of projects, one project, a sign-in screen. With `kitr/router` the pages are links on one chain in `app/routes.ts`. Add `.page('/projects/$id', { lazy: () => import('./pages/project') })` and `/projects/42` exists, with `id` typed in the component, the loader and every `<Link>` that points at it.
+Every app has pages: a dashboard, a list of projects, one project, a sign-in screen. With `@kitr/router` the pages are links on one chain in `app/routes.ts`. Add `.page('/projects/$id', { lazy: () => import('./pages/project') })` and `/projects/42` exists, with `id` typed in the component, the loader and every `<Link>` that points at it.
 
-`kitr/router` is [TanStack Router](https://tanstack.com/router/latest), re-exported unchanged, rendered by [TanStack Start](https://tanstack.com/start/latest). On top it adds the `router` extension for kitr's route table (`.root`, `.page`, `.layout`), `createKitrRouter` (the router built from that table, with kitr's defaults and the app in context), default loading, error and not-found screens, and three `beforeLoad` guards: `requireAuth`, `can` and `guards`.
+`@kitr/router` is [TanStack Router](https://tanstack.com/router/latest), re-exported unchanged, rendered by [TanStack Start](https://tanstack.com/start/latest). On top it adds the `router` extension for kitr's route table (`.root`, `.page`, `.layout`), `createKitrRouter` (the router built from that table, with kitr's defaults and the app in context), default loading, error and not-found screens, and three `beforeLoad` guards: `requireAuth`, `can` and `guards`.
 
-The route table itself comes from the core (`defineRoutes` in `kitr/app`). It only has the methods of the extensions you list: pages from `kitr/router/routes`, endpoints from `kitr/api/routes`, sockets from `kitr/realtime/routes`. A server-only project never installs this package, so its table has no `.page` and no React; its HTTP routes come from [api](/packages/api).
+The route table itself comes from the core (`defineRoutes` in `kitr/app`). It only has the methods of the extensions you list: pages from `@kitr/router/routes`, endpoints from `@kitr/api/routes`, sockets from `@kitr/realtime/routes`. A server-only project never installs this package, so its table has no `.page` and no React; its HTTP routes come from [api](/packages/api).
 
 It runs in the browser, and on the server when the web platform renders pages there.
 
@@ -29,8 +29,8 @@ What `kitr add` does:
 - Adds [react](/packages/react) first if the project does not have it, because the router requires it.
 - Installs `@kitr/router`, `@tanstack/react-router` and `@tanstack/react-start`, and as dev dependencies `@tanstack/router-plugin` and `@tanstack/react-router-devtools`.
 - Adds `'@kitr/router'` to `packages` in `kitrrc.ts`. The router registers no provider; `createKitrRouter` does its wiring.
-- Writes `app/routes.ts`, the route table, with `router` from `kitr/router/routes` in its extension list, a root and two pages (shown under Add your first page). When another package created the table first, it only adds `router` to the list.
-- Writes `app/document.tsx`, the HTML document around every page, with a two-link nav and `kitr/theme/styles.css`.
+- Writes `app/routes.ts`, the route table, with `router` from `@kitr/router/routes` in its extension list, a root and two pages (shown under Add your first page). When another package created the table first, it only adds `router` to the list.
+- Writes `app/document.tsx`, the HTML document around every page, with a two-link nav and `@kitr/theme/styles.css`.
 - Writes `app/pages/home.tsx` (`/`) and `app/pages/about.tsx` (`/about`).
 - Writes `app/router.tsx`, which creates the router from the table (shown under Configure).
 - Writes `app/client.tsx`, Start's client entry, which boots the app before it hydrates the page.
@@ -47,11 +47,11 @@ kitr add router --dry-run
 
 ## Configure
 
-`kitr/router` has no config file. You configure it where it is created, in `app/router.tsx`, which `kitr add router` writes:
+`@kitr/router` has no config file. You configure it where it is created, in `app/router.tsx`, which `kitr add router` writes:
 
 ```tsx
 // app/router.tsx
-import { createKitrRouter } from 'kitr/router'
+import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { routes } from './routes'
 
@@ -95,7 +95,7 @@ Every page is a link on the chain in `app/routes.ts`. `kitr add router` writes t
 ```ts
 // app/routes.ts
 import { defineRoutes } from 'kitr/app'
-import router from 'kitr/router/routes'
+import router from '@kitr/router/routes'
 import { head, RootDocument } from './document'
 
 export const routes = defineRoutes([router], (r) =>
@@ -112,7 +112,7 @@ Add a page with `kitr make:page projects`, or by hand. The command writes `app/p
 
 ```tsx
 // app/pages/projects.tsx
-import { Link } from 'kitr/router'
+import { Link } from '@kitr/router'
 
 const projects = [
   { id: 'apollo', name: 'Apollo', team: 'Platform' },
@@ -171,7 +171,7 @@ r.page('/projects/$id', { lazy: () => import('./pages/project') })
 
 ```tsx
 // app/pages/project.tsx
-import { getRouteApi, Link } from 'kitr/router'
+import { getRouteApi, Link } from '@kitr/router'
 
 const route = getRouteApi('/projects/$id')
 
@@ -207,7 +207,7 @@ r.page('/projects', {
 
 ```tsx
 // app/pages/projects.tsx
-import { getRouteApi, Link } from 'kitr/router'
+import { getRouteApi, Link } from '@kitr/router'
 
 const route = getRouteApi('/projects')
 
@@ -232,7 +232,7 @@ After a form submits or an action finishes, navigate with `useNavigate`:
 
 ```tsx
 // app/features/projects/archive-button.tsx
-import { useNavigate } from 'kitr/router'
+import { useNavigate } from '@kitr/router'
 
 export function ArchiveButton({ id }: { id: string }) {
   const navigate = useNavigate()
@@ -257,7 +257,7 @@ A loader runs before the page renders, on the server during server rendering and
 ```ts
 // app/features/projects/queries.ts
 import { createKeys } from 'kitr/app'
-import { queryFrom } from 'kitr/query'
+import { queryFrom } from '@kitr/query'
 
 export interface Project {
   id: string
@@ -289,8 +289,8 @@ r.page('/projects/$id', {
 
 ```tsx
 // app/pages/project.tsx
-import { useSuspenseQuery } from 'kitr/query'
-import { getRouteApi, Link } from 'kitr/router'
+import { useSuspenseQuery } from '@kitr/query'
+import { getRouteApi, Link } from '@kitr/router'
 import { projectQuery } from '#app/features/projects/queries'
 
 const route = getRouteApi('/projects/$id')
@@ -329,7 +329,7 @@ r.page('/teams/$team', {
 
 ```tsx
 // app/pages/team.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/teams/$team')
 
@@ -361,7 +361,7 @@ r.layout('_app', { lazy: () => import('./pages/app-layout') }, (app) =>
 
 ```tsx
 // app/pages/app-layout.tsx
-import { Link, Outlet } from 'kitr/router'
+import { Link, Outlet } from '@kitr/router'
 
 export default function AppLayout() {
   return (
@@ -388,14 +388,14 @@ export default function AppLayout() {
 | `DefaultError` | The error's title and message, a "Try again" button and a "Go home" link. | `role="alert"`, `data-kitr="error"`, `data-code` set to the error code |
 | `DefaultNotFound` | "Page not found" and a "Go home" link. | `data-kitr="not-found"` |
 
-They are styled by `kitr/theme/styles.css`, which `app/document.tsx` links, through the `.kitr-pending`, `.kitr-error` and `.kitr-not-found` classes. TanStack shows the pending screen only when a loader takes longer than `defaultPendingMs` (one second by default), so fast pages never flash it.
+They are styled by `@kitr/theme/styles.css`, which `app/document.tsx` links, through the `.kitr-pending`, `.kitr-error` and `.kitr-not-found` classes. TanStack shows the pending screen only when a loader takes longer than `defaultPendingMs` (one second by default), so fast pages never flash it.
 
 Override one page by exporting `definePage` from its module:
 
 ```tsx
 // app/pages/project.tsx
 import { toKitrError } from 'kitr/app'
-import { definePage, type ErrorComponentProps, Link } from 'kitr/router'
+import { definePage, type ErrorComponentProps, Link } from '@kitr/router'
 
 export default definePage({
   pendingComponent: () => <p>Loading project…</p>,
@@ -418,7 +418,7 @@ Override them for the whole app in `app/router.tsx`:
 
 ```tsx
 // app/router.tsx
-import { createKitrRouter } from 'kitr/router'
+import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { AcmeError, AcmeNotFound, AcmeSpinner } from './components/route-states'
 import { routes } from './routes'
@@ -434,7 +434,7 @@ export function getRouter() {
 }
 ```
 
-The defaults are exported, so a custom screen can render one inside its own layout: `import { DefaultError } from 'kitr/router'`.
+The defaults are exported, so a custom screen can render one inside its own layout: `import { DefaultError } from '@kitr/router'`.
 
 ## Throw errors from loaders
 
@@ -467,7 +467,7 @@ For a missing record, throw TanStack's `notFound()` instead. The page's not-foun
 
 ```ts
 // app/routes.ts
-import { notFound } from 'kitr/router'
+import { notFound } from '@kitr/router'
 
 const projects: Record<string, { name: string }> = { apollo: { name: 'Apollo' } }
 
@@ -488,7 +488,7 @@ r.page('/projects/$id', {
 
 ```ts
 // app/routes.ts
-import { requireAuth } from 'kitr/router'
+import { requireAuth } from '@kitr/router'
 
 r.layout('_app', { beforeLoad: requireAuth(), lazy: () => import('./pages/app-layout') }, (app) =>
   app.page('/dashboard', { lazy: () => import('./pages/dashboard') }),
@@ -524,7 +524,7 @@ r.page('/sign-in', {
 
 ```tsx
 // app/pages/sign-in.tsx
-import { getRouteApi, useNavigate } from 'kitr/router'
+import { getRouteApi, useNavigate } from '@kitr/router'
 
 const route = getRouteApi('/sign-in')
 
@@ -532,7 +532,7 @@ export default function SignInPage() {
   const { redirect } = route.useSearch()
   const navigate = useNavigate()
   async function signIn() {
-    // ... sign in with kitr/auth
+    // ... sign in with @kitr/auth
     await navigate({ to: redirect })
   }
   return (
@@ -554,7 +554,7 @@ The guard only sees a session if you put one in the router context, through `cre
 
 ```ts
 // app/routes.ts
-import { can } from 'kitr/router'
+import { can } from '@kitr/router'
 
 app.page('/settings', { beforeLoad: can('teams.manage'), lazy: () => import('./pages/settings') })
 // Grace (member) opening /settings: the error screen, title 'Missing permission "teams.manage"'
@@ -588,7 +588,7 @@ A session without a `can` function, or no session at all, fails every check. The
 
 ```ts
 // app/routes.ts
-import { can, guards, requireAuth } from 'kitr/router'
+import { can, guards, requireAuth } from '@kitr/router'
 
 app.page('/admin', {
   beforeLoad: guards(requireAuth(), can('admin.access')),
@@ -612,7 +612,7 @@ app.page('/teams/$team', {
 
 ```tsx
 // app/pages/team.tsx
-import { getRouteApi } from 'kitr/router'
+import { getRouteApi } from '@kitr/router'
 
 const route = getRouteApi('/_app/teams/$team')
 
@@ -627,11 +627,11 @@ When two guards return the same key, the later one wins.
 
 ## Add fields to the router context
 
-Pass extra context with `context` and declare its type once, so every `beforeLoad` and loader sees it. This is how a session reaches the guards. With `kitr/auth` installed, `createKitrRouter` already puts the live session in `context.session` (and the platform service in `context.platform` with `kitr/platform`), read from the container when a guard asks; the example below is for a session service of your own named `session`:
+Pass extra context with `context` and declare its type once, so every `beforeLoad` and loader sees it. This is how a session reaches the guards. With `@kitr/auth` installed, `createKitrRouter` already puts the live session in `context.session` (and the platform service in `context.platform` with `@kitr/platform`), read from the container when a guard asks; the example below is for a session service of your own named `session`:
 
 ```tsx
 // app/router.tsx
-import { createKitrRouter } from 'kitr/router'
+import { createKitrRouter } from '@kitr/router'
 import { app } from './app'
 import { routes } from './routes'
 
@@ -670,8 +670,8 @@ With [auth](/packages/auth), read the session from its `auth` service the same w
 
 ```tsx
 // app/router.tsx
-import type { Session } from 'kitr/auth'
-import { createKitrRouter } from 'kitr/router'
+import type { Session } from '@kitr/auth'
+import { createKitrRouter } from '@kitr/router'
 import type { User } from '#app/abilities'
 import { app } from './app'
 import { routes } from './routes'
@@ -702,13 +702,13 @@ Use a getter when the value changes after the router is created. TanStack Start 
 
 ## Stack pages like a native app
 
-In a phone app a tap on a list row pushes the detail over the list; the list stays where it was, scrolled to the same row, and swiping back reveals it. The browser's model is different: the list unmounts, the detail mounts, back mounts the list again from scratch. `<StackOutlet>` from `kitr/router/stack` gives the router the native model. Put it where a layout renders its children instead of `<Outlet>`:
+In a phone app a tap on a list row pushes the detail over the list; the list stays where it was, scrolled to the same row, and swiping back reveals it. The browser's model is different: the list unmounts, the detail mounts, back mounts the list again from scratch. `<StackOutlet>` from `@kitr/router/stack` gives the router the native model. Put it where a layout renders its children instead of `<Outlet>`:
 
 ```tsx
 // app/routes/_app.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { requireAuth } from 'kitr/router'
-import { StackOutlet } from 'kitr/router/stack'
+import { requireAuth } from '@kitr/router'
+import { StackOutlet } from '@kitr/router/stack'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: requireAuth(),
@@ -796,7 +796,7 @@ On iOS, dragging from the left edge pulls the page away and shows the one beneat
 
 ```tsx
 // app/components/confirm-dialog.tsx
-import { useBackHandler } from 'kitr/router/stack'
+import { useBackHandler } from '@kitr/router/stack'
 
 export function ConfirmDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   useBackHandler(() => {
@@ -811,7 +811,7 @@ Inside a page, `useStack()` tells it where it stands and how to leave:
 
 ```tsx
 // app/components/page-header.tsx
-import { useStack } from 'kitr/router/stack'
+import { useStack } from '@kitr/router/stack'
 
 export function PageHeader({ title }: { title: string }) {
   const stack = useStack()
@@ -832,7 +832,7 @@ export function PageHeader({ title }: { title: string }) {
 | `presentation` | How the current page arrived. |
 | `entry` | The current page's stack entry (id, href, route ids). |
 
-The back button needs the `platform` service from [`kitr/platform`](/packages/platform): the stack subscribes to `platform.onBackButton()` when the service is in the app's container. Without it the gestures and `useStack()` still work; only the hardware button has no listener.
+The back button needs the `platform` service from [`@kitr/platform`](/packages/platform): the stack subscribes to `platform.onBackButton()` when the service is in the app's container. Without it the gestures and `useStack()` still work; only the hardware button has no listener.
 
 ## Tabs that keep their stacks
 
@@ -841,7 +841,7 @@ Tab bars in native apps keep a stack per tab: leave Home three pages deep, visit
 ```tsx
 // app/routes/_app.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { StackTabs } from 'kitr/router/stack'
+import { StackTabs } from '@kitr/router/stack'
 
 export const Route = createFileRoute('/_app')({
   component: () => (
@@ -880,7 +880,7 @@ On a tablet or a desktop window the list and the detail fit side by side. `<Spli
 ```tsx
 // app/routes/_app/chats.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { SplitStack, StackOutlet } from 'kitr/router/stack'
+import { SplitStack, StackOutlet } from '@kitr/router/stack'
 import { ChatList } from '#app/components/chat-list'
 
 export const Route = createFileRoute('/_app/chats')({
@@ -897,7 +897,7 @@ The index route under it is the list on a phone and a placeholder on a wide scre
 ```tsx
 // app/routes/_app/chats/index.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { useSplitPane } from 'kitr/router/stack'
+import { useSplitPane } from '@kitr/router/stack'
 import { ChatList } from '#app/components/chat-list'
 
 export const Route = createFileRoute('/_app/chats/')({
@@ -917,7 +917,7 @@ An app that ships as a marketing site, an authed web app and a phone app shares 
 ```tsx
 // app/routes/pricing.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { onlyPlatform } from 'kitr/router'
+import { onlyPlatform } from '@kitr/router'
 
 export const Route = createFileRoute('/pricing')({
   beforeLoad: onlyPlatform('www'),
@@ -928,7 +928,7 @@ export const Route = createFileRoute('/pricing')({
 ```tsx
 // app/routes/_app/billing.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { guards, onlyPlatform, requireAuth } from 'kitr/router'
+import { guards, onlyPlatform, requireAuth } from '@kitr/router'
 
 export const Route = createFileRoute('/_app/billing')({
   beforeLoad: guards(requireAuth(), onlyPlatform(['web', 'desktop'], { to: '/' })),
@@ -936,7 +936,7 @@ export const Route = createFileRoute('/_app/billing')({
 })
 ```
 
-Keys are platform names from `kitrrc.ts` (`www`, `phone`), platform types (`web`, `mobile`, `desktop`), OS names (`ios`) or `native`. The guard reads `context.platform` (the service from `kitr/platform`, which `createKitrRouter` puts in the router context when the package is installed) and falls back to the build's `KITR_PLATFORM` and `KITR_PLATFORM_TYPE`, so it works in a project with no platform package. Because the platform of a build is a constant, the bundler also drops a component that branches on `import.meta.env.KITR_PLATFORM` from the builds where it never runs.
+Keys are platform names from `kitrrc.ts` (`www`, `phone`), platform types (`web`, `mobile`, `desktop`), OS names (`ios`) or `native`. The guard reads `context.platform` (the service from `@kitr/platform`, which `createKitrRouter` puts in the router context when the package is installed) and falls back to the build's `KITR_PLATFORM` and `KITR_PLATFORM_TYPE`, so it works in a project with no platform package. Because the platform of a build is a constant, the bundler also drops a component that branches on `import.meta.env.KITR_PLATFORM` from the builds where it never runs.
 
 | Guard | Where the route exists |
 | --- | --- |
@@ -944,7 +944,7 @@ Keys are platform names from `kitrrc.ts` (`www`, `phone`), platform types (`web`
 | `onlyPlatform(['web', 'desktop'])` | Every web and desktop build; a 404 on phones. |
 | `onlyPlatform('native', { to: '/download' })` | Native shells; the web redirects to the download page. |
 
-To render a route on the server on one platform and in the browser on another, see `ssrRoute()` with a per-platform table in [`kitr/seo`](/packages/seo).
+To render a route on the server on one platform and in the browser on another, see `ssrRoute()` with a per-platform table in [`@kitr/seo`](/packages/seo).
 
 ## Set the page title and meta tags
 
@@ -994,8 +994,8 @@ r.page('/scan', {
 
 ```tsx
 // app/document.tsx
-import { HeadContent, Link, Outlet, Scripts } from 'kitr/router'
-import css from 'kitr/theme/styles.css?url'
+import { HeadContent, Link, Outlet, Scripts } from '@kitr/router'
+import css from '@kitr/theme/styles.css?url'
 
 /** Head tags for every page. Pages add their own through `head` in their route options. */
 export function head() {
@@ -1056,7 +1056,7 @@ The binding is typed as TanStack's `AnyRouter`, so `to` is not checked here. Ins
 
 ## Keep file routes
 
-A project that already has `app/routes/__root.tsx` keeps working: `kitr/vite` sees the file and lets TanStack's route generator build `app/routeTree.gen.ts` as before, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line. New projects get the table; nothing forces a move, and the two can't mix in one app.
+A project that already has `app/routes/__root.tsx` keeps working: `@kitr/vite` sees the file and lets TanStack's route generator build `app/routeTree.gen.ts` as before, and `createKitrRouter({ routeTree, app })` takes that tree. Route files import `createFileRoute` from `@tanstack/react-router`, because the generator owns that line. New projects get the table; nothing forces a move, and the two can't mix in one app.
 
 ## Commands
 
@@ -1073,7 +1073,7 @@ This writes `app/pages/projects/id.tsx` and adds `.page('/projects/$id', { lazy:
 ```tsx
 // app/pages/projects/id.tsx
 // Route options (loader, beforeLoad, head) go on the `.page('/projects/$id', ...)` link in app/routes.ts.
-// Read what the loader returned: `const route = getRouteApi('/projects/$id')` from 'kitr/router', then `route.useLoaderData()`.
+// Read what the loader returned: `const route = getRouteApi('/projects/$id')` from '@kitr/router', then `route.useLoaderData()`.
 
 export default function ProjectsIdPage() {
   return (
@@ -1086,7 +1086,7 @@ export default function ProjectsIdPage() {
 
 `projects/:id` is accepted for `projects/$id`. `--force` overwrites an existing page file. `kitr eject stub page` copies the template to `stubs/page.ts` so you can change what every new page looks like. Quote the argument in shells that expand `$`. When `app/routes.ts` is not one method chain (a callback with a block body), the command writes the page and prints the link to add by hand.
 
-`kitr doctor` reports a router with no pages (`app/routes.ts` missing) and warns about imports from `@tanstack/react-router` in app code; everything it exports comes from `kitr/router`.
+`kitr doctor` reports a router with no pages (`app/routes.ts` missing) and warns about imports from `@tanstack/react-router` in app code; everything it exports comes from `@kitr/router`.
 
 ## Errors
 
@@ -1095,7 +1095,7 @@ export default function ProjectsIdPage() {
 | `FORBIDDEN` (403) | `can(permission)` failed and no `to` was given. Message: `Missing permission "<permission>"`. | Give the user the permission, hide the link with `useCan()`, or pass `to` to redirect. |
 | redirect | `requireAuth()` found no `session.user`. Not an error: TanStack follows it. | Put a session in context with `createKitrRouter({ context })`. |
 | not found | No page matches, or a loader threw `notFound()`. | Add the page to `app/routes.ts`, or check the id. |
-| `[kitr/router] routes.root() may only be called once` | Two `.root(...)` links on one table. | Keep one; a merged table brings its own root only when yours has none. |
+| `[@kitr/router] routes.root() may only be called once` | Two `.root(...)` links on one table. | Keep one; a merged table brings its own root only when yours has none. |
 | `[kitr] No binding named "session"` | The router context read a service before the app booted. | Read it through a getter, as in "Add fields to the router context". |
 | `Something went wrong` | A loader threw something that is not a `KitrError`. | Throw a `KitrError` with a code and message the user can act on. |
 
@@ -1106,9 +1106,9 @@ Build a small table in a test, create the router from it with a test app and a m
 ```tsx
 // app/pages/project.test.tsx
 import { defineRoutes } from 'kitr/app'
-import { createKitrRouter, createMemoryHistory, getRouteApi, RouterProvider } from 'kitr/router'
-import pages from 'kitr/router/routes'
-import { createTestApp } from 'kitr/testing'
+import { createKitrRouter, createMemoryHistory, getRouteApi, RouterProvider } from '@kitr/router'
+import pages from '@kitr/router/routes'
+import { createTestApp } from '@kitr/testing'
 import { act, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
@@ -1154,7 +1154,7 @@ Guards are plain functions, so test them without rendering. A redirect is thrown
 
 ```ts
 // app/routes/guards.test.ts
-import { can, isRedirect, requireAuth } from 'kitr/router'
+import { can, isRedirect, requireAuth } from '@kitr/router'
 import { describe, expect, it } from 'vitest'
 
 const location = { href: '/projects/apollo?tab=tasks' }

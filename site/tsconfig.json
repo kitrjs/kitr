@@ -16,8 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "#app/*": ["./app/*"],
-      "#components/*": ["./app/components/*"],
-      "kitr/*": ["../packages/*/src/index.ts"]
+      "#components/*": ["./app/components/*"]
     }
   },
   "include": ["app", "kitrrc.ts", "vite.config.ts", "../packages/*/examples"]

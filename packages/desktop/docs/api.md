@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/desktop, with its signature.
+description: Every export of @kitr/desktop, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/desktop`, `kitr/desktop/client`, `kitr/desktop/main`, `kitr/desktop/preload`, `kitr/desktop/provider`, read from the published type definitions. The [guide](/packages/desktop/guide) shows them in use.
+Every export of `@kitr/desktop`, `@kitr/desktop/client`, `@kitr/desktop/main`, `@kitr/desktop/preload`, `@kitr/desktop/provider`, read from the published type definitions. The [guide](/packages/desktop/guide) shows them in use.
 
-## kitr/desktop
+## @kitr/desktop
 
 ### desktop
 
@@ -19,7 +19,7 @@ const desktop: import("@kitr/core").PlatformFactory<DesktopOptions>;
 macOS, Windows and Linux through an Electron shell: Chromium and Node ship inside the app, so
 it renders the same everywhere. The main and preload processes live in `platforms/<name>/`;
 the window loads the same client build the web platform ships. For a smaller binary on the
-OS webview, use `kitr/tauri` instead.
+OS webview, use `@kitr/tauri` instead.
 
 ```ts
 platforms: { app: desktop({ title: 'Acme' }) }
@@ -53,7 +53,7 @@ interface DesktopOptions {
 Options of `desktop()` in `kitrrc.ts`. Every option but `port` is written into the scaffolded
 `main.ts` and `electron-builder.yml` by `kitr add`; edit those files to change them later.
 
-## kitr/desktop/client
+## @kitr/desktop/client
 
 ### createIpcClient
 
@@ -137,7 +137,7 @@ Main: `handleIpc<Ipc>(ipcMain, { 'files.open': async (_e, path) => readFile(path
 Preload: `exposeIpc(contextBridge, ipcRenderer)`
 Renderer: `const ipc = createIpcClient<Ipc>()` → `await ipc.invoke('files.open', '/tmp/a')`
 
-## kitr/desktop/main
+## @kitr/desktop/main
 
 Re-exports `node` unchanged, plus the following.
 
@@ -239,7 +239,7 @@ type IpcHandlers<S extends IpcSchema> = {
 
 One main-process handler per channel of the schema: Electron's invoke event, then the channel's arguments.
 
-## kitr/desktop/preload
+## @kitr/desktop/preload
 
 ### allowChannels
 
@@ -268,7 +268,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
 ```
 
-## kitr/desktop/provider
+## @kitr/desktop/provider
 
 ### electronStorageDriver
 

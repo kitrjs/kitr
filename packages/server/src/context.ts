@@ -34,7 +34,7 @@ export function runWithRequest<T>(ctx: RequestContext, fn: () => T): T {
 /** The current request, from anywhere on the server (services, db hooks, loggers). */
 export function useRequest(): RequestContext {
   const ctx = storage.getStore()
-  if (!ctx) throw new Error('[kitr/server] useRequest() called outside a request.')
+  if (!ctx) throw new Error('[@kitr/server] useRequest() called outside a request.')
   return ctx
 }
 
@@ -48,5 +48,5 @@ export function useRequestApp(fallback?: KitrApp): KitrApp {
   const ctx = storage.getStore()
   if (ctx) return ctx.app
   if (fallback) return fallback
-  throw new Error('[kitr/server] useRequestApp() called outside a request and no fallback given.')
+  throw new Error('[@kitr/server] useRequestApp() called outside a request and no fallback given.')
 }

@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/monitoring'
+import { defineConfig } from '@kitr/monitoring'
 import { env } from '#app/env'
 
 /**

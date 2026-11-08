@@ -75,7 +75,7 @@ export function createAuth<TUser, TCredentials>(
       return session
     },
     async signIn(credentials) {
-      if (!adapter.signIn) throw new Error('[kitr/auth] adapter has no signIn')
+      if (!adapter.signIn) throw new Error('[@kitr/auth] adapter has no signIn')
       set(await adapter.signIn(credentials))
       return session
     },

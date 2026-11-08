@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/seo, with its signature.
+description: Every export of @kitr/seo, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/seo`, read from the published type definitions. The [guide](/packages/seo/guide) shows them in use.
+Every export of `@kitr/seo`, read from the published type definitions. The [guide](/packages/seo/guide) shows them in use.
 
-## kitr/seo
+## @kitr/seo
 
 ### cacheHeaders
 

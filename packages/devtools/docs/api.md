@@ -1,14 +1,14 @@
 ---
 title: API reference
-description: Every export of kitr/devtools, with its signature.
+description: Every export of @kitr/devtools, with its signature.
 order: 2
 ---
 
 # API reference
 
-Every export of `kitr/devtools`, `kitr/devtools/provider`, `kitr/devtools/ui`, read from the published type definitions. The [guide](/packages/devtools/guide) shows them in use.
+Every export of `@kitr/devtools`, `@kitr/devtools/provider`, `@kitr/devtools/ui`, read from the published type definitions. The [guide](/packages/devtools/guide) shows them in use.
 
-## kitr/devtools
+## @kitr/devtools
 
 ### createDevtoolsHub
 
@@ -144,7 +144,7 @@ interface DevtoolsPanel {
 
 A tab in the devtools window, contributed by a provider's `devtools(app)` method or `hub.register()`.
 
-## kitr/devtools/provider
+## @kitr/devtools/provider
 
 ### devtoolsProvider
 
@@ -156,7 +156,7 @@ Development only. Binds the `devtools` hub, collects every provider's `devtools(
 and mounts the overlay. In production `register`/`wrap` are no-ops, and the kitr Vite plugin
 aliases this module away entirely so nothing of it ships.
 
-## kitr/devtools/ui
+## @kitr/devtools/ui
 
 ### Badge
 

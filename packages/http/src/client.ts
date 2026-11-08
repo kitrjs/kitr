@@ -46,7 +46,7 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
               authHeader === 'Authorization' ? `Bearer ${token}` : token,
             )
           }
-          // kitr/shield's double-submit cookie: echo it on every write so same-origin calls pass.
+          // @kitr/shield's double-submit cookie: echo it on every write so same-origin calls pass.
           if (
             !/^(GET|HEAD|OPTIONS)$/i.test(request.method) &&
             !request.headers.has('x-csrf-token')

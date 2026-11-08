@@ -28,7 +28,7 @@ export const platforms = [
       },
       {
         title: 'Installable when you want it',
-        text: '`pwa: true` adds the web manifest and a service worker. `useInstallPrompt` and `useServiceWorker` from `kitr/web/client` show the install button and the update banner.',
+        text: '`pwa: true` adds the web manifest and a service worker. `useInstallPrompt` and `useServiceWorker` from `@kitr/web/client` show the install button and the update banner.',
       },
       {
         title: 'Search engines read it',
@@ -41,7 +41,7 @@ export const platforms = [
     ],
     code: `// kitrrc.ts
 import { defineKitrConfig } from 'kitr/app'
-import { web } from 'kitr/web'
+import { web } from '@kitr/web'
 
 export default defineKitrConfig({
   platforms: {
@@ -114,7 +114,7 @@ export default defineKitrConfig({
       },
     ],
     code: `// server/routes.ts
-import { defineRoutes } from 'kitr/api'
+import { defineRoutes } from '@kitr/api'
 import HealthController from '#server/controllers/health_controller'
 import OrdersController from '#server/controllers/orders_controller'
 
@@ -186,7 +186,7 @@ export type Ipc = {
 }
 
 // app/ipc.ts
-import { createIpcClient } from 'kitr/desktop/client'
+import { createIpcClient } from '@kitr/desktop/client'
 export const ipc = createIpcClient<Ipc>()
 
 const version = await ipc.invoke('app.version')`,
@@ -255,7 +255,7 @@ const version = await ipc.invoke('app.version')`,
       },
     ],
     code: `// app/commands.ts
-import { commandQuery, defineCommands } from 'kitr/tauri/client'
+import { commandQuery, defineCommands } from '@kitr/tauri/client'
 
 type Commands = { greet: (args: { name: string }) => string }
 export const commands = defineCommands<Commands>()
@@ -327,7 +327,7 @@ await commands.greet({ name: 'kitr' })`,
       },
     ],
     code: `// app/components/shell.tsx
-import { useBackButton, useSafeArea } from 'kitr/platform/react'
+import { useBackButton, useSafeArea } from '@kitr/platform/react'
 import { useCallback, type ReactNode } from 'react'
 
 export function Shell({ children }: { children: ReactNode }) {

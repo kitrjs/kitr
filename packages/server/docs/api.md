@@ -1,6 +1,6 @@
 ---
 title: API reference
-description: Every export of kitr/server.
+description: Every export of @kitr/server.
 order: 2
 ---
 

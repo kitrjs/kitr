@@ -1,4 +1,4 @@
-import { cn } from 'kitr/tailwind'
+import { cn } from '@kitr/tailwind'
 import type { ComponentProps, ReactNode } from 'react'
 
 export interface EmptyStateProps extends Omit<ComponentProps<'div'>, 'title'> {

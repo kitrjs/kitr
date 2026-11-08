@@ -41,7 +41,7 @@ for (const dir of readdirSync('packages').sort()) {
   ]
   if (!isKit && !k.included && k.name)
     lines.push(
-      `\`kitr add\` installs the package and wires it into your app: the provider in \`kitrrc.ts\`, its config file and its \`AGENTS.md\` section. Import it from \`kitr/${k.name}\`.`,
+      `\`kitr add\` installs the package and wires it into your app: the provider in \`kitrrc.ts\`, its config file and its \`AGENTS.md\` section. Import it from \`${pkg.name}\`.`,
       '',
     )
   if (k.builtOn?.length) lines.push(`Built on ${k.builtOn.join(', ')}.`, '')

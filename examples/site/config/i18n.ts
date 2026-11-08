@@ -1,4 +1,4 @@
-import { defineConfig } from 'kitr/i18n'
+import { defineConfig } from '@kitr/i18n'
 import de from '#app/locales/de'
 import en from '#app/locales/en'
 
