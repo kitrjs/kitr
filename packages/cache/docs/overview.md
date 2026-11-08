@@ -16,6 +16,37 @@ Some reads are slow or expensive: a report that joins six tables, a call to a ra
 
 It runs on the server only. The provider does nothing in the browser. To cache what the API returns on the client, use [query](/packages/query), which already does.
 
+## Install
+
+```sh
+kitr add cache
+```
+
+This installs `@kitr/cache`, registers the provider in `kitrrc.ts` and writes `config/cache.ts` with the memory driver and a key prefix. It needs [server](/packages/server). The guide's [Install](/packages/cache/guide#install) section lists every change.
+
+## Quick start
+
+On the server, wrap a slow read in `remember()`. This controller builds a project report once every ten minutes:
+
+```ts
+// server/controllers/reports_controller.ts
+import type { HttpContext } from '@kitr/api'
+import { useCache } from '@kitr/cache'
+import { buildProjectReport } from '#server/reports/project_report'
+
+export default class ReportsController {
+  async show({ app, params }: HttpContext<{ id: string }>) {
+    return useCache(app).remember(
+      `report:project:${params.id}`,
+      () => buildProjectReport(params.id),
+      { ttl: 600, tags: ['reports', `project:${params.id}`] },
+    )
+  }
+}
+```
+
+The first request runs `buildProjectReport`, stores the result for 600 seconds and returns it. Every request in the next ten minutes gets the stored copy, and fifty requests arriving at the same moment run the report once. After a write to project 42, `useCache(app).invalidateTags(['project:42'])` makes the next request build a fresh one. The guide continues from here: [Cache your first slow read](/packages/cache/guide#cache-your-first-slow-read).
+
 ## Built on
 
 The package is a small layer of its own rather than a wrapper around one store. Storage goes through a six-method driver:

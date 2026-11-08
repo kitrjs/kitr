@@ -16,6 +16,62 @@ A mobile app that lists orders, a partner that posts invoices, a webhook from yo
 
 Routes and controllers run on the server. The client runs in the browser, on the server and in tests. Use it when something other than your own React app calls your backend: a mobile app, a partner, a webhook. For functions only your React components call, [actions](/packages/actions) are shorter.
 
+## Install
+
+```sh
+kitr add api
+```
+
+This installs `@kitr/api`, writes `config/api.ts`, `server/routes.ts` with a `GET /api/health` route and its controller, and in a React project the typed client in `app/api/client.ts`. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/api/guide#install) section lists every change.
+
+## Quick start
+
+Write a controller. Each method receives the request context and returns the response body:
+
+```ts
+// server/controllers/orders_controller.ts
+import type { HttpContext } from '@kitr/api'
+import { KitrError } from 'kitr/app'
+
+const orders = new Map([['ord_1042', { id: 'ord_1042', customer: 'Ada', total: 129, status: 'open' }]])
+
+export default class OrdersController {
+  async index() {
+    return [...orders.values()]
+  }
+
+  async show({ params }: HttpContext<{ id: string }>) {
+    const order = orders.get(params.id)
+    if (!order) throw KitrError.notFound('Order')
+    return order
+  }
+}
+```
+
+Register it as a resource:
+
+```ts
+// server/routes.ts
+import { defineRoutes } from 'kitr/app'
+import api from '@kitr/api/routes'
+import OrdersController from '#server/controllers/orders_controller'
+
+export const routes = defineRoutes([api], (router) =>
+  router.group({ prefix: '/api' }, (r) => r.resource('orders', OrdersController)),
+)
+
+export type ServerRoutes = typeof routes.$types
+```
+
+Start it with `kitr dev api` and ask for an order:
+
+```sh
+curl http://localhost:3001/api/orders/ord_1042
+# => { "id": "ord_1042", "customer": "Ada", "total": 129, "status": "open" }
+```
+
+`resource` registered `GET /api/orders` and `GET /api/orders/:id` because the controller has `index` and `show`. An unknown id answers `404` with `{ "code": "NOT_FOUND", "message": "Order not found" }`. The guide continues from here: [Build your first endpoint](/packages/api/guide#build-your-first-endpoint).
+
 ## Built on
 
 | Layer | Built on | What kitr adds |

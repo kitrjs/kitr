@@ -16,6 +16,47 @@ Most React apps style with utility classes now, and most of them spend their fir
 
 It runs at build time and in the browser; there is nothing to call on the server. If you prefer plain CSS or CSS Modules, skip this package and use the helpers in [theme](/packages/theme) instead.
 
+## Install
+
+```sh
+kitr add tailwind
+```
+
+This installs `@kitr/tailwind` with Tailwind CSS 4, its Vite plugin, clsx, tailwind-merge and class-variance-authority, adds the package to `kitrrc.ts`, writes `config/tailwind.ts` and `app/styles/app.css`, and points `app/document.tsx` at the new stylesheet. It adds [react](/packages/react) first when the project does not have it. The guide's [Install](/packages/tailwind/guide#install) section lists every change.
+
+## Quick start
+
+A styled component is a component with `className`. The utilities map to the theme's tokens, so `bg-muted` and `border-border` are the theme's colours, not Tailwind's defaults:
+
+```tsx
+// app/features/orders/order-status-badge.tsx
+export function OrderStatusBadge({ status }: { status: 'paid' | 'pending' | 'refunded' }) {
+  return (
+    <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      {status}
+    </span>
+  )
+}
+```
+
+Use it on a page:
+
+```tsx
+// app/pages/orders/index.tsx
+import { OrderStatusBadge } from '#app/features/orders/order-status-badge'
+
+export default () => (
+  <main className="mx-auto max-w-3xl p-6">
+    <h1 className="text-2xl font-semibold text-foreground">Orders</h1>
+    <p className="mt-2 text-muted-foreground">
+      Order ACME-1042 from Grace <OrderStatusBadge status="paid" />
+    </p>
+  </main>
+)
+```
+
+Run `kitr dev` and open `/orders`. The heading uses the theme's foreground colour, the badge sits on the muted surface with the theme's border and radius. Switch the theme to dark and both follow without a `dark:` class, because the tokens change under them. The guide continues from here: [Style your first component](/packages/tailwind/guide#style-your-first-component).
+
 ## Built on
 
 | Built on | Role |

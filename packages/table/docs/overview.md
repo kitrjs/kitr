@@ -16,6 +16,63 @@ Admin screens, dashboards and reports all need the same thing: a table people ca
 
 It runs in the browser, inside React. The URL helpers do not depend on a router, but they were made for [router](/packages/router)'s `validateSearch` and `navigate`. For a list of cards or a feed rather than rows and columns, you don't need a table package.
 
+## Install
+
+```sh
+kitr add table
+```
+
+This installs `@kitr/table` and TanStack Table and adds the package to `kitrrc.ts`. There is no provider and no config file. The guide's [Install](/packages/table/guide#install) section lists every change.
+
+## Quick start
+
+Three pieces: column definitions, a route that accepts table params, and the table bound to them. Start with the columns:
+
+```tsx
+// app/features/orders/columns.tsx
+import type { ColumnDef, DataTableFeatures } from '@kitr/table'
+
+export interface Order {
+  id: string
+  customer: string
+  total: number
+  status: 'open' | 'paid' | 'refunded'
+}
+
+export const columns: ColumnDef<DataTableFeatures, Order>[] = [
+  { accessorKey: 'customer', header: 'Customer' },
+  { accessorKey: 'total', header: 'Total', cell: ({ row }) => `€${row.original.total.toFixed(2)}` },
+  { accessorKey: 'status', header: 'Status', enableSorting: false },
+]
+```
+
+`validateSearch: parseTableSearch` on the route makes `page`, `size`, `sort` and `filter` typed search params. The page turns them into table state and hands them to the registry's `<DataTable>`:
+
+```tsx
+// app/pages/orders/index.tsx
+import { useSuspenseQuery } from '@kitr/query'
+import { getRouteApi } from '@kitr/router'
+import { useUrlTableState } from '@kitr/table'
+import { DataTable } from '#components/ui/data-table'
+import { columns } from '#app/features/orders/columns'
+import { ordersPageQuery } from '#app/features/orders/queries'
+
+const route = getRouteApi('/orders')
+
+export default function OrdersPage() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
+  const { data } = useSuspenseQuery(ordersPageQuery.options(search))
+  const urlState = useUrlTableState({
+    search,
+    setSearch: (patch) => navigate({ search: (prev) => ({ ...prev, ...patch }) }),
+  })
+  return <DataTable columns={columns} data={data.rows} rowCount={data.total} {...urlState} />
+}
+```
+
+Open `/orders` and click the Total header. The URL becomes `/orders?sort=-total`, the loader fetches that page, and the table shows the largest orders first. Reload, or send the link to a colleague, and it is still sorted. The guide continues from here: [Show your first sortable table](/packages/table/guide#show-your-first-sortable-table).
+
 ## Built on
 
 `@kitr/table` is [TanStack Table](https://tanstack.com/table/latest) v9, re-exported unchanged. `useTable`, column definitions, row models and every feature work as TanStack documents them, imported from `@kitr/table`. kitr adds the URL state hook, the search param parser and the feature set for the data table component.

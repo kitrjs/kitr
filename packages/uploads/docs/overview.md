@@ -16,6 +16,56 @@ Avatars, signed invoices, CSV imports: sooner or later an app takes files from p
 
 It runs on both sides: `@kitr/uploads` and `@kitr/uploads/react` in the browser, `@kitr/uploads/server` on the [server](/packages/server). It handles files people send to your app. To read and write files on the user's own device, use [files](/packages/files) instead.
 
+## Install
+
+```sh
+kitr add uploads
+```
+
+This installs `@kitr/uploads`, registers the provider in `kitrrc.ts`, writes `config/uploads.ts` and adds `mountUploads(server)` to `server/main.ts`, which registers `POST /api/uploads` to receive files and `GET /api/uploads/**` to serve them. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/uploads/guide#install) section lists every change.
+
+## Quick start
+
+The server already accepts files. Add a component that sends one:
+
+```tsx
+// app/features/orders/invoice-upload.tsx
+import { useUpload } from '@kitr/uploads/react'
+
+export function InvoiceUpload() {
+  const { send, progress, uploading, error, files } = useUpload({
+    accept: ['application/pdf'],
+    maxSize: 10 * 1024 * 1024,
+  })
+  return (
+    <div>
+      <input type="file" accept="application/pdf" onChange={(e) => send(e.target.files).catch(() => {})} />
+      {uploading ? <progress value={progress} max={100} /> : null}
+      {files[0] ? <a href={files[0].url}>{files[0].name}</a> : null}
+      {error ? <p role="alert">{error.message}</p> : null}
+    </div>
+  )
+}
+```
+
+Grace picks `invoice-1042.pdf`. The hook checks it against the rules, posts it as `multipart/form-data` and updates `progress` from 0 to 100. The server checks the rules again, writes the file to `storage/uploads/<id>/invoice-1042.pdf`, and answers:
+
+```json
+{
+  "files": [
+    {
+      "id": "72eb7790-7c62-4c37-9167-d9989b7ac10f",
+      "name": "invoice-1042.pdf",
+      "size": 48213,
+      "type": "application/pdf",
+      "url": "/api/uploads/72eb7790-7c62-4c37-9167-d9989b7ac10f/invoice-1042.pdf"
+    }
+  ]
+}
+```
+
+`files` in the hook holds that array, so the link appears. A file over 10 MB, or not a PDF, is refused in the browser before a byte is sent, and `error` says why. The guide continues from here: [Upload your first file](/packages/uploads/guide#upload-your-first-file).
+
 ## Built on
 
 `@kitr/uploads` is built on [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) and `XMLHttpRequest` progress events in the browser, and on the [h3](https://h3.dev) server's multipart parsing with kitr's body limits on the server. Storage goes through an `UploadsDriver`: disk is built in, memory is built in for tests, and the [Extend](/packages/uploads/guide#extend) section shows one for S3-compatible object storage such as AWS S3 and Cloudflare R2.

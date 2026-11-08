@@ -16,6 +16,42 @@ You ship a fix, but someone keeps a tab open all week and never reloads it. Inst
 
 It runs in the browser only; on the server the provider binds nothing. To keep data fresh between versions, use [query](/packages/query); this package is about the app's own code.
 
+## Install
+
+```sh
+kitr add updater
+```
+
+This installs `@kitr/updater`, registers the provider in `kitrrc.ts`, writes `config/updater.ts` and a ready-made banner in `app/components/update-banner.tsx`. The guide's [Install](/packages/updater/guide#install) section lists every change.
+
+## Quick start
+
+`kitr add` writes this component. `useUpdate()` reports what the driver found and offers `apply` and `dismiss`:
+
+```tsx
+// app/components/update-banner.tsx
+import { useUpdate } from '@kitr/updater/react'
+
+/** Mount once in the root layout. Hidden until the updater has something ready. */
+export function UpdateBanner() {
+  const { available, update, status, progress, apply, dismiss } = useUpdate()
+  if (!available) return null
+  return (
+    <div role="status">
+      <span>Version {update?.version} is ready.</span>
+      <button type="button" onClick={apply} disabled={status === 'downloading'}>
+        {status === 'downloading' ? `Updating ${Math.round(progress * 100)}%` : 'Restart to update'}
+      </button>
+      <button type="button" onClick={dismiss}>
+        Later
+      </button>
+    </div>
+  )
+}
+```
+
+Mount `<UpdateBanner />` once in `app/document.tsx`, next to `<Outlet />`. Deploy a new build while Ada has the app open. Within the hour, or at her next visit, the bar appears: "Version new is ready. **Restart to update** · Later". She clicks **Restart to update**, the page reloads on the new build, and the bar is gone. A desktop or mobile updater plugs in as a driver and reports `progress` while it downloads. The guide continues from here: [Show your first update banner](/packages/updater/guide#show-your-first-update-banner).
+
 ## Built on
 
 | Where | Driver built on |

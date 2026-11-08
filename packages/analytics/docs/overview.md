@@ -16,6 +16,53 @@ Sooner or later someone asks how many people created a project this week, or whi
 
 It runs in the browser. On the server the same service is bound so components render, but no vendor script loads. For events your server owns, such as a paid invoice, write them to your database or send them from a [job](/packages/jobs). To report errors rather than usage, use [monitoring](/packages/monitoring).
 
+## Install
+
+```sh
+kitr add analytics
+```
+
+This installs `@kitr/analytics`, registers the provider in `kitrrc.ts`, writes `config/analytics.ts` and `app/analytics.ts` (your event declarations), and adds the vendor keys to `.env.example`. The guide's [Install](/packages/analytics/guide#install) section lists every change.
+
+## Quick start
+
+Declare the events your app sends, with their props:
+
+```ts
+// app/analytics.ts
+import type { EventMap } from '@kitr/analytics'
+
+export interface AppEvents extends EventMap {
+  'sign-in.completed': { method: 'password' | 'oauth' }
+  'project.created': { id: string }
+}
+```
+
+Track one after the thing happened:
+
+```tsx
+// app/features/projects/new-project-button.tsx
+import { useAnalytics } from '@kitr/analytics/react'
+import type { AppEvents } from '#app/analytics'
+
+export function NewProjectButton({ onCreate }: { onCreate: () => Promise<{ id: string }> }) {
+  const analytics = useAnalytics<AppEvents>()
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const project = await onCreate()
+        analytics.track('project.created', { id: project.id })
+      }}
+    >
+      New project
+    </button>
+  )
+}
+```
+
+In development, with no adapter configured, the console shows `[analytics] track project.created { app: 'acme', id: 'prj_42' }`. Set `VITE_GA_MEASUREMENT_ID` in `.env` and the same click reaches Google Analytics with no component changes. The guide continues from here: [Track your first event](/packages/analytics/guide#track-your-first-event).
+
 ## Built on
 
 `@kitr/analytics` is a thin adapter layer rather than a wrapper around one SDK. Each adapter speaks to one vendor's script or API:

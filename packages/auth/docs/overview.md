@@ -16,6 +16,45 @@ Almost every screen in an app asks two questions: who is this, and are they allo
 
 It does not store passwords or run a login server. It connects to what you already have through an adapter: your own API's token endpoint, [Better Auth](https://www.better-auth.com/docs), or any identity provider that returns a session. The session, hooks and adapters run in the browser. `@kitr/auth/server` runs on the server with no React dependency, so a pure backend can protect its routes with it alone.
 
+## Install
+
+```sh
+kitr add auth
+```
+
+This installs `@kitr/auth`, registers the provider in `kitrrc.ts`, writes `config/auth.ts` with the token adapter and `app/abilities.ts` for your permissions. The guide's [Install](/packages/auth/guide#install) section lists every change and the adapter flags.
+
+## Quick start
+
+Every component can read the session. Show the signed-in user and a sign-out button:
+
+```tsx
+// app/components/account_menu.tsx
+import { useAuth, useUser } from '@kitr/auth'
+import { Link } from '@kitr/router'
+import type { User } from '#app/abilities'
+
+export function AccountMenu() {
+  const auth = useAuth()
+  const user = useUser<User>()
+  if (!user) return <Link to="/sign-in">Sign in</Link>
+  return (
+    <button type="button" onClick={() => auth.signOut()}>
+      Sign out {user.email}
+    </button>
+  )
+}
+```
+
+Before sign-in it shows "Sign in"; after Ada signs in it shows "Sign out ada@acme.com", and it re-renders on every sign-in and sign-out anywhere in the app. Protect a page with one line in the route table:
+
+```ts
+// app/routes.ts
+r.page('/settings', { beforeLoad: requireAuth(), lazy: () => import('./pages/settings') })
+```
+
+The guide continues from here: [Show who is signed in](/packages/auth/guide#show-who-is-signed-in).
+
 ## Built on
 
 `@kitr/auth` has no identity provider of its own. It is built on three things kitr already has:

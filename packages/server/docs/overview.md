@@ -16,6 +16,49 @@ API routes, webhooks from a payment provider, a realtime channel for order updat
 
 It runs on the server only and never imports React, so a pure backend built with kitr ships none. Routes and controllers come from [API routes](/packages/api); functions your own UI calls come from [actions](/packages/actions).
 
+## Install
+
+```sh
+kitr add server api
+```
+
+This installs `@kitr/server` with h3 and srvx, adds an `api` platform to `kitrrc.ts`, writes `config/server.ts`, `server/main.ts` and an empty route table in `server/routes.ts`, and adds `LOG_LEVEL` to `.env.example`. It adds [logger](/packages/logger) first when the project does not have it. The guide's [Install](/packages/server/guide#install) section lists every change.
+
+## Quick start
+
+`kitr add` wrote the entry. It creates the server from your providers and config, and listens when you run the file directly:
+
+```ts
+// server/main.ts
+import { createServer } from '@kitr/server'
+import { config } from '../config'
+import rc from '../kitrrc'
+
+export const server = createServer({ providers: rc.providers, config })
+
+/** Fetch handler for runtimes that call it (Cloudflare Workers, Deno Deploy). */
+export default server
+
+server.h3.get('/api/orders/latest', () => ({ id: 'ord_1042', customer: 'Ada', total: 129 }))
+```
+
+Start it and ask for the order:
+
+```sh
+kitr dev api
+curl -i http://localhost:3001/api/orders/latest
+```
+
+```http
+HTTP/1.1 200 OK
+content-type: application/json;charset=UTF-8
+x-request-id: 3106a213-994f-4363-b099-eb8c19dc7299
+
+{"id":"ord_1042","customer":"Ada","total":129}
+```
+
+The returned object became JSON, and the response carries a fresh request id that the logger adds to every line for that request. For more than a couple of routes, use [api](/packages/api): controllers, validation and a typed client on top of this server. The guide continues from here: [Start your first server](/packages/server/guide#start-your-first-server).
+
 ## Built on
 
 `@kitr/server` is built on [h3](https://h3.dev), the web-standard HTTP framework, and served by [srvx](https://srvx.h3.dev), so the same server runs on Node, Bun, Deno and Cloudflare Workers, standalone or inside [TanStack Start](https://tanstack.com/start/latest). WebSockets come through [crossws](https://crossws.h3.dev).

@@ -16,6 +16,62 @@ Some desktop apps have to be small: a download of a few megabytes, a window that
 
 `@kitr/tauri/client` and the provider run in the window, and in a plain browser, where they stand aside. The Rust project runs as the app's native process. For most desktop apps we recommend [desktop](/packages/desktop) (Electron) instead, which ships its own browser engine so the app renders the same on every OS.
 
+## Install
+
+```sh
+kitr add tauri app
+```
+
+This installs `@kitr/tauri` with the Tauri API, store plugin and CLI, registers the provider and an `app` platform in `kitrrc.ts`, writes the Rust project in `platforms/app/src-tauri/` with one `greet` command, and `app/commands.ts`, its typed mirror. It adds [router](/packages/router), [platform](/packages/platform) and [storage](/packages/storage) first when they are missing. You need a Rust toolchain on the machine. The guide's [Install](/packages/tauri/guide#install) section lists every change.
+
+## Quick start
+
+Run the platform. kitr starts Vite on port 3200, waits for it, then runs `tauri dev` pointing the window at that port. The first run compiles the Rust crate, which takes a few minutes; later runs take seconds:
+
+```sh
+kitr dev app
+```
+
+The scaffold wrote one Rust command and its typed mirror:
+
+```rust
+// platforms/app/src-tauri/src/lib.rs
+#[tauri::command]
+fn greet(name: &str) -> String {
+    format!("Hello, {name}!")
+}
+```
+
+```ts
+// app/commands.ts
+import { defineCommands } from '@kitr/tauri/client'
+
+export type Commands = {
+  greet: (args: { name: string }) => string
+}
+
+export const commands = defineCommands<Commands>()
+```
+
+Call it from a component, guarded so the web build still runs:
+
+```tsx
+// app/components/welcome.tsx
+import { isTauri } from '@kitr/tauri/client'
+import { useEffect, useState } from 'react'
+import { commands } from '#app/commands'
+
+export function Welcome() {
+  const [greeting, setGreeting] = useState('Welcome to Acme Orders')
+  useEffect(() => {
+    if (isTauri()) void commands.greet({ name: 'Ada' }).then(setGreeting)
+  }, [])
+  return <h1>{greeting}</h1>
+}
+```
+
+In the Tauri window the heading reads `Hello, Ada!`, computed in Rust. In the browser (`kitr dev site`) it stays `Welcome to Acme Orders`. The guide continues from here: [Open your first window](/packages/tauri/guide#open-your-first-window).
+
 ## Built on
 
 `@kitr/tauri` is built on [Tauri 2](https://v2.tauri.app/). The window renders with the OS webview: WebView2 (Chromium-based) on Windows, WKWebView (Safari's engine) on macOS and WebKitGTK on Linux. Native code is Rust, and Tauri plugins (`plugin-store`, `plugin-opener`, `plugin-process`) cover storage, external links and exit.

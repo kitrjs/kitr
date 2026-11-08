@@ -16,6 +16,47 @@ Your first customers all read one language. Then a team in another country signs
 
 It runs in the browser, inside React. On the server you can call `createI18n()` or `matchLocale()` directly to translate an email or pick the language of a server-rendered page. It is for the strings in your code; marketing content in a CMS is a different job.
 
+## Install
+
+```sh
+kitr add i18n
+```
+
+This installs `@kitr/i18n` with i18next and react-i18next, registers the provider in `kitrrc.ts`, and writes `config/i18n.ts` and `app/locales/en.ts`. The guide's [Install](/packages/i18n/guide#install) section lists every change.
+
+## Quick start
+
+The generated English bundle holds one namespace:
+
+```ts
+// app/locales/en.ts
+export default {
+  common: {
+    hello: 'Hello, {{name}}',
+    save: 'Save',
+  },
+} as const
+```
+
+In a component, `useTranslation()` returns `t`, which looks a key up in the current language:
+
+```tsx
+// app/features/orders/welcome.tsx
+import { useTranslation } from '@kitr/i18n'
+
+export function Welcome({ name }: { name: string }) {
+  const { t } = useTranslation()
+  return (
+    <section>
+      <h2>{t('hello', { name })}</h2>
+      <button type="submit">{t('save')}</button>
+    </section>
+  )
+}
+```
+
+`<Welcome name="Ada" />` renders "Hello, Ada" and a "Save" button. The provider created the i18next instance at startup, so there is nothing to load and nothing to wait for, and `t('helo')` is a type error because keys are typed from the English bundle. The guide continues from here: [Translate your first string](/packages/i18n/guide#translate-your-first-string).
+
 ## Built on
 
 `@kitr/i18n` is [react-i18next](https://react.i18next.com) and [i18next](https://www.i18next.com), re-exported unchanged. `useTranslation`, `Trans`, plurals, interpolation, formatting and namespaces work as their docs show.

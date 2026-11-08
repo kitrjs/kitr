@@ -16,6 +16,52 @@ Some work should not keep a request waiting: emailing an invoice, generating a P
 
 It runs on the server only, with no dependencies beyond kitr. For work that must finish before the response, such as charging a card, call the code directly instead of dispatching a job.
 
+## Install
+
+```sh
+kitr add jobs
+```
+
+This installs `@kitr/jobs`, registers the provider in `kitrrc.ts`, writes `config/jobs.ts` and an example job in `server/jobs/example.ts`. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/jobs/guide#install) section lists every change.
+
+## Quick start
+
+Generate a job with `kitr make:job generate-invoice` and describe its input and work:
+
+```ts
+// server/jobs/generate_invoice.ts
+import { defineJob } from '@kitr/jobs'
+import { z } from 'zod'
+
+export const generateInvoice = defineJob('generate_invoice', {
+  schema: z.object({ teamId: z.string(), month: z.string().regex(/^\d{4}-\d{2}$/) }),
+  retries: 3,
+  async run({ teamId, month }, { attempt }) {
+    // Load the team's usage, render the PDF, store it.
+    return { invoiceNumber: `INV-${month}-${teamId}`, attempt }
+  },
+})
+```
+
+List it in `config/jobs.ts` next to the example, then dispatch it from a controller. `dispatch()` checks the payload, queues the job and resolves with its id straight away:
+
+```ts
+// server/controllers/invoices_controller.ts
+import type { HttpContext } from '@kitr/api'
+import { useJobs } from '@kitr/jobs'
+import { generateInvoice } from '#server/jobs/generate_invoice'
+
+export default class InvoicesController {
+  async store({ app, params, response }: HttpContext<{ teamId: string }>) {
+    const jobId = await useJobs(app).dispatch(generateInvoice, { teamId: params.teamId, month: '2026-10' })
+    return response.json({ jobId }, { status: 202 })
+    // => { "jobId": "3f0c9a52-6b1e-4d7a-9a51-0e2f8c1d7b44" }
+  }
+}
+```
+
+The request answers at once with the job id. Within half a second the worker in the same process picks the job up and runs it, and retries it up to three times if it throws. A payload that fails the schema makes `dispatch()` throw a `KitrError` before anything is queued. The guide continues from here: [Dispatch your first job](/packages/jobs/guide#dispatch-your-first-job).
+
 ## Built on
 
 `@kitr/jobs` is kitr's own, built on the [server](/packages/server) lifecycle: the worker starts with the app and drains before shutdown. Payloads are validated with any [Standard Schema](https://standardschema.dev) library. The queue is a `JobsDriver` with a memory implementation built in; the [Extend](/packages/jobs/guide#extend) section shows a Redis-backed one. Schedules use standard five-field cron expressions, parsed by `cronMatches`, or plain intervals parsed by `parseInterval`. Warnings and failures go to the [logger](/packages/logger), and jobs that keep failing can be reported to [monitoring](/packages/monitoring).

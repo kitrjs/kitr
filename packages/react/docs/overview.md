@@ -16,6 +16,45 @@ Every component in a real app needs something from outside itself: the HTTP clie
 
 It runs on the client, and on the server during server rendering. A server-only project has no React at all; use [server](/packages/server) and reach services through `app.container` there.
 
+## Install
+
+```sh
+kitr add react
+```
+
+This installs `@kitr/react` with React and the Vite React plugin, adds the package to `kitrrc.ts` and writes `app/app.ts` and `app/env.ts`. There is no provider and no config file. Every UI kit includes it. The guide's [Install](/packages/react/guide#install) section lists every change.
+
+## Quick start
+
+With the router installed there is nothing to wire: every page already renders inside `KitrProvider`. A component reads a service with `useService` and a config file with `useConfig`:
+
+```tsx
+// app/features/invoices/invoice-count.tsx
+import { useConfig, useService } from '@kitr/react'
+import { useEffect, useState } from 'react'
+
+export function InvoiceCount() {
+  const http = useService('http') // the ky instance from @kitr/http
+  const theme = useConfig('theme') // config/theme.ts
+  const [count, setCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    http
+      .get('invoices')
+      .json<{ id: string }[]>()
+      .then((invoices) => setCount(invoices.length))
+  }, [http])
+
+  return (
+    <p>
+      {count === null ? 'Loading invoices…' : `${count} open invoices`} (theme: {theme.default})
+    </p>
+  )
+}
+```
+
+Render `<InvoiceCount />` on a page and it shows `3 open invoices (theme: system)`. Both hooks are typed: `useService('http')` returns ky's `KyInstance` because [http](/packages/http) declares that binding, and `useConfig('theme')` returns `ThemeConfig` because [theme](/packages/theme) declares that config. For data, prefer [query](/packages/query) over `useEffect`; this example only shows where the service comes from. The guide continues from here: [Read a service in your first component](/packages/react/guide#read-a-service-in-your-first-component).
+
 ## Built on
 
 `@kitr/react` is built on [React](https://react.dev) context and Suspense, and on the kitr core's app object: the container, the provider lifecycle and the config loader. It is included in every kit that renders a UI. kitr adds `createApp` for the browser entry, `KitrProvider`, `KitrBoot` and the three hooks.

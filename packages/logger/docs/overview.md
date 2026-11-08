@@ -16,6 +16,44 @@ When a customer reports that an order never shipped, the logs are where you find
 
 It has no dependencies and runs on the server and in the browser. It is for lines a developer reads. To be alerted about errors with the user and the steps that led to them, use [monitoring](/packages/monitoring); to count what users do, use [analytics](/packages/analytics).
 
+## Install
+
+```sh
+kitr add logger
+```
+
+This installs `@kitr/logger`, registers the provider in `kitrrc.ts` and writes `config/logger.ts`. [server](/packages/server) adds it for you. The guide's [Install](/packages/logger/guide#install) section lists every change.
+
+## Quick start
+
+In a controller, the logger is `ctx.logger`, a child of the app's logger that adds the request id to every line:
+
+```ts
+// server/controllers/orders_controller.ts
+import type { HttpContext } from '@kitr/api'
+
+export default class OrdersController {
+  async ship({ logger, params }: HttpContext<{ id: string }>) {
+    logger.info('order shipped', { orderId: params.id })
+    return { orderId: params.id, status: 'shipped' }
+  }
+}
+```
+
+Call `POST /api/orders/1042/ship` in development and the server prints:
+
+```
+INFO  14:03:22.418 [app] order shipped {"requestId":"9b2f6c1e-4f3a-4c1d-8e7a-2b5d0c9e1f44","orderId":"1042"}
+```
+
+In production, where `NODE_ENV=production`, the same call writes one JSON object per line, ready for your log service:
+
+```json
+{"level":"info","time":"2026-11-07T14:03:22.418Z","name":"app","requestId":"9b2f6c1e-4f3a-4c1d-8e7a-2b5d0c9e1f44","orderId":"1042","msg":"order shipped"}
+```
+
+Keep the message fixed and put the variable parts in fields, so a log service can count every `order shipped` line and filter by `orderId`. The guide continues from here: [Write your first log line](/packages/logger/guide#write-your-first-log-line).
+
 ## Built on
 
 `@kitr/logger` is kitr's own. It writes to the console or to any stream, and its JSON format follows the shape the common collectors expect: one object per line with `level`, `time`, `msg` and your fields. Ship those lines to [Pino](https://getpino.io)-compatible tooling, Datadog, Grafana Loki or any service that reads JSON lines; the guide shows a file and an HTTP sink. kitr adds the request-scoped child logger through the [server](/packages/server), the pretty format for development, timing, run-time level changes and the devtools mirror.

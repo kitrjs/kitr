@@ -16,6 +16,42 @@ A browser app needs a dev server, a bundler and a build step, and every package 
 
 It runs at build time only; nothing of it ships to the browser. A pure backend never installs it: the [server platform](/packages/server) runs TypeScript directly. Every browser platform (`web`, `desktop`, `tauri`, `mobile`) requires it.
 
+## Install
+
+```sh
+kitr add vite
+```
+
+This installs `@kitr/vite` and Vite as dev dependencies, adds the package to `kitrrc.ts`, writes `vite.config.ts` with `kitr()` as its only plugin and adds the client types to `tsconfig.json`. There is no provider. Every kit with a browser platform includes it. The guide's [Install](/packages/vite/guide#install) section lists every change.
+
+## Quick start
+
+The whole Vite config is one plugin:
+
+```ts
+// vite.config.ts
+import { kitr } from '@kitr/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [kitr()],
+})
+```
+
+It reads `kitrrc.ts` and serves two virtual modules, which `app/app.ts` imports:
+
+```ts
+// app/app.ts
+import { createApp } from 'kitr/app'
+import { config } from 'virtual:kitr/config'
+import { providers } from 'virtual:kitr/providers'
+import { env } from './env'
+
+export const app = createApp({ providers, config, env })
+```
+
+Run `kitr dev site` and the browser opens `http://localhost:3000` with the pages from `app/routes.ts`. `virtual:kitr/providers` is the `providers` list from `kitrrc.ts` as static imports, so every provider is in the bundle and tree-shakable, and `virtual:kitr/config` is every file under `config/` keyed by name: `config/query.ts` becomes `config.query`. Change `kitrrc.ts` and both modules reload without a restart. The guide continues from here: [Run your first dev server](/packages/vite/guide#run-your-first-dev-server).
+
 ## Built on
 
 `@kitr/vite` is built on [Vite](https://vite.dev), with [TanStack Start](https://tanstack.com/start/latest) and the [TanStack Router plugin](https://tanstack.com/router/latest/docs/framework/react/routing/installation-with-vite) for the web platform's server rendering and route generation. kitr adds the `kitr()` plugin, the virtual modules, the aliases, the platform selection, the prerender list and the type generation hook.

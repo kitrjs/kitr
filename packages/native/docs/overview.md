@@ -16,6 +16,36 @@ Copy a link, open the share sheet, buzz the phone when an order goes through, re
 
 It runs in the browser and in desktop and mobile shells. It does not sign people in: for that use [auth](/packages/auth), and for files people open and save use [files](/packages/files).
 
+## Install
+
+```sh
+kitr add native
+```
+
+This installs `@kitr/native` and registers the provider in `kitrrc.ts`. There is no config file. The guide's [Install](/packages/native/guide#install) section lists every change.
+
+## Quick start
+
+`useClipboard()` copies text and flips `copied` to `true` for 1.5 seconds, long enough for a "Copied" label:
+
+```tsx
+// app/features/invoices/copy-invoice-link.tsx
+import { useClipboard } from '@kitr/native/react'
+
+export function CopyInvoiceLink({ invoiceId }: { invoiceId: string }) {
+  const { copy, copied, supported } = useClipboard()
+  if (!supported) return null
+  const url = `https://app.acme.com/invoices/${invoiceId}`
+  return (
+    <button type="button" onClick={() => copy(url)}>
+      {copied ? 'Copied' : 'Copy link'}
+    </button>
+  )
+}
+```
+
+Render `<CopyInvoiceLink invoiceId="inv_1042" />` on the invoice page. Ada clicks **Copy link**, the label reads **Copied**, and `https://app.acme.com/invoices/inv_1042` is on her clipboard. The button hides itself where the page has no Clipboard API, which is the case on plain `http://` pages other than `localhost`. In the desktop and mobile shells the same hook uses the native clipboard. The guide continues from here: [Copy your first link](/packages/native/guide#copy-your-first-link).
+
 ## Built on
 
 | Capability | Web driver built on |

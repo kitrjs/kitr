@@ -16,6 +16,56 @@ A train goes into a tunnel, the warehouse wifi drops, the app is reopened on a p
 
 It runs in the browser and in desktop and mobile shells, never on the server. It keeps **data** available offline, not the app itself: to open a web app with no connection, also make it installable with the [web](/packages/web) platform's PWA option.
 
+## Install
+
+```sh
+kitr add offline
+```
+
+This installs `@kitr/offline`, registers the provider at the end of `providers` in `kitrrc.ts`, writes `config/offline.ts` and adds `VITE_APP_VERSION` to `app/env.ts` and `.env.example`. The guide's [Install](/packages/offline/guide#install) section lists every change.
+
+## Quick start
+
+Nothing changes in your queries. A query that loaded once is saved, and the next time the app starts it is in the cache before the page renders:
+
+```tsx
+// app/pages/orders.tsx
+import { queryFrom, useQuery } from '@kitr/query'
+
+interface Order {
+  id: string
+  customer: string
+  total: number
+}
+
+export const ordersQuery = queryFrom({
+  key: () => ['orders', 'list'],
+  fetch: async (_input, { signal }): Promise<Order[]> => {
+    const res = await fetch('https://api.acme.com/orders', { signal })
+    return (await res.json()) as Order[]
+  },
+})
+
+export default function OrdersPage() {
+  const { data: orders, isPending, fetchStatus } = useQuery(ordersQuery.options())
+  if (isPending) return <p>Loading orders…</p>
+  return (
+    <>
+      {fetchStatus === 'paused' && <p>Offline. Showing the last orders loaded.</p>}
+      <ul>
+        {orders?.map((order) => (
+          <li key={order.id}>
+            {order.customer}: ${order.total}
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+```
+
+Open `/orders` with the network on and wait a second for the snapshot to be written. Close the tab, set the browser's devtools to **Offline**, and open the app again. The list shows the orders at once, with "Offline. Showing the last orders loaded." above it, instead of "Loading orders…". When the network returns, the paused refetch runs and the list updates. The guide continues from here: [Show cached data with no connection](/packages/offline/guide#show-cached-data-with-no-connection).
+
 ## Built on
 
 `@kitr/offline` is built on [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/guides/network-mode)'s own network mode, which pauses queries and mutations while offline, and its [dehydrate and hydrate](https://tanstack.com/query/latest/docs/framework/react/reference/hydration) functions, which turn the cache into JSON and back. The snapshot is stored through [storage](/packages/storage), so desktop and mobile apps keep it in the native store, and the online state comes from [platform](/packages/platform).

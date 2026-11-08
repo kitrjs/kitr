@@ -16,6 +16,67 @@ With `@kitr/router` the pages are links on one chain in `app/routes.ts`. Add `.p
 
 It runs in the browser, and on the server when the web platform renders pages there. A server-only project never installs it; its HTTP routes come from [API routes](/packages/api).
 
+## Install
+
+```sh
+kitr add router
+```
+
+This installs `@kitr/router` with TanStack Router and Start, adds the package to `kitrrc.ts`, and writes `app/routes.ts` (the route table), `app/document.tsx`, `app/router.tsx`, `app/client.tsx` and two starter pages. It adds [react](/packages/react) first when the project does not have it. Every UI kit includes it. The guide's [Install](/packages/router/guide#install) section lists every change.
+
+## Quick start
+
+Every page is a link on the chain in `app/routes.ts`:
+
+```ts
+// app/routes.ts
+import { defineRoutes } from 'kitr/app'
+import router from '@kitr/router/routes'
+import { head, RootDocument } from './document'
+
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ head, component: RootDocument })
+    .page('/', { lazy: () => import('./pages/home') })
+    .page('/about', { lazy: () => import('./pages/about') })
+    .page('/projects', { lazy: () => import('./pages/projects') }),
+)
+
+export type AppRoutes = typeof routes.$types
+```
+
+`kitr make:page projects` appends that last line and writes the page. Its default export is the component:
+
+```tsx
+// app/pages/projects.tsx
+import { Link } from '@kitr/router'
+
+const projects = [
+  { id: 'apollo', name: 'Apollo', team: 'Platform' },
+  { id: 'hermes', name: 'Hermes', team: 'Billing' },
+]
+
+export default function ProjectsPage() {
+  return (
+    <main>
+      <h1>Projects</h1>
+      <ul>
+        {projects.map((project) => (
+          <li key={project.id}>
+            <Link to="/projects/$id" params={{ id: project.id }}>
+              {project.name}
+            </Link>{' '}
+            ({project.team})
+          </li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+```
+
+Run `kitr dev` and open `/projects`. You see the two projects as links. The `/projects/$id` link is a type error until you add that page, because `routes.$types` names every page. `lazy` loads the page module on first visit, so no page weighs on another's bundle. The guide continues from here: [Add your first page](/packages/router/guide#add-your-first-page).
+
 ## Built on
 
 `@kitr/router` is [TanStack Router](https://tanstack.com/router/latest), re-exported unchanged, rendered by [TanStack Start](https://tanstack.com/start/latest). Typed paths, search params, loaders, `beforeLoad`, layouts and devtools work exactly as TanStack documents them.

@@ -16,6 +16,82 @@ Some values belong to the whole app rather than one component: the order someone
 
 It runs in the browser, and on the server while a page renders. For data a server owns, such as the list of orders or the signed-in user, use [query](/packages/query) instead.
 
+## Install
+
+```sh
+kitr add state
+```
+
+This installs `@kitr/state` and zustand, adds the package to `kitrrc.ts` and creates `app/stores/`. There is no provider and no config file. The guide's [Install](/packages/state/guide#install) section lists every change.
+
+## Quick start
+
+Put each store in `app/stores/`. This one holds the order Ada is building, and `persist: true` keeps it across reloads:
+
+```ts
+// app/stores/order-draft.ts
+import { createKitrStore } from '@kitr/state'
+
+export interface DraftLine {
+  sku: string
+  name: string
+  price: number
+  quantity: number
+}
+
+interface OrderDraftState {
+  lines: DraftLine[]
+  addLine: (line: Omit<DraftLine, 'quantity'>) => void
+  clear: () => void
+}
+
+export const [useOrderDraft, OrderDraftProvider, orderDraftStore] =
+  createKitrStore<OrderDraftState>({ name: 'order-draft', persist: true }, (set) => ({
+    lines: [],
+    addLine: (line) =>
+      set((state) => {
+        const existing = state.lines.find((l) => l.sku === line.sku)
+        if (!existing) return { lines: [...state.lines, { ...line, quantity: 1 }] }
+        return {
+          lines: state.lines.map((l) => (l.sku === line.sku ? { ...l, quantity: l.quantity + 1 } : l)),
+        }
+      }),
+    clear: () => set({ lines: [] }),
+  }))
+```
+
+Then use it from any two components, however far apart. Each selects only what it needs, so it re-renders only when that changes:
+
+```tsx
+// app/pages/orders/new.tsx
+import { useOrderDraft } from '#app/stores/order-draft'
+
+function AddSeat() {
+  const addLine = useOrderDraft((s) => s.addLine)
+  return (
+    <button type="button" onClick={() => addLine({ sku: 'acme-seat', name: 'Acme seat', price: 12 })}>
+      Add a seat
+    </button>
+  )
+}
+
+function DraftCount() {
+  const count = useOrderDraft((s) => s.lines.reduce((sum, l) => sum + l.quantity, 0))
+  return <p>{count} items in this order</p>
+}
+
+export default function NewOrderPage() {
+  return (
+    <main>
+      <DraftCount />
+      <AddSeat />
+    </main>
+  )
+}
+```
+
+Open `/orders/new` and press **Add a seat** three times: the count reads `3 items in this order`. Reload the page and it still reads 3, because the draft was saved to `localStorage` under `kitr:order-draft`. `kitr make:store <name>` writes a starter store for you. The guide continues from here: [Create your first store](/packages/state/guide#create-your-first-store).
+
 ## Built on
 
 `@kitr/state` is [Zustand](https://zustand.docs.pmnd.rs), re-exported. `create`, selectors, middleware and everything in its docs work as written, imported from `@kitr/state`.

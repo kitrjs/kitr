@@ -16,6 +16,51 @@ When something breaks in production, you want to know before a user writes in, a
 
 It runs in the browser and on the server. The provider and its error boundary need React; a server-only project uses the same API without the provider. It is for failures someone should fix. For lines a developer reads while debugging, use the [logger](/packages/logger); for counting what users do, use [analytics](/packages/analytics).
 
+## Install
+
+```sh
+kitr add monitoring
+```
+
+This installs `@kitr/monitoring`, registers the provider in `kitrrc.ts`, writes `config/monitoring.ts` and adds `VITE_SENTRY_DSN` (or `SENTRY_DSN` in a server-only project) to `app/env.ts` and `.env.example`. The guide's [Install](/packages/monitoring/guide#install) section lists every change.
+
+## Quick start
+
+Uncaught errors are reported on their own. For an error you catch and handle, read the service and call `captureException` in the `catch`:
+
+```tsx
+// app/features/projects/import-projects-button.tsx
+import { useService } from '@kitr/react'
+
+export function ImportProjectsButton({ file }: { file: File }) {
+  const monitoring = useService('monitoring')
+
+  async function importProjects() {
+    try {
+      const res = await fetch('/api/projects/import', { method: 'POST', body: file })
+      if (!res.ok) throw new Error(`Import failed with ${res.status}`)
+    } catch (error) {
+      monitoring.captureException(error, { extra: { fileName: file.name, size: file.size } })
+      alert('That file could not be imported.')
+    }
+  }
+
+  return (
+    <button type="button" onClick={importProjects}>
+      Import projects
+    </button>
+  )
+}
+```
+
+Make the import fail in development and the console reporter prints the report:
+
+```
+[monitoring] error Error: Import failed with 500 { fileName: 'projects.csv', size: 18234 }
+```
+
+With [devtools](/packages/devtools) open, the report also appears in the Errors panel with its stack and extra data. Set `VITE_SENTRY_DSN` and the same call sends it to Sentry in production. The guide continues from here: [Report your first error](/packages/monitoring/guide#report-your-first-error).
+
 ## Built on
 
 Reports go through a `Reporter`. Three are built in:

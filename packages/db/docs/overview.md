@@ -16,6 +16,53 @@ Orders, invoices, projects, teams: almost every app keeps its data in a database
 
 It ships no ORM. It runs on the server only. To keep data in the browser or on a device, use [storage](/packages/storage) instead.
 
+## Install
+
+```sh
+kitr add db
+```
+
+This installs `@kitr/db`, registers the provider in `kitrrc.ts`, writes `config/db.ts` and adds `DATABASE_URL` to `.env.example`. Bring your own ORM. The guide's [Install](/packages/db/guide#install) section lists every change.
+
+## Quick start
+
+With Drizzle and postgres.js installed (`pnpm add drizzle-orm postgres`), describe the connection once:
+
+```ts
+// config/db.ts
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { defineDb } from '@kitr/db'
+import * as schema from '#server/db/schema'
+
+const createDb = () => drizzle(postgres(process.env.DATABASE_URL!), { schema })
+
+/** The client every controller and action gets from useDb<AppDb>(). */
+export type AppDb = ReturnType<typeof createDb>
+
+export default defineDb({
+  connect: () => createDb(),
+  disconnect: (db) => db.$client.end(),
+})
+```
+
+Then read it anywhere on the server:
+
+```ts
+// server/controllers/orders_controller.ts
+import type { HttpContext } from '@kitr/api'
+import { useDb } from '@kitr/db'
+import type { AppDb } from '#config/db'
+
+export default class OrdersController {
+  async index({ app }: HttpContext) {
+    return useDb<AppDb>(app).query.orders.findMany()
+  }
+}
+```
+
+Point `DATABASE_URL` in `.env` at a running database and run `kitr dev`. The provider connects during boot, before the first request, and the server refuses to start if Postgres is not reachable. The guide continues from here: [Connect with Drizzle](/packages/db/guide#connect-with-drizzle).
+
 ## Built on
 
 `@kitr/db` is built on the kitr [server](/packages/server) lifecycle and container. The database client itself is whichever you bring:

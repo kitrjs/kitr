@@ -16,6 +16,56 @@ The hard part of testing an app is rarely the assertion. It is the setup: the pr
 
 It runs in your test process only, never in the app bundle. `@kitr/testing` has no React in it, so a backend without React uses it as is. To fake an API your frontend calls, rather than test your own, use [mocks](/packages/mocks) alongside it.
 
+## Install
+
+```sh
+kitr add testing
+```
+
+This installs `@kitr/testing` and Vitest (plus Testing Library and happy-dom in a React project), adds the package to `kitrrc.ts`, and writes `vitest.config.ts` and `test/example.test.ts`. There is no provider. The guide's [Install](/packages/testing/guide#install) section lists every change.
+
+## Quick start
+
+The server in `server/main.ts` is a fetch handler, so the test client calls it directly, with no port and no running backend. This test creates an order and reads it back:
+
+```ts
+// test/orders.test.ts
+import { createTestClient } from '@kitr/testing'
+import { describe, expect, it } from 'vitest'
+import { server } from '#server/main'
+
+describe('orders', () => {
+  it('creates an order and reads it back', async () => {
+    const client = createTestClient(server)
+
+    const created = await client.post<{ id: string; status: string }>('/api/orders', {
+      customer: 'Grace',
+      total: 120,
+    })
+    expect(created.status).toBe(201)
+    expect(created.body.status).toBe('open')
+
+    const read = await client.get<{ customer: string }>(`/api/orders/${created.body.id}`)
+    expect(read.body.customer).toBe('Grace')
+  })
+})
+```
+
+Run it:
+
+```sh
+pnpm test
+```
+
+```txt
+ ✓ test/orders.test.ts (1 test) 31ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
+
+The first request boots the server's app: every provider in `kitrrc.ts` registers and boots, exactly as in `kitr dev`. Nothing listens on a port, so tests run in parallel without clashing. Components render the same way with `renderWithKitr` from `@kitr/testing/react`. The guide continues from here: [Write your first test](/packages/testing/guide#write-your-first-test).
+
 ## Built on
 
 `@kitr/testing` is built on [Vitest](https://vitest.dev) and [Testing Library](https://testing-library.com/docs/react-testing-library/intro/). Matchers, module mocking, timers and coverage come from Vitest; queries like `getByRole` come from Testing Library. kitr adds the three helpers, the request client with typed responses and error assertions, the per-file environment choice (Node for API tests, jsdom for components) and the isolation between tests.

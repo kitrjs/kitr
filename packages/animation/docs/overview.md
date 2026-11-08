@@ -16,6 +16,40 @@ A toast slides in when an invoice is sent, a dialog grows out of the button that
 
 It runs in the browser, inside React, on every kitr platform: the web, desktop (Electron and Tauri) and mobile (Capacitor) builds use the same code. For a spinning 3D product or a scene with a camera, use [3d](/packages/3d) instead; this package animates DOM and SVG elements.
 
+## Install
+
+```sh
+kitr add animation
+```
+
+This installs `@kitr/animation` with Motion, registers the provider in `kitrrc.ts` and writes `config/animation.ts` with the shared timings. The guide's [Install](/packages/animation/guide#install) section lists every change.
+
+## Quick start
+
+A toast that rises in when an invoice is sent and falls away when it closes:
+
+```tsx
+// app/components/invoice-sent-toast.tsx
+import { AnimatePresence, motion, presets } from '@kitr/animation'
+
+export function InvoiceSentToast({ invoice, onClose }: { invoice: string | null; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {invoice && (
+        <motion.div key={invoice} role="status" className="toast" {...presets.fadeUp}>
+          Invoice {invoice} sent to grace@acme.com
+          <button type="button" onClick={onClose}>
+            Close
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+```
+
+When `invoice` becomes `'INV-1042'`, the toast fades in while rising 12 pixels over 0.25 seconds. When it becomes `null`, it fades out and only then leaves the DOM. For a visitor with reduced motion on, both happen instantly. The guide continues from here: [Animate your first component](/packages/animation/guide#animate-your-first-component).
+
 ## Built on
 
 `@kitr/animation` is [Motion](https://motion.dev/docs/react) for React, re-exported unchanged. `motion.div`, `AnimatePresence`, `useScroll`, layout animations and gestures work exactly as Motion documents them, imported from `@kitr/animation`.

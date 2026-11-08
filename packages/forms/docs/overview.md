@@ -16,6 +16,59 @@ Sign-up pages, invoice editors and settings screens all need the same three thin
 
 It runs in the browser. For the server half of a form, see [actions](/packages/actions) or [API routes](/packages/api).
 
+## Install
+
+```sh
+kitr add forms
+```
+
+This installs `@kitr/forms` with react-hook-form, its resolvers and zod, and adds the package to `kitrrc.ts`. There is no provider and no config file. The guide's [Install](/packages/forms/guide#install) section lists every change.
+
+## Quick start
+
+Start with a schema, then build the form from it. Each field is a `<FormField>` with an input inside:
+
+```tsx
+// app/features/invoices/new-invoice-form.tsx
+import { FieldInput, Form, FormField, SubmitButton, useRootError, useSchemaForm } from '@kitr/forms'
+import { z } from 'zod'
+
+const newInvoiceSchema = z.object({
+  customerEmail: z.email('Enter the customer’s email'),
+  amount: z.coerce.number().positive('Amount must be more than zero'),
+})
+type NewInvoice = z.output<typeof newInvoiceSchema>
+
+export function NewInvoiceForm({ onCreate }: { onCreate: (invoice: NewInvoice) => Promise<unknown> }) {
+  const form = useSchemaForm(newInvoiceSchema, { defaultValues: { customerEmail: '', amount: '' } })
+  return (
+    <Form form={form} onSubmit={onCreate} resetOnSuccess aria-label="New invoice">
+      <FormField name="customerEmail" label="Customer email">
+        <FieldInput type="email" />
+      </FormField>
+      <FormField name="amount" label="Amount (USD)">
+        <FieldInput inputMode="decimal" />
+      </FormField>
+      <RootError />
+      <SubmitButton pendingText="Creating…">Create invoice</SubmitButton>
+    </Form>
+  )
+}
+
+function RootError() {
+  const error = useRootError()
+  return error ? <p role="alert">{error}</p> : null
+}
+```
+
+Render `<NewInvoiceForm onCreate={async (invoice) => console.log('created', invoice)} />` on a page. Tab out of the empty email field and "Enter the customer’s email" appears under it. Fill in `grace@acme.com` and `120`, press the button, and the console prints:
+
+```js
+created { customerEmail: 'grace@acme.com', amount: 120 }
+```
+
+`amount` arrives as the number `120`, because `onSubmit` receives the schema's output. While `onCreate` runs the button reads "Creating…" and is disabled. The guide continues from here: [Build your first form](/packages/forms/guide#build-your-first-form).
+
 ## Built on
 
 `@kitr/forms` is [React Hook Form](https://react-hook-form.com) re-exported unchanged. `useForm`, `Controller`, `useFieldArray`, `watch` and everything in its docs work as written, imported from `@kitr/forms`. React Hook Form's own `<Form>` is exported as `RhfForm`.

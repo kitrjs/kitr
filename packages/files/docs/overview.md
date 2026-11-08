@@ -16,6 +16,46 @@ Sooner or later someone wants to get a file in or out of your app: import last m
 
 It runs in the browser and in desktop and mobile shells. On the server the service exists but has no dialogs. To receive files on your server and store them, use [uploads](/packages/uploads); `@kitr/files` only gets them into and out of the browser.
 
+## Install
+
+```sh
+kitr add files
+```
+
+This installs `@kitr/files`, registers the provider in `kitrrc.ts` and writes `config/files.ts`. The guide's [Install](/packages/files/guide#install) section lists every change.
+
+## Quick start
+
+Export a list as a CSV with one button. `useFileDialogs()` returns the service's calls plus a `busy` flag:
+
+```tsx
+// app/features/orders/export-orders-button.tsx
+import { useFileDialogs } from '@kitr/files/react'
+
+const orders = [
+  { id: 'ord_1042', customer: 'Ada', total: 129 },
+  { id: 'ord_1043', customer: 'Grace', total: 80 },
+]
+
+export function ExportOrdersButton() {
+  const { save, busy } = useFileDialogs()
+
+  async function exportOrders() {
+    const csv = ['id,customer,total', ...orders.map((o) => `${o.id},${o.customer},${o.total}`)].join('\n')
+    const where = await save(csv, { name: 'acme-orders.csv' })
+    if (where) console.log(`Saved to ${where}`)
+  }
+
+  return (
+    <button type="button" disabled={busy} onClick={exportOrders}>
+      Export orders
+    </button>
+  )
+}
+```
+
+Click **Export orders**. In Chrome or Edge a save dialog opens with `acme-orders.csv` filled in and the console prints `Saved to acme-orders.csv`. In Firefox and Safari the browser downloads the file right away. In the Electron shell the same call shows the operating system's dialog. `save()` resolves to `null` when the person cancels. The guide continues from here: [Save your first file](/packages/files/guide#save-your-first-file).
+
 ## Built on
 
 | Driver | Built on | Where |

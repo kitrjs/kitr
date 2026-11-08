@@ -16,6 +16,40 @@ Some teams want the app in the dock or the Start menu: a window that opens offli
 
 The code runs in three places: `@kitr/desktop/client` and the provider in the window (and in a plain browser, where they stand aside), `@kitr/desktop/main` in Electron's main process, and `@kitr/desktop/preload` in the preload script between the two.
 
+## Install
+
+```sh
+kitr add desktop app
+```
+
+This installs `@kitr/desktop` with Electron, electron-vite and electron-builder, registers the provider and an `app` platform in `kitrrc.ts`, and writes `platforms/app/` (main process, preload, IPC declarations) plus the typed `app/ipc.ts` client for the window. It adds [router](/packages/router), [platform](/packages/platform) and [storage](/packages/storage) first when they are missing. The guide's [Install](/packages/desktop/guide#install) section lists every change.
+
+## Quick start
+
+Run the desktop platform. kitr starts Vite on port 3200, waits for it, then opens an Electron window on your app:
+
+```sh
+kitr dev app
+```
+
+The scaffold already declared an `app.version` command in `platforms/app/ipc.ts` and wrote a typed client for the window. Call it from a component:
+
+```tsx
+// app/components/app-version.tsx
+import { useEffect, useState } from 'react'
+import { ipc } from '#app/ipc'
+
+export function AppVersion() {
+  const [version, setVersion] = useState<string>()
+  useEffect(() => {
+    if (ipc.available) void ipc.invoke('app.version').then(setVersion)
+  }, [])
+  return <small>{version ? `Acme Orders ${version}` : 'Acme Orders on the web'}</small>
+}
+```
+
+In the Electron window the footer reads `Acme Orders 0.1.0`, the version from `package.json`. In the browser (`kitr dev site`) it reads `Acme Orders on the web`, because `ipc.available` is false when there is no main process. The guide continues from here: [Open your first window](/packages/desktop/guide#open-your-first-window).
+
 ## Built on
 
 | Built on | Role | What kitr adds |

@@ -16,6 +16,33 @@ Feature flags let you merge unfinished work behind a switch, turn a redesign on 
 
 It runs on both sides: React hooks in the browser, `resolveFlags()` on the server. Flags are not permissions: to decide whether a user may delete an invoice, use [auth](/packages/auth). For a value that is the same for everyone in an environment, a [config file](/docs/configuration) is simpler.
 
+## Install
+
+```sh
+kitr add flags
+```
+
+This installs `@kitr/flags`, registers the provider in `kitrrc.ts`, writes `app/flags.ts` with two example flags and `config/flags.ts` with the provider order. The guide's [Install](/packages/flags/guide#install) section lists every change.
+
+## Quick start
+
+In a component, `useFlag` returns a flag's current value and re-renders when it changes:
+
+```tsx
+// app/features/dashboard/dashboard_page.tsx
+import { useFlag } from '@kitr/flags/react'
+import type { flags } from '#app/flags'
+import { ClassicDashboard } from './classic_dashboard'
+import { NewDashboard } from './new_dashboard'
+
+export function DashboardPage() {
+  const redesigned = useFlag<typeof flags, 'new-dashboard'>('new-dashboard')
+  return redesigned ? <NewDashboard /> : <ClassicDashboard />
+}
+```
+
+Put `FLAG_NEW_DASHBOARD=true` in `.env`, restart the server, and the dashboard switches for everyone. Remove the line and 10% of signed-in users, chosen by user id, still see the redesign through the percentage provider. Everyone else sees the classic one. The guide continues from here: [Show a feature to some users](/packages/flags/guide#show-a-feature-to-some-users).
+
 ## Built on
 
 `@kitr/flags` speaks [OpenFeature](https://openfeature.dev/docs/reference/intro), the vendor-neutral flag standard. Any OpenFeature provider, including LaunchDarkly, Flagsmith, Unleash and the rest, plugs into the chain. Three providers are built in: environment variables, percentage rollouts keyed on the user id, and a rules provider for your own code.

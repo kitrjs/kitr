@@ -16,6 +16,57 @@ A marketing page that must load fast from a CDN, a dashboard behind a login, a s
 
 The platform options run in the CLI and the Vite plugin; the hooks run in the browser. To ship the same app to phones, add [mobile](/packages/mobile); for a desktop window, [desktop](/packages/desktop) or [tauri](/packages/tauri); for an API with no UI, the [server](/packages/server) platform.
 
+## Install
+
+```sh
+kitr add web site
+```
+
+This installs `@kitr/web` with TanStack Start, registers the provider and a `site` platform in `kitrrc.ts`, and sets the `dev`, `build` and `start` scripts to `kitr dev`, `kitr build` and `kitr start`. It adds [router](/packages/router) and [react](/packages/react) first when they are missing. `kitr new` does all of this for you. The guide's [Install](/packages/web/guide#install) section lists every change.
+
+## Quick start
+
+Replace the home page with an order list:
+
+```tsx
+// app/pages/home.tsx
+const orders = [
+  { id: 'ord_1042', customer: 'Ada', total: 129 },
+  { id: 'ord_1043', customer: 'Grace', total: 84 },
+]
+
+export default function OrdersPage() {
+  return (
+    <main>
+      <h1>Acme orders</h1>
+      <ul>
+        {orders.map((order) => (
+          <li key={order.id}>
+            {order.id}: {order.customer}, ${order.total}
+          </li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+```
+
+Run it:
+
+```sh
+kitr dev site
+```
+
+Vite starts on `http://localhost:3000/` and you see the two orders. Edits to the file reload the page in place. When it looks right, build it and serve the build:
+
+```sh
+kitr build site
+kitr start site
+# ✔ site: serving dist/site on http://localhost:3000/
+```
+
+`kitr build site` writes `dist/site`, a static site, a single-page app or an SSR server depending on the `mode` in `kitrrc.ts`, and `kitr start site` serves it the way production will. The guide continues from here: [Ship your first page](/packages/web/guide#ship-your-first-page).
+
 ## Built on
 
 | Built on | Role |

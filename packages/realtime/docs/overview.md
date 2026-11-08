@@ -16,6 +16,63 @@ A chat, a notification bell, a project board that updates while you look at it: 
 
 It runs on both sides. For one-off server calls that return a value, use [actions](/packages/actions) or [API routes](/packages/api) instead; realtime is for events the server sends when something changes.
 
+## Install
+
+```sh
+kitr add realtime
+```
+
+This installs `@kitr/realtime` with crossws (and partysocket in a React app), writes `config/realtime.ts`, an example channel in `app/channels/example.ts` and the client in `app/realtime.ts`, and mounts a `.ws()` route on the server route table. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/realtime/guide#install) section lists every change.
+
+## Quick start
+
+Three files make a live project name: a channel both ends import, an emit on the server, and a subscription in a component. The channel names its params, its events and what each event does to the query cache:
+
+```ts
+// app/channels/projects.ts
+import { defineChannel } from '@kitr/realtime'
+import { z } from 'zod'
+
+export const projectSchema = z.object({ id: z.string(), name: z.string(), teamId: z.string() })
+export type Project = z.infer<typeof projectSchema>
+
+export const projectChannel = defineChannel({
+  name: 'projects',
+  params: z.object({ id: z.string() }),
+  events: {
+    updated: {
+      schema: projectSchema,
+      effects: (project, { id }) => ({ set: [{ key: ['projects', 'detail', id], data: project }] }),
+    },
+  },
+})
+```
+
+Add `projectChannel` to the `.ws('/ws', { channels: [...] })` route in `server/routes.ts`, then emit from the controller that renames a project:
+
+```ts
+// server/controllers/projects_controller.ts
+app.container.use('realtime').use(projectChannel, { id: params.id }).emit('updated', project)
+```
+
+Subscribe in the component that shows the project:
+
+```tsx
+// app/features/projects/project-title.tsx
+import { useQuery } from '@kitr/query'
+import { useChannel } from '@kitr/realtime/react'
+import { type Project, projectChannel } from '#app/channels/projects'
+import { realtime } from '#app/realtime'
+
+export function ProjectTitle({ id }: { id: string }) {
+  useChannel(realtime(), projectChannel, { id })
+  const { data } = useQuery<Project>({ queryKey: ['projects', 'detail', id], enabled: false })
+  return <h1>{data?.name ?? 'Loading'}</h1>
+}
+```
+
+When Grace saves "Apollo launch", the server sends one `updated` event to every connection subscribed to that project. Each client validates the payload against `projectSchema` and runs `effects`, which writes the project into the cache entry. Ada's heading re-renders with the new name. No refetch happens. The guide continues from here: [Push your first update](/packages/realtime/guide#push-your-first-update).
+
 ## Built on
 
 | Transport | Built on | Use it for |

@@ -16,6 +16,51 @@ A product page that lets a customer turn the item around, a configurator that re
 
 It runs in the browser, inside React, on every kitr platform: web, desktop (Electron and Tauri) and mobile (Capacitor). It renders nothing during server rendering, so pages that use it still prerender and hydrate cleanly.
 
+## Install
+
+```sh
+kitr add 3d
+```
+
+This installs `@kitr/3d` with three.js, React Three Fiber and drei, adds it to `packages` in `kitrrc.ts` and adds a note for coding agents to `AGENTS.md`. There is no provider and no config file. The guide's [Install](/packages/3d/guide#install) section lists every change.
+
+## Quick start
+
+A turning cube in the brand colour. Give the scene a height, because a canvas fills its parent:
+
+```tsx
+// app/components/brand-cube.tsx
+import { Scene, useFrame, useThemeColor } from '@kitr/3d'
+import { useRef } from 'react'
+import type { Mesh } from 'three'
+
+function Cube() {
+  const ref = useRef<Mesh>(null)
+  const primary = useThemeColor('--kitr-color-primary')
+  useFrame((_, delta) => {
+    if (ref.current) ref.current.rotation.y += delta * 0.6
+  })
+  return (
+    <mesh ref={ref} rotation={[0.4, 0, 0]}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial color={primary} />
+    </mesh>
+  )
+}
+
+export function BrandCube() {
+  return (
+    <Scene style={{ height: 320 }} fallback={<img src="/images/cube.png" alt="The Acme cube" />}>
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[2, 3, 2]} intensity={1.4} />
+      <Cube />
+    </Scene>
+  )
+}
+```
+
+Render `<BrandCube />` on any page. The server sends an empty 320-pixel box; in the browser it becomes a canvas with a cube turning in the theme's primary colour. Without WebGL the box shows the fallback image, and when the scene scrolls out of view the frame loop stops. The guide continues from here: [Show your first scene](/packages/3d/guide#show-your-first-scene).
+
 ## Built on
 
 `@kitr/3d` re-exports [React Three Fiber](https://r3f.docs.pmnd.rs) and [drei](https://drei.docs.pmnd.rs) unchanged, on top of [three.js](https://threejs.org). Everything those libraries document works exactly as written, imported from `@kitr/3d` and `@kitr/3d/drei`.

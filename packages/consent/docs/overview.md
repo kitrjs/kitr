@@ -16,6 +16,37 @@ In much of the world you need a visitor's permission before you load analytics, 
 
 It runs in the browser. The record lives in a cookie made with [storage](/packages/storage), so server code can read it from the request. It is not a legal template: you decide the categories and the wording.
 
+## Install
+
+```sh
+kitr add consent
+```
+
+This installs `@kitr/consent`, registers the provider in `kitrrc.ts`, writes `config/consent.ts` with the categories and `app/components/consent-banner.tsx`, a banner you can restyle. The guide's [Install](/packages/consent/guide#install) section lists every change.
+
+## Quick start
+
+The banner `kitr add` wrote is a few lines over `useConsent()`:
+
+```tsx
+// app/components/consent-banner.tsx
+import { useConsent } from '@kitr/consent/react'
+
+export function ConsentBanner() {
+  const { decided, acceptAll, rejectAll } = useConsent()
+  if (decided) return null
+  return (
+    <div role="dialog" aria-label="Cookie consent">
+      <span>We use cookies for analytics. You can change your mind in settings.</span>
+      <button type="button" onClick={rejectAll}>Only necessary</button>
+      <button type="button" onClick={acceptAll}>Accept all</button>
+    </div>
+  )
+}
+```
+
+Mount it once in `app/document.tsx`, after the `<Outlet />`. Open the app in a private window and click **Accept all**: the banner disappears, a `consent` cookie records `{ granted: ['necessary', 'analytics', 'marketing'], version: 1 }`, and [analytics](/packages/analytics) sends every call it queued since the page loaded. Click **Only necessary** instead and analytics keeps queuing and never sends. The guide continues from here: [Show your first banner](/packages/consent/guide#show-your-first-banner).
+
 ## Built on
 
 `@kitr/consent` is built on kitr's own [storage](/packages/storage) cookies rather than on a consent management vendor. The cookie holds the choice per category, a version and a timestamp, so you can ask everyone again when your policy changes. kitr adds the category model, the React hook, the integration points that analytics and monitoring listen to, the no-flash rendering of the banner on the server, and a devtools panel that shows the current choice.

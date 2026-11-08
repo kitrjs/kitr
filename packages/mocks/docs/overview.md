@@ -16,6 +16,37 @@ Frontend work shouldn't wait for the backend. The invoices screen is designed, t
 
 It runs on the client and in tests. It cannot answer requests the server makes while rendering a page, because those never reach the browser. To test your own API routes rather than fake them, use [testing](/packages/testing)'s `createTestClient`.
 
+## Install
+
+```sh
+kitr add mocks
+```
+
+This installs `@kitr/mocks` and MSW, writes `app/mocks/handlers.ts` and `app/mocks/browser.ts`, sets up the service worker in `public/` and adds `VITE_MOCKS=false` to `.env.example`. There is no provider: mocks start only when your code calls them. The guide's [Install](/packages/mocks/guide#install) section lists every change.
+
+## Quick start
+
+Add a handler for the request your screen makes:
+
+```ts
+// app/mocks/handlers.ts
+import { HttpResponse, http } from '@kitr/mocks'
+
+export const handlers = [
+  http.get('*/api/me', () =>
+    HttpResponse.json({ id: 'u_ada', email: 'ada@acme.com', name: 'Ada', role: 'admin' }),
+  ),
+  http.get('*/api/invoices', () =>
+    HttpResponse.json([
+      { id: 'inv_1001', customer: 'Grace', amount: 120, status: 'paid' },
+      { id: 'inv_1002', customer: 'Linus', amount: 300, status: 'open' },
+    ]),
+  ),
+]
+```
+
+Set `VITE_MOCKS=true` in `.env`, restart `kitr dev`, and open the invoices page. The list shows the two invoices, and the browser's network panel shows each request answered `from service worker`. The leading `*` matches any origin, so the handler answers whether the client calls `localhost:3333` or `app.acme.com`. `http` and `HttpResponse` are MSW's own, so everything in [MSW's docs](https://mswjs.io/docs/http) applies. The guide continues from here: [Fake your first endpoint](/packages/mocks/guide#fake-your-first-endpoint).
+
 ## Built on
 
 `@kitr/mocks` is [Mock Service Worker](https://mswjs.io) (MSW), with `http` and `HttpResponse` re-exported unchanged. In the browser a service worker intercepts requests; in Node, MSW patches the global `fetch`. Everything in MSW's docs, including GraphQL and WebSocket handlers, works as written.

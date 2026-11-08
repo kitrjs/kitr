@@ -16,6 +16,35 @@ An app that ships to the browser, a phone and a desktop window keeps asking the 
 
 It runs on both sides. In the browser and in native shells it reports the real device; during server rendering it returns safe defaults (online, in the foreground, no insets), so the first render matches the HTML. For device features such as the camera, biometrics or haptics, use [native](/packages/native) instead.
 
+## Install
+
+```sh
+kitr add platform
+```
+
+This installs `@kitr/platform`, registers the provider in `kitrrc.ts` and writes `config/platform.ts`. The desktop, tauri and mobile packages add it for you. The guide's [Install](/packages/platform/guide#install) section lists every change.
+
+## Quick start
+
+`usePlatform()` returns the `platform` service. Render it to see what kitr detected:
+
+```tsx
+// app/components/platform-badge.tsx
+import { usePlatform } from '@kitr/platform/react'
+
+export function PlatformBadge() {
+  const platform = usePlatform()
+  return (
+    <span>
+      {platform.type} · {platform.os}
+      {platform.native ? ' · native' : ''}
+    </span>
+  )
+}
+```
+
+Put `<PlatformBadge />` in a page and run `kitr dev site`. On a Mac in Chrome it shows `web · macos`. In the iOS simulator through `kitr dev phone` it shows `mobile · ios · native`, and in the Electron or Tauri window `desktop · macos · native`. The same component, with no user-agent sniffing. The guide continues from here: [Show where the app runs](/packages/platform/guide#show-where-the-app-runs).
+
 ## Built on
 
 `@kitr/platform` is built on the kitr driver registry. Each platform package registers a `PlatformDriver` for the place it runs, and the service wraps whichever one is active, filling every gap with a browser default:

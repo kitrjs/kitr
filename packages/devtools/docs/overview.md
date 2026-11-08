@@ -16,6 +16,34 @@ In development a small "k" button sits in a corner of the app. Open it and a pan
 
 It runs in the browser, in development only. It renders nothing on the server, binds nothing in production, and the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users.
 
+## Install
+
+```sh
+kitr add devtools
+```
+
+This installs `@kitr/devtools`, registers the provider in `kitrrc.ts` and writes `config/devtools.ts`. The guide's [Install](/packages/devtools/guide#install) section lists every change.
+
+## Quick start
+
+Start the dev server with `kitr dev` and open the app. A round "k" button sits in the bottom-left corner. Click it, or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>, and the panel opens along the bottom of the page with tabs for the route, the query cache, the session, saved values, errors, analytics calls and one log that every kitr package writes to. When the panel is closed, a red number on the button counts the errors logged so far.
+
+If the shortcut clashes with your browser, pick another key and corner:
+
+```ts
+// config/devtools.ts
+import { defineConfig } from '@kitr/devtools'
+
+export default defineConfig({
+  position: 'bottom-right',
+  shortcutKey: 'j',
+  maxEntries: 500,
+  openByDefault: true,
+})
+```
+
+The panel now opens on <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd>, sits bottom-right and is open when the page loads. The guide continues from here: [Open the panel](/packages/devtools/guide#open-the-panel).
+
 ## Built on
 
 `@kitr/devtools` is kitr's own, built on the devtools hub in the kitr core: every package that has something to show registers a panel, and every package that has something to say writes to the hub's log. The panel renders with React and [Hugeicons](https://hugeicons.com). It is a view onto kitr; for component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it, and the [TanStack Router](https://tanstack.com/router/latest/docs/framework/react/devtools) and [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/devtools) devtools for deeper views of each library.

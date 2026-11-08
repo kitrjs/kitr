@@ -16,6 +16,34 @@ Users expect dark mode, a page that does not flash white before it turns dark, a
 
 It runs in the browser, and on the server during server rendering. For utility classes on top of the same tokens, add [tailwind](/packages/tailwind) as well; for a server-only project there is nothing to theme.
 
+## Install
+
+```sh
+kitr add theme
+```
+
+This installs `@kitr/theme`, registers the provider in `kitrrc.ts`, writes `config/theme.ts` and `app/styles/tokens.css`, and puts `<ThemeScript />` in `app/document.tsx` so the saved theme applies before first paint. It adds [react](/packages/react) first when the project does not have it. The guide's [Install](/packages/theme/guide#install) section lists every change.
+
+## Quick start
+
+`useTheme()` returns the current choice and the functions that change it. Any component under the app can call it:
+
+```tsx
+// app/components/theme-button.tsx
+import { useTheme } from '@kitr/theme'
+
+export function ThemeButton() {
+  const { resolved, toggle } = useTheme()
+  return (
+    <button type="button" onClick={toggle}>
+      {resolved === 'dark' ? 'Switch to light' : 'Switch to dark'}
+    </button>
+  )
+}
+```
+
+Put `<ThemeButton />` in the nav of `app/document.tsx` and click it. The page turns dark: `<html>` gets `data-theme="dark"` and `style="color-scheme: dark"`, every `--kitr-*` variable switches to its dark value, and the choice is saved to `localStorage` and a one-year cookie, so a reload keeps it and the server renders the right theme. `theme` is the user's choice (`'light'`, `'dark'` or `'system'`) and `resolved` is what shows on screen. For a styled toggle with an icon, `kitr ui add theme-toggle` copies one into `app/components/ui/`. The guide continues from here: [Add a dark mode toggle](/packages/theme/guide#add-a-dark-mode-toggle).
+
 ## Built on
 
 | Built on | Role |

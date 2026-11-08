@@ -16,6 +16,51 @@ A reminder to approve an invoice, a note that an order has shipped, a nudge befo
 
 It runs in the browser and in desktop and mobile shells; on the server the service shows nothing. It covers notifications the app shows itself. Push notifications sent from your server while the app is closed need a push service (APNs, FCM or Web Push) on top.
 
+## Install
+
+```sh
+kitr add notifications
+```
+
+This installs `@kitr/notifications`, registers the provider in `kitrrc.ts` and writes `config/notifications.ts`. The guide's [Install](/packages/notifications/guide#install) section lists every change.
+
+## Quick start
+
+Ask for permission from a button, then show a notification:
+
+```tsx
+// app/features/invoices/notify-me.tsx
+import { useNotificationPermission, useNotifications } from '@kitr/notifications/react'
+
+export function NotifyMe() {
+  const { permission, request } = useNotificationPermission()
+  const notifications = useNotifications()
+  if (permission === 'unsupported' || permission === 'denied') return null
+  if (permission !== 'granted')
+    return (
+      <button type="button" onClick={request}>
+        Turn on notifications
+      </button>
+    )
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        notifications.show({
+          title: 'Invoice inv_1042 is due',
+          body: 'Acme Corp, $1,280.00, due Friday',
+          url: '/invoices/inv_1042',
+        })
+      }
+    >
+      Test a notification
+    </button>
+  )
+}
+```
+
+Ada clicks **Turn on notifications**, the browser asks, and she allows it. The button changes to **Test a notification**; clicking it shows a system notification titled "Invoice inv_1042 is due" with the app's icon. In the desktop and mobile shells the same component runs on the web driver until you register a native one. The guide continues from here: [Send your first notification](/packages/notifications/guide#send-your-first-notification).
+
 ## Built on
 
 In the browser, `@kitr/notifications` is built on the [Notification API](https://developer.mozilla.org/docs/Web/API/Notifications_API), with timers for scheduling and the service worker from the [web](/packages/web) platform's PWA option where Chrome for Android requires it. kitr adds stable ids you can cancel by, a `url` carried from the notification to its tap, `useNotificationPermission` and `useNotificationTap`, the memory driver and the `NotificationsDriver` interface.

@@ -16,6 +16,49 @@ Your customers want the app on their phone: an icon on the home screen, an Andro
 
 The provider and `@kitr/mobile/client` run in the app, in the WebView and in a plain browser alike. The platform hooks run in the CLI on your machine. For an installable web app with no store listing, the PWA option of the [web](/packages/web) platform is enough.
 
+## Install
+
+```sh
+kitr add mobile phone --appId com.acme.orders --appName "Acme Orders"
+```
+
+This installs `@kitr/mobile` with Capacitor and its iOS and Android packages, registers the provider and a `phone` platform in `kitrrc.ts`, and writes `platforms/phone/capacitor.config.ts`. It adds [router](/packages/router), [platform](/packages/platform) and [storage](/packages/storage) first when they are missing. You need Xcode or Android Studio on the machine. The guide's [Install](/packages/mobile/guide#install) section lists every change.
+
+## Quick start
+
+Build once to create the native projects, then show where the app runs on the home page:
+
+```sh
+kitr build phone
+```
+
+```tsx
+// app/pages/index.tsx
+import { usePlatform } from '@kitr/platform/react'
+
+export default function OrdersHome() {
+  const platform = usePlatform()
+  return (
+    <main>
+      <h1>Acme orders</h1>
+      <p>
+        Running on {platform.os}
+        {platform.native ? ' in the native app' : ' in the browser'}.
+      </p>
+    </main>
+  )
+}
+```
+
+Start it on a simulator:
+
+```sh
+kitr dev phone --target ios
+# phone: dev server on http://192.168.1.20:3100, the ios app loads it live
+```
+
+The iOS simulator opens Acme Orders and shows "Running on ios in the native app". Edit the component and the app updates in place. The same page in a browser at `kitr dev site` says "in the browser". The guide continues from here: [Run the app on a phone](/packages/mobile/guide#run-the-app-on-a-phone).
+
 ## Built on
 
 `@kitr/mobile` is built on [Capacitor](https://capacitorjs.com/docs). Your client build runs in the system WebView, and Capacitor plugins reach native APIs: `@capacitor/app` for app state, the back button and deep links, `@capacitor/preferences` for storage, and any other plugin you add.

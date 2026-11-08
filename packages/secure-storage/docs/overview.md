@@ -16,6 +16,54 @@ A session token, a refresh token, an API key someone pasted into settings: these
 
 It runs in the browser, in desktop and mobile shells, and on the server as an in-memory store. For values that are not secret, such as a theme or a draft order, use [storage](/packages/storage): it is synchronous and renders on the server.
 
+## Install
+
+```sh
+kitr add secure-storage
+```
+
+This installs `@kitr/secure-storage` (with [storage](/packages/storage) as a dependency), registers the provider in `kitrrc.ts`, writes `config/secure-storage.ts` and `app/secure.ts` with one typed item. The guide's [Install](/packages/secure-storage/guide#install) section lists every change.
+
+## Quick start
+
+An item names a key and the type of what is stored under it:
+
+```ts
+// app/secure.ts
+import { defineSecureItem } from '@kitr/secure-storage'
+
+export const sessionItem = defineSecureItem<{ token: string; expiresAt: number }>('session')
+```
+
+Read and write it in a component with `useSecureItem`:
+
+```tsx
+// app/features/account/session-status.tsx
+import { useSecureItem } from '@kitr/secure-storage/react'
+import { sessionItem } from '#app/secure'
+
+export function SessionStatus() {
+  const [session, setSession, { loading, secure }] = useSecureItem(sessionItem)
+  if (loading) return null
+  if (!session)
+    return (
+      <button type="button" onClick={() => setSession({ token: 'tok_ada_7f3k', expiresAt: Date.now() + 3_600_000 })}>
+        Sign in as Ada
+      </button>
+    )
+  return (
+    <p>
+      Signed in{secure ? '' : ' (browser storage)'}.{' '}
+      <button type="button" onClick={() => setSession(undefined)}>
+        Sign out
+      </button>
+    </p>
+  )
+}
+```
+
+Click **Sign in as Ada** and reload: the component shows "Signed in (browser storage)." In DevTools, `localStorage` holds `kitr:secure:session` with a value like `pV0q3m8nVJ2xY1aB.Zk9…`, which is the IV and the ciphertext, not the token. Register a vault driver for your shell and the same item lands in the Keychain or Keystore, with `secure` set to `true`. The guide continues from here: [Store your first secret](/packages/secure-storage/guide#store-your-first-secret).
+
 ## Built on
 
 | Where | Built on |

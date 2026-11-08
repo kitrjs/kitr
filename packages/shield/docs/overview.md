@@ -16,6 +16,49 @@ Every API that a browser can reach gets the same unwanted visitors: other sites 
 
 It runs on the server only, in front of every route. It does not know who the user is: sign-in, sessions and permissions are [auth](/packages/auth)'s job.
 
+## Install
+
+```sh
+kitr add shield
+```
+
+This installs `@kitr/shield`, registers the provider in `kitrrc.ts`, writes `config/shield.ts` and adds `shield(server)` to `server/main.ts` straight after `createServer()`, so the shield sees every request first. It adds [server](/packages/server) first when the project does not have it. The guide's [Install](/packages/shield/guide#install) section lists every change.
+
+## Quick start
+
+There is nothing to write. Start the server and ask it for anything:
+
+```sh
+curl -i http://localhost:3001/api/health
+```
+
+```http
+HTTP/1.1 200 OK
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+permissions-policy: camera=(), microphone=(), geolocation=()
+ratelimit-limit: 300
+ratelimit-remaining: 299
+ratelimit-reset: 60
+referrer-policy: strict-origin-when-cross-origin
+set-cookie: kitr-csrf=ed33bfe66a21a75f218cbf44dd6d230f0f9087dbed1c8fc0; Path=/; SameSite=Lax
+x-content-type-options: nosniff
+x-frame-options: DENY
+```
+
+A `POST` without the CSRF token is refused:
+
+```sh
+curl -i -X POST http://localhost:3001/api/projects
+```
+
+```http
+HTTP/1.1 403 Forbidden
+
+{"code":"FORBIDDEN","message":"CSRF token missing or invalid","status":403}
+```
+
+Your own front end never sees that error: [http](/packages/http) reads the `kitr-csrf` cookie and sends it back as `x-csrf-token` on every request that is not `GET`, `HEAD` or `OPTIONS`. Tune the limits and origins in `config/shield.ts`. The guide continues from here: [Protect your API](/packages/shield/guide#protect-your-api).
+
 ## Built on
 
 Each defence is a plain [h3](https://h3.dev/guide/basics/middleware) middleware with no dependencies of its own. The headers follow the [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/); the CSRF protection uses the double-submit cookie pattern the [http](/packages/http) client sends for you; the rate limiter uses a `RateLimitStore` with a memory implementation built in.

@@ -16,6 +16,62 @@ If your app talks to a backend that already exists, such as a Laravel, Rails, Ad
 
 It runs in the browser, and on the server when a page renders. When the API is part of this app, use [API routes](/packages/api) instead: its client is typed straight from your routes.
 
+## Install
+
+```sh
+kitr add http
+```
+
+This installs `@kitr/http` and ky, registers the provider in `kitrrc.ts`, writes `config/http.ts` and adds `VITE_API_URL` to `app/env.ts` and `.env.example`. It adds [query](/packages/query) first when the project does not have it. The guide's [Install](/packages/http/guide#install) section lists every change.
+
+## Quick start
+
+Describe the endpoint once. `httpQuery` turns it into a query contract, and `queryFrom` turns that into something components and loaders use:
+
+```ts
+// app/features/orders/queries.ts
+import { app } from '#app/app'
+import { createKeys } from 'kitr/app'
+import { httpQuery } from '@kitr/http'
+import { queryFrom } from '@kitr/query'
+
+export interface Order {
+  id: string
+  customer: string
+  total: number
+}
+
+const http = () => app.container.use('http')
+export const orderKeys = createKeys('orders')
+
+export const ordersQuery = queryFrom(
+  httpQuery<void, Order[]>(http, { path: 'orders', key: () => orderKeys.list() }),
+)
+```
+
+Then show it on a page:
+
+```tsx
+// app/pages/orders.tsx
+import { useSuspenseQuery } from '@kitr/query'
+import { ordersQuery } from '#app/features/orders/queries'
+
+export default function OrdersPage() {
+  const { data: orders } = useSuspenseQuery(ordersQuery.options())
+  return (
+    <ul>
+      {orders.map((order) => (
+        <li key={order.id}>
+          {order.customer}: ${order.total}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+Open `/orders`. The client calls `GET http://localhost:3333/orders` (the `VITE_API_URL` base), and the page lists what the API returns, for example `Ada: $120` and `Grace: $80`. A failed request arrives as a `KitrError` with the server's code and message. The guide continues from here: [Load your first endpoint](/packages/http/guide#load-your-first-endpoint).
+
 ## Built on
 
 `@kitr/http` is [ky](https://github.com/sindresorhus/ky#readme), re-exported. Ky's options, hooks, retries and methods all work on the `http` client as ky documents them.
