@@ -418,7 +418,7 @@ kbd {
   background: var(--server-bg);
   color: var(--server-ink);
 }
-/* Client / Server: two tinted halves; the seam runs through the slash, never a word. */
+/* Client and Server: two tinted halves split by a diagonal seam between the words. */
 .badge-both {
   gap: 0;
   padding: 0;
@@ -431,19 +431,12 @@ kbd {
   height: 100%;
 }
 .badge-both .runs-client {
-  padding: 0 4px 0 9px;
+  padding: 0 11px 0 9px;
 }
 .badge-both .runs-server {
-  padding: 0 9px 0 4px;
-}
-.runs-slash {
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 1px;
-  background: linear-gradient(90deg, var(--client-bg) 50%, var(--server-bg) 50%);
-  color: color-mix(in srgb, var(--client-ink) 50%, var(--server-ink));
-  font-weight: 400;
+  margin-left: -7px;
+  padding: 0 9px 0 12px;
+  clip-path: polygon(7px 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .tile {
