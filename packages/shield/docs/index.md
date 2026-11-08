@@ -6,13 +6,14 @@ order: 1
 
 # Shield
 
-Every API that a browser can reach gets the same unwanted visitors: other sites that try to post forms as your signed-in users, pages that frame yours to trick clicks, scripts that hammer the sign-in route. `@kitr/shield` turns on the four defences every API needs, from one config file: safe response headers, CORS for a separate front end, CSRF protection for cookie sessions, and a rate limit per client.
+Other sites post forms as your signed-in users, pages frame yours to trick clicks, scripts hammer the sign-in route. `@kitr/shield` turns on the four defences every API needs from one config file: safe response headers, CORS for a separate front end, CSRF protection for cookie sessions, and a rate limit per client.
 
-Each defence is a plain [h3](https://h3.dev/guide/basics/middleware) middleware. kitr adds the defaults, the order they run in, a config file, and refusals for settings that would open a hole, such as CORS for every origin with cookies.
+> [!SUMMARY]
+> Security headers, CORS, CSRF protection and rate limits for your server, from one config file. Add it with `kitr add shield`; the overview is at [/packages/shield](/packages/shield).
 
-It runs on the server only, in front of every route of the [kitr server](/packages/server). It does not know who the user is: sign-in, sessions and permissions are [auth](/packages/auth)'s job.
+Each defence is a plain [h3](https://h3.dev/guide/basics/middleware) middleware. kitr adds the defaults, the order they run in, and refusals for settings that would open a hole, such as CORS for every origin with cookies. The shield runs on the server only and does not know who the user is: sign-in and permissions are [auth](/packages/auth)'s job.
 
-The examples on this page follow Acme's API at `api.acme.com`, used by the dashboard at `app.acme.com`. People sign in with a cookie session, and Stripe posts payment webhooks to `/webhooks/stripe`.
+The examples follow Acme's API at `api.acme.com`, used by the dashboard at `app.acme.com`, with cookie sessions and Stripe webhooks at `/webhooks/stripe`.
 
 ## Install
 
@@ -20,16 +21,21 @@ The examples on this page follow Acme's API at `api.acme.com`, used by the dashb
 kitr add shield
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
-- Adds the [server](/packages/server) package first if the project does not have it yet (and [logger](/packages/logger), which the server needs).
-- Adds `@kitr/shield` to `dependencies` in `package.json` and installs it. Pass `--no-install` to skip the install.
-- Adds `() => import('@kitr/shield/provider')` to `providers` and `'@kitr/shield'` to `packages` in `kitrrc.ts`. The provider checks `config/shield.ts` at boot.
+- Adds the [server](/packages/server) package first if the project does not have it (and [logger](/packages/logger), which the server needs).
+- Adds `@kitr/shield` to `dependencies` and installs it. Pass `--no-install` to skip the install.
+- Adds the provider to `providers` and `'@kitr/shield'` to `packages` in `kitrrc.ts`. The provider checks `config/shield.ts` at boot.
 - Writes `config/shield.ts` (see [Configure](#configure)).
-- Edits `server/main.ts`, when it exists and does not already call `shield(server`: imports `shield` from `@kitr/shield` and calls `shield(server)` straight after `createServer()`, so the shield sees every request first.
-- Adds a `## kitr: shield` section to `AGENTS.md`: `shield(server)` applies `config/shield.ts`, rate-limited requests get 429 with `RateLimit-*` headers, CSRF failures get 403, and agents tune the config instead of adding helmet or cors by hand.
+- Edits `server/main.ts`, when it exists and does not already call `shield(server`: imports `shield` and calls `shield(server)` straight after `createServer()`.
+- Adds a `## kitr: shield` section to `AGENTS.md`.
 
-It adds no env variables, no scripts and asks no questions. No kit includes the shield, so every project adds it with this command.
+It adds no env variables or scripts and asks no questions. No kit includes the shield.
+
+`kitr remove shield` undoes all of it except the edit to `server/main.ts`: delete the `shield` import and the `shield(server)` line yourself.
+
+</details>
 
 After `kitr add shield`, the top of `server/main.ts` reads:
 
@@ -49,9 +55,7 @@ mountRoutes(server, routes)
 // ...
 ```
 
-If the project has no `server/main.ts` yet, add those two lines yourself once the server platform has written it (`kitr add server api`).
-
-`kitr remove shield` takes the provider and the package out of `kitrrc.ts`, deletes `config/shield.ts`, removes the dependency and the `AGENTS.md` section. It leaves `server/main.ts` alone, so delete the `shield` import and the `shield(server)` line yourself.
+If the project has no `server/main.ts` yet, add those two lines once the server platform has written it (`kitr add server api`).
 
 ## Configure
 
@@ -69,7 +73,7 @@ export default defineConfig({
 })
 ```
 
-Each key takes its middleware's options, or `false` to turn it off. Headers, rate limiting and CSRF are on when their key is missing; CORS is off unless you set it. The defaults below are the ones the middleware uses when an option is left out. The generated file sets `rateLimit.max` to 300.
+Each key takes its middleware's options, or `false` to turn it off. Headers, rate limiting and CSRF are on when their key is missing; CORS is off unless you set it. The table lists what each option defaults to when left out.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -105,7 +109,7 @@ The shield reads one env variable:
 | --- | --- |
 | `NODE_ENV` | `production` turns on HSTS and a `Secure` CSRF cookie. A production build does too. |
 
-Config files are TypeScript, so you can vary values per environment. Tests often turn the rate limit off, because every test request comes from the same client:
+Config files are TypeScript, so values can vary per environment. Tests often turn the rate limit off, because every test request comes from the same client:
 
 ```ts
 // config/shield.ts
@@ -155,7 +159,7 @@ content-type: application/json; charset=utf-8
 {"code":"FORBIDDEN","message":"CSRF token missing or invalid","status":403}
 ```
 
-Your own front end doesn't see that error: [@kitr/http](/packages/http) reads the `kitr-csrf` cookie and sends it back as `x-csrf-token` on every request that is not `GET`, `HEAD` or `OPTIONS`.
+Your own front end doesn't see that error: [@kitr/http](/packages/http) sends the `kitr-csrf` cookie back as `x-csrf-token` on every write.
 
 ## Set security headers
 
@@ -184,11 +188,11 @@ export default defineConfig({
 })
 ```
 
-Set a header to `false` to leave it out, for example when a proxy in front of the server already sends it. `X-Content-Type-Options: nosniff` can't be turned off.
+Set a header to `false` to leave it out, for example when a proxy already sends it. `X-Content-Type-Options` can't be turned off.
 
 ## Tighten the Content-Security-Policy
 
-`DEFAULT_CSP` allows scripts, styles, fonts and images from your own origin only. Inline tags run only with the request's nonce, a random value made for each response. That lets the page's own inline scripts run and blocks injected ones. `{nonce}` stands for that value:
+`DEFAULT_CSP` allows scripts, styles, fonts and images from your own origin only. Inline tags run only with the request's nonce, a random value made for each response, so the page's own inline scripts run and injected ones do not. `{nonce}` stands for that value:
 
 ```ts
 // server/security/csp.ts
@@ -200,7 +204,7 @@ console.log(DEFAULT_CSP)
 //    connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 ```
 
-`style-src-attr 'unsafe-inline'` covers `style="..."` attributes only; they cannot run script, and React writes them for every `style={{ ... }}` prop on the server. Outside production, styles also allow `'unsafe-inline'`, because Vite's dev server injects `<style>` tags without a nonce.
+`style-src-attr 'unsafe-inline'` covers `style="..."` attributes only, which cannot run script. Outside production, styles also allow `'unsafe-inline'`, because Vite's dev server injects `<style>` tags without a nonce.
 
 ### Pages get the nonce
 
@@ -222,13 +226,13 @@ export default createServerEntry({
 })
 ```
 
-Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response. Rate limits and CSRF checks apply to API routes only.
+Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response.
 
-Then the nonce reaches every inline tag without further code:
+The nonce then reaches every inline tag without more code:
 
-- `createKitrRouter` reads it and sets `router.options.ssr.nonce`, which TanStack Start puts on its hydration scripts, `<HeadContent />` and `<Scripts />`.
+- `createKitrRouter` sets `router.options.ssr.nonce` for TanStack Start's scripts.
 - `<ThemeScript />` from `@kitr/theme` puts it on its script and style.
-- Your own inline tags read it with `useCspNonce()`, which returns `undefined` in the browser and outside a request:
+- Your own inline tags call `useCspNonce()`, which returns `undefined` in the browser and outside a request:
 
 ```tsx
 // app/components/analytics-snippet.tsx
@@ -247,7 +251,7 @@ export function AnalyticsSnippet() {
 }
 ```
 
-The browser hides a tag's nonce once it has accepted it, so the browser's render has none to compare with the server's; `suppressHydrationWarning` on the tag says that mismatch is expected. Code that has the h3 event instead of React uses `getCspNonce(event)`.
+`suppressHydrationWarning` says the browser's missing nonce is expected: browsers hide a nonce once they accept it. Code that has the h3 event instead of React uses `getCspNonce(event)`.
 
 ### Write the whole policy
 
@@ -276,13 +280,14 @@ export default defineConfig({
 })
 ```
 
-A resource the policy blocks shows up as an error in the browser console, naming the directive that refused it. See [MDN's CSP reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) for every directive.
+A blocked resource shows up in the browser console, naming the directive that refused it. See [MDN's CSP reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) for every directive.
 
-Don't fix a blocked resource with `default-src *`. Add the one origin that needs it to the one directive that names it.
+> [!WARNING]
+> Don't fix a blocked resource with `default-src *`. Add the one origin that needs it to the one directive that names it.
 
 ### Trust the scripts your scripts load
 
-Acme's tag manager loads more scripts at run time from hosts that change. `strictDynamic` adds `'strict-dynamic'` to the default `script-src`: a script that carries the nonce is trusted, and so is every script it adds to the page. Browsers that know `'strict-dynamic'` then ignore `'self'` and host lists for scripts, so only the nonce matters.
+Acme's tag manager loads more scripts at run time from changing hosts. `strictDynamic` adds `'strict-dynamic'` to the default `script-src`: a script with the nonce is trusted, and so is every script it adds. Supporting browsers then ignore `'self'` and host lists, so only the nonce matters.
 
 ```ts
 // config/shield.ts
@@ -295,7 +300,7 @@ export default defineConfig({
 
 ### Allow every inline script
 
-A third-party widget that writes its own `<script>` or `<style>` tags into the page cannot have a nonce, and the policy blocks it. If you cannot replace it, `unsafeInline: true` allows `'unsafe-inline'` for scripts and styles and sends no nonce.
+A third-party widget that writes its own `<script>` or `<style>` tags cannot carry a nonce. If you cannot replace it, `unsafeInline: true` allows `'unsafe-inline'` for scripts and styles and sends no nonce.
 
 ```ts
 // config/shield.ts
@@ -306,12 +311,12 @@ export default defineConfig({
 })
 ```
 
-> **Warning**
-> With `'unsafe-inline'` in `script-src`, any markup that reaches the page, such as unescaped user content, runs script as your site. The CSP no longer limits that. Prefer a widget that accepts a nonce, or load it in an iframe from its own origin with `frame-src`.
+> [!WARNING] Unsafe inline
+> With `'unsafe-inline'` in `script-src`, any markup that reaches the page, such as unescaped user content, runs script as your site. Prefer a widget that accepts a nonce, or load it in an iframe from its own origin with `frame-src`.
 
 ## Turn on HSTS in production
 
-HSTS tells browsers to use HTTPS for your domain, and its subdomains, for the next `max-age` seconds. The shield sends it only in production (the app's mode, or `NODE_ENV=production`), with a max-age of one year. To roll it out carefully, start short and raise it once every subdomain serves HTTPS:
+HSTS tells browsers to use HTTPS for your domain and its subdomains for the next `max-age` seconds. The shield sends it only in production, with a max-age of one year. To roll it out carefully, start short and raise it once every subdomain serves HTTPS:
 
 ```ts
 // config/shield.ts
@@ -322,12 +327,12 @@ export default defineConfig({
 })
 ```
 
-> **Warning**
-> HSTS includes `includeSubDomains`. Once a browser has seen it, every subdomain of `acme.com` must serve HTTPS until the max-age runs out. A subdomain that only speaks HTTP becomes unreachable for those visitors.
+> [!WARNING] Subdomains
+> HSTS includes `includeSubDomains`. Once a browser has seen it, every subdomain of `acme.com` must serve HTTPS until the max-age runs out, or it becomes unreachable for those visitors.
 
 ## Allow a separate front end
 
-Browsers refuse to let a page on one origin read responses from another unless the API says so with CORS. When the dashboard at `app.acme.com` calls the API at `api.acme.com`, list the dashboard's origin:
+Browsers refuse to let a page read responses from another origin unless the API allows it with CORS. For the dashboard at `app.acme.com` calling `api.acme.com`, list its origin:
 
 ```ts
 // config/shield.ts
@@ -338,11 +343,11 @@ export default defineConfig({
 })
 ```
 
-`origin` takes `'*'`, one origin, a list or a function `(origin) => boolean`. The `cors()` that `@kitr/api` exports for route groups is this one: the same options and the same rules, fitted to route middleware, so a policy written for either works in both.
+`origin` takes `'*'`, one origin, a list or a function `(origin) => boolean`. The `cors()` that `@kitr/api` exports for route groups takes the same options and follows the same rules.
 
-A request from `https://app.acme.com` now gets `Access-Control-Allow-Origin: https://app.acme.com`, `Access-Control-Allow-Credentials: true` and `Vary: Origin`. A preflight (`OPTIONS`) from it gets `204 No Content` with the allowed methods, headers and max-age, before any route, rate limit or CSRF check runs. A request from any other origin gets no CORS headers, so the browser blocks the read.
+A request from `https://app.acme.com` gets `Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials: true` and `Vary: Origin`. Its preflight (`OPTIONS`) gets `204` before any route, rate limit or CSRF check runs. Any other origin gets no CORS headers, so the browser blocks the read.
 
-Origins in the list match exactly. `https://app.acme.com.evil.com`, `http://app.acme.com` and `https://app.acme.co` are all refused. To allow preview deploys on subdomains, pass a function:
+Listed origins match exactly, so `https://app.acme.com.evil.com` and `http://app.acme.com` are refused. To allow preview deploys on subdomains, pass a function:
 
 ```ts
 // config/shield.ts
@@ -356,21 +361,22 @@ export default defineConfig({
 })
 ```
 
-Don't write `origin.endsWith('acme.com')`: `https://evilacme.com` ends with it too. Anchor the pattern and include the dot.
+> [!WARNING] Anchor the pattern
+> Don't write `origin.endsWith('acme.com')`: `https://evilacme.com` ends with it too. Anchor the pattern and include the dot.
 
-For a public, read-only API with no cookies, `origin: '*'` answers `Access-Control-Allow-Origin: *` to everyone. Combining `'*'` with `credentials: true` would let any website send requests with your users' cookies, so the shield refuses it. `cors()` throws when it is created, and the provider stops the app at boot:
+For a public, read-only API with no cookies, `origin: '*'` answers everyone. Combined with `credentials: true` it would let any website send requests with your users' cookies, so the shield refuses it and the provider stops the app at boot:
 
 ```text
 Error: [@kitr/shield] cors.origin "*" cannot be combined with credentials; list the origins instead.
 ```
 
-Projects scaffolded from a kit put `cors()` from [@kitr/api](/packages/api) on the `/api` route group. Once the shield handles CORS, remove that middleware from `server/routes.ts`, so one place decides which origins may call the API.
+Projects scaffolded from a kit put `cors()` from [@kitr/api](/packages/api) on the `/api` route group. Once the shield handles CORS, remove that middleware from `server/routes.ts`.
 
 ## Protect cookie sessions from CSRF
 
-CSRF is another site making the browser post to your API with your user's cookies attached. The shield uses the double-submit cookie pattern: it sets a random token in a readable `kitr-csrf` cookie, and every `POST`, `PUT`, `PATCH` and `DELETE` must send the same value back in the `x-csrf-token` header. Another site can make the browser send the cookie, but it cannot read it, so it cannot write the header.
+CSRF is another site making the browser post to your API with your user's cookies. The shield sets a random token in a readable `kitr-csrf` cookie, and every `POST`, `PUT`, `PATCH` and `DELETE` must send the same value in the `x-csrf-token` header. Another site can make the browser send the cookie but cannot read it, so it cannot write the header.
 
-The cookie is set on the first response that finds none: 48 hex characters, `Path=/`, `SameSite=Lax`, plus `Secure` in production. It is not `HttpOnly`, because your own page has to read it.
+The cookie is `Path=/`, `SameSite=Lax`, plus `Secure` in production. It is not `HttpOnly`, because your own page has to read it.
 
 With [@kitr/http](/packages/http), you do nothing. With plain `fetch`, read the cookie and send it:
 
@@ -397,11 +403,16 @@ export async function postJson(path: string, body: unknown) {
 
 A missing header, a header that differs from the cookie, or a header with no cookie all get `403` with code `FORBIDDEN`.
 
-You can rename the cookie and header with `csrf.cookie` and `csrf.header`. @kitr/http always reads `kitr-csrf` and sends `x-csrf-token`, so renaming either means sending the token yourself.
+<details>
+<summary>Renaming the token, and front ends on another host</summary>
 
-The cookie has no `Domain` attribute, so only pages on the API's own host can read it. When the front end lives on another host, as `app.acme.com` does for `api.acme.com`, serve the API under the front end's host (`app.acme.com/api` through a proxy, or the web platform's `/api/*` route), or authenticate that front end with a bearer token instead of a cookie.
+`csrf.cookie` and `csrf.header` rename the cookie and header, but @kitr/http always uses `kitr-csrf` and `x-csrf-token`, so renaming either means sending the token yourself.
 
-An API that authenticates every request with an `Authorization` header and never with cookies, such as one used only by Acme's mobile app, is not exposed to CSRF. There, `csrf: false` is safe:
+The cookie has no `Domain` attribute, so only pages on the API's own host can read it. When the front end lives on another host, serve the API under the front end's host (`app.acme.com/api` through a proxy, or the web platform's `/api/*` route), or authenticate that front end with a bearer token.
+
+</details>
+
+An API that authenticates every request with an `Authorization` header and never with cookies, such as one used only by a mobile app, is not exposed to CSRF, so `csrf: false` is safe:
 
 ```ts
 // config/shield.ts
@@ -412,12 +423,12 @@ export default defineConfig({
 })
 ```
 
-> **Warning**
+> [!WARNING] Cookie sessions
 > Turn CSRF off only when no route accepts a cookie session. One cookie-authenticated `POST` behind `csrf: false` is open to every site your users visit.
 
 ## Accept webhooks
 
-Stripe, GitHub and other services post to your API from their servers. They have no cookie and send no CSRF header. Exempt their paths with `csrf.ignore`, and keep them out of the rate limit, which would count every webhook from one provider as one client:
+Stripe, GitHub and other services post from their servers with no cookie and no CSRF header. Exempt their paths with `csrf.ignore`, and keep them out of the rate limit, which would count every webhook from one provider as one client:
 
 ```ts
 // config/shield.ts
@@ -429,7 +440,10 @@ export default defineConfig({
 })
 ```
 
-`ignore` matches path prefixes on a segment boundary: `/webhooks` covers `/webhooks` and `/webhooks/stripe`, but not `/webhooksfake`. An exempt route must check the request itself, for example by verifying Stripe's signature header, because nothing else now stands in front of it.
+`ignore` matches path prefixes on a segment boundary: `/webhooks` covers `/webhooks/stripe`, not `/webhooksfake`.
+
+> [!WARNING] Verify the sender
+> An exempt route must check the request itself, for example by verifying Stripe's signature header.
 
 ## Rate limit requests
 
@@ -454,13 +468,16 @@ retry-after: 41
 {"code":"RATE_LIMITED","message":"Too many requests","status":429}
 ```
 
-The window is fixed: it starts with a client's first request and resets `windowMs` later, whatever happened in between. A client can therefore send up to `2 × max` requests across a window boundary. For a global limit that is fine.
+<details>
+<summary>How the window works</summary>
 
-Rate limiting runs before CSRF, so a flood of forged posts is cut off by the counter before any token is compared. Preflights are answered by CORS before the rate limit, so they never count.
+The window is fixed: it starts with a client's first request and resets `windowMs` later, so a client can send up to `2 × max` requests across a boundary. Rate limiting runs before CSRF, so forged posts are cut off before any token is compared. Preflights are answered by CORS first and never count.
+
+</details>
 
 ## Limit one route more tightly
 
-The config sets one limit for the whole server. For a stricter limit on one route, such as sign-in, wrap `rateLimit()` in a middleware that only applies on that path and add it after the shield:
+The config sets one limit for the whole server. For a stricter limit on one route, such as sign-in, wrap `rateLimit()` in a middleware for that path and add it after the shield:
 
 ```ts
 // server/security/sign_in_limit.ts
@@ -489,11 +506,11 @@ server.use(signInLimit)
 // ...
 ```
 
-The sixth attempt from one IP within 15 minutes gets `429`. The headers on that response describe the tighter limit, because it runs last.
+The sixth attempt from one IP within 15 minutes gets `429`, with headers describing the tighter limit.
 
 ## Share rate limits between instances
 
-The default store counts in each process. With three instances behind a load balancer, a client spread across them gets three times `max`, and a restart resets every counter. On the server, `createRedisRateLimitStore` keeps the counters in [Redis](https://redis.io) so every instance counts against one limit. Install a Redis client. The store takes an [ioredis](https://github.com/redis/ioredis) client:
+The default store counts in each process, so a client spread across three instances gets three times `max`, and a restart resets every counter. `createRedisRateLimitStore` keeps counters in [Redis](https://redis.io) so every instance counts against one limit. It takes an [ioredis](https://github.com/redis/ioredis) client:
 
 ```sh
 pnpm add ioredis
@@ -525,13 +542,13 @@ Add the connection string to `.env`:
 REDIS_URL=redis://localhost:6379
 ```
 
-Each window is one Redis key under `prefix` (default `kitr:rl:`). The first request in a window creates it with `SET ... PX windowMs NX`, so it expires on its own and a crash between commands never leaves a counter that lives forever; each request after that is one `INCR`. When Linus's 301st request of the minute reaches instance C after 300 went to A and B, C answers `429` with the same `RateLimit-*` headers.
+Each window is one Redis key under `prefix` (default `kitr:rl:`) that expires on its own. When a client's 301st request of the minute reaches instance C after 300 went to A and B, C answers `429`.
 
-Behind a load balancer, set `trustProxy` too (see [Run behind a proxy](#run-behind-a-proxy)): otherwise every request appears to come from the balancer and all visitors share one counter. The same store works for the per-route `rateLimit()` in [Limit one route more tightly](#limit-one-route-more-tightly) and for `rateLimit()` from [@kitr/api](/packages/api).
+Behind a load balancer, set `trustProxy` too (see [Run behind a proxy](#run-behind-a-proxy)). The same store works for the per-route `rateLimit()` above and for `rateLimit()` from [@kitr/api](/packages/api).
 
 ## Run behind a proxy
 
-By default the rate limit keys on the address of the TCP connection. Behind a load balancer or CDN, that is the proxy's address, so every visitor shares one counter and the whole site is limited together. Turn on `trustProxy` to read the client from `X-Forwarded-For`:
+By default the rate limit keys on the TCP connection's address. Behind a load balancer or CDN that is the proxy's address, so every visitor shares one counter. Turn on `trustProxy` to read the client from the first `X-Forwarded-For` entry:
 
 ```ts
 // config/shield.ts
@@ -542,10 +559,10 @@ export default defineConfig({
 })
 ```
 
-The shield then uses the first entry of `X-Forwarded-For`. A request with neither a header nor a connection address is counted under `anonymous`.
+A request with neither a header nor a connection address is counted under `anonymous`.
 
-> **Warning**
-> Only set `trustProxy: true` when every request passes through a proxy you control that overwrites `X-Forwarded-For`. Without one, a client can send a new value with each request and is never limited.
+> [!WARNING] Trust only your proxy
+> Set `trustProxy: true` only when every request passes through a proxy you control that overwrites `X-Forwarded-For`. Otherwise a client can send a new value each time and is never limited.
 
 ## Key the limit on something else
 
@@ -565,9 +582,10 @@ export default defineConfig({
 })
 ```
 
-The shield runs before your routes and before auth middleware, so the signed-in user is not known yet when `key` runs. Key on something in the request itself.
+The shield runs before auth middleware, so the signed-in user is not known when `key` runs: key on something in the request itself.
 
-Only key on a header that a client cannot change at will, or that you verify elsewhere. A client that can invent a new key per request gets a fresh counter every time.
+> [!WARNING] Key on what clients cannot change
+> A client that can invent a new key per request gets a fresh counter every time.
 
 ## Use the middlewares one by one
 
@@ -606,7 +624,7 @@ server.use(csrf({ ignore: ['/webhooks'] }))
 | `csrf(options)` | `Middleware` | Double-submit cookie CSRF. |
 | `createMemoryRateLimitStore()` | `RateLimitStore` | The default in-process counter store. |
 
-Keep the order when you attach them by hand: CORS must answer preflights before the rate limit and CSRF see them, and the rate limit must run before CSRF.
+Keep this order when attaching by hand: CORS answers preflights before the rate limit and CSRF see them, and the rate limit runs before CSRF.
 
 ## Errors
 
@@ -616,7 +634,7 @@ Keep the order when you attach them by hand: CORS must answer preflights before 
 | `RATE_LIMITED` (429) | A client sent more than `max` requests in the window. Message `Too many requests`. | Wait `Retry-After` seconds. On your side, raise `max`, add `ignore` paths, or set `trustProxy` behind a proxy. |
 | Boot error | `cors.origin` is `'*'` and `cors.credentials` is `true`. | List the origins instead of `'*'`. |
 
-Both runtime errors are `KitrError` responses, so the body is `{ code, message, status }` and @kitr/http throws them as `KitrError` on the client. The 429 still carries the CORS headers, so the front end can read it and show a message.
+Both runtime errors are `KitrError` responses with the body `{ code, message, status }`. The 429 still carries the CORS headers, so the front end can read it.
 
 ## Testing
 
@@ -681,7 +699,7 @@ describe('shield', () => {
 })
 ```
 
-`webhooks/stripe` is exempt from CSRF but still counted by this test's rate limit, because the test config does not list it in `rateLimit.ignore`.
+`webhooks/stripe` is exempt from CSRF but still counted by this rate limit, because the test config does not list it in `rateLimit.ignore`.
 
 To test your real app, import `server` from `#server/main` and use `createTestClient` from [testing](/packages/testing). The real config applies, so set `rateLimit: false` for `NODE_ENV=test` (see [Configure](#configure)), and send the CSRF cookie and header on writes:
 
@@ -713,7 +731,7 @@ interface RateLimitStore {
 }
 ```
 
-The default memory store counts per process; `createRedisRateLimitStore` shares counters through Redis (see [Share rate limits between instances](#share-rate-limits-between-instances)). Any other shared store is one method. This one keeps counters in a [Cloudflare Workers KV](https://developers.cloudflare.com/kv/) namespace, which suits a Workers deployment without Redis. KV is eventually consistent, so the limit is approximate across locations:
+The default memory store counts per process; `createRedisRateLimitStore` shares counters through Redis. Any other shared store is one method. This one uses a [Cloudflare Workers KV](https://developers.cloudflare.com/kv/) namespace, which suits Workers without Redis. KV is eventually consistent, so the limit is approximate across locations:
 
 ```ts
 // server/security/kv_rate_limit_store.ts
@@ -752,13 +770,10 @@ export default defineConfig({
 })
 ```
 
-Windows here line up on the clock (`Math.floor(now / windowMs)`), so every key resets at the same moment. See [`RateLimitStore`](/packages/shield/api#ratelimitstore) in the API reference.
+Windows line up on the clock (`Math.floor(now / windowMs)`), so every key resets at the same moment. See [`RateLimitStore`](/packages/shield/api#ratelimitstore) in the API reference.
 
 ## Next steps
 
 - [API reference](/packages/shield/api): every export with its signature.
-- [Server](/packages/server): the h3 server the shield attaches to.
 - [HTTP](/packages/http): the client that sends the CSRF token for you.
-- [Auth](/packages/auth): sessions, sign-in and permissions.
 - [Run on more than one instance](/guides/scale-out): shared rate limits, cache, queue and sockets.
-- [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/): what each header defends against.

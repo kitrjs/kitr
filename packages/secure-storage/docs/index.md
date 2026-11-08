@@ -6,25 +6,28 @@ order: 1
 
 # Secure storage
 
-A session token, a refresh token, an API key someone pasted into settings: these shouldn't sit in `localStorage` as plain text, where anything that reads the disk or the page can copy them. Phones and computers have a proper vault for secrets, and each has a different API. `@kitr/secure-storage` gives you one async key-value service, `secureStorage`, and typed items on top of it, so the code that keeps Ada's session reads the same wherever the app runs.
+A session token, a refresh token, an API key someone pasted into settings: these shouldn't sit in `localStorage` as plain text. Phones and computers have a proper vault, each with a different API. `@kitr/secure-storage` gives you one async key-value service, `secureStorage`, and typed items on top of it.
 
-On a phone or desktop it uses the system vault: the iOS Keychain, the Android Keystore or Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage). In the browser it encrypts each value with a key the browser never lets out. kitr adds typed items, a React hook, and a `secure` flag that tells you which one you got.
+> [!SUMMARY]
+> Keeps login tokens and secrets in the phone or computer's secure vault instead of plain storage. Add it with `kitr add secure-storage`; the overview is at [/packages/secure-storage](/packages/secure-storage).
 
-It runs in the browser, in desktop and mobile shells, and on the server as an in-memory store. For values that are not secret, such as a theme or a draft order, use [Storage](/packages/storage): it is synchronous and renders on the server.
-
-This guide follows Acme's app at `app.acme.com`: Ada signs in, her session token goes into secure storage, and signing out clears it.
+On a phone or desktop it uses the system vault: the iOS Keychain, the Android Keystore or Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage). In the browser it encrypts each value with a key the browser never lets out. A `secure` flag tells you which you got. It also runs on the server as an in-memory store. The examples follow Acme's app, where a session token goes in at sign-in and out at sign-out.
 
 ## When to use it
 
-Use secure storage for anything that grants access: session and refresh tokens, API keys, a PIN-protected value. Reads are async, so components get `undefined` until the vault answers.
+Use it for anything that grants access: session and refresh tokens, API keys. Reads are async, so components get `undefined` until the vault answers. Use [Storage](/packages/storage) for everything else; it is synchronous and renders on the server.
 
-Use [Storage](/packages/storage) for everything else. Its items are synchronous, can be read during the first render and on the server through cookies, and are cheaper to read. Don't put tokens there: Storage writes plain text.
+> [!WARNING] Not in Storage
+> Don't put tokens in Storage: it writes plain text.
 
 ## Install
 
 ```sh
 kitr add secure-storage
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -34,13 +37,17 @@ What `kitr add` does:
 - Writes `app/secure.ts` with one typed item, `sessionItem` (shown under [Store your first secret](#store-your-first-secret)).
 - Adds a `## kitr: secure-storage` section to `AGENTS.md`: tokens and secrets go through `@kitr/secure-storage` and `app/secure.ts`, never `defineStorage` or `localStorage`; `useSecureItem(item)` returns `[value, set, { loading, secure }]` and the value is `undefined` until the vault answers.
 
-It adds no environment variables or scripts. `kitr add secure-storage` asks no questions, and no kit includes it. To preview the changes:
+It adds no environment variables or scripts, asks no questions, and no kit includes it.
+
+`kitr remove secure-storage` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/secure-storage.ts`. It leaves `app/secure.ts` and lists the files that still import `@kitr/secure-storage`. Stored values stay where they are.
+
+</details>
+
+To preview the changes:
 
 ```sh
 kitr add secure-storage --dry-run
 ```
-
-`kitr remove secure-storage` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/secure-storage.ts`. It leaves `app/secure.ts` because you may have added items to it, and lists the files that still import `@kitr/secure-storage`. Values already stored stay in the vault or in local storage.
 
 ## Configure
 
@@ -64,9 +71,7 @@ export default defineConfig({
 | `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no vault driver, use the encrypted browser fallback inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. `secure` stays `false`. |
 | `storage` | the app's local storage driver | Where the browser fallback keeps its ciphertext. Any [Storage](/packages/storage) `StorageDriver`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `secure-storage`, then `selectDriver(runtime)`: the browser fallback in a browser, a memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. A shell never silently stores secrets in webview storage.
-
-A stricter setup for a banking-grade desktop build:
+The service picks `driver` from the config, else a driver a provider registered, else the one for the runtime: the browser fallback in a browser, a memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. A shell never silently stores secrets in webview storage. A stricter setup:
 
 ```ts
 // config/secure-storage.ts
@@ -120,7 +125,7 @@ export function SessionStatus() {
 }
 ```
 
-Click **Sign in as Ada** and reload: the component renders nothing for a moment, then "Signed in (browser storage)." In DevTools, `localStorage` holds `kitr:secure:session` with a value like `pV0q3m8nVJ2xY1aB.Zk9…`, which is the IV and the ciphertext, not the token. **Sign out** removes it.
+After signing in and reloading, `localStorage` holds `kitr:secure:session` as an IV and ciphertext, not the token. **Sign out** removes it.
 
 ## Read and write a secret in a component
 
@@ -133,9 +138,11 @@ Click **Sign in as Ada** and reload: the component renders nothing for a moment,
 | `[2].loading` | `true` until the first read finishes. |
 | `[2].secure` | `true` when an OS vault holds the value, `false` for the browser fallback and memory. |
 
-Render nothing (or a skeleton) while `loading` is `true`. Don't treat `undefined` as "signed out" before then, or Ada sees a sign-in screen flash on every reload.
+> [!WARNING] Wait for loading
+> Render nothing while `loading` is `true`; treating `undefined` as "signed out" flashes a sign-in screen on every reload.
 
-Each `useSecureItem` call binds its own copy of the item, and only that copy hears its writes. Two components that each call `useSecureItem(sessionItem)` don't update each other: when one signs out, the other keeps showing the old value until it remounts. Read the session in one component near the top and pass it down, or put it in a React context.
+> [!WARNING] Copies don't sync
+> Each `useSecureItem` call hears only its own writes, so two components don't update each other. Read the session in one component near the top and pass it down, or use a React context.
 
 To act after the write, await `set`:
 
@@ -180,13 +187,11 @@ export const sessionItem = defineSecureItem('session', {
 })
 ```
 
-The type comes from the schema, so no type argument is needed. When version 2 of the app stores `{ token, refreshToken, expiresAt }` and Grace still has the old shape, or a value was corrupted, she reads `undefined` and signs in again instead of the app crashing on a missing field. A value that isn't valid JSON is removed the same way, with or without a schema.
-
-Validation runs on reads only. `set` stores whatever you pass, so TypeScript is what checks writes.
+The type comes from the schema. A stored value with an old shape or corrupted reads as `undefined`, so people sign in again instead of the app crashing; invalid JSON is removed the same way. Validation runs on reads only.
 
 ## Store values that aren't JSON
 
-Items serialise with `JSON.stringify` and `JSON.parse` by default. Pass a `codec` for anything else, such as a `Date` that should come back as a `Date`:
+Items use JSON by default. Pass a `codec` for anything else, such as a `Date`:
 
 ```ts
 // app/secure.ts
@@ -200,11 +205,11 @@ export const lastUnlockItem = defineSecureItem<Date>('last-unlock', {
 })
 ```
 
-`lastUnlockItem(storage).set(new Date())` stores `'1767225600000'`, and `get()` returns a `Date`. A `decode` that throws counts as a corrupt value: it is removed and reads as `undefined`.
+A `decode` that throws counts as a corrupt value: it is removed and reads as `undefined`.
 
 ## Use secrets outside React
 
-An item is a function that binds it to a `SecureStorage` service. Get the service from the app's container, or with `useSecureStorage(app)` from `@kitr/secure-storage`:
+An item is a function that binds it to a `SecureStorage` service. Get the service with `useSecureStorage(app)`:
 
 ```ts
 // app/lib/account/session.ts
@@ -221,7 +226,7 @@ export async function currentToken(app: KitrApp): Promise<string | null> {
 }
 ```
 
-A bound item has `key`, `get()`, `set(value)`, `remove()` and `subscribe(listener)`. `subscribe` calls the listener with the new value (or `undefined` after `remove`) on writes made through that bound item, and returns an unsubscribe function:
+A bound item has `key`, `get()`, `set(value)`, `remove()` and `subscribe(listener)`, which hears writes made through that bound item:
 
 ```ts
 // app/lib/account/watch-session.ts
@@ -237,11 +242,11 @@ export function watchSession(storage: SecureStorage, onSignOut: () => void) {
 }
 ```
 
-Make writes through the returned `session` so the listener hears them. In a component, `useSecureStorage()` from `@kitr/secure-storage/react` returns the same service.
+In a component, `useSecureStorage()` from `@kitr/secure-storage/react` returns the same service.
 
 ## Use the key-value API
 
-Under the items is a plain async key-value API of strings. Use it for secrets you don't type ahead, such as one API key per integration:
+Under the items is an async key-value API of strings, for secrets you don't type ahead:
 
 ```ts
 // app/lib/integrations/api-keys.ts
@@ -275,7 +280,7 @@ Keys are given without the prefix; the service adds it.
 
 ## Clear secrets on sign-out
 
-`clear()` removes everything this app stored under its prefix and leaves other apps' entries alone. Call it when Ada signs out, so Linus doesn't inherit her tokens on a shared machine:
+`clear()` removes everything this app stored under its prefix. Call it on sign-out, so the next person on a shared machine doesn't inherit the tokens:
 
 ```ts
 // app/lib/account/sign-out.ts
@@ -291,7 +296,7 @@ To remove one secret, use the item's `remove()` or `set(undefined)` from the hoo
 
 ## Refuse the browser fallback
 
-Set `requireSecure: true` when a secret must never be stored outside an OS vault. With no vault registered, writes throw and nothing is stored:
+Set `requireSecure: true` when a secret must never be stored outside an OS vault. With no vault, writes throw and nothing is stored:
 
 ```ts
 // app/lib/account/remember-device.ts
@@ -306,35 +311,40 @@ export async function rememberDevice(storage: SecureStorage, deviceToken: string
 }
 ```
 
-Reads and removes still work, so a value written before you turned it on can be read once and deleted. Check `storage.secure` before showing a "Remember this device" option, rather than catching the error.
+Reads and removes still work. Check `storage.secure` before showing an option, rather than catching the error.
 
 ## How the browser fallback works
 
-In the browser, and in a shell with no vault registered when you set `fallbackToWeb: true`, each value is encrypted before it is stored:
+In the browser, each value is encrypted before it is stored. The fallback stops a copied `localStorage` dump or a casual look in DevTools.
 
-- On first use the driver creates a 256-bit AES-GCM key with `extractable: false` and keeps it in IndexedDB (`kitr-secure-storage`). Script can use the key but cannot read its bytes.
+> [!WARNING] Not protection against XSS
+> Any script on your page can call `secureStorage.get('session')` and read the token. Keep untrusted scripts off pages that hold secrets, and prefer short-lived tokens. `secure` is `false` for this fallback, so you can tell.
+
+Clearing site data deletes the key, so stored values then read as `null`; treat them as something the person may lose.
+
+<details>
+<summary>How the encryption works</summary>
+
+- On first use the driver creates a 256-bit AES-GCM key with `extractable: false` and keeps it in IndexedDB. Script can use the key but cannot read its bytes.
 - Every write uses a fresh 12-byte IV and stores `<iv>.<ciphertext>` in base64 in local storage.
-- The storage key is authenticated with each value, so ciphertext copied from `kitr:secure:refresh` to `kitr:secure:session` fails to decrypt.
-- A value that fails to decrypt (tampered, moved, or written under another browser profile's key) is removed and reads as `null`.
-- When two tabs start at once, both end up with the same key.
+- The storage key is authenticated with each value, so ciphertext copied to another key fails to decrypt.
+- A value that fails to decrypt is removed and reads as `null`.
 
-The key and the ciphertext live in the same browser profile, so the fallback stops a copied `localStorage` dump or a casual look in DevTools. It does not stop code running on your own page.
+`createWebSecureStorageDriver(storage)` builds the fallback over any [Storage](/packages/storage) driver. Without Web Crypto, its first write rejects.
 
-> **Warning**
-> On the web, any script running on `app.acme.com` can call `secureStorage.get('session')` and read the token. The fallback is not protection against XSS. Keep untrusted scripts off pages that hold secrets, and prefer short-lived tokens. `secure` is `false` for this fallback, so you can tell.
-
-Clearing site data deletes the key, and every stored value then reads as `null`. Treat secrets in the fallback as something the person may lose.
-
-`createWebSecureStorageDriver(storage)` builds the fallback yourself, over any [Storage](/packages/storage) driver. Without Web Crypto, its first write rejects with `@kitr/secure-storage: Web Crypto is not available`.
+</details>
 
 ## Use it on the server
 
-On the server the service is an in-memory store, so code shared with the client runs without an environment check: reads resolve to `null` and items to `undefined`.
+On the server the service is an in-memory store, so shared code runs without an environment check: reads resolve to `null` and items to `undefined`.
 
-> **Warning**
-> The server store is one map for the whole process, shared by every request and lost on restart. Never write a person's secret to it during a request: the next request, from anyone, can read it. Keep server secrets in environment variables and per-user tokens in your database or session.
+> [!WARNING] Shared across requests
+> The server store is one map for the whole process. Never write a person's secret to it during a request; keep server secrets in environment variables and per-user tokens in your database or session.
 
 ## Where values are kept
+
+<details>
+<summary>Drivers for each runtime</summary>
 
 | Where it runs | Driver | `secure` |
 | --- | --- | --- |
@@ -347,7 +357,7 @@ On the server the service is an in-memory store, so code shared with the client 
 
 ### Capacitor
 
-In the [Mobile](/packages/mobile) shell the service uses `@aparajita/capacitor-secure-storage`, an optional peer dependency imported the first time a method runs. `kitr add secure-storage` installs it when the project has the mobile platform. Values go to the iOS Keychain and, on Android, to storage encrypted with a key in the Android Keystore. `secure` is `true`, so `requireSecure: true` is satisfied. Secrets are never written to `localStorage` or IndexedDB there.
+In the [Mobile](/packages/mobile) shell the service uses `@aparajita/capacitor-secure-storage`, which `kitr add secure-storage` installs when the project has the mobile platform. Values go to the iOS Keychain or the Android Keystore, `secure` is `true`, and nothing is written to `localStorage`.
 
 ```ts
 // app/session.ts
@@ -359,20 +369,19 @@ await storage.get('refresh-token') // => 'rt_ada_91f'
 console.log(storage.driver.name, storage.secure) // => capacitor-keychain true
 ```
 
-- The driver turns off iCloud Keychain sync and sets `whenUnlockedThisDeviceOnly`: a secret is readable only while the phone is unlocked, never leaves the device and is not restored onto a new phone. People sign in again after a restore.
-- The iOS Keychain survives uninstalling the app, so a reinstalled app can still read the old secrets. Clear them on first launch if that is wrong for your app.
-- On Android, uninstalling the app removes its secrets.
-- If the plugin is not installed, every call rejects with `E_DRIVER_UNAVAILABLE` and `install @aparajita/capacitor-secure-storage`. When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+- Secrets are readable only while the phone is unlocked, never leave the device and are not restored onto a new phone, so people sign in again after a restore.
+- The iOS Keychain survives uninstalling the app; clear old secrets on first launch if that is wrong for you. On Android, uninstalling removes them.
+- If the plugin is missing, every call rejects with `E_DRIVER_UNAVAILABLE`.
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have vault drivers, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers only `platform` and `storage` drivers, not `secure-storage`: to keep secrets in the Keychain or the Keystore there, register a vault driver as shown under [Extend](#extend). When the [Devtools](/packages/devtools) provider is installed, the service logs which driver is active at boot (for example `web-crypto (encrypted web fallback)`) and each key set or removed, never the values.
+</details>
 
 ## Use it in Electron and Tauri
 
-In a desktop shell the service picks the shell's vault by itself, so `secureStorage.secure` is `true` and `requireSecure: true` lets writes through. The platform's provider reports the runtime and `selectDriver()` does the rest; `config/secure-storage.ts` does not change.
+In a desktop shell the service picks the shell's vault by itself, so `secure` is `true` and `config/secure-storage.ts` does not change.
 
 ### Electron
 
-The Electron driver encrypts in the main process with [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage): the macOS Keychain, Windows DPAPI or the desktop's secret service on Linux. The ciphertext is one JSON file, `kitr-secure-storage.json`, in the app's `userData` folder, readable only by its owner. The window never sees the key. It calls `kitr:secure:get`, `kitr:secure:set`, `kitr:secure:remove` and `kitr:secure:keys` over the preload bridge, and `handleKitrIpc(ipcMain, app)` in `main.ts` serves them. A new desktop project already has both calls; to keep the file somewhere else, pass `secureFile`:
+The Electron driver encrypts in the main process with [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage): the macOS Keychain, Windows DPAPI or the Linux secret service. The ciphertext is one JSON file in the app's `userData` folder, and the window never sees the key. To keep the file somewhere else, pass `secureFile`:
 
 ```ts
 // platforms/app/main.ts
@@ -385,15 +394,20 @@ app.whenReady().then(() => {
 })
 ```
 
-Requirements:
+> [!WARNING] Linux needs a secret service
+> Without GNOME Keyring or KWallet, `safeStorage` falls back to a hard-coded password. kitr refuses: `set()` rejects and nothing is written.
+
+<details>
+<summary>Electron requirements</summary>
 
 - `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
-- A secret store on the machine. On Linux without GNOME Keyring or KWallet, Electron's `safeStorage` falls back to a hard-coded password, which is not a vault. kitr checks `getSelectedStorageBackend()` and refuses: `set()` rejects and nothing is written, while `get()` of a value that no longer decrypts reads as missing.
-- Sign-in on the same account and machine. Ciphertext copied to another computer or user does not decrypt.
+- The same account and machine: ciphertext copied elsewhere does not decrypt.
+
+</details>
 
 ### Tauri
 
-The Tauri driver uses [`@tauri-apps/plugin-stronghold`](https://v2.tauri.app/plugin/stronghold/), an encrypted file in the app data folder. Its password is a random secret kept in the system keyring, so none sits in your bundle. The first call is slower while the key is derived.
+The Tauri driver uses [`@tauri-apps/plugin-stronghold`](https://v2.tauri.app/plugin/stronghold/), an encrypted file in the app data folder, with a random password kept in the system keyring. The first call is slower while the key is derived.
 
 ```ts
 // app/providers/vault.ts
@@ -413,11 +427,16 @@ export default defineProvider({
 })
 ```
 
-Requirements:
+> [!WARNING] Keep a strict CSP
+> Every script in the window can call `kitr_vault_key`, as it can use the vault. Set a strict `csp` in `tauri.conf.json`.
 
-- `@tauri-apps/plugin-stronghold` and `@tauri-apps/api` in `package.json`. `kitr add tauri` and `kitr add secure-storage` in a Tauri project install them. The driver imports the plugin on first use; when it is missing, every method rejects with `E_DRIVER_UNAVAILABLE` naming the package.
-- `tauri-plugin-stronghold`, `keyring` and `rand` in `src-tauri/Cargo.toml`, the plugin registered in `lib.rs` with an Argon2 salt file, the `kitr_vault_key` command in `generate_handler!`, and `stronghold:default` in `capabilities/default.json`. The Tauri scaffold writes all of them; an app created before this version needs them added by hand.
-- Every script in the window can call `kitr_vault_key`, as it can use the vault. Keep a strict `csp` in `tauri.conf.json`.
+<details>
+<summary>Tauri requirements</summary>
+
+- `@tauri-apps/plugin-stronghold` and `@tauri-apps/api` in `package.json`, which `kitr add tauri` and `kitr add secure-storage` install. When missing, every method rejects with `E_DRIVER_UNAVAILABLE`.
+- The matching crates, the plugin and `kitr_vault_key` command registered in `lib.rs`, and `stronghold:default` in `capabilities/default.json`, which the Tauri scaffold writes.
+
+</details>
 
 ## Errors
 
@@ -429,7 +448,7 @@ Requirements:
 | `@kitr/secure-storage: Web Crypto is not available` | The browser fallback's first use, without `crypto.subtle` (a plain `http://` page other than `localhost`). | Serve the app over HTTPS. |
 | `@kitr/secure-storage: could not store the encryption key` | IndexedDB refused the new key and holds none. | Rare; usually storage is full or blocked in a private window. |
 
-A value that fails to decrypt, parse or validate is not an error: it is removed and reads as missing.
+A value that fails to decrypt, parse or validate is removed and reads as missing.
 
 ## Testing
 
@@ -489,7 +508,7 @@ describe('session status', () => {
 })
 ```
 
-For code that takes the service directly, `createSecureStorage({ driver: createMemorySecureStorageDriver() })` needs no app. To test the browser fallback itself, give `createWebSecureStorageDriver()` a memory [Storage](/packages/storage) driver and check the stored value holds no plain text; Node 20 and later have Web Crypto, and without IndexedDB the key lives in memory.
+For code that takes the service directly, `createSecureStorage({ driver: createMemorySecureStorageDriver() })` needs no app. To test the browser fallback, give `createWebSecureStorageDriver()` a memory [Storage](/packages/storage) driver and check the stored value holds no plain text.
 
 ## Extend
 
@@ -506,7 +525,7 @@ interface SecureStorageDriver {
 }
 ```
 
-The built-in Electron driver already does this, so you only need the version below for a vault of your own; it shows the whole shape. It keeps secrets in Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage), which encrypts with the macOS Keychain, Windows DPAPI or the Linux secret store. The main process encrypts and writes a file in the app's data folder; the renderer reaches it over the IPC bridge the desktop platform sets up:
+The built-in Electron driver already covers Electron; this version shows the whole shape for a vault of your own. The main process encrypts with [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage) and writes a file; the renderer reaches it over the desktop IPC bridge:
 
 ```ts
 // platforms/app/main.ts
@@ -577,14 +596,10 @@ export default defineProvider({
 })
 ```
 
-Create the provider with `kitr make:provider vault`, which also adds `() => import('#app/providers/vault-provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, `secureStorage.secure` is now `true`, the session status drops "(browser storage)", and `requireSecure: true` lets writes through. In the web build `ipc.available` is `false`, so the browser fallback still applies.
-
-On Linux without a secret store, `safeStorage` falls back to a hard-coded password; check `safeStorage.getSelectedStorageBackend()` in main if that matters to you. In a [Tauri](/packages/tauri) app the same driver shape fits over a keyring plugin through Tauri commands. The `SecureStorageDriver` and `SecureItem` types are in the [API reference](/packages/secure-storage/api).
+Create the provider with `kitr make:provider vault`, which also lists it in `kitrrc.ts`. Inside the Electron app `secureStorage.secure` is now `true`; in the web build `ipc.available` is `false`, so the browser fallback still applies.
 
 ## Next steps
 
-- [API reference](/packages/secure-storage/api)
-- [Storage](/packages/storage): synchronous items for values that aren't secret, and the driver the fallback writes to.
+- [API reference](/packages/secure-storage/api): every export with its signature.
+- [Storage](/packages/storage): synchronous items for values that aren't secret.
 - [Auth](/packages/auth): sign-in, sessions and the token adapter.
-- [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage): what each operating system uses underneath.
-- [SubtleCrypto on MDN](https://developer.mozilla.org/docs/Web/API/SubtleCrypto): the Web Crypto API behind the browser fallback.

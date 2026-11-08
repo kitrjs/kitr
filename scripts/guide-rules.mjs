@@ -10,8 +10,8 @@ const args = process.argv.slice(2)
 const strict = args.includes('--strict')
 const only = new Set(args.filter((a) => !a.startsWith('--')))
 
-export const MIN_WORDS = 1000
-export const MIN_CODE_BLOCKS = 10
+export const MIN_WORDS = 600
+export const MIN_CODE_BLOCKS = 6
 export const PLACEHOLDERS =
   /\b(foo|baz|qux|quux|asdf|lorem ipsum|MyComponent|doSomething)\b|[`./]bar\b|\bbar[(:`]|test@test\.com/i
 

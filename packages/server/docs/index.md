@@ -11,9 +11,9 @@ API routes, webhooks from a payment provider, a realtime channel for order updat
 > [!SUMMARY]
 > The API server: it boots your providers, logs each request and shuts down cleanly. Add it with `kitr add server api`; the overview is at [/packages/server](/packages/server).
 
-It is built on [h3](https://h3.dev) and served by [srvx](https://srvx.h3.dev), so the same server runs on Node, Bun, Deno and Cloudflare Workers, standalone or inside TanStack Start. It never imports React, so a pure backend built with kitr ships none.
+It is built on [h3](https://h3.dev) and served by [srvx](https://srvx.h3.dev), so the same server runs on Node, Bun, Deno and Cloudflare Workers, standalone or inside TanStack Start. It runs on the server only and is also a platform: `server()` in `kitrrc.ts` tells `kitr dev`, `kitr build` and `kitr start` how to run it.
 
-`@kitr/server` runs on the server only. It is also a platform: `server()` in `kitrrc.ts` tells `kitr dev`, `kitr build` and `kitr start` how to run it. To define routes and controllers on top of it, add [API routes](/packages/api); for functions your own React UI calls, use [Actions](/packages/actions).
+For routes and controllers add [API routes](/packages/api); for functions your React UI calls, use [Actions](/packages/actions).
 
 The examples on this page build the Acme order service at `app.acme.com`: a server that answers `/api/orders`, logs each request with its id, and closes its database pool on shutdown.
 
@@ -25,7 +25,7 @@ Add the server as a platform named `api`:
 kitr add server api
 ```
 
-`server` is the platform type and `api` is the name you address it by (`kitr dev api`). `kitr add server` with no name uses `api`, the usual name for a server platform, and says so.
+`server` is the platform type and `api` the name you address it by (`kitr dev api`); without a name, `kitr add server` uses `api`.
 
 <details>
 <summary>Everything kitr add changes</summary>
@@ -82,7 +82,7 @@ export default defineConfig({
 })
 ```
 
-`server/main.ts` passes every file in `config/` to `createServer({ config })`, so the `server` key reaches the server without more wiring.
+
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -96,7 +96,7 @@ export default defineConfig({
 | `shutdownTimeout` | `10` | Seconds to wait for in-flight requests after `SIGINT` or `SIGTERM` before the process exits with code `1`. |
 | `websocket` | `false` | Accept WebSocket upgrades through `crossws`. [Realtime](/packages/realtime) sets it for you. |
 
-You can also pass server options in code, which overrides `config/server.ts`:
+Options passed in code override `config/server.ts`:
 
 ```ts
 // server/main.ts
@@ -120,7 +120,7 @@ export const server = createServer({
 
 ### Platform options
 
-The platform lives in `kitrrc.ts`. Its options decide how `kitr dev`, `kitr build` and `kitr start` run the entry.
+The platform lives in `kitrrc.ts`; its options decide how the CLI runs the entry.
 
 ```ts
 // kitrrc.ts
@@ -143,9 +143,7 @@ export default defineKitrConfig({
 | `host` | | Interface to bind, passed as `HOST`. Defaults to `localhost` in dev and `0.0.0.0` in production. |
 | `entry` | `'server/main.ts'` | The file the platform runs: `createServer({...})` plus routes and realtime. |
 
-An unknown runtime fails when `kitrrc.ts` loads with `runtime must be one of node, bun, deno, workers`, and a bad port with `port must be a number between 0 and 65535`.
-
-Change an option without opening the file, or override it for one run:
+Change an option without opening the file, or override it for one run (the environment form is `KITR_<NAME>_<OPTION>`):
 
 ```sh
 kitr config api port 4000
@@ -154,11 +152,11 @@ KITR_API_PORT=4000 kitr dev api
 kitr dev api --port 4000
 ```
 
-The environment form is `KITR_<NAME>_<OPTION>`, with the platform name upper-cased and anything that is not a letter or digit turned into `_`.
+
 
 ## Start your first server
 
-`kitr add server api` writes the entry. It creates the server from your providers and config, and listens when you run the file directly:
+`kitr add server api` writes the entry, which creates the server from your providers and config and listens when run directly:
 
 ```ts
 // server/main.ts
@@ -212,7 +210,7 @@ x-request-id: 3106a213-994f-4363-b099-eb8c19dc7299
 {"id":"ord_1042","customer":"Ada","total":129}
 ```
 
-The returned object became JSON, and the response carries a fresh request id. For more than a couple of routes, use [API routes](/packages/api): controllers, validation and a typed client on top of this server.
+The returned object became JSON, and the response carries a fresh request id. For more than a couple of routes, use [API routes](/packages/api).
 
 ## Run the server in development and production
 
@@ -225,7 +223,7 @@ The returned object became JSON, and the response carries a fresh request id. Fo
 | `deno` | `deno run --watch -A server/main.ts` | `tsc --noEmit -p tsconfig.json` | `deno run -A server/main.ts` |
 | `workers` | `wrangler dev --port 3001` in `platforms/api/` | `wrangler deploy --dry-run --outdir dist/api` | `wrangler dev` in `platforms/api/` |
 
-On Node, Bun and Deno the build step typechecks; the server runs from source. `kitr start` binds `0.0.0.0` unless you set `host`, so the server is reachable from outside a container.
+On Node, Bun and Deno the build step typechecks; the server runs from source. `kitr start` binds `0.0.0.0` unless you set `host`.
 
 ```sh
 kitr build api
@@ -252,7 +250,7 @@ The default. `kitr add server api` installs `tsx` as a dev dependency to run Typ
 kitr config api runtime bun
 ```
 
-Bun runs TypeScript itself, so no extra package is installed. `import.meta.main` tells the entry it is the main module.
+Bun runs TypeScript itself, so nothing extra is installed.
 
 ### Deno
 
@@ -260,7 +258,7 @@ Bun runs TypeScript itself, so no extra package is installed. `import.meta.main`
 kitr config api runtime deno
 ```
 
-The platform runs Deno with `-A` (all permissions). See [Deno's permissions guide](https://docs.deno.com/runtime/fundamentals/security/) to narrow them in production.
+The platform runs Deno with `-A`; see [Deno's permissions guide](https://docs.deno.com/runtime/fundamentals/security/) to narrow that in production.
 
 ### Cloudflare Workers
 
@@ -278,11 +276,11 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 ```
 
-Workers call the default export's `fetch`, which `server/main.ts` already exports. `kitr build edge` bundles into `dist/edge`; deploy with `wrangler deploy` from `platforms/edge`. See the [Wrangler docs](https://developers.cloudflare.com/workers/wrangler/) for secrets and routes.
+Workers call the default export's `fetch`, which `server/main.ts` already exports. `kitr build edge` bundles into `dist/edge`; deploy with `wrangler deploy` from `platforms/edge` (see the [Wrangler docs](https://developers.cloudflare.com/workers/wrangler/)).
 
 ## Serve the API inside TanStack Start
 
-In a React project with a web platform, the server platform also writes Start's server entry. A request for a path the kitr server has a route for (an endpoint, a socket, the health check) goes to the same `server` object; everything else renders a page:
+In a React project with a web platform, the server platform also writes Start's server entry. Paths the kitr server has routes for (endpoints, sockets, the health check) go to the same `server` object; everything else renders a page:
 
 ```ts
 // app/server.ts
@@ -301,7 +299,7 @@ export default createServerEntry({
 })
 ```
 
-`server.fetch(request, { pages })` answers API routes itself and hands every other path to `pages`, Start's handler. Pages get the same security headers. The web platform in `ssr` mode serves `/api/orders` too, with no second process. Run `kitr dev api` to run the server on its own port.
+`server.fetch(request, { pages })` answers API routes itself and hands every other path to `pages`, Start's handler. The `ssr` web platform therefore serves `/api/orders` with no second process; `kitr dev api` runs the server on its own port.
 
 ## Call the server from any fetch runtime
 
@@ -323,7 +321,7 @@ console.log(response.status, await response.json())
 // => 200 { id: 'ord_1042', customer: 'Ada', total: 129 }
 ```
 
-The first call to `fetch()` boots the providers, once. Outside tests it also runs each provider's `ready` hook, so job workers and schedulers start the same way they do under `listen()`.
+The first `fetch()` boots the providers once and, outside tests, runs each provider's `ready` hook, as `listen()` does.
 
 ## Add routes and middleware
 
@@ -360,11 +358,11 @@ server.mount('/billing', billing)
 server.mount('/legacy', { fetch: (request) => fetch(`https://legacy.acme.com${new URL(request.url).pathname}`) })
 ```
 
-`GET /billing/invoices` now answers from the billing app. `mount` and `use` return the server, so you can chain them; the table from `createServer({ routes })` is mounted first.
+`GET /billing/invoices` now answers from the billing app. `mount` and `use` return the server, so you can chain them.
 
 ## Read the current request anywhere
 
-Every request runs inside a context you can read from any function on the server, without passing it down. `useRequest()` returns it:
+Every request runs inside a context that any function can read with `useRequest()`:
 
 ```ts
 // server/services/payments.ts
@@ -386,7 +384,7 @@ export async function chargeOrder(orderId: string, amount: number) {
 | `startedAt` | `performance.now()` when the request arrived. |
 | `locals` | A free-form object for middleware. [Auth](/packages/auth) puts `user` here. |
 
-`useRequest()` outside a request throws `[@kitr/server] useRequest() called outside a request.` In code that runs both inside and outside requests, such as a job or a script, use `tryUseRequest()`, which returns `undefined` instead:
+Outside a request `useRequest()` throws; in code that runs both inside and outside requests, such as a job, use `tryUseRequest()`, which returns `undefined`:
 
 ```ts
 // server/services/audit.ts
@@ -399,7 +397,7 @@ export function auditLabel() {
 
 ## Use request-scoped services
 
-Each request gets its own fork of the app container. A service bound per request, such as a database transaction or a cache of the current user, never leaks into another request. Read it with `useRequestApp()`:
+Each request gets its own fork of the app container, so a per-request service such as a database transaction never leaks into another request. Read it with `useRequestApp()`:
 
 ```ts
 // server/services/orders.ts
@@ -411,7 +409,7 @@ export async function findOrder(id: string) {
 }
 ```
 
-Outside a request `useRequestApp()` throws `[@kitr/server] useRequestApp() called outside a request and no fallback given.` Pass the server's app as a fallback for code that also runs in jobs:
+Outside a request `useRequestApp()` throws unless you pass the server's app as a fallback, for code that also runs in jobs:
 
 ```ts
 // server/services/orders.ts
@@ -424,11 +422,11 @@ export function ordersDb() {
 ```
 
 > [!WARNING]
-> Don't import services from module scope into request handlers when they hold per-user state. Take them from `useRequestApp()` so each request sees its own.
+> Don't import services that hold per-user state from module scope into handlers; take them from `useRequestApp()`.
 
 ## Log with the request id
 
-The server's logger comes from the [Logger](/packages/logger) provider when it is registered, and from a built-in logger named `kitr` otherwise. Each request gets a child logger that adds `requestId`:
+The server's logger comes from the [Logger](/packages/logger) provider, or a built-in `kitr` logger without one. Each request gets a child logger that adds `requestId`:
 
 ```ts
 // server/main.ts
@@ -441,17 +439,11 @@ server.h3.post('/api/orders', async (event) => {
 })
 ```
 
-The server logs three kinds of lines for you:
-
-- `listening on http://localhost:3001` at `info` when `listen()` starts.
-- One line per request at `debug`: `POST /api/orders` with `status`, `ip` and `durationMs`.
-- Every `5xx` at `error`, with the error, `method`, `path`, `status` and the request id. `4xx` responses are not logged as errors.
-
-Set `LOG_LEVEL=debug` in `.env` to see the request lines in development.
+The server logs `listening on ...` at `info`, one line per request at `debug` (`POST /api/orders` with `status`, `ip` and `durationMs`) and every `5xx` at `error` with the request id. Set `LOG_LEVEL=debug` in `.env` to see request lines.
 
 ## Trace a request across services
 
-The server reads the request id from the `x-request-id` header when the caller sends one, and makes a UUID otherwise. It echoes the id back on the response, so a support ticket that quotes it leads to the matching log lines.
+The server reads the request id from the `x-request-id` header, or makes a UUID, and echoes it on the response, so a support ticket that quotes it leads to the matching log lines.
 
 ```sh
 curl -i -H 'x-request-id: ticket-8812' http://localhost:3001/api/orders/latest
@@ -477,7 +469,7 @@ export async function fetchInvoice(id: string) {
 }
 ```
 
-Set `requestIdHeader` when your proxy or tracing system uses another header name.
+Set `requestIdHeader` if your proxy uses another header name.
 
 ## Return errors as JSON
 
@@ -499,24 +491,22 @@ content-type: application/json; charset=utf-8
 {"code":"CONFLICT","message":"Invoice INV-1042 is already paid","status":409}
 ```
 
-The helpers `KitrError.notFound('Order')`, `.unauthorized()`, `.forbidden()` and `.validation({ email: ['Required'] })` cover the common cases. A route that doesn't exist answers in the same shape:
+`KitrError.notFound('Order')`, `.unauthorized()`, `.forbidden()` and `.validation({ email: ['Required'] })` cover the common cases. A missing route answers in the same shape:
 
 ```json
 { "code": "NOT_FOUND", "message": "Cannot find any route matching [GET] http://localhost:3001/api/nope", "status": 404 }
 ```
 
-A plain `Error` becomes `INTERNAL` with status `500`. In development its message comes through so you can debug it. In production it does not:
+A plain `Error` becomes `INTERNAL` with status `500`; its message comes through in development but not in production:
 
 ```json
 { "code": "INTERNAL", "message": "Internal server error", "status": 500 }
 ```
 
 > [!WARNING]
-> Only a production app (`kitr build`, or `NODE_ENV=production`) hides `5xx` messages and `data`. A staging server started from source in development mode sends internal error messages, such as database errors, to the client.
+> Only a production app (`kitr build`, or `NODE_ENV=production`) hides `5xx` messages. A staging server started in development mode sends internal errors, such as database errors, to the client.
 
-`4xx` errors keep their message in every mode, so write those messages for the user.
-
-To build the same response yourself, in custom middleware or a mounted handler, use `errorToResponse()`:
+`4xx` messages show in every mode, so write them for the user. In custom middleware or a mounted handler, build the same response with `errorToResponse()`:
 
 ```ts
 // server/main.ts
@@ -529,11 +519,11 @@ server.use((event) => {
 })
 ```
 
-`normaliseServerError()` turns anything (an h3 `HTTPError`, a `KitrError` wrapped as a cause, a plain error) into a `KitrError` without building a response.
+`normaliseServerError()` turns any error into a `KitrError` without building a response.
 
 ## Limit request bodies
 
-`bodyLimit` caps request bodies in bytes. A request that declares a larger `content-length` is rejected before it is read, and the connection is closed so the upload stops:
+`bodyLimit` caps request bodies in bytes. A request that declares a larger `content-length` is rejected before it is read:
 
 ```ts
 // config/server.ts
@@ -549,7 +539,7 @@ export default defineConfig({
 { "code": "PAYLOAD_TOO_LARGE", "message": "Request body is larger than 10485760 bytes", "status": 413 }
 ```
 
-To raise the limit for one part of the API only, set `bodyLimits` by path prefix. The longest prefix that matches the request path wins, and every other path keeps `bodyLimit`:
+To raise the limit for part of the API, set `bodyLimits` by path prefix; the longest matching prefix wins and other paths keep `bodyLimit`:
 
 ```ts
 // config/server.ts
@@ -565,13 +555,11 @@ export default defineConfig({
 })
 ```
 
-A `POST /api/invoices/import` may send 20 MiB, `POST /api/invoices/inv_1042/attachments` 5 MiB, and `POST /api/orders` 1 MiB. [Uploads](/packages/uploads) adds its own entry for its upload path from `config/uploads.ts`, so you do not raise the global limit for it.
-
-Chunked uploads without a `content-length` are counted as they stream and get a `413` with the message `Request body size exceeds the limit of 10485760 bytes`. For large files, use [Uploads](/packages/uploads), which streams to storage with its own limits.
+Chunked uploads without a `content-length` are counted as they stream and get a `413`. For large files use [Uploads](/packages/uploads), which streams to storage with its own limits.
 
 ## Check health from a load balancer
 
-The server answers `GET /healthz` with `{ "ok": true }` and status `200` as soon as it is up. Point your load balancer or container health check at it. Move it or turn it off in `config/server.ts`:
+The server answers `GET /healthz` with `{ "ok": true }` once it is up; point your load balancer at it. Move it or turn it off in `config/server.ts`:
 
 ```ts
 // config/server.ts
@@ -583,11 +571,11 @@ export default defineConfig({
 })
 ```
 
-The route only says the process is serving. For a deeper check, such as the database being reachable, add your own route.
+It only says the process is serving; add your own route to check the database.
 
 ## Run code on start and shutdown
 
-The server runs the provider lifecycle from `kitrrc.ts`. `register` and `boot` run before the first request, `ready` once the server serves, and `shutdown` when it stops. Put the work in a provider, not in `server/main.ts`:
+Providers in `kitrrc.ts` run `register` and `boot` before the first request, `ready` once the server serves, and `shutdown` when it stops. Put the work in a provider, not in `server/main.ts`:
 
 ```ts
 // app/providers/orders-db-provider.ts
@@ -633,7 +621,7 @@ On `SIGINT` or `SIGTERM`, a server started with `listen()`:
 4. Runs every provider's `shutdown` (closing database pools, flushing logs).
 5. Exits with code `0`.
 
-If that takes longer than `shutdownTimeout` seconds, the process exits with code `1`. Give it more time when requests run long, such as invoice exports:
+Past `shutdownTimeout` seconds the process exits with code `1`. Raise it when requests run long, such as invoice exports:
 
 ```ts
 // config/server.ts
@@ -646,11 +634,10 @@ export default defineConfig({
 })
 ```
 
-Keep the timeout below your orchestrator's grace period (30 seconds by default on Kubernetes), or the process is killed before it finishes.
+> [!WARNING]
+> Keep the timeout below your orchestrator's grace period (30 seconds by default on Kubernetes), or the process is killed first.
 
-A process has one handler for `SIGINT` and `SIGTERM`, however many servers it runs. On a signal it drains every server at once and exits once, after the longest `shutdownTimeout` at most.
-
-`listen()` returns a `close()` function that does steps 2 to 4 without exiting, which is what tests and scripts use:
+`listen()` returns a `close()` function that does steps 2 to 4 without exiting, for tests and scripts:
 
 ```ts
 // scripts/smoke.ts
@@ -667,7 +654,7 @@ Port `0` picks a free port; `url` tells you which one.
 
 ## Accept WebSocket connections
 
-Set `websocket: true` to accept WebSocket upgrades through [crossws](https://crossws.h3.dev). [Realtime](/packages/realtime) sets this for you when the route table has a `.ws()` link.
+Set `websocket: true` to accept WebSocket upgrades through [crossws](https://crossws.h3.dev); [Realtime](/packages/realtime) sets it for you.
 
 ```ts
 // server/main.ts
@@ -675,7 +662,7 @@ Set `websocket: true` to accept WebSocket upgrades through [crossws](https://cro
 export const server = createServer({ providers: rc.providers, config, server: { websocket: true } })
 ```
 
-Without the `crossws` package installed, `listen()` throws `[@kitr/server] websocket: true needs the crossws package.` Run `kitr add realtime`, which installs it.
+Without `crossws`, `listen()` throws; `kitr add realtime` installs it.
 
 ## Commands
 
@@ -692,7 +679,7 @@ The server platform answers these commands:
 | `kitr platforms scaffold <name>` | Rewrites the platform's files (`server/main.ts`, `app/server.ts`, `wrangler.toml`; `server/routes.ts` only when missing). |
 | `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`. |
 
-`kitr add server api` prints `api: kitr dev api · kitr build api · kitr config api` when it finishes.
+
 
 `kitr doctor` reports an error when:
 
@@ -721,7 +708,7 @@ These are thrown as plain errors, not JSON responses:
 
 ## Testing
 
-Tests call `server.fetch()` with a `Request`. No port is opened. Import the server from `server/main.ts` and use `createTestClient` from [Testing](/packages/testing) for short calls:
+Tests call `server.fetch()` with a `Request`; no port is opened. Import the server from `server/main.ts` and use `createTestClient` from [Testing](/packages/testing):
 
 ```ts
 // test/orders.test.ts
@@ -738,7 +725,7 @@ it('returns the latest order', async () => {
 })
 ```
 
-To test server behaviour in isolation, build a server in the test. Pass `silentLogger` to keep the output clean and `server` options to change config:
+To test in isolation, build a server in the test, with `silentLogger` and `server` options for config:
 
 ```ts
 // test/server.test.ts
@@ -787,13 +774,10 @@ describe('order service', () => {
 })
 ```
 
-Under Vitest the app environment is `test`, so `fetch()` boots providers but does not run their `ready` hooks: job workers and schedulers stay off. To test lifecycle hooks, call `server.listen({ port: 0 })` and `close()` as shown under "Shut down without dropping requests".
+Under Vitest `fetch()` boots providers but skips their `ready` hooks, so job workers stay off. To test lifecycle hooks, call `server.listen({ port: 0 })` and `close()` as shown under "Shut down without dropping requests".
 
 ## Next steps
 
-- [API reference](/packages/server/api)
-- [API routes](/packages/api): routes, controllers, validation and a typed client on this server
-- [Logger](/packages/logger): levels, formats and the request-scoped logger
-- [Realtime](/packages/realtime): WebSocket channels attached to this server
-- [Build an API server without React](/guides/api-server)
-- [h3 documentation](https://h3.dev)
+- [API reference](/packages/server/api): `createServer`, options and request helpers.
+- [API routes](/packages/api): routes, controllers and a typed client on this server.
+- [Build an API server without React](/guides/api-server): from an empty folder to deployment.

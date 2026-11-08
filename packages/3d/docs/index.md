@@ -6,13 +6,21 @@ order: 1
 
 # 3D
 
-Product viewers, configurators and hero scenes are now ordinary parts of a page. `@kitr/3d` renders them so they behave like the rest of it: nothing during server rendering, a fallback without WebGL, no drawing off screen, a still scene for reduced motion, and a lower resolution when a phone slows down.
+Product viewers, configurators and hero scenes should behave like the rest of the page. `@kitr/3d` renders nothing during server rendering, shows a fallback without WebGL, stops drawing off screen, holds still for reduced motion and lowers the resolution when a phone slows down.
 
-It is [React Three Fiber](https://r3f.docs.pmnd.rs) and [drei](https://drei.docs.pmnd.rs), re-exported unchanged, on top of [three.js](https://threejs.org). Meshes, lights, `useFrame`, `useThree` and every drei helper work exactly as their docs show. kitr adds `<Scene>`, a `<Canvas>` with the behaviour above; `useModel()`, which loads compressed models with a decoder your app serves itself instead of a CDN; `useThemeColor()`, which hands three.js the colours of your theme; and `kitr 3d:decoders` with a `kitr doctor` check to keep that decoder in place.
+> [!SUMMARY]
+> Render 3D scenes and models that stay smooth on phones and fall back when WebGL is missing. Add it with `kitr add 3d`; the overview is at [/packages/3d](/packages/3d).
 
-It runs in the browser, inside React, on every kitr platform: web, desktop (Electron and Tauri) and mobile (Capacitor). For movement of ordinary DOM elements, such as a dialog opening or a list re-sorting, use [animation](/packages/animation) instead.
+It is [React Three Fiber](https://r3f.docs.pmnd.rs) and [drei](https://drei.docs.pmnd.rs), re-exported unchanged, on top of [three.js](https://threejs.org). kitr adds four things:
 
-The examples on this page build the order page of Acme's store at `app.acme.com/orders/1042`: Grace ordered the Acme headset, and the page shows it in 3D so she can turn it around before it ships.
+- `<Scene>`, a `<Canvas>` with the behaviour above.
+- `useModel()`, which loads compressed models with a decoder your app serves itself.
+- `useThemeColor()`, which hands three.js the colours of your theme.
+- `kitr 3d:decoders`, with a `kitr doctor` check, to keep that decoder in place.
+
+It runs in the browser, inside React, on every kitr platform. For ordinary DOM movement, use [animation](/packages/animation).
+
+The examples build the order page of Acme's store at `app.acme.com/orders/1042`: Grace ordered the Acme headset and turns it around in 3D before it ships.
 
 ## Install
 
@@ -20,17 +28,22 @@ The examples on this page build the order page of Acme's store at `app.acme.com/
 kitr add 3d
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
 - Adds `@kitr/3d`, `three`, `@react-three/fiber` and `@react-three/drei` to `dependencies`, and `@types/three` to `devDependencies`, then installs them. Pass `--no-install` to skip the install.
 - Adds `'@kitr/3d'` to `packages` in `kitrrc.ts`. It registers no provider.
 - Adds a `## kitr: 3d` section to `AGENTS.md`: wrap every scene in `<Scene>` rather than a bare `<Canvas>`, import from `@kitr/3d` and `@kitr/3d/drei`, keep models in `public/models/` and load them with `useModel()`, take colours from the theme with `useThemeColor()`, and run `kitr 3d:decoders` for Draco-compressed models.
 
-It writes no config file, adds no env variables or scripts and asks no questions. 3D needs React, so `kitr add` adds the [react](/packages/react) package first when the project has none, and refuses in a server-only project. No kit includes it.
+It writes no config file and asks no questions. It adds the [react](/packages/react) package first when the project has none, and refuses in a server-only project.
 
 `kitr remove 3d` takes `'@kitr/3d'` out of `kitrrc.ts`, removes the four dependencies and the `AGENTS.md` section, then lists files that still import `@kitr/3d`. It leaves `public/draco/` and your models in place.
 
-`kitr doctor` flags imports from `@react-three/fiber` and `@react-three/drei` and suggests `@kitr/3d` and `@kitr/3d/drei`. Import `three` itself directly, as `import { Color } from 'three'`.
+</details>
+
+`kitr doctor` flags imports from `@react-three/fiber` and `@react-three/drei`; use `@kitr/3d` and `@kitr/3d/drei`. Import `three` itself directly: `import { Color } from 'three'`.
 
 ## Configure
 
@@ -107,7 +120,7 @@ export function BrandCube() {
 }
 ```
 
-Render `<BrandCube />` on any page. The server sends an empty 320-pixel box; in the browser it becomes a canvas with a cube turning at 0.6 radians a second in the theme's primary colour. On a device with no WebGL, the box shows `/images/cube.png` instead. Scroll it out of view and the frame loop stops, and `<div data-kitr-scene>` around the canvas reads `never`; scroll back and it reads `always` again.
+The server sends an empty 320-pixel box. In the browser it becomes a canvas with a cube turning in the theme's primary colour, or `/images/cube.png` where WebGL is missing. Scroll it out of view and `<div data-kitr-scene>` around the canvas reads `never`; scroll back and it reads `always`.
 
 ## Load a model
 
@@ -144,21 +157,19 @@ export function HeadsetViewer() {
 }
 ```
 
-Grace can drag to turn the headset and pinch or scroll to zoom. `useModel()` caches by URL, so two viewers on the same page download the file once, and `model.nodes` and `model.materials` hold every named mesh and material from the file.
+Grace can drag to turn the headset and pinch or scroll to zoom. `useModel()` caches by URL, so two viewers download the file once. `model.nodes` and `model.materials` hold every named mesh and material.
 
-If the file is missing or broken, the error reaches `<Scene>`, which shows `fallback` and passes the error to `onError` (or logs it). The rest of the page keeps working; a bare `<Canvas>` would take the whole route down with it.
-
-To start downloading before the viewer is on screen, for example when Grace hovers the link to her order, call `useModel.preload('/models/headset.glb')`.
+If the file is missing or broken, `<Scene>` shows `fallback` and passes the error to `onError`; the rest of the page keeps working. To download early, for example when Grace hovers the link to her order, call `useModel.preload('/models/headset.glb')`.
 
 ## Load compressed models offline
 
-Models exported with Draco compression, such as the output of `gltfjsx --transform`, need a decoder at run time. drei fetches it from Google's CDN by default, which fails in a desktop or mobile build without a network, under a strict Content Security Policy, and on any network that blocks the CDN. `useModel()` loads it from your own app at `/draco/` instead. Copy it there once:
+Draco-compressed models, such as the output of `gltfjsx --transform`, need a decoder at run time. drei fetches it from a CDN, which fails offline, under a strict Content Security Policy and on networks that block the CDN. `useModel()` loads it from your app at `/draco/` instead. Copy it there once:
 
 ```sh
 kitr 3d:decoders
 ```
 
-That copies `draco_decoder.js`, `draco_decoder.wasm` and `draco_wasm_wrapper.js` from the installed `three` into `public/draco/`. Commit them, and run the command again after upgrading `three`. The web build serves them with the rest of `public/`, and the desktop and mobile builds package them, so compressed models load with no network at all.
+That copies the three decoder files from the installed `three` into `public/draco/`. Commit them, and run the command again after upgrading `three`.
 
 `kitr doctor` reads every `.glb` and `.gltf` under `public/` and warns when one uses Draco and `public/draco/` has no decoder:
 
@@ -167,11 +178,16 @@ That copies `draco_decoder.js`, `draco_decoder.wasm` and `draco_wasm_wrapper.js`
     fix: kitr 3d:decoders
 ```
 
-To keep the decoder somewhere else, pass its folder: `useModel(url, { draco: '/static/draco/' })`. For a model with no Draco compression you can skip the decoder entirely with `{ draco: false }`. Meshopt compression needs no files; its decoder is bundled and `useModel()` enables it by default.
+<details>
+<summary>Other decoder locations and Meshopt</summary>
+
+To keep the decoder somewhere else, pass its folder: `useModel(url, { draco: '/static/draco/' })`. For a model with no Draco compression, skip the decoder with `{ draco: false }`. Meshopt compression needs no files; `useModel()` enables it by default.
+
+</details>
 
 ## Show a fallback without WebGL
 
-Some devices cannot draw WebGL: older browsers, locked-down corporate machines, GPUs on the browser's blocklist, and headless test browsers. `<Scene>` checks once, after mounting, and shows `fallback` instead of an empty or broken canvas:
+Older browsers, locked-down machines, blocklisted GPUs and headless test browsers cannot draw WebGL. `<Scene>` checks once, after mounting, and shows `fallback` instead of a broken canvas:
 
 ```tsx
 // app/components/order-preview.tsx
@@ -190,11 +206,11 @@ export function OrderPreview({ order }: { order: { id: string; image: string } }
 }
 ```
 
-The same `fallback` shows when the scene throws while loading or drawing. To branch on WebGL outside a scene, for example to hide a "View in 3D" button, call `isWebGLAvailable()`. It returns `false` on the server, so call it in an effect or an event handler.
+The same `fallback` shows when the scene throws. To branch on WebGL outside a scene, for example to hide a "View in 3D" button, call `isWebGLAvailable()` in an effect or event handler; it returns `false` on the server.
 
 ## Use theme colours
 
-three.js materials take a colour string, but kitr's theme defines colours in `oklch()`, which three.js cannot parse. `useThemeColor()` reads a CSS variable, lets the browser convert it to `#rrggbb`, and reads it again whenever the theme changes:
+kitr's theme defines colours in `oklch()`, which three.js cannot parse. `useThemeColor()` reads a CSS variable, lets the browser convert it to `#rrggbb`, and reads it again when the theme changes:
 
 ```tsx
 // app/components/headset-stand.tsx
@@ -218,11 +234,11 @@ export function HeadsetStand() {
 }
 ```
 
-When Grace switches to dark mode, `data-theme` on `<html>` changes, the hook re-reads both variables and the stand recolours without reloading the scene. The second argument is the colour to use on the server and when the variable is not set. Any CSS colour works, including variables you define yourself, such as `--acme-headset-trim`. To convert a colour once, outside React, call `toHexColor('oklch(55% 0.2 262)')`.
+When Grace switches to dark mode, the stand recolours without reloading the scene. The second argument is the colour for the server and for an unset variable. Any CSS variable works, including your own. To convert once, outside React, call `toHexColor('oklch(55% 0.2 262)')`.
 
 ## Animate with useFrame
 
-`useFrame` runs a function on every frame, with the time since the last one. Scale by `delta` so the speed is the same at 30, 60 and 120 frames a second:
+`useFrame` runs on every frame with the time since the last one. Scale by `delta` so speed is the same at any frame rate:
 
 ```tsx
 // app/components/floating-headset.tsx
@@ -242,15 +258,16 @@ export function FloatingHeadset() {
 }
 ```
 
-Change the object directly through the ref. Don't call `setState` inside `useFrame`: that re-renders the React tree 60 times a second, where a ref change costs nothing.
+> [!WARNING]
+> Change objects through the ref. Calling `setState` inside `useFrame` re-renders the React tree 60 times a second.
 
-For animations stored in the model file, use drei's `useAnimations(model.animations, ref)` from `@kitr/3d/drei`, then `actions['Unfold']?.play()`.
+For animations stored in the model file, use drei's `useAnimations(model.animations, ref)`, then `actions['Unfold']?.play()`.
 
 ## Respect reduced motion
 
-With `reducedMotion="user"`, visitors who turn on "reduce motion" get a still scene: `<Scene>` switches the frame loop to `'demand'`, so `useFrame` animations stop, while dragging with `OrbitControls` and any state change still redraw it. Nothing in your scene has to check the setting.
+With `reducedMotion="user"`, visitors who ask for less motion get a still scene. `<Scene>` switches to `'demand'`, so `useFrame` animations stop while dragging and state changes still redraw. Your scene does not check the setting.
 
-When a scene's movement is the point, such as a short product turn that starts on a button press, keep it but make it gentle, and read the same setting with `usePrefersReducedMotion()`:
+When movement is the point, such as a product turn on a button press, keep it gentle with `usePrefersReducedMotion()`:
 
 ```tsx
 // app/components/turn-button.tsx
@@ -266,11 +283,11 @@ export function TurnButton({ onTurn }: { onTurn: (speed: number) => void }) {
 }
 ```
 
-`<Scene reducedMotion="never">` keeps the frame loop running for everyone, for scenes where motion carries meaning, such as a live chart in 3D.
+Use `reducedMotion="never"` only where motion carries meaning, such as a live chart in 3D.
 
 ## Draw only when something changes
 
-A scene that only moves when it is dragged, like the headset viewer, doesn't need 60 frames a second. `frameloop="demand"` draws once, then again only when something changes: a prop on a mesh, `OrbitControls` moving the camera, a model finishing its download. That saves battery on laptops and phones:
+A scene that only moves when dragged doesn't need 60 frames a second. `frameloop="demand"` draws once, then only when something changes, which saves battery:
 
 ```tsx
 // app/components/still-headset.tsx
@@ -297,9 +314,9 @@ When you change three.js objects yourself, outside React, ask for a frame with `
 
 ## Keep it smooth on phones
 
-Phones have screens with three times the pixels and a fraction of the GPU of a laptop. `<Scene>` caps the pixel ratio at 2 by default and, with `adaptive`, watches the frame rate through drei's `PerformanceMonitor`: when frames drop it steps the pixel ratio down by quarters towards 1, and when they recover it steps back up. The picture gets slightly softer instead of stuttering.
+`<Scene>` caps the pixel ratio at 2. With `adaptive`, it steps the ratio down towards 1 when frames drop and back up when they recover, so the picture softens instead of stuttering.
 
-Set the range with `dpr`. A large hero scene that should favour frame rate:
+Set the range with `dpr`. A hero scene that favours frame rate:
 
 ```tsx
 <Scene dpr={[0.75, 1.5]} className="h-[60vh]">
@@ -307,9 +324,7 @@ Set the range with `dpr`. A large hero scene that should favour frame rate:
 </Scene>
 ```
 
-A fixed `dpr={1}` turns adaptation off. Beyond resolution, keep models light: compress them with `npx gltfjsx model.glb --transform`, which also resizes textures, and prefer one baked lighting texture over many real-time lights and shadows.
-
-Pausing while hidden matters most on phones, too. When Grace switches apps, the WebView reports the page as hidden and the scene stops drawing; when she comes back, it carries on from where it was.
+A fixed `dpr={1}` turns adaptation off. Keep models light: compress with `npx gltfjsx model.glb --transform`, and prefer one baked lighting texture over many real-time lights. When Grace switches apps, the scene stops drawing and resumes when she returns.
 
 ## Handle clicks and hovers
 
@@ -338,11 +353,11 @@ export function ColourSwatch({ colour, onPick }: { colour: string; onPick: (colo
 }
 ```
 
-`event.stopPropagation()` stops the click reaching meshes behind this one. Touch works the same way, so the swatch is tappable in the mobile build. For page text and buttons over the scene, use plain DOM next to `<Scene>` rather than inside it; it stays accessible to screen readers and keyboard users.
+`event.stopPropagation()` stops the click reaching meshes behind. Touch works the same way. Put page text and buttons in plain DOM next to `<Scene>`, so screen readers and keyboard users reach them.
 
 ## Lighting without a network
 
-drei's `<Environment preset="city" />` downloads its lighting file from a CDN when the scene loads. In a desktop or mobile build, or behind a strict CSP, put the `.hdr` file in `public/` and point to it instead:
+drei's `<Environment preset="city" />` downloads its lighting file from a CDN. For offline or strict-CSP builds, put the `.hdr` file in `public/` and point to it:
 
 ```tsx
 // app/components/studio-lighting.tsx
@@ -357,8 +372,6 @@ export function StudioLighting() {
   )
 }
 ```
-
-Like `useModel()`, this keeps every file the scene needs inside the app, so the order page looks the same online, offline and on every platform.
 
 ## Commands
 
@@ -379,11 +392,9 @@ Draco decoder copied. useModel() loads it from /draco/.
 
 With a custom folder, pass it to `useModel(url, { draco: '/static/draco/' })`.
 
-`kitr doctor` warns when a model under `public/` is Draco-compressed and `public/draco/` has no decoder, and when a file imports `@react-three/fiber` or `@react-three/drei` instead of `@kitr/3d` and `@kitr/3d/drei`.
-
 ## Testing
 
-Test what you put inside a scene with [`@react-three/test-renderer`](https://r3f.docs.pmnd.rs/api/testing), which renders React Three Fiber without a GPU and steps frames by hand. Add it once:
+[`@react-three/test-renderer`](https://r3f.docs.pmnd.rs/api/testing) renders React Three Fiber without a GPU and steps frames by hand. Add it once:
 
 ```sh
 pnpm add -D @react-three/test-renderer
@@ -426,7 +437,7 @@ describe('brand cube', () => {
 })
 ```
 
-`<Scene>` itself needs a real browser to draw. In Vitest with happy-dom there is no WebGL, so a page that contains a scene renders its `fallback`, which makes page tests stable and lets you assert on it:
+`<Scene>` needs a real browser to draw. In Vitest with happy-dom there is no WebGL, so a page with a scene renders its `fallback`, which you can assert on:
 
 ```tsx
 // app/pages/order.test.tsx
@@ -440,13 +451,10 @@ it('shows the photo where WebGL is missing', async () => {
 })
 ```
 
-For the real thing, a Playwright test against `kitr dev` runs Chromium with WebGL. Wait for `[data-kitr-scene="always"]` before taking a screenshot, and set `frameloop="demand"` in a test build so frames stop changing.
+In Playwright against `kitr dev`, wait for `[data-kitr-scene="always"]` before a screenshot, and use `frameloop="demand"` so frames stop changing.
 
 ## Next steps
 
-- [API reference](/packages/3d/api): every export kitr adds to `@kitr/3d`.
-- [React Three Fiber](https://r3f.docs.pmnd.rs): the canvas, hooks, events and performance, all imported from `@kitr/3d`.
-- [drei](https://drei.docs.pmnd.rs): controls, loaders, staging and helpers, imported from `@kitr/3d/drei`.
-- [three.js manual](https://threejs.org/manual/): geometry, materials, lights and cameras.
-- [Animation](/packages/animation): DOM and page animation with the same reduced-motion rules.
+- [API reference](/packages/3d/api): every export of `@kitr/3d`.
+- [drei](https://drei.docs.pmnd.rs): controls, loaders and helpers, imported from `@kitr/3d/drei`.
 - [Theme](/packages/theme): the colour tokens `useThemeColor()` reads.

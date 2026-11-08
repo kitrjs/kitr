@@ -6,13 +6,14 @@ order: 1
 
 # Updater
 
-You ship a fix, but Ada keeps a tab on `app.acme.com` open all week and never reloads it. Installed apps are worse: they run the old version until someone thinks to update. `@kitr/updater` notices when a new version is ready, tells people with a banner, and updates the app in place when they click it.
+You ship a fix, but Ada keeps a tab on `app.acme.com` open all week and never reloads it, and installed apps run the old version until someone updates. `@kitr/updater` notices when a new version is ready, tells people with a banner, and updates the app in place when they click it.
 
-It is one `check()` and `apply()` flow with one status, whatever does the updating. In the browser the driver watches the [service worker](https://developer.mozilla.org/docs/Web/API/Service_Worker_API) that the [Web](/packages/web) platform's `pwa` option builds with [vite-plugin-pwa](https://vite-pwa-org.netlify.app/); applying activates the new worker and reloads. Desktop and mobile shells plug in their own updater as a driver. kitr adds the status machine, periodic checks, "remind me later", a React hook, a ready-made banner and a memory driver for tests.
+> [!SUMMARY]
+> Tells people a new version is ready and updates the app in place on web, desktop and mobile. Add it with `kitr add updater`; the overview is at [/packages/updater](/packages/updater).
 
-It runs in the browser only. On the server the provider binds nothing. To keep data fresh between versions, use [Query](/packages/query); this package is about the app's own code.
+It is one `check()` and `apply()` flow with one status, whatever does the updating. In the browser the driver watches the [service worker](https://developer.mozilla.org/docs/Web/API/Service_Worker_API) that the [Web](/packages/web) platform's `pwa` option builds; desktop and mobile shells plug in their own driver. kitr adds periodic checks, "remind me later", a React hook, a ready-made banner and a memory driver for tests. It runs in the browser only; to keep data fresh between versions, use [Query](/packages/query).
 
-This guide follows Acme's orders app: version 2.4.0 ships, Ada sees "Version 2.4.0 is ready", and one click moves her to it without losing her place.
+This guide follows Acme's orders app: version 2.4.0 ships, Ada sees "Version 2.4.0 is ready", and one click moves her to it.
 
 ## Install
 
@@ -20,21 +21,19 @@ This guide follows Acme's orders app: version 2.4.0 ships, Ada sees "Version 2.4
 kitr add updater
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
-- Installs `@kitr/updater` and adds it to `packages` in `kitrrc.ts`.
-- Adds `() => import('@kitr/updater/provider')` to `providers` in `kitrrc.ts`.
-- Writes `config/updater.ts` (shown under [Configure](#configure)).
-- Writes `app/components/update-banner.tsx`, a banner that stays hidden until an update is ready (shown under [Show your first update banner](#show-your-first-update-banner)).
-- Adds a `## kitr: updater` section to `AGENTS.md`: `useUpdate()` from `@kitr/updater/react` drives the banner, which is mounted once in the root layout; status runs idle, checking, available, downloading, ready; the web driver watches the service worker and desktop and mobile packages register theirs.
+- Installs `@kitr/updater` and adds it and its provider to `kitrrc.ts`.
+- Writes `config/updater.ts` (see [Configure](#configure)).
+- Writes `app/components/update-banner.tsx`, a banner hidden until an update is ready (see [Show your first update banner](#show-your-first-update-banner)).
+- Adds a `## kitr: updater` section to `AGENTS.md`.
 
-It adds no environment variables or scripts. `kitr add updater` asks no questions, and no kit includes it. To preview the changes:
-
-```sh
-kitr add updater --dry-run
-```
+It adds no environment variables or scripts and asks no questions. No kit includes it. Preview with `kitr add updater --dry-run`.
 
 `kitr remove updater` removes the provider, the `packages` entry, the dependency, the `AGENTS.md` section and `config/updater.ts`. It leaves `app/components/update-banner.tsx` because you may have edited it, and lists the files that still import `@kitr/updater`.
+
+</details>
 
 ## Configure
 
@@ -59,9 +58,9 @@ export default defineConfig({
 | `driver` | registered, else the driver for the runtime | An `UpdaterDriver` that replaces the one the service would pick. For tests and custom shells. |
 | `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no updater driver, use the service-worker driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-The service picks its driver in this order: `driver` from the config, a driver a provider registered under `updater`, then `selectDriver(runtime)`: the service-worker driver in a browser, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. The defaults in the table are what you get without a config file; the file `kitr add` writes only adds the hourly `interval`.
+The service picks its driver in this order: `driver` from the config, a driver a provider registered under `updater`, then the runtime's default: the service-worker driver in a browser, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set. The generated file only adds the hourly `interval` to the defaults.
 
-For the browser to have something to update, turn on the service worker in the web platform. `registerType: 'prompt'` is the default and is what the updater expects: the new worker waits until you apply it.
+For the browser to have something to update, turn on the service worker in the web platform. `registerType: 'prompt'` is the default and what the updater expects: the new worker waits until you apply it.
 
 ```ts
 // kitrrc.ts
@@ -125,9 +124,9 @@ export function RootDocument() {
 }
 ```
 
-Deploy a new build while Ada has the app open. Within the hour (or at her next visit) a bar appears at the bottom: "Version new is ready. **Restart to update** · Later". She clicks **Restart to update**, the page reloads on the new build, and the bar is gone. The service-worker driver does not know version numbers, so it reports `new` until you give it one; see [Show version numbers on the web](#show-version-numbers-on-the-web).
+Deploy a new build while Ada has the app open. Within the hour (or at her next visit) a bar appears: "Version new is ready. **Restart to update** · Later". She clicks, the page reloads on the new build, and the bar is gone. The service-worker driver does not know version numbers, so it reports `new` until you give it one; see [Show version numbers on the web](#show-version-numbers-on-the-web).
 
-The service only exists in the browser. During server rendering `useUpdate()` reports `idle` with nothing available, so the banner renders nothing there and appears once the browser finds an update.
+On the server `useUpdate()` reports `idle` with nothing available, so the banner renders nothing until the browser finds an update.
 
 ## Follow the update status
 
@@ -159,8 +158,6 @@ The service only exists in the browser. During server rendering `useUpdate()` re
 
 A typical run is `idle → checking → available → downloading → ready`. A check during `downloading` or `ready` is skipped, so the hourly check never interrupts a download.
 
-The hook reads the state with `useSyncExternalStore`, so a component re-renders on every change and nothing else.
-
 ## Check for updates by hand
 
 Add a "Check for updates" item to a settings page. `check()` resolves to the update, or `null` when the app is current:
@@ -183,11 +180,11 @@ export function CheckForUpdates() {
 }
 ```
 
-When something is found, `status` becomes `available` and the banner from the root layout shows it, so this page doesn't need its own "Update" button. A check never throws: a failure sets `status: 'error'` and `error`, and resolves to `null`.
+When something is found, `status` becomes `available` and the root-layout banner shows it. A check never throws: a failure sets `status: 'error'` and `error`, and resolves to `null`.
 
 ## Apply an update
 
-`apply()` downloads (where the driver needs to) and installs, moving `progress` from 0 to 1 on the way. Call it as many times as you like: while an apply is running or done, more calls do nothing, so a double click installs once.
+`apply()` downloads (where the driver needs to) and installs, moving `progress` from 0 to 1. Repeat calls while an apply is running or done do nothing, so a double click installs once.
 
 ```tsx
 // app/components/settings/update-now.tsx
@@ -209,13 +206,14 @@ export function UpdateNow() {
 }
 ```
 
-What "install" means depends on the driver. The service-worker driver tells the waiting worker to take over, waits for it (up to two seconds) and reloads the page. A desktop driver typically downloads the installer and restarts the app. With no update found, `apply()` does nothing.
+What "install" means depends on the driver: the service-worker driver activates the waiting worker (waiting up to two seconds) and reloads; a desktop driver downloads the installer and restarts. With no update found, `apply()` does nothing.
 
-Applying reloads or restarts the app, so anything not saved is lost. Don't call `apply()` while someone is halfway through a form; let them choose the moment.
+> [!WARNING] Unsaved work is lost
+> Applying reloads or restarts the app. Don't call `apply()` while someone is halfway through a form; let them choose the moment.
 
 ## Let people postpone an update
 
-`dismiss()` hides the current update until a different version appears. It sets `status` to `up-to-date` and `update` to `null`:
+`dismiss()` hides the current update until a different version appears:
 
 ```tsx
 // app/components/settings/remind-me-later.tsx
@@ -232,11 +230,11 @@ export function RemindMeLater() {
 }
 ```
 
-After Ada dismisses 2.4.0, the hourly check still finds 2.4.0 but keeps the banner hidden. When 2.4.1 ships, it appears again. The dismissal lives in memory, so a reload shows 2.4.0 again at the next check.
+After Ada dismisses 2.4.0, the hourly check still finds it but keeps the banner hidden until 2.4.1 ships. The dismissal lives in memory, so a reload shows 2.4.0 again at the next check.
 
 ## Apply updates without asking
 
-For a kiosk, a wall display or a dashboard nobody touches, set `auto: true`. Every update found by a check, or announced by the driver, is applied at once:
+For a kiosk or a wall display nobody touches, set `auto: true`: every update found, or announced by the driver, is applied at once:
 
 ```ts
 // config/updater.ts
@@ -249,13 +247,12 @@ export default defineConfig({
 })
 ```
 
-On the web that means the page reloads by itself when a new build is deployed. Keep `auto: false` for anything people type into.
+> [!WARNING] Keep auto off for forms
+> On the web, `auto: true` reloads the page by itself when a new build is deployed. Keep `auto: false` for anything people type into.
 
 ## Show version numbers on the web
 
-A service worker does not know your version numbers, so the default web driver reports `update.version` as `'new'` and `currentVersion` as `'0.0.0'`. Give it your version and it reports `'2.3.0'` as the current one and `'2.3.0+'` for the waiting build. The `version` you pass is the build that is running; the service worker can't tell what the new one is called.
-
-Set the driver yourself in the config, from the version Vite builds in:
+A service worker does not know your version numbers, so the default web driver reports `update.version` as `'new'` and `currentVersion` as `'0.0.0'`. Give it the running version and it reports `'2.3.0'` and `'2.3.0+'` for the waiting build. Set the driver yourself in the config:
 
 ```ts
 // config/updater.ts
@@ -270,13 +267,11 @@ export default defineConfig({
 })
 ```
 
-Declare `VITE_APP_VERSION` in `app/env.ts` and set it in your build. [Offline](/packages/offline) adds the same variable when you install it. For a real version string in the banner, serve a small JSON file with each deploy and write a driver that reads it, as shown under [Extend](#extend).
-
-The service-worker driver needs a registered worker. Without one, `check()` resolves to `null` and the status is `up-to-date`.
+Declare `VITE_APP_VERSION` in `app/env.ts` and set it in your build ([Offline](/packages/offline) adds the same variable). For real version strings, serve a small JSON file with each deploy and write a driver that reads it, as under [Extend](#extend). Without a registered worker, `check()` resolves to `null` and the status is `up-to-date`.
 
 ## Handle a failed update
 
-Neither `check()` nor `apply()` throws. A failure sets `status: 'error'` and keeps the reason in `error`:
+Neither `check()` nor `apply()` throws. A failure sets `status: 'error'` and keeps the reason in `error`; a later `check()` clears it:
 
 ```tsx
 // app/components/settings/update-error.tsx
@@ -296,11 +291,10 @@ export function UpdateError() {
 }
 ```
 
-A later `check()` clears `error`. A non-`Error` rejection from the driver, such as `Promise.reject('offline')`, becomes `new Error('offline')`.
 
 ## Use it outside React
 
-Outside components, read the service from the app's container. `useUpdater(app)` from `@kitr/updater` does the same:
+Outside components, read the service from the app's container with `useUpdater(app)`:
 
 ```ts
 // app/lib/settings/updates-on-focus.ts
@@ -321,7 +315,7 @@ export function checkWhenFocused(app: KitrApp) {
 }
 ```
 
-`updater.state` is a fresh object after every change; `subscribe(listener)` calls `listener` with no arguments after each one and returns an unsubscribe function. `updater.stop()` ends the interval and the driver's listener; the provider calls it when the app shuts down. To build a service with no app, call `createUpdater(config)`. When the [Devtools](/packages/devtools) provider is installed, the service logs `available`, `applied` and failed checks and applies under `updater`.
+`updater.state` is a fresh object after every change; `subscribe(listener)` returns an unsubscribe function. `updater.stop()` ends the interval and the driver's listener; the provider calls it at shutdown. To build a service with no app, call `createUpdater(config)`. With [Devtools](/packages/devtools) installed, the service logs `available`, `applied` and failed checks under `updater`.
 
 ## Where updates come from
 
@@ -336,7 +330,7 @@ export function checkWhenFocused(app: KitrApp) {
 
 ### Capacitor
 
-In the [Mobile](/packages/mobile) shell the service asks the store, not a server of yours, through `@capawesome/capacitor-app-update`, an optional peer dependency imported the first time a method runs. `kitr add updater` installs it when the project has the mobile platform. The service-worker path stays web-only: it cannot update a native app.
+In the [Mobile](/packages/mobile) shell the service asks the store, not a server of yours, through `@capawesome/capacitor-app-update`, an optional peer that `kitr add updater` installs when the project has the mobile platform.
 
 | Call | Android | iOS |
 | --- | --- | --- |
@@ -344,7 +338,7 @@ In the [Mobile](/packages/mobile) shell the service asks the store, not a server
 | `apply()` | Downloads in the background and restarts. Priority 4 and 5 updates use Play's full-screen flow. | Opens the App Store page: iOS cannot install in place. |
 | `currentVersion()` | The installed version name. | The installed version. |
 
-The driver sets no `onAvailable`, so the banner appears after `check()`, which `checkOnBoot` and `interval` run. Play only offers an update to an app installed from Play: a debug build or a sideloaded APK always checks as up to date.
+The driver sets no `onAvailable`, so the banner appears after `check()`, which `checkOnBoot` and `interval` run. Play only offers an update to an app installed from Play: a debug build or sideloaded APK always checks as up to date.
 
 ```tsx
 // app/components/update-banner.tsx
@@ -363,15 +357,15 @@ export function UpdateBanner() {
 // iOS => opens apps.apple.com/app/id...
 ```
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have updater drivers, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers only `platform` and `storage` drivers: to update an installed mobile app, register a driver for your shell's updater, as shown under [Extend](#extend).
+[Mobile](/packages/mobile) registers only `platform` and `storage` drivers; to update an installed mobile app any other way, register a driver as under [Extend](#extend).
 
 ## Use it in Electron and Tauri
 
-In a desktop shell the updater replaces the installed app, not a service worker. `check()` asks the update feed, `apply()` downloads with progress and restarts into the new version, and `currentVersion()` reads the app's version. `config/updater.ts` does not change: `interval`, `auto` and `checkOnBoot` work as on the web.
+In a desktop shell the updater replaces the installed app. `check()` asks the update feed, `apply()` downloads with progress and restarts, and `currentVersion()` reads the app's version. `config/updater.ts` is unchanged.
 
 ### Electron
 
-The driver runs [`electron-updater`](https://www.electron.build/auto-update) in the main process over the `kitr:updater:*` channels that `handleKitrIpc(ipcMain, app)` serves. Main turns off `autoDownload`, so nothing downloads until `apply()`; a download reports `download-progress` as a fraction, then main calls `quitAndInstall()`. When main finds an update on its own, `onAvailable` fires. Point the feed at your release server with a `publish` block in `electron-builder.yml`:
+The driver runs [`electron-updater`](https://www.electron.build/auto-update) in the main process over the `kitr:updater:*` channels that `handleKitrIpc(ipcMain, app)` serves. Nothing downloads until `apply()`. Point the feed at your release server in `electron-builder.yml`:
 
 ```yaml
 # platforms/app/electron-builder.yml
@@ -382,13 +376,13 @@ publish:
 
 Requirements:
 
-- `electron-updater` in the app's `dependencies` (not dev), so electron-builder packs it. It is an optional peer: `kitr add desktop` and `kitr add updater` in a desktop project install it, and main imports it on first use. When it is missing, every method rejects with `E_DRIVER_UNAVAILABLE` naming the package.
-- A packaged, signed build. `electron-updater` does nothing in development (`check()` resolves to `null`), and macOS only installs updates from a signed and notarized app.
+- `electron-updater` in the app's `dependencies` (not dev), so electron-builder packs it. `kitr add desktop` and `kitr add updater` install it; when it is missing, every method rejects with `E_DRIVER_UNAVAILABLE`.
+- A packaged, signed build: `electron-updater` does nothing in development, and macOS only installs from a signed and notarized app.
 - `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script.
 
 ### Tauri
 
-The driver uses [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/): `check()` returns the signed update `tauri.conf.json` points at, `apply()` calls `downloadAndInstall()` with the content length and chunks turned into a fraction, then [`@tauri-apps/plugin-process`](https://v2.tauri.app/plugin/process/)'s `relaunch()`. The running version comes from `@tauri-apps/api/app`. Updates are signed: generate a key pair with `tauri signer generate`, put the public key and the endpoints in `tauri.conf.json`, and sign builds with the private key:
+The driver uses [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/) and [`plugin-process`](https://v2.tauri.app/plugin/process/): `check()` returns the signed update `tauri.conf.json` points at, and `apply()` downloads, installs and relaunches. Updates are signed: generate a key pair with `tauri signer generate`, put the public key and endpoints in `tauri.conf.json`, and sign builds with the private key:
 
 ```json
 {
@@ -404,8 +398,8 @@ The driver uses [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updat
 
 Requirements:
 
-- `@tauri-apps/plugin-updater` and `@tauri-apps/plugin-process` in `package.json`; `kitr add tauri` and `kitr add updater` in a Tauri project install them. Each is imported on first use; when one is missing, the method that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package.
-- `tauri-plugin-updater` and `tauri-plugin-process` in `src-tauri/Cargo.toml`, and `updater:default` and `process:default` in `capabilities/default.json`. The Tauri scaffold writes them, and registers the updater plugin in `lib.rs` only once `plugins.updater` exists in `tauri.conf.json`, because the plugin refuses to start without a public key. Until then `check()` fails with a plugin error and the service sets `status: 'error'`.
+- `@tauri-apps/plugin-updater` and `@tauri-apps/plugin-process` in `package.json` (`kitr add tauri` and `kitr add updater` install them); a missing one rejects with `E_DRIVER_UNAVAILABLE`.
+- `tauri-plugin-updater` and `tauri-plugin-process` in `src-tauri/Cargo.toml`, and `updater:default` and `process:default` in `capabilities/default.json`. The Tauri scaffold writes them, and registers the updater plugin in `lib.rs` only once `plugins.updater` exists, because the plugin refuses to start without a public key. Until then `check()` sets `status: 'error'`.
 
 ## Errors
 
@@ -413,7 +407,6 @@ Requirements:
 | --- | --- | --- |
 | `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | A native shell has no updater driver. Thrown at boot. | Register a driver, or set `fallbackToWeb: true`. |
 
-A failed check or apply is not thrown: it sets `status` to `'error'` and `error` on the state.
 
 ## Testing
 
@@ -536,82 +529,10 @@ export default defineConfig({
 
 The banner now reads "Version 2.4.0 is ready." For an app without a service worker, this is the whole update flow.
 
-The built-in Electron driver does this for you. To see the pieces, or to reach a different updater, here is the same idea written by hand: run [electron-updater](https://www.electron.build/auto-update) in the main process and reach it over the IPC bridge the desktop platform sets up. Install it with `pnpm add electron-updater`, then handle three channels in main:
-
-```ts
-// platforms/app/main.ts
-import { app, BrowserWindow, ipcMain } from 'electron'
-import { autoUpdater } from 'electron-updater'
-import { handleIpc } from '@kitr/desktop/main'
-
-autoUpdater.autoDownload = false
-
-handleIpc<{
-  'updater.check': () => { version: string; notes?: string } | null
-  'updater.apply': () => void
-}>(ipcMain, {
-  'updater.check': async () => {
-    const result = await autoUpdater.checkForUpdates()
-    const info = result?.updateInfo
-    if (!info || info.version === app.getVersion()) return null
-    return { version: info.version, notes: typeof info.releaseNotes === 'string' ? info.releaseNotes : undefined }
-  },
-  'updater.apply': async () => {
-    await autoUpdater.downloadUpdate()
-    autoUpdater.quitAndInstall()
-  },
-})
-
-autoUpdater.on('download-progress', (p) => {
-  BrowserWindow.getAllWindows()[0]?.webContents.send('updater.progress', p.percent / 100)
-})
-// ...
-```
-
-```ts
-// app/providers/electron-updater-provider.ts
-import { defineProvider } from 'kitr/app'
-import { createIpcClient } from '@kitr/desktop/client'
-import type { UpdaterDriver } from '@kitr/updater'
-
-type UpdaterIpc = {
-  'updater.check': () => { version: string; notes?: string } | null
-  'updater.apply': () => void
-}
-const ipc = createIpcClient<UpdaterIpc, { 'updater.progress': (fraction: number) => void }>()
-
-function electronUpdater(): UpdaterDriver {
-  return {
-    name: 'electron-updater',
-    check: () => ipc.invoke('updater.check'),
-    async apply(onProgress) {
-      const off = ipc.on('updater.progress', (fraction) => onProgress?.(fraction))
-      try {
-        await ipc.invoke('updater.apply')
-      } finally {
-        off()
-      }
-    },
-  }
-}
-
-export default defineProvider({
-  name: 'electron-updater',
-  register(app) {
-    if (ipc.available) app.drivers.register('updater', electronUpdater(), { platform: 'desktop' })
-  },
-})
-```
-
-Create the provider with `kitr make:provider electron-updater`, which also adds `() => import('#app/providers/electron-updater-provider')` to `providers` in `kitrrc.ts`. Inside the Electron app, the banner now shows the release version, the button shows download progress, and the app restarts on the new build. In the web build `ipc.available` is `false`, so the service-worker driver still applies.
-
-A [Tauri](/packages/tauri) app does the same with [`@tauri-apps/plugin-updater`](https://v2.tauri.app/plugin/updater/): `check()` resolves to an update or `null`, and the update's `downloadAndInstall()` reports progress before you relaunch. The `UpdaterDriver` and `UpdateInfo` types are in the [API reference](/packages/updater/api).
+For another shell's updater, register a driver for it: `app.drivers.register('updater', driver, { platform: 'desktop' })` in a provider. The `UpdaterDriver` and `UpdateInfo` types are in the [API reference](/packages/updater/api).
 
 ## Next steps
 
-- [API reference](/packages/updater/api)
+- [API reference](/packages/updater/api): every export with its signature.
 - [Web](/packages/web): the `pwa` option that builds the service worker.
-- [vite-plugin-pwa prompt for update](https://vite-pwa-org.netlify.app/guide/prompt-for-update): how the waiting worker is built.
-- [electron-updater](https://www.electron.build/auto-update): publishing and signing desktop updates.
-- [Desktop](/packages/desktop): the Electron shell an installed-app driver plugs into. [Tauri](/packages/tauri) is the alternative shell.
-- [Offline](/packages/offline): keep data across versions, dropped when `VITE_APP_VERSION` changes.
+- [Desktop](/packages/desktop): the Electron shell an installed-app driver plugs into.

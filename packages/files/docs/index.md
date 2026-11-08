@@ -6,25 +6,29 @@ order: 1
 
 # Files
 
-Sooner or later someone wants to get a file in or out of your app: import last month's orders from a spreadsheet, export invoices as CSV, attach a receipt. `@kitr/files` gives you one service with three calls, `open()`, `pick()` and `save()`, that shows the best dialog the current platform has. Components call the same API everywhere and never check which browser or shell they run in.
+Sooner or later someone wants to get a file in or out of your app: import orders from a spreadsheet, export invoices as CSV, attach a receipt. `@kitr/files` gives you one service with three calls, `open()`, `pick()` and `save()`, that shows the best dialog the current platform has.
 
-In Chrome and Edge it uses the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), so saving writes to the exact file the person chose. Everywhere else it falls back to a hidden `<input type="file">` to open and a download link to save. A platform or your own code can register a native driver that adds real file paths. Every picked file has the same shape, a `PickedFile`, with `text()`, `bytes()` and `blob()`.
+> [!SUMMARY]
+> Open, pick and save files on the person's own device with one API on every platform. Add it with `kitr add files`; the overview is at [/packages/files](/packages/files).
 
-It runs in the browser and in desktop and mobile shells. On the server the service exists but has no dialogs. To receive files on your server and store them, use [Uploads](/packages/uploads); `@kitr/files` only gets them into and out of the browser.
+Chrome and Edge use the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API); other browsers fall back to a hidden file input and a download link. Every picked file is a `PickedFile` with `text()`, `bytes()` and `blob()`.
 
-This guide follows Acme's billing screen at `app.acme.com`: Ada imports orders from a CSV, attaches receipts to an invoice, and exports invoices for Grace in accounting.
+The guide follows Acme's billing screen at `app.acme.com`: Ada imports orders from a CSV, attaches receipts to an invoice, and exports invoices for Grace in accounting.
 
 ## When to use it
 
-Use `@kitr/files` when **the person's own device** is the source or destination: they choose a file to open, or choose where a file you generated is saved. The content stays in the browser until your code sends it somewhere.
+Use `@kitr/files` when **the person's own device** is the source or destination. The content stays in the browser until your code sends it somewhere.
 
-Use [Uploads](/packages/uploads) when the file must **reach your server or object storage**: progress bars, size limits, presigned URLs and virus scanning are its job. The two work together: pick with `@kitr/files`, then hand the `Blob` to an upload.
+Use [Uploads](/packages/uploads) when the file must **reach your server or object storage**: progress, size limits, presigned URLs and scanning are its job. Pick with `@kitr/files`, then hand the `Blob` to an upload.
 
 ## Install
 
 ```sh
 kitr add files
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -36,6 +40,8 @@ What `kitr add` does:
 `kitr add files` asks no questions and adds no environment variables or scripts. No kit includes it.
 
 `kitr remove files` reverses every step above and deletes `config/files.ts`, then lists the files that still import `@kitr/files`.
+
+</details>
 
 ## Configure
 
@@ -59,9 +65,9 @@ export default defineConfig({
 | `driver` | the platform's driver, else the driver for the runtime | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
 | `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no files driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then `selectDriver(runtime)`: the web driver in a browser, an in-memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
+The service picks its driver on first use: `driver` from config, then one a platform registered, then the web driver in a browser or an in-memory driver on the server. See [Where it runs](#where-it-runs).
 
-Acme's app has its own project export format, so every dialog offers it:
+Acme has its own project format, so every dialog offers it:
 
 ```ts
 // config/files.ts
@@ -102,7 +108,7 @@ export function ExportOrdersButton() {
 }
 ```
 
-Click **Export orders**. In Chrome or Edge a save dialog opens with `acme-orders.csv` filled in; choose a folder and the console prints `Saved to acme-orders.csv`, the name the person kept. In Firefox and Safari the browser downloads `acme-orders.csv` right away. The file holds:
+In Chrome or Edge, **Export orders** opens a save dialog with `acme-orders.csv` filled in. In Firefox and Safari the browser downloads it right away. The file holds:
 
 ```text
 id,customer,total
@@ -110,7 +116,10 @@ ord_1042,Ada,129
 ord_1043,Grace,80
 ```
 
-`save()` resolves to the saved name, a path on platforms that have one, or `null` when the person cancels. Call it from a click handler: browsers only show file dialogs in response to a user gesture.
+`save()` resolves to the saved name, a path on platforms that have one, or `null` on cancel.
+
+> [!WARNING] Needs a user gesture
+> Call `open`, `pick` and `save` from a click or key handler. Browsers show file dialogs only in response to one.
 
 ## Open a file and read it
 
@@ -156,11 +165,11 @@ export function ImportOrdersButton() {
 }
 ```
 
-Choose the `acme-orders.csv` you exported and the paragraph reads `2 orders imported`. Nothing has left the browser; send the rows to your API with a [mutation](/packages/query) when the person confirms.
+Choose the exported file and the paragraph reads `2 orders imported`. Nothing has left the browser; send the rows to your API with a [mutation](/packages/query) when the person confirms.
 
 ## Open several files
 
-`open()` resolves to an array. Pass `multiple: true` to let the person select more than one file. Without it, `open()` still returns an array, with at most one entry:
+`open()` resolves to an array. Pass `multiple: true` to allow more than one file:
 
 ```tsx
 // app/components/invoices/attach-receipts.tsx
@@ -201,11 +210,11 @@ export function AttachReceipts({ invoiceId }: { invoiceId: string }) {
 }
 ```
 
-Ada selects `taxi.jpg` and `hotel.pdf`; the list shows both with their sizes. A cancelled dialog resolves to `[]`, so the list stays as it was. `title` is shown by platform drivers that have a titled dialog; browsers ignore it.
+A cancelled dialog resolves to `[]`, so the list stays as it was. Browsers ignore `title`; platform dialogs show it.
 
 ## Filter by file type
 
-`filters` decides which files the dialog offers. Each filter is a label and a list of extensions. The filters you pass come first, then the ones in `config/files.ts`:
+Each filter is a label and a list of extensions. Yours come first, then those in `config/files.ts`:
 
 ```ts
 // app/lib/projects/open-project.ts
@@ -219,7 +228,7 @@ export function openProject() {
 }
 ```
 
-Extensions are cleaned before they reach the dialog: `'.PNG'`, `'png'` and `' png '` are the same, duplicates are merged, and `'*'` or `''` is dropped. A filter left with no extensions is not shown in the File System Access picker. `acceptFor()` turns filters into the `accept` string a file input needs, which is what the fallback uses:
+Extensions are cleaned first: `'.PNG'`, `'png'` and `' png '` are the same, and `'*'` or `''` is dropped. `acceptFor()` turns filters into the `accept` string the fallback uses:
 
 ```ts
 import { acceptFor } from '@kitr/files'
@@ -231,7 +240,9 @@ acceptFor([
 // => '.png,.jpg,.pdf'
 ```
 
-Filters are a convenience, not a check. Most dialogs let the person switch to "All files", and the file input fallback lists every filter as one combined list. Check `file.name` or `file.type` before you trust the content:
+> [!WARNING] Filters are not a check
+> Most dialogs let the person switch to "All files". Check `file.name` or `file.type` before you trust the content.
+
 
 ```ts
 // app/lib/orders/check-file.ts
@@ -244,7 +255,7 @@ export function assertCsv(file: PickedFile) {
 
 ## Read a file's content
 
-A `PickedFile` holds the file's details and reads its content only when you ask:
+A `PickedFile` reads its content only when you ask:
 
 | Member | Type | Description |
 | --- | --- | --- |
@@ -286,13 +297,14 @@ export function ReceiptPreview({ file }: { file: PickedFile }) {
 }
 ```
 
-Reading a large file into memory is slow. Check `file.size` first and refuse anything your feature can't handle, before calling `text()` or `bytes()`.
+> [!WARNING] Large files
+> Reading a large file into memory is slow. Check `file.size` before calling `text()` or `bytes()`.
 
-To turn a browser `File` from somewhere else, such as a paste event, into the same shape, call `fromFile(file)`. The optional second argument sets `path`.
+To turn a browser `File` from elsewhere, such as a paste event, into a `PickedFile`, call `fromFile(file)`.
 
 ## Save text, bytes and blobs
 
-`save(data, options)` accepts a string, a `Blob` or `File`, a `Uint8Array` or an `ArrayBuffer`. `name` is required and suggests the file name. In the download fallback, `type` sets the MIME type; without it the type comes from the extension:
+`save(data, options)` accepts a string, `Blob`, `File`, `Uint8Array` or `ArrayBuffer`. `name` is required. In the download fallback, `type` sets the MIME type; otherwise it comes from the extension:
 
 ```ts
 // app/lib/invoices/export.ts
@@ -321,7 +333,7 @@ export async function downloadInvoicePdf() {
 }
 ```
 
-`mimeFor(name)` is the lookup `save()` uses. It knows `txt`, `md`, `csv`, `json`, `html`, `png`, `jpg`, `jpeg`, `gif`, `svg`, `pdf` and `zip`, and returns `application/octet-stream` (or the fallback you pass) for anything else:
+`mimeFor(name)` is the lookup `save()` uses. It knows common extensions (`txt`, `csv`, `json`, `png`, `pdf`, `zip` and a few more) and returns `application/octet-stream`, or the fallback you pass, for the rest:
 
 ```ts
 import { mimeFor, toBlob } from '@kitr/files'
@@ -333,11 +345,11 @@ mimeFor('website-relaunch.acme', 'application/json') // => 'application/json'
 toBlob('id,total', 'text/csv').type // => 'text/csv'
 ```
 
-`toBlob(data, type)` is the other helper: it turns any `FileData` into a `Blob`, and returns a `Blob` you pass unchanged.
+`toBlob(data, type)` turns any `FileData` into a `Blob`.
 
 ## Know when the person cancelled
 
-Cancelling a dialog is not an error. `open()` resolves to `[]`, `pick()` to `null` and `save()` to `null`, so a cancel needs no `try`/`catch`:
+Cancelling is not an error. `open()` resolves to `[]`, and `pick()` and `save()` to `null`, so a cancel needs no `try`/`catch`:
 
 ```ts
 // app/lib/orders/import.ts
@@ -351,13 +363,18 @@ export async function importOrdersFile() {
 }
 ```
 
-With the download fallback, `save()` resolves to `name` as soon as the download starts, because the browser doesn't tell the page whether the person kept the file. Don't show "Saved" as a fact in that case; "Download started" is honest.
+<details>
+<summary>Cancel behaviour in the browser fallbacks</summary>
 
-With the file input fallback, the dialog resolves `[]` on cancel only in browsers that fire the input's `cancel` event. In older browsers a cancelled dialog never resolves, and `busy` from `useFileDialogs()` stays `true` until the next dialog completes.
+With the download fallback, `save()` resolves to `name` as soon as the download starts, because the browser doesn't say whether the person kept the file. Show "Download started", not "Saved".
+
+With the file input fallback, a cancel resolves `[]` only in browsers that fire the input's `cancel` event. In older browsers the dialog never resolves, and `busy` stays `true` until the next dialog completes.
+
+</details>
 
 ## Show a busy state while a dialog is open
 
-`useFileDialogs()` wraps `open`, `pick` and `save` so `busy` is `true` from the moment a call starts until it settles, including the time the dialog is on screen and the time it takes to write the file:
+`useFileDialogs()` sets `busy` from the moment a call starts until it settles, including the time the dialog is on screen:
 
 ```tsx
 // app/components/invoices/export-invoices.tsx
@@ -373,11 +390,11 @@ export function ExportInvoices({ csv }: { csv: string }) {
 }
 ```
 
-Disabling the button while `busy` stops a double click from opening two dialogs. If you don't need the flag, `useFiles()` from `@kitr/files/react` returns the service itself, including `reveal()` and `driver`.
+Disabling the button stops a double click from opening two dialogs. `useFiles()` from `@kitr/files/react` returns the service itself, including `reveal()` and `driver`.
 
 ## Accept dropped files
 
-`useDropFiles(onFiles)` returns drag-and-drop handlers that hand dropped files to your callback as `PickedFile`s, plus an `over` flag for styling the drop zone:
+`useDropFiles(onFiles)` returns drag-and-drop handlers plus an `over` flag for styling the drop zone:
 
 ```tsx
 // app/components/invoices/receipt-drop-zone.tsx
@@ -394,11 +411,12 @@ export function ReceiptDropZone({ onReceipts }: { onReceipts: (files: PickedFile
 }
 ```
 
-Spread only the handlers (`onDragOver`, `onDragLeave` and `onDrop`) onto the element. Don't spread the whole return value: React would put `over` on the `<div>` as an unknown attribute and warn. `onDrop` prevents the browser from opening the file in the tab. Dropped files go through no filters, so check them the same way as picked ones.
+> [!WARNING] Spread only the handlers
+> Spread `onDragOver`, `onDragLeave` and `onDrop`, not `over`, which React would warn about as an unknown attribute. Dropped files go through no filters, so check them like picked ones.
 
 ## Use files outside React
 
-Outside components, get the service from the app's container. `useFiles(app)` from `@kitr/files` is a shortcut for `app.container.use('files')`:
+Outside components, `useFiles(app)` from `@kitr/files` is a shortcut for `app.container.use('files')`:
 
 ```ts
 // app/lib/projects/project-files.ts
@@ -422,11 +440,11 @@ export async function importProject(): Promise<Project | null> {
 }
 ```
 
-`importProject()` offers the `Acme projects` filter from config, because config filters apply to every call. `files.driver.name` tells you which driver is active: `web`, `memory`, or the name a platform driver gives itself.
+`files.driver.name` tells you which driver is active: `web`, `memory`, or a platform driver's name.
 
 ## Open a saved file in its app
 
-`reveal(path)` asks the driver to open a file with the system's default app, such as opening the exported PDF in a viewer. Only drivers that know real paths can do it, so check that the driver has `reveal` first:
+`reveal(path)` opens a file with the system's default app. Only drivers that know real paths have it, so check first:
 
 ```ts
 // app/lib/invoices/open-invoice.ts
@@ -441,11 +459,11 @@ export async function saveAndOpenInvoice() {
 }
 ```
 
-The web and memory drivers have no `reveal`; the call resolves and does nothing. `useFileDialogs()` doesn't return `reveal`; use `useFiles()` in components.
+Without `reveal` the call does nothing. In components, use `useFiles()`; `useFileDialogs()` doesn't return `reveal`.
 
 ## Send a picked file to your server
 
-A `PickedFile` gives you a `Blob`, which `fetch` and `FormData` accept directly. For a small file and your own endpoint, that's enough:
+For a small file and your own endpoint, a `PickedFile`'s `Blob` goes straight into `FormData`:
 
 ```ts
 // app/lib/invoices/upload-receipt.ts
@@ -464,7 +482,7 @@ For progress, size limits, retries or direct uploads to object storage, pass the
 
 ## Where it runs
 
-The service picks a driver once, the first time it is used. The table shows what each environment gets:
+The service picks a driver once, on first use:
 
 | Where the app runs | Driver | Open | Save | `path` |
 | --- | --- | --- | --- | --- |
@@ -475,24 +493,23 @@ The service picks a driver once, the first time it is used. The table shows what
 | Electron | `electron`: `dialog` in the main process, `fs/promises` | Native open dialog | Native save dialog | yes |
 | Tauri | `tauri`: `plugin-dialog` and `plugin-fs` | Native open dialog | Native save dialog | yes |
 | Mobile shell (Capacitor) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The system picker behind `<input type="file">` | Download link | no |
-
 | Server | `memory` | Resolves `[]` | Records the call, resolves `name` | no |
 
 ### Chrome and Edge
 
-The web driver calls `showOpenFilePicker` and `showSaveFilePicker`. The save picker writes the bytes into the file the person chose and resolves to its name. See [MDN on `showSaveFilePicker`](https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker) for support and limits. The API needs a secure context: `https://` or `http://localhost`.
+The web driver calls `showOpenFilePicker` and `showSaveFilePicker`, which write into the file the person chose. The API needs a secure context: `https://` or `http://localhost`. See [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker) for support.
 
 ### Firefox and Safari
 
-The web driver adds a hidden `<input type="file">` to the page, sets its `accept` from your filters, clicks it and removes it once the person chooses or cancels. To save, it creates an object URL, clicks a hidden `<a download>` and revokes the URL a second later. The browser decides where the download goes.
+The web driver clicks a hidden `<input type="file">` with `accept` set from your filters. To save, it clicks a hidden `<a download>`; the browser decides where the file goes.
 
 ### Desktop
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have `files` drivers that show the operating system's dialogs and give every picked file its `path`; see [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). Set `fallbackToWeb: true` only if you want the webview's own pickers instead.
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) show the operating system's dialogs and give every picked file its `path`; see [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). Set `fallbackToWeb: true` only to use the webview's pickers instead.
 
 ### Mobile
 
-In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the service uses three optional peer dependencies, each imported the first time a method runs. `kitr add files` installs them when the project has the mobile platform.
+In the [Mobile](/packages/mobile) shell the service uses three optional peer dependencies, which `kitr add files` installs when the project has the mobile platform.
 
 | Plugin | Used for |
 | --- | --- |
@@ -500,7 +517,10 @@ In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the
 | `@capacitor/filesystem` | `save()` writes the file; picked files read their content from their `path`. |
 | `@capacitor/share` | `save()` opens the share sheet; `reveal(path)` hands a path to it. |
 
-Mobile has no "save as" dialog. `save()` writes the file into the app's cache directory and opens the share sheet, where Ada chooses Save to Files, Drive or Mail. It resolves to the cached file's `file://` URI, or `null` when she dismisses the sheet. The cache can be cleared by the OS, so the URI is for sharing now, not for keeping. To keep a file inside the app, use the file store below.
+Mobile has no "save as" dialog. `save()` writes to the app's cache and opens the share sheet, where Ada chooses Save to Files, Drive or Mail. It resolves to the cached `file://` URI, or `null` if she dismisses the sheet.
+
+> [!WARNING] The cache is temporary
+> The OS can clear it, so use the URI for sharing now. To keep a file, use the file store below.
 
 ```tsx
 // app/components/export-invoices.tsx
@@ -517,7 +537,7 @@ export function ExportInvoices({ csv }: { csv: string }) {
 // => file:///data/user/0/com.acme.app/cache/invoices.csv   (null if dismissed)
 ```
 
-`capacitorFileStore()` reads, writes, deletes and lists files under the app's own directories, with no dialog. Paths are relative to the directory: `data` (the default, private to the app and backed up), `documents`, `cache`, `library` or `external`.
+`capacitorFileStore()` reads, writes, deletes and lists files in the app's own directories with no dialog: `data` (default, private and backed up), `documents`, `cache`, `library` or `external`.
 
 ```ts
 // app/drafts.ts
@@ -537,11 +557,11 @@ A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and the packa
 
 ## Use it in Electron and Tauri
 
-In a desktop shell the service shows the operating system's dialogs, reads and writes real files, and every `PickedFile` has its `path`. `config/files.ts` does not change. In both shells the window reaches only paths the person chose: it cannot read `~/.ssh/id_ed25519` because a script asked.
+In a desktop shell the service shows the operating system's dialogs and every `PickedFile` has its `path`. `config/files.ts` does not change. The window reaches only paths the person chose.
 
 ### Electron
 
-`open()` and `save()` use Electron's [file dialogs](https://www.electronjs.org/docs/latest/api/dialog). For safety, the window can only read and write paths a dialog returned in this session. File content is read when you call `text()`, `bytes()` or `blob()`. To pick a folder, import the driver:
+`open()` and `save()` use Electron's [file dialogs](https://www.electronjs.org/docs/latest/api/dialog), and the window can only read and write paths a dialog returned in this session. To pick a folder, import the driver:
 
 ```ts
 // app/invoices/folder.ts
@@ -558,20 +578,20 @@ export async function readInvoiceFolder() {
 Requirements:
 
 - `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
-- Large files cross the process boundary as one `Uint8Array`, so reading a multi-gigabyte file into memory is the app's choice, not a stream.
+- Files cross the process boundary as one `Uint8Array`, not a stream.
 
 ### Tauri
 
-`open()` and `save()` use [`@tauri-apps/plugin-dialog`](https://v2.tauri.app/plugin/dialog/); content is read and written with [`@tauri-apps/plugin-fs`](https://v2.tauri.app/plugin/file-system/); `reveal(path)` uses [`@tauri-apps/plugin-opener`](https://v2.tauri.app/plugin/opener/). The dialog plugin adds each chosen path to the fs scope for the session, so the window reaches only what the person picked unless your capability file grants more.
+Dialogs use [`@tauri-apps/plugin-dialog`](https://v2.tauri.app/plugin/dialog/), content uses [`@tauri-apps/plugin-fs`](https://v2.tauri.app/plugin/file-system/), and `reveal(path)` uses [`@tauri-apps/plugin-opener`](https://v2.tauri.app/plugin/opener/).
 
 Requirements:
 
-- `@tauri-apps/plugin-dialog`, `@tauri-apps/plugin-fs` and `@tauri-apps/plugin-opener` in `package.json`; `kitr add tauri` and `kitr add files` in a Tauri project install them. Each is imported on first use; when one is missing, the method that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package.
-- The matching crates in `src-tauri/Cargo.toml`, their `.plugin(...)` calls in `lib.rs`, and in `capabilities/default.json` the permissions `dialog:default`, `fs:allow-read-file`, `fs:allow-write-file`, `fs:allow-stat`, `fs:allow-read-dir` and `opener:allow-open-path` (scoped to `$HOME/**`). The Tauri scaffold writes all of them. Narrow the opener scope if the app only opens files from one folder.
+- The three plugins in `package.json`; `kitr add tauri` and `kitr add files` install them. A missing one rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- The matching crates in `src-tauri/Cargo.toml`, their `.plugin(...)` calls in `lib.rs`, and the permissions `dialog:default`, `fs:allow-read-file`, `fs:allow-write-file`, `fs:allow-stat`, `fs:allow-read-dir` and `opener:allow-open-path` in `capabilities/default.json`. The Tauri scaffold writes all of them.
 
 ## Errors
 
-Cancelling is never an error. Anything else the dialog throws reaches your code as it was thrown:
+Anything other than a cancel reaches your code as thrown:
 
 | Error | When | What to do |
 | --- | --- | --- |
@@ -600,7 +620,7 @@ export async function exportInvoices(csv: string) {
 
 ## Testing
 
-Pass `createMemoryFilesDriver(queue)` as the `driver` in config. `open()` and `pick()` take files from the front of `queue` instead of showing a dialog, and `save()` records each call in `driver.saved` and resolves to `name`. An empty queue behaves like a cancelled dialog.
+Pass `createMemoryFilesDriver(queue)` as the `driver` in config. `open()` and `pick()` take files from `queue`, and `save()` records each call in `driver.saved`. An empty queue behaves like a cancel.
 
 ```ts
 // app/lib/orders/files.test.ts
@@ -635,9 +655,9 @@ describe('order files', () => {
 })
 ```
 
-`open({ multiple: true })` takes every queued file at once; without `multiple`, each call takes one. Push more files with `driver.queue.push(...)` between calls.
+`open({ multiple: true })` takes every queued file; otherwise each call takes one. Push more with `driver.queue.push(...)`.
 
-To test a component, render it inside the same app with `renderWithKitr` from `@kitr/testing/react` in a DOM environment, click the button, and read `driver.saved`:
+To test a component, render it with `renderWithKitr` from `@kitr/testing/react` in a DOM environment and read `driver.saved`:
 
 ```tsx
 // app/components/orders/export-orders-button.test.tsx
@@ -665,7 +685,7 @@ it('exports the orders as CSV', async () => {
 
 ## Extend
 
-A driver supplies the dialogs. Write one when a platform has better ones than the browser, for example to get real paths on desktop. The interface is `FilesDriver` in the [API reference](/packages/files/api):
+Write a driver when a platform has better dialogs than the browser. The interface is `FilesDriver` in the [API reference](/packages/files/api):
 
 | Member | Description |
 | --- | --- |
@@ -678,7 +698,7 @@ A driver supplies the dialogs. Write one when a platform has better ones than th
 
 ### An Electron driver
 
-The built-in Electron driver covers the common case; the version below shows how to write one over your own IPC contract. It uses Electron's [`dialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process through [Desktop](/packages/desktop)'s typed IPC. First add three commands to the IPC contract:
+The built-in Electron driver covers the common case; this one is written over your own IPC contract through [Desktop](/packages/desktop)'s typed IPC. First add three commands to the contract:
 
 ```ts
 // platforms/app/ipc.ts
@@ -787,18 +807,14 @@ export default defineProvider({
 })
 ```
 
-Add `() => import('#app/providers/electron-files')` to `providers` in `kitrrc.ts`. The files service resolves its driver on first use, after every provider has registered, so the order in the list doesn't matter. In a plain browser `ipc.available` is `false`, nothing is registered, and the web driver runs. Picked files now have a `path`, and `reveal(path)` opens them in the default app.
-
-The same shape works for any shell: [Tauri's dialog plugin](https://v2.tauri.app/plugin/dialog/) with its fs plugin, or a Capacitor file picker plugin on mobile.
+Add `() => import('#app/providers/electron-files')` to `providers` in `kitrrc.ts`; order doesn't matter. In a plain browser `ipc.available` is `false`, nothing is registered, and the web driver runs. The same shape works for any shell.
 
 ## Devtools
 
-`@kitr/files` has no panel. With [Devtools](/packages/devtools) installed, the service writes to the Log panel under `files`: `open` with the names of the chosen files, and `save` with the name or path it saved to (`null` on cancel). `pick()` doesn't log.
+With [Devtools](/packages/devtools) installed, `open` and `save` write to the Log panel under `files`. `pick()` doesn't log.
 
 ## Next steps
 
-- [API reference](/packages/files/api)
+- [API reference](/packages/files/api): every export and type.
 - [Uploads](/packages/uploads): send picked files to your server or object storage.
-- [Platform](/packages/platform): where the app runs, and the drivers platforms register.
-- [Desktop](/packages/desktop): the Electron shell and its typed IPC. [Tauri](/packages/tauri) is the alternative shell.
-- [MDN: File System API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
+- [Desktop](/packages/desktop): the Electron shell and its typed IPC.

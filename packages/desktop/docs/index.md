@@ -6,19 +6,26 @@ order: 1
 
 # Desktop
 
-Some teams want the app in the dock or the Start menu: a window that opens offline, saves files where they choose and keeps running when the browser is closed. `@kitr/desktop` is the desktop platform for Windows, macOS and Linux. It wraps the same `app/` you ship to the browser in an [Electron](https://www.electronjs.org/docs/latest) window and gives you a typed channel between the window and the Node.js process behind it.
+Some teams want the app in the dock or the Start menu: a window that opens offline and saves files where users choose. `@kitr/desktop` wraps the same `app/` you ship to the browser in an [Electron](https://www.electronjs.org/docs/latest) window and gives you a typed channel between the window and the Node.js process behind it.
 
-Electron bundles its own Chromium and Node.js, so the app renders and behaves the same on every machine. kitr adds the platform on top: `kitr dev` runs the window with hot reload through [electron-vite](https://electron-vite.org/), `kitr build` builds installers with [electron-builder](https://www.electron.build/), one TypeScript type describes every call between the window and the main process, and `@kitr/desktop/provider` moves the [platform](/packages/platform) and [storage](/packages/storage) packages to their Electron drivers.
+> [!SUMMARY]
+> Ship the same app to Windows, macOS and Linux in an Electron shell. Add it with `kitr add desktop app`; the overview is at [/packages/desktop](/packages/desktop).
 
-The code runs in three places. `@kitr/desktop/client` and the provider run in the window (and in a plain browser, where they stand aside). `@kitr/desktop/main` runs in Electron's main process. `@kitr/desktop/preload` runs in the preload script between the two. For a smaller download on the operating system's own webview, use [Tauri](/packages/tauri) instead.
+Electron bundles its own Chromium and Node.js, so the app behaves the same on every machine. kitr adds:
 
-The examples on this page ship the Acme orders app to the desktop: Ada's warehouse team at Acme checks orders, saves invoices as PDF files and watches order sync progress, with the same code the browser runs at `app.acme.com`.
+- `kitr dev` with hot reload through [electron-vite](https://electron-vite.org/), and `kitr build` for installers through [electron-builder](https://www.electron.build/).
+- One TypeScript type describing every call between the window and the main process.
+- `@kitr/desktop/provider`, which moves [platform](/packages/platform) and [storage](/packages/storage) to their Electron drivers.
+
+The code runs in three places: `@kitr/desktop/client` in the window (standing aside in a plain browser), `@kitr/desktop/main` in Electron's main process, and `@kitr/desktop/preload` between the two.
+
+The examples ship the Acme orders app to the desktop: a warehouse team checks orders, saves invoices as PDF files and watches sync progress, with the code the browser runs at `app.acme.com`.
 
 ## When to use it
 
-Use `@kitr/desktop` for most desktop apps. Electron ships Chromium inside the app, so the page your team tests is the page every user runs, on Windows 10, an old MacBook and a Linux kiosk alike. The main process is plain Node.js, so any npm package works there. Electron has the larger community, the most third-party guides and a mature toolchain for installers, auto-update and code signing.
+Use `@kitr/desktop` for most desktop apps. Chromium ships inside the app, so every user runs the page your team tested, and the main process is plain Node.js, so any npm package works.
 
-Use [Tauri](/packages/tauri) when download size matters more than identical rendering. A Tauri app is a few megabytes because it uses the system's webview, but those webviews differ between platforms and you need Rust to build. Your app code stays the same either way.
+Use [Tauri](/packages/tauri) when download size matters more than identical rendering: it uses the system webview, which differs between platforms, and needs Rust to build. Your app code stays the same either way.
 
 ## Install
 
@@ -28,7 +35,10 @@ Add a desktop platform named `app`:
 kitr add desktop app
 ```
 
-`desktop` is the platform type and `app` is the name you address it by (`kitr dev app`). Without a name, `kitr add desktop` logs `No name given: calling the desktop platform "app".` and uses `app`. A name must be a short identifier: letters, digits, `-` and `_`, starting with a letter.
+`desktop` is the platform type and `app` is the name you address it by (`kitr dev app`); without a name it uses `app`. A name starts with a letter and holds letters, digits, `-` and `_`.
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add desktop app` does:
 
@@ -41,6 +51,8 @@ What `kitr add desktop app` does:
 - Writes `platforms/app/ipc.ts`, `main.ts`, `preload.ts`, `electron.vite.config.ts` and `electron-builder.yml`, and `app/ipc.ts` for the window. Files that already exist are kept.
 - Sets `"main"` in `package.json` to `dist/app/electron/main/index.js`, so Electron and electron-builder find the built main process.
 - Adds a `kitr: platform app` section to `AGENTS.md`: how to run and build, where IPC is declared and implemented, and to keep context isolation and the sandbox on.
+
+</details>
 
 `@kitr/desktop` asks no questions. Platform options are flags on the same command, named as in the options table under Configure:
 
@@ -60,13 +72,18 @@ kitr add desktop app --title "Acme Orders" --width 1280 --height 860 --appId com
 | `--no-install` | | Edit `package.json` without running the package manager. |
 | `--dry-run` | | Print what would change. |
 
-The `desktop` kit already has an `app` desktop platform next to a `site` web platform, with a home page that calls the typed IPC. Start a new project from it:
+The `desktop` kit has an `app` desktop platform next to a `site` web platform and a home page that calls the typed IPC:
 
 ```sh
 kitr new acme-orders --kit desktop
 ```
 
-`kitr platforms remove app` takes the platform out of `kitrrc.ts`, and with the last desktop platform also the `desktop` import and the provider line. It leaves `platforms/app/` for you to delete. `kitr remove desktop` does all of that for every desktop platform, and takes `@kitr/desktop` out of `packages` and the dependencies; the Electron dev dependencies and the `"main"` field stay, so remove those yourself.
+<details>
+<summary>Removing the platform</summary>
+
+`kitr platforms remove app` takes the platform out of `kitrrc.ts` (with the last one, also the `desktop` import and provider line). It leaves `platforms/app/` for you to delete. `kitr remove desktop` does this for every desktop platform and removes `@kitr/desktop`; the Electron dev dependencies and the `"main"` field stay.
+
+</details>
 
 ## Configure
 
@@ -104,9 +121,10 @@ export default defineKitrConfig({
 | `appId` | `com.example.<app>` | Reverse-DNS bundle identifier in `electron-builder.yml`. The default lower-cases the title and keeps letters and digits: `Acme Orders` gives `com.example.acmeorders`. |
 | `devtools` | `true` | Open Chromium devtools, detached, when the window loads the dev server. |
 
-Every option except `port` is written into the scaffolded files when you run `kitr add`. The window size goes into `platforms/app/main.ts`, the title and `appId` into `electron-builder.yml`. Changing them in `kitrrc.ts` later does not rewrite those files: edit the files, which are yours, or delete one and run `kitr platforms scaffold app` to write it again.
+> [!WARNING] Edit the scaffolded files
+> Every option except `port` is written into `platforms/app/main.ts` and `electron-builder.yml` by `kitr add`. Changing it in `kitrrc.ts` later does not rewrite them: edit the files, or delete one and run `kitr platforms scaffold app`.
 
-The platform writes the packaging config from the options above. With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` it is:
+With `title: 'Acme Orders'` and `appId: 'com.acme.orders'`, the packaging config is:
 
 ```yaml
 # platforms/app/electron-builder.yml
@@ -156,7 +174,7 @@ The window itself is the kitr client build in `dist/app/client`, built by Vite w
 | `KITR_PLATFORM` | Set to `app` by `kitr dev` and `kitr build`, so the Vite plugin builds this platform into `dist/app`. |
 | `CSC_LINK`, `CSC_KEY_PASSWORD` | Read by electron-builder to sign installers. See "Sign the installers". |
 
-Read or change one option from the command line with `kitr config app` (lists every option), `kitr config app port 3300` or `kitr config app minWidth --unset`. The other platform types each have their own guide: [Web](/packages/web), [Server](/packages/server), [Mobile](/packages/mobile) and [Tauri](/packages/tauri). [Platforms](/docs/platforms) lists them side by side.
+Read or change one option with `kitr config app`, `kitr config app port 3300` or `kitr config app minWidth --unset`.
 
 ## Open your first window
 
@@ -166,7 +184,7 @@ Run the desktop platform:
 kitr dev app
 ```
 
-kitr starts Vite on port 3200, waits until it answers, then starts Electron through electron-vite with `ELECTRON_RENDERER_URL=http://localhost:3200`. The window opens on your app, with devtools detached next to it. Edit a component and the window updates in place, like the browser does.
+kitr starts Vite, waits until it answers, then starts Electron. The window opens on your app with devtools beside it, and edits update in place.
 
 The scaffold already declared two commands in `platforms/app/ipc.ts` and wrote a typed client for the window:
 
@@ -195,11 +213,11 @@ export function AppVersion() {
 }
 ```
 
-In the Electron window the footer reads `Acme Orders 0.1.0`, the `version` from `package.json`. In the browser (`kitr dev site`) it reads `Acme Orders on the web`, because there is no main process to ask.
+In Electron the footer reads `Acme Orders 0.1.0`, the `version` from `package.json`; in the browser (`kitr dev site`) it reads `Acme Orders on the web`.
 
 ## Declare an IPC command
 
-Every call from the window to the main process is declared once, as a TypeScript type, in `platforms/app/ipc.ts`. The key is the channel name and the value is the function signature the window sees. Main, preload and the window all import this one file, so a typo or a wrong argument is a type error, not a silent `undefined`.
+Every call from the window to the main process is declared once in `platforms/app/ipc.ts`: the key is the channel name and the value is the function signature. Main, preload and the window import this one file, so a typo or wrong argument is a type error.
 
 ```ts
 // platforms/app/ipc.ts
@@ -229,13 +247,13 @@ export const channels = {
 } satisfies Record<keyof Ipc | keyof IpcPush, true>
 ```
 
-`channels` is the same list at run time, for the preload script's [allow list](#limit-which-channels-reach-the-window). The `satisfies` makes a missing or left-over channel a type error. Name channels `<area>.<verb>`.
+`channels` is the same list at run time, for the preload's [allow list](#limit-which-channels-reach-the-window). Name channels `<area>.<verb>`; `kitr:` names are reserved.
 
-Arguments and results must be plain data: objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work; functions and class instances do not. Channels starting with `kitr:` are reserved.
+Arguments and results must be plain data: objects, arrays, strings, numbers, dates, `Uint8Array` and `Map` work; functions and class instances do not.
 
 ## Implement a command in the main process
 
-In the main process, `handleIpc<Ipc>(ipcMain, handlers)` registers one handler per channel. Each handler gets Electron's `IpcMainInvokeEvent` first, then the arguments the window passed. TypeScript requires a handler for every channel in `Ipc`, with the right argument and return types.
+`handleIpc<Ipc>(ipcMain, handlers)` registers one handler per channel; each gets Electron's `IpcMainInvokeEvent`, then the window's arguments. TypeScript requires a handler for every channel in `Ipc`.
 
 ```ts
 // platforms/app/main.ts
@@ -283,13 +301,14 @@ app.on('window-all-closed', () => {
 })
 ```
 
-This is the scaffolded `main.ts` with an `invoices.save` handler added. When a handler throws, the promise in the window rejects with Electron's message: `Error invoking remote method 'invoices.save': Error: EACCES: permission denied, open '/Volumes/Archive/inv_2041.pdf'`. When no handler is registered for a channel, it rejects with `Error invoking remote method 'invoices.save': Error: No handler registered for 'invoices.save'`.
+This is the scaffolded `main.ts` with an `invoices.save` handler added. When a handler throws, the promise in the window rejects with Electron's message.
 
-Don't trust the arguments because they are typed. The types hold for your own code, but the main process can read and write any file, so check paths and sizes in the handler as you would on a server.
+> [!WARNING]
+> Typed arguments are not trusted arguments. The main process can read and write any file, so check paths and sizes in the handler as you would on a server.
 
 ## Call the main process from a component
 
-In the window, `ipc.invoke(channel, ...args)` sends the call and resolves with the handler's return value. The channel name autocompletes and the arguments are checked against `Ipc`:
+`ipc.invoke(channel, ...args)` resolves with the handler's return value; the channel name autocompletes and arguments are checked against `Ipc`:
 
 ```tsx
 // app/components/invoices/save-invoice-button.tsx
@@ -321,11 +340,11 @@ export function SaveInvoiceButton({ id, customer }: { id: string; customer: stri
 }
 ```
 
-Clicking the button for `inv_2041` opens the native save dialog with `inv_2041.pdf` filled in. Pick a folder and the page shows `Saved to /Users/ada/Documents/inv_2041.pdf`. Cancel it and `savedTo` stays `null`. In the browser the same component renders a plain download link instead.
+The button opens the native save dialog with `inv_2041.pdf` filled in; cancelling leaves `savedTo` as `null`. In the browser the component renders a plain download link.
 
 ## Push events from the main process
 
-Some things start in the main process: a window gains focus, a background sync makes progress, a menu item is clicked. Declare them in `IpcPush`, send them with `createIpcEmitter<IpcPush>()` in main, and listen with `ipc.on()` in the window.
+Some things start in the main process, like sync progress. Declare them in `IpcPush`, send with `createIpcEmitter<IpcPush>()` in main, and listen with `ipc.on()` in the window.
 
 ```ts
 // platforms/app/sync.ts
@@ -343,7 +362,7 @@ export async function syncOrders(batches: string[][]) {
 }
 ```
 
-`createIpcEmitter(target)` takes a function, not a window, so it finds the current window at send time. When it returns `undefined` (no window open yet, or all closed), `emit()` does nothing. In the window, `ipc.on()` returns the unsubscribe function, which fits `useEffect`:
+`createIpcEmitter(target)` takes a function that finds the current window at send time; with no window, `emit()` does nothing. `ipc.on()` returns the unsubscribe function, which fits `useEffect`:
 
 ```tsx
 // app/components/orders/sync-progress.tsx
@@ -357,11 +376,11 @@ export function SyncProgress() {
 }
 ```
 
-After the first of four batches the bar shows 25%, after the last one 100%. Outside Electron, `ipc.on()` returns a no-op unsubscribe, so the effect is safe in the browser too.
+Outside Electron, `ipc.on()` returns a no-op unsubscribe, so the effect is safe in the browser.
 
 ## Send a message without waiting for an answer
 
-`ipc.send(channel, ...args)` fires a one-way message, for things the window reports but does not wait on, such as analytics or log lines. It is not typed against `Ipc`, and `handleIpc()` does not receive it: listen with Electron's `ipcMain.on()` in main.
+`ipc.send(channel, ...args)` fires a one-way message, such as a log line. It is not typed against `Ipc`; listen with Electron's `ipcMain.on()` in main.
 
 ```ts
 // app/lib/orders/log-view.ts
@@ -382,18 +401,17 @@ ipcMain.on('orders.viewed', (_event, orderId: string) => {
 // logOrderViewed('ord_1042') => prints "[acme] order ord_1042 viewed" in the terminal running kitr dev
 ```
 
-Prefer `invoke()` when the window needs a result or should know about a failure. `send()` gives neither.
 
 ## Keep the web build working
 
-The same `app/` ships to the browser through your web platform, where there is no Electron. kitr gives you two checks:
+The same `app/` ships to the browser, where there is no Electron. Two checks:
 
 | Check | True when |
 | --- | --- |
 | `ipc.available` | The preload bridge is present, so `invoke()` will reach main. |
 | `isElectron()` | The bridge is present, or the user agent contains `Electron`. |
 
-Use `ipc.available` before calling the main process. Without the bridge, `ipc.invoke()` rejects with `[@kitr/desktop] IPC bridge "kitrIpc" is not available (not running in Electron, or the preload script did not call exposeIpc)`, `ipc.on()` returns a no-op and `ipc.send()` does nothing. Use `isElectron()` for anything that only depends on running in the shell:
+Check `ipc.available` before calling the main process. Without the bridge, `ipc.invoke()` rejects, `ipc.on()` returns a no-op and `ipc.send()` does nothing. Use `isElectron()` for anything that only depends on running in the shell:
 
 ```tsx
 // app/components/title-bar.tsx
@@ -406,13 +424,14 @@ export function TitleBar() {
 }
 ```
 
-For behaviour that differs per platform but is not specific to Electron, such as opening links or reading the app version, use the [platform service](/packages/platform) instead of `isElectron()`. It answers the same way in Tauri and on phones.
+For behaviour that is not specific to Electron, such as opening links or reading the app version, use the [platform service](/packages/platform); it answers the same way in Tauri and on phones.
 
-Don't sniff the user agent for `Electron` yourself, and don't import `electron` in `app/`: the window runs sandboxed and the import fails at run time. Everything the window needs from Node goes through an IPC command.
+> [!WARNING]
+> Don't import `electron` in `app/`: the window runs sandboxed and the import fails at run time. Everything the window needs from Node goes through an IPC command.
 
 ## Limit which channels reach the window
 
-`exposeIpc(contextBridge, ipcRenderer)` in the preload script puts a small bridge at `window.kitrIpc` with `invoke`, `on` and `send`. Nothing else from Node or Electron crosses into the page. On its own the bridge forwards any channel name, so the scaffolded preload passes `allow` to forward only the channels `ipc.ts` declares:
+`exposeIpc(contextBridge, ipcRenderer)` in the preload puts a bridge at `window.kitrIpc` with `invoke`, `on` and `send`; nothing else from Node crosses into the page. The scaffolded preload passes `allow` to forward only the channels `ipc.ts` declares:
 
 ```ts
 // platforms/app/preload.ts
@@ -424,12 +443,12 @@ import { channels } from './ipc'
 exposeIpc(contextBridge, ipcRenderer, { allow: allowChannels(channels) })
 ```
 
-`allowChannels()` takes the `channels` record or a plain array, and always lets the channels in `KITR_CHANNELS` through: the exact `kitr:*` names `handleKitrIpc()` serves and pushes, not every name that starts with `kitr:`. `allow` also takes any `(channel) => boolean`. A call to any other channel rejects with `IPC channel "fs.readAnything" is not allowed`; `on()` and `send()` for it do nothing. A hand-written `allow` must keep the `KITR_CHANNELS`, because the provider's storage and platform drivers and the device packages use them.
+`allowChannels()` takes the `channels` record or an array and always lets the `KITR_CHANNELS` through, which the provider's storage, platform and device drivers use. `allow` also takes any `(channel) => boolean`; a hand-written one must keep `KITR_CHANNELS`. Any other channel rejects with `IPC channel "fs.readAnything" is not allowed`.
 
-> **Warning**
-> The allow list is your boundary if the window ever loads content you did not write, such as a remote page or user HTML. Keep it to the channels the app uses, and keep the scaffold's `contextIsolation: true`, `sandbox: true` and `nodeIntegration: false`. Turning any of them off gives page scripts direct access to Node.js and the file system.
+> [!WARNING] The allow list is your boundary
+> If the window ever loads content you did not write, only the allow list protects the main process. Keep it to the channels the app uses, and keep the scaffold's `contextIsolation: true`, `sandbox: true` and `nodeIntegration: false`.
 
-To expose the bridge under another name (two bridges in one window, say), pass the same key to both sides:
+To expose the bridge under another name, pass the same key to both sides:
 
 ```ts
 // app/admin-ipc.ts
@@ -440,11 +459,11 @@ import type { AdminIpc } from '../platforms/app/admin-ipc'
 export const adminIpc = createIpcClient<AdminIpc>('acmeAdminIpc')
 ```
 
-`isElectron()` and the provider only look for the default `kitrIpc` key, so keep the default bridge too.
+`isElectron()` and the provider only look for the default `kitrIpc` key, so keep that bridge too.
 
 ## Unregister handlers
 
-`handleIpc()` returns a function that removes every handler it registered. Use it for handlers that belong to a feature you switch off at run time, or when you register them again after a reload:
+`handleIpc()` returns a function that removes every handler it registered, for features you switch off at run time:
 
 ```ts
 // platforms/app/admin.ts
@@ -465,11 +484,12 @@ export function disableAdminTools() {
 }
 ```
 
-After `disableAdminTools()`, `adminIpc.invoke('teams.list')` rejects with `No handler registered for 'teams.list'`. Electron allows one handler per channel: registering the same channel twice throws `Attempted to register a second handler for 'teams.list'`, so remove the old handlers first.
+> [!WARNING]
+> Electron allows one handler per channel. Registering a channel twice throws, so remove the old handlers first.
 
 ## Configure the main window
 
-`createMainWindow(options)` creates a `BrowserWindow` with secure defaults, wires the preload script and loads the right URL. It takes every [`BrowserWindow` option](https://www.electronjs.org/docs/latest/api/structures/browser-window-options) plus four of its own:
+`createMainWindow(options)` creates a `BrowserWindow` with secure defaults, wires the preload and loads the right URL. It takes every [`BrowserWindow` option](https://www.electronjs.org/docs/latest/api/structures/browser-window-options) plus four of its own:
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -500,14 +520,14 @@ export async function openOrderWindow(orderId: string) {
 }
 ```
 
-`createMainWindow()` resolves after the first page has loaded, with the `BrowserWindow`. The default paths assume the layout the scaffold builds (`dist/app/electron/main`, `dist/app/electron/preload`, `dist/app/client`); pass `clientDir` and `preload` if you change `outDir` in `electron.vite.config.ts`.
+It resolves after the first page loads. Pass `clientDir` and `preload` if you change `outDir` in `electron.vite.config.ts`.
 
 ## Serve the built client
 
-In development the window loads the Vite dev server. In a build there is no server, so the window loads `app://-/` and the main process answers from `dist/app/client`. Two functions make that work, and `createMainWindow()` calls the second for you:
+In a build there is no dev server, so the window loads `app://-/` and the main process answers from `dist/app/client`. Two functions make that work, and `createMainWindow()` calls the second for you:
 
-- `registerAppScheme(protocol)` marks `app://` as a standard, secure scheme with `fetch` and streaming support, so absolute asset paths, `fetch()`, cookies and service workers behave as on `https://`. Call it at the top of `main.ts`, before `app.whenReady()`: Electron only accepts it before the app is ready.
-- `serveClient(protocol, clientDir)` answers `app://` requests from the folder. A path that ends in `/` serves its `index.html`. A path with no file falls back to `index.html` (or `_shell.html`), so client-side routes such as `app://-/orders/ord_1042` load the app. A path that climbs out of the folder (`../`) gets `403 Forbidden`.
+- `registerAppScheme(protocol)` makes `app://` behave like `https://` for asset paths, `fetch()`, cookies and service workers. Call it at the top of `main.ts`, before `app.whenReady()`.
+- `serveClient(protocol, clientDir)` answers `app://` requests from the folder. A path with no file falls back to `index.html`, so client routes like `app://-/orders/ord_1042` load the app; a path that climbs out of the folder gets `403`.
 
 Call `serveClient()` yourself only when you load the client without `createMainWindow()`:
 
@@ -526,11 +546,11 @@ app.whenReady().then(async () => {
 })
 ```
 
-`APP_SCHEME` is `'app'`. Requests the client makes to `https://app.acme.com/api/...` go to the network as usual; only `app://` is served from disk.
+Requests to `https://app.acme.com/api/...` go to the network as usual; only `app://` is served from disk.
 
 ## Keep data on the user's machine
 
-Items you declare with [Storage](/packages/storage) persist in a JSON file in Electron's [`userData`](https://www.electronjs.org/docs/latest/api/app#appgetpathname) folder, not in Chromium's `localStorage`. You declare and read them the same way as on the web:
+[Storage](/packages/storage) items persist in a JSON file in Electron's [`userData`](https://www.electronjs.org/docs/latest/api/app#appgetpathname) folder, not Chromium's `localStorage`. You declare and read them as on the web:
 
 ```ts
 // app/storage.ts
@@ -541,7 +561,7 @@ export const ordersView = defineStorage('orders-view', {
 })
 ```
 
-The provider registers `electronStorageDriver()`, which loads every value once at boot and writes each change in the background over the `kitr:storage:load`, `kitr:storage:set` and `kitr:storage:remove` channels. `handleKitrIpc(ipcMain, app)` in `main.ts` serves them and writes `kitr-storage.json`. Pass a third argument to pick the file:
+The provider's `electronStorageDriver()` loads every value at boot and writes changes in the background; `handleKitrIpc(ipcMain, app)` in `main.ts` serves them and writes `kitr-storage.json`. Pass a third argument to pick the file:
 
 ```ts
 // platforms/app/main.ts
@@ -554,11 +574,14 @@ app.whenReady().then(() => {
 })
 ```
 
-On macOS the default file is `~/Library/Application Support/Acme Orders/kitr-storage.json`. Writes are queued, so two quick changes never interleave. If the file is missing or not valid JSON, the store starts empty. Without `handleKitrIpc()`, reads find nothing and every write logs `[@kitr/storage] electron:ipc:` with Electron's "No handler registered" error.
+> [!WARNING]
+> Without `handleKitrIpc()` in `main.ts`, reads find nothing and every write logs a "No handler registered" error.
+
+On macOS the default file is `~/Library/Application Support/Acme Orders/kitr-storage.json`. A missing or invalid file starts the store empty.
 
 ## Run the device packages in Electron
 
-[Secure storage](/packages/secure-storage), [Notifications](/packages/notifications), [Files](/packages/files), [Updater](/packages/updater) and [Native](/packages/native) each have an Electron driver. They run in the window and call the main process over `kitr:*` channels, so the same `handleKitrIpc(ipcMain, app)` call that serves storage serves all of them, and no setting turns `nodeIntegration` on:
+[Secure storage](/packages/secure-storage), [Notifications](/packages/notifications), [Files](/packages/files), [Updater](/packages/updater) and [Native](/packages/native) each have an Electron driver. The same `handleKitrIpc(ipcMain, app)` call that serves storage serves all of them, with `nodeIntegration` off:
 
 | Package | Main-process work | Channels |
 | --- | --- | --- |
@@ -568,7 +591,7 @@ On macOS the default file is `~/Library/Application Support/Acme Orders/kitr-sto
 | `updater` | `electron-updater`: check, download with progress, `quitAndInstall` | `kitr:updater:check`, `download`, `install`; `kitr:updater:available`, `progress` |
 | `native` | `clipboard`, Touch ID, `net.isOnline()`, `nativeTheme`, `powerMonitor`, `shell.openExternal` | `kitr:native:*`, `kitr:shell:open`; `kitr:native:theme`, `power` |
 
-The window never gets a path or a key it did not earn. Files are read and written only at paths a dialog returned in this session (and inside a folder the person picked); secure storage returns plaintext only for the key asked and refuses to store when the operating system has no vault; `openExternal` opens `http:`, `https:`, `mailto:` and `tel:` links. Options go in the third argument:
+The window gets only what it earned: files are touched only at paths a dialog returned, secure storage refuses to store without an operating system vault, and `openExternal` opens only `http:`, `https:`, `mailto:` and `tel:` links. Options go in the third argument:
 
 ```ts
 // platforms/app/main.ts
@@ -586,11 +609,16 @@ app.whenReady().then(() => {
 })
 ```
 
-`handleKitrIpc()` returns a function that removes the device handlers. To register only the device handlers, call `handleKitrDevices(ipcMain, app, options)`; it takes the same options and returns the same function. `electron-updater` is imported the first time the updater is used, so an app that does not use it does not need it; `kitr add desktop` and `kitr add updater` add it to `dependencies`, where electron-builder packs it. The window-side drivers need `exposeIpc()` in the preload script, which `allowChannels()` already covers.
+<details>
+<summary>Device handlers and electron-updater</summary>
+
+`handleKitrIpc()` returns a function that removes the device handlers. To register only those, call `handleKitrDevices(ipcMain, app, options)`. `electron-updater` is imported when the updater is first used; `kitr add desktop` and `kitr add updater` add it to `dependencies`, where electron-builder packs it.
+
+</details>
 
 ## Use the platform service on the desktop
 
-The provider also registers a `desktop` driver for [Platform](/packages/platform). Code that uses the platform service works in Electron without a single `isElectron()` check:
+The provider registers a `desktop` driver for [Platform](/packages/platform), so platform code works in Electron without `isElectron()` checks:
 
 | Member | In Electron |
 | --- | --- |
@@ -621,7 +649,7 @@ export function HelpMenu() {
 }
 ```
 
-In Electron, "Service status" opens Ada's default browser instead of replacing the app's own page, and "Quit Acme Orders" closes the app. In the browser the first opens a new tab and the second is not rendered. These three methods use the `kitr:*` channels, so they need `handleKitrIpc()` in `main.ts`, which the scaffold calls.
+In Electron, "Service status" opens the default browser and "Quit Acme Orders" closes the app; in the browser the first opens a tab and the second is not rendered. They need `handleKitrIpc()` in `main.ts`, which the scaffold calls.
 
 ## Build installers
 
@@ -637,7 +665,7 @@ It runs three steps in order and stops at the first failure:
 2. `electron-vite build -c platforms/app/electron.vite.config.ts`: main and preload into `dist/app/electron`.
 3. `electron-builder --config platforms/app/electron-builder.yml`: installers into `dist/app/release`.
 
-On success it logs `app: installers are in dist/app/release`. The scaffolded `electron-builder.yml` makes an NSIS installer (`Acme Orders Setup 0.1.0.exe`) on Windows, a `.dmg` on macOS and an `AppImage` on Linux. The version is `version` in `package.json`.
+The scaffolded `electron-builder.yml` makes an NSIS installer on Windows, a `.dmg` on macOS and an `AppImage` on Linux, versioned from `package.json`.
 
 Two flags shorten the build:
 
@@ -646,22 +674,22 @@ kitr build app --no-pack   # client, main and preload only; no electron-builder
 kitr build app --dir       # an unpacked app in dist/app/release, no installer
 ```
 
-`--no-pack` is the fast check that everything compiles. `--dir` makes a folder you can run directly, such as `dist/app/release/win-unpacked/Acme Orders.exe` on Windows or `Acme Orders.app` in a `mac` or `mac-arm64` folder on macOS. It is quicker than an installer when you test packaging.
+`--no-pack` is the fast check that everything compiles. `--dir` makes an unpacked folder you can run directly, quicker than an installer when testing packaging.
 
 ## Run the production build locally
 
-`kitr start app` runs `electron .` in the project root. Electron reads `"main"` from `package.json`, so it starts the built main process from `dist/app/electron/main/index.js`, which loads the built client over `app://`:
+`kitr start app` runs `electron .`, which starts the built main process from `"main"` in `package.json` and loads the built client over `app://`:
 
 ```sh
 kitr build app --no-pack
 kitr start app
 ```
 
-This is the app your users get, without installing it: no dev server, no devtools, the real `app://` serving. If the window stays blank, check that `"main"` in `package.json` is `dist/app/electron/main/index.js`; `kitr doctor` warns when it is not.
+This is the app your users get, without installing it. If the window stays blank, check that `"main"` is `dist/app/electron/main/index.js`; `kitr doctor` warns when it is not.
 
 ## Package for another operating system
 
-electron-builder packages for the OS it runs on by default. To pick targets, edit `platforms/app/electron-builder.yml` with any [electron-builder option](https://www.electron.build/configuration):
+electron-builder packages for the OS it runs on. To pick targets, edit `platforms/app/electron-builder.yml` with any [electron-builder option](https://www.electron.build/configuration):
 
 ```yaml
 # platforms/app/electron-builder.yml
@@ -690,11 +718,11 @@ kitr build app --no-pack
 pnpm exec electron-builder --config platforms/app/electron-builder.yml --win --x64
 ```
 
-Building a macOS app needs a Mac. Windows installers can be built on Linux and macOS with Wine for some targets; CI runners for each OS are the reliable route, as the [multi-platform build guide](https://www.electron.build/multi-platform-build) describes.
+Building a macOS app needs a Mac. CI runners for each OS are the reliable route; see the [multi-platform build guide](https://www.electron.build/multi-platform-build).
 
 ## Sign the installers
 
-Unsigned apps trigger Gatekeeper on macOS and SmartScreen on Windows. electron-builder signs during packaging when it finds a certificate, and `kitr build` passes your environment through to it:
+Unsigned apps trigger Gatekeeper on macOS and SmartScreen on Windows. electron-builder signs during packaging when it finds a certificate in the environment `kitr build` passes through:
 
 ```sh
 export CSC_LINK=./certs/acme-developer-id.p12
@@ -702,21 +730,21 @@ export CSC_KEY_PASSWORD="$ACME_CERT_PASSWORD"
 kitr build app
 ```
 
-`CSC_LINK` is a path, URL or base64 of the `.p12`/`.pfx` certificate, and `CSC_KEY_PASSWORD` its password. On macOS, notarization also needs your Apple credentials. The options and variables are electron-builder's own; see [code signing](https://www.electron.build/code-signing) and the [macOS](https://www.electron.build/mac) pages. kitr adds no signing settings of its own.
+`CSC_LINK` is a path, URL or base64 of the `.p12`/`.pfx` certificate, and `CSC_KEY_PASSWORD` its password. macOS notarization also needs Apple credentials; see electron-builder's [code signing](https://www.electron.build/code-signing) and [macOS](https://www.electron.build/mac) pages.
 
-> **Warning**
-> Never commit the certificate or its password. Keep both in your CI's secret store and set them only on the job that builds releases.
+> [!WARNING]
+> Never commit the certificate or its password. Keep both in your CI's secret store and set them only on the release job.
 
 ## Switch to Tauri
 
-The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. What changes is the native side. Electron IPC commands in `platforms/app/main.ts` become Rust commands, and `ipc.invoke()` calls become `commands.<name>()` from `@kitr/tauri/client`:
+App code does not change between the two desktop platforms. The native side does: IPC commands in `platforms/app/main.ts` become Rust commands, and `ipc.invoke()` calls become `commands.<name>()` from `@kitr/tauri/client`:
 
 ```sh
 kitr platforms remove app
 kitr add tauri app
 ```
 
-Port each handler in `main.ts` to a `#[tauri::command]` in `platforms/app/src-tauri/src/lib.rs`, as the [Tauri](/packages/tauri) guide shows, then remove `@kitr/desktop` as described under Install. Storage values do not move: Electron's `kitr-storage.json` and Tauri's `kitr.json` are separate files.
+Port each handler to a `#[tauri::command]` in `platforms/app/src-tauri/src/lib.rs`, as the [Tauri](/packages/tauri) guide shows, then remove `@kitr/desktop`. Storage values do not move between Electron's `kitr-storage.json` and Tauri's `kitr.json`.
 
 ## Commands
 
@@ -759,9 +787,7 @@ Any option is also a flag on `dev`, `build` and `start` for one run: `kitr dev a
 
 ## Testing
 
-Unit tests run in Node or `happy-dom`, where there is no Electron. kitr's three IPC pieces take Electron's objects as arguments (`ipcMain`, `ipcRenderer`, `contextBridge`), so a test passes small fakes and runs main, preload and the window in one process. The fakes below wire `ipcRenderer.invoke` straight to the handlers `ipcMain.handle` registered.
-
-This test checks the `invoices.save` command end to end, that the desktop driver answers the platform service, and that storage writes land in the file:
+Unit tests run in Node or `happy-dom`, with no Electron. The IPC pieces take `ipcMain`, `ipcRenderer` and `contextBridge` as arguments, so a test passes small fakes and runs main, preload and the window in one process. This test checks `invoices.save` end to end, the platform service and storage writes:
 
 ```ts
 // test/desktop.test.ts
@@ -862,13 +888,10 @@ describe('Acme Orders desktop', () => {
 })
 ```
 
-The handlers in a real app call Electron's `dialog` and `fs`, which do not exist in Vitest. Keep the logic in plain functions that take what they need (`saveInvoice(invoice, writeFile)`), test those directly, and keep the `handleIpc()` handlers as thin wrappers. Test the real window with `kitr dev app`, and the packaged app with `kitr build app --dir` and `kitr start app`.
+Real handlers call Electron's `dialog` and `fs`, which do not exist in Vitest. Keep logic in plain functions that take what they need (`saveInvoice(invoice, writeFile)`) and the `handleIpc()` handlers thin. Test the real window with `kitr dev app`, and the packaged app with `kitr build app --dir` and `kitr start app`.
 
 ## Next steps
 
-- [API reference](/packages/desktop/api)
-- [Tauri](/packages/tauri): the same app on the operating system's webview, with Rust commands
-- [Platform](/packages/platform): app version, external links, app state and exit on every platform
-- [Storage](/packages/storage): typed items that persist in the desktop app's own file
-- [Platforms](/docs/platforms): every platform type and the commands they share
-- [Electron documentation](https://www.electronjs.org/docs/latest) and [electron-builder](https://www.electron.build/)
+- [API reference](/packages/desktop/api): every export of `@kitr/desktop`.
+- [Tauri](/packages/tauri): the same app on the system webview, with Rust commands.
+- [Platform](/packages/platform): app version, external links and exit on every platform.

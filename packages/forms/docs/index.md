@@ -11,7 +11,7 @@ Sign-up pages, invoice editors and settings screens all need the same three thin
 > [!SUMMARY]
 > Forms with schema validation and server errors shown on the right field. Add it with `kitr add forms`; the overview is at [/packages/forms](/packages/forms).
 
-It is [React Hook Form](https://react-hook-form.com) re-exported unchanged, plus `useSchemaForm` (React Hook Form with a [Standard Schema](https://standardschema.dev) resolver), a `<Form>` that maps server errors onto fields, and headless, accessible field helpers. Everything on this page runs in the browser. For the server half of a form, see [server actions](/packages/actions) or [API routes](/packages/api); `@kitr/forms` does not run on the server.
+It is [React Hook Form](https://react-hook-form.com) re-exported unchanged, plus `useSchemaForm` (with a [Standard Schema](https://standardschema.dev) resolver), a `<Form>` that maps server errors onto fields, and headless, accessible field helpers. It runs in the browser; for the server half of a form see [server actions](/packages/actions) or [API routes](/packages/api).
 
 The examples follow one form through the page: Ada creates invoices for Acme's customers in the app at `app.acme.com`.
 
@@ -32,7 +32,7 @@ What `kitr add` does:
 
 </details>
 
-It writes no config file, registers no provider, adds no env variables and asks no questions. The `app` and `fullstack` kits already include forms, along with the styled `form` component described in [Style fields](#style-fields).
+`kitr add forms` writes no config file and asks no questions. The `app` and `fullstack` kits include it, with the styled `form` component from [Style fields](#style-fields).
 
 <details>
 <summary>What kitr remove does</summary>
@@ -63,7 +63,7 @@ export function NewInvoiceForm({ onCreate }: { onCreate: (values: unknown) => Pr
 }
 ```
 
-`useSchemaForm(schema, options)` takes every [`useForm` option](https://react-hook-form.com/docs/useform) except `resolver`, which it sets from the schema. These are the ones you use most:
+`useSchemaForm(schema, options)` takes every [`useForm` option](https://react-hook-form.com/docs/useform) except `resolver`. The common ones:
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ export function NewInvoiceForm({ onCreate }: { onCreate: (values: unknown) => Pr
 
 ## Build your first form
 
-Start with a schema. Put it in its own file so the server can import the same one.
+Start with a schema in its own file, so the server can import the same one.
 
 ```ts
 // app/validators/invoices.ts
@@ -161,11 +161,11 @@ Open `/invoices/new`, tab out of the empty email field and "Enter the customer�
 created { customerEmail: 'grace@acme.com', amount: 120, dueOn: '2026-12-01' }
 ```
 
-`amount` arrives as the number `120`, not the string from the input, because `onSubmit` receives the schema's output. While `onCreate` runs, the button reads "Creating…" and is disabled. When it resolves, `resetOnSuccess` clears the form.
+`amount` arrives as the number `120` because `onSubmit` receives the schema's output. While `onCreate` runs, the button reads "Creating…" and is disabled; when it resolves, `resetOnSuccess` clears the form.
 
 ## Validate with any schema library
 
-`useSchemaForm` accepts any [Standard Schema](https://standardschema.dev): zod, [valibot](https://valibot.dev) or [arktype](https://arktype.io). It wires React Hook Form's `standardSchemaResolver` for you.
+`useSchemaForm` accepts any [Standard Schema](https://standardschema.dev): zod, [valibot](https://valibot.dev) or [arktype](https://arktype.io).
 
 ```tsx
 // app/components/invoices/new-invoice-form.tsx
@@ -185,13 +185,11 @@ export function useNewInvoiceForm() {
 }
 ```
 
-The form has two types. The schema's input type is what the fields hold (`amount` is a string). Its output type is what `onSubmit` receives (`amount` is a number). Both are inferred, so `form.setValue('amount', 120)` is a type error and `values.amount.toFixed(2)` in `onSubmit` is not.
-
-`useZodForm` is the same function under another name, for codebases that already use it. Asynchronous checks work too: a zod `.refine(async ...)` runs on blur and on submit like any other rule.
+The schema's input type is what the fields hold (`amount` is a string); its output type is what `onSubmit` receives (`amount` is a number). Both are inferred, so `form.setValue('amount', 120)` is a type error and `values.amount.toFixed(2)` in `onSubmit` is not. Async checks such as `.refine(async ...)` work too.
 
 ## Choose when fields are validated
 
-`useSchemaForm` defaults to `mode: 'onTouched'`: a field is checked the first time it loses focus, then on every change until it passes. Nobody sees "Enter the customer’s email" before they had a chance to type it.
+`useSchemaForm` defaults to `mode: 'onTouched'`: a field is checked when it first loses focus, then on every change until it passes.
 
 ```tsx
 // app/components/invoices/quick-invoice-form.tsx
@@ -219,7 +217,7 @@ Submitting always validates every field, whatever the mode.
 
 ## Submit to your API
 
-`onSubmit` can return any promise. To get the query cache updated as well, pass a [query](/packages/query) mutation's `mutateAsync`. Here the mutation posts to an external API through [http](/packages/http):
+`onSubmit` can return any promise. To update the query cache as well, pass a [query](/packages/query) mutation's `mutateAsync`. Here it posts to an external API through [http](/packages/http):
 
 ```ts
 // app/queries/invoices.ts
@@ -271,7 +269,8 @@ export default function NewInvoicePage() {
 }
 ```
 
-Use `mutateAsync`, not `mutate`. `mutate` swallows the error, so `<Form>` never sees the server's field errors and the button stops being pending before the request ends.
+> [!WARNING]
+> Use `mutateAsync`, not `mutate`. `mutate` swallows the error, so `<Form>` never sees the field errors and the button stops pending early.
 
 ## Submit to a server action
 
@@ -303,13 +302,11 @@ export default function NewInvoicePage() {
 }
 ```
 
-`useMutation('invoices.create')` finds the mutation by the name you gave `defineMutation`; `kitr types` writes that name into `.kitr/actions.ts`, so the input is typed and a misspelt name is a type error.
-
-If someone bypasses the browser check, the action rejects with `VALIDATION` and the same messages land under the same fields.
+`useMutation('invoices.create')` finds the mutation by its `defineMutation` name; `kitr types` types it. If someone bypasses the browser check, the action rejects with `VALIDATION` and the same messages land under the same fields.
 
 ## Show server errors on fields
 
-When `onSubmit` throws or rejects, `<Form>` turns the error into a `KitrError` and reads its `fieldErrors`. Each key is a field path, each value a list of messages, and the first message shows under the field:
+When `onSubmit` throws or rejects, `<Form>` reads the `KitrError`'s `fieldErrors`: each key is a field path, each value a list of messages, and the first shows under the field:
 
 ```ts
 // what the server sent back (HTTP 422)
@@ -332,7 +329,7 @@ The rules:
 - An error without `fieldErrors` (a `CONFLICT`, a `NETWORK` failure, a 500) puts its `message` on the root error.
 - Only the first message per field is shown.
 
-You do not have to shape errors yourself. [API routes](/packages/api) answer `422` with `fieldErrors` when a validator fails, [server actions](/packages/actions) do the same when their `input` schema fails, and [http](/packages/http) converts common backend formats, including the AdonisJS and VineJS `errors` array.
+[API routes](/packages/api) and [server actions](/packages/actions) answer failed validation with `fieldErrors` already, and [http](/packages/http) converts common backend formats.
 
 ## Throw field errors from the server
 
@@ -357,7 +354,7 @@ export const createInvoice = defineMutation('invoices.create', {
 })
 ```
 
-Ada sees "No customer with this email" under the email field, with `aria-invalid="true"` on the input. A message for the whole form goes under `_root`:
+Ada sees "No customer with this email" under the email field. A message for the whole form goes under `_root`:
 
 ```ts
 throw KitrError.validation({ _root: ['Invoices are locked while the month closes'] })
@@ -367,7 +364,7 @@ Nested fields use dot paths: `'billing.vatId'` or `'lines.2.quantity'`.
 
 ## Show a form-level error
 
-Errors that are not about one field come back from `useRootError()`. It returns the message, or `undefined`. Call it inside `<Form>`:
+`useRootError()` returns the message of errors that are not about one field, or `undefined`. Call it inside `<Form>`:
 
 ```tsx
 // app/components/invoices/form-alert.tsx
@@ -384,7 +381,7 @@ export function FormAlert() {
 }
 ```
 
-The root error is cleared each time the form is submitted again. If Ada's connection drops, she sees "Network request failed". If a server action fails with a 500 in production, she sees "Internal server error"; the real message stays in the server log.
+The root error clears on each submit. A dropped connection shows "Network request failed"; a 500 in production shows "Internal server error" and keeps the real message in the server log.
 
 ## Show a pending state
 
@@ -396,9 +393,7 @@ The root error is cleared each time the form is submitted again. If Ada's connec
 </SubmitButton>
 ```
 
-A `disabled` prop you pass is combined with the pending state, never replaced by it, so `disabled={!canInvoice}` keeps the button off and a pending form still cannot submit twice.
-
-For anything else that should react to the submit, call `useFormStatus()` inside `<Form>`:
+A `disabled` prop you pass is combined with the pending state. For anything else that reacts to the submit, call `useFormStatus()` inside `<Form>`:
 
 ```tsx
 // app/components/invoices/cancel-link.tsx
@@ -415,11 +410,11 @@ export function CancelLink() {
 }
 ```
 
-`pending` is true while `onSubmit` runs or React Hook Form is submitting. `isValid` is React Hook Form's `formState.isValid`.
+`pending` is true while `onSubmit` runs; `isValid` is React Hook Form's `formState.isValid`.
 
 ## Run code after a submit
 
-`onSuccess` runs with what `onSubmit` returned and the submitted values. `onError` runs after the error has been put on the fields, with the error as a `KitrError`. Neither runs when the schema rejects the input in the browser, because `onSubmit` never starts.
+`onSuccess` runs with what `onSubmit` returned and the submitted values. `onError` runs after the error is on the fields, with a `KitrError`. Neither runs when the browser-side schema check fails.
 
 ```tsx
 // app/components/invoices/new-invoice-panel.tsx
@@ -447,11 +442,11 @@ export function NewInvoicePanel({ onCreate }: { onCreate: (v: unknown) => Promis
 }
 ```
 
-`resetOnSuccess` returns every field to `defaultValues`. Leave it off for edit forms, where the saved values should stay on screen.
+
 
 ## Edit an existing record
 
-Load the record first, then pass it as `defaultValues`. Render the form only once the data is there, so the defaults are right from the first render:
+Load the record first and render the form only once it is there, passing it as `defaultValues`. Leave `resetOnSuccess` off for edit forms:
 
 ```ts
 // app/routes.ts
@@ -489,7 +484,7 @@ export default function EditInvoicePage() {
 }
 ```
 
-To follow data that changes while the form is open, pass `values` instead of `defaultValues`. React Hook Form then resets the form each time `values` changes. `form.formState.isDirty` tells you whether Ada changed anything.
+To follow data that changes while the form is open, pass `values` instead of `defaultValues`; the form resets each time `values` changes. `form.formState.isDirty` tells you whether Ada changed anything.
 
 ## Use your own inputs
 
@@ -517,11 +512,7 @@ export function CurrencySelect() {
 </FormField>
 ```
 
-`useFieldProps()` returns the field's `id` (so the `<label>` points at it), `aria-invalid` and `aria-describedby`, plus everything `form.register(name)` returns. Outside a `<FormField>` it throws `[@kitr/forms] useFieldProps() must be used inside <FormField>.`
-
-The registered `onChange`, `onBlur`, `name` and `ref` are spread after your own props, so they win. Don't pass `onChange` to `<FieldInput>` to watch a value; it is replaced. Use `form.watch` instead ([Watch a field](#watch-a-field)).
-
-A checkbox works the same way, and its value arrives as a boolean:
+`useFieldProps()` returns the field's `id`, `aria-invalid` and `aria-describedby`, plus everything `form.register(name)` returns. A checkbox works the same way and arrives as a boolean:
 
 ```tsx
 <FormField name="sendNow" label="Email the invoice to the customer now">
@@ -531,7 +522,7 @@ A checkbox works the same way, and its value arrives as a boolean:
 
 ## Lay out a field yourself
 
-`<FormField>` renders the label, then its children, then the description, then the error. To place things differently, pass a function as its child. It receives `{ id, name, invalid, describedBy }`. The function runs inside `<FormField>` itself, so call `form.register` there rather than `useFieldProps()`:
+`<FormField>` renders the label, children, description, then error. To place things differently, pass a function as its child; it receives `{ id, name, invalid, describedBy }`. Call `form.register` there rather than `useFieldProps()`:
 
 ```tsx
 // app/components/invoices/note-field.tsx
@@ -555,7 +546,7 @@ export function NoteField() {
 }
 ```
 
-`useFormContext` is React Hook Form's, re-exported from `@kitr/forms`. It works anywhere inside `<Form>`.
+
 
 ## Wrap a controlled component
 
@@ -584,11 +575,11 @@ export function DueDateField() {
 }
 ```
 
-The field error and the server errors still appear, because they are keyed by name, not by input.
+Field and server errors still appear, because they are keyed by name.
 
 ## Repeat fields
 
-Invoice lines are a list. `useFieldArray` from React Hook Form adds and removes rows; each row's fields use an index path:
+Invoice lines are a list. `useFieldArray` adds and removes rows; each row's fields use an index path:
 
 ```tsx
 // app/components/invoices/invoice-lines.tsx
@@ -623,7 +614,7 @@ export function InvoiceLines() {
 }
 ```
 
-Use `line.id` as the key, not `index`. A server error for `lines.1.quantity` lands under the second row's quantity input.
+Use `line.id` as the key, not `index`. A server error for `lines.1.quantity` lands under the second row's input.
 
 ## Watch a field
 
@@ -645,11 +636,11 @@ export function DeliveryFields() {
 }
 ```
 
-The component re-renders when `sendNow` changes. Validation of a hidden field is up to the schema: make `ccEmail` optional, or use a zod `discriminatedUnion`.
+The component re-renders when `sendNow` changes. Make a hidden field optional in the schema, or use a zod `discriminatedUnion`.
 
 ## Submit without the Form component
 
-When a submit does not go through `<Form>`, for example a "Mark as paid" button that saves one field, call `applyServerErrors` yourself. It puts the error on the form the same way `<Form>` does and returns `true` when the error was a `VALIDATION` error:
+When a submit does not go through `<Form>`, such as a "Mark as paid" button, call `applyServerErrors` yourself. It puts the error on the form as `<Form>` does and returns `true` for a `VALIDATION` error:
 
 ```tsx
 // app/components/invoices/mark-paid.tsx
@@ -676,7 +667,7 @@ export function MarkPaid({ save }: { save: (paidOn: string) => Promise<void> }) 
 }
 ```
 
-`applyServerErrors` accepts a `KitrError`, the plain JSON shape a server sent (`{ code, message, status, fieldErrors }`) or any other thrown value. Anything that is not a field error ends up on `root.server`.
+It accepts a `KitrError`, the JSON shape a server sent, or any thrown value; anything that is not a field error ends up on `root.server`.
 
 ## Style fields
 
@@ -705,11 +696,11 @@ For a finished look, copy the styled components into your app:
 kitr ui add form
 ```
 
-This writes `app/components/ui/form.tsx` (plus `button`, `input` and `label` if they are missing). It exports `Form`, a spaced `FormField`, a `FieldInput` built on your `Input`, a `FormMessage` that shows the root error, and a `SubmitButton` built on your `Button`. Import from `#components/ui/form` instead of `@kitr/forms`; the file is yours to edit.
+This writes `app/components/ui/form.tsx` (plus `button`, `input` and `label` if missing), exporting `Form`, `FormField`, `FieldInput`, `FormMessage` (the root error) and `SubmitButton`. Import from `#components/ui/form` instead of `@kitr/forms`; the file is yours to edit.
 
 ## Make forms accessible
 
-`<FormField>` and `useFieldProps()` produce this markup for a field with a description and a failed check (the ids come from React's `useId`):
+`<FormField>` and `useFieldProps()` produce this markup for a field with a description and a failed check:
 
 ```html
 <div data-kitr="field" data-invalid="">
@@ -766,11 +757,12 @@ export function InvoiceForm({ defaultValues, onSubmit }: { defaultValues?: Parti
 }
 ```
 
-The generated file needs `kitr ui add form` first, which the `app` and `fullstack` kits have already run. `kitr doctor` warns when a file under `app/` imports `react-hook-form` directly instead of `@kitr/forms`.
+> [!WARNING]
+> The generated file needs `kitr ui add form` first (the `app` and `fullstack` kits ran it). Import from `@kitr/forms`, not `react-hook-form`; `kitr doctor` warns otherwise.
 
 ## Errors
 
-These are the errors a form shows and where each one appears. The codes are `KitrError` codes, the error shape every kitr data source produces.
+These are the `KitrError` codes a form shows and where each appears.
 
 | Code | When | What to do |
 | --- | --- | --- |
@@ -783,7 +775,7 @@ These are the errors a form shows and where each one appears. The codes are `Kit
 
 ## Testing
 
-Forms run in a DOM test without an app, a router or a server. Render the component, type into it and submit. To test server errors, make the submit function reject with the error the server would send.
+Forms run in a DOM test without an app, router or server. Render, type, submit; to test server errors, make the submit function reject with the error the server would send.
 
 ```tsx
 // app/components/invoices/new-invoice-form.test.tsx
@@ -840,12 +832,10 @@ describe('NewInvoiceForm', () => {
 })
 ```
 
-`onCreate` receives the schema's output, so the test checks for the number `120`. Run the file with `pnpm test`. A form that calls `useMutation` needs the query client: render it with `renderWithKitr` from [testing](/packages/testing) instead of `render`.
+A form that calls `useMutation` needs the query client: render it with `renderWithKitr` from [testing](/packages/testing).
 
 ## Next steps
 
 - [API reference](/packages/forms/api): every export with its signature.
-- [React Hook Form docs](https://react-hook-form.com/docs): everything there works as written, imported from `@kitr/forms`. Its own `<Form>` is exported as `RhfForm`.
 - [Server actions](/packages/actions): the server half of a form, with the same error shape.
 - [Query](/packages/query): mutations, cache effects and `mutateAsync`.
-- [Tailwind](/packages/tailwind): style fields with the `data-kitr` attributes.

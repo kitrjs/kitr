@@ -6,13 +6,14 @@ order: 1
 
 # Tables
 
-Admin screens, dashboards and reports all need the same thing: a table people can sort, page through and filter. Grace sorts Acme's orders by total, filters to the open ones, goes to page 3, and sends Linus the link. `@kitr/table` keeps those choices in the page's URL, so the view survives a reload, works with the back button, and opens the same for Linus.
+Admin screens, dashboards and reports all need a table people can sort, page through and filter. Grace sorts Acme's orders by total, filters to the open ones, goes to page 3, and sends Linus the link. `@kitr/table` keeps those choices in the page's URL, so the view survives a reload, works with the back button, and opens the same for Linus.
 
-It is [TanStack Table](https://tanstack.com/table/latest) v9, re-exported unchanged, so `useTable`, column definitions and every feature work as TanStack documents them. On top it adds `useUrlTableState()`, which binds sorting, pagination and column filters to search params; `parseTableSearch()`, which validates those params from an untrusted URL; and `dataTableFeatures`, the feature set kitr's `<DataTable>` component expects.
+> [!SUMMARY]
+> Sortable, pageable, filterable tables whose state lives in the URL. Add it with `kitr add table`; the overview is at [/packages/table](/packages/table).
 
-It runs in the browser, inside React. The URL helpers do not depend on a router, but the examples use [router](/packages/router), whose `validateSearch` and `navigate` they were made for. For a list of cards or a feed rather than rows and columns, you don't need a table package; render the array.
+It is [TanStack Table](https://tanstack.com/table/latest) v9, re-exported unchanged, plus `useUrlTableState()` (binds sorting, pagination and filters to search params), `parseTableSearch()` (validates those params from an untrusted URL) and `dataTableFeatures` (the feature set kitr's `<DataTable>` expects). It runs in the browser, inside React; the examples use [router](/packages/router).
 
-The examples on this page build Acme's orders screen at `app.acme.com/orders`: thousands of orders with a customer, a total, a status and the date they were placed, served one page at a time by `/api/orders`.
+The examples build Acme's orders screen at `app.acme.com/orders`: thousands of orders with a customer, a total, a status and a date, served one page at a time by `/api/orders`.
 
 ## Install
 
@@ -20,23 +21,26 @@ The examples on this page build Acme's orders screen at `app.acme.com/orders`: t
 kitr add table
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
 - Adds `@kitr/table` and `@tanstack/react-table` to `dependencies` and installs them. Pass `--no-install` to skip the install.
 - Adds `'@kitr/table'` to `packages` in `kitrrc.ts`. It registers no provider.
-- Adds a `## kitr: table` section to `AGENTS.md`: put `validateSearch: parseTableSearch` on the route, spread `useUrlTableState({ search, setSearch })` into `useReactTable` or the registry `<DataTable>`, and keep sorting and paging in the URL so views are shareable.
+- Adds a `## kitr: table` section to `AGENTS.md`.
 
-It writes no config file and no other files, adds no env variables or scripts, and asks no questions. Tables are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it, along with the `data-table` component.
+It writes no config file, adds no env variables or scripts, and asks no questions. Tables are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it, along with the `data-table` component.
 
-The styled table component is separate, because it is yours to edit. Copy it in with:
+`kitr remove table` takes the package out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, and lists files that still import `@kitr/table`. It leaves `data-table.tsx` in place.
+
+</details>
+
+The styled table component is yours to edit, so copy it in separately:
 
 ```sh
 kitr ui add data-table
 ```
 
 That writes `app/components/ui/data-table.tsx`, plus the `button` and `icon` components it uses.
-
-`kitr remove table` takes `'@kitr/table'` out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `@kitr/table`. It leaves `data-table.tsx` in place.
 
 ## Configure
 
@@ -168,11 +172,11 @@ export default function OrdersPage() {
 }
 ```
 
-Open `/orders` and click the Total header. The URL becomes `/orders?sort=-total`, the loader fetches that page, and the table shows the largest orders first. Reload, and it is still sorted. [Fetch one page from the server](#fetch-one-page-from-the-server) shows `ordersPageQuery` and the API behind it.
+Open `/orders` and click the Total header. The URL becomes `/orders?sort=-total` and the table shows the largest orders first, even after a reload. [Fetch one page from the server](#fetch-one-page-from-the-server) shows `ordersPageQuery` and the API behind it.
 
 ## Define columns
 
-A column needs an id and a header. `accessorKey` reads a field of the row and doubles as the id; `cell` renders it; `id` names a column that reads no field, such as a row of buttons:
+A column needs an id and a header. `accessorKey` reads a field and doubles as the id; `cell` renders it; `id` names a column that reads no field, such as a row of buttons:
 
 ```tsx
 // app/components/orders/columns.tsx
@@ -206,7 +210,7 @@ export const columns: ColumnDef<DataTableFeatures, Order>[] = [
 ]
 ```
 
-The column id is what appears in the URL: sorting the `customer` column writes `sort=customer`. Keep ids short and stable, because changing one breaks links people saved. `enableSorting: false` stops a header from being clickable; in `<DataTable>` it renders as plain text.
+The column id is what appears in the URL (`sort=customer`), so keep ids short and stable: changing one breaks saved links. `enableSorting: false` makes a header plain text in `<DataTable>`.
 
 For a typed `getValue()` in each cell, use TanStack's column helper with the same feature set:
 
@@ -230,7 +234,7 @@ Define columns outside the component, or in `useMemo`, so the table does not reb
 
 ## Keep sorting, paging and filters in the URL
 
-`useUrlTableState` reads the table's state from `search` and writes every change back through `setSearch`. The URL is the only copy of the state, so there is nothing to sync. What lands in the URL with TanStack Router's default search serialiser:
+`useUrlTableState` reads the table's state from `search` and writes every change back through `setSearch`. The URL is the only copy of the state, so there is nothing to sync. With TanStack Router's default serialiser:
 
 | Table state | URL | Notes |
 | --- | --- | --- |
@@ -240,7 +244,7 @@ Define columns outside the component, or in `useMemo`, so the table does not reb
 | Customer A to Z, then newest | `?sort=customer%2C-placedAt` | Comma-separated, in priority order. The comma is URL-encoded. |
 | Status is open | `?filter=%7B%22status%22%3A%22open%22%7D` | `filter` is an object, which the router stores as JSON: `{"status":"open"}`. |
 
-Some writes also reset the page, because page 4 of the old order is meaningless in the new one:
+Some writes also reset the page, because page 4 of the old order means nothing in the new one:
 
 | Change | What `setSearch` receives |
 | --- | --- |
@@ -251,9 +255,10 @@ Some writes also reset the page, because page 4 of the old order is meaningless 
 | Next page | `{ page: 2, size: undefined }` |
 | Back to page 1 at the default size | `{ page: undefined, size: undefined }` |
 
-Clicking a header cycles through the sort directions. A number column such as Total starts with largest first (`-total`, then `total`, then unsorted); a text column such as Customer starts with A to Z.
+Clicking a header cycles the sort directions. A number column such as Total starts largest first (`-total`, then `total`, then unsorted); a text column starts A to Z.
 
-Don't keep a copy of the sort or page in `useState` next to the table. Two sources of truth drift apart, and the back button only restores one of them.
+> [!WARNING] One source of truth
+> Don't keep a copy of the sort or page in `useState` next to the table. The two drift apart, and the back button restores only one.
 
 ## Validate the URL
 
@@ -280,7 +285,7 @@ parseTableSearch({ page: '1.5', filter: { status: 'open', total: 100 } })
 | `sort` | Comma-separated column ids of letters, digits, `_` and `.`, each optionally prefixed with `-`. |
 | `filter` | An object; only its string values are kept. |
 
-To add params of your own, such as a search box, call it inside your own `validateSearch` and add your fields beside it:
+For params of your own, such as a search box, call it inside your own `validateSearch`:
 
 ```ts
 // app/routes.ts
@@ -307,11 +312,11 @@ export default function OrdersPage() {
 }
 ```
 
-The sort pattern allows dotted ids such as `customer.name`, so a column can sort by a nested field. Your API should still accept only the columns it knows; see the next section.
+The sort pattern allows dotted ids such as `customer.name`. Your API should still accept only the columns it knows.
 
 ## Fetch one page from the server
 
-`useUrlTableState` sets `manualSorting`, `manualPagination` and `manualFiltering`, because the usual table is bigger than one response. The server sorts, filters and slices; the table shows what came back. Turn the search into a request in the query:
+`useUrlTableState` sets `manualSorting`, `manualPagination` and `manualFiltering`: the server sorts, filters and slices, and the table shows what came back. Turn the search into a request in the query:
 
 ```ts
 // app/queries/orders.ts
@@ -371,13 +376,16 @@ export default class OrdersController {
 }
 ```
 
-`parseSort('-total,customer')` returns `[{ id: 'total', desc: true }, { id: 'customer', desc: false }]`, and `formatSort()` turns that back into the string. Use the same page size default on both sides, or pass `size` always. Only ids in `sorters` are used, so a hand-edited `?sort=password` sorts nothing. With a database, build the `ORDER BY` from such an allow-list, never from the raw string. `@kitr/table` imports React, so in a server without React, split the string yourself.
+`parseSort('-total,customer')` returns `[{ id: 'total', desc: true }, { id: 'customer', desc: false }]`, and `formatSort()` reverses it. Use the same page size default on both sides, or always pass `size`. Pass the total as `rowCount`, or Next stays disabled.
 
-Pass the total as `rowCount`. Without it, a manually paged table cannot know how many pages there are, and Next stays disabled.
+> [!WARNING] Allow-list sort columns
+> Only ids in `sorters` are used, so a hand-edited `?sort=password` sorts nothing. With a database, build the `ORDER BY` from such an allow-list, never from the raw string.
+
+`@kitr/table` imports React; in a server without React, split the sort string yourself.
 
 ## Filter by a column
 
-A filter is a column id and a string value. Set it from any input with `column.setFilterValue()`; `useUrlTableState` writes it to the URL and resets to page 1. An empty string removes the filter:
+A filter is a column id and a string value. Set it from any input with `column.setFilterValue()`; `useUrlTableState` writes it to the URL and resets to page 1. An empty string removes it:
 
 ```tsx
 // app/components/orders/status-filter.tsx
@@ -401,7 +409,7 @@ export function StatusFilter({ table }: { table: ReactTable<DataTableFeatures, O
 }
 ```
 
-`<DataTable>` builds its table inside, so a filter outside it writes the URL instead. That is the same thing, because the URL is the state:
+`<DataTable>` builds its table inside, so a filter outside it writes the URL directly, which is the same thing because the URL is the state:
 
 ```ts
 // app/routes.ts
@@ -447,11 +455,11 @@ export default function OrdersToolbar() {
 }
 ```
 
-Filter values are always strings in the URL. A number filter (`minTotal=100`) arrives as `'100'`; convert it on the server. For free-text search across columns, add your own `q` param as in [Validate the URL](#validate-the-url), rather than a filter on one column.
+Filter values are always strings in the URL, so convert a number filter (`minTotal=100`) on the server. For free-text search across columns, add your own `q` param as in [Validate the URL](#validate-the-url).
 
 ## Change the page size
 
-`table.setPageSize()` writes `size` to the URL and keeps the first visible row on screen, which from page 1 means staying on page 1:
+`table.setPageSize()` writes `size` to the URL and keeps the first visible row on screen:
 
 ```tsx
 // app/components/orders/page-size.tsx
@@ -476,11 +484,11 @@ export function PageSize({ table }: { table: ReactTable<DataTableFeatures, Order
 // choosing 50 => setSearch({ page: undefined, size: 50 })
 ```
 
-Choosing the default size again removes `size` from the URL. Sizes above 500 are dropped by `parseTableSearch` when the page loads, so a hand-edited `?size=100000` falls back to the default.
+The default size is removed from the URL, and `parseTableSearch` drops sizes above 500, so a hand-edited `?size=100000` falls back to the default.
 
 ## Sort and page in the browser
 
-For a small list that arrives in one response, such as the twenty orders of one customer, let the table sort, filter and page itself. Add TanStack's row models to the feature set, and turn the manual flags off after the spread:
+For a small list that arrives in one response, such as one customer's twenty orders, let the table sort, filter and page itself. Add TanStack's row models to the feature set, and turn the manual flags off after the spread:
 
 ```tsx
 // app/components/orders/customer-orders.tsx
@@ -536,9 +544,10 @@ export function CustomerOrders(props: {
 
 Given Grace's 120, Ada's 80 and Linus's 300 and `?sort=-total`, the rows come out Linus, Grace, Ada. The state still lives in the URL; only the work moved to the browser.
 
-Turning the flags off is not enough on its own. `dataTableFeatures` has no row models, so without `sortedRowModel` and the rest the table keeps the rows in the order you passed them, whatever the URL says. TanStack v9 only ships the code for what you register, which is why kitr's default set is small.
+> [!WARNING] Add the row models
+> Turning the flags off is not enough: `dataTableFeatures` has no row models, so without `sortedRowModel` and the rest the table keeps your row order, whatever the URL says.
 
-`clientTableFeatures` from `@kitr/table` is that feature set ready-made, with the sort and filter functions TanStack's `auto` picks. With it, `useUrlTableState({ search, setSearch, manual: false })` is all a client-side table needs, and the `data-table` component does both when you pass `clientSide`: `<DataTable columns={columns} data={rows} clientSide {...tableState} />`.
+`clientTableFeatures` is that feature set ready-made. With it, `useUrlTableState({ search, setSearch, manual: false })` is all a client-side table needs, and `<DataTable columns={columns} data={rows} clientSide {...tableState} />` does both.
 
 ## Hide columns
 
@@ -592,11 +601,11 @@ export function OrdersTable(props: {
 }
 ```
 
-Spread `urlState` first and set `state` after it, merging `urlState.state` in. Writing `state: { columnVisibility }` alone would drop sorting, paging and filters. Visibility is a viewer's preference rather than part of the view, which is why it stays out of the URL.
+Spread `urlState` first and merge `urlState.state` into `state`: writing `state: { columnVisibility }` alone would drop sorting, paging and filters. Visibility is a viewer's preference, so it stays out of the URL.
 
 ## Select rows
 
-Row selection is not in the default set, because many tables don't need it. Add `rowSelectionFeature` to a feature set of your own, and give rows a stable id so a selection survives a refetch:
+Row selection is not in the default set. Add `rowSelectionFeature` to a feature set of your own, and give rows a stable id so a selection survives a refetch:
 
 ```tsx
 // app/components/orders/refund-table.tsx
@@ -646,11 +655,11 @@ export function RefundTable({ orders }: { orders: Order[] }) {
 }
 ```
 
-Checking Grace's order 1001 sets `rowSelection` to `{ '1001': true }`. Without `getRowId`, rows are keyed by their index on the page, so a selection points at different orders after a sort. `<DataTable>` is typed for `dataTableFeatures`; for a table with extra features, edit your copy of `data-table.tsx` or render the rows yourself as below.
+Checking Grace's order 1001 sets `rowSelection` to `{ '1001': true }`. Without `getRowId`, rows are keyed by page index, so a selection points at different orders after a sort. `<DataTable>` is typed for `dataTableFeatures`; for extra features, edit your copy of `data-table.tsx` or render the rows yourself.
 
 ## Render your own markup
 
-`<DataTable>` is one possible rendering. To build a different one, such as a table that turns into cards on phones, call `useTable` with `dataTableFeatures` and render headers and cells with `table.FlexRender`:
+`<DataTable>` is one rendering. For another, such as cards on phones, call `useTable` with `dataTableFeatures` and render with `table.FlexRender`:
 
 ```tsx
 // app/components/orders/orders-grid.tsx
@@ -724,11 +733,11 @@ export function OrdersGrid(props: {
 }
 ```
 
-With 45 orders and the default size of 20, `table.getPageCount()` is `3`. `aria-sort` on the header tells screen readers which way the column is sorted. [TanStack's table guides](https://tanstack.com/table/latest/docs/guide/tables) cover header groups, footers, pinning and the rest.
+With 45 orders and the default size of 20, `table.getPageCount()` is `3`. [TanStack's table guides](https://tanstack.com/table/latest/docs/guide/tables) cover header groups, footers, pinning and the rest.
 
 ## Keep table state out of the URL
 
-`useUrlTableState` only needs `search` and `setSearch`, so any state store works. For a table inside a dialog, where the URL should not change, keep the params in `useState`:
+`useUrlTableState` only needs `search` and `setSearch`, so any state store works. For a table in a dialog, where the URL should not change, use `useState`:
 
 ```tsx
 // app/components/orders/pick-order-dialog.tsx
@@ -748,11 +757,11 @@ export function PickOrderDialog(props: { columns: ColumnDef<DataTableFeatures, O
 }
 ```
 
-Closing the dialog forgets the sort. Everything else, including the page resets and the defaults left out, behaves as it does in the URL.
+Closing the dialog forgets the sort; everything else behaves as it does in the URL.
 
 ## Testing
 
-The table's state lives in `search` and leaves through `setSearch`, so a test renders the table with a `search` object and a mock `setSearch`, clicks, and asserts what would have gone into the URL. No router is needed:
+A test renders the table with a `search` object and a mock `setSearch`, clicks, and asserts what would have gone into the URL. No router is needed:
 
 ```tsx
 // app/components/orders/orders-grid.test.tsx
@@ -851,7 +860,5 @@ To test the route's own `validateSearch`, call `parseTableSearch` with the raw p
 ## Next steps
 
 - [API reference](/packages/table/api): every export of `@kitr/table`.
-- [TanStack Table docs](https://tanstack.com/table/latest): features, row models and column options, imported from `@kitr/table`.
 - [Router](/packages/router): `validateSearch`, `loaderDeps` and `navigate`, which the URL state uses.
 - [Query](/packages/query): cache each page of rows by its search params.
-- [Testing](/packages/testing): render tables inside your app's providers.

@@ -8,9 +8,10 @@ order: 1
 
 Users expect dark mode without a white flash on load. `@kitr/theme` gives you light, dark and system themes that remember the user's choice, design tokens as CSS variables, and the settings `kitr ui add` uses to copy components into your app. Components come from [shadcn/ui](https://ui.shadcn.com)-compatible registries.
 
-It runs in the browser, and on the server during server rendering. For utility classes on top of the same tokens, add [tailwind](/packages/tailwind) as well; for a server-only project there is nothing to theme.
+> [!SUMMARY]
+> Light, dark and system themes with no flash on load, design tokens and copy-in components. Add it with `kitr add theme`; the overview is at [/packages/theme](/packages/theme).
 
-This guide follows Acme's dashboard at `app.acme.com`: Ada adds a dark mode toggle, brands the colours and copies in a few components. Toasts have their own package, [toast](/packages/toast).
+This guide follows Acme's dashboard at `app.acme.com`: Ada adds a dark mode toggle, brands the colours and copies in a few components. Toasts have their own package, [toast](/packages/toast). For utility classes on the same tokens, add [tailwind](/packages/tailwind).
 
 ## Install
 
@@ -18,29 +19,25 @@ This guide follows Acme's dashboard at `app.acme.com`: Ada adds a dark mode togg
 kitr add theme
 ```
 
-What `kitr add` does:
+<details>
+<summary>Everything kitr add changes</summary>
 
 - Adds [react](/packages/react) first if the project does not have it, because theme requires it.
-- Installs `@kitr/theme`.
-- Adds `'@kitr/theme'` to `packages` and `() => import('@kitr/theme/provider')` to `providers` in `kitrrc.ts`.
-- Writes `config/theme.ts` (shown under Configure).
-- Writes `app/styles/tokens.css`, an empty `:root` block for your token overrides.
-- Loads `tokens.css` after kitr's tokens, so your values win. With [tailwind](/packages/tailwind), it adds `@import './tokens.css';` to `app/styles/app.css` right after `@import '@kitr/theme/styles.css';`. Without it, it links `#app/styles/tokens.css?url` from `head()` in `app/document.tsx`, after `@kitr/theme/styles.css`.
-- Edits `app/document.tsx` (or `app/routes/__root.tsx` in a project that kept file routes) to apply the saved theme before first paint: imports `ThemeScript` from `@kitr/theme`, puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A document that already has `<ThemeScript` or has no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
-- Adds a `theme` section to `AGENTS.md`: use `useTheme()`, put `<ThemeScript />` in the document head, take colours and radii from the `--kitr-*` variables, keep components in `app/components/ui/` and add them with `kitr ui add`, and use Hugeicons through `<Icon />`.
-- Adds no environment variables and no scripts. When it finishes it prints `Pull components with kitr ui add button input form`.
+- Installs `@kitr/theme`, adds it to `packages` and its provider to `providers` in `kitrrc.ts`.
+- Writes `config/theme.ts` (see Configure) and `app/styles/tokens.css`, an empty `:root` block for your token overrides.
+- Loads `tokens.css` after kitr's tokens, so your values win: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise by linking it from `head()` in `app/document.tsx`.
+- Edits `app/document.tsx` (or `app/routes/__root.tsx`) to apply the saved theme before first paint: puts `<ThemeScript />` above `<HeadContent />` and adds `suppressHydrationWarning` to `<html lang="en">`. A document that already has `<ThemeScript` or no `<HeadContent />` is left alone ([Avoid a flash on load](#avoid-a-flash-on-load)).
+- Adds a `theme` section to `AGENTS.md`.
 
-`kitr add` skips `config/theme.ts` and `tokens.css` when they already exist. It asks no questions; `--no-install` skips the package manager and `--dry-run` prints the plan.
+It adds no environment variables or scripts, skips `config/theme.ts` and `tokens.css` when they exist, and asks no questions. `--no-install` skips the package manager and `--dry-run` prints the plan.
 
-```sh
-kitr add theme --dry-run
-```
+The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include theme, with a starter set of components (`icon`, `button`, `input`, `card`, `theme-toggle` and more).
 
-The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include theme, and copy in a starter set of components with it (`icon`, `button`, `input`, `card`, `theme-toggle` and more). The `blank` kit does not.
+`kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning`, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and `app/components/ui/` stay, because they are yours.
 
-The base stylesheet, `@kitr/theme/styles.css`, is linked from the `app/document.tsx` that [router](/packages/router) writes, so it is in place before you add theme. With [tailwind](/packages/tailwind), `app/styles/app.css` imports it instead.
+</details>
 
-`kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning` from `app/document.tsx`, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and the components in `app/components/ui/` stay, because they are yours.
+The base stylesheet `@kitr/theme/styles.css` is linked from the `app/document.tsx` that [router](/packages/router) writes (or imported by `app/styles/app.css` with tailwind), so it is in place before you add theme.
 
 ## Configure
 
@@ -69,7 +66,7 @@ export default defineConfig({
 | `colors.dark` | none | The same, for the dark theme. |
 | `registry` | kitr's registry | Where `kitr ui add` and `kitr ui list` fetch components: a URL or a local directory. |
 | `componentsDir` | `app/components/ui` | Where `kitr ui add` writes components. |
-| `tokens.light`, `tokens.dark` | none | Typed slot for token overrides. Nothing reads it yet; override tokens in `app/styles/tokens.css` (see "Brand the colours"). |
+| `tokens.light`, `tokens.dark` | none | Reserved slot for token overrides; override tokens in `app/styles/tokens.css` (see [Brand the colors](#brand-the-colors)). |
 
 | Variable | Used for |
 | --- | --- |
@@ -79,7 +76,7 @@ The config is read once, when the app is created. `useConfig('theme')` from [rea
 
 ## Add a dark mode toggle
 
-`useTheme()` returns the current choice and the functions that change it. Any component under the app can call it:
+`useTheme()` returns the current choice and the functions that change it:
 
 ```tsx
 // app/components/theme-button.tsx
@@ -122,7 +119,7 @@ export function RootDocument() {
 }
 ```
 
-Click it and the page turns dark: `<html>` gets `data-theme="dark"` and `style="color-scheme: dark"`, every `--kitr-*` variable switches to its dark value, and the choice is saved, so a reload keeps it.
+Click it and the page turns dark: `<html>` gets `data-theme="dark"`, every `--kitr-*` variable switches to its dark value, and the choice is saved, so a reload keeps it.
 
 | Field | What it is |
 | --- | --- |
@@ -131,7 +128,7 @@ Click it and the page turns dark: `<html>` gets `data-theme="dark"` and `style="
 | `setTheme(theme)` | Sets the choice and saves it to `localStorage` and a one-year cookie. |
 | `toggle()` | Switches to the opposite of `resolved` and saves that, which leaves `'system'`. |
 
-For a styled toggle with an icon, copy the registry's version instead: `kitr ui add theme-toggle` writes `app/components/ui/theme-toggle.tsx` (plus `button` and `icon`), and you render `<ThemeToggle />`.
+For a styled toggle with an icon, `kitr ui add theme-toggle` writes `app/components/ui/theme-toggle.tsx` (plus `button` and `icon`); render `<ThemeToggle />`.
 
 ## Let users pick light, dark or system
 
@@ -156,11 +153,11 @@ export function AppearanceSetting() {
 }
 ```
 
-With `system` saved, `resolved` follows the OS: when Linus's laptop switches to dark at sunset, the dashboard does too, without a reload. A stored value other than `light`, `dark` or `system` is ignored and `default` applies.
+With `system` saved, `resolved` follows the OS without a reload, so the dashboard goes dark when Linus's laptop does at sunset. A stored value other than `light`, `dark` or `system` is ignored and `default` applies.
 
 ## Avoid a flash on load
 
-React applies the theme after it hydrates, a moment after the first paint. Without help, a dark-mode user sees a white page flash first. `<ThemeScript />` is a tiny inline script that reads the saved choice and sets `data-theme` before anything paints. Put it first in the document head:
+React applies the theme after it hydrates, a moment after first paint, so a dark-mode user would see a white flash. `<ThemeScript />` is a tiny inline script that reads the saved choice and sets `data-theme` before anything paints. Put it first in the document head:
 
 ```tsx
 // app/document.tsx
@@ -191,15 +188,13 @@ export function RootDocument() {
 }
 ```
 
-The script changes `<html>` before React hydrates it, so React would warn that the attribute differs from the server's HTML; `suppressHydrationWarning` on `<html>` tells it this one difference is expected.
+`suppressHydrationWarning` on `<html>` tells React that the script's change to the attribute is expected. `kitr add theme` and the kits add both for you. The script only reads `localStorage`, so it works in `ssr`, `static` and `spa` modes and in desktop and mobile shells.
 
-`kitr add theme` adds `<ThemeScript />` and `suppressHydrationWarning` to the `app/document.tsx` `kitr add router` writes, and the kits include them. It works the same in `ssr`, `static` and `spa` modes and in desktop and mobile shells, because it only reads `localStorage`.
-
-If you changed `storageKey` or `attribute` in `config/theme.ts`, pass the same values: `<ThemeScript storageKey="acme-theme" attribute="data-mode" />`. The script reads its props, not the config. It escapes both values, so a key containing `</script>` cannot break out of the tag.
+If you changed `storageKey` or `attribute` in `config/theme.ts`, pass the same values, because the script reads its props, not the config: `<ThemeScript storageKey="acme-theme" attribute="data-mode" />`.
 
 ## Render the saved theme on the server
 
-In `ssr` mode the server can send the right theme in the HTML itself. `setTheme` writes the choice to a cookie as well as to `localStorage`, and `themeFromCookie` reads it from the request's `Cookie` header:
+In `ssr` mode the server can send the right theme in the HTML. `setTheme` writes a cookie as well as `localStorage`, and `themeFromCookie` reads it from the request:
 
 ```ts
 // app/lib/theme/read-theme.ts
@@ -256,11 +251,11 @@ themeFromCookie(null) // => undefined
 themeFromCookie('acme-theme=light', 'acme-theme') // => 'light', with a custom storageKey
 ```
 
-When it returns `undefined`, keep `<ThemeScript />` to resolve `system` in the browser. Keep it in any case: it covers static pages and the shells, where there is no request.
+When it returns `undefined`, `<ThemeScript />` resolves `system` in the browser. Keep it in any case: it covers static pages and the shells, where there is no request.
 
 ## Color the window chrome and status bar
 
-`colors` in `config/theme.ts` keeps `<meta name="theme-color">` in step with the theme. Browsers that support the tag tint their toolbar, and installed PWAs their title bar, with this colour:
+`colors` in `config/theme.ts` keeps `<meta name="theme-color">` in step with the theme. Browsers tint their toolbar, and installed PWAs their title bar, with it:
 
 ```ts
 // config/theme.ts
@@ -273,11 +268,11 @@ export default defineConfig({
 })
 ```
 
-On every change of `resolved`, the provider sets the tag's `content` to `colors.light` or `colors.dark`, and creates the tag if the page has none. Pick the same colour as `--kitr-color-background` so the chrome blends into the page. kitr only writes the tag; inside the [desktop](/packages/desktop) and [mobile](/packages/mobile) shells, whether the window or status bar follows it depends on the shell's web view.
+On every change of `resolved`, the provider sets the tag's `content` (creating the tag if needed). Pick the same colour as `--kitr-color-background` so the chrome blends in. Inside the [desktop](/packages/desktop) and [mobile](/packages/mobile) shells, whether the window or status bar follows it depends on the shell's web view.
 
 ## Use the tokens in CSS
 
-`@kitr/theme/styles.css` defines every token as a `--kitr-*` variable on `:root`, with dark values under `[data-theme="dark"]`. Use them in any stylesheet and the component follows the theme without a line of JavaScript:
+`@kitr/theme/styles.css` defines every token as a `--kitr-*` variable on `:root`, with dark values under `[data-theme="dark"]`. Use them in any stylesheet and the component follows the theme:
 
 ```css
 /* app/components/invoices/invoice-card.module.css */
@@ -310,9 +305,10 @@ On every change of `resolved`, the provider sets the tag's `content` to `colors.
 | `--kitr-font-sans`, `--kitr-font-mono` | the system UI and monospace stacks | same |
 | `--kitr-shadow-sm`, `--kitr-shadow-md` | soft shadows at 6% and 8% black | same |
 
-Don't hard-code `#fff` or `rgb(...)` in a component. A hard-coded colour does not change with the theme, and it does not change when Acme rebrands.
+> [!WARNING] No hard-coded colours
+> Don't hard-code `#fff` or `rgb(...)` in a component: it won't change with the theme or when Acme rebrands.
 
-The same tokens exist in JavaScript as `defaultTokens` and `darkTokens`:
+The same tokens exist in JavaScript:
 
 ```ts
 import { darkTokens, defaultTokens } from '@kitr/theme'
@@ -340,7 +336,7 @@ To change a token for the whole app, override its variable in `app/styles/tokens
 }
 ```
 
-`kitr add theme` loads this file for you: with [tailwind](/packages/tailwind) through `@import './tokens.css';` in `app/styles/app.css`, otherwise with an import in `app/document.tsx`. If you move it, keep it after `@kitr/theme/styles.css`, so your values come later in the cascade and win:
+`kitr add theme` loads this file for you. If you move it, keep it after `@kitr/theme/styles.css` so your values win the cascade. Without tailwind, link it from the document:
 
 ```tsx
 // app/document.tsx
@@ -357,11 +353,11 @@ export function head() {
 }
 ```
 
-With [tailwind](/packages/tailwind), import it in `app/styles/app.css` after `@kitr/theme/styles.css` instead: `@import './tokens.css';`.
+With [tailwind](/packages/tailwind), use `@import './tokens.css';` in `app/styles/app.css` after the theme import instead.
 
 ## Define your own tokens
 
-`defineTokens` turns a nested object into CSS variables with typed names. Use it for values kitr has no token for, such as Acme's invoice status colours:
+`defineTokens` turns a nested object into CSS variables with typed names, for values kitr has no token for, such as Acme's invoice status colours:
 
 ```ts
 // app/styles/acme-tokens.ts
@@ -383,9 +379,9 @@ acme.css()
 // => ':root {\n  --acme-status-paid: oklch(65% 0.15 150);\n  --acme-status-overdue: oklch(60% 0.2 27);\n  --acme-space-card: 16;\n}\n'
 ```
 
-`acme.var('status.unpaid')` is a type error, because the path is checked against the object. Numbers are written as they are, without a unit; write `'16px'` when the CSS needs one. The prefix defaults to `kitr`.
+`acme.var('status.unpaid')` is a type error, because paths are checked against the object. Numbers are written without a unit; write `'16px'` when CSS needs one. The prefix defaults to `kitr`.
 
-Emit the variables once, from the root layout, or spread `flat()` into a `style` to scope them to one element:
+Emit the variables once from the root layout, or spread `flat()` into a `style` to scope them to one element:
 
 ```tsx
 // app/components/invoices/invoice-status.tsx
@@ -410,7 +406,7 @@ import { acme } from '#app/styles/acme-tokens'
 
 ## Style with CSS Modules
 
-Without Tailwind, CSS Modules plus three small helpers cover most styling. `kitr css:types` writes a `.d.ts` next to each `*.module.css`, so class names are checked:
+Without Tailwind, CSS Modules plus three small helpers cover most styling. `kitr css:types` writes a `.d.ts` next to each `*.module.css` so class names are checked:
 
 ```sh
 kitr css:types
@@ -443,11 +439,11 @@ export function InvoiceCard({ id, total, overdue }: { id: string; total: number;
 // overdue → class="card_x1 overdue_x2" (the hashed names from the module)
 ```
 
-`pick` skips `false`, `null` and `undefined`, so `pick(styles, 'card', isOpen && 'overdue')` works too. `pick(styles, 'crad')` is a type error. To type a module by hand, use `CssModule<'card' | 'overdue'>`.
+`pick` skips `false`, `null` and `undefined`, so `pick(styles, 'card', isOpen && 'overdue')` works. `pick(styles, 'crad')` is a type error. To type a module by hand, use `CssModule<'card' | 'overdue'>`.
 
 ## Pass values to CSS
 
-`vars()` builds a `style` object of CSS variables, so a component passes a number to its stylesheet without inline colour or size rules:
+`vars()` builds a `style` object of CSS variables, so a component passes a value to its stylesheet:
 
 ```tsx
 // app/components/projects/progress-bar.tsx
@@ -475,7 +471,7 @@ export function ProgressBar({ done }: { done: number }) {
 
 ## Style states with data attributes
 
-`dataAttrs()` turns an object into `data-*` attributes, so plain CSS can target a component's state with an attribute selector:
+`dataAttrs()` turns an object into `data-*` attributes, so plain CSS can target a component's state:
 
 ```tsx
 // app/components/orders/order-row.tsx
@@ -498,11 +494,11 @@ export function OrderRow({ status, selected }: { status: 'open' | 'shipped'; sel
 }
 ```
 
-Keys become kebab-case. `true` gives an empty attribute; `false`, `null` and `undefined` leave it out; numbers become strings.
+Keys become kebab-case. `true` gives an empty attribute; `false`, `null` and `undefined` leave it out.
 
 ## Build component variants
 
-`@kitr/theme` re-exports [class-variance-authority](https://cva.style) as `cva` (with `VariantProps`) and [clsx](https://github.com/lukeed/clsx) as `clsx` and `cx`. The registry components use them, and so can yours:
+`@kitr/theme` re-exports [class-variance-authority](https://cva.style) as `cva` (with `VariantProps`) and [clsx](https://github.com/lukeed/clsx) as `clsx` and `cx`, which the registry components use:
 
 ```tsx
 // app/components/ui/badge.tsx
@@ -526,11 +522,11 @@ export function Badge({
 // cx('badge', { active: true, muted: false }) => 'badge active'
 ```
 
-With [tailwind](/packages/tailwind), use its `cn()` instead of `cx`, which also merges conflicting utility classes.
+With [tailwind](/packages/tailwind), use its `cn()` instead of `cx`: it also merges conflicting utility classes.
 
 ## Add components
 
-`kitr ui add` copies components from a shadcn-compatible registry into `app/components/ui/`. The files are yours to edit; nothing is imported from a package at run time.
+`kitr ui add` copies components from a shadcn-compatible registry into `app/components/ui/`. The files are yours to edit.
 
 ```sh
 kitr ui add button input card dialog
@@ -551,7 +547,7 @@ export function NewProjectCard() {
 }
 ```
 
-The components use the `--kitr-*` tokens and `cva`, so they follow the theme and your token overrides. `kitr ui add` also copies their registry dependencies (`theme-toggle` brings `button` and `icon`) and installs the npm packages they need (`icon` installs `@hugeicons/react` and `@hugeicons/core-free-icons`).
+The components use the `--kitr-*` tokens and `cva`, so they follow the theme and your overrides. `kitr ui add` also copies registry dependencies (`theme-toggle` brings `button` and `icon`) and installs the npm packages they need.
 
 | Component | What it is |
 | --- | --- |
@@ -572,11 +568,11 @@ The components use the `--kitr-*` tokens and `cva`, so they follow the theme and
 | `list-page` | A list route: page header, data table bound to search params, empty state. Writes a page, not a component. |
 | `sign-in-page` | A sign-in route using [forms](/packages/forms). Writes a page, not a component. |
 
-To use your company's registry, set `registry` in `config/theme.ts`, pass `--registry`, or set `KITR_REGISTRY`. A registry is any URL or directory that serves `registry.json` and one `<name>.json` per component in the shadcn format.
+For your company's registry, set `registry` in `config/theme.ts`, pass `--registry`, or set `KITR_REGISTRY`. A registry is any URL or directory serving `registry.json` and one `<name>.json` per component in the shadcn format.
 
 ## Use icons
 
-Icons are [Hugeicons](https://hugeicons.com) in the stroke-rounded style: round caps, round joins, soft corners, drawn in `currentColor`. `kitr ui add icon` (every kit that includes theme has it) gives you `<Icon>`:
+Icons are [Hugeicons](https://hugeicons.com) in the stroke-rounded style, drawn in `currentColor`. `kitr ui add icon` gives you `<Icon>`:
 
 ```tsx
 // app/components/projects/add-project-button.tsx
@@ -593,7 +589,7 @@ export function AddProjectButton() {
 }
 ```
 
-The registry components, the kit pages and the devtools overlay all draw from this set. Use one icon set across the app; don't mix in emoji or text glyphs as icons.
+The registry components, kit pages and devtools overlay all use this set. Use one icon set across the app, not emoji or text glyphs.
 
 ## Change the storage key or attribute
 
@@ -617,11 +613,12 @@ export default defineConfig({
 <ThemeScript storageKey="acme-admin-theme" attribute="data-mode" />
 ```
 
-With a different `attribute`, `@kitr/theme/styles.css` no longer switches to dark, because its dark block targets `[data-theme="dark"]`. Copy the dark values into your own `[data-mode="dark"]` block in `app/styles/tokens.css`, or keep the default attribute.
+> [!WARNING] Custom attribute
+> With a different `attribute`, `@kitr/theme/styles.css` no longer switches to dark, because its dark block targets `[data-theme="dark"]`. Copy the dark values into your own `[data-mode="dark"]` block in `app/styles/tokens.css`, or keep the default.
 
 ## Use ThemeProvider on its own
 
-The theme provider in `kitrrc.ts` renders `ThemeProvider` with your config. Outside a kitr app, such as in a Storybook or an embedded widget, render it yourself:
+The provider in `kitrrc.ts` renders `ThemeProvider` with your config. Outside a kitr app, such as Storybook or an embedded widget, render it yourself:
 
 ```tsx
 // app/widget/main.tsx
@@ -644,7 +641,8 @@ createRoot(document.getElementById('acme-widget')!).render(
 | `initialResolved` | `'light'` | `resolved` before the first effect runs, for example from `themeFromCookie`, so the first render matches the server. |
 | `colors` | none | `<meta name="theme-color">` per resolved theme. |
 
-Don't render a second `ThemeProvider` inside a kitr app. The provider already wraps the tree, and a nested one keeps its own state, so its `toggle` would not change what the rest of the app reads.
+> [!WARNING] One ThemeProvider
+> Don't render a second `ThemeProvider` inside a kitr app: a nested one keeps its own state, so its `toggle` would not change what the rest of the app reads.
 
 ## Commands
 
@@ -658,7 +656,7 @@ Don't render a second `ThemeProvider` inside a kitr app. The provider already wr
 kitr ui add theme-toggle
 ```
 
-This writes `app/components/ui/theme-toggle.tsx`, `app/components/ui/button.tsx` and `app/components/ui/icon.tsx`, and installs `class-variance-authority`, `@hugeicons/react` and `@hugeicons/core-free-icons`:
+This writes `theme-toggle.tsx`, `button.tsx` and `icon.tsx` into `app/components/ui/` and installs `class-variance-authority`, `@hugeicons/react` and `@hugeicons/core-free-icons`:
 
 ```tsx
 // app/components/ui/theme-toggle.tsx
@@ -705,7 +703,7 @@ kitr ui list
 
 ## Testing
 
-In a test, boot an app with the theme provider and render with `renderWithKitr` from [testing](/packages/testing). Config goes in through `createTestApp`:
+Boot an app with the theme provider and render with `renderWithKitr` from [testing](/packages/testing). Config goes in through `createTestApp`:
 
 ```tsx
 // app/components/theme-button.test.tsx
@@ -734,7 +732,7 @@ describe('ThemeButton', () => {
 })
 ```
 
-The theme is saved to `localStorage` and a cookie, which the test DOM keeps between tests. Clear them in an `afterEach` so one test's choice does not leak into the next:
+The theme is saved to `localStorage` and a cookie, which the test DOM keeps between tests. Clear them in `afterEach`:
 
 ```ts
 // test/setup.ts
@@ -747,9 +745,7 @@ afterEach(() => {
 })
 ```
 
-To test what a component does in dark mode without clicking, save the choice before rendering: `localStorage.setItem('kitr-theme', 'dark')`. The provider reads it on mount.
-
-For `system`, the provider asks `window.matchMedia('(prefers-color-scheme: dark)')`. Replace it to control the OS setting:
+To test dark mode without clicking, save the choice first: `localStorage.setItem('kitr-theme', 'dark')`. For `system`, the provider asks `window.matchMedia('(prefers-color-scheme: dark)')`; replace it to control the OS setting:
 
 ```ts
 // test/dark-system.ts
@@ -768,6 +764,4 @@ export function prefersDark(dark: boolean) {
 
 - [API reference](/packages/theme/api): every export of `@kitr/theme`, `@kitr/theme/provider` and `@kitr/theme/server`.
 - [Tailwind](/packages/tailwind): the same tokens as utility classes, and `cn()`.
-- [Router](/packages/router): writes the `app/document.tsx` where `<ThemeScript />` and the stylesheet go.
 - [Toast](/packages/toast): short messages like "Saved", which follow the theme.
-- [shadcn/ui](https://ui.shadcn.com/docs/registry): the registry format `kitr ui add` reads.

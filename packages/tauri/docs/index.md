@@ -6,23 +6,24 @@ order: 1
 
 # Tauri
 
-Some desktop apps have to be small: a download of a few megabytes, a window that starts fast and idles on little memory. `@kitr/tauri` is a desktop platform for Windows, macOS and Linux built on [Tauri 2](https://v2.tauri.app/). It wraps the same `app/` you ship to the browser in a small Rust binary around the webview the operating system already has, and gives you typed calls from your components to Rust functions.
+Some desktop apps have to be small: a download of a few megabytes, a window that starts fast and idles on little memory. `@kitr/tauri` is a desktop platform for Windows, macOS and Linux built on [Tauri 2](https://v2.tauri.app/). It wraps the same `app/` you ship to the browser in a small Rust binary around the webview the operating system already has, with typed calls from your components to Rust functions.
 
-Tauri renders with the OS webview: WebView2 (Chromium-based) on Windows, WKWebView (Safari's engine) on macOS and WebKitGTK on Linux. Native code is Rust. kitr adds the platform on top: `kitr dev` runs the window with hot reload, `kitr build` builds installers through the Tauri CLI, `defineCommands` types every `#[tauri::command]` from TypeScript, `commandQuery` and `commandMutation` plug those commands into [Query](/packages/query), and `@kitr/tauri/provider` moves the [platform](/packages/platform) and [storage](/packages/storage) packages to their Tauri drivers.
+> [!SUMMARY]
+> A small desktop app for Windows, macOS and Linux from the same `app/` as your web app. Add it with `kitr add tauri app`; the overview is at [/packages/tauri](/packages/tauri).
 
-`@kitr/tauri/client` and the provider run in the window, and in a plain browser, where they stand aside. The Rust project runs as the app's native process. For most desktop apps we recommend [Desktop](/packages/desktop) (Electron) instead, which ships its own browser engine so the app renders the same on every OS.
+Tauri renders with the OS webview (WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux); native code is Rust. kitr adds `kitr dev` and `kitr build`, `defineCommands` to type every `#[tauri::command]`, `commandQuery` and `commandMutation` for [Query](/packages/query), and a provider that moves [platform](/packages/platform) and [storage](/packages/storage) to their Tauri drivers. The client helpers and provider stand aside in a plain browser.
 
-The examples on this page ship the Acme orders app to the desktop: Ada's warehouse team at Acme lists orders, exports invoices to disk and watches order sync progress, with the same code the browser runs at `app.acme.com`.
+The examples ship the Acme orders app to the desktop: Ada's warehouse team lists orders, exports invoices to disk and watches order sync progress.
 
 ## When to use it
 
-Use `@kitr/tauri` when download size, start-up time and memory matter more than identical rendering everywhere: an internal tool on old laptops, a tray utility, an app distributed over slow connections. Installers are a few megabytes because the browser engine is not inside them. Tauri's permission system also makes you list every native capability the window may use.
+Use `@kitr/tauri` when download size, start-up time and memory matter more than identical rendering everywhere: an internal tool on old laptops, a tray utility, an app on slow connections. Installers are a few megabytes because the browser engine is not inside them.
 
-Use [Desktop](/packages/desktop) (Electron) for most other apps. Electron ships its own browser, so every user sees the page you tested; Tauri's webviews differ between systems. Electron's native side is Node.js; Tauri's is Rust. Your app code stays the same either way.
+For most other apps use [Desktop](/packages/desktop) (Electron). It ships its own browser, so every user sees the page you tested; Tauri's webviews differ between systems. Your app code stays the same either way.
 
 ## Install
 
-Building needs Rust and the system libraries Tauri uses. Follow [Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS first: Rust through `rustup` everywhere, the Xcode command line tools on macOS, the Microsoft C++ Build Tools and WebView2 on Windows, and `webkit2gtk` with a few other packages on Linux.
+Building needs Rust and the system libraries Tauri uses. Follow [Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS first.
 
 Then add a Tauri platform named `app`:
 
@@ -30,21 +31,9 @@ Then add a Tauri platform named `app`:
 kitr add tauri app
 ```
 
-`tauri` is the platform type and `app` is the name you address it by (`kitr dev app`). Without a name, `kitr add tauri` logs `No name given: calling the tauri platform "app".` and uses `app`. A name must be a short identifier: letters, digits, `-` and `_`, starting with a letter.
+`tauri` is the platform type and `app` is the name you address it by (`kitr dev app`). A name is letters, digits, `-` and `_`, starting with a letter. Without one, kitr uses `app`.
 
-What `kitr add tauri app` does:
-
-- Installs `@kitr/tauri` and adds it to `packages` in `kitrrc.ts`.
-- Adds the packages the platform needs when they are missing, each with its own setup: [Router](/packages/router) (and [React](/packages/react) before it), [Platform](/packages/platform), which writes `config/platform.ts`, and [Storage](/packages/storage), which writes `config/storage.ts` and `app/storage.ts`.
-- Installs `@tauri-apps/api` and `@tauri-apps/plugin-store`, and `@tauri-apps/cli` as a dev dependency.
-- Adds `() => import('@kitr/tauri/provider')` to `providers` in `kitrrc.ts`.
-- Writes `app: tauri({...})` into `platforms` in `kitrrc.ts`, with the flags you passed as options, and adds `import { tauri } from '@kitr/tauri'`.
-- Sets the `dev`, `build` and `start` scripts in `package.json` to `kitr dev`, `kitr build` and `kitr start`.
-- Writes the Rust project in `platforms/app/src-tauri/`: `tauri.conf.json`, `Cargo.toml`, `build.rs`, `src/main.rs`, `src/lib.rs` with a `greet` command, `capabilities/default.json`, `.gitignore` (ignoring `/target` and `/gen/schemas`) and `icons/README.md`. Files that already exist are kept.
-- Writes `app/commands.ts`, the typed mirror of the Rust commands.
-- Adds a `kitr: platform app` section to `AGENTS.md`: how to run and build, how to add a command, and where permissions go.
-
-`@kitr/tauri` asks no questions. Platform options are flags on the same command, named as in the options table under Configure:
+Platform options are flags on the same command:
 
 ```sh
 kitr add tauri app --title "Acme Orders" --width 1280 --height 860 --appId com.acme.orders
@@ -62,13 +51,26 @@ kitr add tauri app --title "Acme Orders" --width 1280 --height 860 --appId com.a
 | `--no-install` | | Edit `package.json` without running the package manager. |
 | `--dry-run` | | Print what would change. |
 
-The `tauri` kit already has an `app` Tauri platform next to a `site` web platform, with a home page that calls a Rust command and listens to an event. Start a new project from it:
+<details>
+<summary>Everything kitr add changes</summary>
+
+- Installs `@kitr/tauri` and adds it to `packages` in `kitrrc.ts`, with its provider.
+- Adds the packages the platform needs when missing, each with its own setup: [Router](/packages/router) (and [React](/packages/react)), [Platform](/packages/platform) and [Storage](/packages/storage).
+- Installs `@tauri-apps/api` and `@tauri-apps/plugin-store`, and `@tauri-apps/cli` as a dev dependency.
+- Writes `app: tauri({...})` into `platforms` in `kitrrc.ts` with your flags.
+- Sets the `dev`, `build` and `start` scripts to `kitr dev`, `kitr build` and `kitr start`.
+- Writes the Rust project in `platforms/app/src-tauri/` (`tauri.conf.json`, `Cargo.toml`, `build.rs`, `src/main.rs`, `src/lib.rs` with a `greet` command, `capabilities/default.json`, `icons/README.md`). Existing files are kept.
+- Writes `app/commands.ts`, the typed mirror of the Rust commands.
+- Adds a `kitr: platform app` section to `AGENTS.md`.
+
+It asks no questions. `kitr platforms remove app` takes the platform out of `kitrrc.ts` (and, for the last Tauri platform, the import and provider) but leaves `platforms/app/` for you to delete. `kitr remove tauri` does that for every Tauri platform and removes `@kitr/tauri`; the `@tauri-apps/*` packages stay.
+
+</details>
+The `tauri` kit has an `app` Tauri platform next to a `site` web platform, with a home page that calls a Rust command and listens to an event:
 
 ```sh
 kitr new acme-orders --kit tauri
 ```
-
-`kitr platforms remove app` takes the platform out of `kitrrc.ts`, and with the last Tauri platform also the `tauri` import and the provider line. It leaves `platforms/app/` for you to delete. `kitr remove tauri` does all of that for every Tauri platform, and takes `@kitr/tauri` out of `packages` and the dependencies; the `@tauri-apps/*` packages stay, so remove those yourself.
 
 ## Configure
 
@@ -106,7 +108,8 @@ export default defineKitrConfig({
 | `appId` | `com.example.<app>` | `identifier` in `tauri.conf.json`. The default lower-cases the title and keeps letters and digits: `Acme Orders` gives `com.example.acmeorders`. |
 | `devtools` | `true` | Open the webview inspector in `kitr dev`. Never in release builds. |
 
-Every option is written into the scaffolded files when you run `kitr add`, and the Tauri CLI reads those files, not `kitrrc.ts`. Changing an option later does not rewrite them: edit `tauri.conf.json`, which is yours, or delete it and run `kitr platforms scaffold app` to write it again. This includes `port`: if you change it, change `build.devUrl` too, or the window waits on the old port.
+> [!WARNING] Options are written once
+> Options are written into the scaffolded files, and the Tauri CLI reads those files, not `kitrrc.ts`. Changing an option later does not rewrite them: edit `tauri.conf.json`, or delete it and run `kitr platforms scaffold app`. If you change `port`, change `build.devUrl` too.
 
 With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` in a project whose `package.json` has version `0.1.0`, the platform writes:
 
@@ -147,7 +150,7 @@ With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` in a project whose `p
 }
 ```
 
-`frontendDist` points at this platform's client build. Every other key is [Tauri's configuration](https://v2.tauri.app/reference/config/). The content security policy allows the app's own files and `https:` and `wss:` APIs; widen `connect-src` or `img-src` if you load from elsewhere.
+`frontendDist` points at this platform's client build; every other key is [Tauri's configuration](https://v2.tauri.app/reference/config/). The content security policy allows the app's own files and `https:` and `wss:` APIs; widen `connect-src` or `img-src` for other sources.
 
 | Variable | Used for |
 | --- | --- |
@@ -155,11 +158,11 @@ With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` in a project whose `p
 | `KITR_PLATFORM` | Set to `app` by `kitr dev` and `kitr build`, so the Vite plugin builds this platform into `dist/app`. |
 | `TAURI_ENV_*` | Set by Tauri and readable in the app: `import.meta.env.TAURI_ENV_PLATFORM`. |
 
-Read or change one option from the command line with `kitr config app` (lists every option), `kitr config app minWidth 960` or `kitr config app minWidth --unset`. The other platform types each have their own guide: [Web](/packages/web), [Server](/packages/server), [Mobile](/packages/mobile) and [Desktop](/packages/desktop). [Platforms](/docs/platforms) lists them side by side.
+Read or change one option with `kitr config app` (lists every option), `kitr config app minWidth 960` or `kitr config app minWidth --unset`. [Platforms](/docs/platforms) lists the platform types side by side.
 
 ## Open your first window
 
-Tauri needs the app icons listed in `tauri.conf.json` before it compiles. When they are missing, `kitr dev app` and `kitr build app` write a placeholder `platforms/app/app-icon.png` (a rounded square) and run `tauri icon` on it. Replace it with your own 1024×1024 PNG whenever you like:
+Tauri needs the icons listed in `tauri.conf.json` before it compiles. When they are missing, `kitr dev app` and `kitr build app` write a placeholder and run `tauri icon` on it. Replace it with your own 1024×1024 PNG whenever you like:
 
 ```sh
 cd platforms/app
@@ -173,7 +176,7 @@ The icons land in `platforms/app/src-tauri/icons/`. Run the platform:
 kitr dev app
 ```
 
-kitr starts Vite on port 3200, then opens the Tauri window on it. `kitr dev app --port 3300` changes the port. The first run compiles Rust for a few minutes; later runs take seconds. Components update in place, but after editing `src-tauri`, restart `kitr dev app`.
+kitr starts Vite on port 3200, then opens the Tauri window on it (`--port 3300` changes the port). The first run compiles Rust for a few minutes; later runs take seconds. After editing `src-tauri`, restart `kitr dev app`.
 
 The scaffold wrote one Rust command and its typed mirror:
 
@@ -230,7 +233,7 @@ In the Tauri window the heading reads `Hello, Ada!`, computed in Rust. In the br
 
 ## Add a Rust command
 
-A command is a Rust function marked `#[tauri::command]` and listed in `generate_handler!`. It takes named arguments and returns anything [serde](https://serde.rs/) can serialise. Add one that lists orders by status:
+A command is a Rust function marked `#[tauri::command]` and listed in `generate_handler!`. It takes named arguments and returns anything [serde](https://serde.rs/) can serialise:
 
 ```rust
 // platforms/app/src-tauri/src/lib.rs
@@ -267,7 +270,7 @@ pub fn run() {
 }
 ```
 
-Then declare it in `app/commands.ts`, with the same name and the TypeScript shape of its arguments and result:
+Then declare it in `app/commands.ts` with the same name and the TypeScript shape of its arguments and result:
 
 ```ts
 // app/commands.ts
@@ -291,17 +294,20 @@ export type Commands = {
 export const commands = defineCommands<Commands>()
 ```
 
-`await commands.list_orders({ status: 'paid' })` resolves to `[{ id: 'ord_1042', customer: 'Ada', totalCents: 12000, status: 'paid' }]`. Three naming rules come from Tauri, and `defineCommands` follows them as they are:
+`await commands.list_orders({ status: 'paid' })` resolves to `[{ id: 'ord_1042', customer: 'Ada', totalCents: 12000, status: 'paid' }]`. Three naming rules come from Tauri:
 
-- The command name is the Rust function name, snake_case: `list_orders`, not `listOrders`.
-- Argument keys are the Rust parameter names in camelCase: `invoice_id: String` in Rust is `{ invoiceId }` in TypeScript.
-- Result fields are what serde writes. Add `#[serde(rename_all = "camelCase")]` to the struct, as above, to get `totalCents` instead of `total_cents`.
+- The command name is the Rust function name, snake_case: `list_orders`.
+- Argument keys are the Rust parameter names in camelCase: `invoice_id` is `{ invoiceId }`.
+- Result fields are what serde writes. Add `#[serde(rename_all = "camelCase")]` to get `totalCents`.
 
-A command with no arguments is declared as `() => T` and called with no argument: `commands.sync_orders()`. The type in `app/commands.ts` is a promise you make by hand: TypeScript cannot read Rust, so a renamed Rust parameter compiles on both sides and fails at run time. Change both files in the same commit.
+A command with no arguments is declared `() => T`.
+
+> [!WARNING] Keep both files in step
+> The type in `app/commands.ts` is a promise you make by hand: TypeScript cannot read Rust, so a renamed Rust parameter compiles on both sides and fails at run time. Change both in the same commit.
 
 ## Return an error from Rust
 
-Return `Result<T, String>` (or any error type that implements `Serialize`) and the promise in the window rejects with the error value. Async commands run off the main thread, which suits file and network work; they must take owned arguments (`String`, not `&str`):
+Return `Result<T, String>` (or any error type that implements `Serialize`) and the promise in the window rejects with the error value. Async commands run off the main thread, which suits file and network work, and take owned arguments (`String`, not `&str`):
 
 ```rust
 // platforms/app/src-tauri/src/lib.rs
@@ -320,7 +326,7 @@ async fn export_invoice(invoice_id: String, path: String) -> Result<String, Stri
 }
 ```
 
-This example uses [reqwest](https://docs.rs/reqwest), which you add with `cargo add reqwest` in `platforms/app/src-tauri`. In the window, catch the rejection like any other:
+This example uses [reqwest](https://docs.rs/reqwest) (`cargo add reqwest` in `platforms/app/src-tauri`). In the window, catch the rejection like any other:
 
 ```ts
 // app/lib/invoices/export.ts
@@ -337,11 +343,11 @@ export async function exportInvoice(invoiceId: string, folder: string) {
 // exportInvoice('inv_2041', '/Volumes/ReadOnly') => { ok: false, message: 'Could not save inv_2041: Read-only file system (os error 30)' }
 ```
 
-The rejected value is the Rust error as serialised, a plain string here, not an `Error` object, so read it with `String(error)` rather than `error.message`.
+The rejected value is the Rust error as serialised, a plain string here, so read it with `String(error)`, not `error.message`.
 
 ## Read a command with a query
 
-To cache a command's result, share it between components and refresh it after a change, wrap it with `commandQuery(command, name)` and pass the result to `queryFrom` from [Query](/packages/query):
+To cache a command's result, share it between components and refresh it after a change, wrap it with `commandQuery(command, name)` and pass it to `queryFrom` from [Query](/packages/query):
 
 ```ts
 // app/queries/orders.ts
@@ -378,11 +384,11 @@ export default function OrdersPage() {
 }
 ```
 
-The page lists `Ada: $120.00`. `commandQuery` builds the contract: the cache key is `['tauri', name, input]` (here `['tauri', 'list_orders', { status: 'paid' }]`), `fetch` calls the command, and `source` is `'tauri'` for devtools. Pass the Rust name as the second argument, because a function from `defineCommands` does not know its own name.
+The page lists `Ada: $120.00`. The cache key is `['tauri', name, input]`. Pass the Rust name as the second argument, because a function from `defineCommands` does not know its own name.
 
 ## Change data with a mutation
 
-`commandMutation(command, { effects })` does the same for commands that change something. Start with the Rust command:
+`commandMutation(command, { effects })` does the same for commands that change something. The Rust command:
 
 ```rust
 // platforms/app/src-tauri/src/lib.rs
@@ -396,7 +402,7 @@ fn ship_order(id: String, carrier: String) -> Result<Order, String> {
 }
 ```
 
-Then wrap it. The effects say which cached queries to refresh when it succeeds:
+Then wrap it. The effects name the cached queries to refresh on success:
 
 ```ts
 // app/lib/orders/mutations.ts
@@ -426,11 +432,11 @@ export function ShipButton({ id }: { id: string }) {
 }
 ```
 
-When `ship_order` resolves, every `list_orders` query refetches, because invalidation matches the key prefix `['tauri', 'list_orders']`. `effects` also takes a function of the result and input, as in Query's own [mutation effects](/packages/query). When the Rust command returns `Err`, `ship.error` holds it as a `KitrError` and nothing is invalidated.
+When `ship_order` resolves, every `list_orders` query refetches, because invalidation matches the key prefix. `effects` also takes a function of the result and input, as in Query's [mutation effects](/packages/query). When Rust returns `Err`, `ship.error` holds it as a `KitrError` and nothing is invalidated.
 
 ## Listen to events from Rust
 
-Rust pushes events to the window with `emit`, for progress, background results or menu clicks. Event names may contain letters, digits, `-`, `/`, `:` and `_`, so use `orders-sync-progress` rather than dots:
+Rust pushes events to the window with `emit`, for progress, background results or menu clicks. Event names may contain letters, digits, `-`, `/`, `:` and `_`:
 
 ```rust
 // platforms/app/src-tauri/src/lib.rs
@@ -446,7 +452,7 @@ async fn sync_orders(app: AppHandle) -> Result<(), String> {
 }
 ```
 
-In a component, `useTauriEvent(event, handler)` subscribes for as long as the component is mounted and passes each event's payload to the handler:
+In a component, `useTauriEvent(event, handler)` subscribes while the component is mounted:
 
 ```tsx
 // app/components/orders/sync-progress.tsx
@@ -466,11 +472,14 @@ export function SyncProgress() {
 }
 ```
 
-Clicking "Sync orders" moves the bar to 25, 50, 75 and 100. The hook re-subscribes when `event` or `handler` changes, so pass a stable handler: wrap it in `useCallback`, as above, or define it outside the component. Don't pass an inline arrow function, which unsubscribes and subscribes again on every render and can miss events in between. Outside Tauri the hook does nothing.
+Clicking "Sync orders" moves the bar to 25, 50, 75 and 100. Outside Tauri the hook does nothing.
+
+> [!WARNING] Pass a stable handler
+> Wrap the handler in `useCallback` or define it outside the component. An inline arrow function resubscribes on every render and can miss events.
 
 ## Send events to Rust
 
-`emitTauri(event, payload)` sends an event to the Rust side and to every window. Use it for things the window reports and does not wait on. In a plain browser it resolves and does nothing.
+`emitTauri(event, payload)` sends an event to the Rust side and every window, for things the window reports and does not wait on. In a plain browser it does nothing.
 
 ```ts
 // app/lib/orders/opened.ts
@@ -506,11 +515,11 @@ pub fn run() {
 // reportOrderOpened('ord_1042') => prints [acme] order opened: {"orderId":"ord_1042"}
 ```
 
-When the window needs an answer, use a command instead: `emitTauri` returns nothing from Rust.
+When the window needs an answer, use a command: `emitTauri` returns nothing from Rust.
 
 ## Keep the web build working
 
-The same `app/` ships to the browser through your web platform, where there is no Tauri runtime. `isTauri()` returns `true` only inside a Tauri webview (it checks for `window.__TAURI_INTERNALS__`). In a browser:
+The same `app/` ships to the browser, where there is no Tauri runtime. `isTauri()` is `true` only inside a Tauri webview. In a browser:
 
 | Call | Outside Tauri |
 | --- | --- |
@@ -520,7 +529,7 @@ The same `app/` ships to the browser through your web platform, where there is n
 | `emitTauri()` | Resolves to `undefined` and sends nothing. |
 | The provider | Registers no drivers; the web defaults stay. |
 
-So guard command calls, and offer the web alternative next to them:
+Guard command calls, and offer the web alternative next to them:
 
 ```tsx
 // app/components/invoices/export-button.tsx
@@ -537,11 +546,11 @@ export function ExportButton({ invoiceId }: { invoiceId: string }) {
 }
 ```
 
-For behaviour that differs per platform but is not specific to Tauri, such as opening links or reading the app version, use the [platform service](/packages/platform) instead of `isTauri()`. It answers the same way in Electron and on phones. Don't import `@tauri-apps/api` at the top of shared modules either: `@kitr/tauri/client` loads it lazily, only when a command or event actually runs.
+For behaviour that differs per platform but is not Tauri-specific, such as opening links or reading the app version, use the [platform service](/packages/platform). Don't import `@tauri-apps/api` at the top of shared modules: `@kitr/tauri/client` loads it lazily.
 
 ## Grant the window permissions
 
-Tauri denies every plugin command the window has not been granted. Grants live in capability files in `platforms/app/src-tauri/capabilities/`; the scaffold writes one for the main window:
+Tauri denies every plugin command the window has not been granted. Grants live in `platforms/app/src-tauri/capabilities/`; the scaffold writes one for the main window:
 
 ```json
 // platforms/app/src-tauri/capabilities/default.json
@@ -556,12 +565,12 @@ Tauri denies every plugin command the window has not been granted. Grants live i
 
 `core:default`, `store:default` and `opener:default` cover what the provider uses. Your own `#[tauri::command]` functions need no entry. A plugin call without permission rejects with a message naming the permission to add. See the [capabilities guide](https://v2.tauri.app/security/capabilities/).
 
-> **Warning**
-> The scaffold sets `"csp": null` in `tauri.conf.json`, which turns off Tauri's content security policy so development works with any asset. Before you ship, set a [CSP](https://v2.tauri.app/security/csp/) that allows only your own origin and `https://app.acme.com`, and grant only the permissions the app uses. Every permission is reachable from any script that runs in the window.
+> [!WARNING] Set a CSP before shipping
+> The scaffold sets `"csp": null` in `tauri.conf.json`, which turns off Tauri's content security policy for development. Before you ship, set a [CSP](https://v2.tauri.app/security/csp/) that allows only your own origin and `https://app.acme.com`, and grant only the permissions the app uses. Every permission is reachable from any script in the window.
 
 ## Add a Tauri plugin
 
-Native features beyond the scaffold (dialogs, notifications, the file system, global shortcuts) come as [Tauri plugins](https://v2.tauri.app/plugin/). The Tauri CLI adds the Rust crate, registers it in `lib.rs`, installs the JavaScript package and adds the default permission in one step:
+Native features beyond the scaffold (dialogs, notifications, the file system, global shortcuts) come as [Tauri plugins](https://v2.tauri.app/plugin/). The Tauri CLI adds the crate, registers it in `lib.rs`, installs the JavaScript package and adds the default permission:
 
 ```sh
 cd platforms/app
@@ -583,11 +592,11 @@ export async function pickExportFolder(): Promise<string | null> {
 }
 ```
 
-Import the plugin lazily, as above, so the web build never loads it. The plugins that kitr's device packages use are already installed and registered; see [Run the device packages in Tauri](#run-the-device-packages-in-tauri). If `tauri add` cannot edit `lib.rs` because you changed its shape, it prints the line to add by hand.
+Import the plugin lazily, as above, so the web build never loads it. If `tauri add` cannot edit `lib.rs` because you changed its shape, it prints the line to add by hand.
 
 ## Run the device packages in Tauri
 
-[Secure storage](/packages/secure-storage), [Notifications](/packages/notifications), [Files](/packages/files), [Updater](/packages/updater) and [Native](/packages/native) each have a Tauri driver built on the official plugins. The scaffold installs, registers and permits all of them, so a new app only has to call the kitr service:
+[Secure storage](/packages/secure-storage), [Notifications](/packages/notifications), [Files](/packages/files), [Updater](/packages/updater) and [Native](/packages/native) each have a Tauri driver built on the official plugins. The scaffold installs, registers and permits all of them, so you only call the kitr service:
 
 | Package | Plugin (JavaScript and Rust) | Permissions in `capabilities/default.json` |
 | --- | --- | --- |
@@ -597,17 +606,20 @@ Import the plugin lazily, as above, so the web build never loads it. The plugins
 | `updater` | `@tauri-apps/plugin-updater` and `plugin-process`, `tauri-plugin-updater` and `tauri-plugin-process` | `updater:default`, `process:default` |
 | `native` | `@tauri-apps/plugin-clipboard-manager`, `plugin-os` and `plugin-opener`, with the matching crates | `clipboard-manager:allow-read-text`, `clipboard-manager:allow-write-text`, `os:default`, `opener:default` |
 
-Each driver loads its plugin the first time it is used. A missing package rejects with `E_DRIVER_UNAVAILABLE`, and a missing permission with Tauri's own error. Three choices to know:
+Each driver loads its plugin on first use. A missing package rejects with `E_DRIVER_UNAVAILABLE`, and a missing permission with Tauri's own error.
 
-- **Secure storage uses Stronghold, not the store plugin.** The store plugin keeps plain JSON in the app data folder, which is what `@kitr/storage` already uses. Stronghold is an encrypted snapshot, opened with a random secret the scaffolded `kitr_vault_key` command keeps in the operating system's keyring. Every script in the window can call that command, so keep a strict `csp`.
-- **Files stay inside what the person picked.** The scaffold grants read, write, stat and list on the fs plugin without a static scope; the dialog plugin adds each chosen path to the scope for the session.
-- **The updater plugin is registered only when `tauri.conf.json` has `plugins.updater`.** The plugin refuses to start without a public key, so `lib.rs` checks for the config first. Add the key and endpoints (see [Updater](/packages/updater#use-it-in-electron-and-tauri)) and restart.
+<details>
+<summary>Design choices behind the drivers</summary>
 
-An app created before this version has none of that. Install the packages (`kitr add secure-storage`, `kitr add files` and the other device packages add the ones they need), then add the crates to `src-tauri/Cargo.toml`, the `.plugin()` calls and the `kitr_vault_key` command to `lib.rs`, and the permissions above to `capabilities/default.json`; compare with a fresh `kitr new --kit tauri`.
+- **Secure storage uses Stronghold, not the store plugin.** The store plugin keeps plain JSON, which is what `@kitr/storage` uses. Stronghold is an encrypted snapshot opened with a random secret that the scaffolded `kitr_vault_key` command keeps in the OS keyring. Every script in the window can call that command, so keep a strict `csp`.
+- **Files stay inside what the person picked.** The scaffold grants read, write, stat and list on the fs plugin without a static scope; the dialog plugin adds each chosen path for the session.
+- **The updater plugin is registered only when `tauri.conf.json` has `plugins.updater`.** It refuses to start without a public key, so `lib.rs` checks first. Add the key and endpoints (see [Updater](/packages/updater#use-it-in-electron-and-tauri)) and restart.
+
+</details>
 
 ## Keep data on the user's machine
 
-Items you declare with [Storage](/packages/storage) persist through Tauri's [store plugin](https://v2.tauri.app/plugin/store/) in `kitr.json` in the app's data folder, not in the webview's `localStorage`, which some OSes clear. You declare and read them the same way as on the web:
+Items you declare with [Storage](/packages/storage) persist through Tauri's [store plugin](https://v2.tauri.app/plugin/store/) in `kitr.json` in the app's data folder, not the webview's `localStorage`, which some OSes clear. You declare and read them as on the web:
 
 ```ts
 // app/storage.ts
@@ -618,9 +630,9 @@ export const ordersView = defineStorage('orders-view', {
 })
 ```
 
-The provider registers `tauriStoreDriver()`, which loads every value once at boot and saves each change to disk in the background. The scaffold already registers `tauri_plugin_store` in `lib.rs` and grants `store:default`; without either, the values live in memory only and every write logs `[@kitr/storage] tauri:store:` with the plugin's error.
+The provider's `tauriStoreDriver()` loads every value at boot and saves each change in the background. Without `tauri_plugin_store` in `lib.rs` or the `store:default` grant (the scaffold has both), values live in memory only and every write logs `[@kitr/storage] tauri:store:`.
 
-On macOS, with `identifier: 'com.acme.orders'`, the file is `~/Library/Application Support/com.acme.orders/kitr.json`. Values are kept as strings; any other value another part of the app put in `kitr.json` is skipped on load. To keep kitr's items in another file, register the driver yourself with a provider of your own:
+On macOS, with `identifier: 'com.acme.orders'`, the file is `~/Library/Application Support/com.acme.orders/kitr.json`. To keep kitr's items in another file, register the driver yourself with a provider of your own:
 
 ```ts
 // app/providers/orders-store.ts
@@ -636,11 +648,11 @@ export default defineProvider({
 })
 ```
 
-The registry keeps the driver with the highest priority, and the Tauri provider registers its own at the default, so priority `20` wins. Add `() => import('#app/providers/orders-store')` to `providers` in `kitrrc.ts`.
+The highest priority wins and the Tauri provider uses the default, so `20` wins. Add `() => import('#app/providers/orders-store')` to `providers` in `kitrrc.ts`.
 
 ## Use the platform service in Tauri
 
-The provider also registers a driver for [Platform](/packages/platform), so code that uses the platform service works in Tauri without an `isTauri()` check:
+The provider also registers a driver for [Platform](/packages/platform), so platform-service code works in Tauri without an `isTauri()` check:
 
 | Member | In Tauri |
 | --- | --- |
@@ -652,13 +664,7 @@ The provider also registers a driver for [Platform](/packages/platform), so code
 | `exit()` | Exits through `@tauri-apps/plugin-process`; falls back to `window.close()` when that package is missing |
 | `onAppState(fn)` | `true` when the page is visible, `false` when the window is minimised or hidden |
 
-`kitr add` installs neither JavaScript package. The Rust side of the opener plugin is in the scaffold, so for links that open in the system browser install its JavaScript half:
-
-```sh
-pnpm add @tauri-apps/plugin-opener
-```
-
-For `exit()`, add the process plugin on both sides with `pnpm exec tauri add process` in `platforms/app`. Then:
+`kitr add` installs neither JavaScript package. For links that open in the system browser, install the opener plugin's JavaScript half: `pnpm add @tauri-apps/plugin-opener`. For `exit()`, run `pnpm exec tauri add process` in `platforms/app`. Then:
 
 ```tsx
 // app/components/help-menu.tsx
@@ -689,15 +695,15 @@ In Tauri, "Service status" opens Ada's default browser and "Quit Acme Orders" en
 kitr build app
 ```
 
-It runs `vite build` (the client into `dist/app/client`), then `tauri build` in `platforms/app`, and logs `app: installers are in platforms/app/src-tauri/target/release/bundle`. With `"targets": "all"`, that folder holds `msi/` and `nsis/` on Windows, `macos/` (the `.app`) and `dmg/` on macOS, and `deb/`, `rpm/` and `appimage/` on Linux. The version is `version` in `tauri.conf.json`, written from `package.json` when you ran `kitr add`; keep the two in step.
+It runs `vite build` (client into `dist/app/client`), then `tauri build` in `platforms/app`. With `"targets": "all"`, `src-tauri/target/release/bundle` holds `msi/` and `nsis/` on Windows, `macos/` and `dmg/` on macOS, and `deb/`, `rpm/` and `appimage/` on Linux. The version is `version` in `tauri.conf.json`, copied from `package.json` at `kitr add`; keep the two in step.
 
-For a faster build with debug symbols and the webview inspector, pass `--debug`:
+For a faster build with debug symbols and the webview inspector:
 
 ```sh
 kitr build app --debug
 ```
 
-`tauri build --debug` puts the bundles in `target/debug/bundle` instead, although kitr's closing log line names the `release` folder either way. The release build is optimised and takes longer the first time.
+Debug bundles land in `target/debug/bundle`, although kitr's closing log line names `release` either way.
 
 `kitr build app` passes only `--debug` to the Tauri CLI. For one bundle format or another target, build the client with kitr and run the Tauri CLI yourself:
 
@@ -710,39 +716,39 @@ Tauri builds for the OS it runs on. Use a CI runner per OS for the others, as [T
 
 ## Run the production build locally
 
-There is no `kitr start` step for Tauri. `kitr start app` logs `app: run the installed app or the binary in platforms/app/src-tauri/target/release` and exits. Run the binary from there, or install the bundle:
+`kitr start app` only logs where the binary is. Run it from `platforms/app/src-tauri/target/release`, or install the bundle:
 
 ```sh
 kitr build app
 open "platforms/app/src-tauri/target/release/bundle/macos/Acme Orders.app"
 ```
 
-That is the app your users get: the client from `dist/app/client` embedded in the binary, no dev server.
+That is the app your users get: the client embedded in the binary, no dev server.
 
 ## Sign the installers
 
-Unsigned apps trigger Gatekeeper on macOS and SmartScreen on Windows. The Tauri CLI signs during `tauri build` when it finds signing settings, and `kitr build` passes your environment through to it. On macOS that is the identity of a certificate in the keychain:
+Unsigned apps trigger Gatekeeper on macOS and SmartScreen on Windows. The Tauri CLI signs during `tauri build` when it finds signing settings, and `kitr build` passes your environment through. On macOS that is a certificate identity in the keychain:
 
 ```sh
 export APPLE_SIGNING_IDENTITY="Developer ID Application: Acme Inc (TEAMID1234)"
 kitr build app
 ```
 
-Notarization, Windows certificates and Linux signing have their own settings; see Tauri's [macOS](https://v2.tauri.app/distribute/sign/macos/), [Windows](https://v2.tauri.app/distribute/sign/windows/) and [Linux](https://v2.tauri.app/distribute/sign/linux/) signing guides. kitr adds no signing settings of its own.
+Notarization, Windows certificates and Linux signing have their own settings; see Tauri's [macOS](https://v2.tauri.app/distribute/sign/macos/), [Windows](https://v2.tauri.app/distribute/sign/windows/) and [Linux](https://v2.tauri.app/distribute/sign/linux/) guides.
 
-> **Warning**
+> [!WARNING] Keep certificates secret
 > Never commit certificates, private keys or their passwords. Keep them in your CI's secret store and set them only on the job that builds releases.
 
 ## Switch to Electron
 
-The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. What changes is the native side. Rust commands become IPC handlers in `platforms/app/main.ts`, and `commands.<name>()` calls become `ipc.invoke('<area>.<verb>')` from `@kitr/desktop/client`:
+The app code does not change between the two desktop platforms: both serve the same client build and register the same `platform` and `storage` drivers. Rust commands become IPC handlers in `platforms/app/main.ts`, and `commands.<name>()` calls become `ipc.invoke('<area>.<verb>')` from `@kitr/desktop/client`:
 
 ```sh
 kitr platforms remove app
 kitr add desktop app
 ```
 
-Port each command to a handler as the [Desktop](/packages/desktop) guide shows, then remove `@kitr/tauri` as described under Install. Storage values do not move: Tauri's `kitr.json` and Electron's `kitr-storage.json` are separate files.
+Port each command to a handler as the [Desktop](/packages/desktop) guide shows. Storage values do not move: Tauri's `kitr.json` and Electron's `kitr-storage.json` are separate files.
 
 ## Commands
 
@@ -759,15 +765,9 @@ The Tauri platform answers these commands:
 | `kitr platforms scaffold <name>` | Writes the scaffolded files that are missing. Existing files are kept. |
 | `kitr platforms remove <name>` | Takes the platform out of `kitrrc.ts`, with its import and provider when it was the last Tauri platform. |
 
-The Tauri CLI works from `platforms/app` for everything else: `pnpm exec tauri icon`, `pnpm exec tauri add <plugin>`, `pnpm exec tauri info` (prints the toolchain and webview versions).
+The Tauri CLI handles the rest from `platforms/app`: `pnpm exec tauri icon`, `pnpm exec tauri add <plugin>`, and `pnpm exec tauri info` (toolchain and webview versions, system libraries).
 
-`kitr doctor` checks each Tauri platform and reports:
-
-- an error for each missing package: `@tauri-apps/api`, `@tauri-apps/cli`, `@tauri-apps/plugin-store`, `@tauri-apps/plugin-opener`, `@tauri-apps/plugin-process`. Fix: `pnpm add <package>` (`-D` for the CLI).
-- an error when `platforms/app/src-tauri/tauri.conf.json` is missing. Fix: `kitr platforms scaffold app`.
-- an error when `cargo` is not on `PATH`: `app: the Rust toolchain (cargo) is not on PATH, and Tauri builds with it`. Fix: install Rust from [rustup.rs](https://rustup.rs) and open a new terminal.
-
-For the system libraries and webview versions, run `pnpm exec tauri info`.
+`kitr doctor` reports an error for each missing package (`@tauri-apps/api`, `cli`, `plugin-store`, `plugin-opener`, `plugin-process`; fix with `pnpm add <package>`), for a missing `tauri.conf.json` (`kitr platforms scaffold app`), and when `cargo` is not on `PATH` (install Rust from [rustup.rs](https://rustup.rs)).
 
 ## Errors
 
@@ -775,7 +775,7 @@ For the system libraries and webview versions, run `pnpm exec tauri info`.
 | --- | --- | --- |
 | The Rust error value, such as `Could not save inv_2041: ...` | A command returned `Err`. The promise rejects with that value. | Handle it where you call the command; read it with `String(error)`. |
 | A message naming a plugin command and the permissions that allow it | The window called a plugin command its capability does not grant. | Add one of the named permissions to `capabilities/default.json`. |
-| `@kitr/<package> has no tauri driver: @tauri-apps/plugin-<name> is not installed` (`E_DRIVER_UNAVAILABLE`) | A device package called a plugin whose JavaScript package is not in `package.json`. | Run the `npm install` line in the message; for an app created before this version, add the crate, the `.plugin()` call and the permission too. |
+| `@kitr/<package> has no tauri driver: @tauri-apps/plugin-<name> is not installed` (`E_DRIVER_UNAVAILABLE`) | A device package called a plugin whose JavaScript package is not in `package.json`. | Run the `npm install` line in the message; also add the crate, the `.plugin()` call and the permission. |
 | A `TypeError` from `@tauri-apps/api` | A command ran outside Tauri, in a browser or a test without mocks. | Guard with `isTauri()`. In tests, use `mockIPC()`. |
 | `Platform name "<name>" must be a short identifier (site, api, app, phone...)` | `kitr add tauri` got a name with spaces or symbols. | Use letters, digits, `-` and `_`. |
 | `tauri has no option "<flag>" (options: port, title, width, height, minWidth, minHeight, appId, devtools)` | `kitr add tauri` got an unknown flag. | Use one of the listed options; names are camelCase. |
@@ -784,9 +784,9 @@ For the system libraries and webview versions, run `pnpm exec tauri info`.
 
 ## Testing
 
-Unit tests run in Node or `happy-dom`, where there is no Tauri runtime. Tauri ships `mockIPC()` in [`@tauri-apps/api/mocks`](https://v2.tauri.app/develop/tests/mocking/) for this: it installs a fake runtime on `window`, routes every command to a function you write, and with `shouldMockEvents` delivers events too. `isTauri()` returns `true` while it is installed.
+Unit tests run in Node or `happy-dom`, where there is no Tauri runtime. Tauri's `mockIPC()` from [`@tauri-apps/api/mocks`](https://v2.tauri.app/develop/tests/mocking/) installs a fake runtime on `window`, routes every command to a function you write, and with `shouldMockEvents` delivers events too. `isTauri()` is `true` while it is installed.
 
-This test checks a command, the query built from it, an event reaching a component, and the platform driver:
+This test checks a command, its query, an event reaching a component, and the platform driver:
 
 ```tsx
 // test/tauri.test.tsx
@@ -865,13 +865,10 @@ describe('Acme Orders in Tauri', () => {
 })
 ```
 
-Install the fake before the code under test runs. After each test, call `cleanup()`, then `clearMocks()`, then delete `window.__TAURI_INTERNALS__`. Test the Rust side with `cargo test` in `platforms/app/src-tauri`.
+Install the fake before the code under test runs. After each test, call `cleanup()`, `clearMocks()`, then delete `window.__TAURI_INTERNALS__`. Test the Rust side with `cargo test` in `platforms/app/src-tauri`.
 
 ## Next steps
 
-- [API reference](/packages/tauri/api)
-- [Desktop](/packages/desktop): the recommended desktop platform, with Chromium in the app and Node.js IPC
-- [Query](/packages/query): cache and refresh command results with `commandQuery` and `commandMutation`
-- [Platform](/packages/platform): app version, external links, app state and exit on every platform
-- [Platforms](/docs/platforms): every platform type and the commands they share
-- [Tauri documentation](https://v2.tauri.app/start/)
+- [API reference](/packages/tauri/api): every export with its signature.
+- [Desktop](/packages/desktop): the Electron platform, with Chromium in the app.
+- [Query](/packages/query): cache and refresh command results.

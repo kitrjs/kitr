@@ -6,19 +6,25 @@ order: 1
 
 # Translations
 
-Acme's first customers all read English. Then a team in Berlin signs up, and every button, empty state and order total needs to read naturally in German too. `@kitr/i18n` moves your interface text into one file per language, picks the visitor's language automatically, and makes a misspelled key a type error instead of a blank on the screen.
+Acme's first customers all read English. Then a team in Berlin signs up, and every button, empty state and order total needs to read naturally in German too. `@kitr/i18n` moves your interface text into one file per language, picks the visitor's language automatically, and makes a misspelled key a type error.
 
-It is [react-i18next](https://react.i18next.com) and [i18next](https://www.i18next.com), re-exported unchanged, with a provider and defaults most apps want: an isolated i18next instance per app, the fallback language set to your default locale, no HTML escaping (React already escapes), no Suspense, and locale detection from a saved choice or the browser. It adds `matchLocale()` to pick a language from an `Accept-Language` header and a `TranslationKeys` type for typed key props.
+> [!SUMMARY]
+> Translations with typed keys and automatic language detection, built on react-i18next. Add it with `kitr add i18n`; the overview is at [/packages/i18n](/packages/i18n).
 
-It runs in the browser, inside React. The provider is client-side, and `kitr add i18n` skips a server-only project with a warning. On the server you can still call `createI18n()` or `matchLocale()` directly, to translate an email or choose the language of a server-rendered page.
+It is [react-i18next](https://react.i18next.com) and [i18next](https://www.i18next.com), re-exported unchanged, with a provider and sensible defaults: the fallback language is your default locale, there is no HTML escaping (React already escapes) and no Suspense. It adds `matchLocale()` for `Accept-Language` headers and a `TranslationKeys` type for typed key props.
 
-The examples on this page translate Acme's order screens at `app.acme.com` into English and German: the page title, the order count, totals in euros and a welcome line for Ada.
+The provider runs in the browser, inside React. On the server you can still call `createI18n()` or `matchLocale()` directly, to translate an email or pick a page's language.
+
+The examples translate Acme's order screens at `app.acme.com` into English and German.
 
 ## Install
 
 ```sh
 kitr add i18n
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -30,7 +36,12 @@ What `kitr add` does:
 
 The `site` kit includes i18n with English and German bundles, a language switch, and the visitor's choice in a cookie so server-rendered pages arrive in the right language.
 
-`kitr remove i18n` takes the provider and the package out of `kitrrc.ts`, deletes `config/i18n.ts`, removes the three dependencies and the `AGENTS.md` section, then lists files under `app/` and `config/` that still import `@kitr/i18n`. It leaves `app/locales/` in place.
+`kitr remove i18n` takes the provider and the package out of `kitrrc.ts`, deletes `config/i18n.ts`, removes the three dependencies and the `AGENTS.md` section, then lists files that still import `@kitr/i18n`. It leaves `app/locales/` in place.
+
+</details>
+
+> [!WARNING] Client packages only
+> `kitr add i18n` skips a server-only project with a warning.
 
 ## Configure
 
@@ -66,7 +77,8 @@ Any other [i18next option](https://www.i18next.com/overview/configuration-option
 | `interpolation.escapeValue` | `false` | React escapes text already; escaping twice shows `&lt;`. |
 | `react.useSuspense` | `false` | Bundles are in memory, so there is nothing to wait for. |
 
-Passing `interpolation` replaces kitr's whole object, so include `escapeValue: false` in it when you add other interpolation options. i18n reads no env variables.
+> [!WARNING] interpolation replaces kitr's object
+> Include `escapeValue: false` in it when you add other interpolation options.
 
 ## Translate your first string
 
@@ -99,7 +111,7 @@ export function Welcome({ name }: { name: string }) {
 }
 ```
 
-`<Welcome name="Ada" />` renders "Hello, Ada" and a "Save" button. The provider created the i18next instance at startup, so there is nothing to load and nothing to wait for. `as const` on the bundle keeps the exact strings, which [typed keys](#type-your-keys) need.
+`<Welcome name="Ada" />` renders "Hello, Ada" and a "Save" button. `as const` keeps the exact strings, which [typed keys](#type-your-keys) need.
 
 ## Organize strings into namespaces
 
@@ -139,11 +151,11 @@ export function OrdersHeader() {
 }
 ```
 
-That renders "Orders", "Open" and "Cancel". For a component that only reads one branch, `useTranslation('orders', { keyPrefix: 'status' })` lets you write `t('paid')` for `orders.status.paid`.
+For one branch, `useTranslation('orders', { keyPrefix: 'status' })` lets you write `t('paid')` for `orders.status.paid`.
 
 ## Insert values
 
-Wrap a placeholder in double braces in the string, and pass the value under the same name:
+Put a placeholder in double braces and pass the value under the same name:
 
 ```tsx
 // app/components/orders/assigned-to.tsx
@@ -157,11 +169,12 @@ export function AssignedTo({ order }: { order: { id: string; owner: string } }) 
 }
 ```
 
-Values are inserted as they are, without HTML escaping: `t('hello', { name: '<b>Ada</b>' })` returns `Hello, <b>Ada</b>`. Rendered as React text that is safe, because React escapes it. Never pass a translated string to `dangerouslySetInnerHTML`; use [Trans](#put-markup-inside-a-string) for markup.
+> [!WARNING] Values are not HTML-escaped
+> Rendered as React text that is safe. Never pass a translated string to `dangerouslySetInnerHTML`; use [Trans](#put-markup-inside-a-string) for markup.
 
 ## Count things
 
-Give a key one variant per plural form, and pass `count`. i18next picks the form with `Intl.PluralRules` for the current language:
+Give a key one variant per plural form and pass `count`. i18next picks the form for the current language:
 
 ```ts
 // app/locales/en.ts
@@ -187,11 +200,11 @@ export function OrderCount({ count }: { count: number }) {
 // count 3 => 3 orders
 ```
 
-Ask for `count`, never `count_one`. `_zero` is optional: without it, English uses `_other` and shows "0 orders". Other languages have other forms: Polish has `_few` and `_many`, Arabic six forms. Each language's bundle lists the forms that language needs; the [i18next plural guide](https://www.i18next.com/translation-function/plurals) lists them.
+Ask for `count`, never `count_one`. `_zero` is optional. Other languages need other forms, such as Polish `_few` and `_many`; see the [i18next plural guide](https://www.i18next.com/translation-function/plurals).
 
 ## Format numbers, money and dates
 
-Name a formatter after the value inside the braces. The formatters use `Intl` with the current language, so the same key prints `€1,234.50` in English and `1.234,50 €` in German:
+Name a formatter after the value inside the braces. It uses `Intl` with the current language, so one key prints `€1,234.50` in English and `1.234,50 €` in German:
 
 ```ts
 // app/locales/en.ts
@@ -222,11 +235,11 @@ export function OrderSummary({ order }: { order: { total: number; placedAt: Date
 // de, placedAt 2026-03-01 => Bestellt am 1.3.2026
 ```
 
-The built-in formatters are `number`, `currency`, `datetime`, `relativetime` and `list`, each taking `Intl` options in parentheses. See [i18next formatting](https://www.i18next.com/translation-function/formatting). Keep amounts as numbers and dates as `Date` objects until they reach `t`; don't format them yourself first.
+The formatters are `number`, `currency`, `datetime`, `relativetime` and `list`, each taking `Intl` options in parentheses; see [i18next formatting](https://www.i18next.com/translation-function/formatting). Pass raw numbers and `Date` objects to `t`; don't format them first.
 
 ## Put markup inside a string
 
-A sentence with a link or bold words in the middle can't be split into pieces without breaking the word order in other languages. Keep it as one string with numbered or named tags, and render it with `Trans`:
+A sentence with a link or bold words can't be split without breaking word order in other languages. Keep it as one string with named tags and render it with `Trans`:
 
 ```ts
 // app/locales/en.ts
@@ -254,11 +267,11 @@ export function WelcomeBack({ name }: { name: string }) {
 }
 ```
 
-`<WelcomeBack name="Ada" />` renders "Welcome back, **Ada**. See your orders." with "See your orders" as a link. The German bundle can move the tags anywhere in its sentence. [Trans in react-i18next's docs](https://react.i18next.com/latest/trans-component) covers the other forms.
+The German bundle can move the tags anywhere in its sentence. [Trans in react-i18next's docs](https://react.i18next.com/latest/trans-component) covers the other forms.
 
 ## Add a language
 
-Copy the English bundle, translate it, and list it in the config. Type the copy against the English one, so a missing or misspelled key fails the type check:
+Copy the English bundle, translate it, and list it in the config. Typing the copy against the English one makes a missing key fail the type check:
 
 ```ts
 // app/locales/en.ts
@@ -299,11 +312,11 @@ export default defineConfig({
 })
 ```
 
-A key missing from `de.ts` is a type error. If one slips through anyway, a German page shows the English string, because `fallbackLng` is `defaultLocale`. Plural keys are the exception to "same keys": a language may need `_few` or `_many` forms that English doesn't have, so loosen `Bundle` for those namespaces.
+A key missing from `de.ts` is a type error, and at run time a German page shows the English string. Plural keys are the exception: a language may need forms English lacks, so loosen `Bundle` for those namespaces.
 
 ## Type your keys
 
-Tell i18next the shape of the English bundle once. Then `t()` autocompletes every key, checks the namespace prefix, and rejects typos at compile time:
+Tell i18next the shape of the English bundle once, and `t()` autocompletes every key and rejects typos at compile time:
 
 ```ts
 // app/i18n.d.ts
@@ -328,7 +341,7 @@ export function OrdersHeader() {
 }
 ```
 
-When a component takes a key as a prop, type the prop with `TranslationKeys`. It flattens a namespace into its dotted key paths:
+When a component takes a key as a prop, type it with `TranslationKeys`, which flattens a namespace into dotted key paths:
 
 ```tsx
 // app/components/orders/status-badge.tsx
@@ -344,11 +357,12 @@ export function StatusBadge({ label }: { label: OrderKey }) {
 }
 ```
 
-`TranslationKeys<typeof en>` over the whole bundle gives `'common.hello' | 'orders.title' | ...`, with the namespace as the first dotted segment, not the `orders:` prefix `t()` expects. Pass one namespace, as above, for keys you hand to `t`.
+> [!WARNING] Pass one namespace
+> `TranslationKeys<typeof en>` over the whole bundle gives `'common.hello'`, not the `common:hello` form `t()` expects.
 
 ## Switch the language
 
-`i18n.changeLanguage()` switches every mounted component at once. Save the choice under `storageKey` so detection picks it on the next visit:
+`i18n.changeLanguage()` switches every mounted component. Save the choice under `storageKey` so detection finds it next visit:
 
 ```tsx
 // app/components/language-switch.tsx
@@ -377,7 +391,7 @@ export function LanguageSwitch() {
 }
 ```
 
-`changeLanguage` does not write to `localStorage` itself; the `setItem` call does. It also does not touch `<html lang>`. Keep it in sync for screen readers and hyphenation by listening once, where the app starts:
+`changeLanguage` writes neither `localStorage` nor `<html lang>`. Keep `<html lang>` in sync for screen readers by listening once at startup:
 
 ```ts
 // app/client.tsx
@@ -393,7 +407,7 @@ app.boot().then(() => {
 })
 ```
 
-A language that is not in `locales` (by default, not in `resources`) is never chosen: `changeLanguage('fr')` without a French bundle leaves `resolvedLanguage` on `en`.
+A language outside `locales` is never chosen: `changeLanguage('fr')` without a French bundle stays on `en`.
 
 ## Detect the visitor's language
 
@@ -404,7 +418,7 @@ With `detect: true`, the provider picks the first language in this order:
 3. The browser's `navigator.languages`, matched against your languages.
 4. `defaultLocale`.
 
-Matching tries each browser language in order. An exact match wins; otherwise the base language matches (`en-GB` matches `en`), and a base language matches a regional bundle (`pt` matches `pt-BR`). `detectLocale(supported, storageKey)` runs steps 2 and 3 on their own:
+Matching tries each browser language in order: an exact match wins, then the base language (`en-GB` matches `en`), and a base matches a regional bundle (`pt` matches `pt-BR`). `detectLocale(supported, storageKey)` runs steps 2 and 3 alone:
 
 ```ts
 // app/lib/settings/language.ts
@@ -416,11 +430,11 @@ detectLocale(['en', 'de'])
 // on the server => undefined
 ```
 
-Detection runs once, when the provider creates the instance at startup. With `detect: false`, the app starts in `app.env.locale` or `defaultLocale`, which is what you want when the server decides the language.
+Detection runs once at startup. Use `detect: false` when the server decides the language.
 
 ## Choose the language on the server
 
-On the server there is no `navigator` and no `localStorage`; the `Accept-Language` header carries the visitor's preference. `matchLocale()` parses it, quality values and all, and returns the best supported language:
+On the server the `Accept-Language` header carries the visitor's preference. `matchLocale()` parses it and returns the best supported language:
 
 ```ts
 // server/controllers/locale-controller.ts
@@ -435,7 +449,7 @@ export default class LocaleController {
 }
 ```
 
-What it returns for a few headers, with `['en', 'de']` supported:
+With `['en', 'de']` supported:
 
 | `Accept-Language` | Result |
 | --- | --- |
@@ -444,11 +458,11 @@ What it returns for a few headers, with `['en', 'de']` supported:
 | `fr-FR,fr;q=0.9` | `undefined` |
 | `''` | `undefined` |
 
-It reads the languages in the order the header lists them and does not sort by `q`; browsers already send them in preference order. It also takes an array, such as `navigator.languages`. A server-rendered app usually stores the choice in a cookie instead, so the server and the browser agree; the `site` kit does this with [storage](/packages/storage)'s `defineCookie`.
+It reads languages in header order and does not sort by `q`; browsers already send them in preference order. It also takes an array such as `navigator.languages`. A server-rendered app usually stores the choice in a cookie so server and browser agree; the `site` kit does this with [storage](/packages/storage)'s `defineCookie`.
 
 ## Translate outside components
 
-The provider binds the i18next instance as `i18n` in the container. Read it where there are no hooks, such as a toast after a mutation or a router loader:
+The provider binds the instance as `i18n` in the container. Read it where there are no hooks, such as a toast after a mutation:
 
 ```ts
 // app/lib/orders/notify.ts
@@ -461,7 +475,7 @@ export function orderSavedMessage(app: KitrApp, orderId: string) {
 }
 ```
 
-On the server, for an email in the customer's language, create an instance from the same config and take a fixed `t` per language. `getFixedT` does not change the instance's language, so concurrent requests can't affect each other:
+For an email in the customer's language, create an instance from the same config and take a fixed `t` per language:
 
 ```ts
 // server/mail/order-confirmation.ts
@@ -477,11 +491,12 @@ export function confirmationSubject(locale: string, count: number) {
 // confirmationSubject('de', 2) => 2 Bestellungen
 ```
 
-The provider binds one i18next instance per request on the server, so `changeLanguage()` in a request's render changes only that request. An instance you create yourself, at module level, is shared by every request: don't call `changeLanguage()` on it there, because the language would switch under requests that are still rendering. Use `getFixedT`, or `i18n.cloneInstance({ lng })` for a per-request copy.
+> [!WARNING] Don't change language on a shared instance
+> An instance you create at module level is shared by every request, so `changeLanguage()` would switch the language under requests still rendering. Use `getFixedT`, or `i18n.cloneInstance({ lng })` for a per-request copy.
 
 ## Load a language on demand
 
-Every bundle in `resources` ships in the main JavaScript bundle. With many languages, load the rarely used ones when they are chosen, and list them in `locales` up front so they can be chosen:
+Every bundle in `resources` ships in the main JavaScript bundle. Load rarely used languages when chosen, and list them in `locales` up front:
 
 ```ts
 // app/lib/settings/load-language.ts
@@ -511,11 +526,11 @@ export default defineConfig({
 })
 ```
 
-Without `fr` in `locales`, the bundle loads but `changeLanguage('fr')` stays on English. For loading every language over HTTP, i18next has [backend plugins](https://www.i18next.com/overview/plugins-and-utils#backends).
+Without `fr` in `locales`, `changeLanguage('fr')` stays on English. To load every language over HTTP, see i18next [backend plugins](https://www.i18next.com/overview/plugins-and-utils#backends).
 
 ## Handle missing keys
 
-A key that exists in English but not in German shows the English string. A key that exists nowhere shows the key itself, without its namespace:
+A key missing in German shows the English string. A key that exists nowhere shows the key itself, without its namespace:
 
 ```ts
 // app/lib/orders/missing.ts
@@ -528,11 +543,11 @@ export function demo(app: KitrApp) {
 }
 ```
 
-Typed keys catch this at compile time. To also catch it at run time, for example to report keys a translator forgot, pass i18next's `saveMissing` and `missingKeyHandler` options in `config/i18n.ts`.
+Typed keys catch this at compile time. To report missing keys at run time, pass i18next's `saveMissing` and `missingKeyHandler` in `config/i18n.ts`.
 
 ## Testing
 
-Render translated components with [testing](/packages/testing)'s `createTestApp` and `renderWithKitr`. Pass the i18n provider and your config with `detect: false`, so the browser language of the test runner doesn't decide the result. Pass `env: { locale }` to render another language:
+Render translated components with [testing](/packages/testing)'s `createTestApp` and `renderWithKitr`. Use `detect: false` so the runner's browser language doesn't decide the result, and `env: { locale }` to render another language:
 
 ```tsx
 // app/components/orders/orders-header.test.tsx
@@ -581,12 +596,10 @@ describe('OrdersHeader', () => {
 })
 ```
 
-The test assumes `orders.title`, `orders.count_one`, `orders.count_other` and `orders.total` in both bundles, as in the sections above. To test plain functions that call `t`, skip React and use `createI18n(i18nConfig, 'de').t(...)`. Tests that check a whole page in every language catch untranslated strings early: render it with `boot('de')` and assert that no English heading is on the screen.
+To test plain functions that call `t`, skip React and use `createI18n(i18nConfig, 'de').t(...)`.
 
 ## Next steps
 
 - [API reference](/packages/i18n/api): every export of `@kitr/i18n` and `@kitr/i18n/provider`.
-- [react-i18next docs](https://react.i18next.com): `useTranslation`, `Trans` and the rest, imported from `@kitr/i18n`.
-- [i18next docs](https://www.i18next.com): plurals, formatting, context and options.
 - [Storage](/packages/storage): keep the visitor's language in a cookie the server can read.
-- [Testing](/packages/testing): `createTestApp` and `renderWithKitr`.
+- [i18next docs](https://www.i18next.com): plurals, formatting, context and options.

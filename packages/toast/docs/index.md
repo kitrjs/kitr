@@ -8,6 +8,9 @@ order: 1
 
 A toast is a short message that appears for a few seconds and then goes away: "Invoice saved", "Could not send", "You are offline". `@kitr/toast` gives you one `toast()` function to call from anywhere in the app, and a provider that draws the messages with [sonner](https://sonner.emilkowal.ski).
 
+> [!SUMMARY]
+> One `toast()` function to call from anywhere, drawn by sonner and following the theme. Add it with `kitr add toast`; the overview is at [/packages/toast](/packages/toast).
+
 `toast` itself imports nothing. Until the provider boots, and in any place without one, such as a test or a script, every call goes to the console instead. That is what lets other packages and plain modules call it safely.
 
 This guide follows Acme's dashboard at `app.acme.com`: Ada shows a toast when Grace saves an invoice, a loading toast while one is sent, and an error toast when a payment fails.
@@ -17,6 +20,9 @@ This guide follows Acme's dashboard at `app.acme.com`: Ada shows a toast when Gr
 ```sh
 kitr add toast
 ```
+
+<details>
+<summary>Everything <code>kitr add</code> changes</summary>
 
 What `kitr add` does:
 
@@ -36,6 +42,8 @@ kitr add toast --dry-run
 The `app`, `fullstack`, `saas`, `realtime`, `desktop`, `tauri` and `mobile` kits include toast. The `site`, `server` and `blank` kits do not.
 
 `kitr remove toast` removes the provider, the `packages` entry, the dependency, `config/toast.ts` and the `AGENTS.md` section. Calls to `toast` left in your code keep compiling only while the package is installed, so remove them first.
+
+</details>
 
 ## Configure
 

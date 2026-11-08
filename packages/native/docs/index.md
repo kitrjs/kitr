@@ -6,13 +6,12 @@ order: 1
 
 # Native
 
-Copy a link, share, buzz the phone, read the location, take a photo, ask for a fingerprint: every platform has its own API for each. `@kitr/native` puts all six behind one `native` service. Each one works in the browser, tells you whether this device supports it, and can switch to a native driver without changing your code.
+Copy a link, share, buzz the phone, read the location, take a photo, ask for a fingerprint: every platform has its own API for each. `@kitr/native` puts all six behind one `native` service. Each works in the browser, tells you whether the device supports it, and can switch to a native driver without changing your code.
 
-The web drivers use the [Clipboard API](https://developer.mozilla.org/docs/Web/API/Clipboard_API), [Web Share](https://developer.mozilla.org/docs/Web/API/Web_Share_API), [`navigator.vibrate`](https://developer.mozilla.org/docs/Web/API/Navigator/vibrate), the [Geolocation API](https://developer.mozilla.org/docs/Web/API/Geolocation_API), a file input with `capture`, and [WebAuthn](https://developer.mozilla.org/docs/Web/API/Web_Authentication_API) with the device's own authenticator. kitr adds the `supported` flag, a typed `UnsupportedError`, React hooks, memory drivers for tests and a driver slot per capability.
+> [!SUMMARY]
+> Gives you clipboard, share sheet, haptics, location, camera and fingerprint unlock behind one service, each with a web fallback. Add it with `kitr add native`; the overview is at [/packages/native](/packages/native).
 
-It runs in the browser and in desktop and mobile shells. It does not sign people in: for that use [Auth](/packages/auth), and for files people open and save use [Files](/packages/files).
-
-This guide follows Acme's order screen at `app.acme.com`: Ada copies an invoice link, shares it with Grace, photographs a delivery note and unlocks the invoices page with her fingerprint.
+It runs in the browser and in desktop and mobile shells. It does not sign people in (use [Auth](/packages/auth)) or open and save files (use [Files](/packages/files)). The examples follow Acme's order screen at `app.acme.com`.
 
 ## Install
 
@@ -20,23 +19,30 @@ This guide follows Acme's order screen at `app.acme.com`: Ada copies an invoice 
 kitr add native
 ```
 
+<details>
+<summary>Everything kitr add changes</summary>
+
 What `kitr add` does:
 
 - Installs `@kitr/native` and adds it to `packages` in `kitrrc.ts`.
 - Adds `() => import('@kitr/native/provider')` to `providers` in `kitrrc.ts`.
 - Adds a `## kitr: native` section to `AGENTS.md`: the six capabilities come from `useNative()`, `useClipboard()`, `useShare()` and `useGeolocation()` in `@kitr/native/react`, check `.supported` (or `canShare`) before showing a button, and an unsupported capability rejects with `UnsupportedError`.
 
-No kit includes it. `kitr add native` adds [platform](/packages/platform) first when the project lacks it. The web drivers work on their own, and a desktop or mobile platform you add later registers its own drivers. To preview the changes:
+No kit includes it. `kitr add native` adds [platform](/packages/platform) first when the project lacks it.
+
+`kitr remove native` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/native.ts` if you created one. It then lists the files that still import `@kitr/native`.
+
+</details>
+
+To preview the changes:
 
 ```sh
 kitr add native --dry-run
 ```
 
-`kitr remove native` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/native.ts` if you created one. It then lists the files that still import `@kitr/native`.
-
 ## Configure
 
-The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
+The provider picks a driver per capability on its own, so you need no config to start. To replace drivers for the whole app, create `config/native.ts`:
 
 ```ts
 // config/native.ts
@@ -61,7 +67,7 @@ export default defineConfig({
 | `drivers.biometrics` | registered, else `webBiometrics()` | A `BiometricsDriver`: `available()` and `authenticate(options)`. |
 | `fallbackToWeb` | `false` | In a native shell with no driver for a capability, use the web drivers inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
-The same object goes to `createNative(config, app)` when you build the service by hand, as in tests. Writing a driver is covered under [Extend](#extend).
+Writing a driver is covered under [Extend](#extend); the order drivers are chosen in is under [Where each capability comes from](#where-each-capability-comes-from).
 
 ## Copy your first link
 
@@ -108,7 +114,7 @@ export default function InvoicePage() {
 }
 ```
 
-Ada clicks **Copy link**, the label reads **Copied**, and `https://app.acme.com/invoices/inv_1042` is on her clipboard. Pass another duration as the first argument: `useClipboard(3000)`. The button hides itself where the page has no Clipboard API, which is the case on plain `http://` pages other than `localhost`.
+Clicking **Copy link** puts `https://app.acme.com/invoices/inv_1042` on the clipboard and the label reads **Copied**. Pass another duration as the first argument: `useClipboard(3000)`. The button hides itself where there is no Clipboard API, such as plain `http://` pages other than `localhost`.
 
 ## Check what the device supports
 
@@ -142,9 +148,7 @@ export function DeviceFeatures() {
 }
 ```
 
-The example result is desktop Chrome: no Web Share on Linux, no vibration. When the [Devtools](/packages/devtools) provider is installed, the service logs the same object under `native` as it starts.
-
-The web camera driver always exists in a browser, because it only opens a file input. On a laptop with no camera that input opens the file picker instead.
+The example result is desktop Chrome: no Web Share on Linux, no vibration. The web camera driver always exists in a browser, because it only opens a file input.
 
 ## Copy and paste text
 
@@ -178,7 +182,10 @@ export function PasteOrderNumber({ onFound }: { onFound: (orderId: string) => vo
 }
 ```
 
-Browsers ask permission before a page reads the clipboard, and reject with the browser's own `NotAllowedError` when the person says no. Writing needs no prompt but must happen during a click or key press. Call `writeText` from the handler, not from an effect.
+Browsers ask permission before a page reads the clipboard, and reject with `NotAllowedError` when the person says no.
+
+> [!WARNING] Write from a click
+> `writeText` must run during a click or key press. Call it from the handler, not from an effect.
 
 ## Open the share sheet
 
@@ -210,10 +217,7 @@ export function ShareInvoice({ invoiceId, total }: { invoiceId: string; total: s
 }
 ```
 
-`share()` resolves to `true` when Ada picked a target and `false` when she closed the sheet. Any other failure rejects with the browser's error, for example `NotAllowedError` when `share()` was not called from a click. `canShare` from the hook is `false` when the capability is unsupported, so it is safe to call everywhere.
-
-To act on the result:
-
+`share()` resolves to `true` when a target was picked and `false` when the sheet was closed. Other failures reject with the browser's error, such as `NotAllowedError` when `share()` was not called from a click. `canShare` is `false` when unsupported, so it is safe to call everywhere. To act on the result:
 ```tsx
 // app/hooks/invoices/use-share-invoice.ts
 import { useShare } from '@kitr/native/react'
@@ -230,7 +234,7 @@ export function useShareInvoice() {
 
 ## Share a file
 
-The payload takes `files: File[]` as well. Browsers that cannot share files say so through `canShare`, so check with the files included:
+The payload takes `files: File[]` too. Check `canShare` with the files included:
 
 ```tsx
 // app/components/invoices/share-invoice-pdf.tsx
@@ -256,8 +260,6 @@ export function ShareInvoicePdf({ invoiceId }: { invoiceId: string }) {
   )
 }
 ```
-
-Where the browser has `navigator.share` but no `navigator.canShare`, the web driver answers `false` for any payload with files and `true` otherwise.
 
 ## Give haptic feedback
 
@@ -285,7 +287,7 @@ export function PlaceOrderButton({ onPlace }: { onPlace: () => Promise<void> }) 
 }
 ```
 
-The web driver maps each kind to a [vibration pattern](https://developer.mozilla.org/docs/Web/API/Vibration_API) in milliseconds. Only some Android browsers vibrate; Safari and desktop browsers have no `navigator.vibrate`, so `supported` is `false` there.
+The web driver maps each kind to a [vibration pattern](https://developer.mozilla.org/docs/Web/API/Vibration_API). Only some Android browsers vibrate; Safari and desktop browsers report `supported: false`.
 
 | Kind | Web pattern (ms) | Use it for |
 | --- | --- | --- |
@@ -297,11 +299,12 @@ The web driver maps each kind to a [vibration pattern](https://developer.mozilla
 | `warning` | `[30, 60, 30]` | Something needs a look |
 | `error` | `[50, 50, 50, 50, 50]` | A failed action |
 
-Don't call `impact` without checking `supported` first: on an unsupported device it rejects with `UnsupportedError`, and a haptic is never worth an error message.
+> [!WARNING] Check supported
+> On an unsupported device `impact` rejects with `UnsupportedError`. Check `supported` first.
 
 ## Read the current location
 
-`geolocation.current()` resolves to a `Position` once. Acme's drivers check in at a delivery address:
+`geolocation.current()` resolves to a `Position` once:
 
 ```tsx
 // app/components/orders/check-in-button.tsx
@@ -337,7 +340,7 @@ export function CheckInButton({ orderId }: { orderId: string }) {
 | `highAccuracy` | `false` | Ask for GPS-level accuracy. Slower and uses more battery. |
 | `timeout` | none | Give up after this many milliseconds. |
 
-On the web the call rejects with the browser's [`GeolocationPositionError`](https://developer.mozilla.org/docs/Web/API/GeolocationPositionError): `code` 1 when Ada denies the prompt, 2 when no position is available and 3 on timeout. `accuracy` is in metres; `altitude`, `heading` and `speed` are `null` when the device does not know them.
+On the web the call rejects with a [`GeolocationPositionError`](https://developer.mozilla.org/docs/Web/API/GeolocationPositionError): `code` 1 when denied, 2 when unavailable and 3 on timeout. `accuracy` is in metres; `altitude`, `heading` and `speed` are `null` when unknown.
 
 ## Follow the location
 
@@ -360,9 +363,7 @@ export function DeliveryTracker() {
 }
 ```
 
-`error` holds a failure of the first read only. The web driver's watch has no error callback, so a permission revoked while watching stops updates without setting `error`.
-
-Outside React, `watch` returns a function that stops it:
+`error` holds a failure of the first read only. Outside React, `watch` returns a function that stops it:
 
 ```ts
 // app/lib/orders/track-delivery.ts
@@ -376,11 +377,9 @@ export function trackDelivery(native: Native, report: (lat: number, lng: number)
 }
 ```
 
-On an unsupported device `watch` returns a no-op stop function instead of throwing.
-
 ## Take a photo
 
-`camera.capture()` resolves to a `Photo` (`{ blob, type, source }`) or `null` when the person cancels. Grace photographs a signed delivery note and attaches it to the order:
+`camera.capture()` resolves to a `Photo` (`{ blob, type, source }`) or `null` when the person cancels:
 
 ```tsx
 // app/components/orders/attach-delivery-note.tsx
@@ -410,7 +409,7 @@ export function AttachDeliveryNote({ orderId }: { orderId: string }) {
 | `source` | `'camera'` | `'camera'` opens the camera; `'library'` opens the photo library or file picker. |
 | `quality` | none | A hint for native drivers. The web driver ignores it and returns the file as picked. |
 
-On the web, `capture()` opens a hidden `<input type="file" accept="image/*">`. With `source: 'camera'` it adds `capture="environment"`, which opens the rear camera on phones; desktop browsers show the file picker either way. Call it from a click, or the browser refuses to open the input. To send the photo to your server, [Uploads](/packages/uploads) takes the `blob` as is.
+On the web, `capture()` opens a hidden file input; with `source: 'camera'` phones open the rear camera and desktop browsers show the file picker. Call it from a click. To send the photo to your server, [Uploads](/packages/uploads) takes the `blob` as is.
 
 ## Unlock with biometrics
 
@@ -445,14 +444,15 @@ export function InvoiceLock({ children }: { children: ReactNode }) {
 }
 ```
 
-`available()` resolves to `false` on an unsupported device rather than throwing, so you can call it without checking `supported`.
+`available()` resolves to `false` on an unsupported device rather than throwing. On the web the driver uses WebAuthn: the first `authenticate()` registers this device and later calls show the fingerprint or PIN prompt. Only native drivers show `reason`.
 
-On the web the driver uses WebAuthn. The first `authenticate()` registers this device, and later calls show the fingerprint or PIN prompt. The web driver does not show `reason`; native drivers pass it to the system prompt.
+> [!WARNING] Not a server check
+> `authenticate()` proves someone is at the device, not who they are, and a script on the page can skip it. Never unlock server data because the client said `true`. For sign-in, verify a passkey on the server with [Auth](/packages/auth).
 
-> **Warning**
-> `authenticate()` proves someone is at the device. It does not prove who they are to your server, and a script on the page can skip the check. Never unlock data on the server because the client said `true`. For sign-in, verify a passkey assertion on the server with [Auth](/packages/auth).
+<details>
+<summary>Keep the credential id under another key</summary>
 
-To keep the credential id under another key, for example one per signed-in user, configure the web driver yourself:
+For example one per signed-in user:
 
 ```ts
 // config/native.ts
@@ -467,9 +467,11 @@ export default defineConfig({
 
 `webBiometrics()` returns `null` where the browser has no WebAuthn, which `?? undefined` turns into "use the default".
 
+</details>
+
 ## Handle unsupported capabilities
 
-A capability with no driver still exists on the service, with `supported: false` and `name: 'unsupported'`. Most methods reject with `UnsupportedError`; three answer safely instead so that feature checks never throw:
+A capability with no driver still exists, with `supported: false` and `name: 'unsupported'`. Most methods reject with `UnsupportedError`; three answer safely so feature checks never throw:
 
 | Call | Unsupported result |
 | --- | --- |
@@ -497,11 +499,11 @@ export async function copyInvoiceNumber(native: Native, invoiceId: string) {
 }
 ```
 
-Checking `supported` before rendering the button is the better habit. Catching `UnsupportedError` is for code paths where you cannot hide the control.
+Prefer checking `supported` before rendering the control; catch `UnsupportedError` where you cannot hide it.
 
 ## Use it outside React
 
-Outside components, read the service from the app's container. `useNative(app)` from `@kitr/native` does the same thing:
+Outside components, read the service from the app's container:
 
 ```ts
 // app/lib/orders/after-place.ts
@@ -515,9 +517,12 @@ export async function afterOrderPlaced(app: KitrApp, orderId: string) {
 }
 ```
 
-Methods are bound to their driver, so `const { writeText } = native.clipboard` works too. To build a service with no app at all, call `createNative(config)`; with no `config.drivers` and no app it uses the web drivers.
+To build a service with no app, call `createNative(config)`; with no drivers it uses the web drivers.
 
 ## Where each capability comes from
+
+<details>
+<summary>How a driver is chosen</summary>
 
 For each capability the service takes the first of these that exists:
 
@@ -537,9 +542,11 @@ For each capability the service takes the first of these that exists:
 
 In a Capacitor shell the [Capacitor drivers](#capacitor) answer, and in Electron and Tauri the drivers under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). Set `fallbackToWeb: true` to use the browser drivers instead.
 
+</details>
+
 ### Capacitor
 
-In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the service uses the phone's own APIs through Capacitor plugins, named `'capacitor'` in `native.clipboard.name`. Each plugin is an optional peer dependency that the driver imports the first time a method runs, so the web build never loads them.
+In the [Mobile](/packages/mobile) shell the service uses the phone's own APIs through Capacitor plugins, named `'capacitor'` in `native.clipboard.name`. Each plugin is an optional peer dependency, so the web build never loads them.
 
 | Capability | Plugin | Notes |
 | --- | --- | --- |
@@ -555,7 +562,7 @@ In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the
 pnpm add @capacitor/clipboard @capacitor/share @capacitor/haptics @capacitor/geolocation
 ```
 
-A plugin that is not installed does not fall back to the webview. The call rejects with `E_DRIVER_UNAVAILABLE` and the package to install:
+A missing plugin does not fall back to the webview. The call rejects with `E_DRIVER_UNAVAILABLE` and the package to install:
 
 ```tsx
 // app/components/copy-link.tsx
@@ -574,7 +581,7 @@ export function CopyInvoiceLink({ url }: { url: string }) {
 
 ## Use it in Electron and Tauri
 
-A desktop has a clipboard and, on a Mac, Touch ID, but no share sheet, haptic motor or GPS. The desktop drivers supply what exists and leave the rest `null`, so `native.share.supported` is `false` and `native.haptics.impact('success')` rejects with `UnsupportedError`, the same as in a browser without the API. Check `supported` before showing the control.
+A desktop has a clipboard and, on a Mac, Touch ID, but no share sheet, haptic motor or GPS. The desktop drivers leave those `null`, so `supported` is `false` for them.
 
 | Capability | Electron | Tauri |
 | --- | --- | --- |
@@ -582,7 +589,7 @@ A desktop has a clipboard and, on a Mac, Touch ID, but no share sheet, haptic mo
 | `biometrics` | Touch ID on macOS (`systemPreferences.promptTouchID`); `available()` is `false` elsewhere | `null` (the biometric plugin is mobile-only) |
 | `share`, `haptics`, `geolocation`, `camera` | `null` | `null` |
 
-Both drivers also carry a `system` object with what desktop apps want beyond the six capabilities. The service API has no call for it, so import the driver:
+Both drivers also carry a `system` object for desktop needs beyond the six capabilities. Import the driver to use it:
 
 ```ts
 // app/system.ts
@@ -612,15 +619,15 @@ export async function watchTheMachine() {
 | `isOnline()` | `net.isOnline()` | `navigator.onLine` |
 | `onPower(listener)`, `isOnBattery()` | `powerMonitor`: suspend, resume, battery, AC | Not available |
 
-`openExternal` refuses anything but `http:`, `https:`, `mailto:` and `tel:` links, so a page cannot launch `file:` or custom handlers. In Electron, pass `externalProtocols` to `handleKitrIpc()` to allow more.
+`openExternal` refuses anything but `http:`, `https:`, `mailto:` and `tel:` links. In Electron, pass `externalProtocols` to `handleKitrIpc()` to allow more.
 
-### Electron
+<details>
+<summary>Requirements for each shell</summary>
 
-Requirements: `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script, which a desktop project already has. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`. Touch ID needs a Mac with Touch ID and a signed app.
+- **Electron:** `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script, which a desktop project already has. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`. Touch ID needs a Mac with Touch ID and a signed app.
+- **Tauri:** `@tauri-apps/plugin-clipboard-manager`, `@tauri-apps/plugin-os`, `@tauri-apps/plugin-opener` and `@tauri-apps/api`, which `kitr add tauri` and `kitr add native` install. A missing one rejects with `E_DRIVER_UNAVAILABLE` naming the package. The Tauri scaffold writes the matching crates and permissions in `src-tauri`.
 
-### Tauri
-
-Requirements: `@tauri-apps/plugin-clipboard-manager`, `@tauri-apps/plugin-os`, `@tauri-apps/plugin-opener` and `@tauri-apps/api` in `package.json`; `kitr add tauri` and `kitr add native` in a Tauri project install them. Each is imported on first use; when one is missing, the call that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package. In `src-tauri`, the matching crates and `.plugin(...)` calls, and the permissions `clipboard-manager:allow-read-text`, `clipboard-manager:allow-write-text`, `os:default` and `opener:default`, which the Tauri scaffold writes.
+</details>
 
 ## Errors
 
@@ -631,11 +638,11 @@ Requirements: `@tauri-apps/plugin-clipboard-manager`, `@tauri-apps/plugin-os`, `
 | `NotAllowedError` (browser) | Clipboard read denied, or `share()` / `writeText()` not called from a click. | Call from an event handler; explain the permission. |
 | `GeolocationPositionError` (browser) | `current()` denied (code 1), unavailable (2) or timed out (3). | Show a message, and offer a manual address. |
 
-`share()` resolving to `false` and `authenticate()` or `capture()` resolving to `false` / `null` are cancels, not errors.
+A `false` from `share()` or `authenticate()`, or a `null` from `capture()`, is a cancel, not an error.
 
 ## Testing
 
-`createMemoryNativeDrivers()` returns six drivers that work in Node and in a DOM test, plus two logs: `shared` (every payload passed to `share`) and `haptics_log` (every kind passed to `impact`). Its defaults:
+`createMemoryNativeDrivers()` returns six drivers for Node and DOM tests, plus two logs: `shared` (every `share` payload) and `haptics_log` (every `impact` kind):
 
 | Capability | Memory behaviour |
 | --- | --- |
@@ -710,7 +717,7 @@ describe('invoice sharing', () => {
 })
 ```
 
-To test a fallback, leave a capability out on purpose. `createNative()` with no drivers in Node reports every capability unsupported:
+`createNative()` with no drivers in Node reports every capability unsupported, which tests a fallback:
 
 ```ts
 // app/lib/invoices/copy-or-explain.test.ts
@@ -729,7 +736,7 @@ A location fix for a test is one override: `createMemoryNativeDrivers({ geolocat
 
 ## Extend
 
-Each capability has its own driver interface. A driver is a plain object (or a class instance: methods run with the driver as `this`):
+Each capability has its own driver interface. A driver is a plain object or class instance:
 
 ```ts
 interface ClipboardDriver {
@@ -756,7 +763,7 @@ interface BiometricsDriver {
 }
 ```
 
-Register a driver from a provider's `register()`, so it is in place before the `native` service is built. This one gives the Capacitor shell real haptics with [`@capacitor/haptics`](https://capacitorjs.com/docs/apis/haptics). Install it with `pnpm add @capacitor/haptics`, then create the provider with `kitr make:provider native-drivers`:
+Register a driver from a provider's `register()`, so it is in place before the service is built. This one gives the Capacitor shell real haptics with [`@capacitor/haptics`](https://capacitorjs.com/docs/apis/haptics). Run `pnpm add @capacitor/haptics` and `kitr make:provider native-drivers`, then:
 
 ```ts
 // app/providers/native-drivers-provider.ts
@@ -791,9 +798,9 @@ export default defineProvider({
 })
 ```
 
-Add `() => import('#app/providers/native-drivers-provider')` to `providers` in `kitrrc.ts`. Inside the iOS or Android app, `native.haptics.name` is now `'mobile'` and `impact('success')` plays the system success pattern; in the browser the web driver still applies. A registered driver has priority 10 by default, and a higher `priority` wins when two providers register the same capability.
+Add `() => import('#app/providers/native-drivers-provider')` to `providers` in `kitrrc.ts`. Inside the app, `native.haptics.name` is now `'mobile'`; in the browser the web driver still applies. A higher `priority` wins when two providers register the same capability (default 10).
 
-The Electron shell runs Node only in the main process, so a native driver there calls main over IPC. Add a channel to the IPC contract the desktop platform wrote, handle it in main with Electron's [`clipboard`](https://www.electronjs.org/docs/latest/api/clipboard) module, and wrap the client in a driver:
+Electron runs Node only in the main process, so a driver there calls main over IPC. Add a channel to the desktop IPC contract, handle it in main with Electron's [`clipboard`](https://www.electronjs.org/docs/latest/api/clipboard), and wrap the client in a driver:
 
 ```ts
 // app/native/electron-clipboard.ts
@@ -828,14 +835,10 @@ handleIpc<{ 'clipboard.read': () => string; 'clipboard.write': (text: string) =>
 // ...
 ```
 
-Then set it in `config/native.ts`, as shown under [Configure](#configure). `electronClipboard()` returns `undefined` in a plain browser, so the web driver still applies to the web build. The types are under `ClipboardDriver`, `ShareDriver`, `HapticsDriver`, `GeolocationDriver`, `CameraDriver` and `BiometricsDriver` in the [API reference](/packages/native/api).
+Then set it in `config/native.ts`, as shown under [Configure](#configure). `electronClipboard()` returns `undefined` in a plain browser, so the web build keeps the web driver.
 
 ## Next steps
 
-- [API reference](/packages/native/api)
-- [Platform](/packages/platform): where the app runs, online state, deep links and the back button.
+- [API reference](/packages/native/api): every export with its signature.
 - [Auth](/packages/auth): sign-in and passkeys verified on the server.
 - [Uploads](/packages/uploads): send photos from `camera.capture()` to your server.
-- [Mobile](/packages/mobile): the Capacitor shell that native drivers plug into.
-- [Extending kitr](/docs/extending): swap or write a driver for a device package.
-- [Web Share API on MDN](https://developer.mozilla.org/docs/Web/API/Web_Share_API): which browsers share files and which only share links.

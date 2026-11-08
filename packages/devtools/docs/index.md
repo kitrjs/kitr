@@ -6,17 +6,23 @@ order: 1
 
 # Devtools
 
-When a page shows stale data or a button does nothing, you want to see what the app is doing: which route matched, what is cached, who is signed in, which request failed. `@kitr/devtools` shows that in the page itself. In development, click the small "k" button in a corner to open the panel.
+When a page shows stale data or a button does nothing, you want to see which route matched, what is cached, who is signed in and which request failed. `@kitr/devtools` shows that in the page itself: in development, click the small "k" button in a corner to open the panel.
 
-The examples on this page follow one scenario: Acme's app at `app.acme.com` has a cart for orders, and Ada wants to see what is in it, log each change, and empty it from a button while she builds the checkout.
+> [!SUMMARY]
+> A panel inside your running app that shows routes, cache, session, requests and your own log lines. Add it with `kitr add devtools`; the overview is at [/packages/devtools](/packages/devtools).
 
-`@kitr/devtools` runs in the browser, in development by default. It renders nothing on the server, and unless you set `enabled: true` the `kitr()` Vite plugin leaves it out of production builds, so it adds no bytes for your users. It is a view onto kitr; for React component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools next to it.
+It runs in the browser only, and the `kitr()` Vite plugin leaves it out of production builds unless you set `enabled: true`. For React component trees and network timing, keep using [React Developer Tools](https://react.dev/learn/react-developer-tools) and your browser's devtools.
+
+The examples follow one scenario: Acme's app at `app.acme.com` has a cart, and Ada wants to see what is in it, log each change and empty it from a button.
 
 ## Install
 
 ```sh
 kitr add devtools
 ```
+
+<details>
+<summary>Everything kitr add changes</summary>
 
 What `kitr add` does:
 
@@ -25,15 +31,14 @@ What `kitr add` does:
 - Writes `config/devtools.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Adds a `## kitr: devtools` section to `AGENTS.md` telling coding agents how to open the overlay, to log with `getDevtools(app)?.log(...)`, and to add panels through a provider's `devtools()` method with the parts in `@kitr/devtools/ui`.
 
-`kitr add devtools` asks no questions and adds no env variables. To edit `package.json` without running the package manager, pass the global flag:
+`kitr add devtools` asks no questions and adds no env variables. Every kit except `blank` and `server` includes it.
 
-```sh
-kitr add devtools --no-install
-```
+`kitr remove devtools` undoes all of this and deletes `config/devtools.ts`. Calls to `getDevtools(app)?.log(...)` can stay: without the package they return `null`. Panels in your own providers stay but are never shown.
 
-Every kit except `blank` and `server` includes devtools: `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile`. It is a client package, so in a server-only project `kitr add devtools` prints a warning and skips it.
+</details>
 
-`kitr remove devtools` removes the provider, the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/devtools.ts`. Calls to `getDevtools(app)?.log(...)` can stay: without the package they return `null` and do nothing. Panels you wrote in your own providers stay too, and are never shown.
+> [!WARNING] Client packages only
+> In a server-only project `kitr add devtools` prints a warning and skips it.
 
 ## Configure
 
@@ -61,11 +66,11 @@ export default defineConfig({
 | `maxEntries` | `500` | Log entries kept per channel. When a channel is full, its oldest entry is dropped. |
 | `openByDefault` | `false` | Open the panel on first load. After that, the panel remembers whether you left it open. |
 
-The panel also remembers, per browser, the tab you had open and the height you dragged it to. It keeps them in `localStorage` under `kitr:devtools`; delete that key to start fresh.
+The panel remembers its open tab and height in `localStorage` under `kitr:devtools`; delete that key to start fresh.
 
 ### Turn it off without removing it
 
-Set `enabled: false` to hide the overlay and stop binding the hub, for example while you record a demo of `app.acme.com`:
+Set `enabled: false` to hide the overlay and stop binding the hub, for example while you record a demo. The package stays installed:
 
 ```ts
 // config/devtools.ts
@@ -78,8 +83,6 @@ export default defineConfig({
   maxEntries: 500,
 })
 ```
-
-The package stays installed, so the panels come back when you remove the line.
 
 ### Turn it on in production
 
@@ -94,11 +97,11 @@ export default defineConfig({
 })
 ```
 
-To decide at runtime, use an expression such as `enabled: import.meta.env.VITE_DEBUG === '1'`. The panel ships in the build and shows only when the expression is true. To keep a longer history while chasing a bug that takes many steps to reproduce, raise `maxEntries` instead; each channel keeps that many entries.
+To decide at runtime, use an expression such as `enabled: import.meta.env.VITE_DEBUG === '1'`. The panel ships in the build and shows only when the expression is true.
 
 ### Leave devtools out of a development build
 
-The `kitr()` Vite plugin decides whether the provider is in the bundle at all. Production builds (`kitr build`, `vite build`) leave it out unless `config/devtools.ts` sets `enabled`. To leave it out in development too, for example while profiling, pass `devtools: false`:
+Production builds leave the provider out unless `config/devtools.ts` sets `enabled`. To leave it out in development too, for example while profiling, pass `devtools: false`:
 
 ```ts
 // vite.config.ts
@@ -110,16 +113,13 @@ export default defineConfig({
 })
 ```
 
-With the provider left out, `getDevtools(app)` returns `null` and every log call is skipped.
-
 ## Open the panel
 
-Start the dev server with `kitr dev` and open the app. A round "k" button sits in the bottom-left corner. Click it, or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>, and the panel opens along the bottom of the page.
+Run `kitr dev` and open the app. Click the round "k" button in the bottom-left corner, or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>.
 
-- The tabs along the top are the panels. A tab's badge shows a count or a state, such as the number of errors in the log.
-- The buttons under the tabs are the current panel's actions, such as "Invalidate all queries".
-- Drag the top edge to resize the panel. Press the shortcut again, or the close button, to hide it.
-- When the panel is closed, a red number on the "k" button counts the errors logged so far.
+- Tabs along the top are the panels; a badge shows a count or state, such as errors in the log.
+- Buttons under the tabs are the panel's actions, such as "Invalidate all queries".
+- Drag the top edge to resize. When the panel is closed, a red number on the "k" button counts logged errors.
 
 Keyboard shortcuts:
 
@@ -129,7 +129,7 @@ Keyboard shortcuts:
 | <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> | Open or close the command palette. |
 | <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>Enter</kbd>, <kbd>Esc</kbd> | Move, run and close in the command palette. |
 
-If <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> clashes with your browser or another tool, pick another key:
+If the shortcut clashes with your browser or another tool, pick another key:
 
 ```ts
 // config/devtools.ts
@@ -159,13 +159,11 @@ Three panels are always there. The others appear when their package is installed
 | Errors | [monitoring](/packages/monitoring) | Every error and message monitoring captured. | Clear errors, Throw a test error |
 | Analytics | [analytics](/packages/analytics) | Whether tracking is enabled or queued, the active adapters, and the last 200 calls with their props. | Enable (consent given), Disable, Clear events |
 
-A panel that throws while rendering shows "Panel crashed:" and the error message in its own area. The rest of the overlay and your app keep working.
+A panel that throws while rendering shows "Panel crashed:" and the error in its own area; the rest keeps working.
 
 ## Read the log
 
-The Log panel is one timeline for the whole app. Each entry has a time, a channel, a label and optional data you can expand. Pick a channel from the drop-down to see only that package, or type in the filter box to search labels and data.
-
-The channels kitr packages write to:
+The Log panel is one timeline for the whole app. Each entry has a time, a channel, a label and expandable data. Filter by channel or search labels and data.
 
 | Channel | Written by | Example label |
 | --- | --- | --- |
@@ -182,11 +180,11 @@ The channels kitr packages write to:
 | `cache` | [cache](/packages/cache) | `driver: memory` |
 | `devtools` | devtools | `ran Clear cache`, or `orders: devtools() failed` |
 
-The `files`, `native`, `notifications`, `offline`, `secure-storage` and `updater` packages log under their own names too.
+The `files`, `native`, `notifications`, `offline`, `secure-storage` and `updater` packages log under their own names.
 
 ## Log from your code
 
-To see what your own code does, log to a channel of your own. `getDevtools(app)` returns the hub when devtools is on and `null` otherwise, so the optional call costs nothing in production:
+Log to a channel of your own. `getDevtools(app)` returns the hub when devtools is on and `null` otherwise, so the optional call costs nothing in production:
 
 ```tsx
 // app/components/orders/add-to-cart-button.tsx
@@ -210,13 +208,13 @@ export function AddToCartButton({ sku }: { sku: string }) {
 }
 ```
 
-Click the button and the Log panel shows a new entry:
+Clicking the button adds an entry to the Log panel:
 
 ```
 14:02:31.118  orders  added sku_desk_oak   {1}
 ```
 
-Expand `{1}` to see `items: 1`. The fourth argument is the level, `'info'` by default:
+The fourth argument is the level, `'info'` by default:
 
 ```ts
 // app/lib/orders/checkout.ts
@@ -228,7 +226,7 @@ export function reportCheckoutProblem(app: KitrApp, orderId: string, reason: str
 }
 ```
 
-Logging is cheap enough to time slow work. Here the checkout logs how long the order request took, as an error when it fails:
+Log how long a slow request took, as an error when it fails:
 
 ```ts
 // app/lib/orders/place-order.ts
@@ -256,9 +254,10 @@ export async function placeOrder(app: KitrApp, orderId: string) {
 | `'warn'` | Yellow label. |
 | `'error'` | Red label; counted in the Log tab's badge and on the "k" button. |
 
-Don't log with `console.log` and leave it in. Log calls through `getDevtools(app)?.log` are skipped in production without you removing them, and they sit next to the HTTP requests and navigations that caused them.
+> [!WARNING] Prefer the hub to console.log
+> `getDevtools(app)?.log` calls are skipped in production without removal, and sit next to the requests and navigations that caused them.
 
-To check whether devtools is active, for example to skip building a costly debug summary, test the return value once:
+To skip building a costly debug summary when devtools is off, test the return value once:
 
 ```ts
 // app/lib/orders/debug-summary.ts
@@ -276,13 +275,13 @@ export function logCartSummary(app: KitrApp) {
 
 ## Run an action from the command palette
 
-Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>. The palette lists "Open" for every panel, then every action of every panel, labelled with its panel. Type to filter, use the arrow keys to pick, and press <kbd>Enter</kbd> to run.
+Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>. The palette lists "Open" for every panel, then every panel action. Type to filter, pick with the arrow keys, and press <kbd>Enter</kbd>.
 
-Each run is logged under the `devtools` channel: `ran Clear cache` at the debug level when it works, `Clear cache failed` with the error at the error level when it throws. Actions you add to your own panels appear in the palette automatically.
+Each run is logged under the `devtools` channel, as an error if it throws. Actions on your own panels appear automatically.
 
 ## Add a panel
 
-A provider contributes panels through a `devtools(app)` method that returns them. Lazy-import the panel module inside it, so the React code never reaches your main bundle:
+A provider contributes panels through a `devtools(app)` method. Lazy-import the panel module so the React code stays out of your main bundle:
 
 ```ts
 // app/providers/orders.ts
@@ -345,7 +344,7 @@ export const panels = () => [
 ]
 ```
 
-Reload the app and an Orders tab appears after the built-in and package panels. The tab's badge shows the item count, and "Empty cart" is a button in the panel and an entry in the command palette. When the provider's `devtools()` method throws, the panel is skipped and the Log shows `orders: devtools() failed` with the error.
+Reload and an Orders tab appears, with the item count as its badge. "Empty cart" is a button and a palette entry. If `devtools()` throws, the panel is skipped and the Log shows `orders: devtools() failed`.
 
 What each field does:
 
@@ -357,11 +356,9 @@ What each field does:
 | `badge(app)` | no | Text or a count next to the label. `null`, `undefined`, `0` and `''` show nothing; a badge that throws is hidden. |
 | `actions` | no | Buttons under the tabs and entries in the command palette: `{ id, label, run(app) }`. `run` may return a promise. |
 
-The built-in panels have icons in their tabs; panels you add show the label only.
-
 ## Refresh a panel when data changes
 
-The overlay re-renders when the hub changes: a new log entry, a panel added or removed, or a call to `notify()`. Data that changes without a log entry, such as the cart above, needs a `notify()`:
+The overlay re-renders on a new log entry, a panel change or a call to `notify()`. Data that changes without a log entry, such as the cart, needs `notify()`:
 
 ```ts
 // app/lib/orders/cart.ts
@@ -407,11 +404,11 @@ export default defineProvider({
 })
 ```
 
-`notify()` calls in the same tick are merged into one re-render, so a burst of changes does not redraw the panel a dozen times. `getDevtools(app)` is `null` in production, so the subscription only exists in development.
+`notify()` calls in the same tick merge into one re-render. `getDevtools(app)` is `null` in production, so the subscription exists only in development.
 
 ## Build panel bodies
 
-`@kitr/devtools/ui` exports the parts the built-in panels use. They are plain React components with no dependencies:
+`@kitr/devtools/ui` exports the plain React components the built-in panels use:
 
 | Component | Props | Renders |
 | --- | --- | --- |
@@ -422,9 +419,7 @@ export default defineProvider({
 | `Toolbar` | `children` | A row of buttons. |
 | `Button` | `children`, `onClick`, `title?` | A small button. |
 
-`styles` is the overlay's stylesheet as a string, already on the page while the overlay is mounted; class names such as `kitr-dt-stack` and `kitr-dt-h` come from it.
-
-A panel that shows the orders log next to the cart:
+Class names such as `kitr-dt-stack` and `kitr-dt-h` come from the overlay's stylesheet, already on the page. A panel that shows the orders log next to the cart:
 
 ```tsx
 // app/providers/orders-devtools.tsx
@@ -454,7 +449,7 @@ export const panels = () => [
 
 ## Read the hub directly
 
-The hub is bound as `devtools` in the container while devtools is active. Besides `log()` and `notify()`, it can read and clear entries and register panels at run time:
+The hub is bound as `devtools` in the container while devtools is active. It can also read and clear entries and register panels at run time:
 
 ```ts
 // app/lib/orders/debug.ts
@@ -479,7 +474,10 @@ export function ordersLog(app: KitrApp) {
 | `subscribe(listener)` | Called after changes, once per tick. Returns the unsubscribe function. |
 | `notify()` | Ask the overlay to re-render. |
 
-Use `register()` for a panel that only makes sense while a page is open:
+<details>
+<summary>Register a panel only while a page is open</summary>
+
+Use `register()` for a panel that only makes sense on one page:
 
 ```ts
 // app/routes.ts
@@ -513,9 +511,11 @@ export default function OrderPage() {
 
 The effect returns the function `register()` gave back, so the tab disappears when Ada leaves the page.
 
+</details>
+
 ## Testing
 
-Devtools is only active in the browser in development, so a test app built with `createTestApp()` has no hub and `getDevtools(app)` returns `null`. Code that logs keeps working in tests and logs nothing. To assert on what your code logs, bind a hub of your own with `createDevtoolsHub()`:
+A test app built with `createTestApp()` has no hub, so `getDevtools(app)` returns `null` and logging does nothing. To assert on what your code logs, bind a hub with `createDevtoolsHub()`:
 
 ```ts
 // app/lib/orders/checkout.test.ts
@@ -541,7 +541,7 @@ it('logs a blocked checkout as a warning', async () => {
 })
 ```
 
-To check that a provider contributes its panel, boot the real devtools provider in a client app in development mode, and call the panel's action:
+To check that a provider contributes its panel, boot the devtools provider in a development client app and call the panel's action:
 
 ```ts
 // app/providers/orders.test.ts
@@ -575,7 +575,7 @@ Run tests that render the overlay or touch `localStorage` in a DOM environment (
 
 ## Extend
 
-Panels follow the `DevtoolsPanel` interface from `@kitr/devtools`. A panel is an object, so you can also build one from a function and share it between providers:
+A panel is a plain object following `DevtoolsPanel`, so you can build one from a function and share it:
 
 ```ts
 // The interfaces, from @kitr/devtools
@@ -635,8 +635,6 @@ See [`DevtoolsPanel`](/packages/devtools/api#devtoolspanel) and [`DevtoolsHub`](
 
 ## Next steps
 
-- [API reference](/packages/devtools/api) for every export and type.
-- [Configuration](/docs/configuration) for providers and `kitrrc.ts`, where panels are registered.
-- [Analytics](/packages/analytics) and [monitoring](/packages/monitoring), whose panels show what would be sent.
-- [Logger](/packages/logger), whose output lands in the Log panel.
-- [TanStack Router devtools](https://tanstack.com/router/latest/docs/framework/react/devtools) and [TanStack Query devtools](https://tanstack.com/query/latest/docs/framework/react/devtools) for deeper views of each library.
+- [API reference](/packages/devtools/api): every export and type.
+- [Configuration](/docs/configuration): providers and `kitrrc.ts`, where panels are registered.
+- [Logger](/packages/logger): its output lands in the Log panel.

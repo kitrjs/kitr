@@ -11,17 +11,17 @@ Most screens show data that lives on a server: Acme's list of orders, one invoic
 > [!SUMMARY]
 > Loads server data, caches it and refreshes it when something changes. Add it with `kitr add query`; the overview is at [/packages/query](/packages/query).
 
-It is [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), re-exported unchanged, plus a small **data contract**: you describe each piece of data once with `queryFrom`, `mutationFrom` and `subscriptionFrom`, and every source (a REST API, your own API routes, server actions, realtime channels) plugs into it the same way. Every failure from every source arrives as one error type, `KitrError`.
+It is [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview), re-exported unchanged, plus a small **data contract**: describe each piece of data once with `queryFrom`, `mutationFrom` and `subscriptionFrom`, and every source (REST, API routes, server actions, realtime) plugs in the same way. Every failure arrives as one error type, `KitrError`.
 
-It runs in the browser, and on the server while a page renders. For values only the browser owns, such as a cart or a sidebar toggle, use [State](/packages/state) instead.
+It runs in the browser, and on the server while a page renders.
 
 This guide follows Acme's order screen from the first query to live updates and tests.
 
 ## When to use it
 
-Use queries for **server data**: anything a server owns and the browser only displays or changes. Orders, invoices, the signed-in user's profile and a team's projects are all server data. The cache knows when they are stale and refetches them for you.
+Use queries for **server data**: anything a server owns and the browser only displays or changes, such as orders, invoices or a team's projects. The cache knows when it is stale and refetches it.
 
-Use [State](/packages/state) for **client state**: values that exist only in the browser, such as a half-filled cart, a selected tab or a theme choice. Copying server data into a store means you now own keeping it fresh, which is the job this package already does.
+Use [State](/packages/state) for **client state** that exists only in the browser, such as a half-filled cart or a theme choice. Copying server data into a store means you own keeping it fresh.
 
 ## Install
 
@@ -41,7 +41,7 @@ What `kitr add` does:
 
 </details>
 
-Every UI kit includes it: `blank` adds it directly, and every kit with [HTTP](/packages/http) gets it because `http` requires `query`. To see the changes without writing them, run it with `--dry-run`:
+Every UI kit includes it. To see the changes without writing them, run it with `--dry-run`:
 
 ```sh
 kitr add query --dry-run
@@ -75,9 +75,7 @@ export default defineConfig({
 | `defaultOptions.queries.retry` | no retry on 4xx, two retries otherwise | When a failed query retries. kitr's rule reads `error.status`: a status from 400 to 499 never retries; anything else retries up to twice. |
 | `createClient` | | A function that returns your own `QueryClient`. When set, every other option is ignored. |
 
-The provider reads this file at boot, builds the client with `createQueryClient(config)`, binds it in the container as `queryClient`, wraps the React tree in `QueryClientProvider` and hands the same client to the router as `context.queryClient`.
-
-To change the defaults for every query, for example to stop refetching when the window regains focus, pass TanStack's own options:
+The provider builds the client from this file, binds it as `queryClient`, wraps the React tree in `QueryClientProvider` and gives the router the same client as `context.queryClient`. To change the defaults for every query, such as refetching on window focus, pass TanStack's own options:
 
 ```ts
 // config/query.ts
@@ -158,13 +156,13 @@ export default function OrdersPage() {
 }
 ```
 
-Open `/orders` and you see two lines, `Ada: $120 (paid)` and `Grace: $80 (open)`. Leave the page and come back within 30 seconds: the list shows at once, with no loading state, because it comes from the cache.
+Open `/orders` and you see `Ada: $120 (paid)` and `Grace: $80 (open)`. Leave and come back within 30 seconds: the list shows at once, from the cache.
 
-`ordersQuery.options()` returns ordinary TanStack [`queryOptions`](https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions). Anything that takes query options takes it: `useQuery`, `useSuspenseQuery`, `useQueries`, `queryClient.fetchQuery`, `prefetchQuery` and `ensureQueryData`.
+`ordersQuery.options()` returns ordinary TanStack [`queryOptions`](https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions), accepted by `useQuery`, `useSuspenseQuery`, `prefetchQuery`, `ensureQueryData` and the rest.
 
 ## Name cache entries with keys
 
-A key is an array that names a piece of data in the cache. Two calls with equal keys share one cache entry and one request. `createKeys` from `kitr/app` builds keys in one shape for each resource, so every part of the app agrees on what to refresh:
+A key is an array that names a piece of data in the cache; equal keys share one entry and one request. `createKeys` from `kitr/app` builds keys in one shape per resource:
 
 ```ts
 // app/lib/orders/keys.ts
@@ -181,7 +179,7 @@ orderKeys.detail('ord_1') // => ['orders', 'detail', 'ord_1']
 orderKeys.custom('by-customer', 'ada') // => ['orders', 'by-customer', 'ada']
 ```
 
-Invalidating a key also invalidates every key that starts with it. `orderKeys.lists()` covers every filtered list; `orderKeys.all` covers everything about orders. `keyMatches(prefix, key)` from `kitr/app` applies the same rule, if you need it in your own code:
+Invalidating a key also invalidates every key that starts with it: `orderKeys.lists()` covers every filtered list, `orderKeys.all` everything about orders. `keyMatches(prefix, key)` from `kitr/app` applies the same rule in your own code:
 
 ```ts
 import { keyMatches } from 'kitr/app'
@@ -190,11 +188,12 @@ keyMatches(['orders', 'list'], ['orders', 'list', { status: 'open' }]) // => tru
 keyMatches(['orders', 'detail'], ['orders', 'list']) // => false
 ```
 
-A key must include every input that changes the result. A list filtered by status and page needs both in its key, or two different pages end up in one cache entry.
+> [!WARNING] Keys need every input
+> A list filtered by status and page needs both in its key, or two pages share one cache entry.
 
 ## Pass input to a query
 
-The first argument of `key` and `fetch` is the query's input. Type it once on `key`, and `options(input)`, `key(input)` and `fetch(input)` all expect it:
+The first argument of `key` and `fetch` is the query's input. Type it once on `key` and `options(input)`, `key(input)` and `fetch(input)` all expect it:
 
 ```ts
 // app/queries/orders.ts
@@ -223,9 +222,7 @@ export const ordersQuery = queryFrom({
 })
 ```
 
-`fetch` receives a `signal`. Pass it on: when a component unmounts or the key changes mid-flight, TanStack aborts the request.
-
-You rarely write `fetch` by hand. Each data source package produces the contract for you, and you pass it straight to `queryFrom`:
+`fetch` receives a `signal`; pass it on so TanStack can abort the request. You rarely write `fetch` by hand: each source package produces the contract, and you pass it to `queryFrom`:
 
 | Source | Package | Contract |
 | --- | --- | --- |
@@ -234,11 +231,11 @@ You rarely write `fetch` by hand. Each data source package produces the contract
 | A server action | [Actions](/packages/actions) | Nothing to wrap: `defineQuery('orders.list', …)` registers a named query, used as `useQuery('orders.list')` |
 | A realtime channel | [Realtime](/packages/realtime) | `useChannel(realtime(), orderChannel, params)` |
 
-Components never learn which source they read from. Swap a REST endpoint for a server action and no component changes.
+Components never learn which source they read from, so swapping a REST endpoint for a server action changes no component.
 
 ## Read data in a component
 
-`useQuery` returns `data` as `undefined` until the first load finishes, plus flags for every state. It is the hook to use when the component draws its own loading and error states:
+`useQuery` returns `data` as `undefined` until the first load finishes, plus flags for every state. Use it when the component draws its own loading and error states:
 
 ```tsx
 // app/components/orders/order-summary.tsx
@@ -257,7 +254,7 @@ export function OrderSummary({ id }: { id: string }) {
 }
 ```
 
-`useSuspenseQuery` returns `data` that is always defined. The component suspends until the data arrives, and the nearest `<Suspense>` boundary shows the fallback. A route's `pendingComponent` acts as that boundary:
+`useSuspenseQuery` returns `data` that is always defined; the component suspends and the nearest `<Suspense>` boundary (or the route's `pendingComponent`) shows the fallback:
 
 ```tsx
 // app/components/orders/order-list.tsx
@@ -276,9 +273,7 @@ export function OrderList({ page }: { page: number }) {
 }
 ```
 
-Errors thrown by a suspense query go to the nearest error boundary, such as the route's `errorComponent`.
-
-`options()` returns a plain object, so you can spread it and add any TanStack option for one call site. Here only the count of open orders is selected, and the component re-renders only when that number changes:
+Errors go to the nearest error boundary, such as the route's `errorComponent`. Spread `options()` to add any TanStack option for one call site; here only the count of open orders is selected:
 
 ```tsx
 // app/components/orders/open-count.tsx
@@ -297,7 +292,7 @@ export function OpenOrderCount() {
 
 ## Load data before the page renders
 
-Start the request in the route's loader so the data arrives with the page instead of after it. The router gives every loader `context.queryClient`, the same client the components read from:
+Start the request in the route's loader so the data arrives with the page. Every loader gets `context.queryClient`, the client components read from:
 
 ```ts
 // app/routes.ts
@@ -325,9 +320,9 @@ export default function OrderPage() {
 }
 ```
 
-`ensureQueryData` returns cached data when there is some and fetches otherwise. With server rendering, the server runs the loader, renders with the data and sends it along with the HTML, so the browser does not fetch it again.
+`ensureQueryData` returns cached data when there is some and fetches otherwise. With server rendering, the data travels with the HTML, so the browser does not fetch it again.
 
-Don't `await` data the page can live without. Start it with `prefetchQuery` and let the component suspend on it, so the page renders without waiting:
+Don't `await` data the page can live without: start it with `prefetchQuery` and let the component suspend on it:
 
 ```ts
 // app/routes.ts
@@ -356,7 +351,7 @@ r.page('/orders/', {
 export default () => (
 ```
 
-The kitr router preloads a route's loader when the pointer rests on a link to it, so most pages open with their data already in the cache.
+
 
 ## Change data with a mutation
 
@@ -401,7 +396,7 @@ export function ShipButton({ id }: { id: string }) {
 }
 ```
 
-`useMutation` returns TanStack's [`useMutation`](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation) result: `mutate`, `mutateAsync`, `isPending`, `error`, `data` and `reset`. Pass any `useMutation` option except `mutationFn` as the second argument. Your `onSuccess` runs after the mutation's own cache effects, so the cache is already updated when it runs:
+`useMutation` returns TanStack's [`useMutation`](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation) result (`mutate`, `mutateAsync`, `isPending`, `error`, `data`, `reset`). Pass any option except `mutationFn` as the second argument; your `onSuccess` runs after the mutation's cache effects:
 
 ```tsx
 // app/hooks/orders/use-ship-and-return.ts
@@ -420,7 +415,7 @@ export function useShipAndReturn() {
 
 ## Refresh what a mutation changed
 
-After a save, every screen showing the changed data must update. Instead of telling each component to refetch, the mutation declares its **effects** on the cache, and `useMutation` applies them when the mutation succeeds:
+After a save, every screen showing the changed data must update. The mutation declares its **effects** on the cache, and `useMutation` applies them on success:
 
 ```ts
 // app/queries/orders.ts
@@ -450,9 +445,7 @@ export const shipOrder = mutationFrom({
 | `invalidate` | Marks every entry starting with the key as stale. Entries on screen refetch now; the rest refetch next time they are used. | You don't have the new value, or many entries changed (every filtered list). |
 | `remove` | Drops the entries from the cache. The next read fetches from scratch. | The thing was deleted. |
 
-They run in that order: `set`, then `remove`, then `invalidate`. The mutation's `onSuccess` waits for the invalidated queries to refetch, so `ship.isPending` stays `true` until the lists on screen have refetched.
-
-`effects` is either a function of the result and the input, as above, or a plain object when the effects never depend on the result:
+They run in that order: `set`, `remove`, `invalidate`. `ship.isPending` stays `true` until the invalidated lists on screen have refetched. `effects` is a function of the result and input, or a plain object when they never depend on the result:
 
 ```ts
 // app/queries/invoices.ts
@@ -470,9 +463,9 @@ export const deleteInvoice = mutationFrom({
 ```
 
 > [!WARNING]
-> Don't call `queryClient.invalidateQueries` in the component after `mutate`. The next component that runs the same mutation forgets to, and its screen shows stale data. Declare the effect on the mutation once.
+> Don't call `queryClient.invalidateQueries` in the component after `mutate`. The next component that runs the mutation forgets to. Declare the effect on the mutation once.
 
-`effectsFor(result, input)` returns the effects a result would produce, which helps when you test them:
+`effectsFor(result, input)` returns the effects a result would produce, for tests:
 
 ```ts
 import { shipOrder } from '#app/queries/orders'
@@ -489,7 +482,7 @@ shipOrder.effectsFor(
 
 ## Combine effects from several resources
 
-Shipping an order also changes the customer's open invoice. `mergeEffects` from `kitr/app` joins several effects into one, concatenating each list:
+Shipping an order also changes the customer's open invoice. `mergeEffects` from `kitr/app` joins effects, concatenating each list (it skips `undefined`):
 
 ```ts
 // app/queries/orders.ts
@@ -514,11 +507,11 @@ export const shipOrder = mutationFrom({
 // effects for ord_2 => { set: [...], invalidate: [['orders', 'list'], ['invoices', 'list']] }
 ```
 
-`mergeEffects` skips `undefined`, so a helper that returns no effect for some inputs can sit in the list.
+
 
 ## Update the cache outside a mutation
 
-Sometimes the change comes from somewhere that is not a mutation: a message from a service worker, a `postMessage` from another window, a test. `applyCacheEffect` applies the same effect shape to any client, and `invalidate` marks several keys stale in one call:
+When the change does not come from a mutation (a service worker message, a `postMessage`, a test), `applyCacheEffect` applies the same effect shape to any client, and `invalidate` marks several keys stale in one call:
 
 ```ts
 // app/lib/orders/sync.ts
@@ -541,11 +534,11 @@ export function refreshBilling() {
 }
 ```
 
-In a component, read the client with TanStack's `useQueryClient()` instead of the container. For anything not covered by effects, the client is TanStack's own [`QueryClient`](https://tanstack.com/query/latest/docs/reference/QueryClient): `setQueryData`, `getQueryData`, `cancelQueries` and the rest all work.
+In a component, read the client with `useQueryClient()`. It is TanStack's own [`QueryClient`](https://tanstack.com/query/latest/docs/reference/QueryClient), so `setQueryData`, `getQueryData` and the rest work.
 
 ## Update the screen before the server answers
 
-For an optimistic update, write the expected value before the request, and roll back if it fails. Pass TanStack's `onMutate` and `onError` through `useMutation`; the mutation's own effects still run on success:
+For an optimistic update, write the expected value before the request and roll back on failure, with TanStack's `onMutate` and `onError`; the mutation's effects still run on success:
 
 ```tsx
 // app/hooks/orders/use-mark-paid.ts
@@ -585,7 +578,7 @@ export function useMarkPaid(id: string) {
 
 ## Use a query or mutation by name
 
-[Server actions](/packages/actions) register every `defineQuery('orders.list', ...)` and `defineMutation('orders.ship', ...)` under its name, and `kitr types` writes those names into `.kitr/actions.ts` so they are typed. Every hook in `@kitr/query` then takes the name as its first argument, the input as the second, and TanStack overrides as the third:
+[Server actions](/packages/actions) register every `defineQuery('orders.list', ...)` and `defineMutation('orders.ship', ...)` under its name, and `kitr types` types those names. Every hook then takes the name first, the input second and TanStack overrides third:
 
 ```tsx
 // app/components/open-orders.tsx
@@ -602,9 +595,7 @@ export function OpenOrders() {
 const options = queryOptions(context.app, 'orders.list', { status: 'open' })
 ```
 
-The hooks look the name up in the current app, so two apps or two tests never share operations. A misspelled name is a type error, and at run time it throws `[@kitr/query] "orders.lsit" is not registered`.
-
-`useMutation(name)` works the same way as `useMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
+A misspelled name is a type error, and at run time throws `[@kitr/query] "orders.lsit" is not registered`. Outside React, `call` runs an operation by name: a request in the browser, an in-process handler call on the server:
 
 ```ts
 import { call } from '@kitr/query'
@@ -614,11 +605,11 @@ const open = await call(app, 'orders.list', { status: 'open' })
 await call(app, 'orders.ship', { id: 'ord_2', carrier: 'UPS' })
 ```
 
-Every hook also accepts the imported definition in place of the name, `useQuery(listOrders, input)`, and plain TanStack options. The three forms produce the same query options, so a component and a loader using different forms share one cache entry.
+Every hook also accepts the imported definition (`useQuery(listOrders, input)`) or plain TanStack options; all three forms share one cache entry.
 
 ## Call a source without the cache
 
-`fetch(input, signal?)` on a query and `mutate(input)` on a mutation call the source directly. They skip the cache, skip effects and do not normalise errors to `KitrError`. Use them in scripts, server code or a test of the source itself:
+`fetch(input, signal?)` on a query and `mutate(input)` on a mutation call the source directly, skipping the cache, effects and `KitrError` normalisation. Use them in scripts, server code or source tests:
 
 ```ts
 // scripts/print-open-orders.ts
@@ -631,13 +622,11 @@ await shipOrder.mutate({ id: 'ord_2', carrier: 'UPS' })
 // The cache is untouched: no effects ran.
 ```
 
-`key(input)` returns the cache key, and `contract` holds the full contract with its `kind` and `source` (`'http'`, `'api'`, `'action'`, `'socket'`, or `undefined` for a hand-written one).
+
 
 ## Subscribe to live updates
 
-A subscription is a stream of events whose effects land in the same cache that `useQuery` reads. When Linus ships an order in his browser, the order page Ada has open updates without a refetch.
-
-Define it with the input and event types, a `key`, a `subscribe` function that returns an unsubscribe function, and `effects` that map each event to cache changes:
+A subscription is a stream of events whose effects land in the cache `useQuery` reads: when Linus ships an order, the page Ada has open updates without a refetch. Define it with the input and event types, a `key`, a `subscribe` function that returns an unsubscribe function, and `effects` per event:
 
 ```ts
 // app/lib/orders/subscriptions.ts
@@ -662,7 +651,7 @@ export const orderEvents = subscriptionFrom<string, OrderEvent>({
 })
 ```
 
-Then subscribe from the component that needs it. The hook subscribes on mount, unsubscribes on unmount and resubscribes only when the input's key changes:
+Subscribe from the component that needs it. The hook subscribes on mount, unsubscribes on unmount and resubscribes only when the input's key changes:
 
 ```tsx
 // app/components/orders/live-orders.tsx
@@ -690,7 +679,7 @@ export function LiveOrders({ teamId }: { teamId: string }) {
 | `onEvent` | | Called with every event, after it is stored as `lastEvent`. |
 | `onError` | | Called with a `KitrErrorShape` when the source reports an error. |
 
-The hook returns `{ status, lastEvent, error }`. `status` is `'idle'` before subscribing and after unmount, `'open'` while subscribed, and `'error'` after the source calls `error`. You rarely write `subscribe` by hand: [Realtime](/packages/realtime) channels produce the same shape from a channel definition, with WebSocket, Socket.IO or SSE underneath.
+The hook returns `{ status, lastEvent, error }`, where `status` is `'idle'`, `'open'` or `'error'`. [Realtime](/packages/realtime) channels produce the same shape, so you rarely write `subscribe` by hand.
 
 ## Handle errors
 
@@ -707,7 +696,7 @@ export function OrderError({ error }: { error: Error }) {
 }
 ```
 
-A thrown wire shape such as `{ code: 'CONFLICT', message: 'Order already shipped', status: 409 }` becomes a `KitrError` with that code. A `TypeError` whose message mentions fetch (Chrome's `Failed to fetch`) becomes `NETWORK` with status `0`, and an `AbortError` becomes `TIMEOUT`. Anything else becomes `INTERNAL` with the original message.
+A thrown shape such as `{ code: 'CONFLICT', message: 'Order already shipped', status: 409 }` becomes a `KitrError` with that code. A failed fetch becomes `NETWORK` (status `0`), an `AbortError` becomes `TIMEOUT`, and anything else becomes `INTERNAL`.
 
 | Code | Status | Retried by queries |
 | --- | --- | --- |
@@ -723,7 +712,7 @@ A thrown wire shape such as `{ code: 'CONFLICT', message: 'Order already shipped
 | `UNAVAILABLE` | 503 | twice |
 | `NETWORK` | 0 | twice |
 
-Queries retry only failures that might pass on a second try. A 4xx means the request itself is wrong, so it fails at once and the user sees the error without a wait. Mutations are not retried. [Forms](/packages/forms) puts a `VALIDATION` error's `fieldErrors` under the right inputs, so a `mutateAsync` inside a form's `onSubmit` needs no error code of its own.
+Queries retry only failures that might pass on a second try; a 4xx fails at once. Mutations are not retried. [Forms](/packages/forms) puts a `VALIDATION` error's `fieldErrors` under the right inputs.
 
 ## Tune caching per query
 
@@ -747,7 +736,7 @@ export const teamsQuery = queryFrom({
 })
 ```
 
-`teamsQuery.options()` now carries `staleTime: 600000`. A query without its own `staleTime` uses the config value. For one call site, spread the options and override them:
+A query without its own `staleTime` uses the config value. For one call site, spread the options and override them:
 
 ```tsx
 // app/components/teams/team-picker.tsx
@@ -771,16 +760,14 @@ export function TeamPicker() {
 
 ## Render on the server
 
-On the server, every request gets its own `QueryClient`. The provider binds `queryClient` as a scoped binding, so each forked app that renders a request builds a fresh cache, and one customer's orders can never render into another customer's page. In the browser there is one app, so there is one client for the whole session.
-
-Nothing in your code changes for this. Read the client through `context.queryClient` in loaders and `useQueryClient()` in components, and you always get the one for the current request.
+On the server every request gets its own `QueryClient`, so one customer's orders never render into another's page. In the browser one client serves the session. Read it through `context.queryClient` in loaders and `useQueryClient()` in components and you always get the current request's.
 
 > [!WARNING]
-> Don't import `app` and call `app.container.use('queryClient')` from code that runs during a server render. It reads the root app's client, not the request's, so one visitor's cached data can reach another.
+> Don't call `app.container.use('queryClient')` from code that runs during a server render. It reads the root app's client, so one visitor's cached data can reach another.
 
 ## Testing
 
-In a test, boot an app with the query provider, seed the cache with the data the component needs, and render inside the app's providers. `createTestApp` from `@kitr/testing` boots the app; `renderWithKitr` from `@kitr/testing/react` renders inside `KitrProvider` and takes `queryData` as `[key, data]` pairs. Seeded data is fresh for 30 seconds, so the component reads it without calling `fetch`:
+In a test, seed the cache with the data the component needs. `createTestApp` from `@kitr/testing` boots the app; `renderWithKitr` from `@kitr/testing/react` renders inside `KitrProvider` and takes `queryData` as `[key, data]` pairs, fresh for 30 seconds, so `fetch` is not called:
 
 ```tsx
 // app/components/orders/orders.test.tsx
@@ -871,7 +858,7 @@ The assertions you will write most:
 | A component did not refetch | the `fetch` mock was not called |
 | A failure reached the UI | `result.current.error` is a `KitrError` with the expected `code` |
 
-To test effects without React, call `effectsFor` and apply the result to a bare client. No provider is needed:
+To test effects without React, call `effectsFor` and apply the result to a bare client:
 
 ```ts
 // app/lib/orders/effects.test.ts
@@ -892,11 +879,11 @@ it('shipping replaces the order and refreshes lists', async () => {
 })
 ```
 
-To fake the network itself rather than the query, use [Mocks](/packages/mocks): its handlers answer `fetch` in tests and in the browser, so the query runs end to end.
+To fake the network itself, use [Mocks](/packages/mocks).
 
 ## Extend
 
-Every data source is a function that returns a contract. To add a source kitr does not ship, such as a GraphQL endpoint or a vendor SDK, write one function per kind and pass its result to `queryFrom`, `mutationFrom` or `subscriptionFrom`. The types are `QueryContract`, `MutationContract` and `SubscriptionContract` from `kitr/app` (see the [API reference](/packages/query/api)):
+To add a source kitr does not ship, such as GraphQL or a vendor SDK, write one function per kind returning a `QueryContract`, `MutationContract` or `SubscriptionContract` (from `kitr/app`, see the [API reference](/packages/query/api)) and pass it to `queryFrom`, `mutationFrom` or `subscriptionFrom`:
 
 | Member | Kind | Description |
 | --- | --- | --- |
@@ -961,18 +948,14 @@ export const projectsQuery = queryFrom(
 )
 ```
 
-Throw a `KitrError` (or anything with `code`, `message` and `status`) so components and forms see the same shape as every other source. Whatever you throw is normalised anyway, so a plain `Error` still arrives as `INTERNAL`.
+Throw a `KitrError` (or anything with `code`, `message` and `status`) so components see the same shape as every other source.
 
 ## Devtools
 
-With [Devtools](/packages/devtools) installed, a **Query** panel lists every cached query with its status. Select one to see its data, or to invalidate, refetch or remove it.
-
-Failed mutations are logged to the Log panel under `query` as `mutation failed: <mutationKey>` with the error attached.
+With [Devtools](/packages/devtools) installed, a **Query** panel lists every cached query: select one to see its data, invalidate, refetch or remove it. Failed mutations are logged under `query`.
 
 ## Next steps
 
-- [API reference](/packages/query/api)
-- [TanStack Query docs](https://tanstack.com/query/latest/docs/framework/react/overview): everything there works as written, imported from `@kitr/query`.
+- [API reference](/packages/query/api): every export and contract type.
 - [HTTP](/packages/http): turn REST endpoints into queries and mutations.
-- [Realtime](/packages/realtime): live channels whose events update the cache.
-- [Loading and saving data](/docs/data): how every kitr data source shares one contract.
+- [Loading and saving data](/docs/data): how every data source shares one contract.
