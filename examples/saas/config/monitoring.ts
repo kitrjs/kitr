@@ -9,6 +9,7 @@ export default defineConfig({
   reporters: [
     // import * as Sentry from '@sentry/react'  (pnpm add @sentry/react)
     // ...(env.VITE_SENTRY_DSN ? [sentry(Sentry, { dsn: env.VITE_SENTRY_DSN })] : []),
+    // Better Stack takes the same SDK: betterStack(Sentry, { dsn }) with its DSN.
   ],
   // shouldReport: (error) => !(error instanceof KitrError && error.status < 500),
   tags: { app: env.VITE_APP_NAME },

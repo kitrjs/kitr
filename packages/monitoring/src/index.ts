@@ -40,7 +40,7 @@ export interface CaptureContext {
   source?: string
 }
 
-/** A destination for reports (Sentry, the console, your own endpoint). Only `name` and `captureException` are required. */
+/** A destination for reports (Sentry, Better Stack, the console, your own endpoint). Only `name` and `captureException` are required. */
 export interface Reporter {
   /** Identifies the reporter, such as `sentry`. */
   name: string
@@ -190,7 +190,7 @@ export function installGlobalHandlers(monitoring: Monitoring): () => void {
   }
 }
 
-/** The subset of `@sentry/react` / `@sentry/browser` / `@sentry/node` these reporters call. */
+/** The subset of `@sentry/react` / `@sentry/browser` / `@sentry/node` the `sentry` and `betterStack` reporters call. */
 export interface SentryLike {
   /** `Sentry.init`, called with the reporter's options. */
   init?(options: Record<string, unknown>): unknown
@@ -244,6 +244,14 @@ export function sentry(
     setTag: (k, v) => Sentry.setTag(k, v),
     flush: (t) => Sentry.flush?.(t) ?? Promise.resolve(true),
   }
+}
+
+/**
+ * Better Stack reporter. Better Stack accepts the Sentry SDK, so this is the Sentry reporter
+ * with your Better Stack DSN (Errors -> your application -> Ingest): `betterStack(Sentry, { dsn })`.
+ */
+export function betterStack(Sentry: SentryLike, options: Parameters<typeof sentry>[1]): Reporter {
+  return { ...sentry(Sentry, options), name: 'better-stack' }
 }
 
 /** Mirrors reports into the kitr devtools (channel "errors"). Added automatically in development. */
