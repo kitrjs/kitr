@@ -1,4 +1,5 @@
-import { isKitrErrorShape, KitrError, toKitrError } from '@kitr/core'
+import { type KitrError, toKitrError } from '@kitr/core'
+import { applyRequestHeaders, bearerValue, fromEnvelope } from '@kitr/core/request'
 import ky, { HTTPError, type KyInstance, type Options } from 'ky'
 
 /** Options for `createHttpClient` and `config/http.ts`: kitr's auth settings plus every ky option except `prefixUrl`. */
@@ -39,21 +40,12 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
       ...rest.hooks,
       beforeRequest: [
         async ({ request }) => {
-          const token = await getToken?.()
-          if (token) {
-            request.headers.set(
-              authHeader,
-              authHeader === 'Authorization' ? `Bearer ${token}` : token,
-            )
-          }
-          // kitr/shield's double-submit cookie: echo it on every write so same-origin calls pass.
-          if (
-            !/^(GET|HEAD|OPTIONS)$/i.test(request.method) &&
-            !request.headers.has('x-csrf-token')
-          ) {
-            const csrf = readCsrfCookie()
-            if (csrf) request.headers.set('x-csrf-token', csrf)
-          }
+          // Bearer token, and kitr/shield's double-submit CSRF cookie echoed on writes.
+          applyRequestHeaders(request.headers, {
+            method: request.method,
+            token: await getToken?.(),
+            authHeader,
+          })
         },
         ...(rest.hooks?.beforeRequest ?? []),
       ],
@@ -69,11 +61,7 @@ export function createHttpClient(options: HttpClientOptions = {}): KyInstance {
           const retried = new Request(request, { headers: new Headers(request.headers) })
           retried.headers.set('x-kitr-retried', '1')
           const token = await getToken?.()
-          if (token)
-            retried.headers.set(
-              authHeader,
-              authHeader === 'Authorization' ? `Bearer ${token}` : token,
-            )
+          if (token) retried.headers.set(authHeader, bearerValue(token, authHeader))
           // Retry through this same client so custom fetch, hooks and error normalisation still apply.
           return client(retried)
         },
@@ -103,44 +91,7 @@ export async function normaliseHttpError(error: unknown): Promise<KitrError> {
         body = await response.clone().json()
       } catch {}
     }
-    if (isKitrErrorShape(body)) {
-      return new KitrError(body.code, body.message, {
-        status: body.status || response.status,
-        fieldErrors: body.fieldErrors,
-        data: body.data,
-        cause: error,
-      })
-    }
-    const b = body as any
-    // Common shapes: { message }, { error: { message } }, { errors: [{ field, message }] } (Adonis/VineJS)
-    const message: string | undefined = b?.message ?? b?.error?.message ?? b?.error
-    const fieldErrors = Array.isArray(b?.errors)
-      ? b.errors.reduce((acc: Record<string, string[]>, e: any) => {
-          const field = e.field ?? e.path ?? '_root'
-          acc[field] ??= []
-          acc[field].push(e.message ?? String(e))
-          return acc
-        }, {})
-      : undefined
-    const kitrError = KitrError.fromStatus(
-      response.status,
-      typeof message === 'string' ? message : undefined,
-      body,
-    )
-    return fieldErrors
-      ? new KitrError(kitrError.code, kitrError.message, {
-          status: response.status,
-          fieldErrors,
-          data: body,
-          cause: error,
-        })
-      : kitrError
+    return fromEnvelope(body, response.status, { cause: error })
   }
   return toKitrError(error)
-}
-
-function readCsrfCookie(): string | undefined {
-  if (typeof document === 'undefined') return undefined
-  const m = document.cookie.match(/(?:^|;\s*)kitr-csrf=([^;]+)/)
-  return m ? decodeURIComponent(m[1]!) : undefined
 }

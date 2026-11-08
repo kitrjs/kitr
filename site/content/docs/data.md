@@ -79,3 +79,5 @@ Whatever the source, a failure arrives as a `KitrError` with `code`, `status`, `
 
 - [Query](/packages/query): the full API
 - [HTTP](/packages/http), [API routes](/packages/api), [server actions](/packages/actions), [realtime channels](/packages/realtime): the sources
+
+Which source to use for which job, and what each kit chose: [Choosing a data source](/docs/data-sources).

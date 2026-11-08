@@ -167,3 +167,15 @@ The shield's default policy used to allow inline scripts and styles, which let a
 ## Realtime authorises when a connection opens and subscribes, not afterwards
 
 A realtime connection is checked when it opens (`authorize(request)`) and each time it subscribes (the channel's `authorize`). Nothing re-checks it while it stays open, so a revoked session kept receiving events until its socket dropped. Re-checking every message would put a session lookup on the hot path of every emit, so the model stays and the gap gets a hook instead: `closeSessions(userId)` on the realtime server closes that user's connections on the instance (WebSocket code 4401), and the cookie session controller calls `onSessionsRevoked(userId)` after sign-out-everywhere and password reset. The reconnect that follows goes through `authorize(request)` again and is refused. Reaching other instances is left to the app, since the memory adapter has no one to tell and an eager Redis subscription per server would be a cost every deployment pays.
+## One `kitr generate`, and `typecheck` goes through the CLI
+
+A project used to have two generated files with two commands: `kitr types` wrote `.kitr/actions.ts` and `kitr api:sync` wrote `routes.gen.ts`. Forgetting either gave type errors that did not say why, and the `typecheck` script was `kitr types && tsc --noEmit`, which covered only the first. `kitr generate` now runs every generator: the type generators, then each package's declared `generate` step (`@kitr/api` declares `api:sync`; the CLI knows no package by name). `kitr dev` and `kitr build` run it before starting, `kitr generate --watch` keeps it running, and the kits' `typecheck` script is `kitr typecheck`, which generates and then runs `tsc --noEmit`. The script is not a bare `tsc --noEmit` because `.kitr/` is ignored by git: a plain `tsc` in a fresh clone or in CI would fail on the missing `#kitr/*` files, the confusing error this removes. `kitr types` and `kitr api:sync` still work as aliases for their half. Existing projects keep a working `kitr types && tsc --noEmit`; `kitr add actions` leaves a script that already calls `kitr` alone.
+
+## One request module under `http`, `api`, `actions` and `realtime`
+
+The four data clients each had their own error mapping, query keys, abort handling and header code, so a bearer token or CSRF echo fixed in one was missing from another. They now share `@kitr/core/request` (the error envelope, the query key factory, abort plumbing and header injection). The public APIs of the four packages did not change, and nothing here is new for users except the entry itself, which other packages and apps may import. One visible effect: `api` now reads `{ error: { message } }` and `{ errors: [...] }` bodies from other backends the way `http` always did. [Choosing a data source](data.md) says which client to use when.
+
+## The devtools provider says it is development only
+
+`kitr add devtools` writes a comment above the provider in `kitrrc.ts`: the Vite plugin strips it from production builds. The line stays in the file because the plugin, not the config, decides what ships.
+

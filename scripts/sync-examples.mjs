@@ -44,6 +44,9 @@ const ignored = new Set([
   '.nitro',
   '.kitr',
   'routeTree.gen.ts',
+  // Written by `kitr generate` (api:sync) from the example's real routes on every dev, build and typecheck.
+  'routes.gen.ts',
+  'openapi.json',
 ])
 
 function walk(dir, base = dir, out = []) {

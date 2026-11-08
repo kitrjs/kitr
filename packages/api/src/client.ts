@@ -1,12 +1,12 @@
 import {
   type CacheEffect,
-  isKitrErrorShape,
   KitrError,
   type MutationContract,
   type QueryContract,
   type QueryKey,
   toKitrError,
 } from '@kitr/core'
+import { applyRequestHeaders, fromEnvelope, keyFor } from '@kitr/core/request'
 import type { RouteType } from './types'
 
 /**
@@ -34,27 +34,6 @@ export interface ApiClientOptions {
    * `x-csrf-token` header); `false` turns it off.
    */
   csrf?: false | { cookie?: string; header?: string }
-}
-
-/** The CSRF header for a write, read from `document.cookie`; undefined on the server, for reads and when there is no cookie yet. */
-function csrfHeader(
-  option: ApiClientOptions['csrf'],
-  method: string,
-): [name: string, value: string] | undefined {
-  if (option === false || typeof document === 'undefined') return undefined
-  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return undefined
-  const name = option?.cookie ?? 'kitr-csrf'
-  for (const part of document.cookie.split(';')) {
-    const i = part.indexOf('=')
-    if (i > 0 && part.slice(0, i).trim() === name) {
-      try {
-        return [option?.header ?? 'x-csrf-token', decodeURIComponent(part.slice(i + 1).trim())]
-      } catch {
-        return undefined
-      }
-    }
-  }
-  return undefined
 }
 
 type IsNever<T> = [T] extends [never] ? true : false
@@ -145,13 +124,14 @@ export function createApiClient<R extends Record<string, unknown>>(
     }
     const call = async (input: any = {}, signal?: AbortSignal) => {
       const headers = new Headers(await options.headers?.())
-      const token = await options.getToken?.()
-      if (token) headers.set('authorization', `Bearer ${token}`)
       const hasBody = input.body !== undefined && method !== 'GET' && method !== 'HEAD'
       if (hasBody) headers.set('content-type', 'application/json')
       headers.set('accept', 'application/json')
-      const csrf = csrfHeader(options.csrf, method)
-      if (csrf) headers.set(csrf[0], csrf[1])
+      applyRequestHeaders(headers, {
+        method,
+        token: await options.getToken?.(),
+        csrf: options.csrf,
+      })
       const request = new Request(buildUrl(input), {
         method,
         headers,
@@ -168,22 +148,10 @@ export function createApiClient<R extends Record<string, unknown>>(
       if (response.status === 204) return undefined
       const text = await response.text()
       const data = text ? safeJson(text) : undefined
-      if (!response.ok) {
-        if (isKitrErrorShape(data))
-          throw new KitrError(data.code, data.message, {
-            status: data.status,
-            fieldErrors: data.fieldErrors,
-            data: data.data,
-          })
-        throw KitrError.fromStatus(
-          response.status,
-          typeof (data as any)?.message === 'string' ? (data as any).message : undefined,
-          data,
-        )
-      }
+      if (!response.ok) throw fromEnvelope(data, response.status)
       return data
     }
-    const key = (input: any = {}) => ['api', name, input.params ?? {}, input.query ?? {}] as const
+    const key = (input: any = {}) => keyFor('api', name, input.params ?? {}, input.query ?? {})
     const endpoint = Object.assign(call, {
       method,
       path,

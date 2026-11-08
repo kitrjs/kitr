@@ -508,13 +508,13 @@ export async function addPlatform(
 }
 
 /** Run one hook (`dev`, `build`, `start`, `scaffold`) for the named platforms. */
-/** `kitr types` before dev and build, so generated names are current before anything compiles. */
-async function generateTypes(ctx: ProjectContext) {
-  const { runTypes } = await import('./types')
-  const result = await runTypes(ctx, { quiet: !ctx.verbose })
-  if (result.written.length)
+/** `kitr generate` before dev and build, so generated names and the route table are current before anything compiles. */
+async function generateAll(ctx: ProjectContext) {
+  const { runGenerate } = await import('./generate')
+  const result = await runGenerate(ctx, { quiet: !ctx.verbose, strict: false })
+  if (result.types.written.length)
     log.step(
-      `kitr types: ${result.written.length} file(s) written (${result.generators.join(', ')})`,
+      `kitr generate: ${result.types.written.length} type file(s) written (${result.types.generators.join(', ')})`,
     )
 }
 
@@ -525,7 +525,7 @@ export async function runPlatforms(
   flags: Record<string, string | boolean> = {},
   mode: 'parallel' | 'sequential' = hook === 'build' ? 'sequential' : 'parallel',
 ) {
-  if (hook === 'dev' || hook === 'build') await generateTypes(ctx)
+  if (hook === 'dev' || hook === 'build') await generateAll(ctx)
   const all = await loadPlatforms(ctx)
   const selected = selectPlatforms(all, names)
   const controller = new AbortController()

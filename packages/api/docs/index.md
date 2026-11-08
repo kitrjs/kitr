@@ -1190,3 +1190,4 @@ To test one middleware, call it with a minimal context and a `next` function. Ea
 - [Query](/packages/query): the contracts the client produces
 - [Forms](/packages/forms): showing `fieldErrors` on fields
 - [Build an API server without React](/guides/api-server)
+- [Choosing a data source](/docs/data-sources): when to use API routes and when to use actions, API routes, HTTP or realtime.

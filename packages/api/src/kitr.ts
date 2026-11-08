@@ -50,6 +50,11 @@ export default definePackage({
     ctx.agents.remove('api')
   },
   commands: () => import('./commands'),
+  // `kitr generate` (and so `kitr dev`, `kitr build`, `kitr typecheck`) keeps routes.gen.ts and openapi.json fresh.
+  generate: {
+    command: 'api:sync',
+    watch: ['server/**/*.ts', 'app/**/routes.ts', 'config/api.ts'],
+  },
   generators: {
     controller: {
       description: 'Create a controller in server/controllers',

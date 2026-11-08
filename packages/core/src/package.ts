@@ -124,8 +124,8 @@ export interface AddContext extends ProjectInfo {
     remove(...names: string[]): void
   }
   provider: {
-    /** Add `() => import('<spec>')` to kitrrc.ts providers. */
-    add(spec: string): void
+    /** Add `() => import('<spec>')` to kitrrc.ts providers, with an optional `// comment` line above it. */
+    add(spec: string, options?: { comment?: string }): void
     remove(spec: string): void
   }
   /** Write `config/<name>.ts`. Skipped when it exists unless `overwrite`. */
@@ -357,6 +357,12 @@ export interface PackageDefinition {
   wraps?: Record<string, string>
   /** Type generation this package runs on `kitr types` (`defineTypes`). Lazy, like `commands`. */
   types?: () => Promise<unknown>
+  /**
+   * A step `kitr generate` runs after the type generators: the name of one of this package's own
+   * `commands` (`'api:sync'`) and, for `kitr generate --watch`, the globs that should re-run it.
+   * The command is called with no arguments, so it must work from its defaults.
+   */
+  generate?: { command: string; watch?: string[] }
   vite?: PackageViteNeeds
   /** For `kind: 'platform'`. */
   platform?: PlatformPackage
