@@ -22,6 +22,11 @@
   --blue: #2d6cf0;
   --code-bg: #f4f6f9;
   --shadow: 0 1px 2px rgb(15 27 43 / 0.06), 0 8px 24px rgb(15 27 43 / 0.08);
+  /* Runs-on badges: soft tints with ink of the same hue, apart from the category fills. */
+  --client-bg: #e6ecff;
+  --client-ink: #2f45b5;
+  --server-bg: #fbeedd;
+  --server-ink: #8a4a0c;
 }
 
 [data-theme="dark"] {
@@ -36,6 +41,10 @@
   --warn: #ff8080;
   --code-bg: #131d2a;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  --client-bg: #1d2a52;
+  --client-ink: #b3c3ff;
+  --server-bg: #3a2a16;
+  --server-ink: #f4c88a;
 }
 
 *,
@@ -356,6 +365,45 @@ kbd {
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
+}
+
+.badge-runs {
+  font-weight: 500;
+}
+.runs-client {
+  background: var(--client-bg);
+  color: var(--client-ink);
+}
+.runs-server {
+  background: var(--server-bg);
+  color: var(--server-ink);
+}
+/* Client / Server: two tinted halves; the seam runs through the slash, never a word. */
+.badge-both {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.badge-both .runs-client,
+.badge-both .runs-server {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+.badge-both .runs-client {
+  padding: 0 4px 0 9px;
+}
+.badge-both .runs-server {
+  padding: 0 9px 0 4px;
+}
+.runs-slash {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 1px;
+  background: linear-gradient(90deg, var(--client-bg) 50%, var(--server-bg) 50%);
+  color: color-mix(in srgb, var(--client-ink) 50%, var(--server-ink));
+  font-weight: 400;
 }
 
 .tile {
@@ -796,7 +844,9 @@ a.built-on-link:hover {
 .dir-search {
   grid-area: search;
   position: sticky;
-  top: 65px;
+  /* Tucked 1px under the header's bottom border, so fractional pixel ratios on phones never
+     open a hairline gap where cards show through. */
+  top: 64px;
   z-index: 5;
   padding: 12px 0;
   background: var(--bg);

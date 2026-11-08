@@ -42,17 +42,26 @@ export function CategoryBadge({ category }: { category: PackageEntry['category']
   )
 }
 
-/** Client in blue, server in amber; packages that run in both get one badge split diagonally. */
+/**
+ * Where a package runs: a tinted Client or Server badge. Packages that run on both get one badge
+ * with a Client half and a Server half that meet at the slash, so the colour seam never cuts a
+ * word.
+ */
 export function RunsOnBadge({ value }: { value: RunsOn }) {
-  const r = runsOn[value]
+  if (value === 'both')
+    return (
+      <span className="badge badge-runs badge-both" title="Runs on the client and the server">
+        <span className="runs-client">Client</span>
+        <span className="runs-slash" aria-hidden="true">
+          /
+        </span>
+        <span className="visually-hidden"> and </span>
+        <span className="runs-server">Server</span>
+      </span>
+    )
   return (
-    <span
-      className="badge"
-      style={{ background: r.background }}
-      title={`Runs on: ${r.label.replace(' ', ' and ')}`}
-    >
-      <Icon icon={r.icon} size={13} stroke="#0B121C" strokeWidth={2} />
-      {r.label}
+    <span className={`badge badge-runs runs-${value}`} title={`Runs on the ${value}`}>
+      {runsOn[value].label}
     </span>
   )
 }
