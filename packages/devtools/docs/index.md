@@ -1,6 +1,6 @@
 ---
 title: Devtools
-description: Open a window that shows what every package is doing, from a floating button, a shortcut or a touch gesture. On in development; turn it on in production with one flag.
+description: A panel that shows what every package is doing, opened by a button, a shortcut or a gesture. On in development; one flag ships it.
 order: 1
 ---
 

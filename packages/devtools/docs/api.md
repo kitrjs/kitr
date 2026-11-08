@@ -79,7 +79,7 @@ interface DevtoolsConfig {
    */
   enabled?: boolean;
   /**
-   * The trigger button. `auto` shows it, dimmed on hover-capable screens; `hover` shows it only
+   * The trigger button. `auto` shows it; `hover` shows it only
    * while the pointer is near its corner; `hidden` removes it (use the shortcut, gesture or URL flag).
    * Default `auto`.
    */
