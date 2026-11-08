@@ -429,7 +429,7 @@ describe('brand cube', () => {
 `<Scene>` itself needs a real browser to draw. In Vitest with happy-dom there is no WebGL, so a page that contains a scene renders its `fallback`, which makes page tests stable and lets you assert on it:
 
 ```tsx
-// app/routes/orders/order.test.tsx
+// app/pages/order.test.tsx
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { HeadsetViewer } from '#app/components/headset-viewer'

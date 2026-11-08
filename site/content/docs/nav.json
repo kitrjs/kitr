@@ -3,7 +3,13 @@
     "title": "Start here",
     "pages": [
       {
+        "slug": "what-is-kitr"
+      },
+      {
         "slug": "getting-started"
+      },
+      {
+        "slug": "compare"
       },
       {
         "slug": "project-structure"

@@ -98,6 +98,10 @@ function About() {
           <h3>Changelog</h3>
           <span className="muted">Every release and its tested versions.</span>
         </a>
+        <Link to="/docs/$slug" params={{ slug: 'what-is-kitr' }}>
+          <h3>What is kitr</h3>
+          <span className="muted">The problems it solves, in plain words.</span>
+        </Link>
         <Link to="/docs/$slug" params={{ slug: 'building-packages' }}>
           <h3>Contribute</h3>
           <span className="muted">Fix a doc or write a package.</span>

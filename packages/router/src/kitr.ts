@@ -111,10 +111,7 @@ export default definePackage({
     ctx.write('app/routes.ts', routesFile)
     // Idempotent: a table another package created first gets the pages methods added to its list.
     ctx.routes.extend('kitr/router/routes')
-    ctx.write(
-      'app/pages/home.tsx',
-      `export default function HomePage() {\n  return (\n    <main style={{ padding: 24 }}>\n      <h1>${ctx.pkg.name ?? 'app'}</h1>\n      <p>Edit <code>app/pages/home.tsx</code>. Add a page with <code>kitr make:page</code>.</p>\n    </main>\n  )\n}\n`,
-    )
+    ctx.write('app/pages/home.tsx', homePage(ctx.pkg.name ?? 'app'))
     ctx.write(
       'app/pages/about.tsx',
       `export default function AboutPage() {\n  return <main style={{ padding: 24 }}>About</main>\n}\n`,
@@ -196,3 +193,54 @@ export default function ${naming.pascal(name)}Page() {
   eject: { 'kitr/router': '@tanstack/react-router (+ your own context/guards)' },
   vite: { start: true, optimizeDeps: ['@tanstack/react-router', '@tanstack/react-start'] },
 })
+
+/**
+ * The first screen a new project shows. Inline styles only: it is written before Tailwind or the
+ * UI registry may exist, so it must stand alone. System colours keep it readable in light and dark.
+ */
+const homePage = (name: string) => `const commands = [
+  ['kitr make:page <path>', 'add a page'],
+  ['kitr add <package>', 'add sign-in, forms, an API and more'],
+  ['kitr doctor', 'check the wiring'],
+]
+
+export default function HomePage() {
+  return (
+    <main
+      style={{
+        colorScheme: 'light dark',
+        maxWidth: 640,
+        margin: '0 auto',
+        padding: 24,
+        lineHeight: 1.5,
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
+      <h1>${JSON.stringify(name)
+        .slice(1, -1)
+        .replace(/[<>{}`$\\]/g, '')} is running</h1>
+      <p>
+        This page is <code>app/pages/home.tsx</code>.
+      </p>
+      <p>
+        Pages are listed in <code>app/routes.ts</code>.
+      </p>
+      <h2>Next</h2>
+      <ul>
+        {commands.map(([command, note]) => (
+          <li key={command}>
+            <code>{command}</code>: {note}
+          </li>
+        ))}
+      </ul>
+      <p>
+        <a href="https://kitr.dev/docs/getting-started">Getting started</a> |{' '}
+        <a href="https://kitr.dev/packages">Packages</a>
+      </p>
+      <p>
+        <code>AGENTS.md</code> in this folder describes the conventions for coding assistants.
+      </p>
+    </main>
+  )
+}
+`

@@ -4,9 +4,23 @@
 
 **One way to build everything.**
 
-kitr is the opinionated TypeScript framework for web, mobile, desktop and backend apps. One language, one CLI, one set of conventions, on every platform. Everything is an add-on.
+kitr gives you a React app with routing, data loading, forms, sign-in and a typed API server already wired together, from one CLI, and ships the same code to the web, a server, desktop and phones. It is for teams who want the decisions made and written down, with libraries they already know underneath.
+
+**Status.** Pre-release: the API is settling and every package is at `0.1.0` (they release in lockstep). kitr is not on npm yet, so `npm install -g kitr` and `pnpm dlx kitr` do not work today. The web (`web()`) and server (`server()`) platforms work; desktop, Tauri and mobile (and the device packages behind them) are previews that `kitr add` and `kitr new` refuse without `--preview`.
 
 Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
+
+### Try it
+
+From a checkout (needs Node and pnpm; the component registry in `registry/dist` is committed, so there is nothing extra to build):
+
+```sh
+git clone https://github.com/kitrjs/kitr && cd kitr
+pnpm install && pnpm build
+node packages/kitr/bin/kitr.mjs new my-app --kit app --registry $PWD/registry/dist
+```
+
+Once kitr is published, the same thing is one command. These work only after the first npm release:
 
 ```sh
 pnpm dlx kitr new my-app                # the blank kit: the wiring files and nothing else; kitr add brings the rest
@@ -43,6 +57,20 @@ The core is the `kitrrc.ts` wiring, the app lifecycle, the package and platform 
 
 **Components you own.**
 `kitr ui add button form data-table` copies shadcn-compatible components into `app/components/ui`. They use Tailwind v4, `cva`, native `<dialog>` and the tokens from `kitr/theme`; there is no component library in `node_modules` to fight.
+
+## Compared to Next.js, Expo and others
+
+- **Next.js:** a full-stack React framework with its own router and server model; kitr builds on TanStack Router, Query and Start instead, and adds auth, forms, an API server and a CLI that adds packages for you.
+- **Remix / React Router:** loaders and actions on web standards; kitr's data layer is TanStack Query with one contract for server actions, API routes, external APIs and realtime channels.
+- **TanStack Start:** kitr is TanStack Start underneath for SSR and server functions, plus conventions, a package system and `kitr add`; you can use Start directly if you want fewer opinions.
+- **Expo:** React Native renders native views; kitr's mobile and desktop platforms wrap your web app in Capacitor, Electron or Tauri WebView shells, and they are previews today.
+- **AdonisJS:** the model for kitr's wiring (`kitrrc.ts`, providers, controllers); kitr's server is h3 with Adonis-style controllers, and it stays TypeScript on the same stack as your React code.
+
+See the full comparison at [kitr.dev/docs/compare](https://kitr.dev/docs/compare).
+
+## Learn more
+
+Start with [what kitr is](https://kitr.dev/docs/what-is-kitr), then follow the getting started guide on [kitr.dev/docs](https://kitr.dev/docs).
 
 ## Entry points
 
@@ -186,10 +214,6 @@ The examples are exactly what the CLI generates (with workspace links instead of
 - [docs/entry-points.md](docs/entry-points.md): the re-export rules
 - [site/content/guides](site/content/guides): the step-by-step guides on [kitr.dev/guides](https://kitr.dev/guides), including [an API server without React](site/content/guides/api-server.md)
 - [docs/departures.md](docs/departures.md): where the implementation improved on the design plan, and why
-
-## Status
-
-Pre-release. The API is settling and the version is `0.1.0` across every package (they release in lockstep). Not yet published to npm.
 
 ## Contributing
 

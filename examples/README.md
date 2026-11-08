@@ -4,7 +4,7 @@ Each example is the unmodified output of a CLI kit, with `kitr`/`@kitr/*` pointe
 
 | Directory | Command | Try |
 | --- | --- | --- |
-| `blank/` | `kitr new blank --kit blank` | `pnpm dev` (`kitr dev site`) |
+| `blank/` | `kitr new blank --kit blank` | No dev server: the blank kit has no platform. Run `kitr add web site` first, then `pnpm dev` |
 | `backend/` | `kitr new backend --kit server` | `pnpm dev` (`kitr dev api`), then `curl localhost:3001/api/health` |
 | `dashboard/` | `kitr new dashboard --kit app` | `pnpm dev` |
 | `fullstack/` | `kitr new fullstack --kit fullstack` | `pnpm dev` runs `site` (SSR on :3000) and `api` (:3001); `pnpm build && pnpm start` serves `dist/site` |

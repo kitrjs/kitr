@@ -19,8 +19,8 @@ export function Rich({ text }: { text: string }) {
   )
 }
 
-export function SoonBadge({ short = false }: { short?: boolean }) {
-  return <span className="soon-badge">{short ? 'Soon' : 'Coming soon'}</span>
+export function SoonBadge({ short = false, label }: { short?: boolean; label?: string }) {
+  return <span className="soon-badge">{label ?? (short ? 'Soon' : 'Coming soon')}</span>
 }
 
 /** One platform as a coloured tile: icon, name, the shell it ships in and where it runs. */
@@ -38,7 +38,7 @@ export function PlatformTile({
       params={{ type: platform.type }}
       className={`platform-tile platform-tile-${size}`}
       style={{ background: platform.color }}
-      aria-label={`${platform.name}: ${platform.targets.join(', ')}${platform.available ? '' : ' (coming soon)'}`}
+      aria-label={`${platform.name}: ${platform.targets.join(', ')}${platform.available ? '' : ' (preview)'}`}
     >
       <span className="platform-tile-top">
         <span className="platform-tile-icon">
@@ -51,7 +51,7 @@ export function PlatformTile({
             ))}
           </span>
         ) : (
-          <SoonBadge short />
+          <SoonBadge label="Preview" />
         )}
       </span>
       <span className="platform-tile-text">
@@ -153,7 +153,7 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
                   {c.line.split(':')[0]}
                   <span className="builder-chip-type">: {c.type}</span>
                 </span>
-                {!c.available && <span className="builder-chip-soon">soon</span>}
+                {!c.available && <span className="builder-chip-soon">preview</span>}
               </button>
             )
           })}
