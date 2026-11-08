@@ -1,0 +1,2 @@
+  GET     /api/health                              health
+  WS      /api/ws                                  WS /api/ws

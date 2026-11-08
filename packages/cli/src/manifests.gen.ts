@@ -168,7 +168,7 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "package": "@kitr/devtools",
     "name": "devtools",
     "title": "Devtools",
-    "summary": "Open a panel in development that shows what every package is doing. It is removed from production builds.",
+    "summary": "Open a panel that shows what every package is doing. On in development; turn it on in production with one flag.",
     "category": "dev-tools",
     "runsOn": "client",
     "client": true,
@@ -333,7 +333,8 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "category": "insights",
     "runsOn": "both",
     "builtOn": [
-      "Sentry"
+      "Sentry",
+      "Better Stack"
     ],
     "docs": "docs",
     "setup": "./kitr"

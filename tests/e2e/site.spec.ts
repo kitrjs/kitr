@@ -14,7 +14,8 @@ const live = !!process.env.SITE_URL
 function links(html: string): string[] {
   const out = new Set<string>()
   for (const [, href] of html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)) {
-    if (!href || /^(https?:|mailto:|tel:|#|\/\/)/.test(href)) continue
+    // Only paths on this site: skip anything with a scheme (https:, mailto:, vscode:, ...) and protocol-relative URLs.
+    if (!href || /^([a-z][a-z0-9+.-]*:|#|\/\/)/i.test(href)) continue
     const path = href.split('#')[0]!.split('?')[0]!
     // Cloudflare rewrites mailto links to /cdn-cgi/l/email-protection on the live site.
     if (path && !path.startsWith('/cdn-cgi/')) out.add(path)
@@ -298,6 +299,40 @@ test.describe('in the browser', () => {
     await sections.locator('a[href="#testing"]').click()
     await expect(sections).toBeHidden()
     await expect(page.locator('.docs-bar-section')).toHaveText('Testing')
+  })
+
+  test('guide cards are styled like the package cards', async ({ page }) => {
+    await isolate(page)
+    await page.goto('/guides')
+    await page.waitForLoadState('networkidle')
+    const card = page.locator('.guide-card').first()
+    const style = await card.evaluate((el) => {
+      const s = getComputedStyle(el)
+      const title = el.querySelector('.guide-card-title')?.getBoundingClientRect()
+      const summary = el.querySelector('.guide-card-summary')?.getBoundingClientRect()
+      return {
+        border: s.borderTopWidth,
+        radius: s.borderTopLeftRadius,
+        underline: s.textDecorationLine,
+        stacked: (summary?.top ?? 0) >= (title?.bottom ?? 0),
+      }
+    })
+    expect(style).toEqual({ border: '1px', radius: '12px', underline: 'none', stacked: true })
+  })
+
+  test("the about page and the footer credit the maker with Platon's mark", async ({ page }) => {
+    await isolate(page)
+    await page.goto('/about')
+    const plate = page.locator('.maker-plate')
+    await expect(plate).toHaveAttribute('href', 'https://platon.blue')
+    await expect(plate.locator('svg path')).toHaveCount(2)
+    await expect(page.locator('.maker-links a').first()).toHaveAttribute(
+      'href',
+      'https://platon.blue/kitr',
+    )
+    const credit = page.locator('.footer-maker')
+    await expect(credit).toHaveText('Made by Platon')
+    await expect(credit).toHaveAttribute('href', 'https://platon.blue')
   })
 
   test('on a phone, the package search stays flush under a header that stays put', async ({

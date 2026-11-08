@@ -4,6 +4,8 @@ import { defineConfig } from 'vitest/config'
  * The default test run: every package's unit tests (node and DOM), the
  * type-level tests, and each example's own suite. Slower suites live beside it:
  * `vitest.integration.config.ts` (CLI kits, servers, sockets) and Playwright (`tests/e2e`).
+ * The VS Code extension (`tooling/vscode`) is left out on purpose: it is its own npm project
+ * with its own vitest, run by `npm test` there and by the vscode-release workflow.
  */
 export default defineConfig({
   test: {

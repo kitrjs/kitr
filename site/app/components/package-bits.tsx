@@ -44,17 +44,13 @@ export function CategoryBadge({ category }: { category: PackageEntry['category']
 
 /**
  * Where a package runs: a tinted Client or Server badge. Packages that run on both get one badge
- * with a Client half and a Server half that meet at the slash, so the colour seam never cuts a
- * word.
+ * with a Client half and a Server half that meet on a diagonal seam between the words.
  */
 export function RunsOnBadge({ value }: { value: RunsOn }) {
   if (value === 'both')
     return (
       <span className="badge badge-runs badge-both" title="Runs on the client and the server">
         <span className="runs-client">Client</span>
-        <span className="runs-slash" aria-hidden="true">
-          /
-        </span>
         <span className="visually-hidden"> and </span>
         <span className="runs-server">Server</span>
       </span>

@@ -45,9 +45,9 @@ import {
   SecurityLockIcon,
   ServerStack02Icon,
   Shield01Icon,
-  SmartPhone01Icon,
   SmartPhone02Icon,
   SmartPhone03Icon,
+  SmartPhone04Icon,
   Table02Icon,
   TailwindcssIcon,
   TestTube01Icon,
@@ -95,7 +95,13 @@ export interface PackageEntry {
   description: string
   repo: string
   pages: Array<{ slug: string; title: string; order: number }>
-  examples: Array<{ slug: string; title?: string; description?: string }>
+  examples: Array<{
+    slug: string
+    title?: string
+    description?: string
+    storage?: boolean
+    height?: number
+  }>
 }
 
 export const packages = packagesJson as PackageEntry[]
@@ -200,13 +206,13 @@ const glyphs: Record<string, IconSvgElement> = {
   pwa: SmartPhone02Icon,
   electron: AtomicPowerIcon,
   tauri: AppWindowMacIcon,
-  capacitor: SmartPhone01Icon,
+  capacitor: SmartPhone04Icon,
   storage: HardDriveIcon,
   devtools: CodeSquareIcon,
   theme: ColorsIcon,
   platform: ComputerPhoneSyncIcon,
   web: BrowserIcon,
-  mobile: SmartPhone01Icon,
+  mobile: SmartPhone04Icon,
   desktop: LaptopIcon,
   seo: SearchList01Icon,
   realtime: LiveStreaming02Icon,

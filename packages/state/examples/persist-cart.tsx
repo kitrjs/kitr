@@ -3,8 +3,7 @@ import { useState } from 'react'
 
 export const meta = {
   title: 'A cart that survives a reload',
-  description:
-    'Add a few items, then press Reload. The cart is saved to localStorage under kitr:cart and restored.',
+  description: 'Add items, then press Reload. The cart comes back from localStorage.',
 }
 
 interface CartState {

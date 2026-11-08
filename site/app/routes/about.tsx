@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import mark from '#app/assets/mark.svg?url'
-import { repoUrl } from '#app/components/chrome'
+import { platonUrl, repoUrl } from '#app/components/chrome'
+import { CreatorMark } from '#app/components/creator-marks'
 import { seo } from '#app/lib/seo'
 
 export const Route = createFileRoute('/about')({
@@ -18,19 +19,19 @@ const ideas = [
     title: 're-export',
     color: '#2D6CF0',
     ink: '#FFFFFF',
-    text: '@kitr/router is TanStack Router. @kitr/forms is React Hook Form. Upstream docs still apply, and leaving is an import rewrite.',
+    text: '@kitr/router is TanStack Router. @kitr/forms is React Hook Form. Their docs still apply, and leaving is a find-and-replace.',
   },
   {
     title: 'one contract',
     color: '#1FB25A',
     ink: '#0B121C',
-    text: 'REST APIs, API routes, server actions and realtime channels all speak queries, mutations and subscriptions, with cache effects declared once.',
+    text: 'REST, your own API, server actions and live channels all use the same queries and mutations.',
   },
   {
     title: 'no magic',
     color: '#EC3A3A',
     ink: '#0B121C',
-    text: 'kitrrc.ts lists every provider. Every command runs from flags, so people, CI and coding agents drive it the same way.',
+    text: 'kitrrc.ts lists everything your app loads. Every command runs without prompts, for people, CI and agents alike.',
   },
 ]
 
@@ -43,9 +44,9 @@ function About() {
           <span className="label">About kitr</span>
           <h1 className="display">a box of parts that fit together</h1>
           <p className="lede">
-            Every app ends up making the same thirty decisions: routing, data loading, forms, auth,
-            styling, testing, and how to ship to the web, phones, desktops and servers. kitr makes
-            them once, out loud, with libraries you already trust, and lets you lift any piece out.
+            Every app makes the same thirty decisions: routing, data, forms, sign-in, styling,
+            testing and where it ships. kitr makes them once, with libraries you already trust, and
+            lets you swap out any piece.
           </p>
         </div>
       </section>
@@ -61,22 +62,35 @@ function About() {
 
       <section className="about-row">
         <div className="maker">
+          <a
+            className="maker-plate"
+            href={platonUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="platon.blue"
+          >
+            <CreatorMark name="platon" size={44} />
+          </a>
           <span className="label">Made by</span>
           <h2>Platon</h2>
           <p className="muted">
-            kitr is built and maintained by Platon. It started as the set of decisions that kept
-            being remade for every new React app, written down once so the next app could start
-            where the last one finished.
+            kitr is built and maintained by Platon Podkopov, a senior UI/UX developer in Guildford,
+            UK. It started as the decisions remade for every new React app, written down once so the
+            next app starts where the last one finished.
           </p>
-          <a href="https://github.com/PodkopovP" target="_blank" rel="noreferrer">
-            github.com/PodkopovP
-          </a>
+          <div className="maker-links">
+            <a href={`${platonUrl}/kitr`} target="_blank" rel="noreferrer">
+              platon.blue
+            </a>
+            <a href="https://github.com/PodkopovP" target="_blank" rel="noreferrer">
+              github.com/PodkopovP
+            </a>
+          </div>
         </div>
         <div className="brand">
           <h2>Brand</h2>
           <p className="muted">
-            The mark is a tile cut by the letter K. Its three pieces are the brand colours. Packages
-            use their own category colours, so the brand stays recognisable as the catalogue grows.
+            The mark is a tile cut by the letter K. Its three pieces are the brand colours.
           </p>
           <div className="swatches">
             {['#2D6CF0', '#1FB25A', '#EC3A3A', '#0F1B2B'].map((c) => (

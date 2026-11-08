@@ -6,18 +6,24 @@ export const storagePrefix = (pkg: string, example: string) => `kitr-play:${pkg}
 
 /**
  * A live example in a frame, beside the browser storage it writes. Reload the frame to see what
- * persists; clear its storage to start fresh.
+ * persists; clear its storage to start fresh. An example that stores nothing (`storage: false` in
+ * its meta) gets the whole width.
  */
 export function LiveExample({
   pkg,
   example,
   title,
   description,
+  storage,
+  height,
 }: {
   pkg: string
   example: string
   title?: string
   description?: string
+  storage?: boolean
+  /** Frame height in pixels, for examples that need more than the default 300. */
+  height?: number
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
   const [nonce, setNonce] = useState(0)
@@ -76,38 +82,45 @@ export function LiveExample({
           <Icon icon={icons.external} size={15} />
         </a>
       </div>
-      <div className="example-body">
+      <div
+        className={`example-body${storage === false ? ' example-body-wide' : ''}`}
+        style={height ? { minHeight: height } : undefined}
+      >
         <iframe
           ref={frame}
           key={nonce}
           src={src}
           title={title ?? `${pkg} example`}
           className="example-frame"
+          style={height ? { minHeight: height } : undefined}
+          allow="clipboard-write"
           onLoad={read}
         />
-        <aside className="example-storage" aria-label="Browser storage">
-          <div className="example-storage-head">
-            <span className="label">localStorage</span>
-            <button
-              type="button"
-              className="example-button"
-              onClick={clear}
-              disabled={!entries.length}
-            >
-              <Icon icon={icons.trash} size={14} /> Clear
-            </button>
-          </div>
-          {entries.length ? (
-            entries.map(([key, value]) => (
-              <div key={key} className="example-entry">
-                <span className="mono example-key">{key}</span>
-                <pre className="mono example-value">{pretty(value)}</pre>
-              </div>
-            ))
-          ) : (
-            <p className="example-empty">Nothing stored yet. Interact with the example.</p>
-          )}
-        </aside>
+        {storage !== false && (
+          <aside className="example-storage" aria-label="Browser storage">
+            <div className="example-storage-head">
+              <span className="label">localStorage</span>
+              <button
+                type="button"
+                className="example-button"
+                onClick={clear}
+                disabled={!entries.length}
+              >
+                <Icon icon={icons.trash} size={14} /> Clear
+              </button>
+            </div>
+            {entries.length ? (
+              entries.map(([key, value]) => (
+                <div key={key} className="example-entry">
+                  <span className="mono example-key">{key}</span>
+                  <pre className="mono example-value">{pretty(value)}</pre>
+                </div>
+              ))
+            ) : (
+              <p className="example-empty">Nothing stored yet. Interact with the example.</p>
+            )}
+          </aside>
+        )}
       </div>
       {description && <figcaption>{description}</figcaption>}
     </figure>

@@ -66,6 +66,18 @@ describe('devtools overlay', () => {
     expect(screen.getByText('app content')).toBeTruthy()
   })
 
+  it('runs in production when enabled', async () => {
+    const app = await mount('production', { enabled: true })
+    expect(app.container.has('devtools')).toBe(true)
+    expect(await screen.findByTitle(/kitr devtools/)).toBeTruthy()
+  })
+
+  it('stays off in development when disabled', async () => {
+    const app = await mount('development', { enabled: false })
+    expect(app.container.has('devtools')).toBe(false)
+    expect(document.querySelector('[data-kitr-devtools]')).toBeNull()
+  })
+
   it('collects built-in and provider panels and logs providers that fail', async () => {
     const app = await mount()
     const hub = app.container.use('devtools')

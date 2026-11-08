@@ -21,7 +21,10 @@ export interface KitrPluginOptions {
   generatedRouteTree?: string
   /** Extra options for @tanstack/router-plugin. */
   router?: Record<string, unknown>
-  /** Include `@kitr/devtools/provider`. Default: never in production builds, always otherwise. */
+  /**
+   * Include `@kitr/devtools/provider`. Default: always in development; in production builds only
+   * when `config/devtools.ts` sets `enabled`.
+   */
   devtools?: boolean
   /** Which platform from kitrrc.ts this build is for. Default: `KITR_PLATFORM` (set by `kitr dev|build <name>`), else the first web platform. */
   platform?: string
@@ -102,6 +105,20 @@ async function loadPackageNeeds(root: string, pkg: string): Promise<PackageNeeds
 async function loadNeeds(root: string, packages: string[]): Promise<PackageNeeds[]> {
   const all = await Promise.all(packages.map((pkg) => loadPackageNeeds(root, pkg)))
   return all.filter((n): n is PackageNeeds => !!n)
+}
+
+/**
+ * Static read of `config/<name>.ts`: does it set `enabled` to anything but `false`? A literal
+ * `true` turns the package on; an expression (`process.env.DEBUG === '1'`) is decided at runtime,
+ * so the code has to ship for it. Absent or `false`: no.
+ */
+export function configEnables(configDir: string, name: string): boolean {
+  const file = ['ts', 'mts', 'js', 'mjs']
+    .map((ext) => join(configDir, `${name}.${ext}`))
+    .find(existsSync)
+  if (!file) return false
+  const value = stripComments(readFileSync(file, 'utf8')).match(/\benabled\s*:\s*([^,}\n]+)/)?.[1]
+  return value !== undefined && value.trim() !== 'false'
 }
 
 /** Does a provider spec (`@kitr/devtools/provider`) belong to this package? */
@@ -185,8 +202,11 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       platform = pickPlatform(rc, wantedPlatform)
       const declared = await needs
       serverOnlyConfig = declared.filter((n) => n.needs.serverOnlyConfig).map((n) => n.name)
+      const configDir = resolve(root, rc.directories.config ?? 'config')
       devOnlyProviders = declared
         .filter((n) => n.needs.provider?.production === false)
+        // `enabled: true` (or any expression but `false`) in its config ships it after all.
+        .filter((n) => !(options.devtools ?? configEnables(configDir, n.name)))
         .map((n) => n.package)
       const include = installedDeps(
         root,

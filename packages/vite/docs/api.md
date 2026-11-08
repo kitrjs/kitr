@@ -10,6 +10,16 @@ Every export of `@kitr/vite`, `@kitr/vite/client`, read from the published type 
 
 ## @kitr/vite
 
+### configEnables
+
+```ts
+function configEnables(configDir: string, name: string): boolean;
+```
+
+Static read of `config/<name>.ts`: does it set `enabled` to anything but `false`? A literal
+`true` turns the package on; an expression (`process.env.DEBUG === '1'`) is decided at runtime,
+so the code has to ship for it. Absent or `false`: no.
+
 ### kitr
 
 ```ts
@@ -80,7 +90,10 @@ interface KitrPluginOptions {
   generatedRouteTree?: string;
   /** Extra options for @tanstack/router-plugin. */
   router?: Record<string, unknown>;
-  /** Include `@kitr/devtools/provider`. Default: never in production builds, always otherwise. */
+  /**
+   * Include `@kitr/devtools/provider`. Default: always in development; in production builds only
+   * when `config/devtools.ts` sets `enabled`.
+   */
   devtools?: boolean;
   /** Which platform from kitrrc.ts this build is for. Default: `KITR_PLATFORM` (set by `kitr dev|build <name>`), else the first web platform. */
   platform?: string;

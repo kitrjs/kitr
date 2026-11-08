@@ -6,15 +6,11 @@ order: 0
 
 # Testing
 
-The hard part of testing an app is rarely the assertion. It is the setup: the providers a component expects, the query cache, the router, a server listening on a port, a fake for the one service that calls a third party. Each test file rebuilds a little of the app, and the little versions drift from the real one.
-
-`@kitr/testing` boots your real app for each test, renders components inside its providers and calls your API without opening a port.
-
 ## What it is
 
-`@kitr/testing` is three helpers. `createTestApp()` boots an app with your real providers and config, with any service swapped for a fake. `createTestClient()` sends JSON requests to anything with a `fetch(request)` method, so API tests call the handler directly, sign in with a header, and read typed responses. `renderWithKitr()` from `@kitr/testing/react` renders a component inside that app with the query cache already seeded. `kitr add testing` sets up Vitest and the test environments.
+`@kitr/testing` is three helpers. `createTestApp()` boots your real providers with any service faked. `createTestClient()` calls your API with no port. `renderWithKitr()` renders a component inside the app with the query cache seeded. `kitr add testing` sets up Vitest.
 
-It runs in your test process only, never in the app bundle. `@kitr/testing` has no React in it, so a backend without React uses it as is. To fake an API your frontend calls, rather than test your own, use [mocks](/packages/mocks) alongside it.
+Runs in your test process only. To fake an API the frontend calls, use [mocks](/packages/mocks).
 
 ## Install
 
@@ -22,11 +18,11 @@ It runs in your test process only, never in the app bundle. `@kitr/testing` has 
 kitr add testing
 ```
 
-This installs `@kitr/testing` and Vitest (plus Testing Library and happy-dom in a React project), adds the package to `kitrrc.ts`, and writes `vitest.config.ts` and `test/example.test.ts`. There is no provider. The guide's [Install](/packages/testing/guide#install) section lists every change.
+Adds `@kitr/testing` and Vitest, `vitest.config.ts` and an example test. No provider. [Every change](/packages/testing/guide#install).
 
 ## Quick start
 
-The server in `server/main.ts` is a fetch handler, so the test client calls it directly, with no port and no running backend. This test creates an order and reads it back:
+The server is a fetch handler, so the test client calls it directly:
 
 ```ts
 // test/orders.test.ts
@@ -64,25 +60,25 @@ pnpm test
       Tests  1 passed (1)
 ```
 
-The first request boots the server's app: every provider in `kitrrc.ts` registers and boots, exactly as in `kitr dev`. Nothing listens on a port, so tests run in parallel without clashing. Components render the same way with `renderWithKitr` from `@kitr/testing/react`. The guide continues from here: [Write your first test](/packages/testing/guide#write-your-first-test).
+The first request boots the app exactly as `kitr dev` does. Nothing listens on a port, so tests run in parallel. Next in the guide: [Write your first test](/packages/testing/guide#write-your-first-test).
 
 ## Built on
 
-`@kitr/testing` is built on [Vitest](https://vitest.dev) and [Testing Library](https://testing-library.com/docs/react-testing-library/intro/). Matchers, module mocking, timers and coverage come from Vitest; queries like `getByRole` come from Testing Library. kitr adds the three helpers, the request client with typed responses and error assertions, the per-file environment choice (Node for API tests, jsdom for components) and the isolation between tests.
+kitr adds the three helpers, typed responses, error assertions and the per-file environment choice.
 
 ## Problems it solves
 
-- **Rebuilding the app in every test.** `createTestApp()` boots the real providers and config. See [Boot the app without a server](/packages/testing/guide#boot-the-app-without-a-server).
-- **API tests that open ports.** `createTestClient()` calls the fetch handler in-process. See [Send requests to your API](/packages/testing/guide#send-requests-to-your-api).
-- **Third parties in tests.** Replace one service with a fake and keep the rest real. See [Replace a service with a fake](/packages/testing/guide#replace-a-service-with-a-fake).
-- **Components that need six providers.** `renderWithKitr()` wraps them in the app. See [Render a component](/packages/testing/guide#render-a-component).
-- **Loading spinners in snapshots.** Seed the query cache so the component renders with data. See [Seed the query cache](/packages/testing/guide#seed-the-query-cache).
-- **Asserting error shapes by hand.** Typed helpers for validation and error responses. See [Assert validation errors](/packages/testing/guide#assert-validation-errors).
+- **Rebuilding the app in every test.** [Boot the app without a server](/packages/testing/guide#boot-the-app-without-a-server).
+- **API tests that open ports.** [Send requests to your API](/packages/testing/guide#send-requests-to-your-api).
+- **Third parties in tests.** [Replace a service with a fake](/packages/testing/guide#replace-a-service-with-a-fake).
+- **Components that need six providers.** [Render a component](/packages/testing/guide#render-a-component).
+- **Loading spinners in snapshots.** [Seed the query cache](/packages/testing/guide#seed-the-query-cache).
+- **Asserting error shapes by hand.** [Assert validation errors](/packages/testing/guide#assert-validation-errors).
 
 ## Further reading
 
-- [Guide](/packages/testing/guide): install, configure and every task.
-- [API reference](/packages/testing/api): every export of `@kitr/testing` and `@kitr/testing/react`.
-- [Vitest docs](https://vitest.dev/guide/) and [Testing Library queries](https://testing-library.com/docs/queries/about): the tools underneath.
-- [Mocks](/packages/mocks) and [API](/packages/api): the fake API for the frontend, and the routes these tests call.
-- [Test a kitr app](/guides/testing): the guide that tests the full-stack app end to end.
+- [Guide](/packages/testing/guide).
+- [API reference](/packages/testing/api).
+- [Vitest docs](https://vitest.dev/guide/) and [Testing Library queries](https://testing-library.com/docs/queries/about).
+- [Mocks](/packages/mocks) and [API](/packages/api).
+- [Test a kitr app](/guides/testing).

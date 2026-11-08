@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Command } from '#app/components/command'
+import { Icon } from '#app/components/icons'
 import { PlatformBoard, PlatformBuilder } from '#app/components/platform-bits'
 import homeCode from '#app/generated/home-code.json'
-import { categories, findPackage, kits } from '#app/lib/catalog'
+import { glyph, kits } from '#app/lib/catalog'
+import { useSwapped } from '#app/lib/motion'
+import { findPlatform } from '#app/lib/platforms'
 import { seo, siteUrl } from '#app/lib/seo'
 
 const description =
@@ -84,43 +87,69 @@ const terminal = [
 const ideas = [
   {
     title: 'Re-export, never re-implement',
-    text: '@kitr/router is TanStack Router with a few helpers. Their docs still apply, and leaving kitr is a find-and-replace of imports.',
-  },
-  {
-    title: 'One data contract',
-    text: 'A query says where data comes from. A mutation says what it changes. REST calls, your own API routes and live channels all use the same pair.',
+    text: '@kitr/router is TanStack Router. Their docs still apply, and leaving kitr is a find-and-replace.',
   },
   {
     title: 'No magic',
-    text: 'One file, kitrrc.ts, lists everything your app loads. Nothing is discovered behind your back.',
+    text: 'One file, kitrrc.ts, lists everything your app loads. Nothing happens behind your back.',
   },
   {
-    title: 'Made for agents too',
-    text: 'Every command runs from flags, and AGENTS.md stays current as you add packages.',
+    title: 'Typed end to end',
+    text: 'The API client takes its types from your server routes. No codegen step, no schema to keep in sync.',
+  },
+]
+
+/** One plain line per kit for the home page; the kit's own text is the fallback. */
+const kitBlurb: Record<string, string> = {
+  blank: 'Only the wiring. Add what you need.',
+  app: 'A signed-in web app that talks to your API.',
+  fullstack: 'The app kit plus your own API server.',
+  server: 'An API server on its own, no React.',
+  saas: 'A product with sign-in, a dashboard and its own API.',
+  site: 'A marketing site with a blog, SEO and translations.',
+  realtime: 'A live chat over WebSockets.',
+  desktop: 'The app kit as an Electron desktop app.',
+  tauri: 'The app kit as a Tauri desktop app.',
+  mobile: 'The app kit as an installable phone app.',
+}
+
+const agentPoints = [
+  {
+    title: 'One home for every file',
+    text: 'The conventions are fixed and written down. kitr make writes each kind of file where it belongs.',
+  },
+  {
+    title: 'AGENTS.md stays current',
+    text: 'kitr new writes it. Every kitr add appends the rules for that package, and kitr remove takes them out.',
+  },
+  {
+    title: 'One-line plugin install',
+    text: 'Skills for Claude Code, Cursor, Codex and Copilot that know the CLI and run kitr doctor when they finish.',
   },
 ]
 
 const familiar = [
   {
     name: 'Next.js',
-    text: 'You keep React and server rendering, through TanStack Start. Pages are declared on one route table in app/routes.ts instead of folders, and data goes through TanStack Query.',
+    text: 'Same React and server rendering. Routes live in one file instead of folders, and data goes through TanStack Query.',
   },
   {
     name: 'Expo',
-    text: 'You keep React and one codebase for several targets. Mobile is a Capacitor WebView shell, not React Native, and it is still a preview, so native views are not part of kitr.',
+    text: 'Same React, one codebase for every target. Mobile is a web view in a Capacitor shell, not React Native.',
   },
   {
     name: 'TanStack Start',
-    text: 'You keep the same Start and Router underneath. kitr adds the packages for forms, auth, state and a typed server, plus a CLI that wires them.',
+    text: 'Same Start and Router underneath. kitr adds forms, auth, state, a typed server and a CLI that wires them.',
   },
   {
     name: 'AdonisJS',
-    text: 'You keep controllers and providers that register, boot, ready and shut down, listed in kitrrc.ts. The server is h3, and the API client is typed with no codegen.',
+    text: 'Same controllers and providers. The server is h3, and the API client is typed with no codegen.',
   },
 ]
 
 function Home() {
   const [tab, setTab] = useState(0)
+  const tabSwapped = useSwapped(tab)
   const current = terminal[tab]!
   return (
     <main className="container home">
@@ -129,13 +158,12 @@ function Home() {
           <span className="label">v0.1 pre-release</span>
           <h1 className="display hero-title">One way to build everything.</h1>
           <p className="lede">
-            kitr gives you a React app with routing, data loading, forms, sign-in and a typed API
-            server already wired together, from one CLI. The same code ships to the web and a server
-            today, and to desktop and phones in preview.
+            A React app with routing, data, forms, sign-in and a typed API, wired together by one
+            CLI. Write it once, ship it to the web, a server, desktop and phones.
           </p>
           <p className="hero-sub muted">
-            It is a thin layer over TanStack Router, Query and Start, React Hook Form, Zustand, ky,
-            h3 and Tailwind. Start small, then add each feature with one command.
+            Built on TanStack, React Hook Form, Zustand, h3 and Tailwind. Add each feature with one
+            command.
           </p>
           <Command cmd="kitr new my-app --kit app" />
           <div className="actions">
@@ -147,10 +175,9 @@ function Home() {
             </Link>
           </div>
           <p className="status-strip">
-            <strong>v0.1 pre-release.</strong> Web and server work today; desktop and mobile are
-            previews. Not on npm yet:{' '}
+            Web and server are ready. Desktop and mobile are in preview. Not on npm yet,{' '}
             <Link to="/docs/$slug" params={{ slug: 'getting-started' }}>
-              here is how to try it today
+              here is how to try it
             </Link>
             .
           </p>
@@ -159,7 +186,7 @@ function Home() {
           <span className="label">Ships to</span>
           <PlatformBoard />
           <a href="#mix" className="hero-platforms-note">
-            Use one, or all of them in one project →
+            Use one, or all of them in one project ↓
           </a>
         </div>
       </section>
@@ -185,10 +212,10 @@ function Home() {
             </button>
           ))}
           <span className="terminal-note mono">
-            every command runs from flags, so agents and CI never hit a prompt
+            no prompts, so agents and CI can run every command
           </span>
         </div>
-        <pre className="terminal-body mono">
+        <pre className={`terminal-body mono${tabSwapped ? ' swap-in' : ''}`} key={tab}>
           <span className="t-dim">~/code $</span> {current.cmd}
           {'\n'}
           {current.out.map(([tone, line]) => (
@@ -225,9 +252,9 @@ function Home() {
           <span className="label">One data contract</span>
           <h2 id="contract-title">Describe your data once. Every screen keeps up.</h2>
           <p className="muted">
-            A query says where data comes from. A mutation says what it changes. Your REST API, your
-            own API routes, server actions and realtime channels all speak this contract, so the
-            cache stays right without a single manual refetch.
+            A query says where data comes from. A mutation says what it changes. REST, your own API,
+            server actions and live channels all use this pair, so every screen stays in sync with
+            no manual refetching.
           </p>
           <Link to="/packages/$name" params={{ name: 'query' }}>
             How queries work →
@@ -240,45 +267,71 @@ function Home() {
         />
       </section>
 
-      <section className="kits">
+      <section className="agents" aria-labelledby="agents-title">
         <div className="section-head">
           <div>
-            <h2>Start from a kit, add the rest</h2>
+            <h2 id="agents-title">Built for agents</h2>
             <p className="muted">
-              A kit is a starting set of packages and files. Pick the closest one and add or remove
-              packages later.
+              Less time choosing, more time coding. The same clarity keeps coding agents on track.
             </p>
           </div>
-          <Link to="/packages">All packages →</Link>
+          <Link to="/docs/$slug" params={{ slug: 'agents' }}>
+            Working with agents →
+          </Link>
         </div>
-        <div className="kit-grid">
-          {kits.map((kit) => (
-            <article key={kit.name} className="kit">
-              <h3>{kit.name}</h3>
-              <code className="kit-flag">--kit {kit.name}</code>
-              <p>{kit.text}</p>
-              {kit.platforms.length > 0 && (
-                <p className="kit-platforms mono">{kit.platforms.join(' · ')}</p>
-              )}
-              <ul className="kit-chips" aria-label={`${kit.name} kit packages`}>
-                {kit.packages.map((name) => {
-                  const pkg = findPackage(name)
-                  return pkg ? (
-                    <li key={name}>
-                      <Link to="/packages/$name" params={{ name }} className="kit-chip mono">
-                        <span
-                          className="kit-chip-dot"
-                          style={{ background: categories[pkg.category].color }}
-                        />
-                        {name}
-                      </Link>
-                    </li>
-                  ) : null
-                })}
-              </ul>
-            </article>
+        <ul className="agents-list">
+          {agentPoints.map((point) => (
+            <li key={point.title}>
+              <h3>{point.title}</h3>
+              <p className="muted">{point.text}</p>
+            </li>
           ))}
+        </ul>
+      </section>
+
+      <section className="kits" aria-labelledby="kits-title">
+        <div className="section-head">
+          <div>
+            <h2 id="kits-title">Start from a kit</h2>
+            <p className="muted">A kit is a starting set of packages. Add or remove any later.</p>
+          </div>
+          <Link to="/docs/$slug" params={{ slug: 'kits' }}>
+            How kits work →
+          </Link>
         </div>
+        <ul className="kit-list">
+          {kits.map((kit) => {
+            const types = [...new Set(kit.platforms.map((p) => p.split(':')[1]?.trim() ?? p))]
+            return (
+              <li key={kit.name} className="kit-row">
+                <span className="kit-row-icons" aria-hidden="true">
+                  {types.length ? (
+                    types.map((t) => (
+                      <span
+                        key={t}
+                        className="kit-row-icon"
+                        style={{ background: findPlatform(t)?.color }}
+                      >
+                        <Icon icon={glyph(t)} size={14} stroke="#0B121C" strokeWidth={1.8} />
+                      </span>
+                    ))
+                  ) : (
+                    <span className="kit-row-icon kit-row-icon-blank" />
+                  )}
+                </span>
+                <span className="kit-row-text">
+                  <code className="kit-row-name">--kit {kit.name}</code>
+                  <span className="muted">{kitBlurb[kit.name] ?? kit.text}</span>
+                </span>
+                <span className="kit-row-count mono">
+                  {kit.packages.length
+                    ? `${kit.packages.length} package${kit.packages.length === 1 ? '' : 's'}`
+                    : 'no packages'}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       </section>
 
       <section className="ideas" aria-label="Principles">
