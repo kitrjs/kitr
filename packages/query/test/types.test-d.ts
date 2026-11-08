@@ -1,6 +1,8 @@
-import type { MutationName, OperationInput, OperationOf, QueryName } from '@kitr/core'
+import type { KitrApp, MutationName, OperationInput, OperationOf, QueryName } from '@kitr/core'
 import { describe, expectTypeOf, it } from 'vitest'
 import { call, mutationFrom, queryFrom, queryOptions, useMutation, useQuery } from '../src'
+
+declare const app: KitrApp
 
 /**
  * What `kitr types` writes into `.kitr/actions.ts`, by hand: two names augmenting `Operations`.
@@ -37,9 +39,9 @@ describe('name-keyed operations', () => {
     >()
     // input is optional when every field is
     useQuery('projects.list')
-    expectTypeOf(queryOptions('projects.list').queryKey).toMatchTypeOf<readonly unknown[]>()
-    expectTypeOf(call('projects.list')).resolves.toEqualTypeOf<string[]>()
-    expectTypeOf(call('projects.update', { id: '1', name: 'x' })).resolves.toEqualTypeOf<{
+    expectTypeOf(queryOptions(app, 'projects.list').queryKey).toMatchTypeOf<readonly unknown[]>()
+    expectTypeOf(call(app, 'projects.list')).resolves.toEqualTypeOf<string[]>()
+    expectTypeOf(call(app, 'projects.update', { id: '1', name: 'x' })).resolves.toEqualTypeOf<{
       id: string
     }>()
     // @ts-expect-error unknown name
@@ -47,7 +49,7 @@ describe('name-keyed operations', () => {
     // @ts-expect-error a mutation is not a query
     useQuery('projects.update')
     // @ts-expect-error input is required
-    call('projects.update')
+    call(app, 'projects.update')
   })
 
   it('types useMutation by name and by definition', () => {

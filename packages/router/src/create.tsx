@@ -132,14 +132,19 @@ export function createKitrRouter(
       <KitrProvider app={app}>{children}</KitrProvider>
     ),
   })
-  // `ssr` in config/seo.ts is the default for routes that set none; ssrRoute() still wins. It is
-  // written onto the routes because Start replaces the router's `defaultSsr` with its own.
-  const seo = rootApp.config.has('seo')
-    ? (rootApp.config.get('seo') as { ssr?: boolean | 'data-only' } | undefined)
-    : undefined
-  if (seo?.ssr !== undefined)
-    for (const route of Object.values(router.routesById) as Array<{ options: { ssr?: unknown } }>)
-      if (route.options.ssr === undefined) route.options.ssr = seo.ssr
+  // `ssr` in config/seo.ts is the default for routes that set none; ssrRoute() still wins. It goes
+  // on this router instance, not on the route objects (which every request shares): Start
+  // replaces `defaultSsr` with its own on each request, so keep ours as the fallback.
+  const defaultSsr = (
+    rootApp.config.has('seo') ? (rootApp.config.get('seo') as { ssr?: boolean | 'data-only' }) : {}
+  ).ssr
+  if (defaultSsr !== undefined) {
+    // `defaultSsr` is Start's option: the router's own types do not list it.
+    const update = router.update.bind(router) as (options: Record<string, unknown>) => void
+    router.update = ((next: Record<string, unknown> | undefined) =>
+      update({ ...next, defaultSsr: next?.defaultSsr ?? defaultSsr })) as typeof router.update
+    router.update({})
+  }
   // Loaders read services from the container, so boot before the first load (idempotent).
   const load = router.load.bind(router)
   router.load = (async (...args: Parameters<typeof load>) => {

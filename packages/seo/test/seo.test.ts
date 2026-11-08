@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { createApp } from '@kitr/core'
+import { describe, expect, it } from 'vitest'
 import { cacheHeaders, seo, ssrRoute } from '../src'
 
 describe('seo', () => {
@@ -94,18 +95,27 @@ describe('jsonLd escaping', () => {
 })
 
 // Regression: `seo()` never read config/seo.ts, so every page lost the site name, image and
-// canonical origin unless it passed `site` itself.
-describe('seo() reads config/seo.ts', () => {
-  it('uses the site from defineConfig, and an explicit site still wins', async () => {
-    vi.resetModules()
-    const mod = await import('../src')
-    expect(mod.seo({ title: 'Pricing' }).meta).toContainEqual({ title: 'Pricing' })
-    mod.defineConfig({ site: { name: 'Acme', url: 'https://acme.dev' } })
-    const head = mod.seo({ title: 'Pricing' })
-    expect(head.meta).toContainEqual({ title: 'Pricing · Acme' })
-    expect(head.links).toEqual([{ rel: 'canonical', href: 'https://acme.dev' }])
-    expect(mod.seo({ title: 'Pricing', site: { name: 'Other' } }).meta).toContainEqual({
+// canonical origin unless it passed `site` itself. The config now lives on the app.
+describe('seo() reads config/seo.ts from the app', () => {
+  const app = createApp({ config: { seo: { site: { name: 'Acme', url: 'https://acme.dev' } } } })
+
+  it('uses the site from the app, found through the head argument, and an explicit site wins', () => {
+    expect(seo({ title: 'Pricing' }).meta).toContainEqual({ title: 'Pricing' })
+    for (const context of [app, { app }, { context: { app } }, { match: { context: { app } } }]) {
+      const head = seo({ title: 'Pricing' }, context)
+      expect(head.meta).toContainEqual({ title: 'Pricing · Acme' })
+      expect(head.links).toEqual([{ rel: 'canonical', href: 'https://acme.dev' }])
+    }
+    expect(seo({ title: 'Pricing', site: { name: 'Other' } }, app).meta).toContainEqual({
       title: 'Pricing · Other',
     })
+  })
+
+  it('keeps each app and request fork to its own site', () => {
+    const other = createApp({ config: { seo: { site: { name: 'Other' } } } })
+    expect(seo({ title: 'A' }, other).meta).toContainEqual({ title: 'A · Other' })
+    expect(seo({ title: 'A' }, app).meta).toContainEqual({ title: 'A · Acme' })
+    expect(seo({ title: 'A' }, app.fork()).meta).toContainEqual({ title: 'A · Acme' })
+    expect(seo({ title: 'A' }, createApp()).meta).toContainEqual({ title: 'A' })
   })
 })

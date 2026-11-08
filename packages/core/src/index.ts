@@ -6,7 +6,13 @@ export {
   ConfigStore,
   createDefineConfig,
 } from './config'
-export { type Binding, type BindingKey, Container, type ContainerBindings } from './container'
+export {
+  type Binding,
+  type BindingKey,
+  type Constructible,
+  Container,
+  type ContainerBindings,
+} from './container'
 export {
   type AnyContract,
   type CacheEffect,
@@ -64,7 +70,6 @@ export {
   type OperationOutput,
   OperationRegistry,
   type Operations,
-  operations,
   type QueryName,
 } from './operations'
 export {

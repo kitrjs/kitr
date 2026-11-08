@@ -1,4 +1,4 @@
-import { createDefineConfig, getDevtools, type KitrApp, operations } from '@kitr/core'
+import { createDefineConfig, getDevtools, type KitrApp, type OperationRegistry } from '@kitr/core'
 import {
   type DehydratedState,
   dehydrate,
@@ -98,7 +98,7 @@ export function createOffline(
           storage.remove(key)
           return false
         }
-        registerMutationDefaults(client)
+        if (app) registerMutationDefaults(client, app.operations)
         hydrate(client, snap.state)
         restored = true
         // TanStack resumes paused mutations when the network comes back; when it is already
@@ -177,11 +177,12 @@ export function createOffline(
 /**
  * A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do
  * not survive a reload. Give every named mutation (`defineMutation('projects.rename', ...)` in
- * kitr/actions, or one registered in `operations`) its defaults by name, so a mutation paused
- * offline still runs, with its cache effects, after the app restarts. Mutations without a name
- * need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
+ * kitr/actions, or one registered in the app's `operations`) its defaults by name, so a mutation
+ * paused offline still runs, with its cache effects, after the app restarts. Mutations without a
+ * name need `queryClient.setMutationDefaults(key, { mutationFn })` and the same `mutationKey`.
+ * `createOffline` does this from `app.operations` when it is given the app.
  */
-export function registerMutationDefaults(client: QueryClient): void {
+export function registerMutationDefaults(client: QueryClient, operations: OperationRegistry): void {
   for (const name of operations.names()) {
     const op = operations.get(name)
     if (op.kind !== 'mutation') continue
