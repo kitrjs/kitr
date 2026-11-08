@@ -20,9 +20,6 @@ export const Route = createRootRouteWithContext<KitrRouterContext>()({
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'kitr' },
-      { name: 'theme-color', content: '#FFFFFF', media: '(prefers-color-scheme: light)' },
-      { name: 'theme-color', content: '#0B121C', media: '(prefers-color-scheme: dark)' },
-      { name: 'color-scheme', content: 'light dark' },
     ],
     links: [
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },

@@ -24,26 +24,26 @@ Names are yours. One project can hold several platforms of the same type (`admin
 
 | Type | Package | Factory | What it builds |
 | --- | --- | --- | --- |
-| `web` | `@kitr/web` | `web()` from `@kitr/web` | A browser app through TanStack Start: `static` (prerendered pages), `spa`, or `ssr`. `pwa: true` adds the manifest and service worker. |
-| `server` | `@kitr/server` | `server()` from `@kitr/server` | The h3 server in `server/main.ts` on Node, Bun, Deno or Cloudflare Workers. |
-| `desktop` | `@kitr/desktop` | `desktop()` from `@kitr/desktop` | An Electron shell around the SPA build: Chromium ships with the app. Main and preload in `platforms/<name>/`. |
-| `tauri` | `@kitr/tauri` | `tauri()` from `@kitr/tauri` | A Tauri shell around the SPA build: a small Rust binary on the OS webview. Rust project in `platforms/<name>/src-tauri`. |
-| `mobile` | `@kitr/mobile` | `mobile()` from `@kitr/mobile` | A Capacitor shell for iOS and Android. Native project in `platforms/<name>/`. |
+| `web` | `@kitr/web` | `web()` | A browser app: static, single-page or server-rendered. |
+| `server` | `@kitr/server` | `server()` | An API server on Node, Bun, Deno or Cloudflare Workers. |
+| `desktop` | `@kitr/desktop` | `desktop()` | A desktop app in Electron, which ships its own browser. |
+| `tauri` | `@kitr/tauri` | `tauri()` | A small desktop app in Tauri, on the system's webview. |
+| `mobile` | `@kitr/mobile` | `mobile()` | An iOS and Android app in Capacitor. |
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `kitr dev [names...]` | Starts every platform (or the named ones) in parallel: Vite for `web`, `tsx watch` / `bun --watch` / `wrangler dev` for `server`, the Electron window for `desktop`, the Tauri window for `tauri`, Capacitor live reload for `mobile`. |
-| `kitr build [names...]` | Production builds, in order. Web platforms land in `dist/<name>/` (`client/` and, for SSR, `server/server.js`). |
-| `kitr start [names...]` | Serves the builds: srvx for SSR and static sites, the compiled server for `server`. |
-| `kitr add <type> <name> [--option value]` | Adds a platform: installs the package, writes `platforms.<name>` into `kitrrc.ts`, adds the packages the platform needs (`router` for `web`, `router platform storage` for `desktop`, `tauri` and `mobile`, `server` for `server`), scaffolds its files and the `dev`/`build`/`start` scripts. `kitr add web admin --mode spa --port 3002`. |
-| `kitr platforms` | Lists the platforms and their effective options. `kitr platforms types` lists the available types, `kitr platforms scaffold <name>` rewrites a platform's files, `kitr platforms remove <name>` takes it out of `kitrrc.ts`. |
-| `kitr config <name> [option] [value]` | Reads or sets one option in `kitrrc.ts`, validated against the platform's option schema: `kitr config site port 4000`, `kitr config api runtime bun`, `kitr config site pwa --unset`. |
+| `kitr dev [names...]` | Run every platform in development, or only the named ones: `kitr dev site`. |
+| `kitr build [names...]` | Build for production into `dist/<name>/`. |
+| `kitr start [names...]` | Serve the builds. |
+| `kitr add <type> <name>` | Add a platform and the packages it needs: `kitr add web admin --mode spa`. |
+| `kitr platforms` | List the platforms and their options. Subcommands: `types`, `scaffold <name>`, `remove <name>`. |
+| `kitr config <name> [option] [value]` | Read or set one option: `kitr config site port 4000`. `--unset` removes it. |
 
-Every option can be overridden at run time without touching the file: `KITR_SITE_PORT=4000 kitr dev site`, or `kitr dev site --port 4000`. The name is upper-cased with non-alphanumerics turned into `_`.
+Override any option at run time with an environment variable or a flag: `KITR_SITE_PORT=4000 kitr dev site` or `kitr dev site --port 4000`.
 
-`kitr doctor` runs each platform's own checks (the Rust toolchain for Tauri, Xcode and Android Studio for Capacitor, `wrangler` for Workers).
+`kitr doctor` also checks each platform's tools, such as the Rust toolchain for Tauri.
 
 ## Options
 
@@ -60,7 +60,7 @@ Every platform takes `without`, whatever its type:
 | `mode` | `spa` | `static`: prerender every route to HTML. `spa`: one shell, client routing. `ssr`: render on request through TanStack Start. |
 | `port` | `3000` | Dev and production port. |
 | `host` | | Bind address (localhost in dev, `0.0.0.0` in production). |
-| `pwa` | `false` | `true` or `{ name, shortName, themeColor, ... }`: web manifest, service worker (vite-plugin-pwa, autoUpdate), `useInstallPrompt`, `useServiceWorker` from `@kitr/web/client`. |
+| `pwa` | `false` | Make the app installable: `true`, or `{ name, shortName, themeColor }`. |
 | `base` | `/` | Public base path. |
 | `open` | `false` | Open the browser on `kitr dev`. |
 
@@ -73,7 +73,7 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 | `runtime` | `node` | `node`, `bun`, `deno` or `workers` (Cloudflare, via `wrangler.toml`). |
 | `port` | `3001` | |
 | `host` | | |
-| `entry` | `server/main.ts` | `createServer({ providers, config, routes })` with the table from `server/routes.ts`. A React project with a web platform also gets `app/server.ts`, Start's server entry, which hands the table's paths to the same server inside the Start process. |
+| `entry` | `server/main.ts` | The file that starts the server. |
 
 **desktop** (`@kitr/desktop`, Electron)
 
@@ -84,34 +84,34 @@ Prerendering, the sitemap and `robots.txt` come from `config/seo.ts` (`kitr add 
 | `appId` | | Bundle identifier. |
 | `devtools` | `true` | Open devtools in dev. |
 
-electron-vite builds `platforms/<name>/{main,preload,ipc}.ts`; electron-builder packages installers. `@kitr/desktop/client` has the typed IPC bridge (`createIpcClient`, `isElectron`), `@kitr/desktop/main` and `@kitr/desktop/preload` serve the other two processes, and `@kitr/desktop/provider` registers the `platform` and `storage` drivers. Electron is the recommended desktop shell for most setups: it ships a browser with the app, so what you test is what every user runs.
+The Electron code lives in `platforms/<name>/`. Electron is the recommended desktop shell: it ships its own browser, so every user sees what you tested. See [desktop](/packages/desktop).
 
 **tauri** (`@kitr/tauri`)
 
-Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri` and needs the Rust toolchain; the window is the webview the operating system provides, so downloads are small but rendering can differ between machines. `@kitr/tauri/client` has `isTauri`, `defineCommands`, `commandQuery`, `commandMutation`, `useTauriEvent` and `emitTauri`; `@kitr/tauri/provider` registers the `platform` and `storage` drivers on the Tauri APIs and the store plugin. Pick one of `desktop` and `tauri` per project; neither installs the other's tooling.
+Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri` and needs the Rust toolchain. Downloads are small, but the system webview can render differently between machines. Pick `desktop` or `tauri`, not both. See [tauri](/packages/tauri).
 
 **mobile** (`@kitr/mobile`)
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `targets` | `ios,android` | Native projects; `kitr dev`/`kitr build` run `cap add <target>` the first time and `--target ios` or `--target android` picks one. |
+| `targets` | `ios,android` | Which native projects to create. `--target ios` picks one at run time. |
 | `appId`, `appName` | | Bundle identifier and display name. |
 | `scheme` | | Custom URL scheme for deep links. |
 | `port` | `3100` | Dev server for live reload on the device. |
 
-`@kitr/mobile/provider` registers the Capacitor drivers; `@kitr/platform/react` (`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) and `@kitr/storage` then answer the same way in the browser and in the shell.
+Hooks like `usePlatform()` and `useBackButton()` work the same in the browser and on the phone. See [mobile](/packages/mobile).
 
 ## Where the code runs: runtime, platform and form factor
 
-Three questions have three answers, kept apart on purpose:
+Three separate questions, three APIs:
 
 | Question | API | Values |
 | --- | --- | --- |
-| Which host am I in? | `detectRuntime()` from `@kitr/platform`; `platform.runtime` and `useRuntime()` from `@kitr/platform/react` | `web`, `electron`, `tauri`, `capacitor` |
+| Which host am I in? | `detectRuntime()`, `useRuntime()` | `web`, `electron`, `tauri`, `capacitor` |
 | What kind of place is it? | `platform.type`, `platform.os`, `platform.native`, `usePlatform()` | `web`, `desktop`, `mobile`, `server`; `macos`, `windows`, `linux`, `ios`, `android` |
 | How big is the screen and what is the input? | `useFormFactor()` from `@kitr/platform/react` | `width` (`compact`, `medium`, `expanded`), `input` (`touch`, `pointer`), `orientation` |
 
-The matrix below is what each environment answers. `desktop()` and `tauri()` both report `type: 'desktop'`; only the runtime tells Electron from Tauri.
+What each environment answers. Electron and Tauri are both `type: 'desktop'`; only the runtime tells them apart.
 
 | Environment | `runtime` | `type` | `native` | `os` | `useFormFactor()` before it can measure |
 | --- | --- | --- | --- | --- | --- |
@@ -121,9 +121,11 @@ The matrix below is what each environment answers. `desktop()` and `tauri()` bot
 | Tauri (`tauri()`) | `tauri` | `desktop` | `true` | `macos`, `windows`, `linux` | `expanded`, `pointer` |
 | Capacitor (`mobile()`) | `capacitor` | `mobile` | `true` | `ios`, `android` | `compact`, `touch` |
 
-`detectRuntime()` reads globals only, so it is safe anywhere: Tauri by `window.__TAURI_INTERNALS__`, Capacitor by `Capacitor.isNativePlatform()`, Electron by the preload bridge (`kitrIpc`), `process.versions.electron` or an `Electron/` user agent, and everything else is `web`. The `platform` service reports the runtime its shell provider registered, and falls back to `detectRuntime()` for a driver that does not say. `isElectron()`, `isTauri()` and `isCapacitor()` in each platform's `client` entry are `detectRuntime()` comparisons.
+`detectRuntime()` only reads globals, so it is safe to call anywhere, including on the server.
 
-The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick their driver by `platform.runtime`: a driver in the config, else one a provider registered, else `selectDriver(runtime)`. The web runtime gets the browser driver (a memory driver on the server). A native runtime gets its own driver, and where that driver is missing `selectDriver()` throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` naming the runtime and the package, instead of quietly running browser code in the webview. Electron and Tauri have all five; the matrix below says what each uses. Set `fallbackToWeb: true` in the package's `config/<name>.ts` to keep the webview behaviour on purpose.
+### Device packages on each runtime
+
+The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick a driver for the runtime they run in. When a native runtime has no driver, they throw `E_DRIVER_UNAVAILABLE` instead of quietly running browser code. Set `fallbackToWeb: true` in the package's config to use the browser driver anyway.
 
 | Package | Browser | Electron (`desktop()`) | Tauri (`tauri()`) |
 | --- | --- | --- | --- |
@@ -133,9 +135,7 @@ The five device packages (`native`, `notifications`, `files`, `secure-storage`, 
 | `updater` | Service worker | `electron-updater` | `plugin-updater` and `plugin-process` |
 | `native` | Web APIs per capability | Clipboard, Touch ID, `system` (theme, power, online, `openExternal`) | Clipboard, `system` (theme, online, `openExternal`) |
 
-The Electron drivers need `handleKitrIpc()` in main and `exposeIpc()` in the preload script; the Tauri drivers need the plugin packages, crates and permissions the Tauri scaffold writes. Electron's `electron-updater` is an optional peer, and the Tauri plugins are optional peers that `kitr add tauri` installs. `kitr add <package>` installs the peers for the platforms a project has.
-
-What the Capacitor runtime (`mobile()`) gets, with each plugin an optional peer dependency that `kitr add` installs and the driver imports on first use:
+`kitr add <package>` installs the plugins each of your platforms needs. On Capacitor:
 
 | Package | Capacitor driver | Plugins | Caveats |
 | --- | --- | --- | --- |
@@ -145,7 +145,7 @@ What the Capacitor runtime (`mobile()`) gets, with each plugin an optional peer 
 | `secure-storage` | Keychain and Keystore | `@aparajita/capacitor-secure-storage` | The Keychain survives an uninstall on iOS |
 | `updater` | Play in-app updates on Android, the App Store page on iOS | `@capawesome/capacitor-app-update` | Play offers updates only to builds installed from Play |
 
-A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and `install <plugin>`; nothing falls back to the webview. Electron and Tauri keep throwing until their drivers land.
+A missing plugin throws `E_DRIVER_UNAVAILABLE` with the plugin to install.
 
 ## One project, every platform
 
@@ -308,6 +308,6 @@ export const kiosk = definePlatform<{ port?: number }>(
 )
 ```
 
-A shell platform (Electron, Tauri, Capacitor or your own) does not have to write the skeleton again: `shellPlatformHooks()` from `@kitr/platform/cli` runs the sequence every shell shares (dev server, wait for it, launch the shell; client build, shell build; dependency, file and tool checks in `doctor`) and takes the parts that differ, and `createShellProvider()` from `@kitr/platform/shell` does the same for the runtime half (detect the shell, register the `platform` driver and the shell's other drivers, log the runtime to devtools). `desktop`, `tauri` and `mobile` are thin configurations of both.
+`ctx` has the platform name, the project root, the options, the command-line flags and `log`, `run` and `exec` helpers.
 
-`ctx` carries the platform name, the project root, the resolved options, the package manager, the other platforms, the flags from the command line, an abort signal and `log`, `run` and `exec` helpers that resolve `node_modules/.bin`. `@kitr/vite` reads `import.meta.env.KITR_PLATFORM` and `KITR_PLATFORM_TYPE` so app code can branch per platform at build time.
+A shell around the web build (like Electron, Tauri or Capacitor) can reuse the shared steps: `shellPlatformHooks()` from `@kitr/platform/cli` for dev, build and doctor, and `createShellProvider()` from `@kitr/platform/shell` for the runtime drivers. `desktop`, `tauri` and `mobile` are built this way.

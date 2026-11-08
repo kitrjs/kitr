@@ -5,7 +5,9 @@ description: The mental model for kitr in five minutes: platforms, packages, kit
 
 # What is kitr
 
-kitr is a TypeScript framework for apps that run in a browser, on a server, on the desktop and on phones. You write one `app/` folder in React and TypeScript. A project file called `kitrrc.ts` says where it runs and which capabilities it has, and one CLI (`kitr add`, `kitr dev`, `kitr build`) sets everything up. Each capability is a small package that wraps a library you may already know, such as TanStack Router, TanStack Query, React Hook Form or h3. It is for teams who want one set of conventions instead of choosing and wiring twenty libraries, and for coding agents, which can read the same conventions from `AGENTS.md`.
+kitr is a TypeScript framework for apps that run in the browser, on a server, on the desktop and on phones. You write one `app/` folder in React. `kitrrc.ts` says where it runs, and the `kitr` CLI sets everything up.
+
+Each feature is a small package around a library you may already know, such as TanStack Router or React Hook Form. You get one set of conventions instead of wiring twenty libraries yourself, and coding agents can read the same conventions from `AGENTS.md`.
 
 ## The four words you need
 

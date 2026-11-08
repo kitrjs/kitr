@@ -5,7 +5,7 @@ description: Why kitr suits coding agents, how to install the Claude Code plugin
 
 # Built for agents
 
-kitr makes the choices up front and writes them down. Every kind of file has one home, every package has one way in, and every command runs from flags. You spend your time on the code, not on deciding where it goes or which library to use. The same clarity is what makes a coding agent reliable: it has one right answer to find, and the project tells it what that answer is.
+kitr makes the choices up front and writes them down. Every kind of file has one home, every package has one way in, and every command runs from flags. That gives a coding agent one right answer to find, and the project tells it what that answer is.
 
 ## Why it works
 

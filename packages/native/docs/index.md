@@ -6,7 +6,7 @@ order: 1
 
 # Native
 
-Copy a link, open the share sheet, buzz the phone when an order goes through, read where someone is standing, take a photo, ask for a fingerprint: every app reaches for these sooner or later, and every platform has its own API for each one. `@kitr/native` puts the six behind one `native` service. Each capability has a web driver built on the matching browser API, reports whether it works on this device, and can be replaced by a native driver without changing the code that calls it.
+Copy a link, share, buzz the phone, read the location, take a photo, ask for a fingerprint: every platform has its own API for each. `@kitr/native` puts all six behind one `native` service. Each one works in the browser, tells you whether this device supports it, and can switch to a native driver without changing your code.
 
 The web drivers use the [Clipboard API](https://developer.mozilla.org/docs/Web/API/Clipboard_API), [Web Share](https://developer.mozilla.org/docs/Web/API/Web_Share_API), [`navigator.vibrate`](https://developer.mozilla.org/docs/Web/API/Navigator/vibrate), the [Geolocation API](https://developer.mozilla.org/docs/Web/API/Geolocation_API), a file input with `capture`, and [WebAuthn](https://developer.mozilla.org/docs/Web/API/Web_Authentication_API) with the device's own authenticator. kitr adds the `supported` flag, a typed `UnsupportedError`, React hooks, memory drivers for tests and a driver slot per capability.
 
@@ -447,7 +447,7 @@ export function InvoiceLock({ children }: { children: ReactNode }) {
 
 `available()` resolves to `false` on an unsupported device rather than throwing, so you can call it without checking `supported`.
 
-On the web the driver uses WebAuthn with the platform authenticator. The first `authenticate()` registers a credential for this site on this device, and that prompt is itself the check. It saves the credential id in `localStorage` under `kitr:biometrics:credential`; later calls ask for that credential, so the person sees the fingerprint or PIN prompt instead of a passkey picker. If the device no longer has the credential, the driver forgets the id and the next call registers a new one. A cancel keeps the id. The web driver does not show `reason`; native drivers pass it to the system prompt.
+On the web the driver uses WebAuthn. The first `authenticate()` registers this device, and later calls show the fingerprint or PIN prompt. The web driver does not show `reason`; native drivers pass it to the system prompt.
 
 > **Warning**
 > `authenticate()` proves someone is at the device. It does not prove who they are to your server, and a script on the page can skip the check. Never unlock data on the server because the client said `true`. For sign-in, verify a passkey assertion on the server with [Auth](/packages/auth).
@@ -535,7 +535,7 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, but the web drivers never answer there by accident. In a Capacitor shell the [Capacitor drivers](#capacitor) answer, and in Electron and Tauri the drivers under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri) answer. To keep the webview behaviour on purpose, set `fallbackToWeb: true`.
+In a Capacitor shell the [Capacitor drivers](#capacitor) answer, and in Electron and Tauri the drivers under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). Set `fallbackToWeb: true` to use the browser drivers instead.
 
 ### Capacitor
 
@@ -544,9 +544,9 @@ In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the
 | Capability | Plugin | Notes |
 | --- | --- | --- |
 | `clipboard` | `@capacitor/clipboard` | No permission prompt. iOS shows its "pasted from" banner on reads. |
-| `share` | `@capacitor/share` | `canShare()` is `false` for a payload with `files`: a `File` cannot cross the bridge, so save it with [Files](/packages/files) and share its `url`. A dismissed sheet resolves `false`. |
+| `share` | `@capacitor/share` | Cannot share files; save with [Files](/packages/files) and share the `url`. |
 | `haptics` | `@capacitor/haptics` | `light`, `medium` and `heavy` are impacts, `success`, `warning` and `error` are notifications, `selection` plays the selection start, change and end ticks. |
-| `geolocation` | `@capacitor/geolocation` | Asks for the permission before the first read and rejects with `@kitr/native: location permission was denied` when refused. iOS needs `NSLocationWhenInUseUsageDescription` in `Info.plist`; Android needs `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` in the manifest. |
+| `geolocation` | `@capacitor/geolocation` | Asks for permission first. Needs `NSLocationWhenInUseUsageDescription` on iOS and the location permissions on Android. |
 | `camera`, `biometrics` | none | `supported: false`. Register a driver as shown under [Extend](#extend). |
 
 `kitr add native` installs the four plugins when the project has the mobile platform; `kitr new --kit mobile` installs all of them. Without the mobile platform, add them yourself:

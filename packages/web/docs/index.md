@@ -84,7 +84,7 @@ export default defineKitrConfig({
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `mode` | `'spa'` | `static`: prerender every route to HTML at build time. `spa`: one HTML shell, client routing. `ssr`: render each request on the server through TanStack Start, then hydrate. |
+| `mode` | `'spa'` | `static` prerenders pages, `spa` renders in the browser, `ssr` renders on the server per request. |
 | `port` | `3000` | Dev and production port. Must be a number between 0 and 65535. |
 | `host` | | Interface to bind. Vite's default (`localhost`) in dev, `0.0.0.0` for `kitr start`. |
 | `pwa` | `false` | `true` makes the app installable: a web manifest and a service worker. An object sets the manifest (see below). |
@@ -120,7 +120,7 @@ A bad port fails the same way with `port: port must be a number between 0 and 65
 
 | Variable | Used for |
 | --- | --- |
-| `KITR_SITE_<OPTION>` | Overrides one option for one run of the CLI: `KITR_SITE_PORT=4000 kitr dev site`. The platform name is upper-cased, with other characters turned into `_`. |
+| `KITR_SITE_<OPTION>` | Override one option for one run: `KITR_SITE_PORT=4000 kitr dev site`. |
 | `PORT` | The port `kitr start` listens on when no `--port` flag is given. Wins over the `port` option. |
 | `HOST` | The interface `kitr start` binds when no `--host` flag is given. |
 | `KITR_PLATFORM` | Set by `kitr dev`, `kitr build` and `kitr start` to the platform name. The Vite plugin uses it to pick the platform it builds. |
@@ -643,8 +643,8 @@ For `spa`, tell the host to answer unknown paths with `index.html` (on Netlify, 
 
 | Command | What it does |
 | --- | --- |
-| `kitr add web [name]` | Adds a web platform (named `site` when you leave the name out): installs the packages, adds router and React when missing, writes `platforms.<name>` in `kitrrc.ts` and adds the scripts. |
-| `kitr css:types` | Writes a `.d.ts` next to every `*.module.css` under `app/`, so CSS Module class names are typed. `--dir <dir>` scans another directory; `--check` writes nothing and exits with code 1 when a typing is stale. |
+| `kitr add web [name]` | Add a web platform, named `site` by default. |
+| `kitr css:types` | Type CSS Module class names. `--check` fails when stale. |
 | `kitr dev [names...]` | Runs `vite dev --port <port> --strictPort`, plus `--host` and `--open` when set. |
 | `kitr build [names...]` | Runs `vite build` into `dist/<name>`. |
 | `kitr start [names...]` | Serves `dist/<name>` with srvx: static files, the SPA fallback, or the `ssr` server bundle. |

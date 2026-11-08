@@ -6,7 +6,7 @@ order: 1
 
 # Actions
 
-Rename a project, archive an invoice, invite Grace to a team: a button often needs to run a bit of server code and nothing more. An API route, a client for it and types on both sides is a lot of ceremony for that. An action is a function you define once with `defineQuery` or `defineMutation`; the browser calls it as if it were local, and kitr sends the request, validates the input on the server and brings back the result or a typed error.
+Rename a project, archive an invoice: a button often just needs to run a bit of server code. An action is a function you define once with `defineQuery` or `defineMutation`. The browser calls it like a local function, and kitr sends the request, checks the input and returns the result or a typed error.
 
 Actions are [TanStack Start server functions](https://tanstack.com/start/latest/docs/framework/react/server-functions) with four things added: input validation with any Standard Schema, kitr's one error shape so a validation failure lands on the right form field, cache effects after a mutation, and a generated registry that lets a component say `useQuery('projects.list')` with full types.
 
@@ -50,7 +50,7 @@ export const updateProject = defineMutation('projects.update', {
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `input` | none | Any [Standard Schema](https://standardschema.dev) (zod, valibot, arktype). Validated on the server; a failure reaches the caller as a `VALIDATION` error with `fieldErrors`. Without it the input is `void`. |
+| `input` | none | A [Standard Schema](https://standardschema.dev) such as zod, checked on the server. A failure is a `VALIDATION` error with `fieldErrors`. |
 | `handler` | required | Runs on the server only. Receives `{ input, context, signal }`. Its code and imports never reach the browser bundle. |
 | `middleware` | `[]` | TanStack Start function middleware, run before the handler. Whatever it puts in `context` is typed on the handler. |
 | `staleTime` | the query client's | Queries only: how long a result counts as fresh, in milliseconds, carried into the query options. |

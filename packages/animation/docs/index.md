@@ -55,7 +55,7 @@ The provider passes it to Motion's [`MotionConfig`](https://motion.dev/docs/reac
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `reducedMotion` | `'user'` | `'user'` follows the operating system's reduce-motion setting. `'always'` behaves as if every visitor had it on. `'never'` ignores it. When it applies, Motion skips movement (`x`, `y`, `scale`, `rotate` and layout) and keeps opacity and colour changes. |
+| `reducedMotion` | `'user'` | `'user'` follows the system's reduce-motion setting, `'always'` always reduces, `'never'` ignores it. Reduced motion keeps fades and drops movement. |
 | `transition` | `transitions.base` | The transition for any `motion` element that sets none: 0.25 seconds on a decelerating curve. |
 | `skipAnimations` | `true` under Vitest, `false` elsewhere | Jump every animation straight to its final values. Exit animations still finish, so elements still leave the DOM. |
 | `nonce` | none | A Content Security Policy nonce for the `<style>` tags Motion adds for layout and exit animations. |

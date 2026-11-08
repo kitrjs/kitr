@@ -6,7 +6,7 @@ order: 1
 
 # SEO
 
-Paste a link into Slack or search for your product, and what people see comes from a handful of tags: the title, the description, a share image, a canonical URL. `@kitr/seo` writes those tags for a route from one call, `seo({ title, description })`, adds structured data for rich results, and tells the build which pages to prerender as plain HTML and where the sitemap lives. It builds on [TanStack Router's `head`](https://tanstack.com/router/latest/docs/framework/react/guide/document-head-management) and [TanStack Start's prerendering](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering); kitr adds the tag set, the site defaults and the build wiring.
+Paste a link into Slack or search for your product, and what people see comes from a few tags: title, description, share image. `@kitr/seo` writes them from one call, `seo({ title, description })`, adds structured data, and tells the build which pages to prerender. It builds on [TanStack Router's `head`](https://tanstack.com/router/latest/docs/framework/react/guide/document-head-management) and [TanStack Start's prerendering](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering).
 
 The examples on this page follow one scenario: Acme's marketing site at `acme.com` has a pricing page, a blog with posts by Ada and Grace, and a sign-in link to the app at `app.acme.com`, which search engines should not index.
 
@@ -72,7 +72,7 @@ export default defineConfig({
 | Option | Default | Description |
 | --- | --- | --- |
 | `site.name` | none | Appended to page titles (`Pricing · Acme`) and sent as `og:site_name`. Also the title of a page that sets none. |
-| `site.url` | none | The canonical origin, `https://acme.com`. Turns on the sitemap at build time and adds the `Sitemap:` line to `robotsTxt()`. Must be a string literal; see [Generate a sitemap](#generate-a-sitemap). |
+| `site.url` | none | The site's address, `https://acme.com`. Turns on the [sitemap](#generate-a-sitemap). |
 | `site.image` | none | The share image for pages that set none. Use an absolute URL. |
 | `site.twitter` | none | The site's X (Twitter) handle, sent as `twitter:site`. |
 | `site.locale` | none | Sent as `og:locale`, such as `en_US`. |
@@ -397,7 +397,7 @@ What the build does with `prerender` in each web mode:
 | Web mode | Effect |
 | --- | --- |
 | `ssr` | Prerenders the listed routes (and the pages they link to, with `crawlLinks`). Everything else renders on the server. |
-| `static` | Prerenders every page. An empty list starts from `/` and crawls every link. A non-empty list starts from `/` plus those routes, and follows links only with `crawlLinks: true`. |
+| `static` | Prerenders every page, starting from `/` and following links. |
 | `spa` | Ignored. The build writes one HTML shell. |
 
 The build reads `config/seo.ts` as text, without running it. A list built in code (`prerender: posts.map(...)`) or imported from another file is not seen. Write each path as a string, or list a page that links to all of them and set `crawlLinks: true`.

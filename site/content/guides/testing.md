@@ -8,7 +8,7 @@ time: 40 min
 
 # Test your app
 
-A test suite earns its keep when it catches the bug before Grace does, runs in seconds, and never fails for a reason that has nothing to do with your change. kitr helps with the last two: the server is a fetch handler, so API tests need no port; actions run in-process; components render inside the same providers the app uses. This guide puts those pieces together into one suite, from the cheapest test to the most expensive, and runs it in CI.
+A good test suite catches bugs, runs in seconds and never fails for no reason. kitr makes tests fast: API tests need no port, actions run in-process, and components render inside the app's own providers. This guide builds one suite, from the cheapest test to the most expensive, and runs it in CI.
 
 You will test `acme-projects`, the project tracker from [Build a full-stack app](/guides/fullstack-app): a permission rule, the `projects.create` action, the `/api/teams/:teamId/projects` routes against a real Postgres, the new-project form, the projects page, and one browser test that clicks through the built app.
 

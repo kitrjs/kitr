@@ -8,7 +8,7 @@ time: 40 min
 
 # Run on more than one instance
 
-One instance is the right way to start, and a kitr app runs on one without any of this. The day you add a second, for uptime during deploys or for load, everything a package kept in the memory of its process starts to disagree: Ada's live update reaches only the clients on her instance, a rate limit lets a client through three times, a cached report cleared on one instance is still served by the other, a nightly job runs once per instance, and an upload saved to one disk is a 404 on the next request.
+Start with one instance; a kitr app needs none of this until then. Once you add a second, anything kept in one process's memory disagrees: live updates reach only half the clients, rate limits double, a cleared cache is still served, nightly jobs run twice, and uploads go missing.
 
 This guide takes `acme-projects`, the app from [Build a full-stack app](/guides/fullstack-app) deployed in [Deploy to production](/guides/deploy), and moves each of those into shared storage: [Redis](https://redis.io) for events, cache entries, counters and the job queue, and an S3-compatible bucket for files. Each package keeps its in-memory default for development, so `kitr dev` still needs nothing but Node. At the end, two instances run side by side on your machine and you watch an event cross from one to the other.
 
@@ -191,7 +191,7 @@ export default defineConfig({
 })
 ```
 
-Every instance's worker now pulls from one queue, and each job runs on exactly one of them. A worker that dies mid-job leaves the job reserved; after `visibilityTimeout` it goes back to the queue and another worker runs it, so keep the timeout above your longest job. Scheduled jobs queue once per run: before queuing `prune_sessions` at 03:00, each worker takes a Redis lock named after the job and the minute, and only the one that gets it queues the run. Give every instance the same `TZ`, because cron reads local time.
+Every worker now pulls from one queue, and each job runs on exactly one of them. If a worker dies mid-job, another runs it after `visibilityTimeout`. Scheduled jobs are queued once. Give every instance the same `TZ`, because cron reads local time.
 
 To keep jobs off the web instances, run separate workers with `kitr jobs:work` and set `worker: false` on the web servers; [Jobs](/packages/jobs#run-the-worker-in-its-own-process) shows both.
 

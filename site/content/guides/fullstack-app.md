@@ -279,7 +279,7 @@ export function NewProjectForm({ teamId }: { teamId: string }) {
 }
 ```
 
-Render `<NewProjectForm teamId="team_acme" />` above the list in `ProjectsPage`. Type `Apollo launch` and press Create: the project appears at the top of the list. Submit the same name again and "This team already has a project with that name" appears under the field. The handler threw `KitrError.validation`, the error crossed the network with its field errors intact, and `<Form>` put each message under its input. Anything else a handler throws becomes a `500`, logged on the server; in production the browser only sees `Internal server error`.
+Render `<NewProjectForm teamId="team_acme" />` above the list in `ProjectsPage`. Type `Apollo launch` and press Create: the project appears at the top. Submit the same name again and "This team already has a project with that name" appears under the field. Any other error becomes a `500`, logged on the server.
 
 ## Open an API for other clients
 

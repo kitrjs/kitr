@@ -62,7 +62,7 @@ The client reads this file through `createRealtimeClient(config)`. The server do
 | `transport` | `'websocket'` | `'websocket'` (crossws and partysocket), `'socket.io'` (rooms, adapters) or `'sse'` (one-way stream over HTTP, control messages over POST). |
 | `path` | `'/ws'`, or `'/events'` for `sse` | Where the server listens. The client connects to the same origin at this path. |
 | `url` | same origin at `path` | A full URL for the client, such as `wss://realtime.acme.com/ws`, when the realtime server is on another host. |
-| `heartbeat` | `25000` | WebSocket only: milliseconds between client pings. A ping still unanswered when the next one is due means the connection is dead, and the client reconnects. `0` turns pings off. |
+| `heartbeat` | `25000` | WebSocket only: milliseconds between pings. A missed ping reconnects. `0` turns pings off. |
 
 Realtime adds no environment variables.
 
@@ -590,7 +590,9 @@ channel(transport, projectChannel)
 
 ## The server in the container
 
-The first `.ws()` or `.sse()` link on the table binds its server in the app container as `realtime`, as the transport-neutral `RealtimeServer` (`use`, `attach`, `connections`). That is the one controllers, actions and jobs emit through, and a second link's server is reachable only through what `routes.compile('h3', server)` returned. To run a realtime server you build yourself, outside the table, `createRealtimeServer(options)` from `@kitr/realtime/server` still returns one with `attach(server, path)`, and `realtimeProvider(options)` binds one as `realtime` without a route; `sseProvider` from `@kitr/realtime/sse/server` does the same for SSE. `attach` must run before `server.listen()`, because it turns on WebSocket support for the listener.
+The first `.ws()` or `.sse()` link on the table is available as `realtime` in the container, so controllers, actions and jobs can emit through it.
+
+To run a realtime server outside the route table, use `createRealtimeServer(options)` from `@kitr/realtime/server` and call `attach(server, path)` before `server.listen()`.
 
 ## Transports
 
@@ -809,10 +811,10 @@ What the adapter does, and what stays per instance:
 | Behaviour | With the Redis adapter |
 | --- | --- |
 | `emit()` | Reaches subscribers on every instance. |
-| Redis subscriptions | One per topic per instance, made when the topic's first local client subscribes and dropped after the last leaves. Traffic follows what clients watch, not the instance count. |
+| Redis subscriptions | One per topic per instance, only while a client watches it. |
 | `ok` reply to a subscribe | Sent once the Redis subscription is live, so an emit right after the reply is not lost. |
 | `use(channel, params).size` and `connections` | Count this instance only. |
-| SSE control `POST`s | A `POST` that the load balancer sends to another instance than the stream is forwarded through Redis to the instance that holds the stream. A connection id no instance holds still answers `410`, and the client opens a new stream. |
+| SSE control `POST`s | Forwarded through Redis to the instance that holds the stream. |
 | Channel `authorize` and `onMessage` | Run on the instance that holds the connection, with that connection's context. |
 
 The adapter takes these options:

@@ -8,7 +8,7 @@ order: 1
 
 A session token, a refresh token, an API key someone pasted into settings: these shouldn't sit in `localStorage` as plain text, where anything that reads the disk or the page can copy them. Phones and computers have a proper vault for secrets, and each has a different API. `@kitr/secure-storage` gives you one async key-value service, `secureStorage`, and typed items on top of it, so the code that keeps Ada's session reads the same wherever the app runs.
 
-A platform registers its vault as a driver: the iOS Keychain, the Android Keystore or Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage). In the browser, and anywhere no vault is registered, a fallback encrypts each value with AES-GCM through the [Web Crypto API](https://developer.mozilla.org/docs/Web/API/SubtleCrypto), under a key the browser keeps in IndexedDB and never lets out. kitr adds typed items with schema checks, a React hook, a `secure` flag that says which one you got, a switch that refuses the fallback, and a memory driver for tests.
+On a phone or desktop it uses the system vault: the iOS Keychain, the Android Keystore or Electron's [`safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage). In the browser it encrypts each value with a key the browser never lets out. kitr adds typed items, a React hook, and a `secure` flag that tells you which one you got.
 
 It runs in the browser, in desktop and mobile shells, and on the server as an in-memory store. For values that are not secret, such as a theme or a draft order, use [Storage](/packages/storage): it is synchronous and renders on the server.
 
@@ -393,7 +393,7 @@ Requirements:
 
 ### Tauri
 
-The Tauri driver uses [`@tauri-apps/plugin-stronghold`](https://v2.tauri.app/plugin/stronghold/), an encrypted [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs) snapshot (`kitr-vault.hold`) in the app data folder. Stronghold, not `@tauri-apps/plugin-store`: the store plugin writes plain JSON to disk, which is storage, not a vault. Opening the snapshot needs a password. The scaffolded Rust side creates a random 32-byte secret on first run, keeps it in the operating system's keyring (Keychain, Credential Manager or the Secret Service) and hands it to the page through the `kitr_vault_key` command, so no password sits in your bundle. Opening the snapshot derives a key with Argon2, so the first call is slower than the ones after it.
+The Tauri driver uses [`@tauri-apps/plugin-stronghold`](https://v2.tauri.app/plugin/stronghold/), an encrypted file in the app data folder. Its password is a random secret kept in the system keyring, so none sits in your bundle. The first call is slower while the key is derived.
 
 ```ts
 // app/providers/vault.ts

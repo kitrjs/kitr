@@ -103,7 +103,7 @@ The shield reads one env variable:
 
 | Variable | Used for |
 | --- | --- |
-| `NODE_ENV` | `production` turns on HSTS and the `Secure` flag on the CSRF cookie. The app's mode (`kitr build`, Vite's production mode) does the same, so hosts that never set `NODE_ENV` are covered. |
+| `NODE_ENV` | `production` turns on HSTS and a `Secure` CSRF cookie. A production build does too. |
 
 Config files are TypeScript, so you can vary values per environment. Tests often turn the rate limit off, because every test request comes from the same client:
 
@@ -188,7 +188,7 @@ Set a header to `false` to leave it out, for example when a proxy in front of th
 
 ## Tighten the Content-Security-Policy
 
-`DEFAULT_CSP` allows scripts, styles, fonts and images from your own origin only. Inline `<script>` and `<style>` tags run only when they carry the request's nonce, a random value the shield makes for every response and puts in the header as `'nonce-<value>'`. Server-rendered React needs a few inline tags (TanStack Start's hydration data, the theme script), and the nonce lets those through while an injected `<script>` from user content, which has no nonce, stays blocked. Connections may go to your origin and to any WebSocket. Nothing may frame the page. `DEFAULT_CSP` is a template; `{nonce}` stands for the request's value:
+`DEFAULT_CSP` allows scripts, styles, fonts and images from your own origin only. Inline tags run only with the request's nonce, a random value made for each response. That lets the page's own inline scripts run and blocks injected ones. `{nonce}` stands for that value:
 
 ```ts
 // server/security/csp.ts
@@ -222,7 +222,7 @@ export default createServerEntry({
 })
 ```
 
-Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response. An `app/server.ts` that calls `handler.fetch` for pages directly gets no shield headers on pages. Rate limiting and CSRF checks do not apply to pages (they are the renderer's); the CSRF cookie is still set on them so the first `POST` to your API has a token to send.
+Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response. Rate limits and CSRF checks apply to API routes only.
 
 Then the nonce reaches every inline tag without further code:
 

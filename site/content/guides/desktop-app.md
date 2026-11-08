@@ -8,7 +8,7 @@ time: 40 min
 
 # Build a desktop app
 
-The people in Acme's back office keep the billing app open all day next to their spreadsheets. In a browser tab it gets lost among forty others, Cmd+N opens a new browser window instead of a new invoice, and exporting means a download that lands somewhere in the Downloads folder. You will build Acme Billing for the desktop: a window with the invoice list beside the selected invoice, a File menu with a New Invoice shortcut, a CSV export that asks where to save through the operating system's own dialog, settings that persist in the app's data folder, and installers for each operating system.
+Acme's back office keeps the billing app open all day, and in a browser tab it gets lost. You will build Acme Billing for the desktop: an invoice list beside the selected invoice, a File menu with a shortcut, a CSV export through the system's save dialog, saved settings, and installers for each operating system.
 
 kitr runs the same `app/` folder in an [Electron](https://www.electronjs.org) window. Electron ships its own Chromium, so the page your team tests is the page every user runs. Native work happens in Electron's main process, a Node.js program you write in `platforms/app/main.ts`, and the window calls it through IPC commands that are typed from one file.
 
@@ -396,7 +396,7 @@ Unsigned apps trigger Gatekeeper on macOS and SmartScreen on Windows. electron-b
 
 ## Choose Tauri instead
 
-When download size matters more than identical rendering, the [Tauri](/packages/tauri) platform wraps the same client build in the operating system's own web view, for an installer of a few megabytes instead of around a hundred. Both platforms register the same `platform` and `storage` drivers, so the pages, the queries and the storage items do not change. What changes is the native side: IPC commands in `main.ts` become Rust commands in `platforms/app/src-tauri/src/lib.rs`, called with `commands.<name>()` from `@kitr/tauri/client`, and you need the Rust toolchain to build.
+When download size matters more than identical rendering, use [Tauri](/packages/tauri) instead: a few megabytes instead of around a hundred. Pages, queries and storage stay the same. The native side moves from `main.ts` to Rust commands in `platforms/app/src-tauri/src/lib.rs`.
 
 ```sh
 kitr platforms remove app

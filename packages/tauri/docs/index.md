@@ -18,7 +18,7 @@ The examples on this page ship the Acme orders app to the desktop: Ada's warehou
 
 Use `@kitr/tauri` when download size, start-up time and memory matter more than identical rendering everywhere: an internal tool on old laptops, a tray utility, an app distributed over slow connections. Installers are a few megabytes because the browser engine is not inside them. Tauri's permission system also makes you list every native capability the window may use.
 
-Use [Desktop](/packages/desktop) (Electron) for most other apps. Electron ships Chromium with the app, so the page your team tests is the page every user runs, while Tauri's three webviews can differ in CSS support, media codecs and Web APIs. Electron's native side is Node.js, with the larger community and ecosystem, where Tauri's is Rust and needs the Rust toolchain on every build machine. Both platforms load the same client build and register the same `platform` and `storage` drivers, so the app code does not change when you switch.
+Use [Desktop](/packages/desktop) (Electron) for most other apps. Electron ships its own browser, so every user sees the page you tested; Tauri's webviews differ between systems. Electron's native side is Node.js; Tauri's is Rust. Your app code stays the same either way.
 
 ## Install
 
@@ -104,7 +104,7 @@ export default defineKitrConfig({
 | `minWidth` | | Smallest width the user can resize to. |
 | `minHeight` | | Smallest height the user can resize to. |
 | `appId` | `com.example.<app>` | `identifier` in `tauri.conf.json`. The default lower-cases the title and keeps letters and digits: `Acme Orders` gives `com.example.acmeorders`. |
-| `devtools` | `true` | Opens the webview inspector when `kitr dev` starts the window. `kitr dev` passes it as `KITR_DEVTOOLS`, which the scaffolded `src/lib.rs` reads in debug builds. Release builds never open it. |
+| `devtools` | `true` | Open the webview inspector in `kitr dev`. Never in release builds. |
 
 Every option is written into the scaffolded files when you run `kitr add`, and the Tauri CLI reads those files, not `kitrrc.ts`. Changing an option later does not rewrite them: edit `tauri.conf.json`, which is yours, or delete it and run `kitr platforms scaffold app` to write it again. This includes `port`: if you change it, change `build.devUrl` too, or the window waits on the old port.
 
@@ -147,13 +147,13 @@ With `title: 'Acme Orders'` and `appId: 'com.acme.orders'` in a project whose `p
 }
 ```
 
-`frontendDist` points at this platform's client build, so `kitr build app` and `tauri build` agree on where the bundle is. Every other key is [Tauri's configuration](https://v2.tauri.app/reference/config/). The content security policy lets the window load the app's own files, talk to Rust over Tauri's IPC, and call `https:` and `wss:` APIs; Tauri adds hashes for the inline scripts in the client build. Widen `connect-src` or `img-src` there if the app loads from elsewhere. The scaffolded Rust crate depends on `tauri`, `tauri-plugin-store`, `tauri-plugin-opener`, `tauri-plugin-process`, `serde` and `serde_json`, and the main window gets the `core:default`, `store:default`, `opener:default` and `process:default` permissions. The provider opens links through the opener plugin and quits through the process plugin, so `kitr add tauri` installs both JavaScript packages.
+`frontendDist` points at this platform's client build. Every other key is [Tauri's configuration](https://v2.tauri.app/reference/config/). The content security policy allows the app's own files and `https:` and `wss:` APIs; widen `connect-src` or `img-src` if you load from elsewhere.
 
 | Variable | Used for |
 | --- | --- |
 | `KITR_APP_<OPTION>` | Overrides one option for one run of the CLI: `KITR_APP_PORT=3300 kitr dev app`. The platform name is upper-cased. |
 | `KITR_PLATFORM` | Set to `app` by `kitr dev` and `kitr build`, so the Vite plugin builds this platform into `dist/app`. |
-| `TAURI_ENV_*` | Set by the Tauri CLI. The Vite plugin adds the prefix to `envPrefix` for Tauri platforms, so `import.meta.env.TAURI_ENV_PLATFORM` reads `darwin`, `windows` or `linux` in the window. |
+| `TAURI_ENV_*` | Set by Tauri and readable in the app: `import.meta.env.TAURI_ENV_PLATFORM`. |
 
 Read or change one option from the command line with `kitr config app` (lists every option), `kitr config app minWidth 960` or `kitr config app minWidth --unset`. The other platform types each have their own guide: [Web](/packages/web), [Server](/packages/server), [Mobile](/packages/mobile) and [Desktop](/packages/desktop). [Platforms](/docs/platforms) lists them side by side.
 
@@ -173,7 +173,7 @@ The icons land in `platforms/app/src-tauri/icons/`. Run the platform:
 kitr dev app
 ```
 
-kitr starts Vite on port 3200, waits until it answers, then runs `tauri dev --no-watch` in `platforms/app`, pointing the window at that port. `kitr dev app --port 3300` and `KITR_APP_PORT=3300` move both Vite and the window; `devUrl` in `tauri.conf.json` is only the default. The first run compiles the Rust crate and its dependencies, which takes a few minutes; later runs take seconds. The window opens on your app and updates in place when you edit a component. With `--no-watch`, Tauri does not rebuild when Rust files change: stop and run `kitr dev app` again after editing `src-tauri`.
+kitr starts Vite on port 3200, then opens the Tauri window on it. `kitr dev app --port 3300` changes the port. The first run compiles Rust for a few minutes; later runs take seconds. Components update in place, but after editing `src-tauri`, restart `kitr dev app`.
 
 The scaffold wrote one Rust command and its typed mirror:
 
@@ -554,7 +554,7 @@ Tauri denies every plugin command the window has not been granted. Grants live i
 }
 ```
 
-`core:default` covers events, windows and the app APIs the provider uses. `store:default` lets the storage driver read and write, and `opener:default` lets `platform.openExternal()` open web links. Your own `#[tauri::command]` functions need no entry: Tauri allows the app's commands by default. When the window calls a plugin command it was not granted, the promise rejects with a message naming the command and the permissions that would allow it; add one of those to `permissions`. The [capabilities guide](https://v2.tauri.app/security/capabilities/) covers scopes and per-window grants.
+`core:default`, `store:default` and `opener:default` cover what the provider uses. Your own `#[tauri::command]` functions need no entry. A plugin call without permission rejects with a message naming the permission to add. See the [capabilities guide](https://v2.tauri.app/security/capabilities/).
 
 > **Warning**
 > The scaffold sets `"csp": null` in `tauri.conf.json`, which turns off Tauri's content security policy so development works with any asset. Before you ship, set a [CSP](https://v2.tauri.app/security/csp/) that allows only your own origin and `https://app.acme.com`, and grant only the permissions the app uses. Every permission is reachable from any script that runs in the window.
@@ -597,7 +597,7 @@ Import the plugin lazily, as above, so the web build never loads it. The plugins
 | `updater` | `@tauri-apps/plugin-updater` and `plugin-process`, `tauri-plugin-updater` and `tauri-plugin-process` | `updater:default`, `process:default` |
 | `native` | `@tauri-apps/plugin-clipboard-manager`, `plugin-os` and `plugin-opener`, with the matching crates | `clipboard-manager:allow-read-text`, `clipboard-manager:allow-write-text`, `os:default`, `opener:default` |
 
-Each driver imports its plugin the first time it is used. A missing JavaScript package rejects with `E_DRIVER_UNAVAILABLE` naming it, and a missing crate or permission shows as Tauri's own error naming the command, so a web build never loads a plugin it does not use. The provider registers a loader for each plugin, so your bundler sees a literal `import()` and bundles it; that is why the Tauri platform installs all of them, even those you have not used yet. Three choices to know:
+Each driver loads its plugin the first time it is used. A missing package rejects with `E_DRIVER_UNAVAILABLE`, and a missing permission with Tauri's own error. Three choices to know:
 
 - **Secure storage uses Stronghold, not the store plugin.** The store plugin keeps plain JSON in the app data folder, which is what `@kitr/storage` already uses. Stronghold is an encrypted snapshot, opened with a random secret the scaffolded `kitr_vault_key` command keeps in the operating system's keyring. Every script in the window can call that command, so keep a strict `csp`.
 - **Files stay inside what the person picked.** The scaffold grants read, write, stat and list on the fs plugin without a static scope; the dialog plugin adds each chosen path to the scope for the session.
@@ -865,7 +865,7 @@ describe('Acme Orders in Tauri', () => {
 })
 ```
 
-Install the fake before the code under test runs. After each test, unmount components first (`cleanup()`), so `useTauriEvent` unsubscribes while the fake is still there, then call `clearMocks()`. `clearMocks()` empties `window.__TAURI_INTERNALS__` but leaves the object, so delete it too, or `isTauri()` stays `true` in the next test. The short wait inside `act` lets `useTauriEvent` finish subscribing before the event is emitted, because it loads the event API lazily. Test the Rust side with `cargo test` in `platforms/app/src-tauri`, and the real window with `kitr dev app`.
+Install the fake before the code under test runs. After each test, call `cleanup()`, then `clearMocks()`, then delete `window.__TAURI_INTERNALS__`. Test the Rust side with `cargo test` in `platforms/app/src-tauri`.
 
 ## Next steps
 

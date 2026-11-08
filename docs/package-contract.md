@@ -1,6 +1,11 @@
 # The package contract
 
-Everything in kitr beyond the core is a package you add, and every package, official or not, plugs in the same way. A kitr package is an npm package with two additions: a static `kitr` block in `package.json`, read by the site, the registry and `kitr add --list` without executing anything, and a setup module exported as `<package>/kitr`, which the CLI loads from the installed package and runs on `kitr add`, `kitr remove`, `kitr doctor` and `kitr make:*`. Core knows no package by name: `kitr add @acme/anything` does exactly what `kitr add jobs` does.
+A kitr package is an npm package with two additions:
+
+- a `kitr` block in `package.json` that describes it, and
+- a setup module exported as `<package>/kitr` that `kitr add`, `kitr remove`, `kitr doctor` and `kitr make:*` run.
+
+Official and third-party packages work the same way: `kitr add @acme/anything` does what `kitr add jobs` does.
 
 ## The setup module
 
@@ -50,14 +55,14 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `dev` | boolean | Installed as a devDependency (tooling the app never imports at run time, such as `testing`) |
 | `questions` | `Question[]` or `(project) => Question[]` | Asked on `add`; `--yes`, `CI` or no TTY takes the defaults |
 | `add(ctx)` / `remove(ctx)` | codemods | Run with the answers; `--dry-run` prints the plan |
-| `commands` | `() => import(...)` | A module of command objects (citty's shape), mounted as `kitr <name>`. The `<name>:` prefix is the convention; a core name or a name another package took is an error |
+| `commands` | `() => import(...)` | Commands mounted as `kitr <name>`, such as `kitr jobs:work` |
 | `generators` | `Record<string, Generator>` | Mounted as `kitr make:<kind>`; the project's `stubs/<kind>.ts` overrides the stub |
 | `doctor(project)` | `Finding[]` | Appended to `kitr doctor`. Pure: read, never write |
 | `types` | `() => import(...)` | A module exporting a `defineTypes()` generator that `kitr types` runs into `.kitr/` |
 | `wraps` | `Record<string, string>` | Upstream libraries this package re-exports, by the kitr entry to import instead; `kitr doctor` flags direct imports |
-| `vite` | `{ serverOnlyConfig, optimizeDeps, plugin, start, provider }` | Read by `@kitr/vite` at config time from every package in `kitrrc.ts`: the plugin to add (`@vitejs/plugin-react`, `@kitr/tailwind/vite`), the deps to pre-bundle, the config file to keep out of browser bundles, whether to render through TanStack Start, whether the provider ships in production. The plugin knows no package by name. |
+| `vite` | `{ serverOnlyConfig, optimizeDeps, plugin, start, provider }` | What the package adds to the Vite build, such as a plugin: `@kitr/tailwind/vite` |
 | `platform` | `{ factory, export, from, defaultName }` | For `kind: 'platform'`: the `definePlatform` factory `kitrrc.ts` calls, how it imports it, and the name `kitr add <type>` suggests |
-| `kit` | `{ description, platforms, packages, components, files }` | For `kind: 'kit'`: the platforms `kitr new --kit` writes to `kitrrc.ts`, the packages it adds (a name, or `{ name, answers }` to pre-fill a package's questions), the registry components it pulls and `files(ctx, projectName)`, which writes the kit's pages, controllers and tests with the same `ctx` as `add`. The kit itself is never installed into the project |
+| `kit` | `{ description, platforms, packages, components, files }` | For `kind: 'kit'`: what `kitr new --kit` sets up. See [Writing a kit](kits.md#writing-a-kit) |
 | `routes` | string | The module exporting this package's route-table extension |
 | `eject` | `Record<string, string>` | Import rewrites `kitr eject all` prints |
 
@@ -89,10 +94,10 @@ The CLI installs the package itself and lists it in `kitrrc.ts` `packages`; `add
 | `ctx.agents.add('jobs', body)`, `.remove('jobs')` | a `## kitr: jobs` section in `AGENTS.md` |
 | `ctx.tsconfig.addTypes(...)`, `.addLib(...)`, `.addInclude(...)`, `.addPaths({...})`, `.set(option, value)` | `tsconfig.json` |
 | `ctx.vite.addPlugin('tailwind', '@tailwindcss/vite')` | `plugins` in `vite.config.ts`, when the file exists |
-| `ctx.routes.extend('@kitr/api/routes')`, `.remove(...)` | the extensions list of the project's `defineRoutes([...])` call, in `directories.routeTable` (default `app/routes.ts`); created when missing |
-| `ctx.server.attach({ marker, import, line, first })` | one line (and its import) after `createServer()` in the server platform's entry, once; `first` puts it straight after `createServer()` for middleware that must see every request |
+| `ctx.routes.extend('@kitr/api/routes')`, `.remove(...)` | the extensions in the project's `defineRoutes([...])` call |
+| `ctx.server.attach({ marker, import, line, first })` | one line and its import after `createServer()` in the server entry. `first` puts it before the others |
 | `ctx.replaceImport(file, from, to)` | swap one side-effect import for another (`@kitr/theme/styles.css` for the Tailwind preset) |
-| `ctx.types.enable()` | the `#kitr/*` path and `.kitr` include in `tsconfig.json`, `.kitr` in `.gitignore`, `kitr types` before `tsc` in the typecheck script |
+| `ctx.types.enable()` | generated types in `.kitr/`, wired into `tsconfig.json` and `.gitignore` |
 | `ctx.app.option('operations', '#kitr/actions')`, `.removeOption(...)` | pass a named value to `createApp({ ... })` in `app/app.ts`, imported from the given module |
 
 The project facts it may read: `ctx.root`, `ctx.pm`, `ctx.pkg`, `ctx.rc` (packages, providers, directories, platforms), `ctx.isServerOnly`, `ctx.has('react')` (a dependency, present or queued), `ctx.hasPackage('server')` (in `kitrrc.ts`, or added earlier in this run), `ctx.exists(path)`, `ctx.read(path)`, and `ctx.answers`.
@@ -120,18 +125,18 @@ The project facts it may read: `ctx.root`, `ctx.pm`, `ctx.pkg`, `ctx.rc` (packag
 
 ## How `kitr add` resolves a name
 
-`jobs` means `@kitr/jobs`; anything with a scope or a slash is taken as written. When the package is not resolvable from the project, the CLI installs it first (`pnpm add @kitr/jobs`) and then loads its `kitr` module; with `--no-install` that is an error naming the flag. Inside this monorepo the module resolves from the CLI's own tree, which is how `kitr new --no-install` regenerates the examples. A package with no setup module is installed and listed in `kitrrc.ts`, and nothing else happens: there is no fallback inside the CLI, because the CLI knows no package by name.
+`jobs` means `@kitr/jobs`; a name with a scope is used as written. If the package is not installed, the CLI installs it, then runs its `kitr` module. A package without a setup module is installed and listed in `kitrrc.ts`, and nothing else happens.
 
 ## Commands
 
-A `commands` module exports plain command objects in citty's shape (`meta`, `args`, `run`); the kitr CLI mounts them next to its own. The `<name>:` prefix (`jobs:work`) is the convention, so a project with several packages never sees two meanings of one word; a bare name is allowed, and a collision with a core command or another package's command is an error at load time. Commands are loaded only when `kitr --help` runs or the word typed is not a core command, so an unrelated `kitr dev` pays nothing for them.
+A `commands` module exports command objects in [citty](https://github.com/unjs/citty)'s shape (`meta`, `args`, `run`). Prefix them with the package name (`jobs:work`) so they never clash. A name that clashes with a core command or another package is an error.
 
 ## Platforms and kits
 
-A platform package (`kind: 'platform'`) adds a `platform` block: the `definePlatform` factory `kitrrc.ts` calls, the export and module it is imported from, and the name `kitr add <type>` suggests. See [platforms.md](platforms.md).
+A platform package (`kind: 'platform'`) adds a `platform` block: the `definePlatform` factory `kitrrc.ts` calls, the export and module it is imported from, and the name `kitr add <type>` suggests. See [Platforms](platforms.md).
 
-A kit package (`kind: 'kit'`) adds a `kit` block and is run by `kitr new --kit <name>` instead of `kitr add`: the platforms to write, the packages to add with their answers, the registry components to copy and a `files(ctx, projectName)` hook with the same `ctx` as `add()`. A kit is never installed into the project. See [kits.md](kits.md).
+A kit package (`kind: 'kit'`) adds a `kit` block and runs on `kitr new --kit <name>`. See [Kits](kits.md).
 
 ## Where the official setups are
 
-Every official package keeps its setup in `packages/<name>/src/kitr.ts`, published as its `./kitr` export; the kits are `packages/kit-<name>/src/kitr.ts`. The CLI holds no package-specific code: `packages/cli` is the contract runner, the codemods, `kitr new`'s seven base files and the core commands.
+Every official package keeps its setup in `packages/<name>/src/kitr.ts`, and every kit in `packages/kit-<name>/src/kitr.ts`. The CLI has no package-specific code.

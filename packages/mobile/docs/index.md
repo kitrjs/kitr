@@ -91,7 +91,7 @@ export default defineKitrConfig({
 | `targets` | `['ios', 'android']` | Native projects to create and build. Each must be `ios` or `android`. |
 | `appId` | `com.example.<app>` | Reverse-DNS bundle identifier. The default lower-cases the app name and drops everything but letters and digits: `acme-orders` gives `com.example.acmeorders`. |
 | `appName` | the package name | Name shown on the home screen. `acme-orders` becomes `Acme Orders`. |
-| `scheme` | | Custom URL scheme for deep links (`acme` opens `acme://...`). `kitr build` and `kitr dev` register it in the iOS `Info.plist` and the Android manifest; `kitr doctor` warns when a native project lacks it. |
+| `scheme` | | URL scheme for deep links: `acme` opens `acme://...`. |
 | `port` | `3100` | Port of the dev server the device loads with `kitr dev phone`. |
 | `capacitor` | | Extra [Capacitor config](https://capacitorjs.com/docs/config), such as `plugins`, merged last into `capacitor.config.ts`. |
 
@@ -314,7 +314,7 @@ kitr build phone
 #        ...
 ```
 
-The device packages [Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater) drive these plugins in the shell. `kitr add <package>` installs the ones it needs when the project has the mobile platform, and `kitr new --kit mobile` installs all of them. If you add a device package before the mobile platform, run `kitr add <package>` again afterwards. iOS and Android sync on Linux too: Capacitor 8 uses Swift Package Manager on iOS, so a CI job can run `kitr build phone` without Xcode or the Android SDK. It only syncs; building the app still needs the native toolchain.
+The device packages ([Native](/packages/native), [Notifications](/packages/notifications), [Files](/packages/files), [Secure storage](/packages/secure-storage) and [Updater](/packages/updater)) use these plugins. `kitr add <package>` installs the ones it needs. If you added a device package before the mobile platform, run `kitr add <package>` again.
 
 ## Check whether the app runs in the shell
 
@@ -396,7 +396,7 @@ Capacitor turns off the default back behaviour as soon as a listener is register
 
 ## Open deep links
 
-To open `acme://orders/1042` in the app, set `scheme: 'acme'` on the platform in `kitrrc.ts`. The next `kitr build` or `kitr dev` adds it to `CFBundleURLSchemes` in the iOS `Info.plist` and as an `intent-filter` on the main activity in the Android manifest, once; edits you make to those files stay. `https` links (`https://app.acme.com/orders/1042`) need Associated Domains on iOS and an App Links `intent-filter` on Android, which you add yourself: the [Capacitor deep links guide](https://capacitorjs.com/docs/guides/deep-links) has both. Then hand each URL to the router:
+To open `acme://orders/1042` in the app, set `scheme: 'acme'` on the platform in `kitrrc.ts`. The next build adds it to the iOS and Android projects. `https` links need extra setup on each platform; see the [Capacitor deep links guide](https://capacitorjs.com/docs/guides/deep-links). Then hand each URL to the router:
 
 ```tsx
 // app/components/deep-links.tsx
@@ -509,8 +509,8 @@ export function AboutVersion() {
 
 | Command | What it does |
 | --- | --- |
-| `kitr add mobile [name]` | Adds a mobile platform (named `phone` when you leave the name out): installs Capacitor, writes `platforms.<name>`, runs the router, platform and storage recipes, writes `platforms/<name>/capacitor.config.ts`. |
-| `kitr dev <name>` | Creates the native project if needed, starts Vite on the LAN and runs `cap run <target> --no-sync` against it. Flags: `--target`, `--device`, `--host`, `--port`. |
+| `kitr add mobile [name]` | Add a mobile platform, named `phone` by default. |
+| `kitr dev <name>` | Run the app on a phone or simulator with live reload: `kitr dev phone --target ios`. |
 | `kitr build <name>` | Runs `vite build`, `cap add` for missing targets and `cap sync`. Flags: `--target`, `--open`. |
 | `kitr config <name> [option] [value]` | Reads or sets an option in `kitrrc.ts`. `--unset` removes one. |
 | `kitr platforms` | Lists every platform with its options. |
