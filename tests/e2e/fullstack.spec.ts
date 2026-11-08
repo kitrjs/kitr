@@ -95,3 +95,51 @@ test.describe('websockets', () => {
     await expect(page.getByText('not for you')).toHaveCount(0)
   })
 })
+
+test.describe('a mutation', () => {
+  test('a note created through the form is stored by the API and read back after a reload', async ({
+    page,
+    baseURL,
+  }) => {
+    const errors = watchForErrors(page)
+    const text = `note ${Date.now()}`
+    await page.goto('/e2e/notes')
+    await expect(page.getByRole('heading', { name: 'Notes' })).toBeVisible()
+    // Until the page hydrates the form is plain HTML; the page marks the form once it is interactive.
+    await expect(page.locator('form[data-ready="true"]')).toBeVisible()
+    await page.getByLabel('Note').fill(text)
+    await page.getByRole('button', { name: 'Add note' }).click()
+    await expect(page.getByRole('listitem').filter({ hasText: text })).toBeVisible()
+    await expect(page.getByLabel('Note')).toHaveValue('')
+
+    // The record lives on the server, not in the page: the API lists it ...
+    const stored = (await (await fetch(`${baseURL}/api/e2e/notes`)).json()) as {
+      notes: { id: number; text: string }[]
+    }
+    expect(stored.notes.map((n) => n.text)).toContain(text)
+
+    // ... and a reload renders it on the server, in the HTML, before any script runs.
+    await page.reload()
+    await expect(page.getByRole('listitem').filter({ hasText: text })).toHaveCount(1)
+    const html = await (await fetch(`${baseURL}/e2e/notes`)).text()
+    expect(html).toContain(text)
+    expect(errors.filter((e) => !/favicon/.test(e))).toEqual([])
+  })
+
+  test('the API rejects an empty note and the page shows the reason', async ({ page, baseURL }) => {
+    const api = await request.newContext({ baseURL })
+    const res = await api.post('/api/e2e/notes', { data: { text: '   ' } })
+    expect(res.status()).toBe(422)
+    expect(await res.json()).toMatchObject({ code: 'INVALID' })
+    const created = await api.post('/api/e2e/notes', { data: { text: 'from the api' } })
+    expect(created.status()).toBe(201)
+    await api.dispose()
+
+    await page.goto('/e2e/notes')
+    await expect(page.getByRole('listitem').filter({ hasText: 'from the api' })).toBeVisible()
+    await expect(page.locator('form[data-ready="true"]')).toBeVisible()
+    await page.getByLabel('Note').fill('   ')
+    await page.getByRole('button', { name: 'Add note' }).click()
+    await expect(page.getByRole('alert')).toHaveText('text is required')
+  })
+})

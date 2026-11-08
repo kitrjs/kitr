@@ -1,0 +1,109 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits", "helpers:pinGitHubActionDigestsToSemver"],
+  "timezone": "Etc/UTC",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "prConcurrentLimit": 6,
+  "prHourlyLimit": 4,
+  "minimumReleaseAge": "3 days",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "ignorePaths": ["examples/**", "**/templates/**"],
+  "packageRules": [
+    {
+      "groupName": "TanStack",
+      "matchPackageNames": ["@tanstack/**"]
+    },
+    {
+      "groupName": "Vite and Vitest",
+      "matchPackageNames": [
+        "vite",
+        "vitest",
+        "@vitest/**",
+        "@vitejs/**",
+        "vite-plugin-pwa",
+        "happy-dom",
+        "@testing-library/**"
+      ]
+    },
+    {
+      "groupName": "Biome and TypeScript",
+      "matchPackageNames": ["@biomejs/biome", "typescript", "tsx", "tsdown", "@types/node"]
+    },
+    {
+      "groupName": "Server runtime (h3, srvx, crossws)",
+      "matchPackageNames": ["h3", "srvx", "crossws", "wrangler"]
+    },
+    {
+      "groupName": "React",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom",
+        "react-hook-form",
+        "@hookform/resolvers",
+        "zustand",
+        "motion",
+        "sonner"
+      ]
+    },
+    {
+      "groupName": "Validation and HTTP (Zod, ky)",
+      "matchPackageNames": ["zod", "ky", "msw", "partysocket", "socket.io", "socket.io-client"]
+    },
+    {
+      "groupName": "Tailwind and styling",
+      "matchPackageNames": [
+        "tailwindcss",
+        "@tailwindcss/**",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge",
+        "@hugeicons/**"
+      ]
+    },
+    {
+      "groupName": "Native shells (Capacitor, Electron, Tauri)",
+      "matchPackageNames": [
+        "@capacitor/**",
+        "electron",
+        "electron-builder",
+        "electron-vite",
+        "@tauri-apps/**"
+      ]
+    },
+    {
+      "groupName": "i18n and 3D",
+      "matchPackageNames": ["i18next", "react-i18next", "three", "@types/three", "@react-three/**"]
+    },
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Majors are never grouped: each one gets its own PR and a human decision.",
+      "matchUpdateTypes": ["major"],
+      "groupName": null,
+      "addLabels": ["major"],
+      "schedule": ["before 6am on the first day of the month"]
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "The blessed upstream versions in packages/cli/src/versions.ts, written as `name: '^x.y.z'`.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^packages/cli/src/versions\\.ts$/"],
+      "matchStrings": ["\\s'?(?<depName>[@\\w/.-]+)'?: '(?<currentValue>[\\^~]?\\d[^']*)',?"],
+      "datasourceTemplate": "npm"
+    }
+  ],
+  "description": [
+    "Groups follow packages/cli/src/versions.ts: the custom manager below reads that table, so a bump edits it, the manifests and the lockfile in one PR. The examples are generated kit output: run `pnpm sync:examples` on a Renovate PR that touches versions.ts (CI's check:examples says so)."
+  ]
+}

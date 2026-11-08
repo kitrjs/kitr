@@ -36,7 +36,7 @@ kitr add native --dry-run
 
 ## Configure
 
-`@kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the web driver. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
+`@kitr/native` has no config file. The provider picks a driver per capability on its own: a driver you configure, else one a platform package registered, else the one for the runtime: the web drivers in a browser, and `E_DRIVER_UNAVAILABLE` in an Electron, Tauri or Capacitor shell unless you set `fallbackToWeb`. To replace drivers for the whole app, create `config/native.ts` yourself. The app loads every file in `config/` under its file name:
 
 ```ts
 // config/native.ts
@@ -59,6 +59,7 @@ export default defineConfig({
 | `drivers.geolocation` | registered, else `webGeolocation()` | A `GeolocationDriver`: `current(options)` and `watch(listener, options)`. |
 | `drivers.camera` | registered, else `webCamera()` | A `CameraDriver`: `capture(options)`. |
 | `drivers.biometrics` | registered, else `webBiometrics()` | A `BiometricsDriver`: `available()` and `authenticate(options)`. |
+| `fallbackToWeb` | `false` | In a native shell with no driver for a capability, use the web drivers inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
 The same object goes to `createNative(config, app)` when you build the service by hand, as in tests. Writing a driver is covered under [Extend](#extend).
 
@@ -522,8 +523,8 @@ For each capability the service takes the first of these that exists:
 
 1. The driver in `config.drivers`, named `'configured'`.
 2. A driver a provider registered with `app.drivers.register('<capability>', driver, { platform })`, named after `platform`.
-3. The web driver, named `'web'`.
-4. Nothing: `supported: false`, named `'unsupported'`.
+3. The driver `selectDriver(runtime)` picks, where `runtime` is `platform.runtime` (`web`, `electron`, `tauri` or `capacitor`). On `web` that is the web driver, named `'web'`, or nothing (`supported: false`, named `'unsupported'`) where the browser lacks the API. A native runtime uses its own driver, named after the runtime, and throws `E_DRIVER_UNAVAILABLE` while it has none.
+4. In a native shell with `fallbackToWeb: true`, the web driver, named `'web'`.
 
 | Capability | Web driver | Works in |
 | --- | --- | --- |
@@ -534,12 +535,100 @@ For each capability the service takes the first of these that exists:
 | `camera` | `webCamera()`, file input with `capture` | Every browser |
 | `biometrics` | `webBiometrics()`, WebAuthn platform authenticator | Browsers with WebAuthn, on HTTPS |
 
-Desktop and mobile shells run the app in a webview, so the web drivers apply there too. Today [Desktop](/packages/desktop) (Electron), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) register only `platform` and `storage` drivers, none of these six. To use the native clipboard, Face ID or real haptics in a shell, register a driver as shown under [Extend](#extend).
+Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. In a Capacitor shell the [Capacitor drivers](#capacitor) answer. Today [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) register only `platform` and `storage` drivers, none of these six, so creating the service in those shells throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use the native clipboard, Face ID or real haptics, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
+
+### Capacitor
+
+In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the service uses the phone's own APIs through Capacitor plugins, named `'capacitor'` in `native.clipboard.name`. Each plugin is an optional peer dependency that the driver imports the first time a method runs, so the web build never loads them.
+
+| Capability | Plugin | Notes |
+| --- | --- | --- |
+| `clipboard` | `@capacitor/clipboard` | No permission prompt. iOS shows its "pasted from" banner on reads. |
+| `share` | `@capacitor/share` | `canShare()` is `false` for a payload with `files`: a `File` cannot cross the bridge, so save it with [Files](/packages/files) and share its `url`. A dismissed sheet resolves `false`. |
+| `haptics` | `@capacitor/haptics` | `light`, `medium` and `heavy` are impacts, `success`, `warning` and `error` are notifications, `selection` plays the selection start, change and end ticks. |
+| `geolocation` | `@capacitor/geolocation` | Asks for the permission before the first read and rejects with `@kitr/native: location permission was denied` when refused. iOS needs `NSLocationWhenInUseUsageDescription` in `Info.plist`; Android needs `ACCESS_COARSE_LOCATION` and `ACCESS_FINE_LOCATION` in the manifest. |
+| `camera`, `biometrics` | none | `supported: false`. Register a driver as shown under [Extend](#extend). |
+
+`kitr add native` installs the four plugins when the project has the mobile platform; `kitr new --kit mobile` installs all of them. Without the mobile platform, add them yourself:
+
+```sh
+pnpm add @capacitor/clipboard @capacitor/share @capacitor/haptics @capacitor/geolocation
+```
+
+A plugin that is not installed does not fall back to the webview. The call rejects with `E_DRIVER_UNAVAILABLE` and the package to install:
+
+```tsx
+// app/components/copy-link.tsx
+import { useClipboard } from '@kitr/native/react'
+
+export function CopyInvoiceLink({ url }: { url: string }) {
+  const clipboard = useClipboard()
+  return (
+    <button type="button" onClick={() => clipboard.writeText(url).catch((error) => console.warn(error.message))}>
+      Copy invoice link
+    </button>
+  )
+}
+// without @capacitor/clipboard => "@kitr/native has no capacitor driver: install @capacitor/clipboard. ..."
+```
+
+Desktop and mobile shells run the app in a webview, but kitr no longer lets the web drivers answer there by accident. [Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have drivers for the capabilities a desktop has, described under [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). [Mobile](/packages/mobile) registers none of these six, so creating the service in a Capacitor shell throws `E_DRIVER_UNAVAILABLE` naming the runtime. Register a driver as shown under [Extend](#extend) to use Face ID or real haptics there, or set `fallbackToWeb: true` to keep the webview behaviour on purpose.
+
+## Use it in Electron and Tauri
+
+A desktop has a clipboard and, on a Mac, Touch ID, but no share sheet, haptic motor or GPS. The desktop drivers supply what exists and leave the rest `null`, so `native.share.supported` is `false` and `native.haptics.impact('success')` rejects with `UnsupportedError`, the same as in a browser without the API. Check `supported` before showing the control.
+
+| Capability | Electron | Tauri |
+| --- | --- | --- |
+| `clipboard` | Electron `clipboard` in the main process | `@tauri-apps/plugin-clipboard-manager` |
+| `biometrics` | Touch ID on macOS (`systemPreferences.promptTouchID`); `available()` is `false` elsewhere | `null` (the biometric plugin is mobile-only) |
+| `share`, `haptics`, `geolocation`, `camera` | `null` | `null` |
+
+Both drivers also carry a `system` object with what desktop apps want beyond the six capabilities. The service API has no call for it, so import the driver:
+
+```ts
+// app/system.ts
+import { createElectronNativeDriver } from '@kitr/native'
+
+const { system } = createElectronNativeDriver()
+
+/** Open Acme's docs in the browser, follow dark mode and pause syncing on battery. */
+export async function watchTheMachine() {
+  await system.openExternal('https://acme.com/docs') // http, https, mailto and tel only
+  console.log(await system.platform(), await system.appVersion(), await system.isDark()) // => linux 1.4.0 true
+  const stopTheme = system.onTheme((dark) => console.log(dark ? 'dark' : 'light'))
+  const stopPower = system.onPower((event) => console.log(event)) // 'suspend' | 'resume' | 'battery' | 'ac'
+  return () => {
+    stopTheme()
+    stopPower()
+  }
+}
+```
+
+| `system` member | Electron | Tauri |
+| --- | --- | --- |
+| `openExternal(url)` | `shell.openExternal` through `kitr:shell:open` | `plugin-opener`'s `openUrl` |
+| `platform()` | `process.platform`: `darwin`, `win32`, `linux` | `plugin-os`'s `platform()`: `macos`, `windows`, `linux` |
+| `appVersion()` | `app.getVersion()` | `@tauri-apps/api/app` |
+| `isDark()`, `onTheme(listener)` | `nativeTheme` | The window's `theme()` and `onThemeChanged` |
+| `isOnline()` | `net.isOnline()` | `navigator.onLine` |
+| `onPower(listener)`, `isOnBattery()` | `powerMonitor`: suspend, resume, battery, AC | Not available |
+
+`openExternal` refuses anything but `http:`, `https:`, `mailto:` and `tel:` links, so a page cannot launch `file:` or custom handlers. In Electron, pass `externalProtocols` to `handleKitrIpc()` to allow more.
+
+### Electron
+
+Requirements: `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script, which a desktop project already has. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`. Touch ID needs a Mac with Touch ID and a signed app.
+
+### Tauri
+
+Requirements: `@tauri-apps/plugin-clipboard-manager`, `@tauri-apps/plugin-os`, `@tauri-apps/plugin-opener` and `@tauri-apps/api` in `package.json`; `kitr add tauri` and `kitr add native` in a Tauri project install them. Each is imported on first use; when one is missing, the call that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package. In `src-tauri`, the matching crates and `.plugin(...)` calls, and the permissions `clipboard-manager:allow-read-text`, `clipboard-manager:allow-write-text`, `os:default` and `opener:default`, which the Tauri scaffold writes.
 
 ## Errors
 
 | Error | When | What to do |
 | --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no native driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/native.ts` to run the web driver inside the webview. |
 | `UnsupportedError` (`capability` set) | A method other than `canShare`, `available` or `watch` on a capability with no driver. | Check `supported` before showing the control. |
 | `NotAllowedError` (browser) | Clipboard read denied, or `share()` / `writeText()` not called from a click. | Call from an event handler; explain the permission. |
 | `GeolocationPositionError` (browser) | `current()` denied (code 1), unavailable (2) or timed out (3). | Show a message, and offer a manual address. |
@@ -750,4 +839,5 @@ Then set it in `config/native.ts`, as shown under [Configure](#configure). `elec
 - [Auth](/packages/auth): sign-in and passkeys verified on the server.
 - [Uploads](/packages/uploads): send photos from `camera.capture()` to your server.
 - [Mobile](/packages/mobile): the Capacitor shell that native drivers plug into.
+- [Extending kitr](/docs/extending): swap or write a driver for a device package.
 - [Web Share API on MDN](https://developer.mozilla.org/docs/Web/API/Web_Share_API): which browsers share files and which only share links.

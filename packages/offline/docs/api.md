@@ -33,7 +33,7 @@ to storage on a throttle (and when the page is hidden), and can restore them int
 ### registerMutationDefaults
 
 ```ts
-function registerMutationDefaults(client: QueryClient): void;
+function registerMutationDefaults(client: QueryClient, operations: OperationRegistry): void;
 ```
 
 A mutation restored from a snapshot has its key and input but no `mutationFn`: functions do

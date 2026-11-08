@@ -1,6 +1,11 @@
 import { type KitrApp, KitrError } from '@kitr/core'
 import type { H3Event } from 'h3'
 import { accepts, type UploadedFile, type UploadRules, type UploadsConfig } from './index'
+import { signedUrl, verifySignedUrl } from './signing'
+import { matchesType, sniffType } from './sniff'
+
+export { type SignatureCheck, type SignedUrlOptions, signedUrl, verifySignedUrl } from './signing'
+export { sniffType } from './sniff'
 
 /** A stored file's key, original name, size and type. */
 export interface StoredFile {
@@ -177,8 +182,18 @@ export interface Uploads {
   read(key: string): Promise<{ data: Uint8Array; type: string } | undefined>
   /** Delete a stored file through the driver. */
   remove(key: string): Promise<void>
+  /**
+   * A link to a stored file that works for `expiresIn` seconds and no longer: the file's URL
+   * under the mount path (default `/api/uploads`) with an HMAC signature. Needs `secret` in
+   * `config/uploads.ts`. The link skips `authorize`, so hand it only to the person it is for.
+   */
+  signedUrl(key: string, options: { expiresIn: number; path?: string }): Promise<string>
+  /** Answer a `GET` for a stored file under `base`: checks the signed link or `authorize`, then sends the file with safe headers. What the mounted route runs. */
+  serve(event: H3Event, options?: { base?: string; app?: KitrApp }): Promise<Response>
   /** Mount `POST <path>` (receive) and `GET <path>/:key` (serve) on a kitr server. */
   mount<S extends { h3: any; app?: KitrApp }>(server: S, path?: string): S
+  /** The config this service was made from. */
+  readonly config: UploadsConfig
   /** The driver files are stored with. */
   readonly driver: UploadsDriver
 }
@@ -196,16 +211,60 @@ declare module '@kitr/core' {
 const INLINE_TYPES =
   /^(image\/(png|jpeg|gif|webp|avif|bmp|x-icon)|video\/[\w.+-]+|audio\/[\w.+-]+|application\/pdf|text\/plain)(\s*;.*)?$/i
 
-/** Headers for serving a stored file: never sniffed, sandboxed, and inline only when that is safe. */
-export function servedFileHeaders(type: string, name?: string): Record<string, string> {
-  const inline = INLINE_TYPES.test(type)
+/** Declared types served as themselves when the bytes cannot be sniffed. */
+const DEFAULT_ALLOWED_TYPES = ['text/plain', 'text/csv', 'application/json'] as const
+
+/** Options of `servedFileHeaders`. */
+export interface ServedFileOptions {
+  /**
+   * The file's bytes. With them the type is sniffed from the signature (PNG, JPEG, PDF, ZIP...)
+   * and the declared type is only a fallback for allow-listed text formats; without them the
+   * declared type is taken as given.
+   */
+  data?: Uint8Array
+  /** Declared types that may be served as themselves when the bytes have no signature. Default `text/plain`, `text/csv`, `application/json`. */
+  allow?: string[]
+  /** Override `cache-control`. Default: public and immutable. */
+  cacheControl?: string
+}
+
+/**
+ * The type a stored file is served as, and whether a browser may show it inline: the type its bytes
+ * show (so a declared `image/png` over HTML is not an image); failing that, the declared type if
+ * allow-listed; otherwise `application/octet-stream`.
+ */
+export function resolveServedType(
+  declared: string,
+  data: Uint8Array,
+  allow: readonly string[] = DEFAULT_ALLOWED_TYPES,
+): { type: string; inline: boolean } {
+  const sniffed = sniffType(data)
+  if (sniffed) return { type: sniffed, inline: INLINE_TYPES.test(sniffed) }
+  if (matchesType(declared, allow))
+    return { type: declared, inline: /^text\/plain(\s*;.*)?$/i.test(declared) }
+  return { type: 'application/octet-stream', inline: false }
+}
+
+/**
+ * Headers for serving a stored file: never sniffed by the browser (`nosniff`), sandboxed, and
+ * inline only when that is safe; everything else is a download (`Content-Disposition: attachment`).
+ * Pass the bytes in `options.data` so the type comes from them, not from the uploader.
+ */
+export function servedFileHeaders(
+  type: string,
+  name?: string,
+  options: ServedFileOptions = {},
+): Record<string, string> {
+  const served = options.data
+    ? resolveServedType(type, options.data, options.allow)
+    : { type, inline: INLINE_TYPES.test(type) }
   const filename = name ? `; filename="${name.replace(/["\\\r\n]/g, '_')}"` : ''
   return {
-    'content-type': inline ? type : 'application/octet-stream',
-    'content-disposition': `${inline ? 'inline' : 'attachment'}${filename}`,
+    'content-type': served.inline || options.data ? served.type : 'application/octet-stream',
+    'content-disposition': `${served.inline ? 'inline' : 'attachment'}${filename}`,
     'x-content-type-options': 'nosniff',
     'content-security-policy': "default-src 'none'; img-src 'self'; media-src 'self'; sandbox",
-    'cache-control': 'public, max-age=31536000, immutable',
+    'cache-control': options.cacheControl ?? 'public, max-age=31536000, immutable',
   }
 }
 
@@ -240,8 +299,11 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
         ? `${config.publicPath.replace(/\/$/, '')}/${key}`
         : undefined,
   })
+  if (config.requireSigned && !config.secret)
+    throw new Error('[@kitr/uploads] requireSigned needs `secret` in config/uploads.ts.')
   const uploads: Uploads = {
     driver,
+    config,
     async store(file) {
       const key = `${crypto.randomUUID()}/${safeName(file.name)}`
       await driver.put(key, file.data, { type: file.type, name: file.name })
@@ -281,18 +343,65 @@ export function createUploads(config: UploadsConfig = {}): Uploads {
     },
     read: (key) => driver.get(key),
     remove: (key) => driver.delete(key),
+    async signedUrl(key, options) {
+      if (!config.secret)
+        throw new Error('[@kitr/uploads] signedUrl() needs `secret` in config/uploads.ts.')
+      const base = (options.path ?? '/api/uploads').replace(/\/$/, '')
+      return signedUrl(`${base}/${key.split('/').map(encodeURIComponent).join('/')}`, {
+        expiresIn: options.expiresIn,
+        secret: config.secret,
+      })
+    },
+    async serve(event, options = {}) {
+      const base = (options.base ?? '/api/uploads').replace(/\/$/, '')
+      const url = new URL(event.req.url)
+      let key: string
+      try {
+        key = decodeURIComponent(url.pathname.slice(base.length + 1))
+      } catch {
+        throw KitrError.notFound('File')
+      }
+      // A link that carries a signature must verify: a bad or expired one is refused, not
+      // quietly treated as an unsigned request.
+      const check = await verifySignedUrl(url, config.secret ?? '')
+      if (check === 'expired') throw KitrError.forbidden('This link has expired')
+      if (check === 'invalid') throw KitrError.forbidden('This link is not valid')
+      if (check === 'unsigned' && config.requireSigned)
+        throw KitrError.forbidden('A signed link is required')
+      const file = await driver.get(key)
+      if (!file) throw KitrError.notFound('File')
+      const allow = config.allowTypes
+      const served = resolveServedType(file.type, file.data, allow)
+      const name = key.split('/').pop() ?? key
+      if (check === 'unsigned' && config.authorize) {
+        const app = options.app ?? (event.context as { kitr?: { app?: KitrApp } }).kitr?.app
+        if (!app)
+          throw new Error(
+            '[@kitr/uploads] authorize needs the app: mount uploads on a kitr server.',
+          )
+        const allowed = await config.authorize(
+          { event, request: event.req as unknown as Request, app },
+          { key, name, type: served.type, size: file.data.byteLength },
+        )
+        if (!allowed) throw KitrError.forbidden('You cannot open this file')
+      }
+      // Files behind a link or a check are not for shared caches.
+      const restricted = check === 'ok' || !!config.authorize
+      return new Response(file.data as BodyInit, {
+        headers: servedFileHeaders(file.type, name, {
+          data: file.data,
+          allow,
+          cacheControl: restricted ? 'private, max-age=300' : undefined,
+        }),
+      })
+    },
     mount(server, path = '/api/uploads') {
       const base = path.replace(/\/$/, '')
       raiseBodyLimit(server as never, base, config)
       server.h3.post(base, async (event: H3Event) => ({ files: await uploads.receive(event) }))
-      server.h3.get(`${base}/**`, async (event: H3Event) => {
-        const key = decodeURIComponent(new URL(event.req.url).pathname.slice(base.length + 1))
-        const file = await driver.get(key)
-        if (!file) throw KitrError.notFound('File')
-        return new Response(file.data as BodyInit, {
-          headers: servedFileHeaders(file.type, key.split('/').pop()),
-        })
-      })
+      server.h3.get(`${base}/**`, (event: H3Event) =>
+        uploads.serve(event, { base, app: server.app }),
+      )
       return server
     },
   }
@@ -337,15 +446,10 @@ export function mountUploads<
   server.h3.post(base, async (event: H3Event) => ({
     files: await useUploads(server.app).receive(event),
   }))
-  server.h3.get(`${base}/**`, async (event: H3Event) => {
-    const key = decodeURIComponent(new URL(event.req.url).pathname.slice(base.length + 1))
-    const file = await useUploads(server.app).driver.get(key)
-    if (!file) throw KitrError.notFound('File')
-    // The type is whatever the uploader declared: never serve it as-is (an SVG or HTML upload
-    // would run script as the site).
-    return new Response(file.data as BodyInit, {
-      headers: servedFileHeaders(file.type, key.split('/').pop()),
-    })
-  })
+  // The service is resolved per request. The file's bytes decide its type, not what the uploader
+  // declared (an SVG or HTML upload would run script as the site).
+  server.h3.get(`${base}/**`, (event: H3Event) =>
+    useUploads(server.app).serve(event, { base, app: server.app }),
+  )
   return server
 }

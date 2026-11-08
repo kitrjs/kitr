@@ -4,6 +4,7 @@ import { copyDecoders, DEFAULT_DECODER_DIR } from './decoders'
  * `kitr 3d:decoders`. A plain command object (citty's shape), so this module needs no CLI
  * dependency; the kitr CLI mounts it when `@kitr/3d` is in kitrrc.ts.
  */
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const decoders = {
   meta: {
     name: '3d:decoders',

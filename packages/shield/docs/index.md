@@ -131,7 +131,7 @@ The response now carries the shield's headers:
 
 ```http
 HTTP/1.1 200 OK
-content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+content-security-policy: default-src 'self'; script-src 'self' 'nonce-Zr3x0u6Gm1l8dQe0c8Z0Nw=='; style-src 'self' 'nonce-Zr3x0u6Gm1l8dQe0c8Z0Nw=='; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 permissions-policy: camera=(), microphone=(), geolocation=()
 ratelimit-limit: 300
 ratelimit-remaining: 299
@@ -188,19 +188,70 @@ Set a header to `false` to leave it out, for example when a proxy in front of th
 
 ## Tighten the Content-Security-Policy
 
-`DEFAULT_CSP` allows scripts, styles, fonts and images from your own origin only, plus inline scripts and styles, which server-rendered React needs. Connections may go to your origin and to any WebSocket. Nothing may frame the page. The full value:
+`DEFAULT_CSP` allows scripts, styles, fonts and images from your own origin only. Inline `<script>` and `<style>` tags run only when they carry the request's nonce, a random value the shield makes for every response and puts in the header as `'nonce-<value>'`. Server-rendered React needs a few inline tags (TanStack Start's hydration data, the theme script), and the nonce lets those through while an injected `<script>` from user content, which has no nonce, stays blocked. Connections may go to your origin and to any WebSocket. Nothing may frame the page. `DEFAULT_CSP` is a template; `{nonce}` stands for the request's value:
 
 ```ts
 // server/security/csp.ts
 import { DEFAULT_CSP } from '@kitr/shield'
 
 console.log(DEFAULT_CSP)
-// => default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
-//    img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:;
-//    frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+// => default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}';
+//    style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:;
+//    connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 ```
 
-When a page loads something from another origin, write the whole policy. Acme loads Stripe.js, avatars from `cdn.acme.com` and calls the API from the dashboard:
+`style-src-attr 'unsafe-inline'` covers `style="..."` attributes only; they cannot run script, and React writes them for every `style={{ ... }}` prop on the server. Outside production, styles also allow `'unsafe-inline'`, because Vite's dev server injects `<style>` tags without a nonce.
+
+### Pages get the nonce
+
+The nonce lives in the request context of `@kitr/server`, so pages must be rendered inside the server's middleware. A new React app's `app/server.ts` does that:
+
+```ts
+// app/server.ts
+import handler, { createServerEntry } from '@tanstack/react-start/server-entry'
+import { server } from '#server/main'
+
+export default createServerEntry({
+  fetch(request, options) {
+    return server.fetch(request, {
+      pages: (request) => {
+        return handler.fetch(request, options)
+      },
+    })
+  },
+})
+```
+
+Paths the server has routes for are answered there; every other path goes to `pages`, with the shield's headers on the response. An older `app/server.ts` that calls `handler.fetch` for pages directly still works, but pages then get no shield headers at all: replace its `fetch` with the one above. Rate limiting and CSRF checks do not apply to pages (they are the renderer's); the CSRF cookie is still set on them so the first `POST` to your API has a token to send.
+
+Then the nonce reaches every inline tag without further code:
+
+- `createKitrRouter` reads it and sets `router.options.ssr.nonce`, which TanStack Start puts on its hydration scripts, `<HeadContent />` and `<Scripts />`.
+- `<ThemeScript />` from `@kitr/theme` puts it on its script and style.
+- Your own inline tags read it with `useCspNonce()`, which returns `undefined` in the browser and outside a request:
+
+```tsx
+// app/components/analytics-snippet.tsx
+import { useCspNonce } from '@kitr/shield'
+
+export function AnalyticsSnippet() {
+  const nonce = useCspNonce()
+  return (
+    <script
+      nonce={nonce}
+      suppressHydrationWarning
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: a fixed snippet, no user input
+      dangerouslySetInnerHTML={{ __html: "window.dataLayer = window.dataLayer || []" }}
+    />
+  )
+}
+```
+
+The browser hides a tag's nonce once it has accepted it, so the browser's render has none to compare with the server's; `suppressHydrationWarning` on the tag says that mismatch is expected. Code that has the h3 event instead of React uses `getCspNonce(event)`.
+
+### Write the whole policy
+
+When a page loads something from another origin, write the whole policy and put `{nonce}` where inline tags should be allowed. Acme loads Stripe.js, avatars from `cdn.acme.com` and calls the API from the dashboard:
 
 ```ts
 // config/shield.ts
@@ -208,8 +259,9 @@ import { defineConfig } from '@kitr/shield'
 
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com",
-  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'nonce-{nonce}' https://js.stripe.com",
+  "style-src 'self' 'nonce-{nonce}'",
+  "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob: https://cdn.acme.com",
   "font-src 'self' data:",
   "connect-src 'self' https://api.acme.com wss://api.acme.com",
@@ -227,6 +279,35 @@ export default defineConfig({
 A resource the policy blocks shows up as an error in the browser console, naming the directive that refused it. See [MDN's CSP reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) for every directive.
 
 Don't fix a blocked resource with `default-src *`. Add the one origin that needs it to the one directive that names it.
+
+### Trust the scripts your scripts load
+
+Acme's tag manager loads more scripts at run time from hosts that change. `strictDynamic` adds `'strict-dynamic'` to the default `script-src`: a script that carries the nonce is trusted, and so is every script it adds to the page. Browsers that know `'strict-dynamic'` then ignore `'self'` and host lists for scripts, so only the nonce matters.
+
+```ts
+// config/shield.ts
+import { defineConfig } from '@kitr/shield'
+
+export default defineConfig({
+  headers: { strictDynamic: true },
+})
+```
+
+### Allow every inline script
+
+A third-party widget that writes its own `<script>` or `<style>` tags into the page cannot have a nonce, and the policy blocks it. If you cannot replace it, `unsafeInline: true` restores the policy kitr shipped before nonces: `'unsafe-inline'` for scripts and styles, no nonce.
+
+```ts
+// config/shield.ts
+import { defineConfig } from '@kitr/shield'
+
+export default defineConfig({
+  headers: { unsafeInline: true },
+})
+```
+
+> **Warning**
+> With `'unsafe-inline'` in `script-src`, any markup that reaches the page, such as unescaped user content, runs script as your site. The CSP no longer limits that. Prefer a widget that accepts a nonce, or load it in an iframe from its own origin with `frame-src`.
 
 ## Turn on HSTS in production
 
@@ -256,6 +337,8 @@ export default defineConfig({
   cors: { origin: ['https://app.acme.com'], credentials: true },
 })
 ```
+
+`origin` takes `'*'`, one origin, a list or a function `(origin) => boolean`. The `cors()` that `@kitr/api` exports for route groups is this one: the same options and the same rules, fitted to route middleware, so a policy written for either works in both.
 
 A request from `https://app.acme.com` now gets `Access-Control-Allow-Origin: https://app.acme.com`, `Access-Control-Allow-Credentials: true` and `Vary: Origin`. A preflight (`OPTIONS`) from it gets `204 No Content` with the allowed methods, headers and max-age, before any route, rate limit or CSRF check runs. A request from any other origin gets no CORS headers, so the browser blocks the read.
 

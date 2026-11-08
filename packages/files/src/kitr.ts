@@ -6,6 +6,12 @@ export default definePackage({
   requires: ['platform'],
   client: true,
   add(ctx) {
+    // With the mobile platform the Capacitor driver needs its plugins; the web build never loads them.
+    if (
+      ctx.has('@capacitor/core') ||
+      Object.values(ctx.rc.platforms).some((p) => p.factory === 'mobile')
+    )
+      ctx.deps.add('@capacitor/filesystem', '@capacitor/share', '@capawesome/capacitor-file-picker')
     ctx.provider.add('@kitr/files/provider')
     ctx.config(
       'files',

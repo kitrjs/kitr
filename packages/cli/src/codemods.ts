@@ -1,7 +1,8 @@
 import { execSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { builders, generateCode, parseModule } from 'magicast'
-import type { ProjectContext } from './context'
+import { type ProjectContext, projectBin } from './context'
+import { findRcBlock, insertEntry, quoteOf, removeEntries } from './rc-text'
 import { versionOf } from './versions'
 
 /** Which route table a package extends: pages (`app`) or endpoints and sockets (`server`). */
@@ -32,42 +33,103 @@ export class Codemods {
   }
 
   /** Add a provider lazy import to kitrrc.ts (`() => import('x')`). Idempotent. */
-  addProvider(spec: string) {
-    this.editRc((mod, src) => {
-      if (hasImportOf(src, spec)) return
-      ensureArray(mod, 'providers').push(builders.raw(`() => import('${spec}')`))
-    })
+  addProvider(spec: string, comment?: string) {
+    this.editRcList('providers', { add: { spec, lazy: true } })
+    if (comment) this.commentProvider(spec, comment)
+  }
+
+  /** A `// comment` line above the provider's lazy import, once. */
+  private commentProvider(spec: string, comment: string) {
+    const rcPath = this.ctx.rcPath ?? this.ctx.path('kitrrc.ts')
+    if (this.ctx.dryRun || !existsSync(rcPath)) return
+    const lines = readFileSync(rcPath, 'utf8').split('\n')
+    const at = lines.findIndex((line) => line.includes(`import('${spec}')`))
+    if (at < 0 || lines[at - 1]?.trim() === `// ${comment}`) return
+    const line = lines[at]!
+    const indent = /^\s*/.exec(line)![0]
+    // `providers: [() => import('x')]` on one line: open the array so the comment has a line of its own.
+    const inline = /^(\s*)providers:\s*\[(\(\) => import\('[^']+'\))\](,?)$/.exec(line)
+    if (inline) {
+      lines.splice(
+        at,
+        1,
+        `${indent}providers: [`,
+        `${indent}  // ${comment}`,
+        `${indent}  ${inline[2]},`,
+        `${indent}]${inline[3]}`,
+      )
+    } else if (/^\s*\(\) => import\(/.test(line)) {
+      lines.splice(at, 0, `${indent}// ${comment}`)
+    } else return
+    writeFileSync(rcPath, lines.join('\n'))
   }
   removeProvider(spec: string) {
-    // Lazy imports are opaque to magicast's proxies, so match them by their generated source.
-    this.editRc((mod) => {
-      const providers = ensureArray(mod, 'providers')
-      for (let i = providers.length - 1; i >= 0; i--) {
-        if (hasImportOf(generateCode(providers[i]).code, spec)) providers.splice(i, 1)
-      }
-    })
+    this.editRcList('providers', { remove: (text) => hasImportOf(text, spec) })
   }
   addPackage(name: string) {
-    this.editRc((mod) => {
-      const packages = ensureArray(mod, 'packages')
-      if (!packages.includes(name)) packages.push(name)
-    })
+    this.editRcList('packages', { add: { spec: name, lazy: false } })
   }
   removePackage(name: string) {
-    this.editRc((mod) => {
-      const packages = ensureArray(mod, 'packages')
-      for (let i = packages.length - 1; i >= 0; i--) {
-        const v = packages[i]
-        const text = typeof v === 'string' ? v : generateCode(v).code.replace(/^['"]|['"]$/g, '')
-        if (text === name) packages.splice(i, 1)
-      }
+    this.editRcList('packages', {
+      remove: (text) => text.slice(1, -1) === name && /^['"]/.test(text),
     })
   }
   addCommand(spec: string) {
-    this.editRc((mod, src) => {
-      if (hasImportOf(src, spec)) return
-      ensureArray(mod, 'commands').push(builders.raw(`() => import('${spec}')`))
-    })
+    this.editRcList('commands', { add: { spec, lazy: true } })
+  }
+
+  /**
+   * Edit one list of kitrrc.ts (`packages`, `providers`, `commands`) as text. The list's own
+   * entries, their order, comments, quotes and indentation are never reprinted: an added entry is
+   * inserted after the last one in the style of the others, and a removed entry takes its own line
+   * with it. Falls back to a structural edit when the list does not exist yet.
+   */
+  private editRcList(
+    key: 'packages' | 'providers' | 'commands',
+    edit: { add?: { spec: string; lazy: boolean }; remove?: (elementSource: string) => boolean },
+  ) {
+    const rcPath = this.ctx.rcPath ?? this.ctx.path('kitrrc.ts')
+    if (!existsSync(rcPath)) {
+      this.ctx.write(
+        'kitrrc.ts',
+        `import { defineKitrConfig } from 'kitr/app'\n\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n})\n`,
+      )
+      this.ctx.rcPath = rcPath
+    }
+    if (this.ctx.dryRun) return
+    const src = readFileSync(rcPath, 'utf8')
+    const list = findRcBlock(src, key, '[')
+    if (!list) {
+      // No such list yet: let magicast create it.
+      return this.editRc((mod) => {
+        if (!edit.add) return
+        const { spec, lazy } = edit.add
+        ensureArray(mod, key).push(lazy ? builders.raw(`() => import('${spec}')`) : spec)
+      })
+    }
+    let next = src
+    if (edit.add) {
+      const { spec, lazy } = edit.add
+      const present = list.elements.some((el) => {
+        const text = src.slice(el.start, el.end)
+        return lazy ? hasImportOf(text, spec) : text.slice(1, -1) === spec && /^['"]/.test(text)
+      })
+      if (present) return
+      const quote = quoteOf(src, list)
+      next = insertEntry(
+        src,
+        list,
+        lazy ? `() => import(${quote}${spec}${quote})` : `${quote}${spec}${quote}`,
+      )
+    }
+    if (edit.remove) {
+      const doomed = list.elements.filter((el) => edit.remove?.(src.slice(el.start, el.end)))
+      if (!doomed.length) return
+      next = removeEntries(src, list, doomed)
+    }
+    if (next === src) return
+    writeFileSync(rcPath, next)
+    this.ctx.touched.add('kitrrc.ts')
   }
 
   private editRc(edit: (mod: any, src: string) => void) {
@@ -235,7 +297,7 @@ export class Codemods {
 
   /**
    * Make the project ready for `kitr types`: the `#kitr/*` path and `.kitr` include in
-   * tsconfig.json, `.kitr` in .gitignore, and `kitr types` before `tsc` in the typecheck script.
+   * tsconfig.json, `.kitr` in .gitignore, and the typecheck script going through `kitr typecheck`.
    * Projects from `kitr new` have all of it; this brings older ones up to date. Idempotent.
    */
   enableGeneratedTypes() {
@@ -269,8 +331,12 @@ export class Codemods {
     }
     const pkg = this.ctx.pkg
     const typecheck: string | undefined = pkg.scripts?.typecheck
-    if (typecheck && !typecheck.includes('kitr types'))
-      this.setScript('typecheck', `kitr types && ${typecheck}`)
+    // `kitr typecheck` generates, then runs tsc; a script already calling kitr is left alone.
+    if (typecheck && !/\bkitr (types|generate|typecheck)\b/.test(typecheck))
+      this.setScript(
+        'typecheck',
+        /^tsc( --noEmit)?$/.test(typecheck) ? 'kitr typecheck' : `kitr generate && ${typecheck}`,
+      )
     if (pkg.imports && !pkg.imports['#kitr/*']) {
       this.setPackageField('imports', { ...pkg.imports, '#kitr/*': './.kitr/*' })
     }
@@ -398,7 +464,7 @@ export class Codemods {
         /\.(ts|tsx|js|mjs|json)$/.test(f) && f !== 'package.json' && existsSync(this.ctx.path(f)),
     )
     if (!files.length) return
-    const bin = this.ctx.path('node_modules', '.bin', 'biome')
+    const bin = projectBin(this.ctx.root, 'biome')
     if (!existsSync(bin)) return
     try {
       execSync(`"${bin}" format --write ${files.map((f) => `"${f}"`).join(' ')}`, {

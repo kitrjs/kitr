@@ -64,6 +64,7 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
 }
 
 /** A schema that accepts anything; used as the default when no input schema is given. */
+// kitr-allow-module-state: constant schema that accepts anything, never mutated
 export const anySchema: StandardSchemaV1<unknown, unknown> = {
   '~standard': { version: 1, vendor: 'kitr', validate: (value) => ({ value }) },
 }

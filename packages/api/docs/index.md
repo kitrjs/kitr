@@ -384,7 +384,21 @@ The context carries everything about the request:
 | `event` | The underlying h3 event. |
 | `validate(schema, source)` | Validates `body`, `query` or `params` on demand. |
 
-kitr creates one instance of each controller class and reuses it for every request. Don't store request data on `this`; keep it in local variables or `ctx.locals`.
+kitr builds a new instance of the controller for every request, from that request's container (`app.container.make(Controller)`), so a controller can take services and keep per-request state in its fields. List the bindings its constructor needs in `static inject`, in order; a controller without `inject` is built with no arguments:
+
+```ts
+// server/controllers/projects_controller.ts
+import type { Db } from '#server/db'
+
+export default class ProjectsController {
+  static inject = ['db'] as const
+  constructor(private db: Db) {}
+
+  async index() {
+    return this.db.projects.all()
+  }
+}
+```
 
 ## Validate input
 
@@ -623,7 +637,7 @@ Middleware runs outer to inner: group middleware first, then route middleware, t
 
 ## Allow cross-origin requests
 
-`cors()` answers browser preflight requests and sets the CORS headers for the origins you list. The generated routes file leaves it out: the app and its API share an origin, so no CORS is needed. Add it when another site calls the API:
+`cors()` answers browser preflight requests and sets the CORS headers for the origins you list. It is the same function as `cors()` in [@kitr/shield](/packages/shield), with the same options, fitted to route middleware; one policy works in both. The generated routes file leaves it out: the app and its API share an origin, so no CORS is needed. Add it when another site calls the API:
 
 ```ts
 // server/routes.ts
@@ -649,7 +663,7 @@ export type ServerRoutes = typeof routes.$types
 | --- | --- | --- |
 | `origin` | none | One origin, a list, a function `(origin) => boolean`, or `'*'` for a public API. With none, no cross-origin caller is allowed. `'*'` with `credentials` throws, because it would let any site act as the user. |
 | `methods` | `GET, POST, PUT, PATCH, DELETE, OPTIONS` | `access-control-allow-methods` on preflight. |
-| `headers` | `Content-Type, Authorization` | `access-control-allow-headers` on preflight. |
+| `headers` | `Content-Type, Authorization, X-CSRF-Token, X-Requested-With` | `access-control-allow-headers` on preflight. Earlier releases allowed only the first two, so a client that sent the CSRF header needed it listed. |
 | `credentials` | `false` | Sends `access-control-allow-credentials: true`, needed for cookies. |
 | `maxAge` | `600` | Seconds a browser may cache the preflight. |
 
@@ -1176,3 +1190,4 @@ To test one middleware, call it with a minimal context and a `next` function. Ea
 - [Query](/packages/query): the contracts the client produces
 - [Forms](/packages/forms): showing `fieldErrors` on fields
 - [Build an API server without React](/guides/api-server)
+- [Choosing a data source](/docs/data-sources): when to use API routes and when to use actions, API routes, HTTP or realtime.

@@ -32,14 +32,17 @@ export interface RcInfo {
 }
 
 export interface RcPlatform {
-  /** The factory called (`web`, `server`...), which is the platform type for kitr's packages. */
+  /** The factory called (`web`, `server`...), by its exported name: the platform type for kitr's packages. */
   factory: string
+  /** The name the factory is called by in kitrrc.ts, when the import renames it (`web as webPlatform`). */
+  local?: string
   /** Where the factory is imported from, when it is (`@kitr/web`). */
   source?: string
   /** Literal options, when they parse as JSON-ish; otherwise undefined. */
   options?: Record<string, unknown>
 }
 
+// kitr-allow-module-state: CLI logger, stateless functions
 export const log = {
   info: (msg: string) => console.log(`${pc.cyan('ℹ')} ${msg}`),
   success: (msg: string) => console.log(`${pc.green('✔')} ${msg}`),
@@ -110,12 +113,13 @@ export function readRcInfo(rcPath: string | undefined): RcInfo {
 /** Static read of the `platforms` dictionary. Nothing is executed; `loadPlatforms()` does that. */
 export function readRcPlatforms(src: string): Record<string, RcPlatform> {
   const out: Record<string, RcPlatform> = {}
-  const imports = new Map<string, string>()
+  const imports = new Map<string, { source: string; imported: string }>()
   for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g))
     for (const name of m[1]!.split(',')) {
       const parts = name.trim().split(/\s+as\s+/)
+      const imported = parts[0]!.trim()
       const local = (parts[1] ?? parts[0])!.trim()
-      if (local) imports.set(local, m[2]!)
+      if (local) imports.set(local, { source: m[2]!, imported })
     }
   const start = src.search(/platforms\s*:\s*\{/)
   if (start < 0) return out
@@ -148,7 +152,14 @@ export function readRcPlatforms(src: string): Record<string, RcPlatform> {
         options = new Function(`return (${arg})`)()
       } catch {}
     }
-    out[name] = { factory, source: imports.get(factory), options }
+    const from = imports.get(factory)
+    const renamed = from !== undefined && from.imported !== factory
+    out[name] = {
+      factory: from?.imported ?? factory,
+      ...(renamed ? { local: factory } : {}),
+      source: from?.source,
+      options,
+    }
     entry.lastIndex = i
   }
   return out
@@ -176,7 +187,7 @@ export function createContext(
     read: (...parts) => readFileSync(join(root, ...parts), 'utf8'),
     write(path, content, { overwrite = false } = {}) {
       const full = resolve(root, path)
-      const rel = relative(root, full)
+      const rel = relative(root, full).split('\\').join('/')
       if (existsSync(full) && !overwrite) {
         if (ctx.verbose) log.step(`skip ${rel} (exists)`)
         return false
@@ -197,12 +208,20 @@ export function createContext(
       const rc = ctx.readRc()
       return (
         !('react' in deps) &&
+        // Installed from a registry, every package is added to package.json before any setup
+        // module runs, so @kitr/react can be there before `react` is in kitrrc.ts.
+        !('@kitr/react' in deps) &&
         !rc.packages.includes('@kitr/react') &&
         ('@kitr/server' in deps || rc.packages.includes('@kitr/server'))
       )
     },
   }
   return ctx
+}
+
+/** A binary in the project's node_modules/.bin. On Windows the runnable shim is `<name>.cmd`. */
+export function projectBin(root: string, name: string): string {
+  return join(root, 'node_modules', '.bin', process.platform === 'win32' ? `${name}.cmd` : name)
 }
 
 function cliVersion(): string {

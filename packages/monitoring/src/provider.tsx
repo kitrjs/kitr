@@ -23,8 +23,8 @@ export interface ErrorBoundaryProps {
  * Errors already reported. React retries a failed render once (and StrictMode renders twice), which
  * throws a fresh error object each time, so errors are also keyed by name and message until the current task yields.
  */
-const reportedByBoundary = new WeakSet<object>()
-const recentKeys = new Set<string>()
+const reportedByBoundary = new WeakSet<object>() // kitr-allow-module-state: dedupes the retries of one render pass by error object; weakly held, so it keeps nothing alive
+const recentKeys = new Set<string>() // kitr-allow-module-state: dedupes StrictMode double renders by message and is cleared when the current task yields; shared by apps on a page on purpose, so one error is reported once
 function seen(error: unknown): boolean {
   if (error && typeof error === 'object') {
     if (reportedByBoundary.has(error)) return true

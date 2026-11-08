@@ -1,4 +1,13 @@
 import { createDefineConfig, getDevtools, type KitrApp } from '@kitr/core'
+import { runtimeOf } from '@kitr/platform'
+import { selectDriver } from './driver'
+
+export { type Driver, type DriverOptions, selectDriver } from './driver'
+export { createCapacitorDriver as createCapacitorUpdaterDriver } from './drivers/capacitor'
+export { createElectronDriver as createElectronUpdaterDriver } from './drivers/electron'
+export { createMemoryUpdaterDriver } from './drivers/memory'
+export { createTauriDriver as createTauriUpdaterDriver } from './drivers/tauri'
+export { createServiceWorkerUpdaterDriver } from './drivers/web'
 
 /**
  * One check/apply flow for new versions. On the web the driver watches the service worker
@@ -53,6 +62,11 @@ export interface UpdaterConfig {
   checkOnBoot?: boolean
   /** Apply as soon as an update is ready, without asking. Default false. */
   auto?: boolean
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no updater driver, use the service-worker
+   * driver inside the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean
 }
 
 /** A snapshot of the updater, replaced on every change. */
@@ -103,119 +117,15 @@ declare module '@kitr/core' {
 export const defineConfig = createDefineConfig<UpdaterConfig>()
 
 /**
- * Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
- * to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
- */
-export function createServiceWorkerUpdaterDriver(
-  options: { version?: string } = {},
-): UpdaterDriver {
-  const sw = () => (typeof navigator === 'undefined' ? undefined : navigator.serviceWorker)
-  let waiting: ServiceWorker | null = null
-  const listeners = new Set<(info: UpdateInfo) => void>()
-  const announce = () => {
-    const info = { version: options.version ? `${options.version}+` : 'new' }
-    for (const l of listeners) l(info)
-  }
-  const watch = (reg: ServiceWorkerRegistration) => {
-    if (reg.waiting) {
-      waiting = reg.waiting
-      announce()
-    }
-    reg.addEventListener('updatefound', () => {
-      const installing = reg.installing
-      installing?.addEventListener('statechange', () => {
-        if (installing.state === 'installed' && sw()?.controller) {
-          waiting = installing
-          announce()
-        }
-      })
-    })
-  }
-  let watched = false
-  const ensure = async () => {
-    const api = sw()
-    if (!api || watched) return
-    watched = true
-    const reg = await api.getRegistration()
-    if (reg) watch(reg)
-  }
-  return {
-    name: 'service-worker',
-    async check() {
-      const api = sw()
-      if (!api) return null
-      await ensure()
-      const reg = await api.getRegistration()
-      if (!reg) return null
-      await reg.update()
-      return reg.waiting ? { version: options.version ? `${options.version}+` : 'new' } : null
-    },
-    async apply() {
-      const api = sw()
-      if (!api) return
-      const reg = await api.getRegistration()
-      const target = waiting ?? reg?.waiting
-      if (!target) return
-      await new Promise<void>((resolve) => {
-        api.addEventListener('controllerchange', () => resolve(), { once: true })
-        target.postMessage({ type: 'SKIP_WAITING' })
-        setTimeout(resolve, 2000)
-      })
-      location.reload()
-    },
-    onAvailable(listener) {
-      listeners.add(listener)
-      void ensure()
-      return () => {
-        listeners.delete(listener)
-      }
-    },
-    currentVersion: async () => options.version ?? '0.0.0',
-  }
-}
-
-/** For tests and the server: set `next` to simulate an available update. */
-export function createMemoryUpdaterDriver(
-  options: { version?: string; next?: UpdateInfo | null } = {},
-) {
-  const listeners = new Set<(info: UpdateInfo) => void>()
-  const driver = {
-    name: 'memory',
-    next: options.next ?? null,
-    applied: [] as UpdateInfo[],
-    check: async () => driver.next,
-    apply: async (onProgress?: (f: number) => void) => {
-      onProgress?.(0.5)
-      onProgress?.(1)
-      if (driver.next) driver.applied.push(driver.next)
-      driver.next = null
-    },
-    onAvailable(listener: (info: UpdateInfo) => void) {
-      listeners.add(listener)
-      return () => {
-        listeners.delete(listener)
-      }
-    },
-    announce(info: UpdateInfo) {
-      driver.next = info
-      for (const l of listeners) l(info)
-    },
-    currentVersion: async () => options.version ?? '1.0.0',
-  }
-  return driver satisfies UpdaterDriver
-}
-
-/**
  * Build the `updater` service. The driver is `config.driver`, else the one registered on `app`, else
- * the service-worker driver in a browser. Starts the `interval` checks and the driver listener.
+ * `selectDriver()` for the runtime (the service-worker driver in a browser, `E_DRIVER_UNAVAILABLE` in a
+ * native shell unless `fallbackToWeb` is set). Starts the `interval` checks and the driver listener.
  */
 export function createUpdater(config: UpdaterConfig = {}, app?: KitrApp): Updater {
   const driver =
     config.driver ??
     app?.drivers.resolve('updater') ??
-    (typeof window === 'undefined'
-      ? createMemoryUpdaterDriver()
-      : createServiceWorkerUpdaterDriver())
+    selectDriver(runtimeOf(app), { fallbackToWeb: config.fallbackToWeb })
   const log = (label: string, data?: unknown) =>
     app && getDevtools(app)?.log('updater', label, data)
   const listeners = new Set<() => void>()

@@ -1,7 +1,6 @@
 {
   "name": "@kitr/tauri",
   "version": "0.1.0",
-  "private": true,
   "description": "@kitr/tauri: the desktop platform with a Tauri shell. Rust project in platforms/<name>/src-tauri, typed commands and events, storage drivers, installers.",
   "kitr": {
     "name": "tauri",
@@ -70,7 +69,14 @@
     "@tauri-apps/api": ">=2.0.0",
     "@tauri-apps/plugin-store": ">=2.0.0",
     "@tauri-apps/plugin-opener": ">=2.0.0",
-    "@tauri-apps/plugin-process": ">=2.0.0"
+    "@tauri-apps/plugin-process": ">=2.0.0",
+    "@tauri-apps/plugin-clipboard-manager": ">=2.0.0",
+    "@tauri-apps/plugin-dialog": ">=2.0.0",
+    "@tauri-apps/plugin-fs": ">=2.0.0",
+    "@tauri-apps/plugin-notification": ">=2.0.0",
+    "@tauri-apps/plugin-os": ">=2.0.0",
+    "@tauri-apps/plugin-stronghold": ">=2.0.0",
+    "@tauri-apps/plugin-updater": ">=2.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -86,6 +92,27 @@
       "optional": true
     },
     "@tauri-apps/plugin-process": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-clipboard-manager": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-dialog": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-fs": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-notification": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-os": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-stronghold": {
+      "optional": true
+    },
+    "@tauri-apps/plugin-updater": {
       "optional": true
     }
   },

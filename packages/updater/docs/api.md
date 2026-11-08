@@ -6,9 +6,37 @@ order: 2
 
 # API reference
 
-Every export of `@kitr/updater`, `@kitr/updater/react`, `@kitr/updater/provider`, read from the published type definitions. The [guide](/packages/updater/guide) shows them in use.
+Every export of `@kitr/updater`, `@kitr/updater/react`, `@kitr/updater/provider`, `@kitr/updater/driver`, `@kitr/updater/drivers/web`, `@kitr/updater/drivers/electron`, `@kitr/updater/drivers/tauri`, `@kitr/updater/drivers/capacitor`, read from the published type definitions. The [guide](/packages/updater/guide) shows them in use.
 
 ## @kitr/updater
+
+### createCapacitorUpdaterDriver
+
+```ts
+function createCapacitorUpdaterDriver(_options?: DriverOptions): Driver;
+```
+
+Updater for the Capacitor shell on `@capawesome/capacitor-app-update`, which asks the store
+rather than a server of yours. Android uses Play in-app updates: a flexible update downloads in
+the background with progress and restarts on `apply()`, and a high-priority update (4 or 5) or a
+device that only allows it uses the immediate, full-screen flow. iOS cannot install in place, so
+`apply()` opens the App Store page. The service-worker path stays web-only.
+
+### createElectronUpdaterDriver
+
+```ts
+function createElectronUpdaterDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Electron shell, on `electron-updater` in the main process (served
+over the `kitr:updater:*` channels of `handleKitrIpc()`). `check()` asks the update feed in
+`electron-builder.yml`'s `publish` block, `apply()` downloads the installer, reports progress
+and restarts into it with `quitAndInstall()`, and `onAvailable` fires when main finds an update
+on its own. `electron-updater` is an optional peer, imported by main on first use: when it is
+missing every method rejects with `E_DRIVER_UNAVAILABLE`. It only updates packaged apps; in
+development `check()` resolves to null.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
 
 ### createMemoryUpdaterDriver
 
@@ -41,6 +69,18 @@ function createServiceWorkerUpdaterDriver(options?: {
 Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
 to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
 
+### createTauriUpdaterDriver
+
+```ts
+function createTauriUpdaterDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Tauri shell, on `@tauri-apps/plugin-updater` (find and install the
+signed update `tauri.conf.json`'s `plugins.updater` points at) and `@tauri-apps/plugin-process`
+(relaunch into it). Both are imported on first use and are optional peers: a missing one makes
+the method that needs it reject with `E_DRIVER_UNAVAILABLE`. `apply()` reports the download as a
+fraction when the server sends a content length.
+
 ### createUpdater
 
 ```ts
@@ -48,7 +88,19 @@ function createUpdater(config?: UpdaterConfig, app?: KitrApp): Updater;
 ```
 
 Build the `updater` service. The driver is `config.driver`, else the one registered on `app`, else
-the service-worker driver in a browser. Starts the `interval` checks and the driver listener.
+`selectDriver()` for the runtime (the service-worker driver in a browser, `E_DRIVER_UNAVAILABLE` in a
+native shell unless `fallbackToWeb` is set). Starts the `interval` checks and the driver listener.
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The updater driver for a runtime: the service-worker driver on `web` (a memory driver on the
+server), and each shell's own updater (electron-updater, the Tauri updater plugin, store or
+live-update checks). A shell with no updater driver yet throws `E_DRIVER_UNAVAILABLE` rather than
+watching a service worker that cannot update a native app, unless `fallbackToWeb` is set.
 
 ### useUpdater
 
@@ -65,6 +117,17 @@ const defineConfig: <const C extends UpdaterConfig>(config: C) => C;
 ```
 
 Types `config/updater.ts`. Returns the object unchanged.
+
+### DriverOptions
+
+```ts
+interface DriverOptions extends SelectDriverOptions {
+  /** The running build's version, reported by the web driver as `<version>+` when a new worker waits. */
+  version?: string;
+}
+```
+
+Options of `selectDriver()`.
 
 ### UpdateInfo
 
@@ -118,6 +181,11 @@ interface UpdaterConfig {
   checkOnBoot?: boolean;
   /** Apply as soon as an update is ready, without asking. Default false. */
   auto?: boolean;
+  /**
+   * In a native shell (Electron, Tauri, Capacitor) with no updater driver, use the service-worker
+   * driver inside the WebView instead of throwing `E_DRIVER_UNAVAILABLE`. Default false.
+   */
+  fallbackToWeb?: boolean;
 }
 ```
 
@@ -160,6 +228,14 @@ interface UpdaterState {
 ```
 
 A snapshot of the updater, replaced on every change.
+
+### Driver
+
+```ts
+type Driver = UpdaterDriver;
+```
+
+What an updater driver is: `UpdaterDriver`, whichever runtime supplies it.
 
 ### UpdateStatus
 
@@ -209,5 +285,96 @@ const updaterProvider: import("@kitr/core").KitrProvider;
 
 Binds `updater` to the platform updater (`updater` capability) or the service-worker driver,
 checks at boot and on the configured interval, and stops at shutdown.
+
+## @kitr/updater/driver
+
+### selectDriver
+
+```ts
+function selectDriver(runtime: Runtime, options?: DriverOptions): Driver;
+```
+
+The updater driver for a runtime: the service-worker driver on `web` (a memory driver on the
+server), and each shell's own updater (electron-updater, the Tauri updater plugin, store or
+live-update checks). A shell with no updater driver yet throws `E_DRIVER_UNAVAILABLE` rather than
+watching a service worker that cannot update a native app, unless `fallbackToWeb` is set.
+
+### DriverOptions
+
+```ts
+interface DriverOptions extends SelectDriverOptions {
+  /** The running build's version, reported by the web driver as `<version>+` when a new worker waits. */
+  version?: string;
+}
+```
+
+Options of `selectDriver()`.
+
+### Driver
+
+```ts
+type Driver = UpdaterDriver;
+```
+
+What an updater driver is: `UpdaterDriver`, whichever runtime supplies it.
+
+## @kitr/updater/drivers/web
+
+### createServiceWorkerUpdaterDriver
+
+```ts
+function createServiceWorkerUpdaterDriver(options?: {
+  version?: string;
+}): UpdaterDriver;
+```
+
+Service-worker driver: an update is "available" when a new worker is waiting; applying tells it
+to skip waiting and reloads. `version` is the running build; the update is reported as `<version>+`.
+
+## @kitr/updater/drivers/electron
+
+### createElectronDriver
+
+```ts
+function createElectronDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Electron shell, on `electron-updater` in the main process (served
+over the `kitr:updater:*` channels of `handleKitrIpc()`). `check()` asks the update feed in
+`electron-builder.yml`'s `publish` block, `apply()` downloads the installer, reports progress
+and restarts into it with `quitAndInstall()`, and `onAvailable` fires when main finds an update
+on its own. `electron-updater` is an optional peer, imported by main on first use: when it is
+missing every method rejects with `E_DRIVER_UNAVAILABLE`. It only updates packaged apps; in
+development `check()` resolves to null.
+
+Throws `E_DRIVER_UNAVAILABLE` when the preload bridge is missing (no `exposeIpc()` call).
+
+## @kitr/updater/drivers/tauri
+
+### createTauriDriver
+
+```ts
+function createTauriDriver(_options?: DriverOptions): Driver;
+```
+
+The updater driver for the Tauri shell, on `@tauri-apps/plugin-updater` (find and install the
+signed update `tauri.conf.json`'s `plugins.updater` points at) and `@tauri-apps/plugin-process`
+(relaunch into it). Both are imported on first use and are optional peers: a missing one makes
+the method that needs it reject with `E_DRIVER_UNAVAILABLE`. `apply()` reports the download as a
+fraction when the server sends a content length.
+
+## @kitr/updater/drivers/capacitor
+
+### createCapacitorDriver
+
+```ts
+function createCapacitorDriver(_options?: DriverOptions): Driver;
+```
+
+Updater for the Capacitor shell on `@capawesome/capacitor-app-update`, which asks the store
+rather than a server of yours. Android uses Play in-app updates: a flexible update downloads in
+the background with progress and restarts on `apply()`, and a high-priority update (4 or 5) or a
+device that only allows it uses the immediate, full-screen flow. iOS cannot install in place, so
+`apply()` opens the App Store page. The service-worker path stays web-only.
 
 <!-- GENERATED by scripts/api-docs.mjs from the type definitions. Do not edit. -->

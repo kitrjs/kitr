@@ -22,6 +22,7 @@ export interface MotionStep {
   easing: string
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const ease = {
   ios: 'cubic-bezier(0.32, 0.72, 0, 1)',
   android: 'cubic-bezier(0.2, 0, 0, 1)',

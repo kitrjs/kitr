@@ -2,6 +2,7 @@ import { createDefineConfig, defineProvider, getDevtools } from '@kitr/core'
 
 /** A log level, lowest to highest; `silent` drops everything and is for configuration only. */
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'silent'
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const levels: Record<LogLevel, number> = {
   trace: 10,
   debug: 20,
@@ -62,6 +63,7 @@ export interface Logger {
   time<T>(msg: string, fn: () => Promise<T>, fields?: Record<string, unknown>): Promise<T>
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 const colors: Record<LogLevel, string> = {
   trace: '\x1b[90m',
   debug: '\x1b[36m',
@@ -141,7 +143,7 @@ export function createLogger(options: LoggerOptions = {}): Logger {
   return build(options.bindings ?? {}, options.name)
 }
 
-const reserved = new Set(['level', 'time', 'msg'])
+const reserved = new Set(['level', 'time', 'msg']) // kitr-allow-module-state: constant set built once at import, never mutated
 
 /** Fields may not overwrite `level`, `time` or `msg`: filtering and formatting rely on them. */
 function withoutReserved(fields?: Record<string, unknown>): Record<string, unknown> {

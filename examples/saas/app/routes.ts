@@ -1,10 +1,8 @@
 import { defineRoutes } from 'kitr/app'
-import type { Session } from '@kitr/auth'
+import { ensureSession } from '@kitr/auth'
 import { requireAuth } from '@kitr/router'
 import router from '@kitr/router/routes'
-import { ssrRoute } from '@kitr/seo'
 import { parseTableSearch } from '@kitr/table'
-import type { User } from '#app/abilities'
 import { projectsQuery } from '#app/queries/projects'
 import { head, RootDocument } from './document'
 
@@ -21,18 +19,30 @@ export const routes = defineRoutes([router], (r) =>
       }),
       lazy: () => import('./pages/sign-in'),
     })
-    // Pathless layout: everything under it needs a session. The guard runs on the client only
-    // (the token lives in localStorage), so the layout opts out of SSR.
+    .page('/forgot-password', { lazy: () => import('./pages/forgot-password') })
+    .page('/reset-password', {
+      validateSearch: (search: Record<string, unknown>) => ({
+        token: typeof search.token === 'string' ? search.token : '',
+      }),
+      lazy: () => import('./pages/reset-password'),
+    })
+    .page('/verify-email', {
+      validateSearch: (search: Record<string, unknown>) => ({
+        token: typeof search.token === 'string' ? search.token : '',
+      }),
+      lazy: () => import('./pages/verify-email'),
+    })
+    // Pathless layout: everything under it needs a session, and renders on the server with it.
+    // `ensureSession` loads the session first: from the request while rendering on the server,
+    // from the cookie-backed /api/auth/session (cached) in the browser.
     .layout(
       '_app',
       {
-        ...ssrRoute(false),
-        beforeLoad: async ({ context, location }) => {
-          // Read the live session from the container: the router copies its context object,
-          // so a value captured at creation time would be stale after sign-in.
-          await context.app.boot()
-          const session = context.app.container.use('auth').session as Session<User>
-          return requireAuth()({ context: { session }, location })
+        beforeLoad: async (ctx) => {
+          await ensureSession(ctx)
+          // The guard redirects when signed out. Its result is dropped on purpose: it holds
+          // functions, and the route context of a server-rendered page must be serializable.
+          await requireAuth()(ctx)
         },
         lazy: () => import('./layouts/app'),
       },

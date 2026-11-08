@@ -1,0 +1,68 @@
+{
+  "default": 80,
+  "comment": "Line coverage floor per package, read by scripts/coverage-gate.mjs. Every package not listed is held at `default`. An exception needs a reason. Floors marked 'behind' were set to the package's coverage when the gate was added, minus two points: raise them as tests land, never lower them without saying why here.",
+  "packages": {
+    "desktop": {
+      "floor": 60,
+      "reason": "Electron shell: the main process and preload only run inside Electron, so only the config side is unit tested"
+    },
+    "tauri": {
+      "floor": 60,
+      "reason": "Tauri shell: the Rust-side bridge and window code only run inside a Tauri webview"
+    },
+    "mobile": {
+      "floor": 60,
+      "reason": "Capacitor shell: the native bridge only runs on a device or simulator"
+    },
+    "platform": {
+      "floor": 60,
+      "reason": "Detects and bridges Electron, Tauri and Capacitor WebViews; the branches for the real runtimes cannot execute under Node"
+    },
+    "devtools": {
+      "floor": 60,
+      "reason": "Browser overlay: its panels are exercised in a real browser by tests/e2e/devtools.spec.ts, which does not count towards v8 coverage"
+    },
+    "kit-desktop": {
+      "floor": 31,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite (kitr new --kit desktop), not by unit tests"
+    },
+    "kit-tauri": {
+      "floor": 31,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite (kitr new --kit tauri), not by unit tests"
+    },
+    "kit-mobile": {
+      "floor": 26,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite (kitr new --kit mobile), not by unit tests"
+    },
+    "kit-realtime": {
+      "floor": 11,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite and the kit-realtime Playwright projects"
+    },
+    "kit-saas": {
+      "floor": 7,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite and the saas Playwright project"
+    },
+    "kit-site": {
+      "floor": 8,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite and the kit-site Playwright project"
+    },
+    "tailwind": {
+      "floor": 18,
+      "reason": "behind: a Vite plugin and build hooks, exercised by the example builds"
+    },
+    "react": { "floor": 56, "reason": "behind" },
+    "mocks": { "floor": 57, "reason": "behind" },
+    "theme": { "floor": 58, "reason": "behind" },
+    "db": { "floor": 60, "reason": "behind" },
+    "analytics": { "floor": 65, "reason": "behind" },
+    "vite": { "floor": 68, "reason": "behind: plugin hooks that only run inside a Vite build" },
+    "monitoring": { "floor": 68, "reason": "behind" },
+    "testing": { "floor": 70, "reason": "behind" },
+    "uploads": { "floor": 71, "reason": "behind" },
+    "query": { "floor": 72, "reason": "behind" },
+    "i18n": { "floor": 73, "reason": "behind" },
+    "storage": { "floor": 73, "reason": "behind" },
+    "router": { "floor": 74, "reason": "behind" },
+    "seo": { "floor": 76, "reason": "behind" }
+  }
+}

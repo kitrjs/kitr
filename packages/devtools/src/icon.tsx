@@ -33,6 +33,7 @@ export function Icon({ icon, size = 14 }: { icon: IconSvgElement; size?: number 
   )
 }
 
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const icons = {
   close: Cancel01Icon,
   command: CommandIcon,
@@ -41,6 +42,7 @@ export const icons = {
 }
 
 /** Icons for the built-in panels; a contributed panel may register its own under `panelIcons[id]`. */
+// kitr-allow-module-state: lookup table built once at import, never mutated
 export const panelIcons: Record<string, IconSvgElement> = {
   app: DashboardSquare01Icon,
   router: Route01Icon,

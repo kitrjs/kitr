@@ -56,11 +56,12 @@ export default defineConfig({
 | `filters` | `[]` | File types added to every dialog, after the ones a call passes. Use it for your app's own document type. |
 | `filters[].name` | | The label in the dialog's file-type menu, such as `Acme projects`. |
 | `filters[].extensions` | | Extensions without the dot, such as `['acme']`. Case, leading dots and spaces are ignored; `'*'` and empty strings are dropped. |
-| `driver` | the platform's driver, else the web driver | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
+| `driver` | the platform's driver, else the driver for the runtime | Replace the dialogs. Tests pass `createMemoryFilesDriver()` here. |
+| `fallbackToWeb` | `false` | In Electron, Tauri or Capacitor with no files driver, use the web driver inside the webview instead of throwing `E_DRIVER_UNAVAILABLE`. |
 
 `@kitr/files` adds no environment variables.
 
-The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then the web driver in a browser, and an in-memory driver on the server.
+The provider binds one `files` service in the container. It picks its driver the first time the service is used: `driver` from config if set, then a driver a platform registered under the `files` capability, then `selectDriver(runtime)`: the web driver in a browser, an in-memory driver on the server, and `E_DRIVER_UNAVAILABLE` in a native shell unless `fallbackToWeb` is set.
 
 Acme's app has its own project export format, so every dialog offers it:
 
@@ -471,8 +472,12 @@ The service picks a driver once, the first time it is used. The table shows what
 | --- | --- | --- | --- | --- |
 | Chrome, Edge and other Chromium browsers | `web` | File System Access picker | Save picker, writes the chosen file | no |
 | Firefox, Safari | `web` | Hidden `<input type="file">` | Download link | no |
-| Desktop shell (Electron or Tauri) | `web`, unless you register one | The shell's webview decides | The shell's webview decides | no |
-| Mobile shell (Capacitor) | `web`, unless you register one | The system picker behind `<input type="file">` | Download link | no |
+| Desktop shell (Electron or Tauri) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The shell's webview decides | The shell's webview decides | no |
+| Mobile shell (Capacitor) | `capacitor` | The system document picker | Cache file, then the share sheet | yes |
+| Electron | `electron`: `dialog` in the main process, `fs/promises` | Native open dialog | Native save dialog | yes |
+| Tauri | `tauri`: `plugin-dialog` and `plugin-fs` | Native open dialog | Native save dialog | yes |
+| Mobile shell (Capacitor) | The one you register, else `E_DRIVER_UNAVAILABLE`; `web` with `fallbackToWeb` | The system picker behind `<input type="file">` | Download link | no |
+
 | Server | `memory` | Resolves `[]` | Records the call, resolves `name` | no |
 
 ### Chrome and Edge
@@ -485,11 +490,86 @@ The web driver adds a hidden `<input type="file">` to the page, sets its `accept
 
 ### Desktop
 
-[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) don't register a `files` driver today, so the web driver runs inside the shell's webview. Electron, the recommended shell, embeds Chromium, so the File System Access pickers show the OS dialogs, but picked files have no `path` and `reveal()` does nothing. Tauri uses the operating system's webview, so on macOS and Linux the file input and download fallbacks run instead. For real paths, write a driver over your IPC contract, as [Extend](#extend) shows for Electron.
+[Desktop](/packages/desktop) (Electron) and [Tauri](/packages/tauri) have `files` drivers that show the operating system's dialogs and give every picked file its `path`; see [Use it in Electron and Tauri](#use-it-in-electron-and-tauri). Set `fallbackToWeb: true` only if you want the webview's own pickers instead.
 
 ### Mobile
 
-[Mobile](/packages/mobile) doesn't register a `files` driver today either. Inside Capacitor, the file input opens the system picker. Downloads from a WebView depend on the shell, so test saving on a device, or register a driver that uses a Capacitor filesystem or share plugin.
+In the [Mobile](/packages/mobile) shell (`platform.runtime === 'capacitor'`) the service uses three optional peer dependencies, each imported the first time a method runs. `kitr add files` installs them when the project has the mobile platform.
+
+| Plugin | Used for |
+| --- | --- |
+| `@capawesome/capacitor-file-picker` | `open()` and `pick()`: the system document picker. The filters become MIME types; an extension kitr cannot map to a MIME type offers every file. |
+| `@capacitor/filesystem` | `save()` writes the file; picked files read their content from their `path`. |
+| `@capacitor/share` | `save()` opens the share sheet; `reveal(path)` hands a path to it. |
+
+Mobile has no "save as" dialog. `save()` writes the file into the app's cache directory and opens the share sheet, where Ada chooses Save to Files, Drive or Mail. It resolves to the cached file's `file://` URI, or `null` when she dismisses the sheet. The cache can be cleared by the OS, so the URI is for sharing now, not for keeping. To keep a file inside the app, use the file store below.
+
+```tsx
+// app/components/export-invoices.tsx
+import { useFileDialogs } from '@kitr/files/react'
+
+export function ExportInvoices({ csv }: { csv: string }) {
+  const files = useFileDialogs()
+  return (
+    <button type="button" onClick={async () => console.log(await files.save(csv, { name: 'invoices.csv' }))}>
+      Export invoices
+    </button>
+  )
+}
+// => file:///data/user/0/com.acme.app/cache/invoices.csv   (null if dismissed)
+```
+
+`capacitorFileStore()` reads, writes, deletes and lists files under the app's own directories, with no dialog. Paths are relative to the directory: `data` (the default, private to the app and backed up), `documents`, `cache`, `library` or `external`.
+
+```ts
+// app/drafts.ts
+import { capacitorFileStore } from '@kitr/files'
+
+const drafts = capacitorFileStore({ directory: 'data' })
+
+await drafts.write('drafts/invoice-1042.json', JSON.stringify({ total: 120 }))
+// => 'file:///data/user/0/com.acme.app/files/drafts/invoice-1042.json'
+await drafts.list('drafts') // => [{ name: 'invoice-1042.json', type: 'file', size: 13, modifiedAt: 1767000000000, uri: '...' }]
+await drafts.readText('drafts/invoice-1042.json') // => '{"total":120}'
+await drafts.exists('drafts/invoice-1042.json') // => true
+await drafts.remove('drafts/invoice-1042.json')
+```
+
+A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and the package to install, never a silent fallback.
+
+## Use it in Electron and Tauri
+
+In a desktop shell the service shows the operating system's dialogs, reads and writes real files, and every `PickedFile` has its `path`. `config/files.ts` does not change. In both shells the window reaches only paths the person chose: it cannot read `~/.ssh/id_ed25519` because a script asked.
+
+### Electron
+
+`open()` runs Electron's [`dialog.showOpenDialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process; `save()` runs `showSaveDialog` and writes the bytes with `fs/promises`. Main remembers each path a dialog returned this session and refuses `kitr:files:read`, `write`, `stat`, `list` and `reveal` for any other path, including `..` out of a picked folder. A file's content is read on demand when you call `text()`, `bytes()` or `blob()`. `reveal(path)` opens a chosen file with the default app. The driver also picks folders, which the service API has no call for, so import the driver:
+
+```ts
+// app/invoices/folder.ts
+import { createElectronFilesDriver } from '@kitr/files'
+
+/** Let Grace pick the folder the month's invoices live in, then read each file. */
+export async function readInvoiceFolder() {
+  const folder = await createElectronFilesDriver().openDirectory({ title: 'Invoices' })
+  if (!folder) return [] // cancelled
+  return Promise.all((await folder.list()).map((file) => file.text()))
+}
+```
+
+Requirements:
+
+- `handleKitrIpc()` in `main.ts` and `exposeIpc()` in the preload script. Without the `kitrIpc` bridge, creating the service throws `E_DRIVER_UNAVAILABLE`.
+- Large files cross the process boundary as one `Uint8Array`, so reading a multi-gigabyte file into memory is the app's choice, not a stream.
+
+### Tauri
+
+`open()` and `save()` use [`@tauri-apps/plugin-dialog`](https://v2.tauri.app/plugin/dialog/); content is read and written with [`@tauri-apps/plugin-fs`](https://v2.tauri.app/plugin/file-system/); `reveal(path)` uses [`@tauri-apps/plugin-opener`](https://v2.tauri.app/plugin/opener/). The dialog plugin adds each chosen path to the fs scope for the session, so the window reaches only what the person picked unless your capability file grants more.
+
+Requirements:
+
+- `@tauri-apps/plugin-dialog`, `@tauri-apps/plugin-fs` and `@tauri-apps/plugin-opener` in `package.json`; `kitr add tauri` and `kitr add files` in a Tauri project install them. Each is imported on first use; when one is missing, the method that needs it rejects with `E_DRIVER_UNAVAILABLE` naming the package.
+- The matching crates in `src-tauri/Cargo.toml`, their `.plugin(...)` calls in `lib.rs`, and in `capabilities/default.json` the permissions `dialog:default`, `fs:allow-read-file`, `fs:allow-write-file`, `fs:allow-stat`, `fs:allow-read-dir` and `opener:allow-open-path` (scoped to `$HOME/**`). The Tauri scaffold writes all of them. Narrow the opener scope if the app only opens files from one folder.
 
 ## Errors
 
@@ -497,6 +577,7 @@ Cancelling is never an error. Anything else the dialog throws reaches your code 
 
 | Error | When | What to do |
 | --- | --- | --- |
+| `E_DRIVER_UNAVAILABLE` (`KitrError`, `data.runtime`, `data.package`) | The app runs in Electron, Tauri or Capacitor and no files driver is registered. | Register a driver with `app.drivers.register()`, or set `fallbackToWeb: true` in `config/files.ts` to run the web driver inside the webview. |
 | `AbortError` | The person cancelled the File System Access picker. | Nothing: `@kitr/files` catches it and resolves `[]` or `null`. |
 | `SecurityError` | The picker was called without a user gesture, such as from a timer or after an `await` that took too long. | Call `open`, `pick` or `save` directly from a click or key handler. |
 | `NotAllowedError` | The browser or the person denied write access to the chosen file. | Show a message and offer to save again. |
@@ -599,7 +680,7 @@ A driver supplies the dialogs. Write one when a platform has better ones than th
 
 ### An Electron driver
 
-This driver uses Electron's [`dialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process through [Desktop](/packages/desktop)'s typed IPC. First add three commands to the IPC contract:
+The built-in Electron driver covers the common case; the version below shows how to write one over your own IPC contract. It uses Electron's [`dialog`](https://www.electronjs.org/docs/latest/api/dialog) in the main process through [Desktop](/packages/desktop)'s typed IPC. First add three commands to the IPC contract:
 
 ```ts
 // platforms/app/ipc.ts

@@ -1,5 +1,22 @@
 import { expect, test } from '@playwright/test'
 
+/**
+ * This project runs against the Vite dev server, which is cold when the suite starts: the first
+ * page load makes Vite discover and pre-bundle dependencies it had not seen, and when that finishes
+ * it reloads every open page ("optimized dependencies changed"). A test that opened the overlay in
+ * that window lost it to the reload and failed on a click that had worked a moment earlier. Load
+ * the app once up front, until the page has settled, so the tests start on a warm server.
+ */
+test.beforeAll(async ({ browser, baseURL }) => {
+  const page = await (await browser.newContext({ baseURL })).newPage()
+  for (let pass = 0; pass < 2; pass++) {
+    await page.goto('/')
+    await expect(page.locator('.kitr-dt-trigger')).toBeVisible({ timeout: 30_000 })
+    await page.waitForLoadState('networkidle')
+  }
+  await page.context().close()
+})
+
 test.beforeEach(async ({ page }) => {
   // Start from a clean overlay once per test; reloads within the test keep what was persisted.
   await page.addInitScript(() => {

@@ -4,6 +4,21 @@ import {
   type PlatformName,
   type PlatformTypeName,
 } from '@kitr/core'
+import { detectRuntime, type Runtime } from './runtime'
+
+export {
+  DRIVER_UNAVAILABLE,
+  detectRuntime,
+  driverUnavailable,
+  isDriverUnavailable,
+  type Runtime,
+  type RuntimeDrivers,
+  type RuntimeScope,
+  runtimeOf,
+  runtimes,
+  type SelectDriverOptions,
+  selectRuntimeDriver,
+} from './runtime'
 
 /**
  * Where the app runs, as one API. Platform packages register a `PlatformDriver`;
@@ -36,6 +51,8 @@ export interface PlatformDriver {
   type: PlatformType
   /** True inside a native shell (Capacitor, Tauri, Electron). */
   native: boolean
+  /** The host runtime: `web`, `electron`, `tauri` or `capacitor`. Default: `web` for a browser driver, the detected runtime for a native one. */
+  runtime?: Runtime
   /** The operating system, read on every access. */
   os(): PlatformOs | string
   /** Installed as an app (PWA standalone, native shell). */
@@ -166,6 +183,11 @@ export interface Platform {
   readonly type: PlatformType
   /** True inside a native shell (Capacitor, Tauri, Electron). */
   readonly native: boolean
+  /**
+   * The host runtime: `web`, `electron`, `tauri` or `capacitor`. Device packages
+   * (`native`, `files`, `notifications`, `secure-storage`, `updater`) pick their driver by it.
+   */
+  readonly runtime: Runtime
   /** The operating system, read from the driver on every access. */
   readonly os: PlatformOs | string
   /** Installed as an app: a standalone PWA or any native shell. */
@@ -254,6 +276,9 @@ export function createPlatform(
     },
     get native() {
       return driver.native
+    },
+    get runtime() {
+      return driver.runtime ?? (driver.native ? detectRuntime() : 'web')
     },
     get os() {
       return driver.os()
@@ -380,3 +405,5 @@ function cssSafeArea(): SafeArea {
   probe.remove()
   return area
 }
+
+export { loadShellModule, type ModuleLoader, registerShellModules } from './modules'

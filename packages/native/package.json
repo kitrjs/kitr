@@ -1,7 +1,6 @@
 {
   "name": "@kitr/native",
   "version": "0.1.0",
-  "private": true,
   "description": "@kitr/native: clipboard, share, haptics, geolocation, camera and biometrics behind one API with web fallbacks and native drivers.",
   "keywords": [
     "kitr",
@@ -30,6 +29,26 @@
       "types": "./dist/provider.d.ts",
       "default": "./dist/provider.js"
     },
+    "./driver": {
+      "types": "./dist/driver.d.ts",
+      "default": "./dist/driver.js"
+    },
+    "./drivers/web": {
+      "types": "./dist/drivers/web.d.ts",
+      "default": "./dist/drivers/web.js"
+    },
+    "./drivers/electron": {
+      "types": "./dist/drivers/electron.d.ts",
+      "default": "./dist/drivers/electron.js"
+    },
+    "./drivers/tauri": {
+      "types": "./dist/drivers/tauri.d.ts",
+      "default": "./dist/drivers/tauri.js"
+    },
+    "./drivers/capacitor": {
+      "types": "./dist/drivers/capacitor.d.ts",
+      "default": "./dist/drivers/capacitor.js"
+    },
     "./kitr": {
       "types": "./dist/kitr.d.ts",
       "default": "./dist/kitr.js"
@@ -46,13 +65,34 @@
   },
   "dependencies": {
     "@kitr/core": "workspace:*",
+    "@kitr/platform": "workspace:*",
     "@kitr/react": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "@capacitor/core": ">=7.0.0",
+    "@capacitor/clipboard": ">=7.0.0",
+    "@capacitor/share": ">=7.0.0",
+    "@capacitor/haptics": ">=7.0.0",
+    "@capacitor/geolocation": ">=7.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "@capacitor/core": {
+      "optional": true
+    },
+    "@capacitor/clipboard": {
+      "optional": true
+    },
+    "@capacitor/share": {
+      "optional": true
+    },
+    "@capacitor/haptics": {
+      "optional": true
+    },
+    "@capacitor/geolocation": {
       "optional": true
     }
   },
@@ -62,7 +102,12 @@
     "react": "^19.3.1",
     "@types/react": "^19.3.0",
     "react-dom": "^19.3.1",
-    "@kitr/react": "workspace:*"
+    "@kitr/react": "workspace:*",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/clipboard": "^8.0.1",
+    "@capacitor/share": "^8.0.3",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/geolocation": "^8.2.4"
   },
   "kitr": {
     "name": "native",

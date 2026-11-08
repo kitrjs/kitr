@@ -95,6 +95,88 @@ Same options as `desktop`. The Rust project lives in `platforms/<name>/src-tauri
 
 `@kitr/mobile/provider` registers the Capacitor drivers; `@kitr/platform/react` (`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink`, `useSafeArea`) and `@kitr/storage` then answer the same way in the browser and in the shell.
 
+## Where the code runs: runtime, platform and form factor
+
+Three questions have three answers, kept apart on purpose:
+
+| Question | API | Values |
+| --- | --- | --- |
+| Which host am I in? | `detectRuntime()` from `@kitr/platform`; `platform.runtime` and `useRuntime()` from `@kitr/platform/react` | `web`, `electron`, `tauri`, `capacitor` |
+| What kind of place is it? | `platform.type`, `platform.os`, `platform.native`, `usePlatform()` | `web`, `desktop`, `mobile`, `server`; `macos`, `windows`, `linux`, `ios`, `android` |
+| How big is the screen and what is the input? | `useFormFactor()` from `@kitr/platform/react` | `width` (`compact`, `medium`, `expanded`), `input` (`touch`, `pointer`), `orientation` |
+
+The matrix below is what each environment answers. `desktop()` and `tauri()` both report `type: 'desktop'`; only the runtime tells Electron from Tauri.
+
+| Environment | `runtime` | `type` | `native` | `os` | `useFormFactor()` before it can measure |
+| --- | --- | --- | --- | --- | --- |
+| Browser | `web` | `web` | `false` | from the user agent | `compact`, `touch` |
+| Server rendering | `web` | `server` | `false` | `server` | `compact`, `touch` |
+| Electron (`desktop()`) | `electron` | `desktop` | `true` | `macos`, `windows`, `linux` | `expanded`, `pointer` |
+| Tauri (`tauri()`) | `tauri` | `desktop` | `true` | `macos`, `windows`, `linux` | `expanded`, `pointer` |
+| Capacitor (`mobile()`) | `capacitor` | `mobile` | `true` | `ios`, `android` | `compact`, `touch` |
+
+`detectRuntime()` reads globals only, so it is safe anywhere: Tauri by `window.__TAURI_INTERNALS__`, Capacitor by `Capacitor.isNativePlatform()`, Electron by the preload bridge (`kitrIpc`), `process.versions.electron` or an `Electron/` user agent, and everything else is `web`. The `platform` service reports the runtime its shell provider registered, and falls back to `detectRuntime()` for a driver that does not say. `isElectron()`, `isTauri()` and `isCapacitor()` in each platform's `client` entry are `detectRuntime()` comparisons.
+
+The five device packages (`native`, `notifications`, `files`, `secure-storage`, `updater`) pick their driver by `platform.runtime`: a driver in the config, else one a provider registered, else `selectDriver(runtime)`. The web runtime gets the browser driver (a memory driver on the server). A native runtime gets its own driver, and where that driver is missing `selectDriver()` throws a `KitrError` with code `E_DRIVER_UNAVAILABLE` naming the runtime and the package, instead of quietly running browser code in the webview. Electron and Tauri have all five; the matrix below says what each uses. Set `fallbackToWeb: true` in the package's `config/<name>.ts` to keep the webview behaviour on purpose.
+
+| Package | Browser | Electron (`desktop()`) | Tauri (`tauri()`) |
+| --- | --- | --- | --- |
+| `secure-storage` | AES-GCM in IndexedDB-keyed storage (`secure: false`) | `safeStorage`, ciphertext in `userData` (`secure: true`) | Stronghold snapshot, password in the OS keyring (`secure: true`) |
+| `notifications` | Notification API, timers | Electron `Notification` in main, badge, click events | `plugin-notification`; scheduling by timer; taps on mobile only |
+| `files` | File System Access or `<input type="file">` | `dialog` and `fs/promises` on dialog-chosen paths, `path` set | `plugin-dialog` and `plugin-fs`, `path` set |
+| `updater` | Service worker | `electron-updater` | `plugin-updater` and `plugin-process` |
+| `native` | Web APIs per capability | Clipboard, Touch ID, `system` (theme, power, online, `openExternal`) | Clipboard, `system` (theme, online, `openExternal`) |
+
+The Electron drivers need `handleKitrIpc()` in main and `exposeIpc()` in the preload script; the Tauri drivers need the plugin packages, crates and permissions the Tauri scaffold writes. Electron's `electron-updater` is an optional peer, and the Tauri plugins are optional peers that `kitr add tauri` installs. `kitr add <package>` installs the peers for the platforms a project has.
+
+What the Capacitor runtime (`mobile()`) gets, with each plugin an optional peer dependency that `kitr add` installs and the driver imports on first use:
+
+| Package | Capacitor driver | Plugins | Caveats |
+| --- | --- | --- | --- |
+| `native` | clipboard, share, haptics, geolocation | `@capacitor/clipboard`, `share`, `haptics`, `geolocation` | `camera` and `biometrics` are `supported: false`; sharing `File` objects is not possible |
+| `notifications` | OS-scheduled local notifications, Android channels; `capacitorPush()` for FCM and APNs | `@capacitor/local-notifications`, `push-notifications` | Push needs Firebase config on Android and the Push capability on iOS |
+| `files` | System picker; `save()` goes through the cache and the share sheet; `capacitorFileStore()` | `@capawesome/capacitor-file-picker`, `@capacitor/filesystem`, `@capacitor/share` | No "save as" dialog on mobile |
+| `secure-storage` | Keychain and Keystore | `@aparajita/capacitor-secure-storage` | The Keychain survives an uninstall on iOS |
+| `updater` | Play in-app updates on Android, the App Store page on iOS | `@capawesome/capacitor-app-update` | Play offers updates only to builds installed from Play |
+
+A plugin that is not installed rejects with `E_DRIVER_UNAVAILABLE` and `install <plugin>`; nothing falls back to the webview. Electron and Tauri keep throwing until their drivers land.
+
+## One project, every platform
+
+[`examples/everywhere`](https://github.com/kitrjs/kitr/tree/main/examples/everywhere) is one project with a website, an Electron app and a Capacitor app:
+
+```ts
+// kitrrc.ts
+platforms: {
+  site: web({ mode: 'spa' }),
+  app: desktop(),
+  phone: mobile(),
+},
+```
+
+It is the `app` kit plus `kitr add desktop app`, `kitr add mobile phone`, `kitr add secure-storage` and `kitr add notifications`. Add the platforms first, so the device packages see Capacitor and install its plugins.
+
+| Command | What it does |
+| --- | --- |
+| `kitr dev` | Runs every platform. Each line of output starts with `[site]`, `[app]` or `[phone]`. Each platform has its own port. |
+| `kitr dev app` | Runs one. |
+| `kitr build site` | Builds one. `kitr build app` also packs the Electron app. `kitr build phone` also runs `cap sync`. |
+
+Branch on the shell in code:
+
+```ts
+import { detectRuntime } from '@kitr/platform'
+
+if (detectRuntime() === 'electron') {
+  // Electron only. In components, use useRuntime().
+}
+if (import.meta.env.KITR_PLATFORM === 'phone') {
+  // Only in the build of the platform named phone. Other builds drop this branch.
+}
+```
+
+Use the runtime for what the shell can do. Use `KITR_PLATFORM` for what to ship. To add your own state or a different driver, see [Extending kitr](/docs/extending).
+
 ## Layout
 
 ```
@@ -152,5 +234,7 @@ export const kiosk = definePlatform<{ port?: number }>(
   }),
 )
 ```
+
+A shell platform (Electron, Tauri, Capacitor or your own) does not have to write the skeleton again: `shellPlatformHooks()` from `@kitr/platform/cli` runs the sequence every shell shares (dev server, wait for it, launch the shell; client build, shell build; dependency, file and tool checks in `doctor`) and takes the parts that differ, and `createShellProvider()` from `@kitr/platform/shell` does the same for the runtime half (detect the shell, register the `platform` driver and the shell's other drivers, log the runtime to devtools). `desktop`, `tauri` and `mobile` are thin configurations of both.
 
 `ctx` carries the platform name, the project root, the resolved options, the package manager, the other platforms, the flags from the command line, an abort signal and `log`, `run` and `exec` helpers that resolve `node_modules/.bin`. `@kitr/vite` reads `import.meta.env.KITR_PLATFORM` and `KITR_PLATFORM_TYPE` so app code can branch per platform at build time.

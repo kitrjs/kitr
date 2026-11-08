@@ -38,3 +38,37 @@ test('production build ships no devtools', async ({ page }) => {
   await page.keyboard.press('Control+Shift+K')
   await expect(page.locator('[data-kitr-devtools]')).toHaveCount(0)
 })
+
+test.describe('a mutation', () => {
+  test('a note added on the page is still there after a reload', async ({ page }) => {
+    const errors = watchForErrors(page)
+    await page.goto('/e2e/notes')
+    await page.evaluate(() => localStorage.removeItem('e2e:notes'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Notes' })).toBeVisible()
+    await expect(page.getByRole('listitem')).toHaveCount(0)
+
+    await page.getByLabel('Note').fill('buy milk')
+    await page.getByRole('button', { name: 'Add note' }).click()
+    await page.getByLabel('Note').fill('write the report')
+    await page.getByRole('button', { name: 'Add note' }).click()
+    await expect(page.getByRole('listitem')).toHaveText(['buy milk', 'write the report'])
+    await expect(page.getByLabel('Note')).toHaveValue('')
+
+    await page.reload()
+    await expect(page.getByRole('listitem')).toHaveText(['buy milk', 'write the report'])
+    // Another tab of the same browser reads the same record.
+    const other = await page.context().newPage()
+    await other.goto('/e2e/notes')
+    await expect(other.getByRole('listitem')).toHaveText(['buy milk', 'write the report'])
+    expect(errors.filter((e) => !/favicon/.test(e))).toEqual([])
+  })
+
+  test('an empty note is not added', async ({ page }) => {
+    await page.goto('/e2e/notes')
+    await page.evaluate(() => localStorage.removeItem('e2e:notes'))
+    await page.reload()
+    await page.getByRole('button', { name: 'Add note' }).click()
+    await expect(page.getByRole('listitem')).toHaveCount(0)
+  })
+})

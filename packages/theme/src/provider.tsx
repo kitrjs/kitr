@@ -7,9 +7,36 @@ import { setToastImplementation } from './toast'
 
 type ToasterComponent = ComponentType<{ position?: string; richColors?: boolean }>
 
+/**
+ * Sonner adds its stylesheet as a `<style>` tag when it loads and cannot be given a nonce, which a
+ * page under a nonce-based Content-Security-Policy refuses. While it loads, `<style>` tags made by
+ * `document.createElement` get the page's nonce (the `csp-nonce` meta tag TanStack Start renders).
+ */
+async function importSonner() {
+  const nonce =
+    typeof document === 'undefined'
+      ? undefined
+      : document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.content
+  if (!nonce) return import('sonner')
+  const create = document.createElement
+  document.createElement = function (
+    this: Document,
+    ...args: Parameters<Document['createElement']>
+  ) {
+    const element = create.apply(this, args)
+    if (String(args[0]).toLowerCase() === 'style') element.nonce = nonce
+    return element
+  } as Document['createElement']
+  try {
+    return await import('sonner')
+  } finally {
+    document.createElement = create
+  }
+}
+
 const Toaster = lazy(async (): Promise<{ default: ToasterComponent }> => {
   try {
-    const sonner = await import('sonner')
+    const sonner = await importSonner()
     setToastImplementation(sonner.toast as any)
     return { default: sonner.Toaster as unknown as ToasterComponent }
   } catch {

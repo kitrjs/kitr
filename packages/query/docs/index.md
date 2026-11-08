@@ -586,20 +586,20 @@ export function OpenOrders() {
   return <ul>{orders.map((o) => <li key={o.id}>{o.customer}</li>)}</ul>
 }
 
-// In a loader:
-const options = queryOptions('orders.list', { status: 'open' })
+// In a loader, which has no React context: pass the app first.
+const options = queryOptions(context.app, 'orders.list', { status: 'open' })
 ```
 
-The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[@kitr/query] "orders.lsit" is not registered` with the names that are.
+The hooks look the name up in the registry of the app in React context (`useApp().operations`), so two apps, or two tests, never share operations; `queryOptions` and `call` run outside React and take the app as their first argument. The input is optional when every field of it is optional. A name that is not registered, or a mutation name given to `useQuery`, is a type error; at run time the hook throws `[@kitr/query] "orders.lsit" is not registered` with the names that are.
 
 `useMutation(name)` works the same way as `useMutation(definition)`: both apply the mutation's cache effects, then your own `onSuccess`. Outside React, `call` runs an operation by name. A query fetches, a mutation mutates; in the browser it is a request, on the server the handler runs in-process:
 
 ```ts
 import { call } from '@kitr/query'
 
-const open = await call('orders.list', { status: 'open' })
+const open = await call(app, 'orders.list', { status: 'open' })
 // => [{ id: 'ord_2', customer: 'Grace', total: 80, status: 'open' }]
-await call('orders.ship', { id: 'ord_2', carrier: 'UPS' })
+await call(app, 'orders.ship', { id: 'ord_2', carrier: 'UPS' })
 ```
 
 Every hook also accepts the imported definition in place of the name, `useQuery(listOrders, input)`, and plain TanStack options as before. The three forms produce the same query options, so a component and a loader using different forms share one cache entry.

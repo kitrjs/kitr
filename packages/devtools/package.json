@@ -1,7 +1,6 @@
 {
   "name": "@kitr/devtools",
   "version": "0.1.0",
-  "private": true,
   "description": "@kitr/devtools: the development overlay. Every provider can contribute panels, actions and event logs; left out of production builds unless enabled.",
   "keywords": [
     "kitr",

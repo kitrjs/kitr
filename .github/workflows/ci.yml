@@ -4,14 +4,18 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run by hand from the Actions tab, on any branch.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Lint, types, builds of every package, the registry and the examples, and the bundle checks.
-  verify:
+  # Everything that is built is built here, once, and handed to the jobs below as one artifact:
+  # every package's dist, the component registry, the examples' route trees and builds. Install
+  # and build cost minutes, so no other Linux job repeats them.
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +34,38 @@ jobs:
             pnpm -C examples/$app exec kitr build site
           done
           pnpm -C examples/backend exec kitr build api
+      # Every file the build wrote (ignored, untracked or changed), minus node_modules.
+      - name: Pack the build
+        run: |
+          git status --porcelain --ignored | grep -v '^ \?D' | cut -c4- | grep -Ev '(^|/)node_modules/?$' > "$RUNNER_TEMP/build-files.txt"
+          tar -czf "$RUNNER_TEMP/build.tgz" -T "$RUNNER_TEMP/build-files.txt"
+          ls -lh "$RUNNER_TEMP/build.tgz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}/build.tgz
+          retention-days: 1
+          compression-level: 0
+
+  # Lint, generated files and docs, and the bundle checks, against the build.
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      # Before the install, so the workspace bins link to files that exist.
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm manifests:check
       - run: pnpm readmes:check
       - run: pnpm docs:check --strict
@@ -39,15 +75,50 @@ jobs:
       - name: Generated API pages match the built types
         run: pnpm docs:api --check
       - run: pnpm -C site build
-      - run: pnpm typecheck
       - run: pnpm lint
+      - name: No module-scope state in package sources
+        run: pnpm check:module-state
       - name: Examples are unmodified kit output
         run: pnpm check:examples
       - name: Production bundle checks
         run: pnpm check:bundles
+      # The upstream versions kitr installs are the ones this repo builds and tests with.
+      - name: Pinned upstream versions match the lockfile
+        run: pnpm versions:check
+
+  # Types of every package and example: the longest single step, so it runs beside `verify`,
+  # in two halves.
+  typecheck:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scope: packages
+            filter: ./packages/**
+          - scope: apps
+            filter: "!./packages/**"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: pnpm typecheck (${{ matrix.scope }})
+        run: pnpm -r --filter "${{ matrix.filter }}" run typecheck
 
   # Unit, component and type-level tests, on every supported Node.
   unit:
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -68,14 +139,21 @@ jobs:
       REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
       - run: pnpm test:coverage
+      # Per-package floors from coverage.floors.json: a package under its floor fails the job.
+      - run: pnpm coverage:gate
       - if: matrix.node == 22
         uses: actions/upload-artifact@v4
         with:
@@ -85,23 +163,34 @@ jobs:
 
   # The CLI and the examples run for real: kits, generators, add/remove, the backend over the network.
   integration:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm -C registry build
       - run: pnpm test:integration
 
-  # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools.
-  e2e:
-    runs-on: ubuntu-latest
+  # The CLI on Windows: kits, generators, add/remove, with paths, shims and shells as Windows has them.
+  # It builds for itself: the artifact is Linux's, and this job is also the check that the repo builds here.
+  # Starts at once, next to `build`, so it adds no wall time.
+  windows:
+    runs-on: windows-latest
     steps:
+      # Before checkout: the default (autocrlf) turns every file CRLF, and Biome and the
+      # "unmodified kit output" check compare against LF.
+      - run: git config --global core.autocrlf false
+      - run: git config --global core.longpaths true
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -111,6 +200,62 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm -C registry build
+      # The kit, generator and add/remove suites. backend.test.ts and platforms.test.ts start
+      # servers and dev builds of every platform; Linux covers them.
+      - name: CLI integration tests
+        run: pnpm test:integration tests/integration/cli.test.ts
+
+  # Publishes every package to a throwaway Verdaccio and runs `kitr new` against it: the first
+  # install from a registry, on every run. One kit per runner, so they install side by side. The
+  # whole-catalog pass (`kitr add` of every package) rides on the app run on main only.
+  registry-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kit: app
+            catalog: true
+          - kit: fullstack
+            catalog: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install and build the ${{ matrix.kit }} kit from a registry
+        run: pnpm smoke:registry --kits ${{ matrix.kit }} ${{ matrix.catalog && github.event_name == 'push' && '--all-packages' || '' }}
+
+  # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools, and
+  # one spec per kit (site: language and prerendering; realtime: two pages over WebSocket and SSE;
+  # fullstack and dashboard: a record created, reloaded and read back). Every Playwright project runs.
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ${{ runner.temp }}
+      - name: Restore the build
+        run: tar -xzf "$RUNNER_TEMP/build.tgz"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
       - if: failure()
@@ -119,3 +264,102 @@ jobs:
           name: playwright-results
           path: test-results/
           retention-days: 7
+
+  # The Capacitor shell: builds the mobile example and runs `cap sync` for Android and iOS, so every
+  # plugin the device packages need reaches both native projects. Sync only, no native build:
+  # it needs neither the Android SDK nor Xcode (Capacitor 8 uses Swift Package Manager on iOS).
+  mobile-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C examples/mobile exec kitr build phone
+      - name: Plugins reached both native projects
+        run: |
+          grep -q capacitor-secure-storage examples/mobile/platforms/phone/android/capacitor.settings.gradle
+          grep -q capacitor-secure-storage examples/mobile/platforms/phone/ios/App/CapApp-SPM/Package.swift
+
+  # The Electron and Tauri drivers against the real runtimes (secure storage, notifications, plugins).
+  desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: examples/tauri/platforms/app/src-tauri
+      - name: Linux libraries for Electron, its keyring, and Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0 \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C registry build
+      # electron-builder --dir stops at the unpacked app; the smoke test launches it with Playwright.
+      - name: Build the Electron example
+        run: pnpm -C examples/desktop exec kitr build app --dir
+      - name: Electron smoke test (secure storage round trip, notification call)
+        run: tests/electron/run.sh
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-results
+          path: test-results/
+          retention-days: 7
+      # cargo check compiles the scaffold's Rust against every plugin crate without bundling.
+      - name: Tauri scaffold compiles
+        working-directory: examples/tauri/platforms/app/src-tauri
+        run: |
+          mkdir -p ../../../dist/app/client && echo '<!doctype html>' > ../../../dist/app/client/index.html
+          python3 - <<'PY'
+          import struct, zlib
+          raw = b''.join(b'\x00' + b'\x20\x60\xc0\xff' * 512 for _ in range(512))
+          def chunk(t, d): return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+          png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 512, 512, 8, 6, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+          open('/tmp/app-icon.png', 'wb').write(png)
+          PY
+          npx --yes @tauri-apps/cli@2 icon /tmp/app-icon.png
+          cargo check
+
+  # One project, three platforms: the everywhere example builds its web site, its Electron app
+  # (unpacked, no installers) and syncs its Capacitor project, so the plugins reach Android and iOS.
+  everywhere:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Linux libraries for Electron
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb dbus-x11 gnome-keyring libsecret-1-0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C registry build
+      - run: pnpm -C examples/everywhere typecheck
+      - name: Web
+        run: pnpm -C examples/everywhere exec kitr build site
+      - name: Electron (unpacked app, no installers)
+        run: pnpm -C examples/everywhere exec kitr build app --dir
+      - name: Capacitor (cap sync for Android and iOS)
+        run: pnpm -C examples/everywhere exec kitr build phone
+      - name: Plugins reached both native projects
+        run: |
+          grep -q capacitor-secure-storage examples/everywhere/platforms/phone/android/capacitor.settings.gradle
+          grep -q capacitor-local-notifications examples/everywhere/platforms/phone/android/capacitor.settings.gradle
+          grep -q capacitor-secure-storage examples/everywhere/platforms/phone/ios/App/CapApp-SPM/Package.swift

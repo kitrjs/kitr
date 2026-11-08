@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "kitr types && tsc --noEmit",
+    "typecheck": "kitr typecheck",
     "lint": "biome check .",
     "kitr": "kitr",
     "test": "vitest run",

@@ -163,7 +163,14 @@ export function Search() {
               }}
               aria-controls="search-results"
             />
-            <kbd className="mono">esc</kbd>
+            <button
+              type="button"
+              className="search-close mono"
+              onClick={close}
+              aria-label="Close search"
+            >
+              esc
+            </button>
           </div>
           <ul id="search-results" className="search-results">
             {results.map((r, i) => {

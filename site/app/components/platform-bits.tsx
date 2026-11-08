@@ -20,10 +20,6 @@ export function Rich({ text }: { text: string }) {
   )
 }
 
-export function SoonBadge({ short = false, label }: { short?: boolean; label?: string }) {
-  return <span className="soon-badge">{label ?? (short ? 'Soon' : 'Preview')}</span>
-}
-
 /** One platform as a coloured tile: icon, name, the shell it ships in and where it runs. */
 export function PlatformTile({
   platform,
@@ -39,21 +35,17 @@ export function PlatformTile({
       params={{ type: platform.type }}
       className={`platform-tile platform-tile-${size}`}
       style={{ background: platform.color }}
-      aria-label={`${platform.name}: ${platform.targets.join(', ')}${platform.available ? '' : ' (preview)'}`}
+      aria-label={`${platform.name}: ${platform.targets.join(', ')}`}
     >
       <span className="platform-tile-top">
         <span className="platform-tile-icon">
           <Icon icon={glyph(platform.type)} size={size === 'lg' ? 30 : 22} stroke="#0B121C" />
         </span>
-        {platform.available ? (
-          <span className="platform-tile-marks" aria-hidden="true">
-            {marks.map((m) => (
-              <CreatorMark key={m} name={m} size={size === 'lg' ? 18 : 15} />
-            ))}
-          </span>
-        ) : (
-          <SoonBadge label="Preview" />
-        )}
+        <span className="platform-tile-marks" aria-hidden="true">
+          {marks.map((m) => (
+            <CreatorMark key={m} name={m} size={size === 'lg' ? 18 : 15} />
+          ))}
+        </span>
       </span>
       <span className="platform-tile-text">
         <span className="platform-tile-name">{platform.name}</span>
@@ -95,9 +87,7 @@ export function PlatformBoard() {
  * and Tauri share the `shell` group, because a project keeps one desktop shell.
  */
 export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' | 'h2' }) {
-  const [on, setOn] = useState(
-    () => new Set(builder.choices.filter((c) => c.on && c.available).map((c) => c.id)),
-  )
+  const [on, setOn] = useState(() => new Set(builder.choices.filter((c) => c.on).map((c) => c.id)))
   const pm = usePm((s) => s.pm)
   const chosen = builder.choices.filter((c) => on.has(c.id))
   const types = new Set(chosen.map((c) => c.type))
@@ -155,7 +145,6 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
                   {c.line.split(':')[0]}
                   <span className="builder-chip-type">: {c.type}</span>
                 </span>
-                {!c.available && <span className="builder-chip-soon">preview</span>}
               </button>
             )
           })}

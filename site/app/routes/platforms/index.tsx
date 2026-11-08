@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Icon } from '#app/components/icons'
-import { PlatformBoard, PlatformBuilder, Rich, SoonBadge } from '#app/components/platform-bits'
+import { PlatformBoard, PlatformBuilder, Rich } from '#app/components/platform-bits'
 import { glyph } from '#app/lib/catalog'
 import { platforms } from '#app/lib/platforms'
 import { seo } from '#app/lib/seo'
@@ -58,7 +58,6 @@ function Platforms() {
                         <Icon icon={glyph(p.type)} size={18} stroke="#0B121C" />
                       </span>
                       {p.name}
-                      {!p.available && <SoonBadge />}
                     </Link>
                   </th>
                   <td className="platform-table-targets">{p.targets.join(', ')}</td>

@@ -8,12 +8,22 @@ import {
   type PlatformFactory,
   type PlatformInstance,
 } from '@kitr/core'
-import { builders, generateCode, parseModule } from 'magicast'
+import pc from 'picocolors'
 import type { Codemods } from './codemods'
 import { configurePackages } from './configure'
-import { log, type ProjectContext } from './context'
+import { log, type ProjectContext, readRcPlatforms } from './context'
 import { manifests } from './manifests.gen'
-import { loadPackage } from './packages'
+import { ensureAvailable, loadPackage } from './packages'
+import {
+  addNamedImport,
+  addProperty,
+  fileQuote,
+  findOptionsObject,
+  findRcBlock,
+  insertEntry,
+  removeEntries,
+  removeNamedImport,
+} from './rc-text'
 
 /**
  * Platforms answer "where does this app run?". They are packages, listed by name in kitrrc.ts:
@@ -127,6 +137,38 @@ function applyEnv(
   return Object.keys(overrides).length ? instance.with(overrides) : instance
 }
 
+/**
+ * Copy a child's output to `target` one line at a time, each line through `prefix`, so two
+ * platforms running side by side stay readable. A partial last line is held until it ends.
+ */
+export function pipeLines(
+  source: NodeJS.ReadableStream | null,
+  target: { write(chunk: string): unknown },
+  prefix: (line: string) => string,
+) {
+  if (!source) return
+  let rest = ''
+  source.on('data', (chunk: string | Buffer) => {
+    const lines = (rest + chunk.toString()).split(/\r?\n/)
+    rest = lines.pop() ?? ''
+    for (const line of lines) target.write(`${prefix(line)}\n`)
+  })
+  source.on('end', () => {
+    if (rest) target.write(`${prefix(rest)}\n`)
+    rest = ''
+  })
+}
+
+// kitr-allow-module-state: constant list of colour functions, never mutated
+const PREFIX_COLORS = [pc.cyan, pc.magenta, pc.yellow, pc.green, pc.blue, pc.red]
+
+/** `[name] ` in a colour that stays the same for a platform (plain when colours are off). */
+export function platformPrefix(name: string, index: number): (line: string) => string {
+  const colour = PREFIX_COLORS[index % PREFIX_COLORS.length]!
+  const label = colour(`[${name}]`)
+  return (line) => `${label} ${line}`
+}
+
 /** Pick platforms by name; no names means every platform. */
 export function selectPlatforms(
   all: Record<string, PlatformInstance>,
@@ -175,6 +217,8 @@ export function createPlatformContext(
     flags?: Flags
     signal?: AbortSignal
     env?: Record<string, string>
+    /** Put this label in front of every line the platform's processes print (`[site]`). */
+    prefix?: (line: string) => string
   } = { platforms: [] },
 ): PlatformContext {
   const baseEnv: Record<string, string | undefined> = {
@@ -189,13 +233,24 @@ export function createPlatformContext(
   ) =>
     new Promise<void>((resolveRun, reject) => {
       if (options.signal?.aborted) return resolveRun()
+      const prefix = options.prefix
       const child = spawn(command, args, {
         cwd: o.cwd ?? ctx.root,
-        stdio: 'inherit',
-        env: { ...baseEnv, ...o.env },
+        // With a prefix the output goes through us, line by line; input stays the terminal's.
+        stdio: prefix ? ['inherit', 'pipe', 'pipe'] : 'inherit',
+        env: {
+          // Piped output is not a terminal, so tools would drop their colours: ask for them.
+          ...(prefix && process.stdout.isTTY ? { FORCE_COLOR: '1' } : {}),
+          ...baseEnv,
+          ...o.env,
+        },
         signal: options.signal,
         shell: process.platform === 'win32',
       })
+      if (prefix) {
+        pipeLines(child.stdout, process.stdout, prefix)
+        pipeLines(child.stderr, process.stderr, prefix)
+      }
       child.on('error', (error) =>
         (error as NodeJS.ErrnoException).name === 'AbortError' ? resolveRun() : reject(error),
       )
@@ -222,13 +277,14 @@ export function createPlatformContext(
       const full = resolve(ctx.root, path)
       if (existsSync(full) && !o.overwrite) return false
       if (ctx.dryRun) {
-        log.step(`would write ${relative(ctx.root, full)}`)
+        log.step(`would write ${relative(ctx.root, full).split('\\').join('/')}`)
         return true
       }
       mkdirSync(dirname(full), { recursive: true })
       writeFileSync(full, content)
-      ctx.touched.add(relative(ctx.root, full))
-      log.step(`write ${relative(ctx.root, full)}`)
+      const rel = relative(ctx.root, full).split('\\').join('/')
+      ctx.touched.add(rel)
+      log.step(`write ${rel}`)
       return true
     },
     run,
@@ -292,23 +348,24 @@ export async function loadFactory(
 }
 
 /** `{ mode: 'ssr', port: 3000 }` as source text, single quotes, no quoted keys. Biome reflows it. */
-export function literal(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map((v) => literal(v)).join(', ')}]`
+export function literal(value: unknown, quote = "'"): string {
+  if (Array.isArray(value)) return `[${value.map((v) => literal(v, quote)).join(', ')}]`
   if (value && typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>).filter(
       ([, v]) => v !== undefined,
     )
     if (!entries.length) return '{}'
-    return `{ ${entries.map(([k, v]) => `${/^[a-zA-Z_$][\w$]*$/.test(k) ? k : `'${k}'`}: ${literal(v)}`).join(', ')} }`
+    return `{ ${entries.map(([k, v]) => `${/^[a-zA-Z_$][\w$]*$/.test(k) ? k : `${quote}${k}${quote}`}: ${literal(v, quote)}`).join(', ')} }`
   }
-  if (typeof value === 'string') return `'${value.replace(/'/g, "\\'")}'`
+  if (typeof value === 'string') return `${quote}${value.split(quote).join(`\\${quote}`)}${quote}`
   return String(value)
 }
 
-function editRcSource(
-  ctx: ProjectContext,
-  edit: (mod: any, target: any, src: string, addImport: (line: string) => void) => void,
-) {
+/**
+ * Edit kitrrc.ts as text (see rc-text.ts): what is not the edit stays byte for byte. Creates the
+ * file when the project has none; does nothing on a dry run.
+ */
+function editRcText(ctx: ProjectContext, edit: (src: string) => string) {
   const rcPath = ctx.rcPath ?? ctx.path('kitrrc.ts')
   if (!existsSync(rcPath)) {
     ctx.write(
@@ -319,26 +376,21 @@ function editRcSource(
   }
   if (ctx.dryRun) return
   const src = readFileSync(rcPath, 'utf8')
-  const mod = parseModule(src)
-  const target =
-    mod.exports.default?.$type === 'function-call'
-      ? mod.exports.default.$args[0]
-      : mod.exports.default
-  if (!target || typeof target !== 'object')
+  if (findOptionsObject(src) === -1)
     throw new Error(`${rcPath}: expected \`export default defineKitrConfig({...})\``)
-  const imports: string[] = []
-  edit(mod, target, src, (line) => imports.push(line))
-  let code = generateCode(mod, { quote: 'single' }).code
-  if (imports.length) {
-    // Add imports as plain text after the last import so the file keeps its own style.
-    const lines = code.split('\n')
-    let last = -1
-    for (let i = 0; i < lines.length; i++) if (/^import\s/.test(lines[i]!)) last = i
-    lines.splice(last + 1, 0, ...imports)
-    code = lines.join('\n')
-  }
-  writeFileSync(rcPath, code)
+  const next = edit(src)
+  if (next === src) return
+  writeFileSync(rcPath, next)
   ctx.touched.add('kitrrc.ts')
+}
+
+/** The `name: factory(...)` entry of the platforms object, found in the text. */
+function platformEntry(src: string, name: string) {
+  const block = findRcBlock(src, 'platforms', '{')
+  const entry = block?.elements.find((el) =>
+    new RegExp(`^(['"]?)${name}\\1\\s*:`).test(src.slice(el.start, el.end)),
+  )
+  return { block, entry }
 }
 
 /** Write `platforms.<name> = <factory>({...})` into kitrrc.ts with its import. Replaces an existing entry. */
@@ -348,17 +400,14 @@ export function writeRcPlatform(
   info: Pick<PlatformTypeInfo, 'entry' | 'factory'>,
   options: Record<string, unknown>,
 ) {
-  editRcSource(ctx, (_mod, target, src, addImport) => {
-    if (
-      !new RegExp(
-        `import\\s*\\{[^}]*\\b${info.factory}\\b[^}]*\\}\\s*from\\s*['"]${info.entry}['"]`,
-      ).test(src)
-    )
-      addImport(`import { ${info.factory} } from '${info.entry}'`)
-    if (!target.platforms) target.platforms = {}
-    target.platforms[name] = builders.raw(
-      `${info.factory}(${Object.keys(options).length ? literal(options) : ''})`,
-    )
+  editRcText(ctx, (src) => {
+    const call = `${info.factory}(${Object.keys(options).length ? literal(options, fileQuote(src)) : ''})`
+    const { block, entry } = platformEntry(src, name)
+    let out: string
+    if (entry) out = `${src.slice(0, entry.start)}${name}: ${call}${src.slice(entry.end)}`
+    else if (block) out = insertEntry(src, block, `${name}: ${call}`)
+    else out = addProperty(src, 'platforms', `{ ${name}: ${call} }`)
+    return addNamedImport(out, info.factory, info.entry)
   })
 }
 
@@ -368,13 +417,19 @@ export function writeRcPlatform(
  */
 export function removeRcPlatform(ctx: ProjectContext, name: string): string | undefined {
   const platforms = ctx.readRc().platforms
-  const factory = platforms[name]?.factory
-  const stillUsed = Object.entries(platforms).some(([n, p]) => n !== name && p.factory === factory)
-  editRcSource(ctx, (mod, target) => {
-    if (target.platforms) delete target.platforms[name]
-    if (factory && !stillUsed && mod.imports[factory]) delete mod.imports[factory]
+  const gone = platforms[name]
+  const factory = gone?.factory
+  const local = gone?.local ?? factory
+  const others = Object.entries(platforms).filter(([n]) => n !== name)
+  // The type is still in use when another platform calls the same factory, whatever it is renamed to.
+  const typeUsed = others.some(([, p]) => p.factory === factory)
+  const importUsed = others.some(([, p]) => (p.local ?? p.factory) === local)
+  editRcText(ctx, (src) => {
+    const { block, entry } = platformEntry(src, name)
+    const out = block && entry ? removeEntries(src, block, [entry]) : src
+    return local && !importUsed ? removeNamedImport(out, local) : out
   })
-  return factory && !stillUsed ? factory : undefined
+  return factory && !typeUsed ? factory : undefined
 }
 
 /** Change one option of a platform in kitrrc.ts (`kitr config site port 4000`). `undefined` removes it. */
@@ -384,17 +439,17 @@ export function setRcPlatformOption(
   key: string,
   value: unknown,
 ) {
-  editRcSource(ctx, (_mod, target) => {
-    const call = target.platforms?.[name]
-    if (call?.$type !== 'function-call')
-      throw new Error(`kitrrc.ts: platforms.${name} is not a factory call`)
-    let arg = call.$args[0]
-    if (!arg) {
-      call.$args.push({})
-      arg = call.$args[0]
-    }
-    if (value === undefined) delete arg[key]
-    else arg[key] = value
+  editRcText(ctx, (src) => {
+    const { entry } = platformEntry(src, name)
+    const text = entry ? src.slice(entry.start, entry.end) : ''
+    const call = /^(['"]?)[\w$-]+\1\s*:\s*([\w$]+)\s*\(/.exec(text)
+    if (!entry || !call) throw new Error(`kitrrc.ts: platforms.${name} is not a factory call`)
+    const options = { ...readRcPlatforms(src)[name]?.options }
+    if (value === undefined) delete options[key]
+    else options[key] = value
+    const head = text.slice(0, call[0].length - 1 - call[2]!.length)
+    const replaced = `${head}${call[2]}(${Object.keys(options).length ? literal(options, fileQuote(src)) : ''})`
+    return src.slice(0, entry.start) + replaced + src.slice(entry.end)
   })
 }
 
@@ -420,6 +475,7 @@ export async function addPlatform(
   codemods: Codemods,
   add: AddPlatformOptions,
 ): Promise<PlatformInstance> {
+  await ensureAvailable(ctx, add.type, { install: add.install ?? true })
   const info = await resolvePlatformType(ctx, add.type)
   if (!/^[a-z][a-z0-9_-]*$/i.test(add.name))
     throw new Error(
@@ -459,13 +515,13 @@ export async function addPlatform(
 }
 
 /** Run one hook (`dev`, `build`, `start`, `scaffold`) for the named platforms. */
-/** `kitr types` before dev and build, so generated names are current before anything compiles. */
-async function generateTypes(ctx: ProjectContext) {
-  const { runTypes } = await import('./types')
-  const result = await runTypes(ctx, { quiet: !ctx.verbose })
-  if (result.written.length)
+/** `kitr generate` before dev and build, so generated names and the route table are current before anything compiles. */
+async function generateAll(ctx: ProjectContext) {
+  const { runGenerate } = await import('./generate')
+  const result = await runGenerate(ctx, { quiet: !ctx.verbose, strict: false })
+  if (result.types.written.length)
     log.step(
-      `kitr types: ${result.written.length} file(s) written (${result.generators.join(', ')})`,
+      `kitr generate: ${result.types.written.length} type file(s) written (${result.types.generators.join(', ')})`,
     )
 }
 
@@ -476,7 +532,7 @@ export async function runPlatforms(
   flags: Record<string, string | boolean> = {},
   mode: 'parallel' | 'sequential' = hook === 'build' ? 'sequential' : 'parallel',
 ) {
-  if (hook === 'dev' || hook === 'build') await generateTypes(ctx)
+  if (hook === 'dev' || hook === 'build') await generateAll(ctx)
   const all = await loadPlatforms(ctx)
   const selected = selectPlatforms(all, names)
   const controller = new AbortController()
@@ -484,7 +540,9 @@ export async function runPlatforms(
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)
   const everyInstance = Object.values(all)
-  const tasks = selected.map(([name, base]) => {
+  // Several platforms running at once print into one terminal: label each line with its platform.
+  const labelled = mode === 'parallel' && selected.length > 1 && hook !== 'scaffold'
+  const tasks = selected.map(([name, base], index) => {
     const { instance, flags: platformFlags } = withFlags(base, flags)
     const fn = instance[hook]
     return async () => {
@@ -499,6 +557,7 @@ export async function runPlatforms(
           platforms: everyInstance,
           flags: platformFlags,
           signal: controller.signal,
+          ...(labelled ? { prefix: platformPrefix(name, index) } : {}),
         }),
       )
     }

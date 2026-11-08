@@ -7,12 +7,20 @@ import type { Validators } from './types'
  *
  *   export default class ProjectsController {
  *     static validation = { store: { body: createProjectSchema } }
+ *     static inject = ['db'] as const
+ *     constructor(private db: Db) {}
  *     async index({ query }: HttpContext) { ... }
  *     async store({ body }: HttpContext<{}, {}, CreateProject>) { ... }
  *   }
+ *
+ * A controller is built per request from the request's container (`app.container.make(Controller)`),
+ * with the bindings named by `static inject` as constructor arguments, so it can take services and
+ * hold per-request state in its fields.
  */
 export interface ControllerClass {
   new (...args: any[]): object
+  /** Bindings passed to the constructor, in order. Resolved from the request's container. */
+  readonly inject?: readonly string[]
   /** Validators per method name, e.g. `{ store: { body: schema } }`. */
   validation?: Record<string, Validators>
 }
@@ -69,7 +77,7 @@ export type ControllerValidators<C, M extends string> =
       : undefined
     : undefined
 
-const instances = new WeakMap<ControllerClass, object>()
+// kitr-allow-module-state: a cache of dynamic imports, keyed by the import function; it holds classes, never instances
 const resolved = new WeakMap<LazyController, Promise<ControllerClass>>()
 
 /** True for a `[Controller, 'method']` handler. */
@@ -92,16 +100,6 @@ export async function resolveControllerClass(
     resolved.set(ref, p)
   }
   return p
-}
-
-/** The single shared instance of a controller class; one per class, reused across requests. */
-export function controllerInstance(cls: ControllerClass): object {
-  let instance = instances.get(cls)
-  if (!instance) {
-    instance = new cls()
-    instances.set(cls, instance)
-  }
-  return instance
 }
 
 function isClass(fn: unknown): fn is ControllerClass {

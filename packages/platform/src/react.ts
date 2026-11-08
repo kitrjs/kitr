@@ -1,10 +1,20 @@
 import { useApp } from '@kitr/react'
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import type { Platform, SafeArea } from './index'
+import { detectRuntime, type Platform, type Runtime, type SafeArea } from './index'
 
 /** The `platform` service from the container. */
 export function usePlatform(): Platform {
   return useApp().container.use('platform')
+}
+
+/**
+ * The host runtime: `web`, `electron`, `tauri` or `capacitor`. Use it to branch on the shell
+ * itself; `usePlatform().type` says `desktop` for both Electron and Tauri. Without the platform
+ * provider it falls back to `detectRuntime()`.
+ */
+export function useRuntime(): Runtime {
+  const app = useApp()
+  return app.container.has('platform') ? app.container.use('platform').runtime : detectRuntime()
 }
 
 /** `true` while the device reports a connection. Hydration-safe: the server and first render say online. */

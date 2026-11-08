@@ -310,6 +310,7 @@ export async function typesChecks(ctx: ProjectContext): Promise<Finding[]> {
   }
 }
 
+// kitr-allow-module-state: constant set built once at import, never mutated
 const ROUTE_CREATORS = new Set([
   'createFileRoute',
   'createLazyFileRoute',

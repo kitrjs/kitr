@@ -23,7 +23,7 @@ What `kitr add` does:
 - Adds [server](/packages/server) and [query](/packages/query) first when the project does not have them, because actions require both.
 - Installs `@kitr/actions` and adds it to `packages` in `kitrrc.ts`. Actions register no provider.
 - Adds `#kitr/*` to `paths` and `.kitr/**/*` to `include` in `tsconfig.json`, and `.kitr` to `.gitignore`. Projects from `kitr new` already have both.
-- Prefixes the `typecheck` script with `kitr types &&`, so `tsc` always sees current names, and adds `#kitr/*` to the `imports` field of `package.json` when it has one.
+- Points the `typecheck` script at `kitr typecheck`, which generates the names and then runs `tsc`, and adds `#kitr/*` to the `imports` field of `package.json` when it has one.
 - Creates an empty `app/actions/` folder (or `directories.actions` from `kitrrc.ts`).
 - Edits `app/app.ts`: `import { operations } from '#kitr/actions'` and `createApp({ operations, ... })`.
 - Runs `kitr types` once dependencies are installed, which writes `.kitr/actions.ts`.
@@ -162,7 +162,9 @@ import { queryOptions } from '@kitr/query'
 
 r.page('/projects/', {
   loader: ({ context }) =>
-    context.queryClient.ensureQueryData(queryOptions('projects.list', { status: 'open' })),
+    context.queryClient.ensureQueryData(
+      queryOptions(context.app, 'projects.list', { status: 'open' }),
+    ),
   lazy: () => import('./pages/projects/index'),
 })
 ```
@@ -187,13 +189,13 @@ const project = await renameProject({ id: 'prj_42', name: 'Acme site' })
 
 In the browser this is one request. On the server, during rendering or inside another handler, Start runs the handler in-process; there is no HTTP hop. A direct call applies no cache effects, because there is no cache in play; use `useMutation` in components for that.
 
-When all you have is the name, `call` from `@kitr/query` looks it up in the registry:
+When all you have is the name, `call` from `@kitr/query` looks it up in the app's registry (`app.operations`), so pass the app:
 
 ```ts
 import { call } from '@kitr/query'
 
-await call('projects.rename', { id: 'prj_42', name: 'Acme site' })
-const open = await call('projects.list', { status: 'open' })
+await call(app, 'projects.rename', { id: 'prj_42', name: 'Acme site' })
+const open = await call(app, 'projects.list', { status: 'open' })
 ```
 
 The generated tree gives the same functions grouped by feature, which reads well in scripts:
@@ -411,3 +413,4 @@ The server function itself is a TanStack Start function, so it also works with S
 - [Forms](/packages/forms): field errors from a mutation.
 - [API routes](/packages/api) for the same handlers behind URLs.
 - [Type generation](/docs/cli#type-generation): the `kitr types` runner and how a package adds a generator.
+- [Choosing a data source](/docs/data-sources): when to use actions and when to use actions, API routes, HTTP or realtime.

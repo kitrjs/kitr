@@ -1,21 +1,17 @@
-// Usage: node tests/e2e/prepare.mjs <example> <copy-name> [--build] [--add <package>]
+// Usage: node tests/e2e/prepare.mjs <example> <copy-name> [--build] [--add <package>] [--variant <name>]
 // Copies examples/<example> to $TMPDIR/kitr-e2e-apps/<copy-name> with its installed node_modules
 // symlinked in, adds the e2e fixture files from tests/e2e/fixtures/<example>, and optionally
 // builds it. The examples themselves stay the untouched output of `kitr new`.
+//
+// A fixture directory holds the files copied into the app (pages, stores) and, optionally, a
+// `patch.mjs` that links them into the app (route table, server routes) and a `variant-<name>.mjs`
+// for each `--variant <name>`: the same kit wired differently (the realtime kit over SSE).
 import { execFileSync } from 'node:child_process'
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { withBuildSlot } from './build-slots.mjs'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const [example, name = example, ...flags] = process.argv.slice(2)
@@ -41,8 +37,8 @@ for (const entry of readdirSync(join(source, 'node_modules'))) {
 const bin = join(source, 'node_modules/.bin')
 if (existsSync(bin)) symlinkSync(bin, join(target, 'node_modules/.bin'), 'dir')
 
-// `--add <pkg>`: a preview package no kit installs (devtools), added the way a user would with
-// `kitr add <pkg> --preview`, and linked from the workspace.
+// `--add <pkg>`: a package no kit installs (devtools), added the way a user would with
+// `kitr add <pkg>`, and linked from the workspace.
 for (let i = 0; i < flags.length; i++) {
   if (flags[i] !== '--add') continue
   const pkg = flags[++i]
@@ -55,55 +51,40 @@ for (let i = 0; i < flags.length; i++) {
   symlinkSync(join(root, 'packages', pkg), join(scope, pkg), 'dir')
   execFileSync(
     process.execPath,
-    [join(root, 'packages/kitr/bin/kitr.mjs'), 'add', pkg, '--preview', '--no-install', '--yes'],
+    [join(root, 'packages/kitr/bin/kitr.mjs'), 'add', pkg, '--no-install', '--yes'],
     { cwd: target, stdio: 'inherit', env: { ...process.env, CI: '1' } },
   )
 }
 
+// Fixture files go under app/, then the example's patch links them in.
 const fixtures = join(root, 'tests/e2e/fixtures', example)
-if (existsSync(fixtures)) cpSync(fixtures, join(target, 'app'), { recursive: true })
-
-// Fixture pages: the fixture ships page components under app/pages/e2e; link them into the
-// app's route table the way `kitr make:page` would, after the kit's own pages.
-const appRoutes = join(target, 'app/routes.ts')
-if (existsSync(appRoutes) && existsSync(join(target, 'app/pages/e2e'))) {
-  let src = readFileSync(appRoutes, 'utf8')
-  const anchor = ".page('/about', { lazy: () => import('./pages/about') })"
-  if (!src.includes(anchor))
-    throw new Error(`prepare: ${appRoutes} has no /about page to link after`)
-  src = `import { meQuery } from '#app/e2e/me-query'\n${src}`
-  src = src.replace(
-    anchor,
-    `${anchor}
-    .page('/e2e/counter', { lazy: () => import('./pages/e2e/counter') })
-    .page('/e2e/me', {
-      loader: ({ context }) => context.queryClient.ensureQueryData(meQuery),
-      lazy: () => import('./pages/e2e/me'),
-    })
-    .page('/e2e/socket', { lazy: () => import('./pages/e2e/socket') })`,
-  )
-  writeFileSync(appRoutes, src)
-}
-
-// Fixture API route: lets a test push an event down a socket channel through the realtime
-// server the table's `.ws` link binds in the container.
-const routesFile = join(target, 'server/routes.ts')
-if (existsSync(routesFile)) {
-  let src = readFileSync(routesFile, 'utf8')
-  const anchor = "r.get('/health'"
-  if (!src.includes(anchor))
-    throw new Error(`prepare: ${routesFile} has no /health route to link before`)
-  src = src.replace(
-    anchor,
-    `r.post('/e2e/emit', async (ctx) => { const body = ctx.body as { room: string; text: string }; ctx.app.container.use('realtime').use(exampleChannel, { room: body.room }).emit('message', body.text); return { sent: true } }, { name: 'e2e.emit' })
-      .get('/health'`,
-  )
-  writeFileSync(routesFile, src)
+if (existsSync(fixtures)) {
+  cpSync(fixtures, join(target, 'app'), {
+    recursive: true,
+    filter: (src) => !/(^|\/)(patch|variant-[\w-]+)\.mjs$/.test(relative(fixtures, src)),
+  })
+  const run = async (file) => {
+    if (!existsSync(file)) return
+    const { default: patch } = await import(pathToFileURL(file).href)
+    await patch({ target, root, name })
+  }
+  await run(join(fixtures, 'patch.mjs'))
+  const variant = flags.indexOf('--variant')
+  if (variant !== -1) {
+    const file = join(fixtures, `variant-${flags[variant + 1]}.mjs`)
+    if (!existsSync(file))
+      throw new Error(`prepare: no variant "${flags[variant + 1]}" for ${example}`)
+    await run(file)
+  }
 }
 
 if (flags.includes('--build')) {
-  execFileSync(process.execPath, [join(root, 'packages/kitr/bin/kitr.mjs'), 'build', 'site'], {
-    cwd: target,
-    stdio: 'inherit',
-  })
+  // Builds are heavy and several apps prepare at once: a few at a time keeps each of them from
+  // starving the others (a prerender that cannot reach its own server in time fails the build).
+  await withBuildSlot(appsDir, () =>
+    execFileSync(process.execPath, [join(root, 'packages/kitr/bin/kitr.mjs'), 'build', 'site'], {
+      cwd: target,
+      stdio: 'inherit',
+    }),
+  )
 }

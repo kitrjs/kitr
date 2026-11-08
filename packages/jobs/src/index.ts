@@ -78,7 +78,7 @@ export interface JobsDriver {
   pull(now: number, limit: number): Promise<QueuedJob[]>
   /** Called once a pulled job is done with: it ran, it failed for good, or its retry was queued. */
   ack?(job: QueuedJob): Promise<void>
-  /** How many jobs are waiting. */
+  /** How many jobs are waiting or running: queued plus reserved (pulled, not yet acked). */
   size(): Promise<number>
   /** Remove every waiting job. */
   clear(): Promise<void>
@@ -147,28 +147,55 @@ declare module '@kitr/core' {
 /** Types `config/jobs.ts`. Returns its argument unchanged. */
 export const defineConfig = createDefineConfig<JobsConfig>()
 
-/** The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between processes; use `createRedisJobsDriver` for that. */
-export function createMemoryJobsDriver(): JobsDriver {
+/** Options for `createMemoryJobsDriver`. */
+export interface MemoryJobsDriverOptions {
+  /**
+   * Milliseconds a pulled job stays reserved. A job the worker never acks (its run is stuck, or
+   * the worker loop died and was restarted in this process) goes back to the queue after this.
+   * Keep it above your longest job `timeout`, or a slow job runs twice. Default 30 000.
+   */
+  visibilityTimeout?: number
+}
+
+/**
+ * The default driver: an in-process queue sorted by `runAt`. Lost on restart and not shared between
+ * processes; use `createRedisJobsDriver` for that. A pulled job is reserved, not removed: it
+ * counts in `size()` until the worker acks it, and returns to the queue if that takes longer than
+ * `visibilityTimeout`.
+ */
+export function createMemoryJobsDriver(options: MemoryJobsDriverOptions = {}): JobsDriver {
+  const visibility = options.visibilityTimeout ?? 30_000
   const queue: QueuedJob[] = []
-  // Pulled but not finished. In memory a crash loses them anyway; a durable driver puts them back.
-  const reserved = new Map<string, QueuedJob>()
+  // Pulled but not acked yet, with when each goes back to the queue. A retry reuses the job id,
+  // so the attempt is part of the key.
+  const reserved = new Map<string, { job: QueuedJob; until: number }>()
+  const key = (job: QueuedJob) => `${job.id}:${job.attempt}`
+  const sort = () => queue.sort((a, b) => a.runAt - b.runAt)
   return {
     name: 'memory',
     async push(job) {
       queue.push(job)
-      queue.sort((a, b) => a.runAt - b.runAt)
+      sort()
     },
     async pull(now, limit) {
+      let returned = false
+      for (const [k, entry] of reserved)
+        if (entry.until <= now) {
+          reserved.delete(k)
+          queue.push(entry.job)
+          returned = true
+        }
+      if (returned) sort()
       const due: QueuedJob[] = []
       while (queue.length && queue[0]!.runAt <= now && due.length < limit) due.push(queue.shift()!)
-      for (const job of due) reserved.set(job.id, job)
+      for (const job of due) reserved.set(key(job), { job, until: now + visibility })
       return due
     },
     async ack(job) {
-      reserved.delete(job.id)
+      reserved.delete(key(job))
     },
     async size() {
-      return queue.length
+      return queue.length + reserved.size
     },
     async clear() {
       queue.length = 0
@@ -257,7 +284,8 @@ export function createRedisJobsDriver(
       await redis.hdel(data, member(job))
     },
     async size() {
-      return redis.zcard(queue)
+      // Reserved jobs are still work: a worker that died mid-job must not read as an empty queue.
+      return (await redis.zcard(queue)) + (await redis.zcard(reserved))
     },
     async clear() {
       await redis.del(queue, reserved, data)
@@ -268,7 +296,7 @@ export function createRedisJobsDriver(
   }
 }
 
-const units: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 }
+const units: Record<string, number> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 } // kitr-allow-module-state: lookup table built once at import, never mutated
 
 /** Parse an interval such as `'30s'`, `'5m'` or `'1.5h'` into milliseconds (`'5m'` → 300000). Throws on anything else. */
 export function parseInterval(text: string): number {

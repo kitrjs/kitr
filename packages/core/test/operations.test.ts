@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createApp } from '../src/app'
 import { globToRegExp } from '../src/generate'
-import { type OperationLike, OperationRegistry, operations } from '../src/operations'
+import { type OperationLike, OperationRegistry } from '../src/operations'
 
 const query = (name: string): OperationLike => ({
   kind: 'query',
@@ -13,8 +13,6 @@ const mutation = (name: string): OperationLike => ({
   name,
   contract: { kind: 'mutation', mutate: async () => name },
 })
-
-afterEach(() => operations.reset())
 
 describe('OperationRegistry', () => {
   it('registers, resolves and lists operations by name', () => {
@@ -47,13 +45,25 @@ describe('OperationRegistry', () => {
     expect(() => registry.register({ bad: {} as OperationLike })).toThrow(/operations.bad/)
   })
 
-  it('is filled by createApp({ operations }) and shared by forks', () => {
+  it('is filled by createApp({ operations }) and read through by forks', () => {
     const app = createApp({ operations: { 'projects.list': query('projects.list') } })
-    expect(app.operations).toBe(operations)
-    expect(operations.get('projects.list').name).toBe('projects.list')
-    expect(app.fork().operations.has('projects.list')).toBe(true)
-    operations.reset()
-    expect(app.operations.has('projects.list')).toBe(false)
+    expect(app.operations.get('projects.list').name).toBe('projects.list')
+    const fork = app.fork()
+    expect(fork.operations.has('projects.list')).toBe(true)
+    expect(fork.operations.names()).toEqual(['projects.list'])
+  })
+
+  it('keeps registrations per app and per fork', () => {
+    const a = createApp({ operations: { 'projects.list': query('projects.list') } })
+    const b = createApp()
+    expect(b.operations.has('projects.list')).toBe(false)
+    const fork = a.fork()
+    const fake = query('fake')
+    fork.operations.register({ 'projects.list': fake, extra: query('extra') })
+    expect(fork.operations.get('projects.list')).toBe(fake)
+    expect(a.operations.get('projects.list')).not.toBe(fake)
+    expect(a.operations.has('extra')).toBe(false)
+    expect(fork.operations.all()).toHaveLength(2)
   })
 })
 

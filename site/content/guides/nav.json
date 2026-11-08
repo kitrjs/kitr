@@ -11,7 +11,7 @@
   },
   {
     "title": "Ship to phones and desktops",
-    "description": "Previews: the same app as an iPhone and Android app, a desktop app, or all of them from one project.",
+    "description": "The same app as an iPhone and Android app, a desktop app, or all of them from one project.",
     "pages": ["mobile-app", "desktop-app", "one-codebase"]
   },
   {

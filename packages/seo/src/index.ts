@@ -1,4 +1,9 @@
-import { type BuildPlatformKey, createDefineConfig, forBuildPlatform } from '@kitr/core'
+import {
+  type BuildPlatformKey,
+  createDefineConfig,
+  forBuildPlatform,
+  type KitrApp,
+} from '@kitr/core'
 
 /** Site-wide values for `seo()` and the build: name, canonical origin, default image, handle and locale. */
 export interface SeoSite {
@@ -32,17 +37,12 @@ declare module '@kitr/core' {
   }
 }
 
-const typed = createDefineConfig<SeoConfig>()
-let configured: SeoConfig = {}
-
 /**
- * Types the default export of `config/seo.ts`, and makes its `site` the defaults `seo()` uses:
- * the config is imported (through `config/index.ts`) before any route renders.
+ * Types the default export of `config/seo.ts`. The config lives on the app (`app.config.get('seo')`,
+ * set from the `config` that `app/app.ts` passes to `createApp`), not in this module, so two apps
+ * in one process keep their own site defaults and `seo()` reads them from the app it is given.
  */
-export const defineConfig: typeof typed = ((config: SeoConfig) => {
-  configured = config
-  return typed(config)
-}) as typeof typed
+export const defineConfig = createDefineConfig<SeoConfig>()
 
 /** What one page passes to `seo()`. Every field is optional; `site` supplies the defaults. */
 export interface SeoInput {
@@ -60,16 +60,43 @@ export interface SeoInput {
   noIndex?: boolean
   /** Joined into a `keywords` meta tag. */
   keywords?: string[]
-  /** Site defaults. Default: `site` from `config/seo.ts`. */
+  /** Site defaults. Default: `site` from the app's `config/seo.ts`, found through the context passed as `seo`'s second argument. */
   site?: SeoSite
 }
 
 /**
- * Meta tags for a route's `head()`: `head: () => seo({ title, description })`.
- * Covers title, description, Open Graph, Twitter cards, canonical and robots.
+ * Where `seo()` finds the app for the site defaults: the argument of a route's `head` (its
+ * `match.context.app`, which `createKitrRouter` puts in every route's context), a loader or
+ * `beforeLoad` context, or the app itself.
  */
-export function seo(input: SeoInput) {
-  const site = input.site ?? configured.site ?? {}
+export type SeoContext = object
+
+function appOf(context: SeoContext | undefined): KitrApp | undefined {
+  const isApp = (value: unknown): value is KitrApp =>
+    !!value && typeof value === 'object' && 'config' in value && 'container' in value
+  const candidates = (value: unknown): unknown[] => {
+    const v = value as
+      | { app?: unknown; context?: unknown; match?: { context?: unknown } }
+      | undefined
+    return [
+      value,
+      v?.app,
+      (v?.context as { app?: unknown } | undefined)?.app,
+      (v?.match?.context as { app?: unknown } | undefined)?.app,
+    ]
+  }
+  return candidates(context).find(isApp)
+}
+
+/**
+ * Meta tags for a route's `head()`: `head: (ctx) => seo({ title, description }, ctx)`.
+ * Covers title, description, Open Graph, Twitter cards, canonical and robots. Pass the `head`
+ * argument (or the app) as the second argument so the site name, image and origin from
+ * `config/seo.ts` apply; without it only `input.site` does.
+ */
+export function seo(input: SeoInput, context?: SeoContext) {
+  const configured = appOf(context)?.config.get('seo', {}) as SeoConfig | undefined
+  const site = input.site ?? configured?.site ?? {}
   const title = input.title
     ? site.name && input.title !== site.name
       ? `${input.title} · ${site.name}`

@@ -10,8 +10,12 @@ const ctx = {
   glob: () => [],
 }
 
+const FILE = 'app/actions/projects.ts'
+const scan = (source: string, extra: Record<string, string> = {}) =>
+  scanActions([{ file: FILE, source }], { root: '/p', files: extra })
+
 describe('scanActions', () => {
-  it('finds exported defineQuery and defineMutation calls, ignoring comments and strings', () => {
+  it('finds exported defineQuery and defineMutation calls, ignoring comments and strings', async () => {
     const src = `
 import { defineMutation, defineQuery } from '@kitr/actions'
 // export const old = defineQuery('projects.old', { handler: () => 1 })
@@ -24,20 +28,60 @@ export const updateProject: ServerMutation<any, any> = defineMutation<typeof sch
 })
 const internal = defineQuery('projects.internal', { handler: () => 1 })
 `
-    expect(scanActions('app/actions/projects.ts', src)).toEqual([
-      {
-        file: 'app/actions/projects.ts',
-        exportName: 'listProjects',
-        name: 'projects.list',
-        kind: 'query',
-      },
-      {
-        file: 'app/actions/projects.ts',
-        exportName: 'updateProject',
-        name: 'projects.update',
-        kind: 'mutation',
-      },
+    expect(await scan(src)).toEqual([
+      { file: FILE, exportName: 'listProjects', name: 'projects.list', kind: 'query' },
+      { file: FILE, exportName: 'updateProject', name: 'projects.update', kind: 'mutation' },
     ])
+  })
+
+  it('follows import aliases, namespace imports, export lists and renamed exports', async () => {
+    const src = `
+import * as k from '@kitr/actions'
+import { defineQuery as query, defineMutation } from '@kitr/actions'
+const listProjects = query('projects.list', { handler: () => [] })
+const rename = defineMutation(\`projects.rename\`, { handler: () => 1 })
+export const archive = (k.defineMutation('projects.archive', { handler: () => 1 }) as const)
+export { listProjects, rename as renameProject }
+`
+    expect(await scan(src)).toEqual([
+      { file: FILE, exportName: 'archive', name: 'projects.archive', kind: 'mutation' },
+      { file: FILE, exportName: 'listProjects', name: 'projects.list', kind: 'query' },
+      { file: FILE, exportName: 'renameProject', name: 'projects.rename', kind: 'mutation' },
+    ])
+  })
+
+  it('resolves the callee by symbol through re-exports, and ignores lookalikes', async () => {
+    const extra = {
+      'node_modules/@kitr/actions/index.d.ts':
+        'export declare function defineQuery(name: string, options: object): { kind: "query" }',
+      'node_modules/kitr/actions.d.ts': "export * from '@kitr/actions'",
+      'app/lib/ops.ts':
+        "import { defineQuery } from '@kitr/actions'\nexport const shared = defineQuery('shared.list', {})",
+      'app/lib/define.ts':
+        'export function defineQuery(name: string, o: object) { return { name, o } }',
+    }
+    const src = `
+import { defineQuery } from '../lib/define'
+export const listProjects = defineQuery('projects.list', {})
+export { shared } from '../lib/ops'
+export { shared as again } from '../lib/ops'
+`
+    const found = await scan(src, extra)
+    // `defineQuery` from ../lib/define is not the kitr one; the re-exported one is.
+    expect(found.map((op) => [op.exportName, op.name])).toEqual([
+      ['shared', 'shared.list'],
+      ['again', 'shared.list'],
+    ])
+  })
+
+  it('names the file and line when an operation name is not a string literal', async () => {
+    const src = `import { defineQuery } from '@kitr/actions'
+const name = 'projects.list'
+export const listProjects = defineQuery(name, { handler: () => [] })
+`
+    await expect(scan(src)).rejects.toThrow(
+      /app\/actions\/projects\.ts:3: .*must be a string literal/,
+    )
   })
 })
 
@@ -99,7 +143,7 @@ describe('the generator', () => {
   it('reads app/actions (or directories.actions), skipping tests and declarations', async () => {
     const files: Record<string, string> = {
       'app/actions/projects.ts':
-        "export const listProjects = defineQuery('projects.list', { handler: () => [] })",
+        "import { defineQuery } from '@kitr/actions'\nexport const listProjects = defineQuery('projects.list', { handler: () => [] })",
       'app/actions/projects.test.ts':
         "export const nope = defineQuery('projects.nope', { handler: () => [] })",
       'app/actions/env.d.ts':

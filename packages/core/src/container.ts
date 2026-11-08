@@ -21,6 +21,21 @@ export type Binding<K> = K extends keyof ContainerBindings ? ContainerBindings[K
 type Factory<T> = (container: Container) => MaybePromise<T>
 
 /**
+ * A class the container can build: `make(Class)` passes it the bindings named by `static inject`,
+ * in order, as constructor arguments. A plain class without `inject` is built with no arguments.
+ *
+ *   class ProjectsController {
+ *     static inject = ['db', 'logger'] as const
+ *     constructor(private db: Db, private logger: Logger) {}
+ *   }
+ */
+export interface Constructible<T = object> {
+  new (...args: any[]): T
+  /** Binding keys to resolve and pass to the constructor, in order. */
+  readonly inject?: readonly BindingKey[]
+}
+
+/**
  * A typed registry of lazy singletons. ~100 lines, no decorators, no reflection.
  * It is what loaders, actions, controllers and tests use to reach services.
  */
@@ -83,11 +98,23 @@ export class Container {
     return this.instances.has(key) || this.factories.has(key) || (this.parent?.has(key) ?? false)
   }
 
-  /** Resolve a binding, running its factory on first use. Factories may be async. */
-  async make<K extends BindingKey>(key: K): Promise<Binding<K>> {
-    if (this.instances.has(key)) return this.instances.get(key) as Binding<K>
+  /**
+   * Resolve a binding, running its factory on first use. Factories may be async.
+   *
+   * Given a class instead of a key, build a new instance of it from this container: the bindings
+   * named by its `static inject` become the constructor arguments, resolved here, so a request
+   * fork gives the instance that request's services. Nothing is cached: every call builds one.
+   */
+  make<T extends object>(Class: Constructible<T>): Promise<T>
+  make<K extends BindingKey>(key: K): Promise<Binding<K>>
+  async make(key: BindingKey | Constructible): Promise<unknown> {
+    if (typeof key === 'function') {
+      const args = await Promise.all((key.inject ?? []).map((dependency) => this.make(dependency)))
+      return new key(...args)
+    }
+    if (this.instances.has(key)) return this.instances.get(key)
     const inflight = this.pending.get(key)
-    if (inflight) return inflight as Promise<Binding<K>>
+    if (inflight) return inflight
     const found = this.locate(key)
     if (!found) throw missing(key)
     if (found.owner !== this && found.build) return found.owner.make(key)
@@ -102,13 +129,13 @@ export class Container {
     }
     if (!(result instanceof Promise)) {
       this.instances.set(key, result)
-      return Promise.resolve(result as Binding<K>)
+      return Promise.resolve(result)
     }
     const promise = result.then(
       (instance) => {
         this.instances.set(key, instance)
         this.pending.delete(key)
-        return instance as Binding<K>
+        return instance
       },
       (error) => {
         // Don't cache a failure: the next make() runs the factory again.

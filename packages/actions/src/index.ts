@@ -3,7 +3,6 @@ import {
   type InferOutput,
   inProduction,
   KitrError,
-  type KitrErrorShape,
   type MutationContract,
   type QueryContract,
   type QueryKey,
@@ -12,14 +11,20 @@ import {
   validate,
 } from '@kitr/core'
 import {
+  type Envelope,
+  failEnvelope,
+  keyFor,
+  linkSignals,
+  okEnvelope,
+  unwrapEnvelope,
+} from '@kitr/core/request'
+import {
   mutationFrom as defineMutationContract,
   queryFrom as defineQueryContract,
   type MutationDefinition,
   type QueryDefinition,
 } from '@kitr/query'
 import { createMiddleware, createServerFn } from '@tanstack/react-start'
-
-type Envelope<T> = { ok: true; data: T } | { ok: false; error: KitrErrorShape }
 
 type InputOf<S> = S extends StandardSchemaV1 ? InferOutput<S> : void
 
@@ -148,8 +153,7 @@ export function defineQuery<
 ): ServerQuery<InputOf<S>, TOutput, TContext> {
   type TInput = InputOf<S>
   const { serverFn, call, run } = build<S, TOutput, TContext>(name, 'GET', options)
-  const key = (input: TInput): QueryKey =>
-    input === undefined ? ['action', name] : ['action', name, input]
+  const key = (input: TInput): QueryKey => keyFor('action', name, input)
   const contract: Omit<QueryContract<TInput, TOutput>, 'kind'> = {
     source: 'action',
     key,
@@ -200,17 +204,10 @@ export function defineMutation<
 /** The error envelope for a failed operation. Server errors are logged and, in production, masked. */
 function failure(name: string, error: unknown): Envelope<never> {
   const kitrError = toKitrError(error)
-  const shape = kitrError.toJSON()
-  if (kitrError.status >= 500) {
-    console.error(`[@kitr/actions] ${name} failed:`, error)
-    // Same rule as the kitr server: in production a server error's message and data
-    // stay in the server log and never reach the browser.
-    if (inProduction()) {
-      shape.message = 'Internal server error'
-      shape.data = undefined
-    }
-  }
-  return { ok: false, error: shape }
+  if (kitrError.status >= 500) console.error(`[@kitr/actions] ${name} failed:`, error)
+  // Same rule as the kitr server: in production a server error's message and data
+  // stay in the server log and never reach the browser.
+  return failEnvelope(kitrError, { mask: inProduction() })
 }
 
 /** redirect() throws a Response and notFound() a marked object: both steer the router, so pass them on. */
@@ -271,7 +268,7 @@ function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
         signal: AbortSignal
       }): Promise<Envelope<TOutput>> => {
         try {
-          return { ok: true, data: await execute(data, context, signal) }
+          return okEnvelope(await execute(data, context, signal))
         } catch (error) {
           if (steersRouter(error)) throw error
           return failure(name, error)
@@ -280,22 +277,10 @@ function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
     )
   const call = async (input: TInput, callOptions: { signal?: AbortSignal } = {}) => {
     const envelope = await serverFn({ data: input ?? undefined, signal: callOptions.signal })
-    if (!envelope.ok) {
-      const e = envelope.error
-      throw new KitrError(e.code, e.message, {
-        status: e.status,
-        fieldErrors: e.fieldErrors,
-        data: e.data,
-      })
-    }
-    return envelope.data
+    return unwrapEnvelope(envelope)
   }
   const run = (input: TInput, runOptions: CallOptions<TContext> = {}) =>
-    execute(
-      input,
-      (runOptions.context ?? {}) as TContext,
-      runOptions.signal ?? new AbortController().signal,
-    )
+    execute(input, (runOptions.context ?? {}) as TContext, linkSignals(runOptions.signal))
   return { serverFn, call, run }
 }
 

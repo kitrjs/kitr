@@ -1,4 +1,5 @@
 import { KitrError } from '@kitr/core'
+import { type CorsOptions, corsPolicy } from '@kitr/shield'
 import type { HttpContext } from './context'
 import type { Middleware } from './types'
 
@@ -9,61 +10,31 @@ export function defineMiddleware<P = any, Q = any, B = any>(
   return middleware
 }
 
-/** Options for `cors()`. */
-export interface CorsOptions {
-  /**
-   * Allowed origins: one origin, a list, a predicate, or `'*'` for a public API. Default none, so
-   * only same-origin requests (which need no CORS) get through: name the origins that may call you.
-   */
-  origin?: string | string[] | ((origin: string) => boolean)
-  /** Methods allowed on preflight. Default GET, POST, PUT, PATCH, DELETE, OPTIONS. */
-  methods?: string[]
-  /** Request headers allowed on preflight. Default Content-Type, Authorization. */
-  headers?: string[]
-  /** Send `access-control-allow-credentials: true` for cookie requests. Default false. */
-  credentials?: boolean
-  /** Seconds a browser may cache the preflight. Default 600. */
-  maxAge?: number
-}
+/**
+ * Options for `cors()`: the same type `@kitr/shield` takes, because both run the same policy.
+ * `origin` is `'*'`, one origin, a list or a predicate; `headers` defaults to Content-Type,
+ * Authorization, X-CSRF-Token and X-Requested-With (earlier releases of this package allowed only
+ * the first two, so a browser client sending the CSRF header needed them listed).
+ */
+export type { CorsOptions }
 
 /** Marks middleware that answers preflight, so the router registers OPTIONS for its routes. */
 export const handlesPreflight = Symbol.for('kitr.api.handlesPreflight')
 
 /**
- * CORS for the origins you list; handles preflight. Without `origin` no cross-origin caller is
- * allowed. Throws at once for `origin: '*'` with credentials, which would let any site act as the user.
+ * CORS for the origins you list; handles preflight. This is `cors()` of `@kitr/shield` fitted to
+ * route middleware: the same options and the same rules, so a policy written for one works in the
+ * other. Without `origin` no cross-origin caller is allowed. Throws at once for
+ * `origin: '*'` with credentials, which would let any site act as the user.
  */
 export function cors(options: CorsOptions = {}): Middleware {
-  const {
-    origin,
-    methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    headers = ['Content-Type', 'Authorization'],
-    credentials = false,
-    maxAge = 600,
-  } = options
-  if (origin === '*' && credentials)
-    throw new Error(
-      '[@kitr/api] cors({ origin: "*", credentials: true }) would let any site send requests with your users\' cookies; list the origins instead.',
-    )
-  const allow = (reqOrigin: string | null): string | null => {
-    if (!origin) return null
-    if (origin === '*') return '*'
-    if (!reqOrigin) return null
-    if (typeof origin === 'function') return origin(reqOrigin) ? reqOrigin : null
-    const list = Array.isArray(origin) ? origin : [origin]
-    return list.includes(reqOrigin) ? reqOrigin : null
-  }
+  const policy = corsPolicy(options)
   const middleware: Middleware = async (ctx, next) => {
-    const allowed = allow(ctx.request.header('origin'))
-    if (allowed) {
-      ctx.response.header('access-control-allow-origin', allowed)
-      if (allowed !== '*') ctx.response.header('vary', 'Origin')
-      if (credentials) ctx.response.header('access-control-allow-credentials', 'true')
-    }
+    const decision = policy(ctx.request.header('origin') ?? null)
+    for (const [k, v] of Object.entries(decision.headers)) ctx.response.header(k, v)
+    if (decision.vary) ctx.response.header('vary', 'Origin')
     if (ctx.request.method === 'OPTIONS') {
-      ctx.response.header('access-control-allow-methods', methods.join(', '))
-      ctx.response.header('access-control-allow-headers', headers.join(', '))
-      ctx.response.header('access-control-max-age', String(maxAge))
+      for (const [k, v] of Object.entries(decision.preflight)) ctx.response.header(k, v)
       return ctx.response.noContent()
     }
     return next()

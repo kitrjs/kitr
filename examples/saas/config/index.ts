@@ -4,10 +4,12 @@ import api from './api'
 import auth from './auth'
 import http from './http'
 import logger from './logger'
+import mail from './mail'
 import monitoring from './monitoring'
 import query from './query'
 import seo from './seo'
 import server from './server'
+import shield from './shield'
 import storage from './storage'
 import tailwind from './tailwind'
 import theme from './theme'
@@ -18,10 +20,12 @@ export const config = {
   auth,
   http,
   logger,
+  mail,
   monitoring,
   query,
   seo,
   server,
+  shield,
   storage,
   tailwind,
   theme,
