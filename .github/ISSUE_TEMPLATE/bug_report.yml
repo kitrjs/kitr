@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in kitr does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For a security vulnerability, do not use this form: see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest steps or code that show it. A repository link, or `kitr new` flags plus the files you changed, is ideal.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: packages
+    attributes:
+      label: Packages and versions
+      description: The kitr packages involved and their version (`pnpm ls kitr "@kitr/*"`).
+      placeholder: kitr 0.1.0, @kitr/auth 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: The kitr platform (web, server, desktop, tauri, mobile), and the OS, Node.js and browser versions if relevant.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Error output or stack traces.
+      render: text
