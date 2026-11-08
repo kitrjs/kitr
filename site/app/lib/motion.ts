@@ -7,6 +7,7 @@ import { type MouseEvent, useEffect, useState } from 'react'
 export const exit = {
   popover: 160,
   drawer: 240,
+  reveal: 220,
 } as const
 
 /**

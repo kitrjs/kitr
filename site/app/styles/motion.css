@@ -355,6 +355,40 @@ html.theme-swapped .theme-icon,
   }
 }
 
+/* Sidebar section lists slide open under the page you go to and fold away under the one you leave.
+   Rows animate from 0fr to 1fr, so the height follows the content without being measured. Only a
+   change animates (data-animate), never the page you land on. */
+.reveal {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+  /* Room for focus rings, which overflow: hidden would otherwise cut off. */
+  margin: -4px;
+  padding: 4px;
+}
+.reveal[data-animate] {
+  transition:
+    grid-template-rows var(--dur-base) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
+}
+@starting-style {
+  .reveal[data-animate] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+.reveal[data-closing] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-base) var(--ease-in-out),
+    opacity var(--dur-fast) linear;
+}
+
 /* ------------------------------------------------------ micro-interactions */
 
 .button,
