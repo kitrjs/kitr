@@ -7,6 +7,7 @@
 @import "@fontsource/jetbrains-mono/latin-500.css";
 @import "@fontsource/jetbrains-mono/latin-700.css";
 @import "@fontsource/asimovian/latin-400.css";
+@import "./motion.css";
 
 :root,
 [data-theme="light"] {
@@ -2623,7 +2624,8 @@ a.dcard:focus-visible {
   .docs-layout .sidebar {
     display: none;
   }
-  .docs-layout .sidebar.is-open {
+  .docs-layout .sidebar.is-open,
+  .docs-layout .sidebar.is-closing {
     display: flex;
     position: fixed;
     inset: 0;
@@ -2633,7 +2635,8 @@ a.dcard:focus-visible {
     background: var(--bg);
     overscroll-behavior: contain;
   }
-  .sidebar.is-open .drawer-head {
+  .sidebar.is-open .drawer-head,
+  .sidebar.is-closing .drawer-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2646,10 +2649,12 @@ a.dcard:focus-visible {
     background: var(--bg);
     border-bottom: 1px solid var(--line);
   }
-  .sidebar.is-open a {
+  .sidebar.is-open a,
+  .sidebar.is-closing a {
     line-height: 30px;
   }
-  .sidebar.is-open .sidebar-sections a {
+  .sidebar.is-open .sidebar-sections a,
+  .sidebar.is-closing .sidebar-sections a {
     padding-top: 6px;
     padding-bottom: 6px;
   }

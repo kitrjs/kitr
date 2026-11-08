@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { exit, usePresence, useSwapped } from '#app/lib/motion'
 import { CreatorMark } from './creator-marks'
 import { Icon, icons } from './icons'
 import { Logo } from './logo'
@@ -82,6 +83,8 @@ export function Header() {
     }
   }, [menu])
   useHideOnScroll(menu)
+  const presence = usePresence(menu, exit.popover)
+  const menuSwapped = useSwapped(menu)
 
   return (
     <header className="site-header" ref={header}>
@@ -121,24 +124,32 @@ export function Header() {
           aria-controls="nav-menu"
           onClick={() => setMenu((v) => !v)}
         >
-          <Icon icon={menu ? icons.close : icons.menu} />
+          <span className={menuSwapped ? 'icon-swap' : 'icon-still'} key={String(menu)}>
+            <Icon icon={menu ? icons.close : icons.menu} />
+          </span>
         </button>
       </nav>
-      {menu && (
-        <div id="nav-menu" className="nav-menu">
+      {presence.mounted && (
+        <div id="nav-menu" className="nav-menu" data-closing={presence.closing || undefined}>
           <div className="container">
-            {navItems.map((item) => (
+            {navItems.map((item, i) => (
               <Link
                 key={item.label}
                 to={item.to}
                 params={item.params}
+                style={{ '--i': i } as CSSProperties}
                 aria-current={path.startsWith(item.section) ? 'page' : undefined}
               >
                 {item.label}
                 <Icon icon={icons.arrow} size={18} />
               </Link>
             ))}
-            <a href={repoUrl} target="_blank" rel="noreferrer">
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{ '--i': navItems.length } as CSSProperties}
+            >
               GitHub
               <Icon icon={icons.external} size={18} />
             </a>

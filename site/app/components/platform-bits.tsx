@@ -2,6 +2,7 @@ import { Add01Icon } from '@hugeicons/core-free-icons'
 import { Link } from '@tanstack/react-router'
 import { Fragment, useState } from 'react'
 import { glyph } from '#app/lib/catalog'
+import { useSwapped } from '#app/lib/motion'
 import { builder, type PlatformEntry, platformMarks, platforms } from '#app/lib/platforms'
 import { usePm, withManager } from '#app/lib/pm'
 import { CreatorMark } from './creator-marks'
@@ -100,6 +101,8 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
   const pm = usePm((s) => s.pm)
   const chosen = builder.choices.filter((c) => on.has(c.id))
   const types = new Set(chosen.map((c) => c.type))
+  const picked = [...on].sort().join()
+  const pickedSwapped = useSwapped(picked)
   const code = `${builder.pre}<code>${builder.lines
     .filter((l) => (l.id ? on.has(l.id) : l.type ? types.has(l.type) : true))
     .map((l) => l.html)
@@ -163,7 +166,8 @@ export function PlatformBuilder({ headingLevel = 'h2' }: { headingLevel?: 'h1' |
       </div>
       <div className="builder-out">
         <div
-          className="feature-code builder-code"
+          key={picked}
+          className={`feature-code builder-code${pickedSwapped ? ' swap-in' : ''}`}
           // biome-ignore lint/security/noDangerouslySetInnerHtml: lines highlighted at build time
           dangerouslySetInnerHTML={{ __html: code }}
         />

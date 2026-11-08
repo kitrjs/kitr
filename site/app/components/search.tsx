@@ -1,8 +1,9 @@
 import { BookOpen01Icon, File02Icon, MapsIcon } from '@hugeicons/core-free-icons'
 import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { findPackage, packages } from '#app/lib/catalog'
 import { loadSearch, type SearchEntry, search } from '#app/lib/content'
+import { exit, usePresence } from '#app/lib/motion'
 import { Icon, icons } from './icons'
 import { Tile } from './package-bits'
 
@@ -43,35 +44,69 @@ export function Search() {
   const [entries, setEntries] = useState<SearchEntry[]>([])
   const [active, setActive] = useState(0)
   const dialog = useRef<HTMLDialogElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  // Unmounting a modal dialog drops focus to <body>, so remember where it was to put it back.
+  const returnTo = useRef<Element | null>(null)
+  const presence = usePresence(open, exit.popover)
   const navigate = useNavigate()
+
+  const show = useCallback(() => {
+    // Reopened while it fades out: focus is inside the dialog, so keep the original target.
+    if (!dialog.current) returnTo.current = document.activeElement
+    setOpen(true)
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        setOpen(true)
+        show()
       } else if (e.key === '/' && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault()
-        setOpen(true)
+        show()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [show])
 
   useEffect(() => {
     if (!open) return
-    dialog.current?.showModal()
+    const el = dialog.current
+    if (el && !el.open) el.showModal()
     void loadSearch().then((index) => setEntries(withNames(index)))
   }, [open])
 
-  const results = search(entries, query)
-  const close = () => {
-    dialog.current?.close()
-    setOpen(false)
+  // Once the exit has played and the dialog is gone, hand focus back.
+  const mounted = presence.mounted
+  const wasMounted = useRef(false)
+  useEffect(() => {
+    if (mounted) {
+      wasMounted.current = true
+      const el = dialog.current
+      return () => {
+        try {
+          if (el?.open) el.close()
+        } catch {}
+      }
+    }
+    if (!wasMounted.current) return
+    wasMounted.current = false
     setQuery('')
     setActive(0)
-  }
+    const target = returnTo.current
+    const back =
+      target instanceof HTMLElement && target.isConnected && target !== document.body
+        ? target
+        : button.current
+    back?.focus({ preventScroll: true })
+    returnTo.current = null
+  }, [mounted])
+
+  const results = search(entries, query)
+  // The dialog stays open (and modal) while it fades out and unmounts when the exit is done. The
+  // query is cleared then too, so the results don't collapse to the empty state mid-fade.
+  const close = () => setOpen(false)
   const go = (entry?: SearchEntry) => {
     if (!entry) return
     close()
@@ -84,14 +119,30 @@ export function Search() {
         type="button"
         className="search-button"
         aria-label="Search docs"
-        onClick={() => setOpen(true)}
+        ref={button}
+        onClick={show}
       >
         <Icon icon={icons.search} size={16} />
         <span className="search-label">Search docs</span>
         <kbd className="mono">⌘K</kbd>
       </button>
-      {open && (
-        <dialog ref={dialog} className="search-dialog" onClose={close} aria-label="Search">
+      {presence.mounted && (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: a backdrop click is a mouse shortcut; Escape closes it from the keyboard
+        <dialog
+          ref={dialog}
+          className="search-dialog"
+          data-closing={presence.closing || undefined}
+          onClose={close}
+          onCancel={(e) => {
+            // Escape: run our own close so it animates too.
+            e.preventDefault()
+            close()
+          }}
+          onClick={(e) => {
+            if (e.target === dialog.current) close()
+          }}
+          aria-label="Search"
+        >
           <div className="search-input">
             <Icon icon={icons.search} size={18} />
             <input
