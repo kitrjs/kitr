@@ -13,7 +13,7 @@ kitr is a TypeScript framework for apps that run in a browser, on a server, and 
 
 **Platform.** A platform is where the app runs: a website, an API server, a desktop window, a phone. You list platforms in `kitrrc.ts`, each with a name and options, for example `site: web({ mode: 'ssr' })`. `kitr dev site` runs one, and `kitr build` builds all of them into `dist/<name>/`. Platforms are packages too (`@kitr/web`, `@kitr/server`).
 
-**Package.** A package is one capability: routing, data fetching, forms, auth, mail. It is published as `@kitr/<name>`, and you import from `@kitr/<name>`. The import gives you the upstream library unchanged, plus a few helpers. `kitr add forms` installs the package, wires it into the project, writes its config file and adds lines to `AGENTS.md`. Packages live in the `packages/` folder of the kitr repository.
+**Package.** A package is one capability: routing, data fetching, forms, auth, mail. It is published as `@kitr/<name>`, and you import from `@kitr/<name>`. The import gives you the upstream library unchanged, plus a few helpers. `kitr add forms` installs the package, wires it into the project, writes its config file and adds lines to `AGENTS.md`.
 
 **Kit.** A kit is a starting set of platforms, packages and files for `kitr new`. `app` is a web app on an existing API, `fullstack` adds server rendering and its own backend, `server` is an API with no React. A kit is only a shortcut: afterwards you add and remove packages like any other project. [Kits](/docs/kits) lists them all.
 
@@ -69,7 +69,7 @@ kitr does not re-implement the libraries below. It re-exports them and adds a th
 | Packages in the `app`, `fullstack` and `server` kits | Ready |
 | `desktop()` (Electron), `tauri()`, `mobile()` (Capacitor) | Preview |
 | Device packages (platform, files, notifications, native, secure-storage, updater) | Preview |
-| Install from npm | Not yet: run it from a checkout |
+| Install from npm | Not yet: run an example from a checkout |
 
 Previews exist in the repository but are refused by `kitr new` and `kitr add` unless you pass `--preview`. The native shells are web views around your app, not React Native. kitr has no auth server of its own: the `auth` package connects to the one you have.
 

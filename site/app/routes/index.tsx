@@ -130,8 +130,8 @@ function Home() {
           <h1 className="display hero-title">One way to build everything.</h1>
           <p className="lede">
             kitr gives you a React app with routing, data loading, forms, sign-in and a typed API
-            server already wired together, from one CLI. The same code ships to the web, a server,
-            desktop and phones.
+            server already wired together, from one CLI. The same code ships to the web and a server
+            today, and to desktop and phones in preview.
           </p>
           <p className="hero-sub muted">
             It is a thin layer over TanStack Router, Query and Start, React Hook Form, Zustand, ky,
@@ -150,7 +150,7 @@ function Home() {
             <strong>v0.1 pre-release.</strong> Web and server work today; desktop and mobile are
             previews. Not on npm yet:{' '}
             <Link to="/docs/$slug" params={{ slug: 'getting-started' }}>
-              run it from a checkout
+              here is how to try it today
             </Link>
             .
           </p>

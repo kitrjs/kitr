@@ -10,17 +10,17 @@ kitr gives you a React app with routing, data loading, forms, sign-in and a type
 
 Under the hood it is a thin layer over the libraries you would pick anyway: TanStack Router, Query, Table and Start, React Hook Form, Zustand, ky, h3, Tailwind. It gives them one import surface, one data contract, one app lifecycle and one CLI, and it never re-implements what they already do.
 
-### Try it
+## Try it
 
-From a checkout (needs Node and pnpm; the component registry in `registry/dist` is committed, so there is nothing extra to build):
+kitr is not on npm yet, so a project made by `kitr new` cannot install its dependencies until the first release. To see it running today, clone the repository and start one of the [examples](examples/README.md), which are the exact output of `kitr new`:
 
 ```sh
 git clone https://github.com/kitrjs/kitr && cd kitr
 pnpm install && pnpm build
-node packages/kitr/bin/kitr.mjs new my-app --kit app --registry $PWD/registry/dist
+cd examples/dashboard && pnpm dev     # the app kit; examples/README.md lists the others
 ```
 
-Once kitr is published, the same thing is one command. These work only after the first npm release:
+Once kitr is published, creating a project is one command:
 
 ```sh
 pnpm dlx kitr new my-app                # the blank kit: the wiring files and nothing else; kitr add brings the rest

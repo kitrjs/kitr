@@ -15,15 +15,15 @@ You need [Node.js](https://nodejs.org) 22 or newer.
 npm install -g kitr
 ```
 
-> **Pre-release.** kitr is version 0.1 and is not on npm yet, so `npm install -g kitr` fails today. To try it, run it from a checkout:
+> **Pre-release.** kitr is version 0.1 and is not on npm yet, so `npm install -g kitr` fails today, and a project made by `kitr new` cannot install its dependencies until the first release. To see kitr running now, clone the repository and start one of the examples, which are the exact output of `kitr new`:
 >
 > ```sh
 > git clone https://github.com/kitrjs/kitr && cd kitr
-> pnpm install && pnpm build && pnpm -C registry build
-> node packages/kitr/bin/kitr.mjs new ../my-app --kit app --registry $PWD/registry/dist
+> pnpm install && pnpm build
+> cd examples/dashboard && pnpm dev     # the app kit; see examples/README.md for the others
 > ```
 >
-> Use that `node packages/kitr/bin/kitr.mjs` command wherever this page says `kitr`. Once kitr is published, the steps below work as written.
+> Everything below describes how it works once published.
 
 Now `kitr` works in any folder. Inside a project, the global command hands off to the project's own version of kitr, so everyone on the team runs the same one.
 
@@ -58,7 +58,7 @@ npm run dev
 
 Open the URL it prints. Edit `app/pages/home.tsx` and the page updates as you save.
 
-The starter page confirms the app is running, lists the packages installed, shows the next commands to try and links to these docs and to `AGENTS.md`.
+The starter page confirms the app is running, shows the next commands to try and links to these docs and to `AGENTS.md`. The project also has a `README.md` that says where everything lives.
 
 ## 4. Add a page
 
