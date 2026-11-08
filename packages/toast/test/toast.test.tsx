@@ -84,7 +84,9 @@ describe('toastProvider', () => {
     expect(info).not.toHaveBeenCalled()
     expect(await screen.findByText('Invoice INV-1042 saved')).toBeTruthy()
     const styles = [...document.head.querySelectorAll('style')]
-    expect(styles.some((style) => style.nonce === 'n0nce' && style.textContent?.includes('sonner'))).toBe(true)
+    expect(
+      styles.some((style) => style.nonce === 'n0nce' && style.textContent?.includes('sonner')),
+    ).toBe(true)
     const toaster = document.body.querySelector('[data-sonner-toaster]')
     expect(toaster?.getAttribute('data-y-position')).toBe('top')
     expect(toaster?.getAttribute('data-sonner-theme')).toBe('dark')

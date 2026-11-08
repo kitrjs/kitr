@@ -579,6 +579,9 @@ importers:
       '@kitr/theme':
         specifier: workspace:*
         version: link:../../packages/theme
+      '@kitr/toast':
+        specifier: workspace:*
+        version: link:../../packages/toast
       '@kitr/web':
         specifier: workspace:*
         version: link:../../packages/web
