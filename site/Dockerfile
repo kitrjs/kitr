@@ -2,9 +2,15 @@
 # Build context is the repo root:  docker build -f site/Dockerfile .
 FROM node:22-alpine AS build
 WORKDIR /repo
+# No TTY in a build: pnpm must not stop to ask before replacing node_modules.
+ENV CI=true
 RUN corepack enable
+# Fetch the store from the lockfile alone, so this layer is reused until the lockfile changes
+# and a source-only commit no longer re-downloads every dependency.
+COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN pnpm fetch
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --offline --frozen-lockfile
 RUN pnpm build && pnpm -C site build
 
 FROM nginx:1.27-alpine

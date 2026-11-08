@@ -468,6 +468,19 @@ ${options.extra ?? ''}`
  * A human name for a scaffolded app from its package name: `@acme/example-order-desk` becomes
  * `Order Desk`. Kits use it for page titles and window titles.
  */
+/**
+ * Write a kit template file, replacing whatever an earlier kit or the blank scaffold left
+ * there: a kit owns every file it writes.
+ */
+export function writeTemplate(ctx: AddContext, path: string, content: string): void {
+  ctx.write(path, content, { overwrite: true })
+}
+
+/** Delete files an earlier kit or the blank scaffold wrote, when this kit replaces them. */
+export function removeFiles(ctx: AddContext, ...paths: string[]): void {
+  for (const p of paths) ctx.unlink(p)
+}
+
 export function displayName(name: string) {
   return name
     .replace(/^@[^/]+\//, '')
