@@ -7,12 +7,12 @@ import { Tile } from './package-bits'
 export function GuideCard({ guide }: { guide: GuideItem }) {
   const used = guide.packages.map(findPackage).filter((p) => p !== undefined)
   return (
-    <Link to="/guides/$slug" params={{ slug: guide.slug }} className="card guide-card">
+    <Link to="/guides/$slug" params={{ slug: guide.slug }} className="guide-card">
       <span className="guide-card-title">
         {guide.title}
         {guide.preview && <PreviewBadge />}
       </span>
-      <span className="card-summary">{guide.description}</span>
+      <span className="guide-card-summary">{guide.description}</span>
       <span className="guide-card-foot">
         <span className="guide-tiles">
           <span className="sr-only">Uses {used.map((p) => p.name).join(', ')}</span>
