@@ -3,7 +3,7 @@
 **SaaS kit.** Start a logged-in product on its own API: sign-in, a guarded shell, a projects CRUD, analytics.
 
 ```sh
-pnpm dlx kitr new my-app --kit saas
+pnpm dlx @kitr/kitr new my-app --kit saas
 ```
 
 Read the guide at https://kitr.dev/docs/cli.

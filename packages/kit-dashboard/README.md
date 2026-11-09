@@ -3,7 +3,7 @@
 **Dashboard kit.** Start a logged-in app on an external API: forms, tables, state, theme, auth, mocks and tests.
 
 ```sh
-pnpm dlx kitr new my-app --kit dashboard
+pnpm dlx @kitr/kitr new my-app --kit dashboard
 ```
 
 Read the guide at https://kitr.dev/docs/cli.

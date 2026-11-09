@@ -3,7 +3,7 @@
 **Realtime kit.** Start a chat room: typed WebSocket channels that feed the query cache, rooms in the URL.
 
 ```sh
-pnpm dlx kitr new my-app --kit realtime
+pnpm dlx @kitr/kitr new my-app --kit realtime
 ```
 
 Read the guide at https://kitr.dev/docs/cli.

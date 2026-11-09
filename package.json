@@ -13,7 +13,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && node scripts/sync-examples.mjs",
     "release": "pnpm build && changeset publish",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
