@@ -114,7 +114,7 @@ export default definePackage({
     ctx.write('app/pages/home.tsx', homePage(ctx.pkg.name ?? 'app'))
     ctx.write(
       'app/pages/about.tsx',
-      `export default function AboutPage() {\n  return <main style={{ padding: 24 }}>About</main>\n}\n`,
+      `export default function AboutPage() {\n  return (\n    <main className="mx-auto max-w-2xl bg-background p-6 text-foreground">\n      <h1 className="text-3xl font-semibold tracking-tight">About</h1>\n    </main>\n  )\n}\n`,
     )
     ctx.write('app/router.tsx', routerFile)
     ctx.write('app/client.tsx', clientFile)
@@ -153,7 +153,8 @@ export default definePackage({
   },
   generators: {
     page: {
-      description: 'Create a page in app/pages and add it to app/routes.ts',
+      description:
+        "Create a page in app/pages and add it to app/routes.ts. Quote params: kitr make:page 'docs/$slug'",
       definition: 'The component a route renders; the file path is the URL path.',
       usage: '<path>',
       target: (name, project) => {
@@ -183,8 +184,12 @@ export default function ${naming.pascal(name)}Page() {
   )
 }
 `,
-      after(ctx, { vars }) {
-        if (ctx.routes.addPage(vars.path!, vars.module!)) return
+      after(ctx, { file, vars }) {
+        const table =
+          ctx.rc.directories.routeTable ?? `${ctx.rc.directories.app ?? 'app'}/routes.ts`
+        // Show both halves: an unquoted $slug is expanded away by the shell, and this line shows it.
+        if (ctx.routes.addPage(vars.path!, vars.module!))
+          return ctx.log.success(`wrote ${file}, added .page('${vars.path}') to ${table}`)
         ctx.log.warn(
           `app/routes.ts is not a method chain; add \`.page('${vars.path}', { lazy: () => import('${vars.module}') })\` to it by hand.`,
         )
@@ -235,8 +240,9 @@ export default function ${naming.pascal(name)}Layout() {
 })
 
 /**
- * The first screen a new project shows. Inline styles only: it is written before Tailwind or the
- * UI registry may exist, so it must stand alone. System colours keep it readable in light and dark.
+ * The first screen a new project shows, styled with the theme's token classes (`bg-background`,
+ * `text-muted-foreground`, `border-border`) so it is the first example of the design system. The
+ * classes are harmless without Tailwind: the page then renders as plain HTML.
  */
 const homePage = (name: string) => `const commands = [
   ['kitr make:page <path>', 'add a page'],
@@ -246,38 +252,34 @@ const homePage = (name: string) => `const commands = [
 
 export default function HomePage() {
   return (
-    <main
-      style={{
-        colorScheme: 'light dark',
-        maxWidth: 640,
-        margin: '0 auto',
-        padding: 24,
-        lineHeight: 1.5,
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <h1>${JSON.stringify(name)
+    <main className="mx-auto max-w-2xl space-y-4 bg-background p-6 leading-relaxed text-foreground">
+      <h1 className="text-3xl font-semibold tracking-tight">${JSON.stringify(name)
         .slice(1, -1)
         .replace(/[<>{}`$\\]/g, '')} is running</h1>
-      <p>
+      <p className="text-muted-foreground">
         This page is <code>app/pages/home.tsx</code>.
       </p>
-      <p>
+      <p className="text-muted-foreground">
         Pages are listed in <code>app/routes.ts</code>.
       </p>
-      <h2>Next</h2>
-      <ul>
+      <h2 className="text-xl font-semibold">Next</h2>
+      <ul className="divide-y divide-border rounded-md border border-border">
         {commands.map(([command, note]) => (
-          <li key={command}>
-            <code>{command}</code>: {note}
+          <li key={command} className="flex flex-wrap gap-x-3 px-4 py-2">
+            <code className="font-mono text-sm">{command}</code>
+            <span className="text-muted-foreground">{note}</span>
           </li>
         ))}
       </ul>
-      <p>
-        <a href="https://kitr.dev/docs/getting-started">Getting started</a> |{' '}
-        <a href="https://kitr.dev/packages">Packages</a>
+      <p className="flex gap-4">
+        <a className="underline underline-offset-4" href="https://kitr.dev/docs/getting-started">
+          Getting started
+        </a>
+        <a className="underline underline-offset-4" href="https://kitr.dev/packages">
+          Packages
+        </a>
       </p>
-      <p>
+      <p className="text-sm text-muted-foreground">
         <code>AGENTS.md</code> in this folder describes the conventions for coding assistants.
       </p>
     </main>
