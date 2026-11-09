@@ -17,8 +17,7 @@ A `fullstack` app, with every folder a package can bring:
 my-app/
 ├── kitrrc.ts                 # packages, providers, platforms: the one place wiring is declared
 ├── config/<package>.ts       # one options file per package (config/api.ts, config/jobs.ts, ...)
-├── vite.config.ts            # kitr() and your own plugins from build/
-├── build/                    # your own Vite plugins: data or files made at build time
+├── scripts/                  # your own generate steps, listed under `generate` in kitrrc.ts
 ├── app/                      # the application: bundled by Vite, runs in the browser and in Start
 │   ├── app.ts                # createApp(): providers, config and env
 │   ├── env.ts                # environment variables, validated at startup
@@ -83,16 +82,7 @@ kitr make
 
 `server/` is the standalone server that `kitr dev api` runs (`server/main.ts`). It never imports React. It imports from `app/` freely: a controller validates with `#app/validators/orders`, throws `#app/exceptions/payment-failed-error`, publishes on `#app/channels/orders`.
 
-Work that happens while the app is built, not while it runs, lives in `build/`: a file there exports a Vite plugin, and `vite.config.ts` adds it next to `kitr()`. Generating JSON a page imports, drawing social images, or copying a file into the output are all plugins (`buildStart` before the bundle, `closeBundle` after it), so `kitr dev` and `kitr build` run them with no extra npm scripts. Content the plugins read, such as a hand-written list a page renders, sits in `app/content/`.
-
-```ts
-// vite.config.ts
-import { kitr } from '@kitr/vite'
-import { defineConfig } from 'vite'
-import { siteData } from './build/site-data'
-
-export default defineConfig({ plugins: [kitr(), siteData()] })
-```
+Work that happens before the app is built, such as JSON a page imports or social images, is a script in `scripts/` listed under `generate` in `kitrrc.ts`. `kitr dev`, `kitr build` and `kitr typecheck` run it, so it needs no `predev` or `prebuild` npm script. Content a script reads, such as a hand-written list a page renders, sits in `app/content/`. [Run your own generate step](/docs/extending#run-your-own-generate-step) has the details.
 
 A `server` app (no React at all) keeps the same split. Its `app/` holds only `env.ts` and the shared declarations, so a web or mobile platform can be added later without moving a file. See [Build an API server without React](/guides/api-server).
 
