@@ -79,6 +79,8 @@ Sessions are HttpOnly cookies, with CSRF protection on the auth routes. A produc
 
 A prerendered marketing site: home, pricing and a blog, in English and German. `config/seo.ts` lists the pages to prerender. The newsletter form posts to `server/controllers/newsletter-controller.ts`, and `test/newsletter.test.ts` covers it.
 
+For a static marketing or docs site, start from `kitr new my-site --kit app --mode static` and `kitr add seo`; the `site` kit adds SSR and an API server.
+
 ### realtime
 
 A chat room. `app/channels/chat.ts` defines the channel, `app/pages/chat.tsx` is the room, and `server/controllers/messages-controller.ts` sends new messages to everyone in it. `config/realtime.ts` picks the transport: WebSocket by default, or Socket.IO or server-sent events.

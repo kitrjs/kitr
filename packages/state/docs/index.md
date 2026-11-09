@@ -490,6 +490,10 @@ Without a provider, the server render fails with:
 
 In a client-only app (`spa` mode, desktop, mobile) skip the provider.
 
+### Static and SSR
+
+A `static` site is rendered on the server too: `kitr build` prerenders every page there, so it needs the provider as much as an `ssr` app, and the build stops on the error above without it. The wrap is one line in `app/document.tsx`, `<OrderDraftProvider><Outlet /></OrderDraftProvider>`, and it is harmless in the browser, where the provider is optional.
+
 <details>
 <summary>Persisted stores and hydration</summary>
 

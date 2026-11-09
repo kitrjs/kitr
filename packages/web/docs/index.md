@@ -642,6 +642,8 @@ npx wrangler pages deploy dist/site/client --project-name acme-orders
 > [!WARNING] SPA hosting
 > Tell the host to answer unknown paths with `index.html` (on Netlify, a `_redirects` line `/* /index.html 200`), or reloading `/orders/ord_1042` returns a 404.
 
+On your own server, nginx serves a `static` build with three rules: `try_files $uri $uri/index.html =404;` finds each prerendered page, `error_page 404 /404.html;` answers missing paths with the not-found page and status 404, and `Cache-Control: public, max-age=31536000, immutable` on `/assets/` caches the hashed files for a year. `sitemap.xml` and `robots.txt` are already in `dist/site/client` when [SEO](/packages/seo) is installed. [Deploy a static site](/guides/deploy#serve-a-static-build-with-nginx) has the full config and a Dockerfile that serves it from nginx.
+
 ## Commands
 
 The web platform answers these commands:

@@ -22,6 +22,8 @@ Now `kitr` works in any folder. Inside a project, the global command hands off t
 
 Prefer not to install globally? Every command on this site has a picker to switch to `pnpm`, `npx`, `yarn` or `bunx`, and remembers your choice.
 
+Try it without installing: `npx @kitr/kitr new my-app --kit app` downloads the CLI for that one run.
+
 ## 2. Create an app
 
 ```sh
@@ -39,6 +41,8 @@ A **kit** is a starting set of platforms, packages and files. Pick the one close
 | `blank` | Starting from nothing: seven wiring files |
 
 [Kits](/docs/kits) lists the rest, including `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile`.
+
+For a static marketing or docs site, start from `kitr new my-site --kit app --mode static` and `kitr add seo`; the `site` kit adds SSR and an API server.
 
 > [!WARNING] Blank projects have no dev server
 > `kitr new my-app` without `--kit` makes a `blank` project, so `npm run dev` fails until you run `kitr add web site`. Use `--kit app` to start with a working page.
