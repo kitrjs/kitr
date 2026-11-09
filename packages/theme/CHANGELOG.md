@@ -1,5 +1,19 @@
 # @kitr/theme
 
+## 0.3.2
+
+### Patch Changes
+
+- c69b14f: Fix the first run from a global install. `kitr new --kit site` (and every kit with a server platform) no longer skips the client packages as "server-only" when npm hoists `@kitr/react`. `kitr ui add`, and every kit that copies components, no longer fail with `Cannot find module '@kitr/cli'` when `kitr` runs through the global bin symlink.
+- a29e11e: `kitr ui add button --registry ./registry/dist` no longer treats the registry path as a second component name and fails with `Component "./registry/dist" not found`.
+- Updated dependencies [8904b74]
+- Updated dependencies [8d78bbb]
+- Updated dependencies [c69b14f]
+- Updated dependencies [3d9ba40]
+- Updated dependencies [9fffc3c]
+  - @kitr/cli@0.3.2
+  - @kitr/core@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes

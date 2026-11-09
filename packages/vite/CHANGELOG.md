@@ -1,5 +1,22 @@
 # @kitr/vite
 
+## 0.3.2
+
+### Patch Changes
+
+- 3d9ba40: Newcomer fixes. `kitr --version` (and `-v`) prints the version instead of "No version specified". `kitr doctor` no longer asks to list `@kitr/kitr` itself in kitrrc.ts. New projects' `biome.json` follows `.gitignore`. Prerendering with `crawlLinks` renders one page per path: `#anchor` links no longer re-render the same page or fill the sitemap with anchors. `kitr make:store` says in the generated file and AGENTS.md that the store needs its Provider for server rendering. `kitr --help` mentions that packages add their own commands inside a project.
+- 36635b6: A page that fails to prerender no longer kills the build with a dump of the `Response`. The build prints one line, `[prerender] 404 at /llms-full.txt, linked from /docs/agents`, and leaves the page out of the sitemap. A route listed in `config/seo.ts` `prerender.routes` still fails the build; a crawled link only warns, unless `prerender.failOnError` is `true`.
+- d0d6285: A `static` web build writes `404.html` from the root route's `notFoundComponent`, which Netlify, Cloudflare Pages and GitHub Pages serve for unknown paths. `kitr start` serves it with status 404 in `static` mode; `spa` mode keeps answering unknown paths with the shell and status 200.
+- Updated dependencies [8904b74]
+- Updated dependencies [8d78bbb]
+- Updated dependencies [c69b14f]
+- Updated dependencies [3d9ba40]
+- Updated dependencies [9fffc3c]
+- Updated dependencies [d0d6285]
+  - @kitr/cli@0.3.2
+  - @kitr/core@0.3.2
+  - @kitr/web@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes

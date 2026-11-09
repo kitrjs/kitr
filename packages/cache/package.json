@@ -1,6 +1,6 @@
 {
   "name": "@kitr/cache",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "@kitr/cache: a tagged server cache with TTLs, memory, Redis and unstorage drivers; remember() around slow work.",
   "keywords": [
     "kitr",

@@ -1,6 +1,6 @@
 {
   "name": "@kitr/toast",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "@kitr/toast: short messages like \"Saved\" from anywhere in the app, drawn by sonner, with a console fallback outside React.",
   "kitr": {
     "name": "toast",

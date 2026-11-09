@@ -1,6 +1,6 @@
 {
   "name": "@kitr/storage",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "@kitr/storage: typed localStorage/sessionStorage items and cookies with one API on the client and the server; SSR-safe React hooks.",
   "keywords": [
     "kitr",

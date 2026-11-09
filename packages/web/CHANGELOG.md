@@ -1,5 +1,13 @@
 # @kitr/web
 
+## 0.3.2
+
+### Patch Changes
+
+- d0d6285: A `static` web build writes `404.html` from the root route's `notFoundComponent`, which Netlify, Cloudflare Pages and GitHub Pages serve for unknown paths. `kitr start` serves it with status 404 in `static` mode; `spa` mode keeps answering unknown paths with the shell and status 200.
+- Updated dependencies [8904b74]
+  - @kitr/core@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes
