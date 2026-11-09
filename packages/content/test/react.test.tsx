@@ -34,11 +34,13 @@ const page: Page = {
 describe('DocBody', () => {
   it('renders the html blocks and each command through renderCommand', () => {
     const view = render(
-      <DocBody page={page} renderCommand={(cmd) => <output data-testid="cmd">{cmd}</output>} />,
+      <DocBody page={page} renderCommand={(cmd) => <pre data-testid="cmd">{cmd}</pre>} />,
     )
     expect(view.container.firstElementChild!.className).toBe('prose steps')
     expect(view.getByRole('heading', { level: 2 }).textContent).toBe('Install')
     expect(view.getByTestId('cmd').textContent).toBe('kitr add content')
+    // The command brings its own copy control; only the two code blocks get one.
+    expect(view.getAllByRole('button', { name: 'Copy code' })).toHaveLength(2)
   })
 
   it('renders a command as a plain code block by default', () => {

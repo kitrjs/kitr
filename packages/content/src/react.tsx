@@ -23,11 +23,16 @@ const defaultCommand = (cmd: string) => (
   </div>
 )
 
-/** Add a Copy button to each code block that has none: `div.code` from the pipeline, or a bare `pre`. */
+/**
+ * Add a Copy button to each code block that has none: a `pre` in `div.code` (as the pipeline
+ * writes them), or a bare `pre` in the HTML. A command rendered by `renderCommand` brings its own.
+ */
 function addCopyButtons(root: HTMLElement) {
   for (const pre of root.querySelectorAll<HTMLPreElement>('pre')) {
     let wrap = pre.parentElement
-    if (!wrap?.classList.contains('code')) {
+    const wrapped = wrap?.classList.contains('code')
+    if (!wrapped && pre.closest('.cmd-block')) continue
+    if (!wrapped || !wrap) {
       wrap = document.createElement('div')
       wrap.className = 'code'
       pre.replaceWith(wrap)
