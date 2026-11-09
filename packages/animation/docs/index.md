@@ -299,6 +299,19 @@ The direction comes from the router's history index, so opening `/projects/42` s
 
 Browsers without view transitions change pages instantly. Chromium, Electron, Android WebView and Safari 18 support them. Pass `viewTransition` to a single link to animate it differently, or `viewTransition={false}` for one that should never animate.
 
+### Keep the header in place
+
+Parts every page shares, such as the header or a docs sidebar, look better standing still while the page under them changes. Mark them with `data-kitr-keep`:
+
+```tsx
+// app/components/site-header.tsx
+<header data-kitr-keep className="sticky top-0">
+  …
+</header>
+```
+
+A kept part is shown live from the first frame: it doesn't fade or move, so the current link just switches. A kept part that only one of the two pages has (a sidebar on docs pages but not the home page) fades with the page. While a modal dialog is open nothing is kept, so a navigation started from a dialog changes the whole view as one picture.
+
 ## Keep the header still during page changes
 
 By default the whole page slides. Give the header and navigation their own `view-transition-name` and they stay in place:

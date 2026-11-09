@@ -257,6 +257,27 @@ export default defineConfig({
 
 To replace a plugin a package declares, leave it out by name and add your own: `kitr({ plugins: { tailwind: false } })` with `tailwindcss()` beside it.
 
+### Build-time steps
+
+Something your build makes, rather than something it bundles, is a plugin of your own in `build/`: JSON a page imports, social images, a file copied into the output. Use `buildStart` for work the bundle depends on and `closeBundle` for work on the output, and `kitr dev` and `kitr build` run it with no npm script around them:
+
+```ts
+// build/release-notes.ts
+import { writeFileSync } from 'node:fs'
+import type { Plugin } from 'vite'
+
+export function releaseNotes(): Plugin {
+  return {
+    name: 'release-notes',
+    buildStart() {
+      writeFileSync('app/generated/releases.json', JSON.stringify(readReleases()))
+    },
+  }
+}
+```
+
+A plugin runs once per environment (client, then server for an SSR or static build); guard with `this.environment.name === 'client'` when the work should happen once.
+
 ## Read the build target in app code
 
 `import.meta.env.KITR_PLATFORM` is the platform this bundle was built for, `KITR_PLATFORM_TYPE` its type and `KITR_PACKAGES` the packages from `kitrrc.ts`, all typed by `@kitr/vite/client`:

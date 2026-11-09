@@ -17,6 +17,8 @@ A `fullstack` app, with every folder a package can bring:
 my-app/
 ├── kitrrc.ts                 # packages, providers, platforms: the one place wiring is declared
 ├── config/<package>.ts       # one options file per package (config/api.ts, config/jobs.ts, ...)
+├── vite.config.ts            # kitr() and your own plugins from build/
+├── build/                    # your own Vite plugins: data or files made at build time
 ├── app/                      # the application: bundled by Vite, runs in the browser and in Start
 │   ├── app.ts                # createApp(): providers, config and env
 │   ├── env.ts                # environment variables, validated at startup
@@ -80,6 +82,17 @@ kitr make
 `app/` is everything Vite bundles. It runs in the browser, and with a web platform in `ssr` or `static` mode it also runs in TanStack Start on the server. Server functions in `app/actions/` live here too: the client imports them by name, and Start runs their handlers on the server.
 
 `server/` is the standalone server that `kitr dev api` runs (`server/main.ts`). It never imports React. It imports from `app/` freely: a controller validates with `#app/validators/orders`, throws `#app/exceptions/payment-failed-error`, publishes on `#app/channels/orders`.
+
+Work that happens while the app is built, not while it runs, lives in `build/`: a file there exports a Vite plugin, and `vite.config.ts` adds it next to `kitr()`. Generating JSON a page imports, drawing social images, or copying a file into the output are all plugins (`buildStart` before the bundle, `closeBundle` after it), so `kitr dev` and `kitr build` run them with no extra npm scripts. Content the plugins read, such as a hand-written list a page renders, sits in `app/content/`.
+
+```ts
+// vite.config.ts
+import { kitr } from '@kitr/vite'
+import { defineConfig } from 'vite'
+import { siteData } from './build/site-data'
+
+export default defineConfig({ plugins: [kitr(), siteData()] })
+```
 
 A `server` app (no React at all) keeps the same split. Its `app/` holds only `env.ts` and the shared declarations, so a web or mobile platform can be added later without moving a file. See [Build an API server without React](/guides/api-server).
 

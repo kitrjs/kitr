@@ -58,6 +58,37 @@ describe('ThemeProvider', () => {
     expect(result.current.theme).toBe('light')
   })
 
+  it('reveals the new theme from an element inside a view transition', async () => {
+    mockMatchMedia(false)
+    let finish = () => {}
+    const start = vi.fn((update: () => void) => {
+      update()
+      return { finished: new Promise<void>((r) => (finish = r)) }
+    })
+    ;(document as any).startViewTransition = start
+    const { result } = renderHook(() => useTheme(), { wrapper: wrapper() })
+    const button = document.createElement('button')
+    button.getBoundingClientRect = () => ({ left: 10, top: 20, width: 40, height: 20 }) as DOMRect
+    act(() => result.current.toggle({ from: button }))
+    const root = document.documentElement
+    expect(start).toHaveBeenCalledOnce()
+    expect(root.getAttribute('data-theme')).toBe('dark')
+    expect(root.hasAttribute('data-kitr-theme-reveal')).toBe(true)
+    expect(root.style.getPropertyValue('--kitr-reveal-x')).toBe('30px')
+    expect(root.style.getPropertyValue('--kitr-reveal-y')).toBe('30px')
+    await act(async () => finish())
+    expect(root.hasAttribute('data-kitr-theme-reveal')).toBe(false)
+    delete (document as any).startViewTransition
+  })
+
+  it('changes instantly without view transitions or a from', () => {
+    mockMatchMedia(false)
+    const { result } = renderHook(() => useTheme(), { wrapper: wrapper() })
+    act(() => result.current.toggle({ from: document.body }))
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(document.documentElement.hasAttribute('data-kitr-theme-reveal')).toBe(false)
+  })
+
   it('restores a stored choice and ignores junk', () => {
     mockMatchMedia(false)
     localStorage.setItem('kitr-theme', 'dark')

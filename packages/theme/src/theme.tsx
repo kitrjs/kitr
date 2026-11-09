@@ -17,11 +17,21 @@ export { themeFromCookie } from './cookie'
 /** The theme on screen once `'system'` is resolved: always `'light'` or `'dark'`. */
 export type ResolvedTheme = 'light' | 'dark'
 
+/** How a theme change is shown. */
+export interface ThemeChangeOptions {
+  /**
+   * Reveal the new theme as a circle growing from this element (or point), through a view
+   * transition. Styled by `@kitr/theme/styles.css`. Visitors who ask for less motion, and browsers
+   * without view transitions, get an instant change.
+   */
+  from?: Element | { x: number; y: number }
+}
+
 interface ThemeContextValue {
   theme: Theme
   resolved: ResolvedTheme
-  setTheme: (theme: Theme) => void
-  toggle: () => void
+  setTheme: (theme: Theme, options?: ThemeChangeOptions) => void
+  toggle: (options?: ThemeChangeOptions) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
@@ -93,7 +103,35 @@ export function ThemeProvider({
   }, [theme, attribute, lightColor, darkColor])
 
   const setTheme = useCallback(
-    (next: Theme) => {
+    (next: Theme, options?: ThemeChangeOptions) => {
+      const root = document.documentElement
+      const reveal =
+        options?.from &&
+        typeof document.startViewTransition === 'function' &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (reveal && options.from) {
+        const point =
+          options.from instanceof Element
+            ? centre(options.from.getBoundingClientRect())
+            : options.from
+        root.style.setProperty('--kitr-reveal-x', `${point.x}px`)
+        root.style.setProperty('--kitr-reveal-y', `${point.y}px`)
+        root.setAttribute('data-kitr-theme-reveal', '')
+        const shown: ResolvedTheme =
+          next === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : next
+        // The attribute is what the CSS reads, so setting it here puts the new theme in the
+        // transition's second picture; React's state catches up straight after.
+        document
+          .startViewTransition(() => {
+            root.setAttribute(attribute, shown)
+            root.style.colorScheme = shown
+          })
+          .finished.finally(() => root.removeAttribute('data-kitr-theme-reveal'))
+      }
       setThemeState(next)
       try {
         window.localStorage.setItem(storageKey, next)
@@ -101,10 +139,10 @@ export function ThemeProvider({
         document.cookie = `${storageKey}=${next}; path=/; max-age=31536000; samesite=lax`
       } catch {}
     },
-    [storageKey],
+    [storageKey, attribute],
   )
   const toggle = useCallback(
-    () => setTheme(resolved === 'dark' ? 'light' : 'dark'),
+    (options?: ThemeChangeOptions) => setTheme(resolved === 'dark' ? 'light' : 'dark', options),
     [resolved, setTheme],
   )
   const value = useMemo(
@@ -112,6 +150,10 @@ export function ThemeProvider({
     [theme, resolved, setTheme, toggle],
   )
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+}
+
+function centre(rect: DOMRect) {
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
 /**
