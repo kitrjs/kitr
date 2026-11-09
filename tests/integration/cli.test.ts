@@ -75,6 +75,8 @@ describe('kitr new', () => {
     // Code routes (app/routes.ts) need no `directories.routes`; a redirected log is never committed.
     expect(rc).not.toMatch(/directories:[^}]*\broutes:/)
     expect(readFileSync(join(dir, '.gitignore'), 'utf8').split('\n')).toContain('*.log')
+    // The starter's first test renders the home page, not 1 + 1.
+    if (kit === 'app') expect(exists(dir, 'test/home.test.tsx')).toBe(true)
     // The typed client resolves names through the route table: without it every call throws.
     if (exists(dir, 'app/api/client.ts')) {
       expect(readFileSync(join(dir, 'app/api/client.ts'), 'utf8')).toContain('registerRoutes(api')

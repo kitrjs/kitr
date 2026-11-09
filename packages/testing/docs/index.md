@@ -27,7 +27,7 @@ kitr add testing
 - Adds `@kitr/testing` and `vitest` to `devDependencies` and installs them. In a project with React it also adds `@testing-library/react`, `@testing-library/dom` and `happy-dom`. Pass `--no-install` to skip the install.
 - Adds `'@kitr/testing'` to `packages` in `kitrrc.ts`. It registers no provider.
 - Writes `vitest.config.ts`, unless one exists (see [Configure](#configure)).
-- Writes `test/example.test.ts`, unless one exists: an API test of `/api/health` without React, or a one-line `expect(1 + 1).toBe(2)` with React.
+- Writes a first test, unless one exists: `test/home.test.tsx`, which renders the starter home page with `renderWithKitr` and checks its heading; `test/example.test.ts`, which boots the app, in a React project without that page; or an API test of `/api/health` in a server-only project.
 - Adds a `## kitr: testing` section to `AGENTS.md`.
 
 It writes no config file, adds no env variables or scripts and asks no questions. Projects from `kitr new` already have `"test": "vitest run"` in `package.json`; otherwise add that script. Every kit except `blank` includes testing.

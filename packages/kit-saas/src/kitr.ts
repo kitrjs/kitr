@@ -46,7 +46,8 @@ registerRoutes(api, [...routeTable])
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
-  remove(ctx, 'app/pages/home.tsx', 'app/pages/about.tsx')
+  // The starter's home test goes with the starter page; this kit's pages bring their own tests.
+  remove(ctx, 'app/pages/home.tsx', 'app/pages/about.tsx', 'test/home.test.tsx')
   ctx.scripts.add('api:sync', 'kitr api:sync')
 
   write(

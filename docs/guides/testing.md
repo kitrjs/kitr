@@ -21,7 +21,7 @@ npm test
 ```
 
 ```txt
- ✓ test/example.test.ts (1 test) 2ms
+ ✓ test/home.test.tsx (1 test) 24ms
 
  Test Files  1 passed (1)
       Tests  1 passed (1)
