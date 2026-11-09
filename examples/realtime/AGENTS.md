@@ -88,7 +88,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: vite
 
-- `vite.config.ts` holds `kitr()` and nothing else: the plugin wires the router, React, Tailwind, `virtual:kitr/*` and the `#app`-style aliases from kitrrc.ts and the installed packages. Add a Vite plugin of your own next to `kitr()`.
+- `vite.config.ts` holds `kitr()`, which wires the router, React, Tailwind, `virtual:kitr/*` and the `#app`-style aliases from kitrrc.ts and the installed packages. Build-time steps (generated data, images, copied files) are Vite plugins of your own in `build/<name>.ts`, added next to `kitr()`; not npm scripts.
 
 ## kitr: platform site
 

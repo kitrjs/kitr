@@ -13,18 +13,24 @@ export const meta = {
 const app = createApp({ environment: 'client', providers: [nativeProvider] })
 const url = 'https://app.acme.com/invoices/inv_1042'
 
+// Tailwind utilities on the kitr tokens, so the example looks the same in any kitr app.
+const button =
+  'min-h-[38px] cursor-pointer rounded-lg border px-3.5 font-semibold disabled:cursor-default disabled:opacity-50 border-border bg-background text-foreground'
+const primary =
+  'min-h-[38px] cursor-pointer rounded-lg border px-3.5 font-semibold disabled:cursor-default disabled:opacity-50 border-primary bg-primary text-primary-foreground'
+
 function CopyInvoiceLink() {
   const { copy, copied, supported } = useClipboard()
   const { share, canShare } = useShare()
   const [failed, setFailed] = useState(false)
   const payload = { title: 'Invoice inv_1042', url }
   return (
-    <div className="demo">
-      <div className="demo-row">
+    <div className="flex flex-col gap-3 text-[15px]">
+      <div className="flex flex-wrap gap-2">
         {supported ? (
           <button
             type="button"
-            className="demo-button primary"
+            className={primary}
             onClick={() =>
               copy(url).then(
                 () => setFailed(false),
@@ -35,21 +41,17 @@ function CopyInvoiceLink() {
             {copied ? 'Copied' : 'Copy link'}
           </button>
         ) : (
-          <p className="demo-muted">No Clipboard API on this page.</p>
+          <p className="m-0 text-muted-foreground">No Clipboard API on this page.</p>
         )}
         {canShare(payload) && (
-          <button
-            type="button"
-            className="demo-button"
-            onClick={() => share(payload).catch(() => {})}
-          >
+          <button type="button" className={button} onClick={() => share(payload).catch(() => {})}>
             Share
           </button>
         )}
       </div>
-      <p className="demo-muted mono">{url}</p>
+      <p className="m-0 font-mono text-muted-foreground">{url}</p>
       {failed && (
-        <p className="demo-muted" role="alert">
+        <p className="m-0 text-muted-foreground" role="alert">
           The browser refused the write: the frame needs clipboard permission.
         </p>
       )}

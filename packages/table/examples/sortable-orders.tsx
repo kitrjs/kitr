@@ -46,6 +46,10 @@ const columns: ColumnDef<ClientTableFeatures, Order>[] = [
  * This page's search params, read once and written with replaceState. In an app, pass the route's
  * `Route.useSearch()` and a `navigate({ search })` instead.
  */
+
+// Tailwind utilities on the kitr tokens, so the example looks the same in any kitr app.
+const link = 'cursor-pointer border-0 bg-transparent p-0 text-primary'
+
 function useLocationSearch() {
   const [search, setState] = useState<TableSearch>(() =>
     parseTableSearch(Object.fromEntries(new URLSearchParams(window.location.search))),
@@ -73,8 +77,8 @@ export default function SortableOrders() {
     ...useUrlTableState({ search, setSearch, manual: false }),
   })
   return (
-    <div className="demo">
-      <table className="demo-table">
+    <div className="flex flex-col gap-3 text-[15px]">
+      <table className="w-full border-collapse overflow-hidden rounded-[10px] border border-border [&_td]:border-b [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-left [&_th]:border-b [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_tr:last-child_td]:border-b-0">
         <thead>
           {table.getHeaderGroups().map((group) => (
             <tr key={group.id}>
@@ -85,7 +89,7 @@ export default function SortableOrders() {
                     {header.column.getCanSort() ? (
                       <button
                         type="button"
-                        className="demo-link"
+                        className={link}
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -110,7 +114,7 @@ export default function SortableOrders() {
           ))}
         </tbody>
       </table>
-      <p className="demo-muted mono">
+      <p className="m-0 font-mono text-muted-foreground">
         {search.sort ? `?sort=${search.sort}` : 'No sort: rows in the order the API returned them'}
       </p>
     </div>

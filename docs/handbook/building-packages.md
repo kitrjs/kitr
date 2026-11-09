@@ -103,6 +103,13 @@ export default function Example() {
 
 Anything an example stores in the browser is namespaced to it, so examples never see each other's data.
 
+Style an example with Tailwind utilities on the kitr tokens (`bg-primary`, `text-muted-foreground`, `border-border`), not class names of your own: the site compiles the examples' classes, and the example looks the same in any kitr app that has [tailwind](/packages/tailwind). Keep repeated strings in a constant at the top of the file:
+
+```tsx
+const button =
+  'min-h-[38px] cursor-pointer rounded-lg border border-border bg-background px-3.5 font-semibold'
+```
+
 ## Setup with kitr add
 
 To let `kitr add stripe` wire your package, export a setup module as `./kitr`:

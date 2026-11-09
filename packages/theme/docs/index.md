@@ -125,10 +125,21 @@ Click it and the page turns dark: `<html>` gets `data-theme="dark"`, every `--ki
 | --- | --- |
 | `theme` | The user's choice: `'light'`, `'dark'` or `'system'`. |
 | `resolved` | What shows on screen: `'light'` or `'dark'`. With `'system'`, it follows the operating system and updates when the OS setting changes. |
-| `setTheme(theme)` | Sets the choice and saves it to `localStorage` and a one-year cookie. |
-| `toggle()` | Switches to the opposite of `resolved` and saves that, which leaves `'system'`. |
+| `setTheme(theme, options?)` | Sets the choice and saves it to `localStorage` and a one-year cookie. |
+| `toggle(options?)` | Switches to the opposite of `resolved` and saves that, which leaves `'system'`. |
 
 For a styled toggle with an icon, `kitr ui add theme-toggle` writes `app/components/ui/theme-toggle.tsx` (plus `button` and `icon`); render `<ThemeToggle />`.
+
+### Reveal the new theme from the button
+
+Pass `from` and the new theme grows as a circle from that element, through a view transition:
+
+```tsx
+// app/components/theme-button.tsx
+<button type="button" onClick={(e) => toggle({ from: e.currentTarget })}>
+```
+
+`from` also takes a point, `{ x, y }` in viewport pixels. The animation lives in `@kitr/theme/styles.css`. Visitors who ask for less motion, and browsers without view transitions, get an instant change. While it runs, `<html>` carries `data-kitr-theme-reveal`, so a style can target the new picture only, such as an icon that turns in: `in-data-[kitr-theme-reveal]:animate-spin`.
 
 ## Let users pick light, dark or system
 
