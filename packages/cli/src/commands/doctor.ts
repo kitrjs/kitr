@@ -53,7 +53,7 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
   for (const name of Object.keys(deps)) {
     if (
       name.startsWith('@kitr/') &&
-      !['@kitr/cli', '@kitr/core', '@kitr/vite', '@kitr/testing'].includes(name) &&
+      !['@kitr/kitr', '@kitr/cli', '@kitr/core', '@kitr/vite', '@kitr/testing'].includes(name) &&
       !rc.packages.includes(name)
     ) {
       out.push({

@@ -58,7 +58,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: state
 
-- Client state only. `kitr make:store <name>` writes `app/stores/<name>.ts` using `createKitrStore`. Server data belongs in queries, not stores.
+- Client state only. `kitr make:store <name>` writes `app/stores/<name>.ts` using `createKitrStore`; wrap the components that use it in its `<NameStoreProvider>`, or server rendering and prerendering throw. Server data belongs in queries, not stores.
 
 ## kitr: tailwind
 

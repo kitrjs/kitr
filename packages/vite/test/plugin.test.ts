@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import { afterEach, describe, expect, it } from 'vitest'
-import { kitr, readRc } from '../src'
+import { crawlFilter, kitr, readRc } from '../src'
 
 const packagesDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const dirs: string[] = []
@@ -344,5 +344,24 @@ describe('robots.txt', () => {
     await robots.generateBundle.call(ctx('client'))
     expect(emitted).toHaveLength(1)
     expect(emitted[0]).toMatchObject({ type: 'asset', fileName: 'robots.txt' })
+  })
+})
+
+describe('crawlFilter', () => {
+  it('renders one page per path and keeps anchors out of the sitemap', () => {
+    const filter = crawlFilter()
+    const pages = [
+      { path: '/docs/a#install' },
+      { path: '/docs/a' },
+      { path: '/docs/a#usage' },
+      { path: '/docs/b' },
+      { path: '/packages?category=ui' },
+    ] as Array<{ path: string; sitemap?: { exclude?: boolean } }>
+    expect(pages.map(filter)).toEqual([true, false, false, true, true])
+    expect(pages.filter((p) => !p.sitemap?.exclude).map((p) => p.path)).toEqual([
+      '/docs/a',
+      '/docs/b',
+      '/packages?category=ui',
+    ])
   })
 })

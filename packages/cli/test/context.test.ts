@@ -345,6 +345,15 @@ describe('doctor', () => {
       expect(f.fix, f.message).toBeTruthy()
   })
 
+  it('does not ask to list @kitr/kitr itself in kitrrc.ts', () => {
+    const dir = project({
+      'package.json': JSON.stringify({ dependencies: { '@kitr/kitr': '1' } }),
+      'kitrrc.ts': rc,
+    })
+    const messages = runChecks(createContext({ root: dir })).map((f) => f.message)
+    expect(messages.filter((m) => m.startsWith('@kitr/kitr '))).toEqual([])
+  })
+
   it('checks config/tailwind.ts against the stylesheet it names', () => {
     const base = {
       'package.json': JSON.stringify({ dependencies: { '@kitr/kitr': '1' } }),

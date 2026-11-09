@@ -9,7 +9,7 @@ export default definePackage({
     ctx.write('app/stores/.gitkeep', '')
     ctx.agents.add(
       'state',
-      `- Client state only. \`kitr make:store <name>\` writes \`app/stores/<name>.ts\` using \`createKitrStore\`. Server data belongs in queries, not stores.`,
+      `- Client state only. \`kitr make:store <name>\` writes \`app/stores/<name>.ts\` using \`createKitrStore\`; wrap the components that use it in its \`<NameStoreProvider>\`, or server rendering and prerendering throw. Server data belongs in queries, not stores.`,
     )
   },
   remove(ctx) {
@@ -29,6 +29,11 @@ interface ${naming.pascal(name)}State {
   reset: () => void
 }
 
+/**
+ * Wrap the components that call \`use${naming.pascal(name)}Store()\` in \`<${naming.pascal(name)}StoreProvider>\`.
+ * Without it the store works in the browser, but server rendering and prerendering throw
+ * "Store has no instance on the server".
+ */
 export const [use${naming.pascal(name)}Store, ${naming.pascal(name)}StoreProvider, ${naming.camel(name)}Store] = createKitrStore<${naming.pascal(name)}State>(
   { name: '${naming.snake(name)}', persist: false },
   (set) => ({

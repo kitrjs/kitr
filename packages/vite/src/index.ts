@@ -457,11 +457,14 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
                     enabled: true,
                     crawlLinks: true,
                     autoSubfolderIndex: true,
+                    filter: crawlFilter(),
                     ...seo.prerender,
                   },
                   ...(seo.sitemap ? { sitemap: seo.sitemap } : {}),
                 }
-              : seo
+              : seo.prerender
+                ? { ...seo, prerender: { filter: crawlFilter(), ...seo.prerender } }
+                : seo
         return tanstackStart({
           srcDirectory,
           router: {
@@ -723,6 +726,28 @@ export async function robotsFor(root: string, configDir = 'config'): Promise<str
     .import<{ robotsTxt: (c: unknown) => string | null }>('@kitr/seo')
     .catch(() => jiti.import<{ robotsTxt: (c: unknown) => string | null }>('@kitr/seo'))
   return seo.robotsTxt(config ?? {})
+}
+
+/**
+ * Start's crawler treats `/docs/a#install` and `/docs/a` as two pages: it renders the same file
+ * once per anchor and lists every anchor in the sitemap. This keeps one page per path: a hash is
+ * dropped, and a path already taken is skipped and left out of the sitemap.
+ */
+export function crawlFilter(): (page: {
+  path: string
+  sitemap?: { exclude?: boolean }
+}) => boolean {
+  const taken = new Set<string>()
+  return (page) => {
+    const path = page.path.split('#')[0] || '/'
+    page.path = path
+    if (taken.has(path)) {
+      page.sitemap = { ...page.sitemap, exclude: true }
+      return false
+    }
+    taken.add(path)
+    return true
+  }
 }
 
 /**
