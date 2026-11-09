@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "fullstack",
+      "audience": "Anyone building chat, live dashboards or collaboration, where every screen updates at once.",
+      "highlights": [
+        {
+          "title": "A chat room",
+          "text": "Rooms live in the URL, and messages reach every open tab as they are sent."
+        },
+        {
+          "title": "A typed channel",
+          "text": "`app/channels/chat.ts` defines the messages once for the server and the client."
+        },
+        {
+          "title": "Pick the transport",
+          "text": "WebSocket by default, or Socket.IO or server-sent events in `config/realtime.ts`."
+        },
+        {
+          "title": "Tested end to end",
+          "text": "`test/messages.test.ts` sends a message through the API."
+        }
+      ],
+      "example": "examples/realtime",
+      "entry": "app/pages/chat.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The chat and its API; open two tabs to see messages arrive"
+        ],
+        [
+          "kitr build",
+          "Both platforms, ready for `kitr start`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the messages test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-realtime"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/realtime",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

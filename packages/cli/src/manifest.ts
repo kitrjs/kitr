@@ -34,6 +34,8 @@ export interface KitrManifest {
   setup?: string
   /** For `kind: 'platform'`: what the platform is, as kitr.dev's /platforms pages show it. */
   platform?: KitrPlatformInfo
+  /** For `kind: 'kit'`: who the kit is for and what it gives you, as kitr.dev's /kits pages show it. */
+  kit?: KitrKitInfo
 }
 
 /**
@@ -63,6 +65,25 @@ export interface KitrPlatformInfo {
   run: Array<[command: string, what: string]>
   /** Upstream docs worth reading, each a title, an `https://` URL and one line on why. */
   resources: Array<{ title: string; url: string; text: string }>
+}
+
+/**
+ * The prose a kit package carries in its `kitr.kit` block. kitr.dev's /kits pages read it, beside
+ * the files the kit writes, so the text ships with the kit it describes.
+ */
+export interface KitrKitInfo {
+  /** Who should start from it, in one sentence: `Teams building an admin for an API they already run.` */
+  audience: string
+  /** Three to five things the new project does, each a title and a sentence or two of markdown. */
+  highlights: Array<{ title: string; text: string }>
+  /** For a preset, the base kit it adds a working app to: `fullstack` for `saas`. */
+  base?: string
+  /** Where the kit's unmodified output lives in the package's repository: `examples/app`. */
+  example?: string
+  /** The file to read first, relative to the project root: `app/pages/home.tsx`. */
+  entry?: string
+  /** The commands to run once it is written, each with what it does: `['kitr dev', 'The app on port 3000']`. */
+  run: Array<[command: string, what: string]>
 }
 
 /** The categories kitr.dev groups packages under, by key, with the heading each one shows. */
@@ -118,6 +139,10 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
     if (known.length && typeof alternative === 'string' && !known.includes(alternative))
       errors.push(`"platform": "alternative" names unknown package "${alternative}"`)
   }
+  if (k.kit !== undefined) {
+    if (k.kind !== 'kit') errors.push('"kit" is only for packages with kind "kit"')
+    errors.push(...validateKitInfo(k.kit).map((e) => `"kit": ${e}`))
+  }
   if (known.length && Array.isArray(k.requires))
     for (const dep of k.requires)
       if (!known.includes(dep)) errors.push(`requires unknown package "${dep}"`)
@@ -125,6 +150,47 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
 }
 
 const isText = (v: unknown) => typeof v === 'string' && v.trim() !== ''
+
+/** Checks one list field of a prose block: present, non-empty, and every item the right shape. */
+function checkList(
+  v: Record<string, unknown>,
+  errors: string[],
+  field: string,
+  ok: (item: unknown) => boolean,
+  shape: string,
+) {
+  if (!(Array.isArray(v[field]) && (v[field] as unknown[]).length))
+    errors.push(`"${field}" must be a non-empty list of ${shape}`)
+  else
+    (v[field] as unknown[]).forEach((item, i) => {
+      if (!ok(item)) errors.push(`"${field}[${i}]" must be ${shape}`)
+    })
+}
+
+/** True when `item` is an object whose `keys` are all non-empty strings. */
+const hasText = (item: unknown, keys: string[]) =>
+  !!item &&
+  typeof item === 'object' &&
+  keys.every((key) => isText((item as Record<string, unknown>)[key]))
+
+const isCommand = (r: unknown) => Array.isArray(r) && r.length === 2 && r.every(isText)
+
+/** Problems with a `kitr.kit` block. */
+function validateKitInfo(p: unknown): string[] {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return ['must be an object']
+  const errors: string[] = []
+  const v = p as Record<string, unknown>
+  if (!isText(v.audience)) errors.push('"audience" must be a non-empty string')
+  for (const field of ['base', 'example', 'entry'] as const)
+    if (v[field] !== undefined && !isText(v[field]))
+      errors.push(`"${field}" must be a non-empty string`)
+  for (const field of ['example', 'entry'] as const)
+    if (isText(v[field]) && /^(\/|\.\.?\/)/.test(v[field] as string))
+      errors.push(`"${field}" must be a path from the root, such as "examples/app"`)
+  checkList(v, errors, 'highlights', (h) => hasText(h, ['title', 'text']), '{ title, text }')
+  checkList(v, errors, 'run', isCommand, '[command, what]')
+  return errors
+}
 
 /** Problems with a `kitr.platform` block. */
 function validatePlatformInfo(p: unknown): string[] {
@@ -140,23 +206,13 @@ function validatePlatformInfo(p: unknown): string[] {
     errors.push('"color" must be a hex colour such as "#38BDF8"')
   if (!(Array.isArray(v.targets) && v.targets.length && v.targets.every(isText)))
     errors.push('"targets" must be a non-empty list of strings')
-  const list = (field: string, ok: (item: unknown) => boolean, shape: string) => {
-    if (!(Array.isArray(v[field]) && (v[field] as unknown[]).length))
-      errors.push(`"${field}" must be a non-empty list of ${shape}`)
-    else
-      (v[field] as unknown[]).forEach((item, i) => {
-        if (!ok(item)) errors.push(`"${field}[${i}]" must be ${shape}`)
-      })
-  }
-  const fields = (item: unknown, keys: string[]) =>
-    !!item &&
-    typeof item === 'object' &&
-    keys.every((key) => isText((item as Record<string, unknown>)[key]))
-  list('highlights', (h) => fields(h, ['title', 'text']), '{ title, text }')
-  list('run', (r) => Array.isArray(r) && r.length === 2 && r.every(isText), '[command, what]')
-  list(
+  checkList(v, errors, 'highlights', (h) => hasText(h, ['title', 'text']), '{ title, text }')
+  checkList(v, errors, 'run', isCommand, '[command, what]')
+  checkList(
+    v,
+    errors,
     'resources',
-    (r) => fields(r, ['title', 'url', 'text']) && /^https:\/\//.test((r as { url: string }).url),
+    (r) => hasText(r, ['title', 'url', 'text']) && /^https:\/\//.test((r as { url: string }).url),
     '{ title, url, text } with an https:// url',
   )
   return errors

@@ -6,6 +6,6 @@
 pnpm dlx @kitr/kitr new my-app --kit dashboard
 ```
 
-Read the guide at https://kitr.dev/docs/cli.
+Read the guide at https://kitr.dev/kits/dashboard.
 
 Part of [kitr](https://kitr.dev), the TypeScript framework where everything is an add-on. MIT licensed.

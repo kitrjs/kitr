@@ -1070,7 +1070,44 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Anyone starting a web app who wants a small, readable project and adds sign-in, forms or an API as the app grows.",
+      "highlights": [
+        {
+          "title": "Two pages, one route table",
+          "text": "`/` and `/about` are listed in `app/routes.ts`, and each is a component in `app/pages/`."
+        },
+        {
+          "title": "Data loading ready",
+          "text": "Query is wired, so the first `queryOptions` you write caches, refetches and suspends."
+        },
+        {
+          "title": "Styled from the first render",
+          "text": "Tailwind and the theme tokens, with light and dark mode and no flash."
+        },
+        {
+          "title": "A passing test",
+          "text": "`test/home.test.tsx` renders the home page with `renderWithKitr`."
+        }
+      ],
+      "example": "examples/app",
+      "entry": "app/pages/home.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The app in the browser, with hot reload"
+        ],
+        [
+          "kitr build",
+          "A single-page build in `dist/site`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the home page test"
+        ]
+      ]
+    }
   },
   "dashboard": {
     "package": "@kitr/kit-dashboard",
@@ -1080,7 +1117,44 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Teams building an admin or internal tool on an API they already run.",
+      "highlights": [
+        {
+          "title": "Talks to your API",
+          "text": "`http` is pointed at `VITE_API_URL`, with typed requests and errors."
+        },
+        {
+          "title": "Sign-in with tokens",
+          "text": "`auth` keeps the session and guards pages; `app/abilities.ts` holds the permissions."
+        },
+        {
+          "title": "Build before the API exists",
+          "text": "Set `VITE_MOCKS=true` and the handlers in `app/mocks/` answer every request."
+        },
+        {
+          "title": "Eleven components to own",
+          "text": "Button, form, data table, app shell and more, copied into `app/components/ui`."
+        }
+      ],
+      "example": "examples/dashboard",
+      "entry": "app/routes.ts",
+      "run": [
+        [
+          "kitr dev",
+          "The dashboard in the browser"
+        ],
+        [
+          "kitr build",
+          "A single-page build in `dist/site`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the home page test"
+        ]
+      ]
+    }
   },
   "desktop": {
     "package": "@kitr/kit-desktop",
@@ -1090,7 +1164,45 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Teams shipping a desktop app for Windows, macOS and Linux who want it to look the same on every machine.",
+      "highlights": [
+        {
+          "title": "The dashboard in Electron",
+          "text": "The same app runs in a window and, with `kitr dev site`, in a browser."
+        },
+        {
+          "title": "A typed IPC contract",
+          "text": "`app/ipc.ts` declares what the app may ask the main process, and both sides are type-checked."
+        },
+        {
+          "title": "Native dialogs and the OS",
+          "text": "The home page opens a file dialog, keeps a secret in the OS vault and sends a notification."
+        },
+        {
+          "title": "Ready to package",
+          "text": "`platforms/app/` holds the Electron main process and the electron-builder config."
+        }
+      ],
+      "example": "examples/desktop",
+      "entry": "app/ipc.ts",
+      "run": [
+        [
+          "kitr dev app",
+          "The Electron window, with hot reload"
+        ],
+        [
+          "kitr dev site",
+          "The same app in a browser"
+        ],
+        [
+          "kitr build app",
+          "Installers for your operating system"
+        ]
+      ]
+    }
   },
   "docs": {
     "package": "@kitr/kit-docs",
@@ -1100,7 +1212,45 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "app",
+      "audience": "Projects that need a docs site written in markdown, fast to load and easy for coding agents to read.",
+      "highlights": [
+        {
+          "title": "Write markdown, get pages",
+          "text": "Each file in `content/docs/` is a page, ordered by `nav.json`."
+        },
+        {
+          "title": "Search and dark mode",
+          "text": "Cmd+K searches every page, and the theme follows the system or the toggle."
+        },
+        {
+          "title": "Static and fast",
+          "text": "Every page is prerendered to HTML, with no server to run."
+        },
+        {
+          "title": "Agents can read it",
+          "text": "The build writes `llms.txt`, `llms-full.txt` and a `.md` copy of every page."
+        }
+      ],
+      "example": "examples/docs",
+      "entry": "content/docs/getting-started.md",
+      "run": [
+        [
+          "kitr dev",
+          "The docs site, reloading as you edit markdown"
+        ],
+        [
+          "kitr build",
+          "Every page as static HTML"
+        ],
+        [
+          "npm test",
+          "Vitest, rendering a page with its sidebar"
+        ]
+      ]
+    }
   },
   "fullstack": {
     "package": "@kitr/kit-fullstack",
@@ -1110,7 +1260,44 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Anyone building an app and its own backend together, in one project and one language.",
+      "highlights": [
+        {
+          "title": "Rendered on the server",
+          "text": "The dashboard kit with SSR, so the first paint has the data and search engines see it."
+        },
+        {
+          "title": "An API server beside it",
+          "text": "`server/routes.ts` serves typed routes to the app and to any other client, with an OpenAPI file."
+        },
+        {
+          "title": "Actions for the UI",
+          "text": "Functions in `app/actions/` run on the server and are called like local functions."
+        },
+        {
+          "title": "Live updates",
+          "text": "A realtime channel in `app/channels/` pushes changes to every open screen."
+        }
+      ],
+      "example": "examples/fullstack",
+      "entry": "server/routes.ts",
+      "run": [
+        [
+          "kitr dev",
+          "The site on port 3000 and the API on 3001, together"
+        ],
+        [
+          "kitr build",
+          "Both platforms, ready for `kitr start`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the home page test"
+        ]
+      ]
+    }
   },
   "mobile": {
     "package": "@kitr/kit-mobile",
@@ -1120,7 +1307,45 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Teams who want one app on the web, installed from the browser, and in the App Store and Google Play.",
+      "highlights": [
+        {
+          "title": "An installable web app",
+          "text": "The site is a PWA with an install button, an online and offline status, and a prompt when an update is ready."
+        },
+        {
+          "title": "A Capacitor app",
+          "text": "`platforms/phone/` wraps the same build for iOS and Android."
+        },
+        {
+          "title": "Native lifecycle",
+          "text": "Inside Capacitor the home page follows the app going to the background and the hardware back button."
+        },
+        {
+          "title": "The dashboard underneath",
+          "text": "Sign-in, forms, tables and the eleven components."
+        }
+      ],
+      "example": "examples/mobile",
+      "entry": "app/pages/home.tsx",
+      "run": [
+        [
+          "kitr dev site",
+          "The app in a browser, as a PWA"
+        ],
+        [
+          "kitr dev phone --target ios",
+          "The Capacitor app in the iOS simulator"
+        ],
+        [
+          "kitr build phone",
+          "The native projects for Xcode and Android Studio"
+        ]
+      ]
+    }
   },
   "realtime": {
     "package": "@kitr/kit-realtime",
@@ -1130,7 +1355,45 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "fullstack",
+      "audience": "Anyone building chat, live dashboards or collaboration, where every screen updates at once.",
+      "highlights": [
+        {
+          "title": "A chat room",
+          "text": "Rooms live in the URL, and messages reach every open tab as they are sent."
+        },
+        {
+          "title": "A typed channel",
+          "text": "`app/channels/chat.ts` defines the messages once for the server and the client."
+        },
+        {
+          "title": "Pick the transport",
+          "text": "WebSocket by default, or Socket.IO or server-sent events in `config/realtime.ts`."
+        },
+        {
+          "title": "Tested end to end",
+          "text": "`test/messages.test.ts` sends a message through the API."
+        }
+      ],
+      "example": "examples/realtime",
+      "entry": "app/pages/chat.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The chat and its API; open two tabs to see messages arrive"
+        ],
+        [
+          "kitr build",
+          "Both platforms, ready for `kitr start`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the messages test"
+        ]
+      ]
+    }
   },
   "saas": {
     "package": "@kitr/kit-saas",
@@ -1140,7 +1403,45 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "fullstack",
+      "audience": "Founders and teams starting a signed-in product: accounts, a guarded app and a first resource to build on.",
+      "highlights": [
+        {
+          "title": "Accounts that work",
+          "text": "Sign-in, sign-up, email verification and password reset, on HttpOnly cookie sessions with CSRF protection."
+        },
+        {
+          "title": "A guarded app shell",
+          "text": "Every page under the `_app` layout needs a session; abilities decide what each role sees."
+        },
+        {
+          "title": "A real resource",
+          "text": "Projects: a data table, a create form and an API, sharing one schema in `app/validators/projects.ts`."
+        },
+        {
+          "title": "Production pieces",
+          "text": "Mail, rate limits and security headers, analytics and error monitoring are already configured."
+        }
+      ],
+      "example": "examples/saas",
+      "entry": "app/pages/projects.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The app and its API; sign in as admin@example.com with the password password"
+        ],
+        [
+          "kitr build",
+          "Both platforms; production needs `SESSION_SECRET` and a mail transport"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the API test"
+        ]
+      ]
+    }
   },
   "server": {
     "package": "@kitr/kit-server",
@@ -1150,7 +1451,44 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Backend developers who want an API, jobs or a realtime service with no React in the project.",
+      "highlights": [
+        {
+          "title": "Routes and controllers",
+          "text": "`server/routes.ts` maps URLs to controllers in `server/controllers/`, with a health check to start."
+        },
+        {
+          "title": "Any database",
+          "text": "`config/db.ts` connects the ORM you pick, with Drizzle and postgres.js sketched in its comments."
+        },
+        {
+          "title": "Live channels",
+          "text": "`app/channels/example.ts` is a typed channel clients can subscribe to."
+        },
+        {
+          "title": "Tested without a running server",
+          "text": "`test/example.test.ts` calls the API in memory with `createTestClient`."
+        }
+      ],
+      "example": "examples/backend",
+      "entry": "server/routes.ts",
+      "run": [
+        [
+          "kitr dev",
+          "The API on port 3001, restarted on change"
+        ],
+        [
+          "kitr build",
+          "A Node build in `dist/api`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the API test"
+        ]
+      ]
+    }
   },
   "site": {
     "package": "@kitr/kit-site",
@@ -1160,7 +1498,45 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "fullstack",
+      "audience": "Teams launching a marketing site that will grow forms, a blog and more than one language.",
+      "highlights": [
+        {
+          "title": "Prerendered pages",
+          "text": "Home, pricing and a blog, written to HTML at build time and listed in `config/seo.ts`."
+        },
+        {
+          "title": "Two languages",
+          "text": "English and German in `app/locales/`, with a locale switch kept in a cookie."
+        },
+        {
+          "title": "A newsletter form",
+          "text": "The form posts to `server/controllers/newsletter-controller.ts`, and a test covers it."
+        },
+        {
+          "title": "Ready to share",
+          "text": "Page titles, share tags and analytics are configured in `config/`."
+        }
+      ],
+      "example": "examples/site",
+      "entry": "app/pages/home.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The site and its API"
+        ],
+        [
+          "kitr build",
+          "Prerenders every page into `dist/site/client`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the newsletter test"
+        ]
+      ]
+    }
   },
   "tauri": {
     "package": "@kitr/kit-tauri",
@@ -1170,6 +1546,44 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Teams shipping a desktop app where download size matters more than identical rendering everywhere.",
+      "highlights": [
+        {
+          "title": "The dashboard in Tauri",
+          "text": "A small native app that uses the system webview."
+        },
+        {
+          "title": "Typed Rust commands",
+          "text": "`app/commands.ts` calls the commands in `src-tauri/src/lib.rs`, with types on both sides."
+        },
+        {
+          "title": "Events from Rust",
+          "text": "Rust emits events with `app.emit`, and the page listens with `useTauriEvent`."
+        },
+        {
+          "title": "A Rust project to grow",
+          "text": "`platforms/app/src-tauri/` is a normal Cargo project with its capabilities file."
+        }
+      ],
+      "example": "examples/tauri",
+      "entry": "app/commands.ts",
+      "run": [
+        [
+          "kitr dev app",
+          "The Tauri window, with hot reload"
+        ],
+        [
+          "kitr dev site",
+          "The same app in a browser"
+        ],
+        [
+          "kitr build app",
+          "A native bundle; needs Rust installed"
+        ]
+      ]
+    }
   }
 }

@@ -52,6 +52,7 @@ export {
   type KitrCatalog,
   type KitrCatalogEntry,
   type KitrCategory,
+  type KitrKitInfo,
   type KitrManifest,
   type KitrPlatformInfo,
   validateManifest,

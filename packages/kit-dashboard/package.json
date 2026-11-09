@@ -9,7 +9,44 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Teams building an admin or internal tool on an API they already run.",
+      "highlights": [
+        {
+          "title": "Talks to your API",
+          "text": "`http` is pointed at `VITE_API_URL`, with typed requests and errors."
+        },
+        {
+          "title": "Sign-in with tokens",
+          "text": "`auth` keeps the session and guards pages; `app/abilities.ts` holds the permissions."
+        },
+        {
+          "title": "Build before the API exists",
+          "text": "Set `VITE_MOCKS=true` and the handlers in `app/mocks/` answer every request."
+        },
+        {
+          "title": "Eleven components to own",
+          "text": "Button, form, data table, app shell and more, copied into `app/components/ui`."
+        }
+      ],
+      "example": "examples/dashboard",
+      "entry": "app/routes.ts",
+      "run": [
+        [
+          "kitr dev",
+          "The dashboard in the browser"
+        ],
+        [
+          "kitr build",
+          "A single-page build in `dist/site`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the home page test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +55,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-dashboard"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/dashboard",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

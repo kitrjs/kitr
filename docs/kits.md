@@ -12,7 +12,7 @@ kitr new my-api --kit server
 kitr new my-saas --kit saas --platform site=web,api=server --mode ssr --runtime bun
 ```
 
-Every flag is listed under [Create a project](cli.md#create-a-project).
+Every flag is listed under [Create a project](cli.md#create-a-project). [kitr.dev/kits](https://kitr.dev/kits) shows each kit with the files it writes.
 
 ## Base kits
 
@@ -135,4 +135,4 @@ export default definePackage({
 
 `packages` are added in order, with `answers` for their questions. `files` runs last, with the same `ctx` a package's `add()` gets ([the contract](package-contract.md#what-ctx-can-do)).
 
-Publish it with `"kind": "kit"` in the `kitr` block of `package.json`. Then `kitr new my-app --kit @acme/kit-starter` runs it.
+Publish it with `"kind": "kit"` in the `kitr` block of `package.json`, and a `kit` object there that says who it is for and what it gives ([the kit block](package-contract.md#what-a-kit-says-about-itself)). Then `kitr new my-app --kit @acme/kit-starter` runs it.

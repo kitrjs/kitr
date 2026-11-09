@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "fullstack",
+      "audience": "Teams launching a marketing site that will grow forms, a blog and more than one language.",
+      "highlights": [
+        {
+          "title": "Prerendered pages",
+          "text": "Home, pricing and a blog, written to HTML at build time and listed in `config/seo.ts`."
+        },
+        {
+          "title": "Two languages",
+          "text": "English and German in `app/locales/`, with a locale switch kept in a cookie."
+        },
+        {
+          "title": "A newsletter form",
+          "text": "The form posts to `server/controllers/newsletter-controller.ts`, and a test covers it."
+        },
+        {
+          "title": "Ready to share",
+          "text": "Page titles, share tags and analytics are configured in `config/`."
+        }
+      ],
+      "example": "examples/site",
+      "entry": "app/pages/home.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The site and its API"
+        ],
+        [
+          "kitr build",
+          "Prerenders every page into `dist/site/client`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the newsletter test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-site"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/site",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

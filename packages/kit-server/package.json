@@ -9,7 +9,44 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Backend developers who want an API, jobs or a realtime service with no React in the project.",
+      "highlights": [
+        {
+          "title": "Routes and controllers",
+          "text": "`server/routes.ts` maps URLs to controllers in `server/controllers/`, with a health check to start."
+        },
+        {
+          "title": "Any database",
+          "text": "`config/db.ts` connects the ORM you pick, with Drizzle and postgres.js sketched in its comments."
+        },
+        {
+          "title": "Live channels",
+          "text": "`app/channels/example.ts` is a typed channel clients can subscribe to."
+        },
+        {
+          "title": "Tested without a running server",
+          "text": "`test/example.test.ts` calls the API in memory with `createTestClient`."
+        }
+      ],
+      "example": "examples/backend",
+      "entry": "server/routes.ts",
+      "run": [
+        [
+          "kitr dev",
+          "The API on port 3001, restarted on change"
+        ],
+        [
+          "kitr build",
+          "A Node build in `dist/api`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the API test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +55,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-server"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/server",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

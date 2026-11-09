@@ -145,6 +145,68 @@ describe('the platform block', () => {
   })
 })
 
+/** A kit block that passes, for tests to break one field at a time. */
+const kitBlock = () => ({
+  audience: 'Teams who sell from a kiosk.',
+  highlights: [{ title: 'A till', text: 'Takes payments at the counter.' }],
+  example: 'examples/till',
+  entry: 'app/pages/home.tsx',
+  run: [['kitr dev', 'The till in the browser']],
+})
+const till = (kit: unknown, kind = 'kit') => ({
+  name: 'till',
+  title: 'Till kit',
+  summary: 'Start a point-of-sale app.',
+  category: 'kits',
+  runsOn: 'both',
+  kind,
+  kit,
+})
+
+describe('the kit block', () => {
+  const kits = packages.filter(({ pkg }) => pkg.kitr.kind === 'kit')
+  const kitNames = kits.map(({ pkg }) => pkg.kitr.name)
+  const repo = join(root, '..')
+
+  it.each(kits.map(({ dir, pkg }) => [dir, pkg.kitr.kit]))(
+    '%s describes itself, and its example and entry exist',
+    (dir, kit) => {
+      expect(kit, dir).toBeDefined()
+      expect(kit.highlights.length, dir).toBeGreaterThanOrEqual(3)
+      expect(existsSync(join(repo, kit.example, 'kitrrc.ts')), kit.example).toBe(true)
+      expect(existsSync(join(repo, kit.example, kit.entry)), kit.entry).toBe(true)
+      if (kit.base) expect(kitNames, `${dir} base`).toContain(kit.base)
+    },
+  )
+
+  it('accepts a complete block', () => {
+    expect(validateManifest(till(kitBlock()))).toEqual([])
+  })
+
+  it('names each broken field', () => {
+    const block = {
+      ...kitBlock(),
+      audience: '',
+      example: '../till',
+      highlights: [],
+      run: [['kitr dev']],
+    }
+    expect(validateManifest(till(block))).toEqual([
+      '"kit": "audience" must be a non-empty string',
+      '"kit": "example" must be a path from the root, such as "examples/app"',
+      '"kit": "highlights" must be a non-empty list of { title, text }',
+      '"kit": "run[0]" must be [command, what]',
+    ])
+  })
+
+  it('belongs to kit packages only', () => {
+    expect(validateManifest(till(kitBlock(), 'package'))).toEqual([
+      '"kit" is only for packages with kind "kit"',
+    ])
+    expect(validateManifest(till(['a']))).toEqual(['"kit": must be an object'])
+  })
+})
+
 describe('kitr package:check', () => {
   it('reports a broken platform block', async () => {
     const { checkPackage } = await import('../src/commands/package-check')

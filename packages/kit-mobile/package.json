@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Teams who want one app on the web, installed from the browser, and in the App Store and Google Play.",
+      "highlights": [
+        {
+          "title": "An installable web app",
+          "text": "The site is a PWA with an install button, an online and offline status, and a prompt when an update is ready."
+        },
+        {
+          "title": "A Capacitor app",
+          "text": "`platforms/phone/` wraps the same build for iOS and Android."
+        },
+        {
+          "title": "Native lifecycle",
+          "text": "Inside Capacitor the home page follows the app going to the background and the hardware back button."
+        },
+        {
+          "title": "The dashboard underneath",
+          "text": "Sign-in, forms, tables and the eleven components."
+        }
+      ],
+      "example": "examples/mobile",
+      "entry": "app/pages/home.tsx",
+      "run": [
+        [
+          "kitr dev site",
+          "The app in a browser, as a PWA"
+        ],
+        [
+          "kitr dev phone --target ios",
+          "The Capacitor app in the iOS simulator"
+        ],
+        [
+          "kitr build phone",
+          "The native projects for Xcode and Android Studio"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-mobile"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/mobile",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "sideEffects": false,
   "exports": {
