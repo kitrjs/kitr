@@ -1,6 +1,6 @@
 {
   "name": "@kitr/actions",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "@kitr/actions: defineQuery and defineMutation over TanStack Start server functions, with validation, middleware, the kitr error shape and cache effects.",
   "kitr": {
     "name": "actions",

@@ -1,6 +1,6 @@
 {
   "name": "@kitr/vite",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "@kitr/vite: the kitr() Vite plugin. Reads kitrrc.ts and the installed packages' Vite needs: router, React, Tailwind, virtual modules, aliases.",
   "type": "module",
   "license": "MIT",

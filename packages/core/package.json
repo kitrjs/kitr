@@ -1,6 +1,6 @@
 {
   "name": "@kitr/core",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Kitr core: typed registry, provider lifecycle, config, env, errors and the data contract. Zero React runtime.",
   "type": "module",
   "license": "MIT",
