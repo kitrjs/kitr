@@ -1,5 +1,15 @@
 # @kitr/auth
 
+## 0.6.0
+
+### Patch Changes
+
+- @kitr/api@0.6.0
+  - @kitr/core@0.6.0
+  - @kitr/http@0.6.0
+  - @kitr/react@0.6.0
+  - @kitr/server@0.6.0
+
 ## 0.5.0
 
 ### Patch Changes

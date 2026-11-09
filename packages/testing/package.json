@@ -1,6 +1,6 @@
 {
   "name": "@kitr/testing",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "@kitr/testing: createTestApp and a request client for API tests (no React); @kitr/testing/react adds renderWithKitr.",
   "kitr": {
     "name": "testing",
