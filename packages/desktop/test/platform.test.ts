@@ -40,6 +40,8 @@ describe('desktop()', () => {
     expect(f.files.get('platforms/app/ipc.ts')).toContain(
       'satisfies Record<keyof Ipc | keyof IpcPush, true>',
     )
+    // Without a publish block electron-builder tries to infer one from git and crashes when it cannot.
+    expect(f.files.get('platforms/app/electron-builder.yml')).toMatch(/^publish: null$/m)
   })
 
   it('builds the client, main and preload, then packages unless --no-pack', async () => {

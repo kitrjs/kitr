@@ -143,3 +143,50 @@ test.describe('a mutation', () => {
     await expect(page.getByRole('alert')).toHaveText('text is required')
   })
 })
+
+test.describe('actions', () => {
+  test('a query loads on the server, a mutation updates the list, errors reach the form', async ({
+    page,
+    baseURL,
+  }) => {
+    const errors = watchForErrors(page)
+    await page.goto('/e2e/tasks')
+    await expect(page.locator('form[data-ready="true"]')).toBeVisible()
+
+    const title = `task ${Date.now()}`
+    await page.getByLabel('Task').fill(title)
+    await page.getByRole('button', { name: 'Add task' }).click()
+    // The mutation's `invalidate` effect refetches the list.
+    await expect(page.getByRole('listitem').filter({ hasText: title })).toBeVisible()
+
+    await page.getByLabel('Task').fill('x')
+    await page.getByRole('button', { name: 'Add task' }).click()
+    await expect(page.getByRole('alert')).toContainText('two letters or more')
+    await page.getByLabel('Task').fill('forbidden')
+    await page.getByRole('button', { name: 'Add task' }).click()
+    await expect(page.getByRole('alert')).toContainText('That title is not allowed')
+
+    // The server stores it: a reload renders the list in the HTML, before any script runs.
+    const html = await (await fetch(`${baseURL}/e2e/tasks`)).text()
+    expect(html).toContain(title)
+    expect(errors.filter((e) => !/favicon|status of (403|422)/.test(e))).toEqual([])
+  })
+
+  test('handler code and what only it imports stay out of the browser bundle', async ({
+    page,
+    baseURL,
+  }) => {
+    const scripts: string[] = []
+    page.on('response', async (res) => {
+      if (res.request().resourceType() === 'script') scripts.push(await res.text())
+    })
+    await page.goto('/e2e/tasks')
+    await expect(page.locator('form[data-ready="true"]')).toBeVisible()
+    expect(scripts.length).toBeGreaterThan(0)
+    for (const script of scripts) {
+      expect(script).not.toContain('e2e-server-only-marker')
+      expect(script).not.toContain('That title is not allowed')
+    }
+    expect(baseURL).toBeTruthy()
+  })
+})

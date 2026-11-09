@@ -25,6 +25,22 @@ describe('OperationRegistry', () => {
     expect(registry.all().map((op) => op.name)).toEqual(['projects.list', 'projects.update'])
   })
 
+  it('registers a callable definition, which is what @kitr/actions returns', () => {
+    const registry = new OperationRegistry()
+    const { kind, contract } = query('projects.list')
+    const callable = Object.assign(async () => 'ok', { kind, contract })
+    Object.defineProperty(callable, 'name', { value: 'projects.list' })
+    registry.register({ 'projects.list': callable })
+    expect(registry.get('projects.list')).toBe(callable)
+  })
+
+  it('rejects a value that is not an operation', () => {
+    const registry = new OperationRegistry()
+    expect(() => registry.register({ nope: (() => 1) as unknown as OperationLike })).toThrow(
+      /operations.nope is not a query or mutation definition/,
+    )
+  })
+
   it('replaces a name registered twice, so a test can swap in a fake', () => {
     const registry = new OperationRegistry()
     registry.register({ 'projects.list': query('projects.list') })

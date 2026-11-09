@@ -10,4 +10,6 @@ interface ImportMetaEnv {
   /** The platform name from kitrrc.ts this bundle was built for (`kitr dev|build <name>`). */
   readonly KITR_PLATFORM: string
   readonly KITR_PLATFORM_TYPE: string
+  /** How the platform renders: `'ssr'`, `'static'` or `'spa'`; desktop, tauri and mobile shells are `'spa'`. */
+  readonly KITR_RENDER: 'ssr' | 'static' | 'spa'
 }

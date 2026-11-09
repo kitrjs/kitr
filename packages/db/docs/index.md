@@ -193,7 +193,6 @@ import { z } from 'zod'
 import { defineMutation } from '@kitr/actions'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
@@ -201,7 +200,7 @@ export const renameProject = defineMutation('projects.rename', {
   input: z.object({ id: z.string(), name: z.string().min(2) }),
   effects: (project) => ({ invalidate: [['projects', 'list']], set: [{ key: ['projects', 'detail', project.id], data: project }] }),
   handler: async ({ input }) => {
-    const db = useDb<AppDb>(useRequestApp(app))
+    const db = useDb<AppDb>(useRequestApp())
     const [project] = await db
       .update(projects)
       .set({ name: input.name })

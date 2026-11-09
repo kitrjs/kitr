@@ -409,7 +409,7 @@ export async function findOrder(id: string) {
 }
 ```
 
-Outside a request `useRequestApp()` throws unless you pass the server's app as a fallback, for code that also runs in jobs:
+Outside a request `useRequestApp()` throws, unless the call runs inside `runWithApp(app, fn)` (a test or a script) or you pass the server's app as a fallback, for code that also runs in jobs:
 
 ```ts
 // server/services/orders.ts
@@ -703,7 +703,7 @@ These are thrown as plain errors, not JSON responses:
 | Message | When | What to do |
 | --- | --- | --- |
 | `[@kitr/server] useRequest() called outside a request.` | `useRequest()` ran in a job, script or module scope. | Use `tryUseRequest()`, or move the call into the handler. |
-| `[@kitr/server] useRequestApp() called outside a request and no fallback given.` | Same, for `useRequestApp()`. | Pass a fallback: `useRequestApp(server.app)`. |
+| `[@kitr/server] useRequestApp() called outside a request and no fallback given.` | Same, for `useRequestApp()`. | In a test or script, wrap the call in `runWithApp(app, () => ...)`. In code that also runs in jobs, pass a fallback: `useRequestApp(server.app)`. |
 | `[@kitr/server] websocket: true needs the crossws package.` | `websocket: true` without `crossws`. | `kitr add realtime`. |
 
 ## Testing

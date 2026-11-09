@@ -5,7 +5,11 @@ import { ThemeScript } from '@kitr/theme'
 /** Head tags for every page. Pages add their own through `head` in their route options. */
 export function head() {
   return {
-    meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }],
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'Tauri' },
+    ],
     links: [{ rel: 'stylesheet', href: css0 }],
   }
 }

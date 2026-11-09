@@ -80,7 +80,7 @@ export const base = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'biome.json',
-    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/.kitr", "!**/dist", "!**/.output"] },\n  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
+    `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": {\n    "includes": [\n      "**",\n      "!**/routeTree.gen.ts",\n      "!**/routes.gen.ts",\n      "!**/openapi.json",\n      "!**/.kitr",\n      "!**/dist",\n      "!**/.output"\n    ]\n  },\n  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "preset": "recommended" } },\n  "overrides": [\n    {\n      "includes": ["server/**", "app/actions/**", "config/**"],\n      "linter": { "rules": { "correctness": { "useHookAtTopLevel": "off" } } }\n    }\n  ]\n}\n`,
   )
   ctx.write(
     '.gitignore',

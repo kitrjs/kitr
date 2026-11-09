@@ -25,7 +25,7 @@ kitr add realtime
 What `kitr add` does:
 
 - Adds the [server](/packages/server) package first if the project does not have it yet.
-- Installs `@kitr/realtime` and `crossws`. In a React app it also installs `partysocket`, the reconnecting WebSocket client.
+- Installs `@kitr/realtime`, `crossws` and `partysocket`, the reconnecting WebSocket client that `@kitr/realtime` imports.
 - Adds `'@kitr/realtime'` to `packages` in `kitrrc.ts`. Realtime registers no provider.
 - Writes `config/realtime.ts` (shown under Configure).
 - Writes `app/channels/example.ts`, a sample channel named `example` with one `message` event.
@@ -250,21 +250,21 @@ Use `set` when the event carries the full record. Use `invalidate` when it only 
 
 ## Emit from the server
 
-`realtime.use(channel, params)` returns an emitter for one topic. Read the server from the container: `ctx.app` in a controller, or the server's app in an action or a job:
+`realtime.use(channel, params)` returns an emitter for one topic. Read the server from the container: `ctx.app` in a controller, `useRequestApp()` in an action, or the server's app in a job:
 
 ```ts
 // app/actions/projects/rename.ts
 import { defineMutation } from '@kitr/actions'
+import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
 import { projectChannel } from '#app/channels/projects'
-import { server } from '#server/main'
 
 export const renameProject = defineMutation('projects.rename', {
   input: z.object({ id: z.string(), name: z.string().min(2) }),
   handler: async ({ input }) => {
     const project = { id: input.id, name: input.name, teamId: 'team_acme' }
     // ... save it with your database
-    server.app.container.use('realtime').use(projectChannel, { id: input.id }).emit('updated', project)
+    useRequestApp().container.use('realtime').use(projectChannel, { id: input.id }).emit('updated', project)
     return project
   },
 })

@@ -6,6 +6,7 @@ import {
   createServer,
   errorToResponse,
   normaliseServerError,
+  runWithApp,
   tryUseRequest,
   useRequest,
   useRequestApp,
@@ -70,6 +71,7 @@ describe('createServer', () => {
     expect(() => useRequestApp()).toThrow(/no fallback/)
     const app = createApp()
     expect(useRequestApp(app)).toBe(app)
+    expect(runWithApp(app, () => useRequestApp())).toBe(app)
   })
 
   it('turns thrown errors into the kitr wire shape', async () => {

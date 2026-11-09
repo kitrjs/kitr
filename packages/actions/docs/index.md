@@ -94,7 +94,6 @@ import { defineMutation } from '@kitr/actions'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 
 export const renameProject = defineMutation('projects.rename', {
@@ -104,7 +103,7 @@ export const renameProject = defineMutation('projects.rename', {
     invalidate: [['projects', 'list']],
   }),
   handler: async ({ input }) => {
-    const db = useDb<AppDb>(useRequestApp(app))
+    const db = useDb<AppDb>(useRequestApp())
     return db.projects.update(input.id, { name: input.name })
   },
 })
@@ -128,7 +127,7 @@ export function RenameButton({ id }: { id: string }) {
 
 Clicking the button sends one request that validates the input, runs the handler and returns the project. The `set` effect writes it into the detail cache and `invalidate` refetches every project list. `rename.mutate({ id })` and `useMutation('projects.rnaem')` are type errors.
 
-`useRequestApp(app)` returns the app for the current request, or `app` when there is none.
+`useRequestApp()` returns the app for the current request. Don't import `app` from `#app/app` in an action file: `app/app.ts` imports the registry that imports every action, and a file that imports `app` back makes the cycle that leaves the registry reading an action before it exists.
 
 ## Read data with a query
 
@@ -140,14 +139,13 @@ import { defineQuery } from '@kitr/actions'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 
 export const listProjects = defineQuery('projects.list', {
   input: z.object({ status: z.enum(['open', 'archived']).optional() }),
   staleTime: 30_000,
   handler: ({ input }) =>
-    useDb<AppDb>(useRequestApp(app)).projects.findMany({ where: { status: input.status } }),
+    useDb<AppDb>(useRequestApp()).projects.findMany({ where: { status: input.status } }),
 })
 ```
 

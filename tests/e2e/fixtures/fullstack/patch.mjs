@@ -18,11 +18,16 @@ export default function patch({ target }) {
       loader: ({ context }) => context.queryClient.fetchQuery(notesQuery),
       lazy: () => import('./pages/e2e/notes'),
     })
+    .page('/e2e/tasks', {
+      loader: ({ context }) =>
+        context.queryClient.ensureQueryData(queryOptions(context.app, 'e2e.tasks.list')),
+      lazy: () => import('./pages/e2e/tasks'),
+    })
     .page('/e2e/socket', { lazy: () => import('./pages/e2e/socket') })`,
   )
   prependTo(
     pages,
-    "import { meQuery } from '#app/e2e/me-query'\nimport { notesQuery } from '#app/e2e/notes-query'\n",
+    "import { queryOptions } from '@kitr/query'\nimport { meQuery } from '#app/e2e/me-query'\nimport { notesQuery } from '#app/e2e/notes-query'\n",
   )
 
   // Endpoints. `/e2e/emit` pushes an event down a socket channel through the realtime server the

@@ -32,9 +32,10 @@ describe('web()', () => {
     expect(() => site.with({ mode: 'nope' as any })).toThrow()
   })
 
-  it('asks for srvx only with ssr and vite-plugin-pwa only with pwa', () => {
+  it('always asks for srvx, which kitr start serves every mode with, and vite-plugin-pwa only with pwa', () => {
     const names = (i: ReturnType<typeof web>) => i.dependencies!.map((d) => d.name)
-    expect(names(web())).not.toContain('srvx')
+    expect(names(web())).toContain('srvx')
+    expect(names(web({ mode: 'static' }))).toContain('srvx')
     expect(names(web())).not.toContain('vite-plugin-pwa')
     expect(names(web({ mode: 'ssr' }))).toContain('srvx')
     expect(names(web({ pwa: true }))).toContain('vite-plugin-pwa')

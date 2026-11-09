@@ -263,7 +263,7 @@ A script that writes files the app imports belongs in `kitr generate`, not in a 
 
 ## Read the build target in app code
 
-`import.meta.env.KITR_PLATFORM` is the platform this bundle was built for, `KITR_PLATFORM_TYPE` its type and `KITR_PACKAGES` the packages from `kitrrc.ts`, all typed by `@kitr/vite/client`:
+`import.meta.env.KITR_PLATFORM` is the platform this bundle was built for, `KITR_PLATFORM_TYPE` its type, `KITR_RENDER` how it renders (`'ssr'`, `'static'` or `'spa'`) and `KITR_PACKAGES` the packages from `kitrrc.ts`, all typed by `@kitr/vite/client`:
 
 ```ts
 // app/components/shell.tsx

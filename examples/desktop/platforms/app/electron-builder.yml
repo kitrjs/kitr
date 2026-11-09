@@ -12,3 +12,6 @@ win:
   target: nsis
 linux:
   target: AppImage
+# The update feed @kitr/updater reads: replace null with a provider and url, e.g.
+# publish: { provider: generic, url: https://updates.example.com/ }
+publish: null

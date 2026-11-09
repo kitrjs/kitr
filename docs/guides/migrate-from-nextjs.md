@@ -148,7 +148,7 @@ import { queryOptions } from '@kitr/query'
 import { seo } from '@kitr/seo'
 
 r.page('/projects', {
-  loader: ({ context }) => context.queryClient.ensureQueryData(queryOptions('projects.list')),
+  loader: ({ context }) => context.queryClient.ensureQueryData(queryOptions(context.app, 'projects.list')),
   head: () => seo({ title: 'Projects · Acme' }),
   lazy: () => import('./pages/projects/index'),
 })
@@ -184,7 +184,7 @@ import { seo } from '@kitr/seo'
 
 r.page('/projects/$id', {
   loader: async ({ context, params }) => {
-    const project = await context.queryClient.ensureQueryData(queryOptions('projects.show', { id: params.id }))
+    const project = await context.queryClient.ensureQueryData(queryOptions(context.app, 'projects.show', { id: params.id }))
     if (!project) throw notFound()
     return { name: project.name }
   },

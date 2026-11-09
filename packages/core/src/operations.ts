@@ -55,6 +55,16 @@ export type OperationOutput<Op> = Op extends { contract: QueryContract<any, infe
     ? O
     : unknown
 
+/** An operation is an object or, for `@kitr/actions` definitions, a callable, carrying `kind` and `contract`. */
+function isOperation(op: unknown): op is OperationLike {
+  return (
+    (typeof op === 'object' || typeof op === 'function') &&
+    op !== null &&
+    'kind' in op &&
+    'contract' in op
+  )
+}
+
 /**
  * The operations of one app. `createApp({ operations })` fills the app's registry, a fork gets a
  * child registry that reads through to its parent (so a request or a test can register a fake
@@ -69,7 +79,7 @@ export class OperationRegistry {
   /** Add operations by name. A name registered twice is replaced, which is how tests swap in fakes. */
   register(operations: Record<string, OperationLike>): this {
     for (const [name, op] of Object.entries(operations)) {
-      if (!op || typeof op !== 'object' || !('kind' in op) || !('contract' in op))
+      if (!isOperation(op))
         throw new Error(`[kitr] operations.${name} is not a query or mutation definition`)
       this.entries.set(name, op)
     }

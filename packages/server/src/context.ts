@@ -65,10 +65,21 @@ export function tryUseRequest(): RequestContext | undefined {
   return storage.getStore()
 }
 
-/** The request-scoped app (container fork). Falls back to the given app outside requests. */
+const appStorage = new AsyncLocalStorage<KitrApp>()
+
+/**
+ * Run `fn` with `app` as the app `useRequestApp()` returns, outside a request: a test, a script or
+ * a job that calls code written for requests, such as an action's handler through `.run()`.
+ */
+export function runWithApp<T>(app: KitrApp, fn: () => T): T {
+  return appStorage.run(app, fn)
+}
+
+/** The request-scoped app (container fork). Outside a request, the app `runWithApp` set, else the fallback. */
 export function useRequestApp(fallback?: KitrApp): KitrApp {
-  const ctx = storage.getStore()
-  if (ctx) return ctx.app
-  if (fallback) return fallback
-  throw new Error('[@kitr/server] useRequestApp() called outside a request and no fallback given.')
+  const app = storage.getStore()?.app ?? appStorage.getStore() ?? fallback
+  if (app) return app
+  throw new Error(
+    '[@kitr/server] useRequestApp() called outside a request and no fallback given. In a test or script, wrap the call in runWithApp(app, () => ...).',
+  )
 }
