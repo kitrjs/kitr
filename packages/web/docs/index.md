@@ -684,6 +684,8 @@ server {
 }
 ```
 
+Add `Cache-Control: public, max-age=31536000, immutable` on `/assets/` to cache the hashed files for a year. `sitemap.xml` and `robots.txt` are already in `dist/site/client` when [SEO](/packages/seo) is installed. [Deploy a static site](/guides/deploy#serve-a-static-build-with-nginx) has the full config and a Dockerfile that serves it from nginx.
+
 ## Commands
 
 The web platform answers these commands:

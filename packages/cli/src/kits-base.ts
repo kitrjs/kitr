@@ -76,13 +76,16 @@ export const base = (ctx: ProjectContext, name: string) => {
   )
   ctx.write(
     'kitrrc.ts',
-    `import { defineKitrConfig } from '@kitr/kitr/app'\n\n/**\n * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every\n * platform by name. \`kitr add\`, \`kitr remove\` and \`kitr config\` edit this file; so can you.\n */\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n  platforms: {},\n  directories: {\n    app: 'app',\n    routes: 'app/routes',\n    config: 'config',\n    components: 'app/components',\n    server: 'server',\n    platforms: 'platforms',\n  },\n})\n`,
+    `import { defineKitrConfig } from '@kitr/kitr/app'\n\n/**\n * Explicit wiring, the Adonis way: every provider is listed here as a lazy import and every\n * platform by name. \`kitr add\`, \`kitr remove\` and \`kitr config\` edit this file; so can you.\n */\nexport default defineKitrConfig({\n  packages: [],\n  providers: [],\n  platforms: {},\n  directories: {\n    app: 'app',\n    config: 'config',\n    components: 'app/components',\n    server: 'server',\n    platforms: 'platforms',\n  },\n})\n`,
   )
   ctx.write(
     'biome.json',
     `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/.kitr", "!**/dist", "!**/.output"] },\n  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
   )
-  ctx.write('.gitignore', 'node_modules\ndist\n.output\n.nitro\n.tanstack\n.kitr\n*.local\n.env\n')
+  ctx.write(
+    '.gitignore',
+    'node_modules\ndist\n.output\n.nitro\n.tanstack\n.kitr\n*.local\n*.log\n.env\n',
+  )
   ctx.write('.env.example', '# Copy to .env. Each package adds the variables it reads below.\n')
   ctx.write(
     'AGENTS.md',

@@ -38,6 +38,7 @@ export default defineKitrConfig({
 - `packages` is what `kitr doctor` checks against `package.json`.
 - `providers` run in order at startup. Each is a lazy import, so a provider only loads when the app boots.
 - `directories` tells the CLI and the Vite plugin where things live, if you move them.
+- `generate` (optional) lists the app's own steps for `kitr generate`, such as `{ name: 'content', run: 'node scripts/content.mjs' }`. See [Run your own generate step](/docs/extending#run-your-own-generate-step).
 
 `kitr add` and `kitr remove` edit this file for you, but it's yours: reorder it, add your own providers, delete what you don't use.
 

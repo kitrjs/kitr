@@ -111,6 +111,33 @@ app.container.singleton('cart', () => createStore<CartState>(() => ({ items: [] 
 
 Pages read it with `useService('cart')`. Tests create their own app, so state never leaks between them.
 
+### Run your own generate step
+
+A script that writes files the app imports, such as a content index or icon sprites, belongs in `kitr generate` rather than in `predev`, `prebuild` and `pretypecheck` scripts. List it under `generate` in `kitrrc.ts`:
+
+```ts
+// kitrrc.ts
+import { defineKitrConfig } from '@kitr/kitr/app'
+
+export default defineKitrConfig({
+  packages: [],
+  providers: [],
+  generate: [
+    { name: 'content', run: 'node scripts/content.mjs', watch: ['content/**/*.md'] },
+    { name: 'icons', run: () => import('./scripts/icons') },
+  ],
+})
+```
+
+`kitr generate`, `kitr dev`, `kitr build` and `kitr typecheck` run each step once, after the type generators and the package steps, from the project root. `run` is a shell command, which sees `KITR_GENERATE=1` in its env, or a function; when the function returns a module whose default export is a function, `kitr` calls it. `watch` lists the files that rerun the step under `kitr generate --watch`. `kitr generate --check` skips app steps, as it skips package steps, because they write rather than compare, and `kitr generate --quiet` shows a step's output only when it fails. `kitr doctor` lists each step:
+
+```txt
+ℹ kitr generate runs app:content (node scripts/content.mjs) after the type generators
+ℹ kitr generate runs app:icons (a function) after the type generators
+```
+
+A failing step stops `kitr build` and `kitr typecheck` with `kitr generate: app:content failed: ...`; `kitr dev` prints the same line as a warning and starts anyway. A package declares the same kind of step with `generate: { command, watch }` in its setup module.
+
 ## 2. Swap a driver
 
 Device packages (`@kitr/secure-storage`, `@kitr/notifications`, `@kitr/files`, `@kitr/native`, `@kitr/updater`) ask the app for a driver. The best match wins, and priority decides.

@@ -72,6 +72,11 @@ describe('kitr new', () => {
     const rc = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
     for (const [, name] of rc.matchAll(/'(@kitr\/[\w.-]+)'/g))
       expect(pkg.dependencies?.[name!] ?? pkg.devDependencies?.[name!], name).toBeDefined()
+    // Code routes (app/routes.ts) need no `directories.routes`; a redirected log is never committed.
+    expect(rc).not.toMatch(/directories:[^}]*\broutes:/)
+    expect(readFileSync(join(dir, '.gitignore'), 'utf8').split('\n')).toContain('*.log')
+    // The starter's first test renders the home page, not 1 + 1.
+    if (kit === 'app') expect(exists(dir, 'test/home.test.tsx')).toBe(true)
     // The typed client resolves names through the route table: without it every call throws.
     if (exists(dir, 'app/api/client.ts')) {
       expect(readFileSync(join(dir, 'app/api/client.ts'), 'utf8')).toContain('registerRoutes(api')
@@ -151,12 +156,13 @@ describe.each([
     run(dir, bin('tsc'), ['--noEmit', '-p', '.'])
   })
 
-  it('passes kitr doctor with no errors', () => {
+  it('passes kitr doctor with no errors or warnings', () => {
     const findings = JSON.parse(kitr(dir, 'doctor', '--json')) as Array<{
       level: string
       message: string
     }>
-    expect(findings.filter((f) => f.level === 'error')).toEqual([])
+    // A fresh project must be clean: a warning here is the first thing a newcomer sees.
+    expect(findings.filter((f) => f.level !== 'info')).toEqual([])
   })
 
   it('lists its routes and info without failing', () => {
@@ -220,6 +226,14 @@ describe('make:* generators produce code that typechecks and builds', () => {
     const out = kitr(dir, command, arg)
     expect(out).toContain(`write ${file}`)
     expect(exists(dir, file)).toBe(true)
+  })
+
+  it("make:page 'docs/$slug' keeps the param in the route and says so", () => {
+    const out = kitr(dir, 'make:page', 'docs/$slug')
+    expect(out).toContain(
+      "wrote app/pages/docs/slug.tsx, added .page('/docs/$slug') to app/routes.ts",
+    )
+    expect(readFileSync(join(dir, 'app/routes.ts'), 'utf8')).toContain("'/docs/$slug'")
   })
 
   it('kitr make lists every generator with the path it writes', () => {

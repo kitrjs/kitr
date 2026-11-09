@@ -108,6 +108,20 @@ export async function addComponents(
   await codemods.flush({ install: options.install })
 }
 
+/**
+ * The component names in `kitr ui add button card --registry ./r`: the positionals, without flags
+ * and without the value of `--registry` when it is given as a separate argument.
+ */
+export function componentNames(rawArgs: string[]): string[] {
+  const names: string[] = []
+  for (let i = 0; i < rawArgs.length; i++) {
+    const arg = rawArgs[i]!
+    if (arg === '--registry') i++
+    else if (!arg.startsWith('-') && !names.includes(arg)) names.push(arg)
+  }
+  return names
+}
+
 /** `kitr ui`: the `add` and `list` subcommands for owned components from a shadcn-compatible registry. */
 // kitr-allow-module-state: command definition object, built once at import, never mutated
 export const ui = {
@@ -136,7 +150,8 @@ export const ui = {
       }) {
         const { createContext } = await cli()
         const ctx = createContext()
-        const names = [args.components, ...rawArgs.slice(1).filter((a) => !a.startsWith('-'))]
+        const names = componentNames(rawArgs)
+        if (!names.length) names.push(args.components)
         await addComponents(ctx, names, {
           registry: args.registry,
           overwrite: args.overwrite,

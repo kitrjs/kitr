@@ -496,6 +496,12 @@ To make a missing provider an error instead, pass `strict: true`. The server ren
 [@kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
 ```
 
+In a client-only app (`spa` mode, desktop, mobile) skip the provider.
+
+### Static and SSR
+
+A `static` site is rendered on the server too: `kitr build` prerenders every page there, so the same rules apply as in an `ssr` app. Without a provider each component that reads the store gets its own fresh copy of the initial state for that render, which is fine for a widget that owns its state and wrong for two components that are meant to share it. To share, wrap them in one line in `app/document.tsx`, `<OrderDraftProvider><Outlet /></OrderDraftProvider>`; it is harmless in the browser, where the provider is optional. Set `strict: true` on the store to get an error instead of the fallback.
+
 <details>
 <summary>Persisted stores and hydration</summary>
 
