@@ -241,12 +241,7 @@ export class Codemods {
     let next = options.import
       ? main.replace(/(import \{ createServer \} from '@kitr\/server'\n)/, `$1${options.import}\n`)
       : main
-    next = options.first
-      ? next.replace(/(export const server = createServer\([^\n]*\)\n)/, `$1${options.line}\n`)
-      : next.replace(
-          /(export const server = createServer\([^\n]*\)\n(?:(?!export |const |\n)[^\n]+\n)*)/,
-          `$1${options.line}\n`,
-        )
+    next = insertAfterServer(next, options.line, options.first ?? false)
     if (next === main) return
     if (!this.ctx.dryRun) writeFileSync(full, next)
     this.ctx.touched.add(file)
@@ -796,6 +791,34 @@ export class Codemods {
  * `import <local> from '<spec>'` after the last package import (before `#app/*` and relative
  * ones), so the extension list reads in the order it is declared and the file stays sorted.
  */
+/**
+ * Insert `line` after the `export const server = createServer(...)` line, or, unless `first`,
+ * after the run of non-blank lines that follows it and does not start a new `export`/`const`.
+ * Line by line rather than one regex, which backtracked quadratically on repeated entries.
+ */
+function insertAfterServer(src: string, line: string, first: boolean): string {
+  const lines = src.split('\n')
+  // The last element has no newline after it, so it can never be the anchor or part of the run.
+  const at = lines.findIndex(
+    (l, i) =>
+      i < lines.length - 1 &&
+      l.includes('export const server = createServer(') &&
+      l.slice(l.indexOf('export const server = createServer(')).endsWith(')'),
+  )
+  if (at === -1) return src
+  let end = at + 1
+  if (!first)
+    while (
+      end < lines.length - 1 &&
+      lines[end] !== '' &&
+      !lines[end]!.startsWith('export ') &&
+      !lines[end]!.startsWith('const ')
+    )
+      end++
+  lines.splice(end, 0, line)
+  return lines.join('\n')
+}
+
 function insertPackageImport(mod: ReturnType<typeof parseModule>, spec: string, local: string) {
   type Decl = { type: string; source?: { value?: unknown } }
   const body = (mod.$ast as unknown as { body: Decl[] }).body

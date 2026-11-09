@@ -115,6 +115,7 @@ describe('htmlToText', () => {
   it('drops script and style whatever their case or closing-tag spacing', () => {
     expect(htmlToText('<p>a</p><SCRIPT type="x">bad()</script ><Style>p{}</STYLE>b')).toBe('a\nb')
     expect(htmlToText('<scripted>keep</scripted>')).toBe('keep')
+    expect(htmlToText('<scr<b>ipt>x')).toBe('x')
     expect(htmlToText('<A class="b" href="/x">Go</A> <a href="/y">open')).toBe('Go (/x) open')
   })
 

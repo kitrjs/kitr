@@ -218,12 +218,25 @@ function linksToText(html: string): string {
   return out + html.slice(at)
 }
 
+/** Remove tags until none are left, so `<scr<b>ipt>` cannot reassemble into `<script>`. */
+function stripTags(html: string): string {
+  let out = html
+  for (let prev = ''; prev !== out; ) {
+    prev = out
+    out = out.replace(/<[^<>]+>/g, '')
+  }
+  return out
+}
+
 /** A readable text version of an HTML body: links become `text (url)`, block ends become line breaks. Used when a template has no `text`. */
 export function htmlToText(html: string): string {
   return (
-    linksToText(stripElements(html, ['style', 'script', 'head']))
-      .replace(/<\/(p|div|h[1-6]|li|tr|br)>|<br\s*\/?>/gi, '\n')
-      .replace(/<[^<>]+>/g, '')
+    stripTags(
+      linksToText(stripElements(html, ['style', 'script', 'head'])).replace(
+        /<\/(p|div|h[1-6]|li|tr|br)>|<br\s*\/?>/gi,
+        '\n',
+      ),
+    )
       .replace(/&nbsp;/g, ' ')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
