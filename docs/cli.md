@@ -15,6 +15,7 @@ A global install (`pnpm add -g @kitr/kitr`) lets you type `kitr` directly. Insid
 | `kitr <pkg>:<cmd>` | Run a command a package adds: `kitr jobs:work`. |
 | `kitr doctor` | Check the project for problems. Exits 1 on errors. |
 | `kitr info` | Print a JSON summary of the project. |
+| `kitr catalog` | List the official packages, platforms and kits. `--json` prints each with its whole `kitr` block. |
 | `kitr upgrade` | Move every kitr package to one version: `kitr upgrade --to 0.2.0`. |
 
 ### Create a project

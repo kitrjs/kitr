@@ -9,6 +9,7 @@ export interface KitrManifest {
   title: string
   /** One plain sentence on what the package does for your app. No library names. */
   summary: string
+  /** The group kitr.dev lists it under; a key of `categories`. */
   category: KitrCategory
   /** Where the package's code runs. */
   runsOn: 'client' | 'server' | 'both'
@@ -64,6 +65,7 @@ export interface KitrPlatformInfo {
   resources: Array<{ title: string; url: string; text: string }>
 }
 
+/** The categories kitr.dev groups packages under, by key, with the heading each one shows. */
 export const categories = {
   'data-fetching': 'Data fetching',
   'app-state': 'App state',
@@ -80,6 +82,7 @@ export const categories = {
   kits: 'Kits',
 } as const
 
+/** A key of `categories`. */
 export type KitrCategory = keyof typeof categories
 
 /** Problems with a manifest, as human-readable strings. Empty when valid. */
@@ -157,4 +160,22 @@ function validatePlatformInfo(p: unknown): string[] {
     '{ title, url, text } with an https:// url',
   )
   return errors
+}
+
+/** One package, platform or kit in `kitr catalog --json`: its `kitr` block and its npm name. */
+export type KitrCatalogEntry = KitrManifest & { package: string }
+
+/**
+ * What `kitr catalog --json` prints: every official package, platform and kit with its whole
+ * `kitr` block, sorted by short name. A site's build step reads it instead of `node_modules`.
+ */
+export interface KitrCatalog {
+  /** The CLI version the catalog came from. */
+  version: string
+  /** Packages added with `kitr add <name>`. */
+  packages: KitrCatalogEntry[]
+  /** Platform packages (`kind: 'platform'`), each with its `platform` block. */
+  platforms: KitrCatalogEntry[]
+  /** Kits used by `kitr new --kit <name>`. */
+  kits: KitrCatalogEntry[]
 }
