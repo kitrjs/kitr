@@ -1,5 +1,18 @@
 import { definePackage, generatorFile, naming } from '@kitr/core/package'
 
+/** `test/home.test.tsx`: the home page rendered inside the app's own providers. */
+const homeTest = `import { renderWithKitr } from '@kitr/testing/react'
+import { expect, it } from 'vitest'
+import { app } from '#app/app'
+import HomePage from '#app/pages/home'
+
+it('renders the home page with its heading', async () => {
+  await app.boot()
+  const page = renderWithKitr(<HomePage />, { app })
+  expect(page.getByRole('heading', { level: 1 }).textContent).toBeTruthy()
+})
+`
+
 /** `kitr add testing`: Vitest, Testing Library, renderWithKitr and a request client for API tests. */
 export default definePackage({
   name: 'testing',
@@ -21,12 +34,23 @@ export default definePackage({
       'vitest.config.ts',
       `import { defineConfig } from 'vitest/config'\n${serverOnly ? '' : "import { kitr } from '@kitr/vite'\n"}\nexport default defineConfig({\n${serverOnly ? '' : '  plugins: [kitr({ plugins: { tailwind: false } })],\n'}  test: {\n    environment: '${serverOnly ? 'node' : 'happy-dom'}',\n    include: ['app/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],\n  },\n})\n`,
     )
-    ctx.write(
-      'test/example.test.ts',
-      serverOnly
-        ? `import { createTestClient } from '@kitr/testing'\nimport { expect, it } from 'vitest'\nimport { server } from '../server/main'\n\nit('answers health', async () => {\n  const client = createTestClient(server)\n  const res = await client.get<{ ok: boolean }>('/api/health')\n  expect(res.status).toBe(200)\n  expect(res.body.ok).toBe(true)\n})\n`
-        : `import { expect, it } from 'vitest'\n\nit('runs', () => {\n  expect(1 + 1).toBe(2)\n})\n`,
-    )
+    // A React project with the router's starter page gets a real component test; one without it
+    // (or with a home page of its own) a boot test; a server-only project an API test.
+    const app = ctx.rc.directories.app ?? 'app'
+    const home = `${app}/pages/home.tsx`
+    const starter =
+      !serverOnly &&
+      ctx.exists(`${app}/app.ts`) &&
+      ctx.exists(home) &&
+      ctx.read(home).includes('is running</h1>')
+    if (starter) ctx.write('test/home.test.tsx', homeTest)
+    else
+      ctx.write(
+        'test/example.test.ts',
+        serverOnly
+          ? `import { createTestClient } from '@kitr/testing'\nimport { expect, it } from 'vitest'\nimport { server } from '../server/main'\n\nit('answers health', async () => {\n  const client = createTestClient(server)\n  const res = await client.get<{ ok: boolean }>('/api/health')\n  expect(res.status).toBe(200)\n  expect(res.body.ok).toBe(true)\n})\n`
+          : `import { createTestApp } from '@kitr/testing'\nimport { expect, it } from 'vitest'\n\nit('boots the app', async () => {\n  const app = await createTestApp()\n  expect(app.status).toBe('booted')\n})\n`,
+      )
     ctx.agents.add(
       'testing',
       `- \`${ctx.pm} test\` runs Vitest. Components: \`renderWithKitr(<X />, { app, queryData })\` from \`@kitr/testing/react\`. APIs: \`createTestClient(server).get('/api/x')\`. No running backend is needed.`,

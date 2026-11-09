@@ -1,0 +1,39 @@
+name: Registry smoke (nightly)
+
+# Every night: main published to a throwaway Verdaccio and installed the way users install, through
+# the published `kitr` bin, for every newcomer kit with both package managers: {app, site,
+# fullstack, dashboard} x {npm, pnpm}. Each project must come up with a clean `kitr doctor`, take
+# `kitr make:page 'docs/$slug'` and `kitr ui add button`, then typecheck and build. Pull requests
+# run a few cells of the same script in ci.yml (`registry-smoke`); this run covers the rest, plus
+# `kitr add` of every package. One registry and one published CLI serve every cell, so the
+# packages are published once.
+on:
+  schedule:
+    - cron: "47 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: smoke-nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm -C registry build
+      - name: Install, check and build every kit with npm and pnpm from a registry
+        run: pnpm smoke:registry --matrix --all-packages

@@ -4,7 +4,15 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import { afterEach, describe, expect, it } from 'vitest'
-import { crawlFilter, kitr, readRc } from '../src'
+import {
+  crawlFilter,
+  finishPrerender,
+  kitr,
+  type PrerenderGuard,
+  prerenderGuard,
+  readPrerender,
+  readRc,
+} from '../src'
 
 const packagesDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const dirs: string[] = []
@@ -363,5 +371,93 @@ describe('crawlFilter', () => {
       '/docs/b',
       '/packages?category=ui',
     ])
+  })
+})
+
+describe('prerender failures', () => {
+  /** Start's side of the crawl: filter, render, then onSuccess for each page that answered 200. */
+  function crawl(guard: PrerenderGuard, pages: Record<string, string | null>) {
+    const asked = Object.keys(pages).map((path) => ({ path }))
+    for (const page of asked) {
+      if (!guard.filter(page)) continue
+      const html = pages[page.path]
+      if (typeof html === 'string') guard.onSuccess({ page, html })
+    }
+    return asked as Array<{ path: string; sitemap?: { exclude?: boolean } }>
+  }
+  const site = {
+    '/': '<a href="/docs/agents">Agents</a>',
+    '/docs/agents': '<a href="/llms-full.txt">llms-full.txt</a> <a href="/#top">Top</a>',
+    '/llms-full.txt': null,
+  }
+
+  it('records what failed and who linked to it, and keeps it out of the sitemap', () => {
+    const guard = prerenderGuard({ routes: ['/'] })
+    const pages = crawl(guard, site)
+    expect(guard.failures()).toEqual([
+      { path: '/llms-full.txt', from: '/docs/agents', listed: false },
+    ])
+    expect(pages.filter((p) => !p.sitemap?.exclude).map((p) => p.path)).toEqual([
+      '/',
+      '/docs/agents',
+    ])
+  })
+
+  /** A built server that renders the not-found page for every path but the two that exist. */
+  function built() {
+    const dir = project({
+      'server/server.js': `export default { fetch(request) {
+        const path = new URL(request.url).pathname
+        const headers = { 'content-type': 'text/html' }
+        if (path === '/' || path === '/docs/agents') return new Response('<h1>Acme</h1>', { headers })
+        return new Response('<h1>Page not found</h1>', { status: 404, headers })
+      } }`,
+      'client/index.html': '',
+    })
+    return { clientDir: join(dir, 'client'), serverEntry: join(dir, 'server/server.js') }
+  }
+  function logger() {
+    const lines: string[] = []
+    return {
+      lines,
+      warn: (m: string) => lines.push(`warn ${m}`),
+      error: (m: string) => lines.push(`error ${m}`),
+    }
+  }
+
+  it('warns in one line for a crawled page and writes 404.html', async () => {
+    const guard = prerenderGuard({ routes: ['/'] })
+    crawl(guard, site)
+    const log = logger()
+    const out = built()
+    await finishPrerender({ guard, ...out, notFoundPage: true, logger: log })
+    expect(log.lines).toEqual(['warn [prerender] 404 at /llms-full.txt, linked from /docs/agents'])
+    expect(readFileSync(join(out.clientDir, '404.html'), 'utf8')).toBe('<h1>Page not found</h1>')
+  })
+
+  it('fails the build for a listed route, or for any page with failOnError', async () => {
+    const listed = prerenderGuard({ routes: ['/', '/pricing'] })
+    crawl(listed, { '/': '', '/pricing': null })
+    const log = logger()
+    await expect(finishPrerender({ guard: listed, ...built(), logger: log })).rejects.toThrow(
+      'prerender failed for /pricing',
+    )
+    expect(log.lines).toEqual(['error [prerender] 404 at /pricing'])
+
+    const strict = prerenderGuard({ routes: ['/'], failOnError: true })
+    crawl(strict, site)
+    await expect(finishPrerender({ guard: strict, ...built(), logger: logger() })).rejects.toThrow(
+      '`prerender.failOnError` is on',
+    )
+  })
+
+  it('reads failOnError from config/seo.ts', () => {
+    const root = project({
+      'config/seo.ts': `export default defineConfig({ prerender: { routes: ['/'], failOnError: true } })`,
+    })
+    expect(readPrerender(root, 'config')).toMatchObject({
+      pages: [{ path: '/' }],
+      failOnError: true,
+    })
   })
 })

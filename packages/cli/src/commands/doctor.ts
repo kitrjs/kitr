@@ -4,6 +4,7 @@ import { defineCommand } from 'citty'
 import pc from 'picocolors'
 import { createProjectInfo } from '../add-context'
 import { createContext, type ProjectContext } from '../context'
+import { loadAppSteps } from '../generate'
 import { installedPackages, type LoadedPackage } from '../packages'
 import { readPlatformConfig, withoutOf } from '../platform-config'
 import { createPlatformContext, loadPlatforms } from '../platforms'
@@ -205,11 +206,14 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
       })
   }
 
-  // Kitr version consistency.
+  // Kitr version consistency. `^0.3.1` and `0.3.1` name the same release: pnpm saves a range
+  // for `kitr add` while `kitr new` writes the exact version, so compare versions, not ranges.
   const kitrVersions = new Set(
     Object.entries(deps)
-      .filter(([n]) => n === 'kitr' || n.startsWith('@kitr/'))
-      .map(([, v]) => v),
+      .filter(
+        ([n]) => (n === 'kitr' || n.startsWith('@kitr/')) && !deps[n]!.startsWith('workspace:'),
+      )
+      .map(([, v]) => v.replace(/^[\^~=v\s]+/, '')),
   )
   if (kitrVersions.size > 1)
     out.push({
@@ -323,6 +327,18 @@ function platformPackage(source: string | undefined): string | undefined {
   return source.startsWith('@') ? source.split('/').slice(0, 2).join('/') : source.split('/')[0]
 }
 
+/** The app's own `kitr generate` steps from kitrrc.ts, listed so they are not invisible. */
+export async function generateChecks(ctx: ProjectContext): Promise<Finding[]> {
+  try {
+    return (await loadAppSteps(ctx)).map((step) => ({
+      level: 'info' as const,
+      message: `kitr generate runs app:${step.name} (${typeof step.run === 'string' ? step.run : 'a function'}) after the type generators`,
+    }))
+  } catch (error) {
+    return [{ level: 'error', message: (error as Error).message }]
+  }
+}
+
 /** Generated types under `.kitr/` must match what the generators produce now. */
 export async function typesChecks(ctx: ProjectContext): Promise<Finding[]> {
   try {
@@ -393,6 +409,7 @@ export const doctor = defineCommand({
     findings.push(...(await packageChecks(ctx, loaded)))
     findings.push(...(await platformChecks(ctx)))
     findings.push(...(await typesChecks(ctx)))
+    findings.push(...(await generateChecks(ctx)))
     if (args.json) {
       console.log(JSON.stringify(findings, null, 2))
     } else {

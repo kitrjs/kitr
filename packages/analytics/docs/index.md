@@ -30,9 +30,9 @@ What `kitr add` does:
 
 - Installs `@kitr/analytics`.
 - Adds `() => import('@kitr/analytics/provider')` to `providers` and `'@kitr/analytics'` to `packages` in `kitrrc.ts`.
-- Adds `VITE_GA_MEASUREMENT_ID: e.string({ optional: true })` to the `public` block of `app/env.ts`, and `VITE_GA_MEASUREMENT_ID=` to `.env.example` (and to `.env` when that file exists).
-- Writes `config/analytics.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
-- Writes `app/analytics.ts`, the typed list of your events, with `sign-in.completed` and `project.created` to start.
+- Adds `VITE_PLAUSIBLE_DOMAIN`, `VITE_PLAUSIBLE_HOST` and `VITE_GA_MEASUREMENT_ID`, each `e.string({ optional: true })`, to the `public` block of `app/env.ts`, and an empty line for each to `.env.example` (and to `.env` when that file exists).
+- Writes `config/analytics.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`. With [consent](/packages/consent) already installed, the `enabled: false` hint becomes a comment saying analytics is held until the visitor accepts.
+- Writes `app/analytics.ts`, the typed list of your events. It starts empty, with two events as a commented example.
 - Adds a `## kitr: analytics` section to `AGENTS.md` telling coding agents to track through `useAnalytics<AppEvents>()`, to declare new events in `app/analytics.ts` first, and never to call gtag or posthog directly.
 
 `kitr add analytics` asks no questions. Pass `--no-install` to skip the package manager. The `saas` and `site` kits include analytics. In a server-only project it prints a warning and skips.
@@ -47,19 +47,21 @@ What `kitr add` does:
 
 ```ts
 // config/analytics.ts
-import { defineConfig, googleAnalytics } from '@kitr/analytics'
+import { defineConfig, googleAnalytics, plausible } from '@kitr/analytics'
 import { env } from '#app/env'
 
 /**
  * With no adapters, development logs every event to the console and production sends nothing,
- * so the app works before any vendor is chosen.
+ * so the app works before any vendor is chosen. Plausible is cookieless; set its domain first.
  */
 export default defineConfig({
   adapters: [
+    ...(env.VITE_PLAUSIBLE_DOMAIN
+      ? [plausible({ domain: env.VITE_PLAUSIBLE_DOMAIN, apiHost: env.VITE_PLAUSIBLE_HOST })]
+      : []),
     ...(env.VITE_GA_MEASUREMENT_ID
       ? [googleAnalytics({ measurementId: env.VITE_GA_MEASUREMENT_ID })]
       : []),
-    // plausible({ domain: 'example.com' }),
     // posthog(posthogJs, { apiKey: env.VITE_POSTHOG_KEY }),   // pnpm add posthog-js
   ],
   // Consent banners: start queued, then call analytics.enable() once the user agrees.
@@ -68,7 +70,7 @@ export default defineConfig({
 })
 ```
 
-With `VITE_GA_MEASUREMENT_ID` empty, development logs every call to the console and production sends nothing, so your buttons work before you choose a vendor.
+With both variables empty, development logs every call to the console and production sends nothing, so your buttons work before you choose a vendor.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -81,6 +83,8 @@ With `VITE_GA_MEASUREMENT_ID` empty, development logs every call to the console 
 
 | Variable | Used for |
 | --- | --- |
+| `VITE_PLAUSIBLE_DOMAIN` | The site as Plausible knows it, such as `app.acme.com`. When set, the generated config adds the Plausible adapter. |
+| `VITE_PLAUSIBLE_HOST` | Optional. Your self-hosted Plausible, such as `https://plausible.acme.com`. Default `https://plausible.io`. |
 | `VITE_GA_MEASUREMENT_ID` | Your Google Analytics 4 measurement id, such as `G-ACME12345`. When set, the generated config adds the Google Analytics adapter. |
 | `VITE_APP_NAME` | Already in your env. The generated config sends it as the `app` prop on every event. |
 
@@ -89,15 +93,17 @@ With `VITE_GA_MEASUREMENT_ID` empty, development logs every call to the console 
 
 ## Track your first event
 
-`kitr add` wrote `app/analytics.ts`. It lists every event the app sends, with the props each one carries:
+`kitr add` wrote `app/analytics.ts`, an empty list of the events the app sends. Declare `project.created` there, with the props it carries:
 
 ```ts
 // app/analytics.ts
 import type { EventMap } from '@kitr/analytics'
 
-/** Every event the app sends, with its props. `useAnalytics<AppEvents>()` checks names and props. */
+/**
+ * Every event the app sends, with its props. `useAnalytics<AppEvents>()` checks names and props,
+ * so declare an event here before you track it.
+ */
 export interface AppEvents extends EventMap {
-  'sign-in.completed': { method: 'password' | 'oauth' }
   'project.created': { id: string }
 }
 ```
@@ -133,7 +139,7 @@ Click it in development, with no adapter configured, and the console shows:
 
 The `app` prop comes from `globalProps`. With [devtools](/packages/devtools) installed, the call also appears in the Analytics panel.
 
-Set `VITE_GA_MEASUREMENT_ID=G-ACME12345` in `.env`, restart, and the same click sends `project.created` to Google Analytics. No component changes.
+Set `VITE_PLAUSIBLE_DOMAIN=app.acme.com` in `.env`, restart, and the same click sends `project.created` to Plausible. `VITE_GA_MEASUREMENT_ID=G-ACME12345` does the same for Google Analytics. No component changes.
 
 ## Declare your events
 

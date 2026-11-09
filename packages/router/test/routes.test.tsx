@@ -127,6 +127,30 @@ describe('pages extension', () => {
     expect(collectIds(ios)).not.toContain('/_app')
   })
 
+  it('loads lazy root components: notFoundComponent for a path no page matches', async () => {
+    const lazyRoot = defineRoutes([pages], (r) =>
+      r
+        .root({
+          component: Shell,
+          notFoundComponent: { lazy: () => import('./fixtures/not-found') },
+          pendingComponent: () => <p>loading</p>,
+        })
+        .page('/', { component: () => <p>home</p> }),
+    )
+    const app = createApp()
+    await app.boot()
+    const router = createKitrRouter({
+      routes: lazyRoot,
+      app,
+      history: createMemoryHistory({ initialEntries: ['/pricing'] }),
+    })
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+      await router.load()
+    })
+    expect(await screen.findByText('fixture not found')).toBeTruthy()
+  })
+
   it('refuses a second root', () => {
     expect(() => defineRoutes([pages], (r) => r.root({}).root({}))).toThrow(
       /root\(\) may only be called once/,

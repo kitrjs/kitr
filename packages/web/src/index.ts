@@ -277,14 +277,22 @@ export async function startWeb(
       plugins.push(ws.plugin({}))
     } catch {}
   } else {
-    // Static and SPA builds: unknown paths fall back to the shell so client routing works.
+    // SPA builds: unknown paths fall back to the shell so client routing works. A static build
+    // prerendered every page, so an unknown path is a 404 and gets the 404.html the build wrote,
+    // the way Netlify, Cloudflare Pages and GitHub Pages serve it. A static build from before
+    // 404.html existed keeps the shell.
     const { readFile } = await import('node:fs/promises')
-    const shell = ['index.html', '_shell.html', '200.html']
-      .map((f) => resolve(clientDir, f))
-      .find(existsSync)
+    const notFound = resolve(clientDir, '404.html')
+    const page =
+      options.mode === 'static' && existsSync(notFound)
+        ? { file: notFound, status: 404 }
+        : ['index.html', '_shell.html', '200.html']
+            .map((f) => ({ file: resolve(clientDir, f), status: 200 }))
+            .find((f) => existsSync(f.file))
     fetch = async () =>
-      shell
-        ? new Response(await readFile(shell), {
+      page
+        ? new Response(await readFile(page.file), {
+            status: page.status,
             headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' },
           })
         : new Response('Not found', { status: 404 })

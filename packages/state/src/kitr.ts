@@ -9,7 +9,7 @@ export default definePackage({
     ctx.write('app/stores/.gitkeep', '')
     ctx.agents.add(
       'state',
-      `- Client state only. \`kitr make:store <name>\` writes \`app/stores/<name>.ts\` using \`createKitrStore\`; wrap the components that use it in its \`<NameStoreProvider>\`, or server rendering and prerendering throw. Server data belongs in queries, not stores.`,
+      `- Client state only. \`kitr make:store <name>\` writes \`app/stores/<name>.ts\` using \`createKitrStore\`. On the server, wrap the components that use it in its \`<NameStoreProvider>\` to share one store per render; without it each component renders the initial state. Server data belongs in queries, not stores.`,
     )
   },
   remove(ctx) {
@@ -30,9 +30,9 @@ interface ${naming.pascal(name)}State {
 }
 
 /**
- * Wrap the components that call \`use${naming.pascal(name)}Store()\` in \`<${naming.pascal(name)}StoreProvider>\`.
- * Without it the store works in the browser, but server rendering and prerendering throw
- * "Store has no instance on the server".
+ * In the browser \`use${naming.pascal(name)}Store()\` needs no provider. On the server, wrap the
+ * components that call it in \`<${naming.pascal(name)}StoreProvider>\` so they share one store per
+ * render; without it each one renders the initial state.
  */
 export const [use${naming.pascal(name)}Store, ${naming.pascal(name)}StoreProvider, ${naming.camel(name)}Store] = createKitrStore<${naming.pascal(name)}State>(
   { name: '${naming.snake(name)}', persist: false },
@@ -43,6 +43,11 @@ export const [use${naming.pascal(name)}Store, ${naming.pascal(name)}StoreProvide
   }),
 )
 `,
+      // The folder now has a real file: the placeholder `kitr add state` wrote is no longer needed.
+      after(ctx) {
+        const keep = `${ctx.rc.directories.app ?? 'app'}/stores/.gitkeep`
+        if (ctx.exists(keep)) ctx.unlink(keep)
+      },
     },
   },
   wraps: { zustand: '@kitr/state' },

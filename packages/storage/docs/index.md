@@ -35,7 +35,7 @@ kitr add storage
 
 - Installs `@kitr/storage` and adds its provider and package to `kitrrc.ts`.
 - Writes `config/storage.ts` (see [Configure](#configure)).
-- Writes `app/storage.ts` with three sample values: `sidebar`, `recentSearches` and `localeCookie`. A server-only project gets only `localeCookie`.
+- Writes `app/storage.ts` with one value, `localeCookie`, and a commented `defineStorage` example.
 - Adds a `## kitr: storage` section to `AGENTS.md`.
 
 It asks no questions and adds no environment variables or scripts. It does not overwrite `config/storage.ts` or `app/storage.ts` when they exist.
@@ -50,19 +50,21 @@ The generated `app/storage.ts` in a project with React:
 
 ```ts
 // app/storage.ts
-import { defineCookie, defineStorage } from '@kitr/storage'
+import { defineCookie } from '@kitr/storage'
 
 /**
  * Every persisted value, in one file, typed. Components read them with
  * `useStorage(item)` / `useCookie(item)` from @kitr/storage/react; plain code with `item.get()`.
+ * A local or session storage value is declared the same way:
+ *
+ *   import { defineStorage } from '@kitr/storage'
+ *
+ *   export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
+ *   export const recentSearches = defineStorage<string[]>('recent-searches', {
+ *     default: [],
+ *     area: 'session',
+ *   })
  */
-export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
-
-export const recentSearches = defineStorage<string[]>('recent-searches', {
-  default: [],
-  area: 'session',
-  version: 1,
-})
 
 /** Readable on the server too (`localeCookie.get(request.headers)`), so SSR picks the right locale. */
 export const localeCookie = defineCookie('locale', { default: 'en', maxAge: 60 * 60 * 24 * 365 })
@@ -103,7 +105,16 @@ export default defineConfig({
 
 ## Save your first value
 
-Read and write a value from a component with `useStorage`. It returns the value, a setter and a remover, like `useState`:
+Declare the value in `app/storage.ts` first, with its default. The type comes from the default:
+
+```ts
+// app/storage.ts
+import { defineStorage } from '@kitr/storage'
+
+export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
+```
+
+Read and write it from a component with `useStorage`. It returns the value, a setter and a remover, like `useState`:
 
 ```tsx
 // app/components/sidebar-toggle.tsx

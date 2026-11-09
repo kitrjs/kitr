@@ -10,12 +10,18 @@ export interface KitrStoreOptions<T> {
   persist?: Partial<PersistOptions<T, Partial<T>>> | boolean
   /** Connect to the Redux DevTools extension in development. Default `true`; never in production or on the server. */
   devtools?: boolean
+  /**
+   * Throw when a component reads the store on the server outside its `<StoreProvider>`, instead of
+   * rendering a fresh copy of the initial state. Default `false`.
+   */
+  strict?: boolean
 }
 
 /**
  * An SSR-safe Zustand store factory. On the client the store is a module-level
  * singleton; on the server (or in tests) you get a fresh store per `<StoreProvider>`,
- * so one user's state never leaks into another's render.
+ * so one user's state never leaks into another's render. Without a provider, each component
+ * that reads the store on the server gets its own fresh store, built from the initial state.
  *
  *   const [useCounter, CounterProvider, counterStore] = createKitrStore({ name: 'counter' }, (set) => ({ ... }))
  */
@@ -79,11 +85,18 @@ export function createKitrStore<T extends object>(
   function useKitrStore<U>(selector: (state: T) => U): U
   function useKitrStore<U>(selector?: (state: T) => U) {
     const fromContext = useContext(Context)
-    const store = fromContext ?? singleton
+    const own = useRef<StoreApi<T> | null>(null)
+    let store = fromContext ?? singleton
     if (!store) {
-      throw new Error(
-        `[@kitr/state] Store "${options.name}" has no instance on the server. Wrap the tree in its <StoreProvider>.`,
-      )
+      if (options.strict)
+        throw new Error(
+          `[@kitr/state] Store "${options.name}" has no instance on the server. Wrap the tree in its <StoreProvider>.`,
+        )
+      // On the server outside a provider: a store of this component's own, made from the initial
+      // state and dropped with the render. Nothing outlives the request, so nothing leaks, but
+      // nothing is shared either: a write here is not seen by other components.
+      own.current ??= build()
+      store = own.current
     }
     const select = (selector ?? ((s) => s)) as (state: T) => U
     // The server snapshot is the current state (not zustand's initial state), so a store

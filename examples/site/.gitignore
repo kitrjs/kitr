@@ -5,4 +5,5 @@ dist
 .tanstack
 .kitr
 *.local
+*.log
 .env

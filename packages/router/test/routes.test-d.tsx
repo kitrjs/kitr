@@ -1,6 +1,12 @@
 import { createApp, defineRoutes } from '@kitr/core'
 import { describe, expectTypeOf, it } from 'vitest'
-import { createKitrRouter, type RouteIds, type RouteTreeOf } from '../src'
+import {
+  createKitrRouter,
+  type RouteIds,
+  type RoutePath,
+  type RouteTreeOf,
+  type ToPathOption,
+} from '../src'
 import { pages } from '../src/routes'
 
 declare const Page: () => null
@@ -57,6 +63,21 @@ describe('pages extension types', () => {
     expectTypeOf<Dashboard['fullPath']>().toEqualTypeOf<'/dashboard'>()
   })
 
+  it('takes a component or { lazy } for the root fallbacks', () => {
+    defineRoutes([pages], (r) =>
+      r.root({
+        component: Page,
+        notFoundComponent: { lazy: () => import('./fixtures/not-found') },
+        errorComponent: Page,
+        pendingComponent: { lazy: () => import('./fixtures/page') },
+      }),
+    )
+    defineRoutes([pages], (r) =>
+      // @ts-expect-error lazy must load a module with a default export
+      r.root({ notFoundComponent: { lazy: () => Promise.resolve({ NotFound: Page }) } }),
+    )
+  })
+
   it('rejects kitr options that are not known', () => {
     defineRoutes([pages], (r) =>
       // @ts-expect-error presentation is one of the four modes
@@ -84,6 +105,26 @@ describe('pages extension types', () => {
     expectTypeOf<RouteIds<typeof router.routeTree>>().toEqualTypeOf<RouteIds<RouteTreeOf<R>>>()
     // Register it as TanStack asks (`interface Register { router: typeof router }`) and every
     // `<Link to>` and `navigate` is checked against these ids.
+  })
+
+  it('lists the page paths a link takes, for nav lists from data', () => {
+    expectTypeOf<RoutePath<typeof routes>>().toEqualTypeOf<
+      '/' | '/about' | '/projects' | '/projects/$id' | '/dashboard'
+    >()
+    expectTypeOf<RoutePath<R>>().toEqualTypeOf<RoutePath<typeof routes>>()
+    const router = createKitrRouter({ routes, app: createApp() })
+    // What `<Link to>` checks once this router is registered.
+    const linkTo = <const TTo extends string>(to: ToPathOption<typeof router, '/', TTo>) => to
+    const nav: Array<{ label: string; to: RoutePath<typeof routes> }> = [
+      { label: 'Home', to: '/' },
+      { label: 'Projects', to: '/projects' },
+    ]
+    for (const item of nav) linkTo(item.to)
+    // @ts-expect-error a concrete path is not a route...
+    linkTo('/projects/apollo')
+    // @ts-expect-error ...nor a RoutePath: use '/projects/$id' with params
+    const concrete: RoutePath<typeof routes> = '/projects/apollo'
+    void concrete
   })
 
   it('is absent from a table that did not install it', () => {

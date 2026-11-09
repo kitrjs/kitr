@@ -6,6 +6,7 @@ import type { PackageDefinition, PackageViteNeeds } from '@kitr/core/package'
 import { pickPackageDefinition, resolvePackageName, shortPackageName } from '@kitr/core/package'
 import type { Plugin, PluginOption } from 'vite'
 
+/** Options for `kitr()` in `vite.config.ts`. All optional: the rest comes from `kitrrc.ts`. */
 export interface KitrPluginOptions {
   /** Project root. Default: Vite's root. */
   root?: string
@@ -220,6 +221,8 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
   let platform = pickPlatform(rc, wantedPlatform)
   const plugins: PluginOption[] = []
   let needs = loadNeeds(root, rc.packages)
+  /** What the prerender asked for and wrote, once Start is set up with it. */
+  let guard: PrerenderGuard | undefined
   /** Config files the installed packages keep out of browser bundles. */
   let serverOnlyConfig: string[] = []
   /** Packages whose provider never ships in a production build. */
@@ -445,25 +448,37 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           p.startsWith(`${srcDirectory}/`)
             ? p.slice(srcDirectory.length + 1)
             : `${'../'.repeat(srcDirectory.split('/').filter(Boolean).length)}${p}`
-        const seo = readPrerender(root, rc.directories.config ?? 'config')
+        const { failOnError, ...seo } = readPrerender(root, rc.directories.config ?? 'config')
         const mode = platform?.mode ?? 'ssr'
+        const pages =
+          mode === 'static'
+            ? [{ path: '/' }, ...(seo.pages ?? []).filter((p) => p.path !== '/')]
+            : (seo.pages ?? [])
+        // Failures are ours to report (see prerenderGuard), so Start is told to carry on.
+        guard =
+          mode === 'spa' || (mode !== 'static' && !seo.prerender)
+            ? undefined
+            : prerenderGuard({ routes: pages.map((p) => p.path), failOnError })
+        const hooks = guard
+          ? { filter: guard.filter, onSuccess: guard.onSuccess, failOnError: false }
+          : {}
         const modeOptions =
           mode === 'spa'
             ? { spa: { enabled: true, prerender: { outputPath: '/index.html' } } }
             : mode === 'static'
               ? {
-                  pages: [{ path: '/' }, ...(seo.pages ?? []).filter((p) => p.path !== '/')],
+                  pages,
                   prerender: {
                     enabled: true,
                     crawlLinks: true,
                     autoSubfolderIndex: true,
-                    filter: crawlFilter(),
                     ...seo.prerender,
+                    ...hooks,
                   },
                   ...(seo.sitemap ? { sitemap: seo.sitemap } : {}),
                 }
               : seo.prerender
-                ? { ...seo, prerender: { filter: crawlFilter(), ...seo.prerender } }
+                ? { ...seo, prerender: { ...seo.prerender, ...hooks } }
                 : seo
         return tanstackStart({
           srcDirectory,
@@ -513,6 +528,30 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
       return out
     }),
   )
+  // After Start's prerender (its `buildApp` hook is also `post`, and comes first in this list):
+  // report the pages that failed, and give a static site its 404.html.
+  plugins.push({
+    name: 'kitr:prerender',
+    apply: 'build',
+    enforce: 'post',
+    buildApp: {
+      order: 'post',
+      async handler(builder) {
+        const env = (name: string) => builder.environments[name]?.config
+        const client = env('client')
+        const server = env('ssr')
+        const notFoundPage = platform?.mode === 'static'
+        if (!client || !server || (!guard && !notFoundPage)) return
+        await finishPrerender({
+          guard,
+          clientDir: resolve(client.root, client.build.outDir),
+          serverEntry: resolve(server.root, server.build.outDir, 'server.js'),
+          notFoundPage,
+          logger: builder.config.logger,
+        })
+      },
+    },
+  })
   // robots.txt from `robots` in config/seo.ts, for web builds that ship no public/robots.txt.
   plugins.push({
     name: 'kitr:robots',
@@ -752,7 +791,8 @@ export function crawlFilter(): (page: {
 
 /**
  * Static read of `config/seo.ts`: `prerender: ['/a']` or `{ routes: [...], crawlLinks }` becomes
- * Start's `pages` + `prerender`, and `site.url` turns on the sitemap. No execution needed.
+ * Start's `pages` + `prerender`, and `site.url` turns on the sitemap. `failOnError: true` comes
+ * back beside them, for `prerenderGuard`. No execution needed.
  */
 export function readPrerender(
   root: string,
@@ -761,6 +801,7 @@ export function readPrerender(
   pages?: Array<{ path: string }>
   prerender?: Record<string, unknown>
   sitemap?: Record<string, unknown>
+  failOnError?: boolean
 } {
   const path = [resolve(root, configDir, 'seo.ts'), resolve(root, configDir, 'ssr.ts')].find(
     existsSync,
@@ -768,19 +809,153 @@ export function readPrerender(
   if (!path) return {}
   const src = readFileSync(path, 'utf8')
   const host = src.match(/site\s*:\s*\{[\s\S]*?url\s*:\s*['"]([^'"]+)['"]/)?.[1]
+  const sitemap = host ? { sitemap: { enabled: true, host } } : {}
   const block = src.match(/prerender\s*:\s*(\{[\s\S]*?\}|\[[\s\S]*?\])/)?.[1]
-  if (!block) return host ? { sitemap: { enabled: true, host } } : {}
+  if (!block) return sitemap
+  const strict = /failOnError\s*:\s*true/.test(block) ? { failOnError: true } : {}
   const list = block.startsWith('[')
     ? block
     : (block.match(/routes\s*:\s*(\[[\s\S]*?\])/)?.[1] ?? '[]')
   const routes = [...list.matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]!)
-  if (!routes.length) return host ? { sitemap: { enabled: true, host } } : {}
+  if (!routes.length) return { ...sitemap, ...strict }
   const crawlLinks = /crawlLinks\s*:\s*true/.test(block)
   return {
     pages: routes.map((p) => ({ path: p })),
     prerender: { enabled: true, crawlLinks, autoSubfolderIndex: true },
-    ...(host ? { sitemap: { enabled: true, host } } : {}),
+    ...sitemap,
+    ...strict,
   }
+}
+
+/** A page the prerender asked for and did not write. */
+export interface PrerenderFailure {
+  /** The page's path, without its `#hash`. */
+  path: string
+  /** The first page whose HTML linked to it; missing for a page only the config lists. */
+  from?: string
+  /** Listed in `config/seo.ts` `prerender.routes` (or `/` on a static site), not crawled. */
+  listed: boolean
+}
+
+/** The `filter` and `onSuccess` hooks `prerenderGuard()` hands Start, and what they saw. */
+export interface PrerenderGuard {
+  /** Start's `prerender.filter`: drops anchors and repeats, and notes every page it lets through. */
+  filter(page: { path: string; sitemap?: { exclude?: boolean } }): boolean
+  /** Start's `prerender.onSuccess`: notes the page as written and which pages it links to. */
+  onSuccess(result: { page: { path: string; sitemap?: { exclude?: boolean } }; html: string }): void
+  /** Pages that passed the filter and were never written. */
+  failures(): PrerenderFailure[]
+  /** Fail the build for crawled pages too (`prerender.failOnError` in `config/seo.ts`). */
+  failOnError: boolean
+}
+
+const trimSlash = (path: string) => (path.length > 1 ? path.replace(/\/+$/, '') : path)
+
+/**
+ * Start's prerender throws on the first page that does not answer 200, and the build dies with a
+ * dump of the `Response`. Start runs with `failOnError: false` instead, and this keeps the record:
+ * `filter` (crawlFilter, plus a note of every page asked for) holds each page out of the sitemap,
+ * `onSuccess` puts it back and notes which page links where, and `failures()` is the difference,
+ * for `finishPrerender` to print and fail on.
+ */
+export function prerenderGuard(options: {
+  routes: string[]
+  failOnError?: boolean
+}): PrerenderGuard {
+  const dedupe = crawlFilter()
+  const listed = new Set(options.routes.map(trimSlash))
+  const asked = new Map<string, { exclude?: boolean } | undefined>()
+  const written = new Set<string>()
+  const linkedFrom = new Map<string, string>()
+  return {
+    failOnError: options.failOnError ?? false,
+    filter(page) {
+      if (!dedupe(page)) return false
+      asked.set(page.path, page.sitemap)
+      page.sitemap = { ...page.sitemap, exclude: true }
+      return true
+    },
+    onSuccess({ page, html }) {
+      written.add(page.path)
+      if (asked.has(page.path)) {
+        const sitemap = asked.get(page.path)
+        if (sitemap) page.sitemap = sitemap
+        else delete page.sitemap
+      }
+      // The links Start's crawler follows: root-relative hrefs on <a>.
+      for (const [, href] of html.matchAll(/<a[^>]+href=["'](\/[^"']*)["']/g)) {
+        const path = href!.split('#')[0] || '/'
+        if (!linkedFrom.has(path)) linkedFrom.set(path, page.path)
+      }
+    },
+    failures() {
+      return [...asked.keys()]
+        .filter((path) => !written.has(path))
+        .map((path) => {
+          const from = linkedFrom.get(path)
+          return { path, ...(from ? { from } : {}), listed: listed.has(trimSlash(path)) }
+        })
+    },
+  }
+}
+
+/**
+ * After Start's prerender: print one line per page that failed (`[prerender] 404 at /x, linked
+ * from /y`), with the status asked again of the built server, and fail the build when a listed
+ * route failed or `failOnError` is on. A static site also gets `404.html`: the root's
+ * `notFoundComponent`, rendered for a path no route matches, which Cloudflare Pages, Netlify and
+ * GitHub Pages serve for unknown paths. It is written here because Start's prerender refuses a
+ * page that answers 404, and so it is never crawled or listed in the sitemap.
+ */
+export async function finishPrerender(options: {
+  guard?: PrerenderGuard
+  clientDir: string
+  serverEntry: string
+  /** Also write `404.html` (a `static` site). */
+  notFoundPage?: boolean
+  logger: { warn(msg: string): void; error(msg: string): void }
+}): Promise<void> {
+  const failures = options.guard?.failures() ?? []
+  let handler: ((request: Request) => Response | Promise<Response>) | undefined
+  if ((failures.length || options.notFoundPage) && existsSync(options.serverEntry)) {
+    const mod = (await import(pathToFileURL(options.serverEntry).href)) as Record<string, any>
+    const server = mod.default?.fetch ? mod.default : mod
+    if (typeof server.fetch === 'function') handler = (request) => server.fetch(request)
+  }
+  const render = async (path: string) => {
+    try {
+      return await handler?.(new Request(new URL(path, 'http://localhost')))
+    } catch {
+      return undefined
+    }
+  }
+  if (options.notFoundPage) {
+    const res = await render('/404')
+    if (res?.headers.get('content-type')?.includes('html'))
+      writeFileSync(resolve(options.clientDir, '404.html'), await res.text())
+    else options.logger.warn('[prerender] 404.html not written: the server rendered no page')
+  }
+  const fatal: string[] = []
+  for (const failure of failures) {
+    const status = (await render(failure.path))?.status
+    const at = `${status && status !== 200 ? status : 'failed'} at ${failure.path}`
+    const line = `[prerender] ${at}${failure.from ? `, linked from ${failure.from}` : ''}`
+    if (failure.listed || options.guard?.failOnError) {
+      options.logger.error(line)
+      fatal.push(failure.path)
+    } else options.logger.warn(line)
+  }
+  if (!fatal.length) return
+  const error = new Error(
+    `prerender failed for ${fatal.join(', ')}: ${
+      options.guard?.failOnError
+        ? '`prerender.failOnError` is on in config/seo.ts.'
+        : 'routes listed in config/seo.ts must render; crawled links only warn.'
+    }`,
+  )
+  // The lines above say where; a stack into the plugin says nothing more.
+  error.stack = `${error.name}: ${error.message}`
+  throw error
 }
 
 /**

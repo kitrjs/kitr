@@ -69,7 +69,9 @@ function seo(input: SeoInput, context?: SeoContext): {
 Meta tags for a route's `head()`: `head: (ctx) => seo({ title, description }, ctx)`.
 Covers title, description, Open Graph, Twitter cards, canonical and robots. Pass the `head`
 argument (or the app) as the second argument so the site name, image and origin from
-`config/seo.ts` apply; without it only `input.site` does.
+`config/seo.ts` apply; without it only `input.site` does. From the `head` argument it also
+takes the canonical URL (`site.url` plus the matched path) and, when the loader returned
+them, `title` and `description`: `head: (ctx) => seo({}, ctx)`.
 
 ### ssrRoute
 
@@ -104,10 +106,15 @@ interface SeoConfig {
   site?: SeoSite;
   /** Default rendering for routes that set no `ssr` of their own (the router's `defaultSsr`). `ssrRoute()` overrides it per route. */
   ssr?: boolean | 'data-only';
-  /** Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform prerenders everything. */
+  /**
+   * Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform
+   * prerenders everything. A listed route that fails to render fails the build; a crawled link only
+   * warns, unless `failOnError` is `true`.
+   */
   prerender?: string[] | {
     routes: string[];
     crawlLinks?: boolean;
+    failOnError?: boolean;
   };
   /** Rules for `robotsTxt()`, which the build writes to `robots.txt` unless `public/robots.txt` exists. `false` writes none. */
   robots?: false | {
@@ -124,13 +131,13 @@ Options for `config/seo.ts`. The build reads `prerender`, `site.url` and `robots
 
 ```ts
 interface SeoInput {
-  /** The page title, without the site name. */
+  /** The page title, without the site name. Default: `title` from the route's loader data. */
   title?: string;
-  /** The page summary for search results and share cards. */
+  /** The page summary for search results and share cards. Default: `description` from the route's loader data. */
   description?: string;
   /** Share image for this page; replaces `site.image`. Use an absolute URL. */
   image?: string;
-  /** The page's canonical URL; falls back to `site.url`, so pass it on every page. */
+  /** The page's canonical URL. Default: `site.url` plus the matched path from the `head` argument, else `site.url`. */
   url?: string;
   /** `og:type`. Default `website`. */
   type?: 'website' | 'article' | 'product';

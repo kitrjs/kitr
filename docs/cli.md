@@ -137,12 +137,13 @@ Components come from kitr's own registry. To use another shadcn-format registry,
 
 ## Type generation
 
-`kitr generate` writes the project's generated files: types under `.kitr/` (ignored by git) and each package's own files, such as the API route table. You rarely run it yourself: `kitr dev`, `kitr build`, `kitr new` and `kitr add` run it, and the dev server reruns it when a file changes.
+`kitr generate` writes the project's generated files: types under `.kitr/` (ignored by git), each package's own files, such as the API route table, then the app's own steps from `generate` in `kitrrc.ts`. You rarely run it yourself: `kitr dev`, `kitr build`, `kitr new` and `kitr add` run it, and the dev server reruns it when a file changes.
 
 | Command | What it does |
 | --- | --- |
 | `kitr generate` | Write every generated file. |
-| `kitr generate --check` | Exit non-zero when a file is stale, without writing. For CI. |
+| `kitr generate --check` | Exit non-zero when a file is stale, without writing. Skips package and app steps. For CI. |
+| `kitr generate --quiet` | Print only failures; an app step's output shows only when it fails. |
 | `kitr generate --watch` | Regenerate on change, for editors without the dev server. |
 | `kitr typecheck` | `kitr generate`, then `tsc --noEmit`. The kits' `typecheck` script. |
 | `kitr types` | Write only the `.kitr/` types. Takes `--check`, `--watch` and `--only <name>`. |
@@ -151,6 +152,23 @@ Components come from kitr's own registry. To use another shadcn-format registry,
 | --- | --- | --- |
 | `platforms` | `platforms` in `kitrrc.ts` | `.kitr/platforms.d.ts`, so `app.platform` has your platform names. |
 | `actions` | `app/actions/**/*.ts` | `.kitr/actions.ts`, so `useQuery('projects.list')` is typed. |
+
+### Add your own step
+
+An app adds a step of its own, such as a content index, under `generate` in `kitrrc.ts`. `run` is a shell command or a function:
+
+```ts
+// kitrrc.ts
+import { defineKitrConfig } from '@kitr/kitr/app'
+
+export default defineKitrConfig({
+  packages: [],
+  providers: [],
+  generate: [{ name: 'content', run: 'node scripts/content.mjs', watch: ['content/**/*.md'] }],
+})
+```
+
+It runs after the type generators and the package steps, in `kitr generate`, `kitr dev`, `kitr build` and `kitr typecheck`, and `kitr doctor` lists it. [Add your own code](/docs/extending#run-your-own-generate-step) has the details.
 
 ### Add a type generator to a package
 
