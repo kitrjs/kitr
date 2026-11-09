@@ -50,7 +50,7 @@ Read the theme cookie on the server to pass as `initialResolved`.
 ### ThemeProvider
 
 ```ts
-function ThemeProvider({ children, defaultTheme, storageKey, attribute, initialResolved, colors }: ThemeProviderProps): import("react").JSX.Element;
+function ThemeProvider({ children, defaultTheme, storageKey, attribute, initialResolved, colors, transition }: ThemeProviderProps): import("react").JSX.Element;
 ```
 
 Light/dark/system with no flash: pair with `<ThemeScript />` in the document head.
@@ -191,6 +191,25 @@ interface DefineTokensResult<T extends TokenGroup> {
 
 What `defineTokens` returns: the tree itself plus helpers that name, reference and emit its CSS variables.
 
+### ThemeChangeOptions
+
+```ts
+interface ThemeChangeOptions {
+  /**
+   * Where the transition starts: the centre of this element, or a point in viewport pixels. Used by
+   * `circle` and `diamond`, and passed to a custom `animate` as `origin`.
+   */
+  from?: Element | {
+    x: number;
+    y: number;
+  };
+  /** This change's transition, over the provider's `transition`; `false` changes at once. */
+  transition?: ThemeTransition;
+}
+```
+
+How a theme change is shown.
+
 ### ThemeConfig
 
 ```ts
@@ -214,6 +233,11 @@ interface ThemeConfig {
     light?: string;
     dark?: string;
   };
+  /**
+   * How a theme change animates: a built-in name (`'fade'`, `'circle'`, `'diamond'`, `'wipe'`,
+   * `'blur'`), your own, or `{ name, duration, easing, direction, animate }`. Default: none.
+   */
+  transition?: ThemeTransition;
   /** Where `kitr ui add` pulls components from. Any shadcn-compatible registry. */
   registry?: string;
   /** Where components are written. Default `app/components/ui`. */
@@ -242,10 +266,58 @@ interface ThemeProviderProps {
     light?: string;
     dark?: string;
   };
+  /** How `setTheme` and `toggle` animate the change. Default: none, an instant change. */
+  transition?: ThemeTransition;
 }
 ```
 
 Props of `ThemeProvider`. The theme provider in `kitrrc.ts` fills them from `config/theme.ts`.
+
+### ThemeTransitionContext
+
+```ts
+interface ThemeTransitionContext {
+  /** The browser's `ViewTransition`; `finished` settles when the change is over. */
+  transition: ViewTransition;
+  /** The theme on screen before the change. */
+  from: ResolvedTheme;
+  /** The theme on screen after it. */
+  to: ResolvedTheme;
+  /** Where the change starts, in viewport pixels: the centre of `from`, or the top centre. */
+  origin: {
+    x: number;
+    y: number;
+  };
+  /** Milliseconds, from the options or the default. */
+  duration: number;
+  /** A CSS easing, from the options or the default. */
+  easing: string;
+}
+```
+
+What a custom `animate` function gets once both pictures of the view transition are ready.
+
+### ThemeTransitionOptions
+
+```ts
+interface ThemeTransitionOptions {
+  /**
+   * A built-in animation, or the name of your own: `<html>` carries
+   * `data-kitr-theme-transition="<name>"` while it runs, for your CSS to target. Default `'fade'`.
+   */
+  name?: ThemeTransitionName | (string & {});
+  /** Milliseconds. Default `400`. */
+  duration?: number;
+  /** Any CSS easing. Default `'cubic-bezier(0.65, 0, 0.35, 1)'`. */
+  easing?: string;
+  /** For `wipe`: the way the new theme sweeps across. Default `'down'`, top to bottom. */
+  direction?: ThemeTransitionDirection;
+  /** Animate it yourself, usually with `element.animate()` on `::view-transition-new(root)`. */
+  animate?: (context: ThemeTransitionContext) => void;
+}
+```
+
+A theme change animation with its timing.
 
 ### TokenGroup
 
@@ -283,6 +355,30 @@ type Theme = 'light' | 'dark' | 'system';
 ```
 
 The user's choice: a fixed theme, or `'system'` to follow the operating system.
+
+### ThemeTransition
+
+```ts
+type ThemeTransition = ThemeTransitionName | (string & {}) | ThemeTransitionOptions | false;
+```
+
+A transition by name, with its timing, or `false` for an instant change.
+
+### ThemeTransitionDirection
+
+```ts
+type ThemeTransitionDirection = 'up' | 'down' | 'left' | 'right';
+```
+
+The way a `wipe` sweeps across the page.
+
+### ThemeTransitionName
+
+```ts
+type ThemeTransitionName = 'fade' | 'circle' | 'diamond' | 'wipe' | 'blur';
+```
+
+The animations `@kitr/theme/styles.css` ships for a theme change.
 
 ### TokenLeaf
 

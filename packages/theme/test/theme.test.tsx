@@ -58,6 +58,129 @@ describe('ThemeProvider', () => {
     expect(result.current.theme).toBe('light')
   })
 
+  function mockViewTransition() {
+    let finish = () => {}
+    let ready = () => {}
+    const skip = vi.fn()
+    const start = vi.fn((update: () => void) => {
+      update()
+      return {
+        finished: new Promise<void>((r) => (finish = r)),
+        ready: new Promise<void>((r) => (ready = r)),
+        skipTransition: skip,
+      }
+    })
+    ;(document as any).startViewTransition = start
+    return { start, skip, finish: () => finish(), ready: () => ready() }
+  }
+  afterEach(() => {
+    delete (document as any).startViewTransition
+  })
+
+  function button() {
+    const el = document.createElement('button')
+    el.getBoundingClientRect = () => ({ left: 10, top: 20, width: 40, height: 20 }) as DOMRect
+    return el
+  }
+
+  it('changes instantly by default, even with a from and view transitions', () => {
+    mockMatchMedia(false)
+    const vt = mockViewTransition()
+    const { result } = renderHook(() => useTheme(), { wrapper: wrapper() })
+    act(() => result.current.toggle({ from: button() }))
+    expect(vt.start).not.toHaveBeenCalled()
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(document.documentElement.hasAttribute('data-kitr-theme-transition')).toBe(false)
+  })
+
+  it('runs the configured transition from an element, then cleans up', async () => {
+    mockMatchMedia(false)
+    const vt = mockViewTransition()
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: wrapper({ transition: 'circle' }),
+    })
+    act(() => result.current.toggle({ from: button() }))
+    const root = document.documentElement
+    expect(vt.start).toHaveBeenCalledOnce()
+    expect(root.getAttribute('data-theme')).toBe('dark')
+    expect(root.getAttribute('data-kitr-theme-transition')).toBe('circle')
+    expect(root.getAttribute('data-kitr-theme-to')).toBe('dark')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-x')).toBe('30px')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-y')).toBe('30px')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-duration')).toBe('400ms')
+    await act(async () => vt.finish())
+    expect(root.hasAttribute('data-kitr-theme-transition')).toBe(false)
+    expect(root.hasAttribute('data-kitr-theme-to')).toBe(false)
+    expect(root.style.getPropertyValue('--kitr-theme-transition-x')).toBe('')
+  })
+
+  it('takes timing and direction, and a per-call transition wins over the provider', () => {
+    mockMatchMedia(false)
+    const vt = mockViewTransition()
+    const { result } = renderHook(() => useTheme(), { wrapper: wrapper({ transition: 'fade' }) })
+    act(() =>
+      result.current.setTheme('dark', {
+        transition: { name: 'wipe', duration: 600, easing: 'linear', direction: 'left' },
+      }),
+    )
+    const root = document.documentElement
+    expect(root.getAttribute('data-kitr-theme-transition')).toBe('wipe')
+    expect(root.getAttribute('data-kitr-theme-direction')).toBe('left')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-duration')).toBe('600ms')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-easing')).toBe('linear')
+    act(() => result.current.setTheme('light', { transition: false }))
+    expect(vt.start).toHaveBeenCalledOnce()
+    expect(root.getAttribute('data-theme')).toBe('light')
+  })
+
+  it('hands a custom animate the transition, themes, origin and timing', async () => {
+    mockMatchMedia(false)
+    const vt = mockViewTransition()
+    const animate = vi.fn()
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: wrapper({ transition: { animate, duration: 250 } }),
+    })
+    act(() => result.current.toggle({ from: { x: 5, y: 6 } }))
+    expect(document.documentElement.getAttribute('data-kitr-theme-transition')).toBe('custom')
+    await act(async () => vt.ready())
+    expect(animate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: 'light',
+        to: 'dark',
+        origin: { x: 5, y: 6 },
+        duration: 250,
+        easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
+      }),
+    )
+  })
+
+  it('skips the running transition when the theme changes again', () => {
+    mockMatchMedia(false)
+    const vt = mockViewTransition()
+    const { result } = renderHook(() => useTheme(), { wrapper: wrapper({ transition: 'fade' }) })
+    act(() => result.current.setTheme('dark'))
+    act(() => result.current.setTheme('light'))
+    expect(vt.start).toHaveBeenCalledTimes(2)
+    expect(vt.skip).toHaveBeenCalledOnce()
+  })
+
+  it('changes instantly for less motion, without view transitions, or when nothing changes', () => {
+    mockMatchMedia(false)
+    const { result } = renderHook(() => useTheme(), { wrapper: wrapper({ transition: 'fade' }) })
+    act(() => result.current.setTheme('dark'))
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    const vt = mockViewTransition()
+    act(() => result.current.setTheme('dark'))
+    expect(vt.start).not.toHaveBeenCalled()
+    const media = window.matchMedia
+    window.matchMedia = vi.fn((query: string) =>
+      query.includes('reduce') ? ({ matches: true } as MediaQueryList) : media(query),
+    ) as any
+    act(() => result.current.setTheme('light'))
+    expect(vt.start).not.toHaveBeenCalled()
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+  })
+
   it('restores a stored choice and ignores junk', () => {
     mockMatchMedia(false)
     localStorage.setItem('kitr-theme', 'dark')
