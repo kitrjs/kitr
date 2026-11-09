@@ -1,6 +1,6 @@
 {
   "name": "@kitr/realtime",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "@kitr/realtime: typed channels with interchangeable transports (WebSocket, Socket.IO, SSE). One definition for both ends; events apply cache effects.",
   "kitr": {
     "name": "realtime",

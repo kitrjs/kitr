@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-fullstack",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "kitr new --kit fullstack: The app kit plus a server-rendered web platform, an API server, actions, api and realtime channels.",
   "kitr": {
     "name": "fullstack",

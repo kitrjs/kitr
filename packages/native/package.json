@@ -1,6 +1,6 @@
 {
   "name": "@kitr/native",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "@kitr/native: clipboard, share, haptics, geolocation, camera and biometrics behind one API with web fallbacks and native drivers.",
   "keywords": [
     "kitr",

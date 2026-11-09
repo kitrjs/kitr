@@ -1,5 +1,11 @@
 # @kitr/cli
 
+## 0.8.0
+
+### Patch Changes
+
+- @kitr/core@0.8.0
+
 ## 0.7.0
 
 ### Minor Changes
