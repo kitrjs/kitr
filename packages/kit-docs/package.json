@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-docs",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "kitr new --kit docs: A static docs site from markdown: sidebar, search, package-manager commands, dark mode and llms.txt.",
   "kitr": {
     "name": "docs",
