@@ -138,7 +138,6 @@ const tsconfig = {
   extends: '../../../../tsconfig.base.json',
   compilerOptions: {
     types: [],
-    baseUrl: '.',
     paths: {
       '@kitr/core': ['../../../core/dist/index.d.ts'],
       '@kitr/router/routes': ['../../dist/routes.d.ts'],

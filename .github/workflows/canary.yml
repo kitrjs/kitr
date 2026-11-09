@@ -37,12 +37,16 @@ jobs:
       # The lockfile is trusted at this point; the next step is the one that moves it.
       - run: pnpm install --frozen-lockfile
       # `--latest` ignores the ranges in package.json, `--recursive` covers every workspace
-      # package, and `workspace:*` links stay as they are.
+      # package, and `workspace:*` links stay as they are. ioredis is held back by
+      # pnpm.updateConfig in package.json: ioredis-mock, which the Redis tests run on, needs ioredis 5.
       - name: Update every dependency to latest
         id: update
         shell: bash
         run: |
           pnpm update --latest --recursive 2>&1 | tee "$RUNNER_TEMP/update.log"
+          # @kitr/actions reads app/actions with the TypeScript compiler API, which TypeScript 7 no
+          # longer ships, so it stays on the 6.x line whatever the rest of the workspace moves to.
+          pnpm --filter @kitr/actions add typescript@^6.0.3 2>&1 | tee -a "$RUNNER_TEMP/update.log"
           node scripts/dependency-diff.mjs | tee "$RUNNER_TEMP/dependency-diff.txt"
       - name: Build
         id: build

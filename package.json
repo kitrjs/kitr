@@ -65,6 +65,11 @@
   "pnpm": {
     "overrides": {
       "@types/node": "^22.19.0"
+    },
+    "updateConfig": {
+      "ignoreDependencies": [
+        "ioredis"
+      ]
     }
   }
 }
