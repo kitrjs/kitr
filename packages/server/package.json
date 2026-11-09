@@ -16,7 +16,75 @@
     ],
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "platform": {
+      "label": "Node · Bun · Deno",
+      "tagline": "An HTTP API with routes, controllers and live channels, on Node, Bun, Deno or Cloudflare Workers. With React or without it.",
+      "targets": [
+        "Node",
+        "Bun",
+        "Deno",
+        "Workers"
+      ],
+      "shell": "h3",
+      "color": "#34D399",
+      "command": "kitr add server api --runtime node",
+      "highlights": [
+        {
+          "title": "Four runtimes, one option",
+          "text": "`runtime: 'bun'`, `'deno'` or `'workers'` changes how `kitr dev` and `kitr build` run the same `server/main.ts`. Workers deploy through `wrangler.toml`."
+        },
+        {
+          "title": "A client typed from your routes",
+          "text": "Routes and controllers live in `server/routes.ts`. The client your pages call is typed from that table, so a renamed field is a type error, not a bug report."
+        },
+        {
+          "title": "Inside your site or beside it",
+          "text": "A project with a web platform also gets `app/routes/api.$.ts`, which mounts the same server inside TanStack Start. Run it there, or as its own process."
+        },
+        {
+          "title": "No React required",
+          "text": "`kitr new my-api --kit server` has no React anywhere in its dependency graph: an h3 server, routes, a database hook, logs and tests."
+        }
+      ],
+      "snippet": "// server/routes.ts\nimport { defineRoutes } from '@kitr/api'\nimport HealthController from '#server/controllers/health-controller'\nimport OrdersController from '#server/controllers/orders-controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api' }, (api) =>\n    api\n      .get('/health', [HealthController, 'show'], { name: 'health' })\n      .resource('orders', OrdersController),\n  ),\n)\n\n/** The client your pages call is typed from this. */\nexport type AppRoutes = typeof routes.$types",
+      "run": [
+        [
+          "kitr dev api",
+          "tsx watch, bun --watch or wrangler dev, by runtime"
+        ],
+        [
+          "kitr build api",
+          "a bundled server in dist/api"
+        ],
+        [
+          "kitr start api",
+          "runs the compiled server"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "h3",
+          "url": "https://h3.dev",
+          "text": "The HTTP framework the server is built on."
+        },
+        {
+          "title": "Bun",
+          "url": "https://bun.sh/docs",
+          "text": "runtime: 'bun'"
+        },
+        {
+          "title": "Deno",
+          "url": "https://docs.deno.com",
+          "text": "runtime: 'deno'"
+        },
+        {
+          "title": "Cloudflare Workers",
+          "url": "https://developers.cloudflare.com/workers/",
+          "text": "runtime: 'workers', deployed with wrangler."
+        }
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",

@@ -20,7 +20,75 @@
     "client": true,
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "platform": {
+      "label": "SSR · SPA · PWA",
+      "tagline": "Static sites, single-page apps and server-rendered apps, all from the same app folder. Installable as a PWA with one option.",
+      "targets": [
+        "Static",
+        "SPA",
+        "SSR",
+        "PWA"
+      ],
+      "shell": "Vite + TanStack Start",
+      "color": "#38BDF8",
+      "command": "kitr add web site --mode ssr",
+      "highlights": [
+        {
+          "title": "Three rendering modes, one option",
+          "text": "`static` prerenders every route to HTML, `spa` serves one shell with client routing, and `ssr` renders on request through TanStack Start. Switch with `kitr config site mode ssr`."
+        },
+        {
+          "title": "Installable when you want it",
+          "text": "`pwa: true` adds the web manifest and a service worker. `useInstallPrompt` and `useServiceWorker` from `@kitr/web/client` show the install button and the update banner."
+        },
+        {
+          "title": "Search engines read it",
+          "text": "`kitr add seo` writes `config/seo.ts`: page heads, share previews, the prerender list, the sitemap and `robots.txt` come from that one file."
+        },
+        {
+          "title": "As many sites as you need",
+          "text": "A marketing site, an app and an admin panel are three named web platforms in one project, each with its own mode and port."
+        }
+      ],
+      "snippet": "// kitrrc.ts\nimport { defineKitrConfig } from '@kitr/kitr/app'\nimport { web } from '@kitr/web'\n\nexport default defineKitrConfig({\n  platforms: {\n    www: web({ mode: 'static' }),\n    site: web({ mode: 'ssr', pwa: { name: 'Acme', themeColor: '#2D6CF0' } }),\n    admin: web({ mode: 'spa', port: 3002 }),\n  },\n})",
+      "run": [
+        [
+          "kitr dev site",
+          "Vite with hot reload on port 3000"
+        ],
+        [
+          "kitr build site",
+          "dist/site/client, plus dist/site/server/server.js in ssr mode"
+        ],
+        [
+          "kitr start site",
+          "serves the build with srvx"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "TanStack Start",
+          "url": "https://tanstack.com/start",
+          "text": "The renderer behind ssr and static mode."
+        },
+        {
+          "title": "Vite",
+          "url": "https://vite.dev/guide/",
+          "text": "Dev server and build for every UI platform."
+        },
+        {
+          "title": "Vite PWA",
+          "url": "https://vite-pwa-org.netlify.app/guide/",
+          "text": "What pwa: true sets up underneath."
+        },
+        {
+          "title": "web.dev: Learn PWA",
+          "url": "https://web.dev/learn/pwa",
+          "text": "Install prompts, offline and updates, explained."
+        }
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",

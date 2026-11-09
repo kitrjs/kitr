@@ -21,7 +21,75 @@
     "client": true,
     "docs": "docs",
     "kind": "platform",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "platform": {
+      "label": "Electron",
+      "tagline": "Windows, macOS and Linux in an Electron shell. Chromium ships with the app, so it looks and behaves the same on every machine.",
+      "targets": [
+        "Windows",
+        "macOS",
+        "Linux"
+      ],
+      "shell": "Electron",
+      "color": "#FB923C",
+      "command": "kitr add desktop app",
+      "alternative": "tauri",
+      "highlights": [
+        {
+          "title": "Your app, in a window",
+          "text": "The same `app/` folder runs in the shell. The main and preload processes live in `platforms/app/`, and electron-builder packages the installers."
+        },
+        {
+          "title": "Typed IPC",
+          "text": "One schema in `platforms/app/ipc.ts`: `handleIpc()` implements it in main and `createIpcClient()` calls it from your components, typed both ways."
+        },
+        {
+          "title": "Storage that lives on disk",
+          "text": "Storage items write to `kitr-storage.json` in the app data folder instead of `localStorage`. Your code does not change."
+        },
+        {
+          "title": "The recommended desktop shell",
+          "text": "What you test is what every user runs. Pick Tauri instead when download size matters more than identical rendering."
+        }
+      ],
+      "snippet": "// platforms/app/ipc.ts\nexport type Ipc = {\n  'app.version': () => string\n  'dialog.openFile': () => string | null\n}\n\n// app/ipc.ts\nimport { createIpcClient } from '@kitr/desktop/client'\nexport const ipc = createIpcClient<Ipc>()\n\nconst version = await ipc.invoke('app.version')",
+      "run": [
+        [
+          "kitr dev app",
+          "the Electron window, loading Vite on port 3200"
+        ],
+        [
+          "kitr build app",
+          "electron-vite builds main, preload and the app"
+        ],
+        [
+          "kitr start app",
+          "opens the built app"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "Electron docs",
+          "url": "https://www.electronjs.org/docs/latest/",
+          "text": "Main process APIs, menus, windows."
+        },
+        {
+          "title": "electron-vite",
+          "url": "https://electron-vite.org/guide/",
+          "text": "How the three processes are built."
+        },
+        {
+          "title": "electron-builder",
+          "url": "https://www.electron.build",
+          "text": "Installers, code signing, auto update."
+        },
+        {
+          "title": "Electron security checklist",
+          "url": "https://www.electronjs.org/docs/latest/tutorial/security",
+          "text": "What the scaffold already turns on, and why."
+        }
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
