@@ -191,6 +191,24 @@ interface DefineTokensResult<T extends TokenGroup> {
 
 What `defineTokens` returns: the tree itself plus helpers that name, reference and emit its CSS variables.
 
+### ThemeChangeOptions
+
+```ts
+interface ThemeChangeOptions {
+  /**
+   * Reveal the new theme as a circle growing from this element (or point), through a view
+   * transition. Styled by `@kitr/theme/styles.css`. Visitors who ask for less motion, and browsers
+   * without view transitions, get an instant change.
+   */
+  from?: Element | {
+    x: number;
+    y: number;
+  };
+}
+```
+
+How a theme change is shown.
+
 ### ThemeConfig
 
 ```ts
