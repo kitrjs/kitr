@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-saas",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "kitr new --kit saas: A logged-in product on its own API: sign-in, a guarded app shell, a projects CRUD with a data table, analytics and monitoring. Server-rendered web plus an API server.",
   "kitr": {
     "name": "saas",

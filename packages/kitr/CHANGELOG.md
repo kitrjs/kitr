@@ -1,5 +1,17 @@
 # kitr
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [8904b74]
+- Updated dependencies [8d78bbb]
+- Updated dependencies [c69b14f]
+- Updated dependencies [3d9ba40]
+- Updated dependencies [9fffc3c]
+  - @kitr/cli@0.3.2
+  - @kitr/core@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes

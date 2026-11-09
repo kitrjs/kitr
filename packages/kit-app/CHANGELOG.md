@@ -1,5 +1,12 @@
 # @kitr/kit-app
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [8904b74]
+  - @kitr/core@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes

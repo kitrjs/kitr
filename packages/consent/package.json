@@ -1,6 +1,6 @@
 {
   "name": "@kitr/consent",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "@kitr/consent: one consent record per visitor, by category, kept in a cookie and read on both sides; analytics and monitoring wait for it.",
   "keywords": [
     "kitr",

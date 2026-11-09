@@ -1,5 +1,15 @@
 # @kitr/consent
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [8904b74]
+- Updated dependencies [7b49b7f]
+  - @kitr/core@0.3.2
+  - @kitr/storage@0.3.2
+  - @kitr/react@0.3.2
+
 ## 0.3.1
 
 ### Patch Changes
