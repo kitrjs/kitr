@@ -1,5 +1,16 @@
 # @kitr/theme
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [14bba43]
+- Updated dependencies [dd305d9]
+- Updated dependencies [59e7c8d]
+- Updated dependencies [611161f]
+  - @kitr/cli@0.4.0
+  - @kitr/core@0.4.0
+
 ## 0.3.2
 
 ### Patch Changes

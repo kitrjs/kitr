@@ -1,5 +1,18 @@
 # @kitr/vite
 
+## 0.4.0
+
+### Patch Changes
+
+- d2c4a4c: The sitemap lists only indexable HTML pages. A crawled `.md`, `.txt` or `.json` file (a "view as markdown" copy, `llms.txt`) and a page whose head says `<meta name="robots" content="noindex">` are still written, but no longer appear in `sitemap.xml`.
+- Updated dependencies [14bba43]
+- Updated dependencies [dd305d9]
+- Updated dependencies [59e7c8d]
+- Updated dependencies [611161f]
+  - @kitr/cli@0.4.0
+  - @kitr/web@0.4.0
+  - @kitr/core@0.4.0
+
 ## 0.3.2
 
 ### Patch Changes

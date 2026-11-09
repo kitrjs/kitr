@@ -1,5 +1,14 @@
 # @kitr/realtime
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [611161f]
+  - @kitr/server@0.4.0
+  - @kitr/core@0.4.0
+  - @kitr/query@0.4.0
+
 ## 0.3.2
 
 ### Patch Changes
