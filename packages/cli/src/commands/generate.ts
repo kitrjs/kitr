@@ -10,12 +10,18 @@ export const generate = defineCommand({
   meta: {
     name: 'generate',
     description:
-      "Run every generator: the types under .kitr/ and each package's own (the route table and openapi.json for @kitr/api). `kitr dev`, `kitr build` and `kitr typecheck` run it first.",
+      "Run every generator: the types under .kitr/, each package's own (the route table and openapi.json for @kitr/api), then the app's `generate` steps from kitrrc.ts. `kitr dev`, `kitr build` and `kitr typecheck` run it first.",
   },
   args: {
     check: {
       type: 'boolean',
-      description: 'Fail if a generated type file is stale instead of writing',
+      description:
+        'Fail if a generated type file is stale instead of writing; package and app steps are skipped',
+      default: false,
+    },
+    quiet: {
+      type: 'boolean',
+      description: "Print only failures; app steps' output is shown only when they fail",
       default: false,
     },
     watch: {
@@ -26,7 +32,7 @@ export const generate = defineCommand({
   },
   async run({ args }) {
     const ctx = createContext()
-    const result = await runGenerate(ctx, { check: args.check })
+    const result = await runGenerate(ctx, { check: args.check, quiet: args.quiet })
     if (args.check) {
       for (const file of result.types.stale) ctx.log.warn(`stale: ${file}`)
       if (result.types.stale.length) {
@@ -38,9 +44,10 @@ export const generate = defineCommand({
         ctx.log.success(`${GENERATED_DIR}/ is up to date (${result.types.generators.join(', ')})`)
       return
     }
-    ctx.log.success(
-      `generated ${result.types.written.length} type file(s) (${result.types.generators.join(', ')})${result.steps.length ? `, ran ${result.steps.join(', ')}` : ''}`,
-    )
+    if (!args.quiet)
+      ctx.log.success(
+        `generated ${result.types.written.length} type file(s) (${result.types.generators.join(', ')})${result.steps.length ? `, ran ${result.steps.join(', ')}` : ''}`,
+      )
     if (!args.watch) return
     ctx.log.info('watching for changes (ctrl-c to stop)')
     const generators = await loadGenerators(ctx)
@@ -65,7 +72,7 @@ export const generate = defineCommand({
         pendingSteps.clear()
         try {
           if (only.length) await runTypes(ctx, { only, quiet: true }, generators)
-          for (const step of due) await step.run()
+          for (const step of due) await step.run({ quiet: args.quiet })
         } catch (error) {
           ctx.log.error((error as Error).message)
         }

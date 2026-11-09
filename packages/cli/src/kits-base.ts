@@ -82,7 +82,10 @@ export const base = (ctx: ProjectContext, name: string) => {
     'biome.json',
     `{\n  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",\n  "files": { "includes": ["**", "!**/routeTree.gen.ts", "!**/.kitr", "!**/dist", "!**/.output"] },\n  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },\n  "formatter": { "indentStyle": "space", "lineWidth": 100 },\n  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } },\n  "css": { "parser": { "tailwindDirectives": true } },\n  "linter": { "rules": { "recommended": true } }\n}\n`,
   )
-  ctx.write('.gitignore', 'node_modules\ndist\n.output\n.nitro\n.tanstack\n.kitr\n*.local\n*.log\n.env\n')
+  ctx.write(
+    '.gitignore',
+    'node_modules\ndist\n.output\n.nitro\n.tanstack\n.kitr\n*.local\n*.log\n.env\n',
+  )
   ctx.write('.env.example', '# Copy to .env. Each package adds the variables it reads below.\n')
   ctx.write(
     'AGENTS.md',

@@ -95,7 +95,8 @@ function tsconfigAliases(ctx: ProjectContext): Record<string, string> {
   return out
 }
 
-async function projectJiti(ctx: ProjectContext) {
+/** A jiti that runs the project's TypeScript (kitrrc.ts) with its tsconfig aliases. */
+export async function projectJiti(ctx: ProjectContext) {
   const { createJiti } = await import('jiti')
   return createJiti(ctx.rcPath ?? ctx.path('kitrrc.ts'), {
     alias: tsconfigAliases(ctx),

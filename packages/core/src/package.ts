@@ -1,4 +1,5 @@
 import type { PlatformFactory } from './platform'
+import type { GenerateStepOptions } from './rc'
 import type { MaybePromise } from './types'
 
 /**
@@ -426,9 +427,10 @@ export interface PackageDefinition {
   /**
    * A step `kitr generate` runs after the type generators: the name of one of this package's own
    * `commands` (`'api:sync'`) and, for `kitr generate --watch`, the globs that should re-run it.
-   * The command is called with no arguments, so it must work from its defaults.
+   * The command is called with no arguments, so it must work from its defaults. An app lists its
+   * own steps in `kitrrc.ts` (`generate: [{ name, run, watch }]`) with the same `watch`.
    */
-  generate?: { command: string; watch?: string[] }
+  generate?: GenerateStepOptions & { command: string }
   vite?: PackageViteNeeds
   /** For `kind: 'platform'`. */
   platform?: PlatformPackage

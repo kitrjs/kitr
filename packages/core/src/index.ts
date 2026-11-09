@@ -104,9 +104,11 @@ export {
 } from './platforms'
 export { defineProvider, type KitrProvider, type ProviderInput, resolveProvider } from './provider'
 export {
+  type AppGenerateStep,
   defaultDirectories,
   defineKitrConfig,
   defineWorkspace,
+  type GenerateStepOptions,
   type KitrRc,
   type KitrWorkspace,
   loadRc,
