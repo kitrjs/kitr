@@ -8,7 +8,7 @@ interface Node {
   [key: string]: unknown
 }
 
-const FACTORIES = new Set(['defineQuery', 'defineMutation'])
+const isFactory = (name: string) => name === 'defineQuery' || name === 'defineMutation'
 
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && typeof (value as Node).type === 'string'
@@ -34,7 +34,7 @@ function factoryNames(program: Node): Set<string> {
     if ((statement.source as { value: string }).value !== '@kitr/actions') continue
     for (const specifier of statement.specifiers as Node[]) {
       const imported = (specifier.imported as { name?: string } | undefined)?.name
-      if (specifier.type === 'ImportSpecifier' && imported && FACTORIES.has(imported))
+      if (specifier.type === 'ImportSpecifier' && imported && isFactory(imported))
         names.add((specifier.local as { name: string }).name)
     }
   }
