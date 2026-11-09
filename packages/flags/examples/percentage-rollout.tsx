@@ -1,8 +1,9 @@
-import { defineFlags, percentageFlagsProvider, staticFlagsProvider } from '@kitr/flags'
 import flagsProvider from '@kitr/flags/provider'
 import { useFlag, useFlags } from '@kitr/flags/react'
 import { createApp, KitrBoot, useService } from '@kitr/react'
 import { useState } from 'react'
+import type { flags } from './percentage-rollout/app/flags'
+import flagsConfig from './percentage-rollout/config/flags'
 
 export const meta = {
   title: 'A redesign for 30% of users',
@@ -11,24 +12,10 @@ export const meta = {
   storage: false,
 }
 
-const flags = defineFlags({
-  'new-dashboard': { default: false, description: 'The redesigned dashboard' },
-  'support-chat': { default: true, description: 'The chat widget' },
-})
-
 const app = createApp({
   environment: 'client',
   providers: [flagsProvider],
-  config: {
-    flags: {
-      definitions: flags,
-      providers: [
-        staticFlagsProvider({ 'support-chat': true }),
-        // The salt picks who lands in the 30%: change it and a different group of users gets the redesign.
-        percentageFlagsProvider({ 'new-dashboard': 30 }, 'dashboard-2026'),
-      ],
-    },
-  },
+  config: { flags: flagsConfig },
 })
 
 const people = ['u_ada', 'u_grace', 'u_linus', 'u_margaret', 'u_edsger', 'u_barbara']
