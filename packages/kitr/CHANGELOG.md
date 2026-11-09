@@ -1,5 +1,13 @@
 # kitr
 
+## 0.3.1
+
+### Patch Changes
+
+- ff932f1: The package READMEs now show `pnpm dlx @kitr/kitr new my-app`, since the CLI is published as `@kitr/kitr`. The command you run is still `kitr`.
+- @kitr/cli@0.3.1
+  - @kitr/core@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes

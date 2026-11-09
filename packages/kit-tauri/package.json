@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-tauri",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "kitr new --kit tauri: The app kit in a Tauri shell: typed Rust commands and events from the same React app. See the desktop kit for Electron.",
   "kitr": {
     "name": "tauri",

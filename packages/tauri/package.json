@@ -1,6 +1,6 @@
 {
   "name": "@kitr/tauri",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "@kitr/tauri: the desktop platform with a Tauri shell. Rust project in platforms/<name>/src-tauri, typed commands and events, storage drivers, installers.",
   "kitr": {
     "name": "tauri",

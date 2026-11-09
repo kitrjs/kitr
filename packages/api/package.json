@@ -1,6 +1,6 @@
 {
   "name": "@kitr/api",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "@kitr/api: Adonis-style router, controllers, validators and middleware on h3, with a typed client and OpenAPI. No React.",
   "kitr": {
     "name": "api",
