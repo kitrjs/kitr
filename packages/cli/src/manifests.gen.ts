@@ -1092,6 +1092,16 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "kind": "kit",
     "setup": "./kitr"
   },
+  "docs": {
+    "package": "@kitr/kit-docs",
+    "name": "docs",
+    "title": "Docs kit",
+    "summary": "Start a docs site from markdown files: a sidebar, search, dark mode and copies for coding agents, prerendered to static HTML.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr"
+  },
   "fullstack": {
     "package": "@kitr/kit-fullstack",
     "name": "fullstack",

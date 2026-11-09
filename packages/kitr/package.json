@@ -103,6 +103,8 @@
     "@kitr/kit-realtime": "workspace:*",
     "@kitr/kit-desktop": "workspace:*",
     "@kitr/kit-tauri": "workspace:*",
-    "@kitr/kit-mobile": "workspace:*"
+    "@kitr/kit-mobile": "workspace:*",
+    "@kitr/kit-docs": "workspace:*",
+    "@kitr/content": "workspace:*"
   }
 }
