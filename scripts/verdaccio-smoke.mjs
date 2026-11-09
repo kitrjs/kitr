@@ -3,6 +3,7 @@
 //
 //   pnpm build && pnpm -C registry build && pnpm smoke:registry
 //   node scripts/verdaccio-smoke.mjs --kits app,fullstack --keep
+//   node scripts/verdaccio-smoke.mjs --kits site --pm npm
 //
 // What it proves, in order:
 //   1. every public package packs and publishes (workspace: ranges become real versions)
@@ -17,8 +18,13 @@
 // pack and restored in a finally block. Needs network access to registry.npmjs.org for the
 // upstream packages. Verdaccio runs through `npx`, so nothing is added to the repo's dependencies.
 //
-// Options: --kits a,b   --port 4873   --keep (keep the scratch dir)   --all-packages
+// Options: --kits a,b   --pm pnpm|npm (the projects' package manager; npm hoists, pnpm does not)
+//          --port 4873   --keep (keep the scratch dir)   --all-packages
 //          --skip-projects (publish and resolve checks only)
+//
+// The CLI runs through its `node_modules/.bin/kitr` symlink, as a global install does
+// (`/usr/local/bin/kitr` → `.../@kitr/kitr/bin/kitr.mjs`), so code that resolves from
+// `process.argv[1]` sees the same path a user's machine gives it.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import {
   copyFileSync,
@@ -43,6 +49,7 @@ const win = process.platform === 'win32'
 const { values: opts } = parseArgs({
   options: {
     kits: { type: 'string', default: 'app,fullstack' },
+    pm: { type: 'string', default: 'pnpm' },
     port: { type: 'string', default: '4873' },
     keep: { type: 'boolean', default: false },
     'all-packages': { type: 'boolean', default: false },
@@ -50,6 +57,8 @@ const { values: opts } = parseArgs({
   },
 })
 const port = Number(opts.port)
+const pm = opts.pm
+if (pm !== 'pnpm' && pm !== 'npm') throw new Error(`--pm must be pnpm or npm, got ${pm}`)
 const registryUrl = `http://127.0.0.1:${port}/`
 
 const log = (msg) => console.log(`\n==> ${msg}`)
@@ -313,7 +322,8 @@ function installPublishedCli() {
       cwd: tool,
     },
   )
-  return join(tool, 'node_modules/@kitr/kitr/bin/kitr.mjs')
+  // The bin symlink, not the file it points at: a global install runs kitr through a link.
+  return join(tool, 'node_modules/.bin/kitr')
 }
 
 /** pnpm and npm read `npm_config_registry`, so every install the CLI runs hits Verdaccio. */
@@ -346,17 +356,31 @@ function smokeKit(kitr, kit) {
   const components = join(root, 'registry/dist')
   const flags = existsSync(components) ? ['--registry', components] : []
   const created = step(kit, 'kitr new (installs from the registry)', () =>
-    sh(process.execPath, [kitr, 'new', kit, '--kit', kit, '--pm', 'pnpm', '--no-git', ...flags], {
+    sh(process.execPath, [kitr, 'new', kit, '--kit', kit, '--pm', pm, '--no-git', ...flags], {
       cwd: projects,
       env,
     }),
   )
   if (!created) return
-  const scripts = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts ?? {}
+  const pkgJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+  const scripts = pkgJson.scripts ?? {}
+  // Every package kitrrc.ts lists must have been set up, not skipped: a skipped client package
+  // leaves the project without its pages, so check the kit's packages made it into the config.
+  const rcText = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+  const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies }
+  const missing = Object.keys(deps).filter(
+    (d) =>
+      d.startsWith('@kitr/') &&
+      !['@kitr/kitr', '@kitr/core'].includes(d) &&
+      !d.startsWith('@kitr/kit-') &&
+      !rcText.includes(`'${d}'`),
+  )
+  if (missing.length)
+    failures.push(`${kit}: installed but not set up in kitrrc.ts: ${missing.join(', ')}`)
   if (scripts.typecheck)
-    step(kit, 'pnpm typecheck', () => sh('pnpm', ['run', 'typecheck'], { cwd: dir, env }))
+    step(kit, `${pm} typecheck`, () => sh(pm, ['run', 'typecheck'], { cwd: dir, env }))
   else failures.push(`${kit}: the project has no typecheck script`)
-  if (scripts.build) step(kit, 'pnpm build', () => sh('pnpm', ['run', 'build'], { cwd: dir, env }))
+  if (scripts.build) step(kit, `${pm} build`, () => sh(pm, ['run', 'build'], { cwd: dir, env }))
   else failures.push(`${kit}: the project has no build script`)
   const lockFile = join(dir, 'pnpm-lock.yaml')
   const localRef = /(version|specifier): (link|file|workspace):|resolution: \{directory/

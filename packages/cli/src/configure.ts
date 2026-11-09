@@ -31,6 +31,13 @@ export async function configurePackages(
     answers?: Record<string, Record<string, string | boolean | string[] | undefined>>
     /** Log a line per package; default on. */
     report?: boolean
+    /**
+     * The project is getting a UI platform (web, desktop, mobile) in this run, so client packages
+     * are set up even though it looks server-only now: `kitr new` with a kit that has a server
+     * platform configures packages before it writes the platforms, and npm hoists @kitr/react
+     * without listing it in package.json.
+     */
+    client?: boolean
   },
 ): Promise<PlanStep[]> {
   const installed = ctx.readRc().packages
@@ -43,7 +50,7 @@ export async function configurePackages(
         ctx.log.info(`${step.name} is already added`)
       continue
     }
-    if (step.client && createProjectInfo(ctx, codemods, added).isServerOnly) {
+    if (step.client && !options.client && createProjectInfo(ctx, codemods, added).isServerOnly) {
       ctx.log.warn(`${step.name} is a client package; this project is server-only. Skipping.`)
       continue
     }

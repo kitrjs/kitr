@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { isAbsolute, resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { Codemods as CodemodsType, ProjectContext } from '@kitr/cli'
 
 /**
@@ -21,9 +21,38 @@ interface RegistryItem {
   files: Array<{ path: string; type: string; target?: string; content: string }>
 }
 
+/**
+ * Where the running CLI's `@kitr/cli` lives, looked up the way `bin/kitr.mjs` picks it: the
+ * project's own `@kitr/kitr` first (the global bin hands off to it), then the real path of the bin
+ * that started (a global install's bin is a symlink in `/usr/local/bin` or `/opt/homebrew/bin`,
+ * where nothing resolves), then this package.
+ */
+export function cliEntry(cwd = process.cwd(), bin = process.argv[1]): string {
+  const bases: string[] = []
+  if (!process.env.KITR_NO_LOCAL) {
+    try {
+      const kitr = createRequire(join(cwd, 'noop.js')).resolve('@kitr/kitr/package.json')
+      bases.push(join(dirname(realpathSync(kitr)), 'package.json'))
+    } catch {}
+  }
+  if (bin) {
+    try {
+      bases.push(realpathSync(bin))
+    } catch {}
+  }
+  bases.push(fileURLToPath(import.meta.url))
+  for (const base of bases) {
+    try {
+      return createRequire(base).resolve('@kitr/cli')
+    } catch {}
+  }
+  throw new Error(
+    'Cannot find @kitr/cli next to the running kitr. Install @kitr/kitr in the project or globally.',
+  )
+}
+
 async function cli(): Promise<typeof import('@kitr/cli')> {
-  const req = createRequire(process.argv[1] ?? import.meta.url)
-  return import(pathToFileURL(req.resolve('@kitr/cli')).href)
+  return import(pathToFileURL(cliEntry()).href)
 }
 
 function registryUrl(ctx: ProjectContext, override?: string): string {

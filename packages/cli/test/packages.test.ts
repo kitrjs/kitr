@@ -5,6 +5,7 @@ import type { Question } from '@kitr/core/package'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createAddContext, createProjectInfo } from '../src/add-context'
 import { Codemods, extensionLocalName } from '../src/codemods'
+import { configurePackages } from '../src/configure'
 import { createContext } from '../src/context'
 import { knownPackageNames, resolvePlan } from '../src/plan'
 import { coerceAnswer, describeQuestions, resolveAnswers } from '../src/questions'
@@ -274,6 +275,36 @@ describe('plan', () => {
       ['platform', 'package'],
       ['tauri', 'platform'],
     ])
+  })
+
+  it('sets up client packages for a run that adds a UI platform, though @kitr/server is installed', async () => {
+    // `kitr new --kit site` with npm: @kitr/server is in package.json, @kitr/react is only hoisted
+    // into node_modules, and the web platform is written after the packages are configured.
+    quiet()
+    const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
+    const ctx = createContext({ root: dir })
+    expect(ctx.isServerOnly()).toBe(true)
+    const steps = await configurePackages(ctx, new Codemods(ctx), ['router', 'seo'], {
+      install: false,
+      yes: true,
+      report: false,
+      client: true,
+    })
+    expect(steps.map((s) => s.name)).toEqual(expect.arrayContaining(['react', 'router', 'seo']))
+  })
+
+  it('still skips a client package in a server-only project', async () => {
+    quiet()
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const dir = project({ 'package.json': pkg, 'kitrrc.ts': rc })
+    const ctx = createContext({ root: dir })
+    const steps = await configurePackages(ctx, new Codemods(ctx), ['seo'], {
+      install: false,
+      yes: true,
+      report: false,
+    })
+    expect(steps.map((s) => s.name)).not.toContain('seo')
   })
 
   it('rejects an unknown package with the known names', async () => {

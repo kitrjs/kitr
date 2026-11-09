@@ -94,6 +94,7 @@ export const newCommand = defineCommand({
       install: args.install,
       yes: true,
       added,
+      client: Object.values(platforms).some((p) => p.type !== 'server'),
       answers: kitAnswers(kit),
     })
     await codemods.flush({ install: false })

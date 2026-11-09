@@ -206,7 +206,8 @@ jobs:
 
   # Publishes every package to a throwaway Verdaccio and runs `kitr new` against it: the first
   # install from a registry, on every run. One kit per runner, so they install side by side. The
-  # whole-catalog pass (`kitr add` of every package) rides on the app run on main only.
+  # whole-catalog pass (`kitr add` of every package) rides on the app run on main only. The site
+  # kit runs with npm, which hoists packages pnpm keeps nested, the way most newcomers install.
   registry-smoke:
     needs: build
     runs-on: ubuntu-latest
@@ -218,6 +219,9 @@ jobs:
             catalog: true
           - kit: fullstack
             catalog: false
+          - kit: site
+            catalog: false
+            pm: npm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -233,7 +237,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Install and build the ${{ matrix.kit }} kit from a registry
-        run: pnpm smoke:registry --kits ${{ matrix.kit }} ${{ matrix.catalog && github.event_name == 'push' && '--all-packages' || '' }}
+        run: pnpm smoke:registry --kits ${{ matrix.kit }} --pm ${{ matrix.pm || 'pnpm' }} ${{ matrix.catalog && github.event_name == 'push' && '--all-packages' || '' }}
 
   # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools, and
   # one spec per kit (site: language and prerendering; realtime: two pages over WebSocket and SSE;
