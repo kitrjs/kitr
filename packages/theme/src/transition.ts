@@ -29,7 +29,7 @@ export interface ThemeTransitionOptions {
    * `data-kitr-theme-transition="<name>"` while it runs, for your CSS to target. Default `'fade'`.
    */
   name?: ThemeTransitionName | (string & {})
-  /** Milliseconds. Default `400`. */
+  /** Milliseconds. Default `600`. */
   duration?: number
   /** Any CSS easing. Default `'cubic-bezier(0.65, 0, 0.35, 1)'`. */
   easing?: string
@@ -42,7 +42,7 @@ export interface ThemeTransitionOptions {
 /** A transition by name, with its timing, or `false` for an instant change. */
 export type ThemeTransition = ThemeTransitionName | (string & {}) | ThemeTransitionOptions | false
 
-const DURATION = 400
+const DURATION = 600
 const EASING = 'cubic-bezier(0.65, 0, 0.35, 1)'
 
 // kitr-allow-module-state: lookup table of CSS names, never mutated
@@ -51,6 +51,8 @@ const VARS = {
   y: '--kitr-theme-transition-y',
   duration: '--kitr-theme-transition-duration',
   easing: '--kitr-theme-transition-easing',
+  radius: '--kitr-theme-transition-radius',
+  reach: '--kitr-theme-transition-reach',
 }
 // kitr-allow-module-state: lookup table of attribute names, never mutated
 const ATTRS = {
@@ -99,6 +101,12 @@ export function changeTheme(
     root.style.setProperty(VARS.x, `${point.x}px`)
     root.style.setProperty(VARS.y, `${point.y}px`)
   }
+  // How far the shapes grow: just past the corner farthest from where they start, so the whole
+  // duration is spent on screen.
+  const start = point ?? { x: window.innerWidth / 2, y: 0 }
+  const far = farthestCorner(start)
+  root.style.setProperty(VARS.radius, `${Math.ceil(Math.hypot(far.x, far.y))}px`)
+  root.style.setProperty(VARS.reach, `${Math.ceil(far.x + far.y)}px`)
   root.style.setProperty(VARS.duration, `${duration}ms`)
   root.style.setProperty(VARS.easing, easing)
   root.setAttribute(ATTRS.name, name)
@@ -114,7 +122,7 @@ export function changeTheme(
           transition,
           from: change.from,
           to: change.to,
-          origin: point ?? { x: window.innerWidth / 2, y: 0 },
+          origin: start,
           duration,
           easing,
         }),
@@ -134,6 +142,14 @@ export function changeTheme(
 function normalize(transition: ThemeTransition | undefined): ThemeTransitionOptions | null {
   if (!transition) return null
   return typeof transition === 'string' ? { name: transition } : transition
+}
+
+/** The distance along each axis from `point` to the viewport corner farthest from it. */
+function farthestCorner(point: { x: number; y: number }) {
+  return {
+    x: Math.max(point.x, window.innerWidth - point.x),
+    y: Math.max(point.y, window.innerHeight - point.y),
+  }
 }
 
 function centre(rect: DOMRect) {

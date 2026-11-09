@@ -333,7 +333,7 @@ An adapter sends calls to one service. Every call goes to each listed adapter in
 
 | Adapter | Sends to | Script or client |
 | --- | --- | --- |
-| `googleAnalytics({ measurementId })` | Google Analytics 4 | Loads `gtag.js` for you. |
+| `googleAnalytics({ measurementId, ads })` | Google Analytics 4 | Loads `gtag.js` for you. It sets the Consent Mode v2 default before anything is sent: analytics granted, because the adapter only loads once the visitor has agreed, and the ad signals denied unless you pass `ads: true`. |
 | `plausible({ domain, apiHost })` | Plausible, cloud or self-hosted | Loads `script.manual.js` for you. |
 | `posthog(client, { apiKey })` | PostHog | You install `posthog-js` and pass it in. |
 | `consoleAdapter({ prefix })` | The browser console | None. The development default. |

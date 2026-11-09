@@ -1,18 +1,28 @@
 import type { AnalyticsAdapter, EventProps } from './types'
 
 /**
- * Google Analytics 4 through gtag.js. Loads the script on `init()` (client only) and
- * forwards page views, events and user ids. `sendPageView: false` is set on config so the
- * router, not the script, decides what a page view is.
+ * Google Analytics 4 through gtag.js. Loads the script on `init()` (client only), which runs once
+ * tracking is enabled (after consent with `@kitr/consent`), and forwards page views, events and
+ * user ids. `send_page_view: false` is set on config so the router, not the script, decides what
+ * a page view is.
+ *
+ * Consent Mode v2 is set before the first config: `analytics_storage` is granted, because the
+ * adapter only starts once the visitor agreed to analytics, and the three ad signals stay denied
+ * unless `ads: true`.
  */
 export function googleAnalytics(options: {
   measurementId: string
   debug?: boolean
+  /** Grant `ad_storage`, `ad_user_data` and `ad_personalization` too. Default false. */
+  ads?: boolean
 }): AnalyticsAdapter {
-  const gtag = (...args: unknown[]) => {
+  // gtag.js only reads `arguments` objects from the dataLayer, the way Google's snippet pushes
+  // them; an array is silently ignored and nothing is sent.
+  function gtag(..._args: unknown[]) {
     const w = globalThis as any
     w.dataLayer = w.dataLayer ?? []
-    w.dataLayer.push(args)
+    // biome-ignore lint/complexity/noArguments: gtag.js needs the arguments object itself
+    w.dataLayer.push(arguments)
   }
   return {
     name: 'google-analytics',
@@ -25,6 +35,13 @@ export function googleAnalytics(options: {
         document.head.appendChild(script)
       }
       ;(globalThis as any).gtag = (globalThis as any).gtag ?? gtag
+      const ads = options.ads ? 'granted' : 'denied'
+      gtag('consent', 'default', {
+        analytics_storage: 'granted',
+        ad_storage: ads,
+        ad_user_data: ads,
+        ad_personalization: ads,
+      })
       gtag('js', new Date())
       gtag('config', options.measurementId, {
         send_page_view: false,

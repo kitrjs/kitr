@@ -185,7 +185,7 @@ export default defineConfig({
 | Field | Default | Description |
 | --- | --- | --- |
 | `name` | `'fade'` | A built-in name or your own (see [Add your own transition](#add-your-own-transition)). |
-| `duration` | `400` | Milliseconds. |
+| `duration` | `600` | Milliseconds. |
 | `easing` | `'cubic-bezier(0.65, 0, 0.35, 1)'` | Any CSS easing function. |
 | `direction` | `'down'` | For `wipe`: `'down'`, `'up'`, `'left'` or `'right'`. |
 | `animate` | none | A function that runs the animation itself (see [Animate it in code](#animate-it-in-code)). |
@@ -238,9 +238,11 @@ Then name it: `transition: 'curtain'`, or `{ name: 'curtain', duration: 700 }`. 
 | `data-kitr-theme-transition` | The transition's name, or `custom` for an `animate` with no name. |
 | `data-kitr-theme-to` | `light` or `dark`: the theme coming in. Style each way differently with it. |
 | `data-kitr-theme-direction` | The `direction` option. |
-| `--kitr-theme-transition-duration` | The duration, such as `400ms`. |
+| `--kitr-theme-transition-duration` | The duration, such as `600ms`. |
 | `--kitr-theme-transition-easing` | The easing. |
 | `--kitr-theme-transition-x`, `--kitr-theme-transition-y` | The origin from `from`, in pixels. Unset without `from`. |
+| `--kitr-theme-transition-radius` | The distance from the origin to the farthest corner of the viewport, in pixels: where `circle` stops, so it spends its whole duration on screen. |
+| `--kitr-theme-transition-reach` | The same distance measured along the axes (across plus down), where `diamond` stops. |
 
 The same attributes style anything else during the change, such as an icon that turns in with the new theme: `in-data-[kitr-theme-transition]:animate-spin`. To animate the old picture over the new one, give `::view-transition-old(root)` a `z-index: 1`.
 

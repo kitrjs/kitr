@@ -123,23 +123,23 @@
     mix-blend-mode: normal;
   }
   html[data-kitr-theme-transition="fade"]::view-transition-old(root) {
-    animation: kitr-theme-fade-out var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-fade-out var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   html[data-kitr-theme-transition="fade"]::view-transition-new(root) {
-    animation: kitr-theme-fade-in var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-fade-in var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   html[data-kitr-theme-transition="circle"]::view-transition-new(root) {
-    animation: kitr-theme-circle var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-circle var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   html[data-kitr-theme-transition="diamond"]::view-transition-new(root) {
-    animation: kitr-theme-diamond var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-diamond var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   html[data-kitr-theme-transition="wipe"]::view-transition-new(root) {
-    animation: kitr-theme-wipe-down var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-wipe-down var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   html[data-kitr-theme-transition="wipe"][data-kitr-theme-direction="up"]::view-transition-new(
@@ -158,11 +158,11 @@
     animation-name: kitr-theme-wipe-right;
   }
   html[data-kitr-theme-transition="blur"]::view-transition-old(root) {
-    animation: kitr-theme-blur-out var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-blur-out var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   html[data-kitr-theme-transition="blur"]::view-transition-new(root) {
-    animation: kitr-theme-fade-in var(--kitr-theme-transition-duration, 400ms)
+    animation: kitr-theme-fade-in var(--kitr-theme-transition-duration, 600ms)
       var(--kitr-theme-transition-easing, ease) both;
   }
   @keyframes kitr-theme-fade-in {
@@ -187,7 +187,8 @@
     }
     to {
       clip-path: circle(
-        150vmax at var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0)
+        var(--kitr-theme-transition-radius, 150vmax) at var(--kitr-theme-transition-x, 50%)
+          var(--kitr-theme-transition-y, 0)
       );
     }
   }
@@ -202,10 +203,14 @@
     }
     to {
       clip-path: polygon(
-        var(--kitr-theme-transition-x, 50%) calc(var(--kitr-theme-transition-y, 0px) - 300vmax),
-        calc(var(--kitr-theme-transition-x, 50%) + 300vmax) var(--kitr-theme-transition-y, 0),
-        var(--kitr-theme-transition-x, 50%) calc(var(--kitr-theme-transition-y, 0px) + 300vmax),
-        calc(var(--kitr-theme-transition-x, 50%) - 300vmax) var(--kitr-theme-transition-y, 0)
+        var(--kitr-theme-transition-x, 50%)
+          calc(var(--kitr-theme-transition-y, 0px) - var(--kitr-theme-transition-reach, 300vmax)),
+        calc(var(--kitr-theme-transition-x, 50%) + var(--kitr-theme-transition-reach, 300vmax))
+          var(--kitr-theme-transition-y, 0),
+        var(--kitr-theme-transition-x, 50%)
+          calc(var(--kitr-theme-transition-y, 0px) + var(--kitr-theme-transition-reach, 300vmax)),
+        calc(var(--kitr-theme-transition-x, 50%) - var(--kitr-theme-transition-reach, 300vmax))
+          var(--kitr-theme-transition-y, 0)
       );
     }
   }
