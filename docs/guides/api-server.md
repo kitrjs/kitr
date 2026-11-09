@@ -217,7 +217,7 @@ export default defineDb({
 })
 ```
 
-Set `DATABASE_URL=postgres://postgres:acme@localhost:5432/billing` in `.env`, then create the table with `drizzle-kit` (the [DB guide](/packages/db#run-migrations) shows `drizzle.config.ts` and the scripts). In the controller, `ctx.app` is the app for this request; `useDb` returns the pooled client:
+Set `DATABASE_URL=postgres://postgres:acme@localhost:5432/billing` in `.env`, then create the table with `drizzle-kit` (the [DB guide](/packages/db/guide#run-migrations) shows `drizzle.config.ts` and the scripts). In the controller, `ctx.app` is the app for this request; `useDb` returns the pooled client:
 
 ```ts
 // server/controllers/invoices-controller.ts
@@ -488,7 +488,7 @@ describe('invoices', () => {
 npm test
 ```
 
-The first request boots the app with every provider in `kitrrc.ts`, database included. For tests that should not touch Postgres, bind a fake client as the [DB guide](/packages/db#testing) shows.
+The first request boots the app with every provider in `kitrrc.ts`, database included. For tests that should not touch Postgres, bind a fake client as the [DB guide](/packages/db/guide#testing) shows.
 
 ## Keep React out
 

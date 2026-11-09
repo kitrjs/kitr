@@ -65,4 +65,4 @@ normaliseServerError(error): KitrError
 defineConfig(config: ServerConfig): ServerConfig
 ```
 
-See [the options table](/packages/server#configuration).
+See [the options table](/packages/server/guide#configure).

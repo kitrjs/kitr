@@ -613,7 +613,7 @@ Each driver loads its plugin on first use. A missing package rejects with `E_DRI
 
 - **Secure storage uses Stronghold, not the store plugin.** The store plugin keeps plain JSON, which is what `@kitr/storage` uses. Stronghold is an encrypted snapshot opened with a random secret that the scaffolded `kitr_vault_key` command keeps in the OS keyring. Every script in the window can call that command, so keep a strict `csp`.
 - **Files stay inside what the person picked.** The scaffold grants read, write, stat and list on the fs plugin without a static scope; the dialog plugin adds each chosen path for the session.
-- **The updater plugin is registered only when `tauri.conf.json` has `plugins.updater`.** It refuses to start without a public key, so `lib.rs` checks first. Add the key and endpoints (see [Updater](/packages/updater#use-it-in-electron-and-tauri)) and restart.
+- **The updater plugin is registered only when `tauri.conf.json` has `plugins.updater`.** It refuses to start without a public key, so `lib.rs` checks first. Add the key and endpoints (see [Updater](/packages/updater/guide#use-it-in-electron-and-tauri)) and restart.
 
 </details>
 
