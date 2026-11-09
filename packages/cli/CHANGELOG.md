@@ -1,5 +1,19 @@
 # @kitr/cli
 
+## 0.4.0
+
+### Patch Changes
+
+- 14bba43: Add `@kitr/content` and the `docs` kit.
+  
+  `kitr add content` renders the markdown folders listed in `config/content.ts` at `kitr generate` time into `.kitr/content/`, read through `#kitr/content`: `loadPage(collection, slug)`, `nav`, `loadSearch()` and typed `Slug<C>`. Pages get Shiki highlighting for light and dark, file captions, callouts, numbered steps, a table of contents, `kitr` command blocks and rewritten `.md` links. `@kitr/content/react` has `DocBody`, `Toc` and `useActiveHeading`, `search()` ranks the index, and with `llms: true` the Vite plugin serves and builds `llms.txt`, `llms-full.txt` and a `.md` copy of every page.
+  
+  `kitr new --kit docs` starts a static docs site from markdown with a sidebar, search, package-manager commands and dark mode, using the new `doc-layout`, `search-dialog` and `command` registry components.
+- dd305d9: `kitr agents` prints the project's `AGENTS.md`, so an agent can read the rules without opening the file. `--list` prints the `## kitr: <name>` section names and `--section <name>` prints one section. Outside a project it fails and names the file it looked for.
+- 59e7c8d: `kitr catalog` lists the official packages, platforms and kits; `kitr catalog --json` prints each with its whole `kitr` block, platforms with their `platform` text, so a site's build step can read them. `@kitr/cli` exports `KitrCatalog`, `KitrCatalogEntry`, `KitrPlatformInfo`, `KitrCategory`, `categories`, `kitManifests`, `validateManifest` and `buildCatalog` to type and build that output.
+- 611161f: A platform package's `kitr` block can carry a `platform` object: its label, tagline, targets, shell, colour, highlights, a code snippet, the commands that run it and links to upstream docs. `@kitr/web`, `@kitr/server`, `@kitr/desktop`, `@kitr/tauri` and `@kitr/mobile` ship theirs, so kitr.dev's /platforms pages read the text from the packages. `kitr package:check` validates the object and names each broken field.
+- @kitr/core@0.4.0
+
 ## 0.3.2
 
 ### Patch Changes

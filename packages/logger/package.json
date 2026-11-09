@@ -1,6 +1,6 @@
 {
   "name": "@kitr/logger",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "@kitr/logger: a tiny structured logger with levels, children and pretty/JSON output. No dependencies.",
   "kitr": {
     "name": "logger",

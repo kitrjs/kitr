@@ -1,5 +1,11 @@
 # @kitr/state
 
+## 0.4.0
+
+### Patch Changes
+
+- @kitr/core@0.4.0
+
 ## 0.3.2
 
 ### Patch Changes
