@@ -343,7 +343,7 @@ curl http://localhost:3000/api/teams/team_acme/projects
 [{ "id": "prj_5f1c2a9e", "teamId": "team_acme", "name": "Apollo launch", "createdAt": "2026-11-07T09:14:00.000Z" }]
 ```
 
-The same URL answers on port 3001 from the `api` platform. A missing project answers `404` with `{ "code": "NOT_FOUND", "message": "Project not found", "status": 404 }`, the same error shape actions use. `kitr api:sync` writes `openapi.json` for partners and the route table the typed browser client needs; the [API guide](/packages/api#call-the-api-from-the-browser) shows `api.projects.index({ params: { teamId } })`.
+The same URL answers on port 3001 from the `api` platform. A missing project answers `404` with `{ "code": "NOT_FOUND", "message": "Project not found", "status": 404 }`, the same error shape actions use. `kitr api:sync` writes `openapi.json` for partners and the route table the typed browser client needs; the [API guide](/packages/api/guide#call-the-api-from-the-browser) shows `api.projects.index({ params: { teamId } })`.
 
 Both read the same table with the same code, so pick per caller, not per feature: actions for your own UI, API routes for everyone else.
 

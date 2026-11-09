@@ -456,6 +456,6 @@ The variables in the job's `env` reach every step, so `loadEnv` in `vitest.confi
 
 - [Testing](/packages/testing): every option of `createTestApp`, `createTestClient` and `renderWithKitr`.
 - [Mocks](/packages/mocks): per-test handlers, error responses and the same mocks in the browser.
-- [Actions](/packages/actions#testing): `.run()` and testing components that call actions by name.
+- [Actions](/packages/actions/guide#testing): `.run()` and testing components that call actions by name.
 - [Deploy to production](/guides/deploy): the build these tests run against, on a real host.
 - [Vitest](https://vitest.dev/guide/) and [Playwright](https://playwright.dev/docs/intro) documentation.

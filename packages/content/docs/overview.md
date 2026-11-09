@@ -55,7 +55,7 @@ Open `/docs/getting-started`. The page shows `content/docs/getting-started.md`, 
 - **Code samples that look different in dark mode.** [Highlight code](/packages/content/guide#highlight-code).
 - **Install commands for one package manager only.** [Show commands for every package manager](/packages/content/guide#show-commands-for-every-package-manager).
 - **No search on a static site.** [Search the pages](/packages/content/guide#search-the-pages).
-- **Coding agents that scrape HTML.** [Serve llms.txt](/packages/content/guide#serve-llms-txt).
+- **Coding agents that scrape HTML.** [Serve llms.txt](/packages/content/guide#serve-llmstxt).
 
 ## Further reading
 

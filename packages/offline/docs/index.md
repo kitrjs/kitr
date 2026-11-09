@@ -505,7 +505,7 @@ To test that a mutation queues, build it with `client.getMutationCache().build(.
 
 ## Extend
 
-Pass your own `StorageDriver` as `storage` (see [Write a storage driver](/packages/storage#write-a-storage-driver)) to keep the snapshot elsewhere, usually because [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) holds far more than `localStorage`. The service reads synchronously, so `createAsyncStorageDriver` loads the store into memory in `hydrate()`. This driver uses [idb-keyval](https://github.com/jakearchibald/idb-keyval):
+Pass your own `StorageDriver` as `storage` (see [Write a storage driver](/packages/storage/guide#write-a-storage-driver)) to keep the snapshot elsewhere, usually because [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) holds far more than `localStorage`. The service reads synchronously, so `createAsyncStorageDriver` loads the store into memory in `hydrate()`. This driver uses [idb-keyval](https://github.com/jakearchibald/idb-keyval):
 
 ```ts
 // app/lib/idb-snapshot.ts

@@ -855,7 +855,7 @@ describe('orders grid', () => {
 })
 ```
 
-To test the route's own `validateSearch`, call `parseTableSearch` with the raw params a link could carry, as in [Validate the URL](#validate-the-url). To render the real page with its loader, see [testing](/packages/testing#render-a-whole-page).
+To test the route's own `validateSearch`, call `parseTableSearch` with the raw params a link could carry, as in [Validate the URL](#validate-the-url). To render the real page with its loader, see [testing](/packages/testing/guide#render-a-whole-page).
 
 ## Next steps
 
