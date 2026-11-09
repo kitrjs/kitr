@@ -65,6 +65,7 @@ export function SearchDialog({ load, placeholder = 'Search docs', className }: S
     <>
       <button
         type="button"
+        aria-label={placeholder}
         onClick={show}
         className={cn(
           'inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground hover:bg-muted',
@@ -92,6 +93,7 @@ export function SearchDialog({ load, placeholder = 'Search docs', className }: S
           <input
             ref={input}
             type="search"
+            aria-label={placeholder}
             value={query}
             placeholder={placeholder}
             aria-controls="search-results"
