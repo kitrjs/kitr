@@ -1,5 +1,11 @@
 # @kitr/tailwind
 
+## 0.6.0
+
+### Patch Changes
+
+- @kitr/core@0.6.0
+
 ## 0.5.0
 
 ### Patch Changes

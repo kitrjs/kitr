@@ -1,5 +1,12 @@
 # @kitr/content
 
+## 0.6.0
+
+### Patch Changes
+
+- @kitr/core@0.6.0
+  - @kitr/router@0.6.0
+
 ## 0.5.0
 
 ### Patch Changes
