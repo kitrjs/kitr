@@ -293,9 +293,11 @@ The direction comes from the router's history index, so opening `/projects/42` s
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `style` | `'slide'` | `'slide'` moves pages sideways like a native app; `'fade'` cross-fades them |
+| `style` | `'slide'` | `'slide'`, `'rise'` or `'fade'`: how pages change (see below) |
 | `reducedMotion` | `'user'` | `'user'` changes pages instantly for visitors who ask for less motion. `'always'` turns page animations off; `'never'` keeps them |
 | `onSearchChange` | `false` | Also animate when only the search or hash changes, such as the next page of a table |
+
+`'slide'` moves pages sideways like a native app. `'rise'` lifts the old page away and settles the new one in from just below, which suits text-heavy pages on phones. `'fade'` cross-fades them.
 
 Browsers without view transitions change pages instantly. Chromium, Electron, Android WebView and Safari 18 support them. Pass `viewTransition` to a single link to animate it differently, or `viewTransition={false}` for one that should never animate.
 

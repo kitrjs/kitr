@@ -35,6 +35,29 @@ html:has(dialog:modal) [data-kitr-keep] {
     animation: 220ms cubic-bezier(0.05, 0.7, 0.1, 1) 60ms both kitr-fade-in;
   }
 
+  /* Rise: the old page lifts away and is gone before the new one settles in from just below.
+     Back mirrors it. The pictures don't blend, so text never shows twice. */
+  html:active-view-transition-type(kitr-rise)::view-transition-old(root),
+  html:active-view-transition-type(kitr-rise)::view-transition-new(root) {
+    mix-blend-mode: normal;
+  }
+  html:active-view-transition-type(kitr-rise)::view-transition-old(root) {
+    animation: 120ms linear both kitr-rise-out-up;
+  }
+  html:active-view-transition-type(kitr-rise)::view-transition-new(root) {
+    animation: 260ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both kitr-rise-in-up;
+  }
+  html:active-view-transition-type(kitr-rise):active-view-transition-type(
+    kitr-back
+  )::view-transition-old(root) {
+    animation-name: kitr-rise-out-down;
+  }
+  html:active-view-transition-type(kitr-rise):active-view-transition-type(
+    kitr-back
+  )::view-transition-new(root) {
+    animation-name: kitr-rise-in-down;
+  }
+
   /* Slide forward: the new page comes in from the right, the old one drifts left. */
   html:active-view-transition-type(kitr-slide)::view-transition-old(root) {
     animation: 280ms cubic-bezier(0.2, 0, 0, 1) both kitr-slide-out-left;
@@ -107,5 +130,29 @@ html:has(dialog:modal) [data-kitr-keep] {
   from {
     opacity: 0;
     transform: translateX(-12%);
+  }
+}
+@keyframes kitr-rise-out-up {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes kitr-rise-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes kitr-rise-out-down {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes kitr-rise-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
   }
 }

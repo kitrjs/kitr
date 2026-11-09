@@ -231,7 +231,7 @@ html[data-kitr-theme-transition="curtain"]::view-transition-new(root) {
 }
 ```
 
-Then name it: `transition: 'curtain'`, or `{ name: 'curtain', duration: 700 }`. kitr turns off the browser's default cross-fade for every theme transition, so only your animation runs.
+Then name it: `transition: 'curtain'`, or `{ name: 'curtain', duration: 700 }`. kitr turns off the browser's default cross-fade for every theme transition, so only your animation runs. It also turns off CSS `transition`s while the change runs, so a button that eases its `background-color` takes the new colour together with the rest of the page instead of fading on its own; CSS `animation`s still play.
 
 | On `<html>` while it runs | Value |
 | --- | --- |

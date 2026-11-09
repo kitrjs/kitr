@@ -80,6 +80,10 @@ describe('pageTransitions', () => {
       'kitr-fade',
       'kitr-forward',
     ])
+    expect(pageTransitions({ style: 'rise' }).types(change(2, 1))).toEqual([
+      'kitr-rise',
+      'kitr-back',
+    ])
   })
 
   it('leaves the first render of the app alone', () => {
