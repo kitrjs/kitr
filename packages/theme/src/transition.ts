@@ -45,18 +45,21 @@ export type ThemeTransition = ThemeTransitionName | (string & {}) | ThemeTransit
 const DURATION = 400
 const EASING = 'cubic-bezier(0.65, 0, 0.35, 1)'
 
+// kitr-allow-module-state: lookup table of CSS names, never mutated
 const VARS = {
   x: '--kitr-theme-transition-x',
   y: '--kitr-theme-transition-y',
   duration: '--kitr-theme-transition-duration',
   easing: '--kitr-theme-transition-easing',
 }
+// kitr-allow-module-state: lookup table of attribute names, never mutated
 const ATTRS = {
   name: 'data-kitr-theme-transition',
   to: 'data-kitr-theme-to',
   direction: 'data-kitr-theme-direction',
 }
 
+// kitr-allow-module-state: a document runs one view transition at a time, whichever app started it
 let running: ViewTransition | null = null
 
 /**
