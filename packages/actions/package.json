@@ -61,21 +61,28 @@
     "@kitr/query": "workspace:*"
   },
   "peerDependencies": {
-    "typescript": ">=5.0.0",
+    "@tanstack/react-query": ">=5.80.0",
     "@tanstack/react-start": ">=1.120.0",
-    "@tanstack/react-query": ">=5.80.0"
+    "typescript": ">=5.0.0",
+    "@typescript/typescript6": ">=6.0.0"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-start": "^1.169.4",
+    "@types/react": "^19.3.0",
+    "@typescript/typescript6": "^6.0.2",
+    "react": "^19.3.1",
     "tsdown": "^0.23.7",
     "typescript": "^5.9.3",
-    "@tanstack/react-start": "^1.169.4",
-    "react": "^19.3.1",
-    "@types/react": "^19.3.0",
-    "vite": "^8.3.6",
-    "@tanstack/react-query": "^5.107.1"
+    "vite": "^8.3.6"
   },
   "keywords": [
     "kitr",
     "kitr-package"
-  ]
+  ],
+  "peerDependenciesMeta": {
+    "@typescript/typescript6": {
+      "optional": true
+    }
+  }
 }
