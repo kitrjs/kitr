@@ -57,6 +57,17 @@ route failed or `failOnError` is on. A static site also gets `404.html`: the roo
 GitHub Pages serve for unknown paths. It is written here because Start's prerender refuses a
 page that answers 404, and so it is never crawled or listed in the sitemap.
 
+### indexable
+
+```ts
+function indexable(path: string, html: string): boolean;
+```
+
+Whether a prerendered page belongs in the sitemap: an HTML page (a path with no extension, or
+`.html`) whose head does not carry `<meta name="robots" content="noindex">`. A `/docs/x.md`
+"view as markdown" file, `llms.txt` or a JSON feed is written like any other page but is not a
+page to list.
+
 ### kitr
 
 ```ts
@@ -82,8 +93,8 @@ function prerenderGuard(options: {
 Start's prerender throws on the first page that does not answer 200, and the build dies with a
 dump of the `Response`. Start runs with `failOnError: false` instead, and this keeps the record:
 `filter` (crawlFilter, plus a note of every page asked for) holds each page out of the sitemap,
-`onSuccess` puts it back and notes which page links where, and `failures()` is the difference,
-for `finishPrerender` to print and fail on.
+`onSuccess` puts it back when `indexable` (an HTML page without `noindex`) and notes which page
+links where, and `failures()` is the difference, for `finishPrerender` to print and fail on.
 
 ### readPrerender
 
