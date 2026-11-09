@@ -1,5 +1,12 @@
 # @kitr/flags
 
+## 0.5.0
+
+### Patch Changes
+
+- @kitr/core@0.5.0
+  - @kitr/react@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes
