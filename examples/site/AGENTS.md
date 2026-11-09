@@ -68,7 +68,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: analytics
 
-- Track from components with `const analytics = useAnalytics<AppEvents>()` (`@kitr/analytics/react`) then `analytics.track('project.created', { id })`; declare new events in `app/analytics.ts` first.
+- Track from components with `const analytics = useAnalytics<AppEvents>()` (`@kitr/analytics/react`) then `analytics.track(name, props)`; declare each event in `AppEvents` in `app/analytics.ts` first.
 - Page views are sent automatically on every route change. `analytics.identify(user.id, traits)` after sign-in, `analytics.reset()` on sign-out.
 - Adapters live in `config/analytics.ts`; never call gtag/posthog directly.
 

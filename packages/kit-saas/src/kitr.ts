@@ -296,6 +296,19 @@ export type ServerRoutes = typeof routes.$types
     ]),
   )
   write(ctx, 'app/api/client.ts', apiClient)
+  // The events the sign-in and projects pages track (the analytics package writes an empty map).
+  write(
+    ctx,
+    'app/analytics.ts',
+    `import type { EventMap } from '@kitr/analytics'
+
+/** Every event the app sends, with its props. \`useAnalytics<AppEvents>()\` checks names and props. */
+export interface AppEvents extends EventMap {
+  'sign-in.completed': { method: 'password' | 'oauth' }
+  'project.created': { id: string }
+}
+`,
+  )
 
   write(
     ctx,

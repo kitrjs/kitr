@@ -57,7 +57,7 @@ export function NewProjectButton({ onCreate }: { onCreate: () => Promise<{ id: s
 }
 ```
 
-With no adapter configured, the console shows `[analytics] track project.created { app: 'acme', id: 'prj_42' }`. Set `VITE_GA_MEASUREMENT_ID` and the same click reaches Google Analytics. Next in the guide: [Track your first event](/packages/analytics/guide#track-your-first-event).
+With no adapter configured, the console shows `[analytics] track project.created { app: 'acme', id: 'prj_42' }`. Set `VITE_PLAUSIBLE_DOMAIN` (or `VITE_GA_MEASUREMENT_ID`) and the same click reaches Plausible (or Google Analytics). Next in the guide: [Track your first event](/packages/analytics/guide#track-your-first-event).
 
 ## Built on
 
