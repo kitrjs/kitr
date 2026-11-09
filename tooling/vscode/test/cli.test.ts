@@ -206,6 +206,8 @@ describe('running the CLI', () => {
     expect(shellQuote('admin/users')).toBe('admin/users')
     expect(shellQuote("it's")).toBe(`'it'\\''s'`)
     expect(shellQuote('a b', true)).toBe('"a b"')
+    expect(shellQuote('C:\\my dir\\', true)).toBe('"C:\\my dir\\\\"')
+    expect(shellQuote('say \\"hi"', true)).toBe('"say \\\\\\"hi\\""')
   })
 
   it('extracts JSON after noise and refuses none', () => {

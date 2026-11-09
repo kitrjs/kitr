@@ -437,7 +437,7 @@ export default function OrdersPage() {
 
 Open `/orders`: three rows. Click the Total header and the URL becomes `/orders?sort=-total`, the loader fetches that page and Grace's $480 order moves to the top. Reload and it is still sorted; share the URL and a teammate sees the same view.
 
-`parseTableSearch` keeps what is valid in the URL and drops the rest, because anyone can edit a URL. The API should do the same: sort only by columns it allows. The [Table guide](/packages/table#fetch-one-page-from-the-server) shows the server half.
+`parseTableSearch` keeps what is valid in the URL and drops the rest, because anyone can edit a URL. The API should do the same: sort only by columns it allows. The [Table guide](/packages/table/guide#fetch-one-page-from-the-server) shows the server half.
 
 ## Create an order with a form
 

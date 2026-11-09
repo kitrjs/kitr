@@ -130,6 +130,9 @@ function cliHasPackage(pkg: string): boolean {
   return false
 }
 
+/** An npm package name: lower case, optionally scoped, no shell metacharacters. */
+const validPackageName = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+
 /**
  * Make sure `pkg` can be loaded: install it into the project when it is not resolvable from
  * the project or the CLI. With `install: false` that is an error naming the flag.
@@ -140,6 +143,8 @@ export async function ensureAvailable(
   options: { install: boolean },
 ): Promise<void> {
   const pkg = resolvePackageName(name)
+  // The name goes into a shell command below, so it must be a plain npm package name.
+  if (!validPackageName.test(pkg)) throw new Error(`"${name}" is not a valid package name.`)
   if (isInstalled(ctx, pkg) || cliResolve(pkg) || cliHasPackage(pkg)) return
   if (!options.install || ctx.dryRun) {
     if (ctx.dryRun) return

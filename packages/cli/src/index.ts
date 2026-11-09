@@ -202,7 +202,7 @@ export async function runMain(rawArgv = process.argv.slice(2)) {
   // Monorepo mode: `--app <name>` runs the command inside that app of kitr.workspace.ts; a
   // fan-out command typed at the workspace root runs in every app. `--filter=a,b` is the same as
   // typing the names after the command.
-  let argv = rawArgv
+  let argv: string[]
   try {
     const taken = takeAppFlag(takeFilterFlag(rawArgv))
     argv = taken.argv

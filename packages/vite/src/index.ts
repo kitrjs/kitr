@@ -674,7 +674,7 @@ export function readRcPlatforms(src: string): Record<string, RcPlatform> {
   const imports = new Map<string, string>()
   for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g))
     for (const name of m[1]!.split(',')) {
-      const parts = name.trim().split(/\s+as\s+/)
+      const parts = name.trim().split(/\bas\b/)
       const local = (parts[1] ?? parts[0])!.trim()
       if (local) imports.set(local, m[2]!)
     }
@@ -849,7 +849,14 @@ export interface PrerenderGuard {
   failOnError: boolean
 }
 
-const trimSlash = (path: string) => (path.length > 1 ? path.replace(/\/+$/, '') : path)
+/** Drop trailing slashes. A loop, since `/\\/+$/` backtracks quadratically on long runs of `/`. */
+function stripTrailingSlashes(s: string): string {
+  let end = s.length
+  while (end > 0 && s.charCodeAt(end - 1) === 47) end--
+  return s.slice(0, end)
+}
+
+const trimSlash = (path: string) => (path.length > 1 ? stripTrailingSlashes(path) : path)
 
 const robotsNoindex =
   /<meta\b(?=[^>]*\bname=["']robots["'])(?=[^>]*\bcontent=["'][^"']*\bnoindex\b)[^>]*>/i
@@ -898,8 +905,10 @@ export function prerenderGuard(options: {
         else delete page.sitemap
       }
       // The links Start's crawler follows: root-relative hrefs on <a>.
-      for (const [, href] of html.matchAll(/<a[^>]+href=["'](\/[^"']*)["']/g)) {
-        const path = href!.split('#')[0] || '/'
+      for (const [tag] of html.matchAll(/<a\s[^<>]*>/g)) {
+        const href = /\shref=["'](\/[^"']*)["']/.exec(tag)?.[1]
+        if (href === undefined) continue
+        const path = href.split('#')[0] || '/'
         if (!linkedFrom.has(path)) linkedFrom.set(path, page.path)
       }
     },

@@ -113,6 +113,13 @@ function fromLoader(context: SeoContext | undefined): Pick<SeoInput, 'title' | '
   }
 }
 
+/** Drop trailing slashes. A loop, since `/\\/+$/` backtracks quadratically on long runs of `/`. */
+function stripTrailingSlashes(s: string): string {
+  let end = s.length
+  while (end > 0 && s.charCodeAt(end - 1) === 47) end--
+  return s.slice(0, end)
+}
+
 /**
  * Meta tags for a route's `head()`: `head: (ctx) => seo({ title, description }, ctx)`.
  * Covers title, description, Open Graph, Twitter cards, canonical and robots. Pass the `head`
@@ -137,7 +144,8 @@ export function seo(input: SeoInput, context?: SeoContext) {
     : site.name
   const image = input.image ?? site.image
   const path = pathOf(context)
-  const url = input.url ?? (site.url && path ? `${site.url.replace(/\/+$/, '')}${path}` : site.url)
+  const url =
+    input.url ?? (site.url && path ? `${stripTrailingSlashes(site.url)}${path}` : site.url)
   const meta: Array<Record<string, string>> = []
   if (title)
     meta.push(
