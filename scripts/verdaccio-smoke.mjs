@@ -239,7 +239,7 @@ function metadata(name) {
   if (!metaCache.has(name))
     metaCache.set(
       name,
-      fetch(`${registryUrl}${name.replace('/', '%2f')}`, {
+      fetch(`${registryUrl}${name.replaceAll('/', '%2f')}`, {
         headers: { accept: 'application/vnd.npm.install-v1+json' },
       }).then((res) => (res.ok ? res.json() : null)),
     )

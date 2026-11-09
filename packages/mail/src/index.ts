@@ -134,10 +134,14 @@ export const defineConfig = createDefineConfig<MailConfig>()
 /** Parse a recipient (`'Ada <ada@acme.com>'`, quoted names included) into an `Address`, trimming the email. */
 export function address(input: Recipient): Address {
   if (typeof input !== 'string') return { ...input, email: input.email.trim() }
-  const m = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(input)
-  if (!m) return { email: input.trim() }
-  const name = m[1]!.replace(/^"(.*)"$/, '$1').replace(/\\(.)/g, '$1') || undefined
-  return { name, email: m[2]!.trim() }
+  // Parsed by hand: a regex here backtracks badly on long runs of spaces in untrusted input.
+  const s = input.trim()
+  const open = s.lastIndexOf('<')
+  if (!s.endsWith('>') || open === -1 || s.length - open < 3 || s.slice(open + 1, -1).includes('>'))
+    return { email: s }
+  let name = s.slice(0, open).trim()
+  if (name.length > 1 && name.startsWith('"') && name.endsWith('"')) name = name.slice(1, -1)
+  return { name: name.replace(/\\(.)/g, '$1') || undefined, email: s.slice(open + 1, -1).trim() }
 }
 
 /** CR or LF in a header would let a value start a new header (`Bcc:`) at the SMTP layer. */
@@ -173,14 +177,53 @@ export function formatAddress(a: Address): string {
 const list = (input?: Recipient | Recipient[]): Address[] =>
   input === undefined ? [] : (Array.isArray(input) ? input : [input]).map(address)
 
+/**
+ * Drop `<style>`, `<script>` and `<head>` elements with their contents. A scan, not a regex: lazy
+ * `[\s\S]*?` matches go quadratic on bodies with many unclosed tags, and `</script >` slips past them.
+ */
+function stripElements(html: string, tags: string[]): string {
+  const lower = html.toLowerCase()
+  const opener = new RegExp(`<(${tags.join('|')})[\\s/>]`, 'g')
+  let out = ''
+  let at = 0
+  for (;;) {
+    opener.lastIndex = at
+    const m = opener.exec(lower)
+    if (!m) return out + html.slice(at)
+    out += html.slice(at, m.index)
+    const close = lower.indexOf(`</${m[1]}`, m.index)
+    const end = close === -1 ? -1 : lower.indexOf('>', close)
+    if (end === -1) return out
+    at = end + 1
+  }
+}
+
+/** `<a href="url">text</a>` → `text (url)`, scanning for each `</a>` once rather than per opening tag. */
+function linksToText(html: string): string {
+  const lower = html.toLowerCase()
+  const opener = /<a\s[^<>]*>/gi
+  let out = ''
+  let at = 0
+  for (let m = opener.exec(html); m; m = opener.exec(html)) {
+    const href = /\shref="([^"]+)"/i.exec(m[0])?.[1]
+    if (href === undefined) continue
+    const textStart = m.index + m[0].length
+    const close = lower.indexOf('</a>', textStart)
+    // No closing tag here means none after it either; leave the rest as it is.
+    if (close === -1) break
+    out += `${html.slice(at, m.index)}${html.slice(textStart, close)} (${href})`
+    at = close + 4
+    opener.lastIndex = at
+  }
+  return out + html.slice(at)
+}
+
 /** A readable text version of an HTML body: links become `text (url)`, block ends become line breaks. Used when a template has no `text`. */
 export function htmlToText(html: string): string {
   return (
-    html
-      .replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>|<head[\s\S]*?<\/head>/gi, '')
-      .replace(/<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+    linksToText(stripElements(html, ['style', 'script', 'head']))
       .replace(/<\/(p|div|h[1-6]|li|tr|br)>|<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
+      .replace(/<[^<>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')

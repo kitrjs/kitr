@@ -13,6 +13,10 @@ on:
       - "packages/**"
   workflow_dispatch:
 
+# Read-only GITHUB_TOKEN: nothing here writes to the repo through it.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

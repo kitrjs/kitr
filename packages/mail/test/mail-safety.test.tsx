@@ -81,6 +81,7 @@ describe('addresses', () => {
     expect(address('"Say \\"hi\\"" <q@x.test>')).toEqual({ name: 'Say "hi"', email: 'q@x.test' })
     expect(address('<bare@x.test>')).toEqual({ name: undefined, email: 'bare@x.test' })
     expect(address('  plain@x.test  ')).toEqual({ email: 'plain@x.test' })
+    expect(address(`${' '.repeat(50_000)}x`)).toEqual({ email: 'x' })
   })
 
   it('quotes names that need it, and round-trips', () => {
@@ -109,6 +110,19 @@ describe('htmlToText', () => {
       '<html><head><title>T</title><style>p{}</style></head><body><script>x()</script><h1>Title</h1><p>One<br>Two</p><a href="https://x.test">Go</a></body></html>',
     )
     expect(text).toBe('Title\nOne\nTwo\nGo (https://x.test)')
+  })
+
+  it('drops script and style whatever their case or closing-tag spacing', () => {
+    expect(htmlToText('<p>a</p><SCRIPT type="x">bad()</script ><Style>p{}</STYLE>b')).toBe('a\nb')
+    expect(htmlToText('<scripted>keep</scripted>')).toBe('keep')
+    expect(htmlToText('<A class="b" href="/x">Go</A> <a href="/y">open')).toBe('Go (/x) open')
+  })
+
+  it('stays fast on bodies full of unclosed tags', () => {
+    const start = performance.now()
+    htmlToText('<style'.repeat(50_000))
+    htmlToText('<a href="/x">'.repeat(50_000))
+    expect(performance.now() - start).toBeLessThan(1000)
   })
 
   it('is used for the text part when the template has none, decoding the link', async () => {
@@ -196,7 +210,13 @@ describe('mailer', () => {
     const seen: Message[] = []
     const m = createMailer({
       from: 'a@x.test',
-      transport: { name: 'spy', send: async (msg) => void seen.push(msg) || {} },
+      transport: {
+        name: 'spy',
+        send: async (msg) => {
+          seen.push(msg)
+          return {}
+        },
+      },
     })
     const sent = await m.send(
       note,

@@ -121,6 +121,13 @@ function fromLoader(context: SeoContext | undefined): Pick<SeoInput, 'title' | '
  * takes the canonical URL (`site.url` plus the matched path) and, when the loader returned
  * them, `title` and `description`: `head: (ctx) => seo({}, ctx)`.
  */
+/** Drop trailing slashes. A loop, since `/\\/+$/` backtracks quadratically on long runs of `/`. */
+function stripTrailingSlashes(s: string): string {
+  let end = s.length
+  while (end > 0 && s.charCodeAt(end - 1) === 47) end--
+  return s.slice(0, end)
+}
+
 export function seo(input: SeoInput, context?: SeoContext) {
   const configured = appOf(context)?.config.get('seo', {}) as SeoConfig | undefined
   const site = input.site ?? configured?.site ?? {}
@@ -137,7 +144,8 @@ export function seo(input: SeoInput, context?: SeoContext) {
     : site.name
   const image = input.image ?? site.image
   const path = pathOf(context)
-  const url = input.url ?? (site.url && path ? `${site.url.replace(/\/+$/, '')}${path}` : site.url)
+  const url =
+    input.url ?? (site.url && path ? `${stripTrailingSlashes(site.url)}${path}` : site.url)
   const meta: Array<Record<string, string>> = []
   if (title)
     meta.push(

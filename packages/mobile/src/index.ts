@@ -177,7 +177,7 @@ function scaffoldCapacitor(ctx: PlatformContext, options: MobileOptions) {
  */
 const config: CapacitorConfig = {
   appId: '${id}',
-  appName: '${name.replace(/'/g, "\\'")}',
+  appName: '${name.replace(/[\\']/g, '\\$&')}',
   webDir: '../../dist/${ctx.name}/client',
   ios: { path: 'ios' },
   android: { path: 'android' },
