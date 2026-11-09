@@ -9,7 +9,44 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Anyone building an app and its own backend together, in one project and one language.",
+      "highlights": [
+        {
+          "title": "Rendered on the server",
+          "text": "The dashboard kit with SSR, so the first paint has the data and search engines see it."
+        },
+        {
+          "title": "An API server beside it",
+          "text": "`server/routes.ts` serves typed routes to the app and to any other client, with an OpenAPI file."
+        },
+        {
+          "title": "Actions for the UI",
+          "text": "Functions in `app/actions/` run on the server and are called like local functions."
+        },
+        {
+          "title": "Live updates",
+          "text": "A realtime channel in `app/channels/` pushes changes to every open screen."
+        }
+      ],
+      "example": "examples/fullstack",
+      "entry": "server/routes.ts",
+      "run": [
+        [
+          "kitr dev",
+          "The site on port 3000 and the API on 3001, together"
+        ],
+        [
+          "kitr build",
+          "Both platforms, ready for `kitr start`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the home page test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +55,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-fullstack"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/fullstack",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

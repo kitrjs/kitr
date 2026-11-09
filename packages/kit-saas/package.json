@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "fullstack",
+      "audience": "Founders and teams starting a signed-in product: accounts, a guarded app and a first resource to build on.",
+      "highlights": [
+        {
+          "title": "Accounts that work",
+          "text": "Sign-in, sign-up, email verification and password reset, on HttpOnly cookie sessions with CSRF protection."
+        },
+        {
+          "title": "A guarded app shell",
+          "text": "Every page under the `_app` layout needs a session; abilities decide what each role sees."
+        },
+        {
+          "title": "A real resource",
+          "text": "Projects: a data table, a create form and an API, sharing one schema in `app/validators/projects.ts`."
+        },
+        {
+          "title": "Production pieces",
+          "text": "Mail, rate limits and security headers, analytics and error monitoring are already configured."
+        }
+      ],
+      "example": "examples/saas",
+      "entry": "app/pages/projects.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The app and its API; sign in as admin@example.com with the password password"
+        ],
+        [
+          "kitr build",
+          "Both platforms; production needs `SESSION_SECRET` and a mail transport"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the API test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-saas"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/saas",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

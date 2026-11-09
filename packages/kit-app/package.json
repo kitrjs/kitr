@@ -9,7 +9,44 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "audience": "Anyone starting a web app who wants a small, readable project and adds sign-in, forms or an API as the app grows.",
+      "highlights": [
+        {
+          "title": "Two pages, one route table",
+          "text": "`/` and `/about` are listed in `app/routes.ts`, and each is a component in `app/pages/`."
+        },
+        {
+          "title": "Data loading ready",
+          "text": "Query is wired, so the first `queryOptions` you write caches, refetches and suspends."
+        },
+        {
+          "title": "Styled from the first render",
+          "text": "Tailwind and the theme tokens, with light and dark mode and no flash."
+        },
+        {
+          "title": "A passing test",
+          "text": "`test/home.test.tsx` renders the home page with `renderWithKitr`."
+        }
+      ],
+      "example": "examples/app",
+      "entry": "app/pages/home.tsx",
+      "run": [
+        [
+          "kitr dev",
+          "The app in the browser, with hot reload"
+        ],
+        [
+          "kitr build",
+          "A single-page build in `dist/site`"
+        ],
+        [
+          "npm test",
+          "Vitest, starting with the home page test"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +55,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-app"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/app",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

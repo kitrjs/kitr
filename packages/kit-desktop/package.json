@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Teams shipping a desktop app for Windows, macOS and Linux who want it to look the same on every machine.",
+      "highlights": [
+        {
+          "title": "The dashboard in Electron",
+          "text": "The same app runs in a window and, with `kitr dev site`, in a browser."
+        },
+        {
+          "title": "A typed IPC contract",
+          "text": "`app/ipc.ts` declares what the app may ask the main process, and both sides are type-checked."
+        },
+        {
+          "title": "Native dialogs and the OS",
+          "text": "The home page opens a file dialog, keeps a secret in the OS vault and sends a notification."
+        },
+        {
+          "title": "Ready to package",
+          "text": "`platforms/app/` holds the Electron main process and the electron-builder config."
+        }
+      ],
+      "example": "examples/desktop",
+      "entry": "app/ipc.ts",
+      "run": [
+        [
+          "kitr dev app",
+          "The Electron window, with hot reload"
+        ],
+        [
+          "kitr dev site",
+          "The same app in a browser"
+        ],
+        [
+          "kitr build app",
+          "Installers for your operating system"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-desktop"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/desktop",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "sideEffects": false,
   "exports": {

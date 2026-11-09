@@ -172,9 +172,49 @@ A platform package (`"kind": "platform"`) adds a `platform` object to the block.
 | `run` | `[command, what][]` | The commands that run it, each with one line on what it does. |
 | `resources` | `{ title, url, text }[]` | Upstream docs, each with an `https://` URL and one line on why to read it. |
 
-`kitr package:check` rejects a `platform` object on any other kind of package, and names each field that is missing or malformed. `kitr catalog --json` prints every official package, kit and platform with its whole block, so a site's build step can read them without opening `node_modules`. `KitrCatalog`, `KitrManifest` and `KitrPlatformInfo` from `@kitr/cli` type that output.
+`kitr package:check` rejects a `platform` object on any other kind of package, and names each field that is missing or malformed. `kitr catalog --json` prints every official package, kit and platform with its whole block, so a site's build step can read them without opening `node_modules`. `KitrCatalog`, `KitrManifest`, `KitrPlatformInfo` and `KitrKitInfo` from `@kitr/cli` type that output.
 
 The `platform` object in the static block is prose. The `platform` field of `definePackage()` in the setup module is code: the factory `kitrrc.ts` calls.
+
+### What a kit says about itself
+
+A kit package (`"kind": "kit"`) adds a `kit` object to the block. It is the text kitr.dev shows on `/kits/<name>`, next to the files the kit writes:
+
+```json
+{
+  "name": "@acme/kit-till",
+  "kitr": {
+    "name": "till",
+    "title": "Till kit",
+    "summary": "Start a point-of-sale app with payments and a receipt printer.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Shops that sell at a counter and want their own till.",
+      "highlights": [
+        { "title": "Takes payments", "text": "A card reader through `@acme/payments`." }
+      ],
+      "example": "examples/till",
+      "entry": "app/pages/till.tsx",
+      "run": [["kitr dev", "The till in the browser"]]
+    }
+  }
+}
+```
+
+| Field | Type | What it holds |
+| --- | --- | --- |
+| `audience` | string | Who should start from it, in one sentence. |
+| `highlights` | `{ title, text }[]` | Three to five things the new project does; `text` is markdown. |
+| `base` | string, optional | For a preset, the kit it adds a working app to: `fullstack` for `saas`. |
+| `example` | string, optional | Where the kit's unmodified output lives in the package's repository: `examples/app`. |
+| `entry` | string, optional | The file to read first, from the project root: `app/pages/home.tsx`. |
+| `run` | `[command, what][]` | The commands to run once the project is written, each with one line on what it does. |
+
+`kitr package:check` rejects a `kit` object on any other kind of package. The `kit` object in the static block is prose; the `kit` field of `definePackage()` in the setup module is what `kitr new` runs.
 
 ## How `kitr add` resolves a name
 

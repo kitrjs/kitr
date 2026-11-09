@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "app",
+      "audience": "Projects that need a docs site written in markdown, fast to load and easy for coding agents to read.",
+      "highlights": [
+        {
+          "title": "Write markdown, get pages",
+          "text": "Each file in `content/docs/` is a page, ordered by `nav.json`."
+        },
+        {
+          "title": "Search and dark mode",
+          "text": "Cmd+K searches every page, and the theme follows the system or the toggle."
+        },
+        {
+          "title": "Static and fast",
+          "text": "Every page is prerendered to HTML, with no server to run."
+        },
+        {
+          "title": "Agents can read it",
+          "text": "The build writes `llms.txt`, `llms-full.txt` and a `.md` copy of every page."
+        }
+      ],
+      "example": "examples/docs",
+      "entry": "content/docs/getting-started.md",
+      "run": [
+        [
+          "kitr dev",
+          "The docs site, reloading as you edit markdown"
+        ],
+        [
+          "kitr build",
+          "Every page as static HTML"
+        ],
+        [
+          "npm test",
+          "Vitest, rendering a page with its sidebar"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-docs"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/docs",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "publishConfig": {
     "access": "public"

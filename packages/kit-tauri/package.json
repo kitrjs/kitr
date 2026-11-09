@@ -9,7 +9,45 @@
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "kit": {
+      "base": "dashboard",
+      "audience": "Teams shipping a desktop app where download size matters more than identical rendering everywhere.",
+      "highlights": [
+        {
+          "title": "The dashboard in Tauri",
+          "text": "A small native app that uses the system webview."
+        },
+        {
+          "title": "Typed Rust commands",
+          "text": "`app/commands.ts` calls the commands in `src-tauri/src/lib.rs`, with types on both sides."
+        },
+        {
+          "title": "Events from Rust",
+          "text": "Rust emits events with `app.emit`, and the page listens with `useTauriEvent`."
+        },
+        {
+          "title": "A Rust project to grow",
+          "text": "`platforms/app/src-tauri/` is a normal Cargo project with its capabilities file."
+        }
+      ],
+      "example": "examples/tauri",
+      "entry": "app/commands.ts",
+      "run": [
+        [
+          "kitr dev app",
+          "The Tauri window, with hot reload"
+        ],
+        [
+          "kitr dev site",
+          "The same app in a browser"
+        ],
+        [
+          "kitr build app",
+          "A native bundle; needs Rust installed"
+        ]
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",
@@ -18,7 +56,7 @@
     "url": "git+https://github.com/kitrjs/kitr.git",
     "directory": "packages/kit-tauri"
   },
-  "homepage": "https://kitr.dev/docs/cli",
+  "homepage": "https://kitr.dev/kits/tauri",
   "bugs": "https://github.com/kitrjs/kitr/issues",
   "sideEffects": false,
   "exports": {
