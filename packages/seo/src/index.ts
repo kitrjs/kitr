@@ -50,13 +50,13 @@ export const defineConfig = createDefineConfig<SeoConfig>()
 
 /** What one page passes to `seo()`. Every field is optional; `site` supplies the defaults. */
 export interface SeoInput {
-  /** The page title, without the site name. */
+  /** The page title, without the site name. Default: `title` from the route's loader data. */
   title?: string
-  /** The page summary for search results and share cards. */
+  /** The page summary for search results and share cards. Default: `description` from the route's loader data. */
   description?: string
   /** Share image for this page; replaces `site.image`. Use an absolute URL. */
   image?: string
-  /** The page's canonical URL; falls back to `site.url`, so pass it on every page. */
+  /** The page's canonical URL. Default: `site.url` plus the matched path from the `head` argument, else `site.url`. */
   url?: string
   /** `og:type`. Default `website`. */
   type?: 'website' | 'article' | 'product'
@@ -92,22 +92,52 @@ function appOf(context: SeoContext | undefined): KitrApp | undefined {
   return candidates(context).find(isApp)
 }
 
+/** The matched path from a `head` argument (`match.pathname`), or a `location`'s. */
+function pathOf(context: SeoContext | undefined): string | undefined {
+  const v = context as
+    | { match?: { pathname?: unknown }; location?: { pathname?: unknown } }
+    | undefined
+  const path = v?.match?.pathname ?? v?.location?.pathname
+  return typeof path === 'string' && path.startsWith('/') ? path : undefined
+}
+
+/** `title` and `description` from a `head` argument's `loaderData`, when the loader returned them. */
+function fromLoader(context: SeoContext | undefined): Pick<SeoInput, 'title' | 'description'> {
+  const data = (context as { loaderData?: unknown } | undefined)?.loaderData as
+    | { title?: unknown; description?: unknown }
+    | undefined
+  if (!data || typeof data !== 'object') return {}
+  return {
+    ...(typeof data.title === 'string' ? { title: data.title } : {}),
+    ...(typeof data.description === 'string' ? { description: data.description } : {}),
+  }
+}
+
 /**
  * Meta tags for a route's `head()`: `head: (ctx) => seo({ title, description }, ctx)`.
  * Covers title, description, Open Graph, Twitter cards, canonical and robots. Pass the `head`
  * argument (or the app) as the second argument so the site name, image and origin from
- * `config/seo.ts` apply; without it only `input.site` does.
+ * `config/seo.ts` apply; without it only `input.site` does. From the `head` argument it also
+ * takes the canonical URL (`site.url` plus the matched path) and, when the loader returned
+ * them, `title` and `description`: `head: (ctx) => seo({}, ctx)`.
  */
 export function seo(input: SeoInput, context?: SeoContext) {
   const configured = appOf(context)?.config.get('seo', {}) as SeoConfig | undefined
   const site = input.site ?? configured?.site ?? {}
+  const loaded = fromLoader(context)
+  input = {
+    ...input,
+    title: input.title ?? loaded.title,
+    description: input.description ?? loaded.description,
+  }
   const title = input.title
     ? site.name && input.title !== site.name
       ? `${input.title} · ${site.name}`
       : input.title
     : site.name
   const image = input.image ?? site.image
-  const url = input.url ?? site.url
+  const path = pathOf(context)
+  const url = input.url ?? (site.url && path ? `${site.url.replace(/\/+$/, '')}${path}` : site.url)
   const meta: Array<Record<string, string>> = []
   if (title)
     meta.push(
