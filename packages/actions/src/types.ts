@@ -19,9 +19,11 @@ export interface FoundOperation {
 
 const NAME = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/
 
-type Ts = typeof import('typescript')
-type Node = import('typescript').Node
-type Symbol = import('typescript').Symbol
+// Typed against the TypeScript 6 API package: `typescript` 7 (the native compiler) ships no compiler
+// API, so its types have no `Node` or `createProgram`. At run time a `typescript` 5 or 6 is used as is.
+type Ts = typeof import('@typescript/typescript6')
+type Node = import('@typescript/typescript6').Node
+type Symbol = import('@typescript/typescript6').Symbol
 
 const KINDS = { defineQuery: 'query', defineMutation: 'mutation' } as const
 
@@ -48,7 +50,7 @@ export async function scanActions(
   sources: Array<{ file: string; source: string }>,
   options: ScanOptions = {},
 ): Promise<FoundOperation[]> {
-  const ts: Ts = await import('typescript').then((m) => (m as { default?: Ts }).default ?? m)
+  const ts = await loadTypeScript()
   const root = (options.root ?? '').replace(/\\/g, '/').replace(/\/$/, '')
   const abs = (file: string) => `${root}/${file}`
   const virtual = new Map(sources.map(({ file, source }) => [abs(file), source]))
@@ -102,7 +104,7 @@ export async function scanActions(
   }
 
   /** `k.defineQuery(...)` where `k` is `import * as k from '@kitr/actions'` that did not resolve (not installed yet). */
-  const namespaceKind = (call: import('typescript').CallExpression) => {
+  const namespaceKind = (call: import('@typescript/typescript6').CallExpression) => {
     const { expression } = call
     if (!ts.isPropertyAccessExpression(expression) || !ts.isIdentifier(expression.expression))
       return undefined
@@ -115,7 +117,7 @@ export async function scanActions(
   }
 
   /** `defineQuery` or `defineMutation` from @kitr/actions, whatever it was imported as; undefined for any other call. */
-  const defineKind = (call: import('typescript').CallExpression) => {
+  const defineKind = (call: import('@typescript/typescript6').CallExpression) => {
     const callee = ts.isPropertyAccessExpression(call.expression)
       ? call.expression.name
       : call.expression
@@ -138,7 +140,9 @@ export async function scanActions(
       : undefined
   }
 
-  const unwrap = (expression: import('typescript').Expression): import('typescript').Expression =>
+  const unwrap = (
+    expression: import('@typescript/typescript6').Expression,
+  ): import('@typescript/typescript6').Expression =>
     ts.isParenthesizedExpression(expression) ||
     ts.isAsExpression(expression) ||
     ts.isSatisfiesExpression(expression) ||
@@ -174,8 +178,31 @@ export async function scanActions(
   return out
 }
 
+const compilerApi = (m: unknown) => {
+  const ts = ((m as { default?: Ts }).default ?? m) as Ts | undefined
+  return typeof ts?.createProgram === 'function' ? ts : undefined
+}
+
+/**
+ * The TypeScript compiler API: the project's `typescript` when it still ships one (5.x, 6.x), else
+ * `@typescript/typescript6`, the 6.x API Microsoft publishes for tools on TypeScript 7, whose
+ * `typescript` package is the native compiler and exports only its version.
+ */
+async function loadTypeScript(): Promise<Ts> {
+  const ts =
+    (await import('typescript').then(compilerApi, () => undefined)) ??
+    (await import('@typescript/typescript6').then(compilerApi, () => undefined))
+  if (ts) return ts
+  throw new Error(
+    '[@kitr/actions] finding actions needs the TypeScript compiler API, which TypeScript 7 no longer ships: install @typescript/typescript6 as a dev dependency',
+  )
+}
+
 /** The project's compiler options (path aliases, JSX, module resolution), trimmed for a read-only walk. */
-function readCompilerOptions(ts: Ts, root: string): import('typescript').CompilerOptions {
+function readCompilerOptions(
+  ts: Ts,
+  root: string,
+): import('@typescript/typescript6').CompilerOptions {
   const configPath = ts.findConfigFile(root, ts.sys.fileExists)
   const config = configPath ? ts.readConfigFile(configPath, ts.sys.readFile) : undefined
   const parsed =
