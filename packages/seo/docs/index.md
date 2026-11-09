@@ -399,7 +399,7 @@ kitr build site
 
 ## Generate a sitemap
 
-Set `site.url` to a string literal, as in the config above, and the build turns on [TanStack Start's sitemap](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering) with that host. It writes `sitemap.xml` from the pages it prerenders, so prerender (or crawl to) every page you want listed. `robotsTxt()` points crawlers at `<site.url>/sitemap.xml`.
+Set `site.url` to a string literal, as in the config above, and the build turns on [TanStack Start's sitemap](https://tanstack.com/start/latest/docs/framework/react/guide/static-prerendering) with that host. It writes `sitemap.xml` from the pages it prerenders, so prerender (or crawl to) every page you want listed. A page with `noIndex: true` (any `<meta name="robots">` that says `noindex`) and a crawled file that is not HTML, such as a `/docs/page.md` copy or `llms.txt`, are written but left out of the sitemap. `robotsTxt()` points crawlers at `<site.url>/sitemap.xml`.
 
 > [!WARNING] Quoted string only
 > `url: process.env.SITE_URL` does not turn the sitemap on: the build matches the source text.

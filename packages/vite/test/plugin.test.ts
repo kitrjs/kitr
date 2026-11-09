@@ -391,6 +391,25 @@ describe('prerender failures', () => {
     '/llms-full.txt': null,
   }
 
+  it('lists only indexable HTML pages in the sitemap', () => {
+    const guard = prerenderGuard({ routes: ['/'] })
+    const pages = crawl(guard, {
+      '/': '<a href="/docs/a">A</a> <a href="/docs/a.md">View as markdown</a>',
+      '/docs/a': '<html><head><title>A</title></head><body>A</body></html>',
+      '/docs/a.md': '# A',
+      '/llms.txt': '# kitr',
+      '/feed.json': '{}',
+      '/404': '<meta name="robots" content="noindex" />',
+      '/draft': '<meta content="noindex, nofollow" name="robots">',
+      '/about.html': '<meta name="robots" content="index, follow">',
+    })
+    expect(pages.filter((p) => !p.sitemap?.exclude).map((p) => p.path)).toEqual([
+      '/',
+      '/docs/a',
+      '/about.html',
+    ])
+  })
+
   it('records what failed and who linked to it, and keeps it out of the sitemap', () => {
     const guard = prerenderGuard({ routes: ['/'] })
     const pages = crawl(guard, site)
