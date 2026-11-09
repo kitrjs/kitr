@@ -16,6 +16,7 @@ import {
   createRootRouteWithContext,
   createRoute,
   type ErrorRouteComponent,
+  lazyRouteComponent,
   type NotFoundRouteComponent,
   Outlet,
   type Register,
@@ -138,6 +139,35 @@ export interface PageModule {
   notFoundComponent?: NotFoundRouteComponent
 }
 
+/**
+ * A component, or `{ lazy: () => import('./pages/not-found') }` to load it the first time it renders.
+ * The module's default export is the component.
+ */
+export type LazyComponent<C> = C | { lazy: () => Promise<{ default: C }> }
+
+/** The root's fallback components, each a component or `{ lazy }`, the way `.page()` takes `lazy`. */
+export interface RootComponentOptions {
+  /** Rendered when no page matches the path, and for `notFound()` thrown without a closer handler. */
+  notFoundComponent?: LazyComponent<NotFoundRouteComponent>
+  /** Rendered when a loader or component throws, unless a page has its own. */
+  errorComponent?: LazyComponent<ErrorRouteComponent> | false | null
+  /** Rendered while a page loads, past the router's `defaultPendingMs`. */
+  pendingComponent?: LazyComponent<RouteComponent>
+}
+
+const ROOT_COMPONENTS = ['notFoundComponent', 'errorComponent', 'pendingComponent'] as const
+
+/** `{ lazy }` root components as TanStack lazy components, which the router preloads before rendering. */
+function rootComponents(options: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...options }
+  for (const key of ROOT_COMPONENTS) {
+    const value = out[key] as { lazy?: () => Promise<{ default: unknown }> } | undefined
+    if (value && typeof value === 'object' && typeof value.lazy === 'function')
+      out[key] = lazyRouteComponent(value.lazy as () => Promise<{ default: RouteComponent }>)
+  }
+  return out
+}
+
 /** `export default definePage({ component: HomePage, pendingComponent: HomeSkeleton })` in a page file. */
 export function definePage(page: PageModule): PageModule {
   return page
@@ -235,6 +265,8 @@ declare module '@kitr/core' {
       /**
        * The root route: the HTML document around every page (`head`, `component`, `beforeLoad`).
        * Once per table, before any page. Without it kitr renders a default document.
+       * `notFoundComponent`, `errorComponent` and `pendingComponent` take a component or
+       * `{ lazy: () => import('./pages/not-found') }`.
        */
       root<
         TSearchValidator = undefined,
@@ -244,18 +276,22 @@ declare module '@kitr/core' {
         TLoaderFn = undefined,
         TSSR = unknown,
       >(
-        options: RootRouteOptions<
-          Register,
-          TSearchValidator,
-          KitrRouterContext,
-          TRouteContextFn,
-          TBeforeLoadFn,
-          TLoaderDeps,
-          TLoaderFn,
-          TSSR,
-          unknown,
-          undefined
-        >,
+        options: Omit<
+          RootRouteOptions<
+            Register,
+            TSearchValidator,
+            KitrRouterContext,
+            TRouteContextFn,
+            TBeforeLoadFn,
+            TLoaderDeps,
+            TLoaderFn,
+            TSSR,
+            unknown,
+            undefined
+          >,
+          keyof RootComponentOptions
+        > &
+          RootComponentOptions,
       ): KitrRouter<
         K & ExtensionKey,
         Omit<R, '~root' | '~parent'> & {
@@ -582,8 +618,8 @@ export function compileTree(entries: RouteEntry[], options: CompileTreeOptions =
   const rootEntry = all.find((e) => e.kind === 'page-root')
   const rootRoute = createRootRouteWithContext<KitrRouterContext>()({
     component: DefaultRootComponent,
-    ...(options.root ?? {}),
-    ...(rootEntry?.options ?? {}),
+    ...rootComponents(options.root ?? {}),
+    ...rootComponents(rootEntry?.options ?? {}),
   } as RootRouteOptions<Register, undefined, KitrRouterContext>)
 
   const byName = new Map<string, AnyRoute>()

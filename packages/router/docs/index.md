@@ -444,6 +444,28 @@ export function getRouter() {
 
 The defaults are exported, so a custom screen can render one inside its own layout: `import { DefaultError } from '@kitr/router'`.
 
+Or set them on the root, where `notFoundComponent`, `errorComponent` and `pendingComponent` take a component or `{ lazy }`, the way `.page()` does. A lazy one loads the first time it shows, so it stays out of the first bundle:
+
+```ts
+// app/routes.ts
+import { defineRoutes } from '@kitr/kitr/app'
+import router from '@kitr/router/routes'
+import { head, RootDocument } from './document'
+
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({
+      head,
+      component: RootDocument,
+      notFoundComponent: { lazy: () => import('./pages/not-found') },
+      errorComponent: { lazy: () => import('./pages/error') },
+    })
+    .page('/', { lazy: () => import('./pages/home') }),
+)
+```
+
+On a `static` web platform, the root's `notFoundComponent` is also what the build writes to `404.html`.
+
 ## Throw errors from loaders
 
 Throw a `KitrError` from a loader and `DefaultError` shows its message as the title, with its code in `data-code`:
@@ -1046,7 +1068,7 @@ export function RootDocument() {
 r.root({ head, component: RootDocument })
 ```
 
-`.root` takes TanStack's root route options (`head`, `component`, `beforeLoad`, `loader`, `errorComponent`) and may be called once per table, before any page. Without it, kitr renders a default document.
+`.root` takes TanStack's root route options (`head`, `component`, `beforeLoad`, `loader`, `errorComponent`) and may be called once per table, before any page. Its `notFoundComponent`, `errorComponent` and `pendingComponent` also take `{ lazy: () => import(...) }`. Without it, kitr renders a default document.
 
 On the web platform, [`mode`](/docs/platforms) decides what happens with the document: `ssr` streams it on every request, `static` prerenders it at build time, and `spa` ships one browser shell. Write the document once; don't branch on the platform inside it.
 

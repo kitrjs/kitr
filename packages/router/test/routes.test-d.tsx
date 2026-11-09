@@ -57,6 +57,21 @@ describe('pages extension types', () => {
     expectTypeOf<Dashboard['fullPath']>().toEqualTypeOf<'/dashboard'>()
   })
 
+  it('takes a component or { lazy } for the root fallbacks', () => {
+    defineRoutes([pages], (r) =>
+      r.root({
+        component: Page,
+        notFoundComponent: { lazy: () => import('./fixtures/not-found') },
+        errorComponent: Page,
+        pendingComponent: { lazy: () => import('./fixtures/page') },
+      }),
+    )
+    defineRoutes([pages], (r) =>
+      // @ts-expect-error lazy must load a module with a default export
+      r.root({ notFoundComponent: { lazy: () => Promise.resolve({ NotFound: Page }) } }),
+    )
+  })
+
   it('rejects kitr options that are not known', () => {
     defineRoutes([pages], (r) =>
       // @ts-expect-error presentation is one of the four modes
