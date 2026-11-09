@@ -1,5 +1,12 @@
 # @kitr/kit-fullstack
 
+## 0.7.0
+
+### Patch Changes
+
+- ff8f972: A kit's `kitr` block can carry a `kit` object: who the kit is for, three to five highlights, the preset's base kit, where its example output lives, the file to read first and the commands to run. `kitr package:check` validates it and `KitrKitInfo` types it. Every official kit now describes itself this way, and its homepage is its page on kitr.dev/kits.
+- @kitr/core@0.7.0
+
 ## 0.6.0
 
 ### Patch Changes

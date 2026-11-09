@@ -1,6 +1,6 @@
 {
   "name": "@kitr/http",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "@kitr/http: ky re-exported, plus a client with auth, refresh and kitr error normalisation.",
   "kitr": {
     "name": "http",

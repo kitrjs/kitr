@@ -1,5 +1,13 @@
 # @kitr/realtime
 
+## 0.7.0
+
+### Patch Changes
+
+- @kitr/core@0.7.0
+  - @kitr/query@0.7.0
+  - @kitr/server@0.7.0
+
 ## 0.6.0
 
 ### Patch Changes

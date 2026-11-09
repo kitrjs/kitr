@@ -1,5 +1,13 @@
 # @kitr/native
 
+## 0.7.0
+
+### Patch Changes
+
+- @kitr/core@0.7.0
+  - @kitr/platform@0.7.0
+  - @kitr/react@0.7.0
+
 ## 0.6.0
 
 ### Patch Changes

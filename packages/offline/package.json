@@ -1,6 +1,6 @@
 {
   "name": "@kitr/offline",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "@kitr/offline: persists the TanStack Query cache, pauses mutations while offline and replays them when the network returns.",
   "keywords": [
     "kitr",

@@ -1,5 +1,16 @@
 # @kitr/cli
 
+## 0.7.0
+
+### Minor Changes
+
+- ff8f972: A kit's `kitr` block can carry a `kit` object: who the kit is for, three to five highlights, the preset's base kit, where its example output lives, the file to read first and the commands to run. `kitr package:check` validates it and `KitrKitInfo` types it. Every official kit now describes itself this way, and its homepage is its page on kitr.dev/kits.
+
+### Patch Changes
+
+- 342a4a7: Hardening from a CodeQL pass. `@kitr/mail` parses recipients and builds the text body by scanning instead of backtracking regexes, so long or malformed input no longer stalls a send, and `htmlToText` now drops `<SCRIPT>` and `</script >` too. `kitr add` refuses a package name that is not a plain npm name before running the installer. Frontmatter, `seo` canonical URLs and the prerender link crawl no longer use regexes that slow down on long input. The generated `capacitor.config.ts` escapes backslashes in the app name.
+- @kitr/core@0.7.0
+
 ## 0.6.0
 
 ### Patch Changes

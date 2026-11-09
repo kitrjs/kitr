@@ -1,6 +1,6 @@
 {
   "name": "@kitr/query",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "@kitr/query: TanStack Query re-exported, plus the data contract, subscriptions and cache effects.",
   "kitr": {
     "name": "query",

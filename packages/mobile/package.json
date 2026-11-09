@@ -1,6 +1,6 @@
 {
   "name": "@kitr/mobile",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "@kitr/mobile: the iOS and Android platform on Capacitor. Native projects in platforms/<name>/, drivers for storage and device capabilities, lifecycle hooks.",
   "kitr": {
     "name": "mobile",

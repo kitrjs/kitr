@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kitr",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "kitr: the CLI and the kitrrc.ts config for apps built from @kitr/* packages. Each package is installed with `kitr add <name>` and imported from `@kitr/<name>`.",
   "type": "module",
   "license": "MIT",
