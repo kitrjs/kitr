@@ -1,6 +1,6 @@
 import { FieldInput, Form, FormField, SubmitButton, useRootError, useSchemaForm } from '@kitr/forms'
 import { useState } from 'react'
-import { z } from 'zod'
+import { type NewInvoiceValues, newInvoiceSchema } from './new-invoice/app/validators/new-invoice'
 
 export const meta = {
   title: 'A form checked by its schema',
@@ -8,13 +8,6 @@ export const meta = {
     'Leave a field empty to see its error. Submit to get typed values, with the amount as a number.',
   storage: false,
 }
-
-const newInvoiceSchema = z.object({
-  customerEmail: z.email('Enter the customer’s email'),
-  amount: z.coerce.number().positive('Amount must be more than zero'),
-})
-
-type NewInvoice = z.output<typeof newInvoiceSchema>
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -27,7 +20,7 @@ const list =
   'm-0 list-none rounded-[10px] border border-border p-0 empty:hidden [&>li]:flex [&>li]:justify-between [&>li]:border-b [&>li]:border-border [&>li]:px-3 [&>li]:py-2 [&>li:last-child]:border-b-0'
 
 export default function NewInvoice() {
-  const [created, setCreated] = useState<NewInvoice[]>([])
+  const [created, setCreated] = useState<NewInvoiceValues[]>([])
   const form = useSchemaForm(newInvoiceSchema, {
     defaultValues: { customerEmail: '', amount: '' },
   })

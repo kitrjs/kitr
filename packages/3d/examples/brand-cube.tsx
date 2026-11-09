@@ -1,6 +1,6 @@
-import { Scene, useFrame, useThemeColor } from '@kitr/3d'
-import { useRef, useState } from 'react'
-import type { Mesh } from 'three'
+import { Scene } from '@kitr/3d'
+import { useState } from 'react'
+import { Cube } from './brand-cube/app/components/cube'
 
 export const meta = {
   title: 'A cube in the theme colour',
@@ -11,20 +11,6 @@ export const meta = {
 // Tailwind utilities on the kitr tokens, so the example looks the same in any kitr app.
 const button =
   'min-h-[38px] cursor-pointer rounded-lg border px-3.5 font-semibold disabled:cursor-default disabled:opacity-50 border-border bg-background text-foreground'
-
-function Cube({ speed }: { speed: number }) {
-  const ref = useRef<Mesh>(null)
-  const primary = useThemeColor('--blue', '#2d6cf0')
-  useFrame((_, delta) => {
-    if (ref.current) ref.current.rotation.y += delta * speed
-  })
-  return (
-    <mesh ref={ref} rotation={[0.4, 0, 0]}>
-      <boxGeometry args={[1.4, 1.4, 1.4]} />
-      <meshStandardMaterial color={primary} />
-    </mesh>
-  )
-}
 
 export default function BrandCube() {
   const [speed, setSpeed] = useState(0.6)

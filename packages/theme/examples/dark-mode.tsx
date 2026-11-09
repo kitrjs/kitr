@@ -27,7 +27,7 @@ function Picker() {
             {t}
           </button>
         ))}
-        <button type="button" className={button} onClick={toggle}>
+        <button type="button" className={button} onClick={() => toggle()}>
           Toggle
         </button>
       </div>

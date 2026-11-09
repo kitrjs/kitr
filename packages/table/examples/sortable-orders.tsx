@@ -3,12 +3,10 @@ import {
   type ColumnDef,
   clientTableFeatures,
   flexRender,
-  parseTableSearch,
-  type TableSearch,
   useTable,
   useUrlTableState,
 } from '@kitr/table'
-import { useCallback, useState } from 'react'
+import { useLocationSearch } from './sortable-orders/app/hooks/use-location-search'
 
 export const meta = {
   title: 'A sort that lives in the URL',
@@ -42,31 +40,8 @@ const columns: ColumnDef<ClientTableFeatures, Order>[] = [
   { accessorKey: 'status', header: 'Status', enableSorting: false },
 ]
 
-/**
- * This page's search params, read once and written with replaceState. In an app, pass the route's
- * `Route.useSearch()` and a `navigate({ search })` instead.
- */
-
 // Tailwind utilities on the kitr tokens, so the example looks the same in any kitr app.
 const link = 'cursor-pointer border-0 bg-transparent p-0 text-primary'
-
-function useLocationSearch() {
-  const [search, setState] = useState<TableSearch>(() =>
-    parseTableSearch(Object.fromEntries(new URLSearchParams(window.location.search))),
-  )
-  const setSearch = useCallback((patch: Partial<TableSearch>) => {
-    setState((current) => {
-      const next = { ...current, ...patch }
-      const params = new URLSearchParams()
-      if (next.sort) params.set('sort', next.sort)
-      if (next.page) params.set('page', String(next.page))
-      const query = params.toString()
-      window.history.replaceState(null, '', query ? `?${query}` : window.location.pathname)
-      return next
-    })
-  }, [])
-  return { search, setSearch }
-}
 
 export default function SortableOrders() {
   const { search, setSearch } = useLocationSearch()

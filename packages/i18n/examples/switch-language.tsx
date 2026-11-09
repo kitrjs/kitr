@@ -1,4 +1,7 @@
 import { createI18n, I18nextProvider, useTranslation } from '@kitr/i18n'
+import de from './switch-language/app/locales/de'
+import en from './switch-language/app/locales/en'
+import fr from './switch-language/app/locales/fr'
 
 export const meta = {
   title: 'One component, three languages',
@@ -6,39 +9,7 @@ export const meta = {
   storage: false,
 }
 
-const i18n = createI18n(
-  {
-    defaultLocale: 'en',
-    detect: false,
-    resources: {
-      en: {
-        common: {
-          hello: 'Hello, {{name}}',
-          orders: 'You have {{count}} open order',
-          orders_other: 'You have {{count}} open orders',
-          save: 'Save',
-        },
-      },
-      de: {
-        common: {
-          hello: 'Hallo, {{name}}',
-          orders: 'Du hast {{count}} offene Bestellung',
-          orders_other: 'Du hast {{count}} offene Bestellungen',
-          save: 'Speichern',
-        },
-      },
-      fr: {
-        common: {
-          hello: 'Bonjour, {{name}}',
-          orders: 'Vous avez {{count}} commande ouverte',
-          orders_other: 'Vous avez {{count}} commandes ouvertes',
-          save: 'Enregistrer',
-        },
-      },
-    },
-  },
-  'en',
-)
+const i18n = createI18n({ defaultLocale: 'en', detect: false, resources: { en, de, fr } }, 'en')
 
 // Tailwind utilities on the kitr tokens, so the example looks the same in any kitr app.
 const button =

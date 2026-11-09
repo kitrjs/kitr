@@ -1,14 +1,11 @@
-import { defineStorage } from '@kitr/storage'
 import { useStorage } from '@kitr/storage/react'
+import { recent, sidebar } from './sidebar-toggle/app/storage'
 
 export const meta = {
   title: 'A preference that survives a reload',
   description:
     'Collapse the sidebar and press Reload. The setting is saved to localStorage with a version.',
 }
-
-const sidebar = defineStorage('sidebar', { default: { collapsed: false }, version: 1 })
-const recent = defineStorage<string[]>('recent-searches', { default: [], ttl: 60_000 })
 
 const searches = ['invoices due', 'ada', 'refunds', 'ord_1042']
 

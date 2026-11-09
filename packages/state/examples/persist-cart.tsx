@@ -1,24 +1,10 @@
-import { createKitrStore } from '@kitr/state'
 import { useState } from 'react'
+import { useCart } from './persist-cart/app/stores/cart'
 
 export const meta = {
   title: 'A cart that survives a reload',
   description: 'Add items, then press Reload. The cart comes back from localStorage.',
 }
-
-interface CartState {
-  items: string[]
-  add: (item: string) => void
-  remove: (index: number) => void
-  clear: () => void
-}
-
-const [useCart] = createKitrStore<CartState>({ name: 'cart', persist: true }, (set) => ({
-  items: [],
-  add: (item) => set((s) => ({ items: [...s.items, item] })),
-  remove: (index) => set((s) => ({ items: s.items.filter((_, i) => i !== index) })),
-  clear: () => set({ items: [] }),
-}))
 
 const fruit = ['Apple', 'Banana', 'Cherry', 'Mango', 'Pear']
 

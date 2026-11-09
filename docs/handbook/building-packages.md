@@ -103,7 +103,7 @@ export default function Example() {
 
 Anything an example stores in the browser is namespaced to it, so examples never see each other's data.
 
-The panel shows the example file without its `meta`, then every file it imports with a relative path. Put files that several examples share in a subfolder (`examples/shared/invoices.tsx`): every file directly in `examples/` is an example of its own.
+The panel shows the example file without its `meta`, then every file it imports with a relative path. Split an example the way an app would be: its own files go in a folder named after it, laid out as in a kitr project, and the panel's tabs drop the folder name (`examples/checkout/config/stripe.ts` shows as `config/stripe.ts`). Files that several examples share go in `examples/shared/`. Every file directly in `examples/` is an example of its own.
 
 Style an example with Tailwind utilities on the kitr tokens (`bg-primary`, `text-muted-foreground`, `border-border`), not class names of your own: the site compiles the examples' classes, and the example looks the same in any kitr app that has [tailwind](/packages/tailwind). Keep repeated strings in a constant at the top of the file:
 
