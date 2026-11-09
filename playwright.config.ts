@@ -15,6 +15,7 @@ import { defineConfig, devices } from '@playwright/test'
  *   kit-site        the site kit (prerendered pages, a cookie locale) behind `kitr start site`
  *   kit-realtime    the realtime kit, two browser pages chatting over its WebSocket channel
  *   kit-realtime-sse  the same kit switched to Server-Sent Events (fixtures/realtime/variant-sse.mjs)
+ *   kit-docs        the docs kit (static pages from markdown, search, llms.txt) behind `kitr start site`
  */
 const root = fileURLToPath(new URL('.', import.meta.url))
 const apps = join(tmpdir(), 'kitr-e2e-apps')
@@ -27,6 +28,7 @@ const ports = {
   kitSite: 4415,
   kitRealtime: 4416,
   kitRealtimeSse: 4417,
+  kitDocs: 4418,
 }
 
 export default defineConfig({
@@ -84,6 +86,11 @@ export default defineConfig({
       testMatch: 'kit-realtime.spec.ts',
       use: { baseURL: `http://127.0.0.1:${ports.kitRealtimeSse}` },
     },
+    {
+      name: 'kit-docs',
+      testMatch: 'kit-docs.spec.ts',
+      use: { baseURL: `http://127.0.0.1:${ports.kitDocs}` },
+    },
   ],
   webServer: [
     {
@@ -132,6 +139,12 @@ export default defineConfig({
       command: `node tests/e2e/prepare.mjs realtime kit-realtime-sse --build --variant sse && cd ${apps}/kit-realtime-sse && ${kitr} start site --host 127.0.0.1 --port ${ports.kitRealtimeSse}`,
       url: `http://127.0.0.1:${ports.kitRealtimeSse}/api/health`,
       timeout: 300_000,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `node tests/e2e/prepare.mjs docs kit-docs --build && cd ${apps}/kit-docs && ${kitr} start site --host 127.0.0.1 --port ${ports.kitDocs}`,
+      url: `http://127.0.0.1:${ports.kitDocs}/docs`,
+      timeout: 240_000,
       reuseExistingServer: !process.env.CI,
     },
   ],

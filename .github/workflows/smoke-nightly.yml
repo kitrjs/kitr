@@ -2,7 +2,7 @@ name: Registry smoke (nightly)
 
 # Every night: main published to a throwaway Verdaccio and installed the way users install, through
 # the published `kitr` bin, for every newcomer kit with both package managers: {app, site,
-# fullstack, dashboard} x {npm, pnpm}. Each project must come up with a clean `kitr doctor`, take
+# fullstack, dashboard, docs} x {npm, pnpm}. Each project must come up with a clean `kitr doctor`, take
 # `kitr make:page 'docs/$slug'` and `kitr ui add button`, then typecheck and build. Pull requests
 # run a few cells of the same script in ci.yml (`registry-smoke`); this run covers the rest, plus
 # `kitr add` of every package. One registry and one published CLI serve every cell, so the

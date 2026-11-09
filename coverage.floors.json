@@ -30,6 +30,10 @@
       "floor": 31,
       "reason": "behind: kit setup module, exercised by the CLI integration suite (kitr new --kit tauri), not by unit tests"
     },
+    "kit-docs": {
+      "floor": 24,
+      "reason": "behind: kit setup module, exercised by the CLI integration suite and the kit-docs Playwright project"
+    },
     "kit-mobile": {
       "floor": 26,
       "reason": "behind: kit setup module, exercised by the CLI integration suite (kitr new --kit mobile), not by unit tests"
