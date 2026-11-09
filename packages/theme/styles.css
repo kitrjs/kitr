@@ -117,6 +117,14 @@
   html[data-kitr-theme-transition] * {
     view-transition-name: none !important;
   }
+  /* CSS transitions are off too. The new picture is the live page, so a button with
+     `transition: background-color` would otherwise fade from the old theme's colours on its own,
+     after the rest of the page has already changed. */
+  html[data-kitr-theme-transition] *,
+  html[data-kitr-theme-transition] *::before,
+  html[data-kitr-theme-transition] *::after {
+    transition: none !important;
+  }
   html[data-kitr-theme-transition]::view-transition-old(root),
   html[data-kitr-theme-transition]::view-transition-new(root) {
     animation: none;

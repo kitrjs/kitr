@@ -1,7 +1,11 @@
 import type { ReducedMotion } from './config'
 
-/** The look of a page change. `'slide'` pushes pages sideways like a native app; `'fade'` cross-fades. */
-export type PageTransitionStyle = 'slide' | 'fade'
+/**
+ * The look of a page change. `'slide'` pushes pages sideways like a native app; `'rise'` lifts the
+ * old page away and settles the new one in from just below, which reads well on phones where most
+ * of the screen is text; `'fade'` cross-fades.
+ */
+export type PageTransitionStyle = 'slide' | 'rise' | 'fade'
 
 /** Options of `pageTransitions()`. */
 export interface PageTransitionOptions {

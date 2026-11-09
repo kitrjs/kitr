@@ -256,10 +256,12 @@ Props of `<Reveal>`: every `motion.div` prop, plus when and how the content appe
 ### PageTransitionStyle
 
 ```ts
-type PageTransitionStyle = 'slide' | 'fade';
+type PageTransitionStyle = 'slide' | 'rise' | 'fade';
 ```
 
-The look of a page change. `'slide'` pushes pages sideways like a native app; `'fade'` cross-fades.
+The look of a page change. `'slide'` pushes pages sideways like a native app; `'rise'` lifts the
+old page away and settles the new one in from just below, which reads well on phones where most
+of the screen is text; `'fade'` cross-fades.
 
 ### PresetName
 
