@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cliEntry } from '../src/commands'
+import { cliEntry, componentNames } from '../src/commands'
 
 const dirs: string[] = []
 afterEach(() => {
@@ -30,5 +30,16 @@ describe('cliEntry', () => {
   it("prefers the project's own @kitr/kitr, as the bin's hand-off does", () => {
     const root = join(import.meta.dirname, '../../kitr')
     expect(cliEntry(root, undefined)).toBe(expected)
+  })
+})
+
+describe('kitr ui add', () => {
+  it('reads the component names, not the value of a separate --registry', () => {
+    expect(componentNames(['button', '--registry', './registry/dist'])).toEqual(['button'])
+    expect(componentNames(['button', 'card', '--registry=./r', '--no-install'])).toEqual([
+      'button',
+      'card',
+    ])
+    expect(componentNames(['--registry', './r', 'button', 'button'])).toEqual(['button'])
   })
 })
