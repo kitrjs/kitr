@@ -40,7 +40,6 @@ export default defineKitrConfig({
   },
   directories: {
     app: 'app',
-    routes: 'app/routes',
     config: 'config',
     components: 'app/components',
     server: 'server',
