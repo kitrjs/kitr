@@ -64,7 +64,10 @@
   "type": "module",
   "pnpm": {
     "overrides": {
-      "@types/node": "^22.19.0"
+      "@types/node": "^22.19.0",
+      "workbox-build>glob": "^14.0.2",
+      "app-builder-lib>minimatch": "^11.0.5",
+      "@electron/universal>minimatch": "^11.0.5"
     }
   }
 }
