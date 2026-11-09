@@ -9,7 +9,7 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      onClick={(e) => toggle({ from: e.currentTarget })}
+      onClick={toggle}
       aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}
     >
       <Icon icon={resolved === 'dark' ? Sun03Icon : Moon02Icon} size={18} />
