@@ -26,9 +26,25 @@ describe('createKitrStore (server)', () => {
     expect(b).toContain('>0<')
   })
 
-  it('throws a clear error without a provider', () => {
+  it('renders the initial state without a provider, in a fresh store per render', () => {
+    const [useDraft] = createKitrStore({ name: 'draft', persist: false }, (set) => ({
+      lines: 0,
+      add: () => set((s) => ({ lines: s.lines + 1 })),
+    }))
     function View() {
-      useCounter()
+      const draft = useDraft()
+      // A write during one render must not reach the next request.
+      draft.add()
+      return createElement('p', null, draft.lines)
+    }
+    expect(renderToString(createElement(View))).toBe('<p>0</p>')
+    expect(renderToString(createElement(View))).toBe('<p>0</p>')
+  })
+
+  it('throws a clear error without a provider when strict', () => {
+    const [useStrict] = createKitrStore({ name: 'strict', strict: true }, () => ({ count: 0 }))
+    function View() {
+      useStrict()
       return null
     }
     expect(() => renderToString(createElement(View))).toThrow(

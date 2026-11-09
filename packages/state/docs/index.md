@@ -93,13 +93,14 @@ export const [usePreferences, PreferencesProvider, preferencesStore] =
 | `persist.version` | `0` | The saved shape's version. Saved data with another version goes through `migrate`, or is dropped without one. |
 | `persist.migrate` | none | A function `(saved, version) => state` that upgrades old saved data. |
 | `devtools` | `true` | Connects to the Redux DevTools in development; `false` leaves it out. |
+| `strict` | `false` | Throws on the server when a component reads the store outside its `StoreProvider`. |
 
 The second argument is a Zustand state creator: it gets `set`, `get` and the store, and returns the initial state with its actions. `createKitrStore` returns three things, in this order:
 
 | Value | Description |
 | --- | --- |
 | `useStore` | The hook. `useStore(selector)` returns a slice; `useStore()` returns the whole state. |
-| `StoreProvider` | A component that gives its subtree a store. Needed on the server; optional in the browser. Takes `initialState`. |
+| `StoreProvider` | A component that gives its subtree a store. Shares one store per server render; optional in the browser. Takes `initialState`. |
 | `store` | The browser's store instance, for code outside components. `null` on the server. |
 
 
@@ -457,8 +458,13 @@ One server process renders pages for many users, so a module-level store would l
 
 - **In the browser**, the store is one module-level instance, read without a provider.
 - **On the server**, each `<StoreProvider>` creates a fresh store for its render, and storage is never touched.
+- **On the server without a provider**, each component that reads the store gets its own fresh store, built from the initial state and dropped with the render.
 
-If a page renders on the server (`ssr` or `static` mode), wrap the part of the tree that reads the store:
+So a page renders on the server with or without a provider, and no state outlives the request. Without a provider nothing is shared either: a write during the server render reaches only the component that made it. Effects and event handlers run in the browser, where the one store is shared as usual.
+
+### Static and SSR
+
+To share one store across a server render, for example to seed it with `initialState`, wrap the part of the tree that reads it:
 
 ```tsx
 // app/document.tsx
@@ -482,13 +488,13 @@ export function RootDocument() {
 }
 ```
 
-Without a provider, the server render fails with:
+In a client-only app (`spa` mode, desktop, mobile) skip the provider.
+
+To make a missing provider an error instead, pass `strict: true`. The server render then fails with:
 
 ```txt
 [@kitr/state] Store "order-draft" has no instance on the server. Wrap the tree in its <StoreProvider>.
 ```
-
-In a client-only app (`spa` mode, desktop, mobile) skip the provider.
 
 <details>
 <summary>Persisted stores and hydration</summary>

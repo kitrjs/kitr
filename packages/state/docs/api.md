@@ -26,6 +26,7 @@ Creates a store that is a singleton in the browser and per-provider on the serve
 | `name` | `string` | required | Used for devtools and as the storage key `kitr:<name>`. |
 | `persist` | `boolean \| PersistOptions` | `false` | Save to `localStorage`. An object is passed to Zustand's `persist` middleware; its `name` overrides the storage key. |
 | `devtools` | `boolean` | `true` in dev | Connect to Redux DevTools in development. |
+| `strict` | `boolean` | `false` | Throw on the server when the hook runs outside a `StoreProvider`. |
 
 ### Returns
 
@@ -34,12 +35,12 @@ A tuple. Name the parts whatever suits your store.
 | Position | Value | Description |
 | --- | --- | --- |
 | 0 | `useStore()` / `useStore(selector)` | Hook. Without a selector it returns the whole state. |
-| 1 | `StoreProvider` | Component with `children` and optional `initialState: Partial<T>`. Required on the server. |
+| 1 | `StoreProvider` | Component with `children` and optional `initialState: Partial<T>`. Shares one store per server render. |
 | 2 | `store` | The browser's `StoreApi<T>`, or `null` on the server. |
 
 ### Errors
 
-Calling the hook on the server without a surrounding `StoreProvider` throws:
+Without a surrounding `StoreProvider`, the hook on the server reads a fresh store of the component's own, built from the initial state. With `strict: true` it throws instead:
 
 ```
 [@kitr/state] Store "cart" has no instance on the server. Wrap the tree in its <StoreProvider>.
