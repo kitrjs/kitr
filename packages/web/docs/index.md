@@ -240,6 +240,17 @@ export default defineConfig({
 > [!WARNING]
 > Keep `crawlLinks: true` in a `static` platform. The array form, `prerender: ['/pricing']`, turns link crawling off, so only `/` and the listed pages are written.
 
+A page that does not render is reported in one line and left out of the sitemap. A crawled link only warns; a route listed in `routes` (and `/` on a `static` platform) fails the build:
+
+```sh
+kitr build site
+# [prerender] 404 at /llms-full.txt, linked from /docs/agents
+# [prerender] 404 at /changelog
+# error during build: prerender failed for /changelog: routes listed in config/seo.ts must render; crawled links only warn.
+```
+
+Set `prerender: { routes, crawlLinks: true, failOnError: true }` to fail the build on broken crawled links too, for example in CI.
+
 ## Run more than one web platform
 
 One project can hold several web platforms, each with its own port, mode and `dist/<name>` folder:

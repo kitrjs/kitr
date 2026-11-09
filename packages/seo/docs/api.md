@@ -104,10 +104,15 @@ interface SeoConfig {
   site?: SeoSite;
   /** Default rendering for routes that set no `ssr` of their own (the router's `defaultSsr`). `ssrRoute()` overrides it per route. */
   ssr?: boolean | 'data-only';
-  /** Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform prerenders everything. */
+  /**
+   * Routes to prerender at build time; `crawlLinks` follows links from them. A `static` web platform
+   * prerenders everything. A listed route that fails to render fails the build; a crawled link only
+   * warns, unless `failOnError` is `true`.
+   */
   prerender?: string[] | {
     routes: string[];
     crawlLinks?: boolean;
+    failOnError?: boolean;
   };
   /** Rules for `robotsTxt()`, which the build writes to `robots.txt` unless `public/robots.txt` exists. `false` writes none. */
   robots?: false | {

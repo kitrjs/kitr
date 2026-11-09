@@ -88,6 +88,7 @@ export default defineConfig({
 | `prerender` | `[]` | Routes the build renders to HTML files. An array of paths, or `{ routes, crawlLinks }`. |
 | `prerender.routes` | `[]` | The paths to prerender, such as `['/', '/pricing']`. |
 | `prerender.crawlLinks` | `false` | Also prerender every page linked from those routes. |
+| `prerender.failOnError` | `false` | Fail the build when a crawled page fails to render, not only a listed one. |
 | `robots` | `{}` | Rules for the `robots.txt` the build writes (see [Write robots.txt](#write-robotstxt)). `false` writes none. |
 | `robots.allow` | `['/']` | `Allow:` lines. |
 | `robots.disallow` | `[]` | `Disallow:` lines. |
@@ -379,6 +380,13 @@ What the build does with `prerender` in each web mode:
 
 > [!WARNING] No computed lists
 > `prerender: posts.map(...)` is not seen. Write each path as a string, or list a page that links to all of them with `crawlLinks: true`.
+
+A page that fails to render prints one line and stays out of the sitemap. A listed route fails the build; a crawled link only warns, unless `failOnError: true`:
+
+```sh
+kitr build site
+# [prerender] 404 at /blog/draft, linked from /blog
+```
 
 ## Generate a sitemap
 
