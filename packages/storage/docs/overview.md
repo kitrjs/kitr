@@ -18,11 +18,20 @@ Storage items run in the browser and native shells; cookies run on both sides. F
 kitr add storage
 ```
 
-Adds `@kitr/storage`, its provider, `config/storage.ts` and `app/storage.ts` with three sample items. [Every change](/packages/storage/guide#install).
+Adds `@kitr/storage`, its provider, `config/storage.ts` and `app/storage.ts` with the locale cookie. [Every change](/packages/storage/guide#install).
 
 ## Quick start
 
-Declare each value once in `app/storage.ts`, then read and write it like `useState`:
+Declare each value once in `app/storage.ts`, with its default:
+
+```ts
+// app/storage.ts
+import { defineStorage } from '@kitr/storage'
+
+export const sidebar = defineStorage('sidebar', { default: { collapsed: false } })
+```
+
+Then read and write it like `useState`:
 
 ```tsx
 // app/components/sidebar-toggle.tsx

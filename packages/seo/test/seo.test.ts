@@ -109,6 +109,28 @@ describe('seo() reads config/seo.ts from the app', () => {
     })
   })
 
+  it('derives the canonical URL from the matched path, and title and description from the loader', () => {
+    // What TanStack passes to `head`: the match (its pathname and context) and the loader data.
+    const ctx = {
+      match: { pathname: '/docs/agents', context: { app } },
+      loaderData: { title: 'Agents', description: 'Rules for coding agents.', words: 1200 },
+    }
+    const head = seo({}, ctx)
+    expect(head.links).toEqual([{ rel: 'canonical', href: 'https://acme.dev/docs/agents' }])
+    expect(head.meta).toContainEqual({
+      property: 'og:url',
+      content: 'https://acme.dev/docs/agents',
+    })
+    expect(head.meta).toContainEqual({ title: 'Agents · Acme' })
+    expect(head.meta).toContainEqual({ name: 'description', content: 'Rules for coding agents.' })
+    // Options passed to seo() win over both.
+    const own = seo({ title: 'Guide', url: 'https://acme.dev/guide' }, ctx)
+    expect(own.meta).toContainEqual({ title: 'Guide · Acme' })
+    expect(own.links).toEqual([{ rel: 'canonical', href: 'https://acme.dev/guide' }])
+    // `title: ctx.loaderData?.title` with no loader data yet still falls back, and is no error.
+    expect(seo({ title: undefined }, ctx).meta).toContainEqual({ title: 'Agents · Acme' })
+  })
+
   it('keeps each app and request fork to its own site', () => {
     const other = createApp({ config: { seo: { site: { name: 'Other' } } } })
     expect(seo({ title: 'A' }, other).meta).toContainEqual({ title: 'A · Other' })

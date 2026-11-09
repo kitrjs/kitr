@@ -345,6 +345,34 @@ describe('doctor', () => {
       expect(f.fix, f.message).toBeTruthy()
   })
 
+  it('reads ^0.3.1 and 0.3.1 as one kitr version, and warns on two releases', () => {
+    const versions = (deps: Record<string, string>) =>
+      runChecks(
+        createContext({
+          root: project({
+            'package.json': JSON.stringify({ dependencies: deps }),
+            'kitrrc.ts': rc,
+          }),
+        }),
+      )
+        .map((f) => f.message)
+        .filter((m) => m.startsWith('kitr packages are on different versions'))
+    // What a fresh pnpm project has: `kitr new` pins, pnpm saves a caret.
+    expect(versions({ '@kitr/kitr': '0.3.1', '@kitr/query': '^0.3.1' })).toEqual([])
+    expect(versions({ '@kitr/kitr': '0.3.1', '@kitr/query': '^0.3.0' })).toEqual([
+      'kitr packages are on different versions: 0.3.1, 0.3.0',
+    ])
+  })
+
+  it('does not ask to list @kitr/kitr itself in kitrrc.ts', () => {
+    const dir = project({
+      'package.json': JSON.stringify({ dependencies: { '@kitr/kitr': '1' } }),
+      'kitrrc.ts': rc,
+    })
+    const messages = runChecks(createContext({ root: dir })).map((f) => f.message)
+    expect(messages.filter((m) => m.startsWith('@kitr/kitr '))).toEqual([])
+  })
+
   it('checks config/tailwind.ts against the stylesheet it names', () => {
     const base = {
       'package.json': JSON.stringify({ dependencies: { '@kitr/kitr': '1' } }),

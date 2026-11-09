@@ -60,7 +60,9 @@ Generated files have their own checks. If one fails, run the command without `--
 
 ### Registry smoke test
 
-`scripts/verdaccio-smoke.mjs` publishes every package to a throwaway [Verdaccio](https://verdaccio.org), checks that every dependency and peer installs, then runs `kitr new`, `typecheck` and `build` for the `app` and `fullstack` kits. Run it after `pnpm build` and `pnpm -C registry build` with `pnpm smoke:registry`. Options: `--kits app,saas`, `--all-packages`, `--skip-projects`, `--keep`, `--port`.
+`scripts/verdaccio-smoke.mjs` publishes every package to a throwaway [Verdaccio](https://verdaccio.org), checks that every dependency and peer installs, then runs `kitr new` for the `app` and `fullstack` kits through the installed `node_modules/.bin/kitr`, as a global install does. In each new project, `kitr doctor` must report no error or warning, `kitr make:page 'docs/$slug'` must write the page and its route, `kitr ui add button` must copy the component (kits with the theme), and the project must typecheck and build. Run it after `pnpm build` and `pnpm -C registry build` with `pnpm smoke:registry`. Options: `--kits app,saas`, `--pm npm`, `--matrix` (`app`, `site`, `fullstack` and `dashboard`, each with npm and pnpm, on one registry), `--all-packages`, `--skip-projects`, `--keep`, `--port`.
+
+CI runs a few kits on every pull request (`registry-smoke` in `ci.yml`); `.github/workflows/smoke-nightly.yml` runs `--matrix --all-packages` every night on `main`.
 
 ### Upstream versions
 

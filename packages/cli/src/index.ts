@@ -11,7 +11,7 @@ import { build, config, dev, platforms, start } from './commands/platforms'
 import { serve } from './commands/serve'
 import { types } from './commands/types'
 import { upgrade } from './commands/upgrade'
-import { createContext, findProjectRoot, findRcPath, log } from './context'
+import { cliVersion, createContext, findProjectRoot, findRcPath, log } from './context'
 import { installedPackages } from './packages'
 import {
   fanOut,
@@ -108,8 +108,9 @@ const info = defineCommand({
 export const main = defineCommand({
   meta: {
     name: 'kitr',
+    version: cliVersion(),
     description:
-      'kitr: one way to build web, mobile, desktop and backend apps. Every command runs from flags alone, so agents and CI never hit a prompt.',
+      'kitr: one way to build web, mobile, desktop and backend apps. Every command runs from flags alone, so agents and CI never hit a prompt. Inside a project, installed packages add their own commands (kitr ui, kitr make:<kind>), listed here when you run --help there.',
   },
   subCommands: {
     new: newCommand,
@@ -243,8 +244,11 @@ export async function runMain(rawArgv = process.argv.slice(2)) {
       return
     }
   }
-  if (wantsHelp || (argv.length === 1 && argv[0] === '--version'))
-    return cittyRunMain(command, { rawArgs: argv })
+  if (argv.length === 1 && (argv[0] === '--version' || argv[0] === '-v')) {
+    console.log(cliVersion())
+    return
+  }
+  if (wantsHelp) return cittyRunMain(command, { rawArgs: argv })
   try {
     await runCommand(command, { rawArgs: argv })
   } catch (error) {

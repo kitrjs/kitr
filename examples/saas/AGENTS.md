@@ -55,7 +55,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: state
 
-- Client state only. `kitr make:store <name>` writes `app/stores/<name>.ts` using `createKitrStore`. Server data belongs in queries, not stores.
+- Client state only. `kitr make:store <name>` writes `app/stores/<name>.ts` using `createKitrStore`. On the server, wrap the components that use it in its `<NameStoreProvider>` to share one store per render; without it each component renders the initial state. Server data belongs in queries, not stores.
 
 ## kitr: tailwind
 
@@ -112,7 +112,7 @@ This app is built with kitr. Each section below is maintained by `kitr add`.
 
 ## kitr: analytics
 
-- Track from components with `const analytics = useAnalytics<AppEvents>()` (`@kitr/analytics/react`) then `analytics.track('project.created', { id })`; declare new events in `app/analytics.ts` first.
+- Track from components with `const analytics = useAnalytics<AppEvents>()` (`@kitr/analytics/react`) then `analytics.track(name, props)`; declare each event in `AppEvents` in `app/analytics.ts` first.
 - Page views are sent automatically on every route change. `analytics.identify(user.id, traits)` after sign-in, `analytics.reset()` on sign-out.
 - Adapters live in `config/analytics.ts`; never call gtag/posthog directly.
 

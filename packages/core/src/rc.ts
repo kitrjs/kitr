@@ -3,6 +3,34 @@ import type { PlatformInstance } from './platform'
 import type { ProviderInput } from './provider'
 
 /**
+ * What every `kitr generate` step shares, from a package's setup module or from `kitrrc.ts`:
+ * the globs (relative to the project root) whose change re-runs it under `kitr generate --watch`.
+ */
+export interface GenerateStepOptions {
+  watch?: string[]
+}
+
+/**
+ * An app's own `kitr generate` step, listed in `kitrrc.ts` under `generate`. It runs after the type
+ * generators and the package steps, in `kitr generate`, `kitr dev`, `kitr build` and
+ * `kitr typecheck`; `kitr generate --check` skips it, as it skips the package steps.
+ *
+ *   generate: [
+ *     { name: 'content', run: 'node scripts/content.mjs', watch: ['content/**'] },
+ *     { name: 'icons', run: () => import('./scripts/icons') },
+ *   ]
+ *
+ * `run` is a shell command, run from the project root, or a function. A function may return a
+ * module whose default export is a function, which is then called, so `() => import('./x')` works
+ * for a script that exports `default async function`. Commands see `KITR_GENERATE=1` in their env.
+ */
+export interface AppGenerateStep extends GenerateStepOptions {
+  /** Shown in logs and `kitr doctor` as `app:<name>`. */
+  name: string
+  run: string | (() => unknown)
+}
+
+/**
  * The shape of `kitrrc.ts`. Same idea as `adonisrc.ts`: explicit lazy imports,
  * so the `kitr()` Vite plugin and the CLI can both read it, and nothing is hidden.
  */
@@ -40,6 +68,8 @@ export interface KitrRc {
     /** Server functions (`defineQuery`, `defineMutation`) `kitr types` scans. Default `app/actions`. */
     actions?: string
   }
+  /** The app's own steps for `kitr generate`, after the type generators and the package steps. */
+  generate?: AppGenerateStep[]
   /** Paths to preload on the server before the first request (server apps). */
   preloads?: Array<() => Promise<unknown>>
 }

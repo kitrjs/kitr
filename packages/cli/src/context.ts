@@ -224,7 +224,7 @@ export function projectBin(root: string, name: string): string {
   return join(root, 'node_modules', '.bin', process.platform === 'win32' ? `${name}.cmd` : name)
 }
 
-function cliVersion(): string {
+export function cliVersion(): string {
   try {
     const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
     return pkg.version

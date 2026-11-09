@@ -149,6 +149,8 @@ export default function ProjectsPage() {
 
 Run `kitr dev` and open `/projects`. You see the two projects as links (the `/projects/$id` link is a type error until the next section adds that page).
 
+`kitr make:page 'docs/$slug'` writes `app/pages/docs/slug.tsx` and the route `/docs/$slug`; quote the argument so the shell does not expand `$slug` to nothing.
+
 `lazy` loads the page module on first visit, so each page has its own bundle. Its default export is the component, or `definePage({ component, pendingComponent, errorComponent })` for its own loading and error screens. Loaders, `beforeLoad` and `head` stay in `app/routes.ts`. Pass `component` instead of `lazy` to put a page in the first bundle.
 
 ## Map links to URLs
@@ -166,6 +168,70 @@ Run `kitr dev` and open `/projects`. You see the two projects as links (the `/pr
 | `.root({ head, component })` | The HTML document around every page |
 
 Route ids include layouts: the dashboard above is `/_app/dashboard`, which is what `getRouteApi('/_app/dashboard')` takes. Path syntax is TanStack's, in its [routing guide](https://tanstack.com/router/latest/docs/framework/react/routing/routing-concepts).
+
+## Links from data
+
+`<Link to>` takes the paths in the route table, and a dynamic page is a template: `/docs/$slug`, not `/docs/agents`. So a nav list of concrete paths does not type-check, even `as const`:
+
+```tsx
+// app/components/docs-nav.tsx
+import { Link } from '@kitr/router'
+
+const docs = [
+  { label: 'Agents', to: '/docs/agents' },
+  { label: 'Deploy', to: '/docs/deploy' },
+] as const
+
+export function DocsNav() {
+  // Type error: '/docs/agents' is not a route. The route is '/docs/$slug'.
+  return docs.map((doc) => (
+    <Link key={doc.to} to={doc.to}>
+      {doc.label}
+    </Link>
+  ))
+}
+```
+
+Don't widen the list to `string` to silence it; that turns the check off for every link in it. Keep the template in `to` and put the value in `params`:
+
+```tsx
+// app/components/docs-nav.tsx
+import { Link } from '@kitr/router'
+
+const docs = [
+  { label: 'Agents', slug: 'agents' },
+  { label: 'Deploy', slug: 'deploy' },
+]
+
+export function DocsNav() {
+  return docs.map((doc) => (
+    <Link key={doc.slug} to="/docs/$slug" params={{ slug: doc.slug }}>
+      {doc.label}
+    </Link>
+  ))
+}
+```
+
+For a list of fixed pages, type it with `RoutePath`, the union of the table's paths (`'/' | '/about' | '/docs/$slug'`). A typo is then an error where the list is written:
+
+```tsx
+// app/components/site-nav.tsx
+import { Link, type RoutePath } from '@kitr/router'
+import type { routes } from '#app/routes'
+
+const nav: Array<{ label: string; to: RoutePath<typeof routes> }> = [
+  { label: 'Home', to: '/' },
+  { label: 'About', to: '/about' },
+]
+
+export function SiteNav() {
+  return nav.map((item) => (
+    <Link key={item.to} to={item.to}>
+      {item.label}
+    </Link>
+  ))
+}
+```
 
 ## Read path params
 
@@ -443,6 +509,28 @@ export function getRouter() {
 ```
 
 The defaults are exported, so a custom screen can render one inside its own layout: `import { DefaultError } from '@kitr/router'`.
+
+Or set them on the root, where `notFoundComponent`, `errorComponent` and `pendingComponent` take a component or `{ lazy }`, the way `.page()` does. A lazy one loads the first time it shows, so it stays out of the first bundle:
+
+```ts
+// app/routes.ts
+import { defineRoutes } from '@kitr/kitr/app'
+import router from '@kitr/router/routes'
+import { head, RootDocument } from './document'
+
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({
+      head,
+      component: RootDocument,
+      notFoundComponent: { lazy: () => import('./pages/not-found') },
+      errorComponent: { lazy: () => import('./pages/error') },
+    })
+    .page('/', { lazy: () => import('./pages/home') }),
+)
+```
+
+On a `static` web platform, the root's `notFoundComponent` is also what the build writes to `404.html`.
 
 ## Throw errors from loaders
 
@@ -1046,7 +1134,7 @@ export function RootDocument() {
 r.root({ head, component: RootDocument })
 ```
 
-`.root` takes TanStack's root route options (`head`, `component`, `beforeLoad`, `loader`, `errorComponent`) and may be called once per table, before any page. Without it, kitr renders a default document.
+`.root` takes TanStack's root route options (`head`, `component`, `beforeLoad`, `loader`, `errorComponent`) and may be called once per table, before any page. Its `notFoundComponent`, `errorComponent` and `pendingComponent` also take `{ lazy: () => import(...) }`. Without it, kitr renders a default document.
 
 On the web platform, [`mode`](/docs/platforms) decides what happens with the document: `ssr` streams it on every request, `static` prerenders it at build time, and `spa` ships one browser shell. Write the document once; don't branch on the platform inside it.
 

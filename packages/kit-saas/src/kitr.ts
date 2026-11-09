@@ -46,7 +46,8 @@ registerRoutes(api, [...routeTable])
 
 const files = (ctx: AddContext, name: string) => {
   const brand = displayName(name)
-  remove(ctx, 'app/pages/home.tsx', 'app/pages/about.tsx')
+  // The starter's home test goes with the starter page; this kit's pages bring their own tests.
+  remove(ctx, 'app/pages/home.tsx', 'app/pages/about.tsx', 'test/home.test.tsx')
   ctx.scripts.add('api:sync', 'kitr api:sync')
 
   write(
@@ -296,6 +297,19 @@ export type ServerRoutes = typeof routes.$types
     ]),
   )
   write(ctx, 'app/api/client.ts', apiClient)
+  // The events the sign-in and projects pages track (the analytics package writes an empty map).
+  write(
+    ctx,
+    'app/analytics.ts',
+    `import type { EventMap } from '@kitr/analytics'
+
+/** Every event the app sends, with its props. \`useAnalytics<AppEvents>()\` checks names and props. */
+export interface AppEvents extends EventMap {
+  'sign-in.completed': { method: 'password' | 'oauth' }
+  'project.created': { id: string }
+}
+`,
+  )
 
   write(
     ctx,

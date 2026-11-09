@@ -175,6 +175,63 @@ A `static` or `spa` web platform has no server: upload `dist/site/client` and yo
 
 With nginx, the same rule is `try_files $uri $uri/ /index.html;`. Without it, reloading `/projects/prj_roadmap` answers 404. Check the shell's file name in `dist/site/client` after a build and use that name.
 
+### Serve a static build with nginx
+
+A `static` build is a folder of files: `/pricing` is `pricing/index.html`, hashed JavaScript and CSS sit under `assets/`, and with [SEO](/packages/seo) added, `sitemap.xml` and `robots.txt` are already in `dist/site/client`, so there is nothing to generate on the server. This nginx config serves it:
+
+```nginx
+# nginx.conf
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+
+  location / {
+    # /pricing -> /pricing/index.html; anything else is a real 404, not the home page.
+    try_files $uri $uri/index.html =404;
+  }
+
+  # File names under assets/ change with their content: cache them for a year.
+  location /assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+  }
+
+  error_page 404 /404.html;
+}
+```
+
+`try_files ... =404` answers a missing page with status 404, which a SPA's `/index.html` fallback would hide. `error_page` points at `404.html`, which a `static` build writes from the root route's `notFoundComponent`; Netlify, Cloudflare Pages and GitHub Pages pick that file up with no setting. Everything outside `assets/` keeps nginx's default caching, so a new deploy reaches returning visitors on their next load.
+
+### Build and serve it from Docker
+
+The image builds the site with Node, then copies only `dist/site/client` into nginx, so no Node runs in production:
+
+```dockerfile
+# Dockerfile
+FROM node:22-alpine AS build
+WORKDIR /app
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm kitr build site
+
+FROM nginx:1.27-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/site/client /usr/share/nginx/html
+EXPOSE 80
+```
+
+```sh
+docker build -t acme-site .
+docker run --rm -p 8080:80 acme-site
+curl -I localhost:8080/pricing
+# HTTP/1.1 200 OK
+curl -I localhost:8080/nope
+# HTTP/1.1 404 Not Found
+```
+
+Use the `.dockerignore` from [Ship it as a Docker image](#ship-it-as-a-docker-image), so a local `dist` or `.env` never reaches the build.
+
 Data in a static site is whatever existed at build time. Anything that changes after the build, such as a list of open jobs, must be fetched in the browser, or the site rebuilt when it changes.
 
 ## Run the API on its own

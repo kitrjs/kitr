@@ -367,6 +367,21 @@ interface RequireAuthOptions {
 
 Options of `requireAuth()`: where anonymous visitors go and which search param remembers their page.
 
+### RootComponentOptions
+
+```ts
+interface RootComponentOptions {
+  /** Rendered when no page matches the path, and for `notFound()` thrown without a closer handler. */
+  notFoundComponent?: LazyComponent<NotFoundRouteComponent>;
+  /** Rendered when a loader or component throws, unless a page has its own. */
+  errorComponent?: LazyComponent<ErrorRouteComponent> | false | null;
+  /** Rendered while a page loads, past the router's `defaultPendingMs`. */
+  pendingComponent?: LazyComponent<RouteComponent>;
+}
+```
+
+The root's fallback components, each a component or `{ lazy }`, the way `.page()` takes `lazy`.
+
 ### DefaultRootRoute
 
 ```ts
@@ -383,6 +398,19 @@ type GroupRouteType<R, P extends string, O> = PageRouteType<GroupRoute<R, P, O>,
 ```
 
 Reserved for the group route the `pages` extension registers under a group. Not a route type itself.
+
+### LazyComponent
+
+```ts
+type LazyComponent<C> = C | {
+  lazy: () => Promise<{
+    default: C;
+  }>;
+};
+```
+
+A component, or `{ lazy: () => import('./pages/not-found') }` to load it the first time it renders.
+The module's default export is the component.
 
 ### PageName
 
@@ -411,6 +439,18 @@ type RootOf<R> = R extends {
 ```
 
 The table's root route type: from `.root(...)`, else the default.
+
+### RoutePath
+
+```ts
+type RoutePath<T> = NoTrailingSlash<PagePaths<T extends {
+  $types: infer R;
+} ? R : T> & string>;
+```
+
+Every page path of a route table, as `<Link to>` takes it: `'/' | '/about' | '/docs/$slug'`.
+Type a nav list with it (`{ to: RoutePath<typeof routes> }[]`) instead of widening to `string`;
+a dynamic page stays a template, with its value in `params`. Takes the table or its `$types`.
 
 ### RouterContextWith
 
@@ -573,6 +613,21 @@ interface PageRouteType<Rt extends AnyRoute, Kind extends string = 'page'> {
 
 The entry type carried per page into `$types`. `scope: 'absolute'`: groups never rewrite it.
 
+### RootComponentOptions
+
+```ts
+interface RootComponentOptions {
+  /** Rendered when no page matches the path, and for `notFound()` thrown without a closer handler. */
+  notFoundComponent?: LazyComponent<NotFoundRouteComponent>;
+  /** Rendered when a loader or component throws, unless a page has its own. */
+  errorComponent?: LazyComponent<ErrorRouteComponent> | false | null;
+  /** Rendered while a page loads, past the router's `defaultPendingMs`. */
+  pendingComponent?: LazyComponent<RouteComponent>;
+}
+```
+
+The root's fallback components, each a component or `{ lazy }`, the way `.page()` takes `lazy`.
+
 ### DefaultRootRoute
 
 ```ts
@@ -589,6 +644,19 @@ type GroupRouteType<R, P extends string, O> = PageRouteType<GroupRoute<R, P, O>,
 ```
 
 Reserved for the group route the `pages` extension registers under a group. Not a route type itself.
+
+### LazyComponent
+
+```ts
+type LazyComponent<C> = C | {
+  lazy: () => Promise<{
+    default: C;
+  }>;
+};
+```
+
+A component, or `{ lazy: () => import('./pages/not-found') }` to load it the first time it renders.
+The module's default export is the component.
 
 ### PageName
 
@@ -617,6 +685,18 @@ type RootOf<R> = R extends {
 ```
 
 The table's root route type: from `.root(...)`, else the default.
+
+### RoutePath
+
+```ts
+type RoutePath<T> = NoTrailingSlash<PagePaths<T extends {
+  $types: infer R;
+} ? R : T> & string>;
+```
+
+Every page path of a route table, as `<Link to>` takes it: `'/' | '/about' | '/docs/$slug'`.
+Type a nav list with it (`{ to: RoutePath<typeof routes> }[]`) instead of widening to `string`;
+a dynamic page stays a template, with its value in `params`. Takes the table or its `$types`.
 
 ### RouteTreeOf
 

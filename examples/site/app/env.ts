@@ -4,6 +4,8 @@ import { createEnv, env as e } from '@kitr/kitr/env'
 export const env = createEnv({
   public: {
     VITE_APP_NAME: e.string({ default: 'site' }),
+    VITE_PLAUSIBLE_DOMAIN: e.string({ optional: true }),
+    VITE_PLAUSIBLE_HOST: e.string({ optional: true }),
     VITE_GA_MEASUREMENT_ID: e.string({ optional: true }),
   },
   server: {},

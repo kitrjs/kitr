@@ -88,6 +88,7 @@ export default defineConfig({
 | `prerender` | `[]` | Routes the build renders to HTML files. An array of paths, or `{ routes, crawlLinks }`. |
 | `prerender.routes` | `[]` | The paths to prerender, such as `['/', '/pricing']`. |
 | `prerender.crawlLinks` | `false` | Also prerender every page linked from those routes. |
+| `prerender.failOnError` | `false` | Fail the build when a crawled page fails to render, not only a listed one. |
 | `robots` | `{}` | Rules for the `robots.txt` the build writes (see [Write robots.txt](#write-robotstxt)). `false` writes none. |
 | `robots.allow` | `['/']` | `Allow:` lines. |
 | `robots.disallow` | `[]` | `Disallow:` lines. |
@@ -137,24 +138,17 @@ View the page source of `/pricing`. The root route's `<HeadContent />` renders t
 
 ## Use your site defaults on every page
 
-`seo()` takes the site name, share image, handle and locale from `site`, so every title gets the site name once you pass `ctx`. Give each page its own URL:
+`seo()` takes the site name, share image, handle and locale from `site`, so every title gets the site name once you pass `ctx`. It also builds the page's URL from `site.url` and the matched path in `ctx`, so a page needs only its title and description:
 
 ```ts
 // app/routes.ts
 import { seo } from '@kitr/seo'
 
 r.page('/pricing', {
-  head: (ctx) =>
-    seo(
-      {
-        title: 'Pricing',
-        description: 'Plans for every team size.',
-        url: 'https://acme.com/pricing',
-      },
-      ctx,
-    ),
+  head: (ctx) => seo({ title: 'Pricing', description: 'Plans for every team size.' }, ctx),
   lazy: () => import('./pages/pricing'),
 })
+// => canonical and og:url: https://acme.com/pricing
 ```
 
 With the config from [Configure](#configure), the title becomes `Pricing · Acme`, and `og:site_name`, `og:locale`, `og:url`, `og:image`, `twitter:site` and a canonical link are filled in. A `site` passed to `seo()` replaces the config's, for a page that belongs to another brand. How the values combine:
@@ -162,15 +156,33 @@ With the config from [Configure](#configure), the title becomes `Pricing · Acme
 | Tag | Comes from |
 | --- | --- |
 | `<title>` | `title · site.name`; `title` alone when it equals `site.name`; `site.name` when there is no `title`. |
+| `title`, `description` | The options, else `title` and `description` from the loader's data. |
 | `og:title`, `twitter:title` | `title` without the site name. |
 | `description`, `og:description`, `twitter:description` | `description`, only when set. |
-| `og:url`, canonical link | `url`, else `site.url`. |
+| `og:url`, canonical link | `url`, else `site.url` plus the matched path from `ctx`, else `site.url`. |
 | `og:image`, `twitter:image` | `image`, else `site.image`. |
 | `twitter:card` | `summary_large_image` when there is an image, else `summary`. |
 | `og:type` | `type`, default `'website'`. |
 
-> [!WARNING] Pass url on every page
-> Without it, `og:url` and the canonical link fall back to `site.url`, so the page tells search engines it is a copy of your home page and they may drop it.
+> [!WARNING] Pass ctx on every page
+> Without `ctx` (or `url`), `og:url` and the canonical link fall back to `site.url`, so the page tells search engines it is a copy of your home page and they may drop it.
+
+When the loader returns `title` and `description`, `seo()` reads them from `ctx.loaderData`, so a page with data needs no options at all:
+
+```ts
+// app/routes.ts
+import { seo } from '@kitr/seo'
+import { getDoc } from '#app/content/docs'
+
+r.page('/docs/$slug', {
+  loader: ({ params }) => getDoc(params.slug), // => { title: 'Agents', description: '...', html: '...' }
+  head: (ctx) => seo({}, ctx),
+  lazy: () => import('./pages/docs/slug'),
+})
+// => <title>Agents · Acme</title>, canonical https://acme.com/docs/agents
+```
+
+Options you pass win over the loader's values and over the derived URL.
 
 ## Set defaults in the root route
 
@@ -259,9 +271,7 @@ r.page('/blog/$slug', {
   head: (ctx) =>
     seo(
       {
-        title: ctx.loaderData?.title,
         description: ctx.loaderData?.excerpt,
-        url: `https://acme.com/blog/${ctx.params.slug}`,
         type: 'article',
         keywords: ctx.loaderData?.tags,
       },
@@ -283,7 +293,7 @@ export default function PostPage() {
 }
 ```
 
-`head` runs after the loader, on the server for the first request and on the client after each navigation. Search engines ignore `keywords`; it only helps your own site search.
+The title comes from the post's `title` and the URL from the path. `head` runs after the loader, on the server for the first request and on the client after each navigation. Search engines ignore `keywords`; it only helps your own site search.
 
 ## Keep a page out of search results
 
@@ -379,6 +389,13 @@ What the build does with `prerender` in each web mode:
 
 > [!WARNING] No computed lists
 > `prerender: posts.map(...)` is not seen. Write each path as a string, or list a page that links to all of them with `crawlLinks: true`.
+
+A page that fails to render prints one line and stays out of the sitemap. A listed route fails the build; a crawled link only warns, unless `failOnError: true`:
+
+```sh
+kitr build site
+# [prerender] 404 at /blog/draft, linked from /blog
+```
 
 ## Generate a sitemap
 

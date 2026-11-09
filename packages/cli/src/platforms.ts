@@ -95,7 +95,8 @@ function tsconfigAliases(ctx: ProjectContext): Record<string, string> {
   return out
 }
 
-async function projectJiti(ctx: ProjectContext) {
+/** A jiti that runs the project's TypeScript (kitrrc.ts) with its tsconfig aliases. */
+export async function projectJiti(ctx: ProjectContext) {
   const { createJiti } = await import('jiti')
   return createJiti(ctx.rcPath ?? ctx.path('kitrrc.ts'), {
     alias: tsconfigAliases(ctx),
@@ -488,7 +489,13 @@ export async function addPlatform(
     ctx,
     codemods,
     [info.package, ...(instance.definition.requires ?? [])],
-    { install: add.install ?? true, yes: true, report: false, added: add.added },
+    {
+      install: add.install ?? true,
+      yes: true,
+      report: false,
+      added: add.added,
+      client: add.type !== 'server',
+    },
   )
   for (const step of steps)
     if (step.package !== info.package) log.success(`${step.name} (needed by ${add.type})`)

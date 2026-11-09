@@ -104,6 +104,23 @@ describe('production serving: spa and static', () => {
     expect(await (await fetch(`${url}/not-prerendered`)).text()).toContain('<div id="root">')
   })
 
+  it('answers unknown paths with 404.html and status 404 in static mode', async () => {
+    const files = client({
+      'dist/site/client/about/index.html': '<!doctype html><h1>About us</h1>',
+      'dist/site/client/404.html': '<!doctype html><h1>Page not found</h1>',
+    })
+    const site = await serve(project(files), web({ mode: 'static', port: 0, host: '127.0.0.1' }))
+    expect(await (await fetch(`${site.url}/about/`)).text()).toContain('About us')
+    const missing = await fetch(`${site.url}/pricing`)
+    expect(missing.status).toBe(404)
+    expect(await missing.text()).toContain('Page not found')
+    // An SPA routes on the client: the same build in spa mode keeps the shell, with 200.
+    const spa = await serve(project(files), web({ mode: 'spa', port: 0, host: '127.0.0.1' }))
+    const deep = await fetch(`${spa.url}/pricing`)
+    expect(deep.status).toBe(200)
+    expect(await deep.text()).toContain('<div id="root">')
+  })
+
   it('prefers _shell.html or 200.html when there is no index.html', async () => {
     const root = project({
       'dist/site/client/_shell.html': '<!doctype html><p>shell file</p>',

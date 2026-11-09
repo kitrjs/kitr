@@ -3,22 +3,35 @@
 //
 //   pnpm build && pnpm -C registry build && pnpm smoke:registry
 //   node scripts/verdaccio-smoke.mjs --kits app,fullstack --keep
+//   node scripts/verdaccio-smoke.mjs --kits site --pm npm
+//   node scripts/verdaccio-smoke.mjs --matrix          (nightly: 4 kits x npm and pnpm)
 //
 // What it proves, in order:
 //   1. every public package packs and publishes (workspace: ranges become real versions)
 //   2. every peer of the umbrella `kitr` package, every dependency of every package, every
 //      upstream version pinned in the CLI's versions.ts and every `builtOn` library resolves
 //      from the registry
-//   3. `kitr` installs from the registry, and `kitr new --kit <kit>` installs, typechecks and
-//      builds from it, which loads every `kitr.ts` setup module the kit uses
+//   3. `kitr` installs from the registry, and `kitr new --kit <kit>` installs from it, which loads
+//      every `kitr.ts` setup module the kit uses. In the new project, `kitr doctor` reports no
+//      error and no warning, `kitr make:page 'docs/$slug'` writes the page and its route,
+//      `kitr ui add button` copies the component (kits with the theme), then the project
+//      typechecks and builds
 //   4. with `--all-packages`: `kitr add` of every released package, one at a time, in one project
 //
 // The real versions and the changesets are never touched: package.json files are bumped for the
 // pack and restored in a finally block. Needs network access to registry.npmjs.org for the
 // upstream packages. Verdaccio runs through `npx`, so nothing is added to the repo's dependencies.
 //
-// Options: --kits a,b   --port 4873   --keep (keep the scratch dir)   --all-packages
+// Options: --kits a,b   --pm pnpm|npm (the projects' package manager; npm hoists, pnpm does not)
+//          --matrix (every kit in MATRIX_KITS with npm and with pnpm; overrides --kits and --pm)
+//          --port 4873   --keep (keep the scratch dir)   --all-packages
 //          --skip-projects (publish and resolve checks only)
+//
+// Every project shares the one registry and the one published CLI, so a matrix run publishes once.
+//
+// The CLI runs through its `node_modules/.bin/kitr` symlink, as a global install does
+// (`/usr/local/bin/kitr` → `.../@kitr/kitr/bin/kitr.mjs`), so code that resolves from
+// `process.argv[1]` sees the same path a user's machine gives it.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import {
   copyFileSync,
@@ -43,6 +56,8 @@ const win = process.platform === 'win32'
 const { values: opts } = parseArgs({
   options: {
     kits: { type: 'string', default: 'app,fullstack' },
+    pm: { type: 'string', default: 'pnpm' },
+    matrix: { type: 'boolean', default: false },
     port: { type: 'string', default: '4873' },
     keep: { type: 'boolean', default: false },
     'all-packages': { type: 'boolean', default: false },
@@ -50,6 +65,17 @@ const { values: opts } = parseArgs({
   },
 })
 const port = Number(opts.port)
+/** The kits the nightly matrix runs: the ones a newcomer starts from. */
+const MATRIX_KITS = ['app', 'site', 'fullstack', 'dashboard']
+/** One project per cell: a kit and the package manager that installs it. */
+const cells = opts.matrix
+  ? MATRIX_KITS.flatMap((kit) => ['npm', 'pnpm'].map((pm) => ({ kit, pm })))
+  : opts.kits
+      .split(',')
+      .filter(Boolean)
+      .map((kit) => ({ kit, pm: opts.pm }))
+for (const { pm } of cells)
+  if (pm !== 'pnpm' && pm !== 'npm') throw new Error(`--pm must be pnpm or npm, got ${pm}`)
 const registryUrl = `http://127.0.0.1:${port}/`
 
 const log = (msg) => console.log(`\n==> ${msg}`)
@@ -313,7 +339,8 @@ function installPublishedCli() {
       cwd: tool,
     },
   )
-  return join(tool, 'node_modules/@kitr/kitr/bin/kitr.mjs')
+  // The bin symlink, not the file it points at: a global install runs kitr through a link.
+  return join(tool, 'node_modules/.bin/kitr')
 }
 
 /** pnpm and npm read `npm_config_registry`, so every install the CLI runs hits Verdaccio. */
@@ -338,30 +365,74 @@ function step(project, label, fn) {
   }
 }
 
-function smokeKit(kitr, kit) {
+/** Run kitr from the published CLI in a project. */
+const kitrIn = (kitr, dir, env, ...args) =>
+  sh(process.execPath, [kitr, ...args], { cwd: dir, env, capture: true })
+
+function smokeKit(kitr, { kit, pm }) {
   const projects = join(work, 'projects')
   mkdirSync(projects, { recursive: true })
-  const dir = join(projects, kit)
+  // In a matrix the same kit runs twice: name each project by its cell.
+  const name = opts.matrix ? `${kit}-${pm}` : kit
+  const label = opts.matrix ? `${kit} (${pm})` : kit
+  const dir = join(projects, name)
   const env = projectEnv()
   const components = join(root, 'registry/dist')
   const flags = existsSync(components) ? ['--registry', components] : []
-  const created = step(kit, 'kitr new (installs from the registry)', () =>
-    sh(process.execPath, [kitr, 'new', kit, '--kit', kit, '--pm', 'pnpm', '--no-git', ...flags], {
+  const created = step(label, 'kitr new (installs from the registry)', () =>
+    sh(process.execPath, [kitr, 'new', name, '--kit', kit, '--pm', pm, '--no-git', ...flags], {
       cwd: projects,
       env,
     }),
   )
   if (!created) return
-  const scripts = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).scripts ?? {}
+  const pkgJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+  const scripts = pkgJson.scripts ?? {}
+  // Every package kitrrc.ts lists must have been set up, not skipped: a skipped client package
+  // leaves the project without its pages, so check the kit's packages made it into the config.
+  const rcText = readFileSync(join(dir, 'kitrrc.ts'), 'utf8')
+  const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies }
+  const missing = Object.keys(deps).filter(
+    (d) =>
+      d.startsWith('@kitr/') &&
+      !['@kitr/kitr', '@kitr/core'].includes(d) &&
+      !d.startsWith('@kitr/kit-') &&
+      !rcText.includes(`'${d}'`),
+  )
+  if (missing.length)
+    failures.push(`${label}: installed but not set up in kitrrc.ts: ${missing.join(', ')}`)
+  // A fresh project is clean: an error or a warning here is the first thing a newcomer reads.
+  step(label, 'kitr doctor reports no error or warning', () => {
+    const out = kitrIn(kitr, dir, env, 'doctor', '--json')
+    const findings = JSON.parse(out.slice(out.indexOf('[')))
+    const bad = findings.filter((f) => f.level !== 'info')
+    if (bad.length) throw new Error(bad.map((f) => `${f.level}: ${f.message}`).join('; '))
+  })
+  // The param stays in the route and leaves the file name; the argument reaches kitr unexpanded,
+  // as it does from a shell when quoted.
+  if (existsSync(join(dir, 'app/routes.ts')))
+    step(label, "kitr make:page 'docs/$slug'", () => {
+      kitrIn(kitr, dir, env, 'make:page', 'docs/$slug')
+      if (!existsSync(join(dir, 'app/pages/docs/slug.tsx')))
+        throw new Error('app/pages/docs/slug.tsx was not written')
+      if (!readFileSync(join(dir, 'app/routes.ts'), 'utf8').includes("'/docs/$slug'"))
+        throw new Error("app/routes.ts has no '/docs/$slug' route")
+    })
+  if ('@kitr/theme' in deps)
+    step(label, 'kitr ui add button', () => {
+      kitrIn(kitr, dir, env, 'ui', 'add', 'button', ...flags)
+      if (!existsSync(join(dir, 'app/components/ui/button.tsx')))
+        throw new Error('app/components/ui/button.tsx was not written')
+    })
   if (scripts.typecheck)
-    step(kit, 'pnpm typecheck', () => sh('pnpm', ['run', 'typecheck'], { cwd: dir, env }))
-  else failures.push(`${kit}: the project has no typecheck script`)
-  if (scripts.build) step(kit, 'pnpm build', () => sh('pnpm', ['run', 'build'], { cwd: dir, env }))
-  else failures.push(`${kit}: the project has no build script`)
+    step(label, `${pm} typecheck`, () => sh(pm, ['run', 'typecheck'], { cwd: dir, env }))
+  else failures.push(`${label}: the project has no typecheck script`)
+  if (scripts.build) step(label, `${pm} build`, () => sh(pm, ['run', 'build'], { cwd: dir, env }))
+  else failures.push(`${label}: the project has no build script`)
   const lockFile = join(dir, 'pnpm-lock.yaml')
   const localRef = /(version|specifier): (link|file|workspace):|resolution: \{directory/
   if (existsSync(lockFile) && localRef.test(readFileSync(lockFile, 'utf8')))
-    failures.push(`${kit}: pnpm-lock.yaml refers to a local path`)
+    failures.push(`${label}: pnpm-lock.yaml refers to a local path`)
 }
 
 function smokeAllPackages(kitr) {
@@ -400,7 +471,7 @@ try {
   if (!opts['skip-projects']) {
     log('installing the published CLI')
     const kitr = installPublishedCli()
-    for (const kit of opts.kits.split(',').filter(Boolean)) smokeKit(kitr, kit)
+    for (const cell of cells) smokeKit(kitr, cell)
     if (opts['all-packages']) smokeAllPackages(kitr)
   }
 } catch (error) {
