@@ -206,11 +206,14 @@ export function runChecks(ctx: ProjectContext, loaded: LoadedPackage[] = []): Fi
       })
   }
 
-  // Kitr version consistency.
+  // Kitr version consistency. `^0.3.1` and `0.3.1` name the same release: pnpm saves a range
+  // for `kitr add` while `kitr new` writes the exact version, so compare versions, not ranges.
   const kitrVersions = new Set(
     Object.entries(deps)
-      .filter(([n]) => n === 'kitr' || n.startsWith('@kitr/'))
-      .map(([, v]) => v),
+      .filter(
+        ([n]) => (n === 'kitr' || n.startsWith('@kitr/')) && !deps[n]!.startsWith('workspace:'),
+      )
+      .map(([, v]) => v.replace(/^[\^~=v\s]+/, '')),
   )
   if (kitrVersions.size > 1)
     out.push({
