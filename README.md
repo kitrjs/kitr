@@ -41,6 +41,10 @@ kitr add forms
 kitr add auth
 ```
 
+## A real example
+
+[kitr.dev](https://kitr.dev) itself is a kitr app, started with `kitr new --kit app` and grown from there. Its source is in [kitrjs/kitr-site](https://github.com/kitrjs/kitr-site): pages, content pipeline, consent and analytics, tests and the Dockerfile it deploys with.
+
 ## Learn more
 
 Everything else lives on [kitr.dev](https://kitr.dev):
