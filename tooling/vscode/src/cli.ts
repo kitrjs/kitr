@@ -262,7 +262,9 @@ export function cliInvocation(options: {
 /** Quote one argument for a POSIX shell or PowerShell/cmd when it needs it. */
 export function shellQuote(arg: string, windows = false): string {
   if (/^[\w@%+=:,./-]+$/.test(arg)) return arg
-  return windows ? `"${arg.replace(/"/g, '\\"')}"` : `'${arg.replace(/'/g, `'\\''`)}'`
+  if (!windows) return `'${arg.replace(/'/g, `'\\''`)}'`
+  // Windows argv rules: backslashes are literal unless they precede a quote, so double those runs.
+  return `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"`
 }
 
 /** Short summary of findings: `2 errors, 1 warning`. */

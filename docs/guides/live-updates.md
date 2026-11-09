@@ -268,7 +268,7 @@ export const routes = defineRoutes([api, realtime], (router) =>
 )
 ```
 
-`userFromSession` is your own lookup, the same one your API uses. Browsers send same-site cookies with the WebSocket upgrade, so no client code changes. For bearer tokens, put the token in the socket URL instead; the [Realtime guide](/packages/realtime#authenticate-connections) shows the client side.
+`userFromSession` is your own lookup, the same one your API uses. Browsers send same-site cookies with the WebSocket upgrade, so no client code changes. For bearer tokens, put the token in the socket URL instead; the [Realtime guide](/packages/realtime/guide#authenticate-connections) shows the client side.
 
 Then the channel's `authorize(params, ctx)` decides who may subscribe to which topic. `ctx` is what the server's `authorize` returned:
 
@@ -348,7 +348,7 @@ it('writes the shipped order into the cache and refetches lists', () => {
 })
 ```
 
-To test authorization and delivery end to end, start the realtime server on a free port and subscribe with the real client; the [Realtime guide](/packages/realtime#testing) has the complete test.
+To test authorization and delivery end to end, start the realtime server on a free port and subscribe with the real client; the [Realtime guide](/packages/realtime/guide#testing) has the complete test.
 
 ## Next steps
 

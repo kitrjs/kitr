@@ -401,7 +401,7 @@ it('lists open invoices', async () => {
 
 Any code that calls `fetch` sees the mocks. Under `happy-dom` a relative URL such as `/api/invoices` resolves against `http://localhost:3000`; in the `node` environment use absolute URLs.
 
-To render a component against these mocks, combine them with `renderWithKitr` from [testing](/packages/testing#fake-the-network-for-components).
+To render a component against these mocks, combine them with `renderWithKitr` from [testing](/packages/testing/guide#fake-the-network-for-components).
 
 ## Override a handler for one test
 

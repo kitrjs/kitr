@@ -64,11 +64,7 @@ describe('inserting and removing entries', () => {
   it('inserts into an empty inline list and an empty multi-line list', () => {
     const inline = 'export default { packages: [] }\n'
     const block = findRcBlock(inline, 'packages', '[')!
-    expect(insertEntry(inline, block, "'a'")).toBe(
-      "export default { packages: [\n  'a',\n] }\n"
-        .replace('[\n  ', '[\n  ')
-        .replace(' }\n', ' }\n'),
-    )
+    expect(insertEntry(inline, block, "'a'")).toBe("export default { packages: [\n  'a',\n] }\n")
   })
 
   it('removes the first, middle and last of an inline list', () => {

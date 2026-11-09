@@ -74,7 +74,7 @@ A signed-in product on its own API. Sign in with `admin@example.com` or `member@
 | `app/validators/projects.ts` | The schema the form, the controller and the test share. |
 | `test/api.test.ts` | Calls the API in a test. |
 
-Sessions are HttpOnly cookies, with CSRF protection on the auth routes. A production build needs `SESSION_SECRET` (32 or more random characters) and a mail transport. See [cookie sessions](/packages/auth#cookie-sessions-with-a-server).
+Sessions are HttpOnly cookies, with CSRF protection on the auth routes. A production build needs `SESSION_SECRET` (32 or more random characters) and a mail transport. See [cookie sessions](/packages/auth/guide#cookie-sessions-with-a-server).
 
 ### site
 

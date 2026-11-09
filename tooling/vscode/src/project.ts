@@ -116,7 +116,7 @@ function findPackageManager(dir: string): PackageManager {
     try {
       files.push(...readdirSync(d))
     } catch {}
-    if (!field && existsSync(join(d, 'package.json')))
+    if (existsSync(join(d, 'package.json')))
       try {
         field = JSON.parse(readFileSync(join(d, 'package.json'), 'utf8')).packageManager
       } catch {}

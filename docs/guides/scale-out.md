@@ -116,7 +116,7 @@ export const routes = defineRoutes([api, realtime], (router) =>
 
 The action that emits stays as it was. On instance B, `emit('created', project)` publishes the event on the Redis channel `acme-projects:rt:projects:{"teamId":"team_acme"}`. Instance A subscribed to that channel when Grace's socket subscribed to the topic, so it receives the event and writes it to her socket. Each instance subscribes only to the topics its own clients watch, and drops a subscription when the last of them leaves.
 
-A WebSocket stays on the instance it opened on, so the load balancer needs no sticky sessions. The SSE transport does not either: a control `POST` that lands on another instance than its stream is forwarded through Redis. `use(channel, params).size` and `connections` still count this instance only. [Realtime](/packages/realtime#run-more-than-one-server-instance) has the details.
+A WebSocket stays on the instance it opened on, so the load balancer needs no sticky sessions. The SSE transport does not either: a control `POST` that lands on another instance than its stream is forwarded through Redis. `use(channel, params).size` and `connections` still count this instance only. [Realtime](/packages/realtime/guide#run-more-than-one-server-instance) has the details.
 
 ## Share the cache
 
@@ -172,7 +172,7 @@ export default defineConfig({
 })
 ```
 
-Each window is one Redis key that expires with the window. A `rateLimit()` on a single route in `server/routes.ts` takes the same store as its `store` option. Only set `trustProxy` when every request passes through a proxy you control; [Shield](/packages/shield#run-behind-a-proxy) explains why.
+Each window is one Redis key that expires with the window. A `rateLimit()` on a single route in `server/routes.ts` takes the same store as its `store` option. Only set `trustProxy` when every request passes through a proxy you control; [Shield](/packages/shield/guide#run-behind-a-proxy) explains why.
 
 ## Share the job queue
 
@@ -193,7 +193,7 @@ export default defineConfig({
 
 Every worker now pulls from one queue, and each job runs on exactly one of them. If a worker dies mid-job, another runs it after `visibilityTimeout`. Scheduled jobs are queued once. Give every instance the same `TZ`, because cron reads local time.
 
-To keep jobs off the web instances, run separate workers with `kitr jobs:work` and set `worker: false` on the web servers; [Jobs](/packages/jobs#run-the-worker-in-its-own-process) shows both.
+To keep jobs off the web instances, run separate workers with `kitr jobs:work` and set `worker: false` on the web servers; [Jobs](/packages/jobs/guide#run-the-worker-in-its-own-process) shows both.
 
 ## Store uploads in a bucket
 
@@ -270,8 +270,8 @@ Use a managed Redis with a replica and automatic failover for production, and ke
 
 ## Next steps
 
-- [Realtime](/packages/realtime#run-more-than-one-server-instance): the adapter, SSE forwarding and writing your own adapter.
-- [Cache](/packages/cache#redis), [Shield](/packages/shield#share-rate-limits-between-instances) and [Jobs](/packages/jobs#share-the-queue-between-processes): each driver's options.
+- [Realtime](/packages/realtime/guide#run-more-than-one-server-instance): the adapter, SSE forwarding and writing your own adapter.
+- [Cache](/packages/cache/guide#redis), [Shield](/packages/shield/guide#share-rate-limits-between-instances) and [Jobs](/packages/jobs/guide#share-the-queue-between-processes): each driver's options.
 - [Deploy to production](/guides/deploy): the Docker image and hosts these instances run on.
-- [Uploads](/packages/uploads#unstorage): the unstorage driver and its options.
+- [Uploads](/packages/uploads/guide#unstorage): the unstorage driver and its options.
 - [ioredis](https://github.com/redis/ioredis#readme): TLS, Sentinel and Cluster connections.
