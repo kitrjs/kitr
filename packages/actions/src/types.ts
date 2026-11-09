@@ -32,6 +32,7 @@ const ACTIONS_PACKAGE = /[\\/](?:@kitr[\\/]actions|packages[\\/]actions)[\\/]/
 /** An import specifier that names the actions package or its `@kitr/actions` re-export. */
 const ACTIONS_SPECIFIER = /^(?:@kitr|kitr)\/actions(?:\/|$)/
 
+/** What `scanActions` needs besides the sources: where the project is, and files to read in place of the disk. */
 export interface ScanOptions {
   /** The project root: where `tsconfig.json` is read from and module specifiers resolve. Default `/`. */
   root?: string

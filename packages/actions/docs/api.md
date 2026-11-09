@@ -272,6 +272,8 @@ interface ScanOptions {
 }
 ```
 
+What `scanActions` needs besides the sources: where the project is, and files to read in place of the disk.
+
 ## @kitr/actions/vite
 
 ### kitrActions
