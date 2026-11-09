@@ -440,6 +440,18 @@ type RootOf<R> = R extends {
 
 The table's root route type: from `.root(...)`, else the default.
 
+### RoutePath
+
+```ts
+type RoutePath<T> = NoTrailingSlash<PagePaths<T extends {
+  $types: infer R;
+} ? R : T> & string>;
+```
+
+Every page path of a route table, as `<Link to>` takes it: `'/' | '/about' | '/docs/$slug'`.
+Type a nav list with it (`{ to: RoutePath<typeof routes> }[]`) instead of widening to `string`;
+a dynamic page stays a template, with its value in `params`. Takes the table or its `$types`.
+
 ### RouterContextWith
 
 ```ts
@@ -673,6 +685,18 @@ type RootOf<R> = R extends {
 ```
 
 The table's root route type: from `.root(...)`, else the default.
+
+### RoutePath
+
+```ts
+type RoutePath<T> = NoTrailingSlash<PagePaths<T extends {
+  $types: infer R;
+} ? R : T> & string>;
+```
+
+Every page path of a route table, as `<Link to>` takes it: `'/' | '/about' | '/docs/$slug'`.
+Type a nav list with it (`{ to: RoutePath<typeof routes> }[]`) instead of widening to `string`;
+a dynamic page stays a template, with its value in `params`. Takes the table or its `$types`.
 
 ### RouteTreeOf
 

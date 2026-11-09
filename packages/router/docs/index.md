@@ -149,6 +149,8 @@ export default function ProjectsPage() {
 
 Run `kitr dev` and open `/projects`. You see the two projects as links (the `/projects/$id` link is a type error until the next section adds that page).
 
+`kitr make:page 'docs/$slug'` writes `app/pages/docs/slug.tsx` and the route `/docs/$slug`; quote the argument so the shell does not expand `$slug` to nothing.
+
 `lazy` loads the page module on first visit, so each page has its own bundle. Its default export is the component, or `definePage({ component, pendingComponent, errorComponent })` for its own loading and error screens. Loaders, `beforeLoad` and `head` stay in `app/routes.ts`. Pass `component` instead of `lazy` to put a page in the first bundle.
 
 ## Map links to URLs
@@ -166,6 +168,70 @@ Run `kitr dev` and open `/projects`. You see the two projects as links (the `/pr
 | `.root({ head, component })` | The HTML document around every page |
 
 Route ids include layouts: the dashboard above is `/_app/dashboard`, which is what `getRouteApi('/_app/dashboard')` takes. Path syntax is TanStack's, in its [routing guide](https://tanstack.com/router/latest/docs/framework/react/routing/routing-concepts).
+
+## Links from data
+
+`<Link to>` takes the paths in the route table, and a dynamic page is a template: `/docs/$slug`, not `/docs/agents`. So a nav list of concrete paths does not type-check, even `as const`:
+
+```tsx
+// app/components/docs-nav.tsx
+import { Link } from '@kitr/router'
+
+const docs = [
+  { label: 'Agents', to: '/docs/agents' },
+  { label: 'Deploy', to: '/docs/deploy' },
+] as const
+
+export function DocsNav() {
+  // Type error: '/docs/agents' is not a route. The route is '/docs/$slug'.
+  return docs.map((doc) => (
+    <Link key={doc.to} to={doc.to}>
+      {doc.label}
+    </Link>
+  ))
+}
+```
+
+Don't widen the list to `string` to silence it; that turns the check off for every link in it. Keep the template in `to` and put the value in `params`:
+
+```tsx
+// app/components/docs-nav.tsx
+import { Link } from '@kitr/router'
+
+const docs = [
+  { label: 'Agents', slug: 'agents' },
+  { label: 'Deploy', slug: 'deploy' },
+]
+
+export function DocsNav() {
+  return docs.map((doc) => (
+    <Link key={doc.slug} to="/docs/$slug" params={{ slug: doc.slug }}>
+      {doc.label}
+    </Link>
+  ))
+}
+```
+
+For a list of fixed pages, type it with `RoutePath`, the union of the table's paths (`'/' | '/about' | '/docs/$slug'`). A typo is then an error where the list is written:
+
+```tsx
+// app/components/site-nav.tsx
+import { Link, type RoutePath } from '@kitr/router'
+import type { routes } from '#app/routes'
+
+const nav: Array<{ label: string; to: RoutePath<typeof routes> }> = [
+  { label: 'Home', to: '/' },
+  { label: 'About', to: '/about' },
+]
+
+export function SiteNav() {
+  return nav.map((item) => (
+    <Link key={item.to} to={item.to}>
+      {item.label}
+    </Link>
+  ))
+}
+```
 
 ## Read path params
 

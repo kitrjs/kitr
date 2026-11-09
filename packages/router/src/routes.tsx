@@ -773,3 +773,18 @@ type Subtree<R, Rt extends AnyRoute> = [LiveChildKeys<R, Rt>] extends [never]
 
 /** The route tree `compile('tanstack')` returns for a table's `$types`: what `createKitrRouter({ routes })` registers. */
 export type RouteTreeOf<R> = Subtree<R, RootOf<R>>
+
+type PagePaths<R> = {
+  [K in keyof R]: R[K] extends { kind: 'page'; path: infer P extends string } ? P : never
+}[keyof R]
+
+type NoTrailingSlash<P extends string> = P extends '/' ? P : P extends `${infer H}/` ? H : P
+
+/**
+ * Every page path of a route table, as `<Link to>` takes it: `'/' | '/about' | '/docs/$slug'`.
+ * Type a nav list with it (`{ to: RoutePath<typeof routes> }[]`) instead of widening to `string`;
+ * a dynamic page stays a template, with its value in `params`. Takes the table or its `$types`.
+ */
+export type RoutePath<T> = NoTrailingSlash<
+  PagePaths<T extends { $types: infer R } ? R : T> & string
+>
