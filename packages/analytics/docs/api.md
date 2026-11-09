@@ -46,12 +46,18 @@ Identity helper that fixes the event map type: `const analytics = createAnalytic
 function googleAnalytics(options: {
   measurementId: string;
   debug?: boolean;
+  ads?: boolean;
 }): AnalyticsAdapter;
 ```
 
-Google Analytics 4 through gtag.js. Loads the script on `init()` (client only) and
-forwards page views, events and user ids. `sendPageView: false` is set on config so the
-router, not the script, decides what a page view is.
+Google Analytics 4 through gtag.js. Loads the script on `init()` (client only), which runs once
+tracking is enabled (after consent with `@kitr/consent`), and forwards page views, events and
+user ids. `send_page_view: false` is set on config so the router, not the script, decides what
+a page view is.
+
+Consent Mode v2 is set before the first config: `analytics_storage` is granted, because the
+adapter only starts once the visitor agreed to analytics, and the three ad signals stay denied
+unless `ads: true`.
 
 ### memoryAdapter
 

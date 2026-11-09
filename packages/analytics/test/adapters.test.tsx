@@ -22,7 +22,21 @@ describe('googleAnalytics', () => {
     ga.track('signup', { plan: 'pro' })
     ga.identify?.('u1', { plan: 'pro' })
     ga.reset?.()
-    const layer = (globalThis as any).dataLayer.map((args: unknown[]) => [...args])
+    const entries: unknown[] = (globalThis as any).dataLayer
+    // gtag.js ignores anything but an arguments object, so an array here means nothing is sent.
+    for (const entry of entries)
+      expect(Object.prototype.toString.call(entry)).toBe('[object Arguments]')
+    const layer = entries.map((args) => [...(args as ArrayLike<unknown>)] as unknown[])
+    expect(layer[0]).toEqual([
+      'consent',
+      'default',
+      {
+        analytics_storage: 'granted',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+      },
+    ])
     expect(layer).toContainEqual([
       'config',
       'G-TEST',
@@ -40,6 +54,19 @@ describe('googleAnalytics', () => {
       'G-TEST',
       { user_id: undefined, send_page_view: false },
     ])
+  })
+})
+
+describe('googleAnalytics with ads', () => {
+  it('grants the ad signals when asked', () => {
+    googleAnalytics({ measurementId: 'G-ADS', ads: true }).init?.()
+    const first = [...(globalThis as any).dataLayer[0]]
+    expect(first[2]).toEqual({
+      analytics_storage: 'granted',
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted',
+    })
   })
 })
 

@@ -20,9 +20,10 @@ html:has(dialog:modal) [data-kitr-keep] {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Browsers with view transitions but without transition types get a short cross-fade. */
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  /* Browsers with view transitions but without transition types get a short cross-fade. A theme
+     change from @kitr/theme keeps its own timing. */
+  html:not([data-kitr-theme-transition])::view-transition-old(root),
+  html:not([data-kitr-theme-transition])::view-transition-new(root) {
     animation-duration: 180ms;
   }
 

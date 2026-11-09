@@ -107,11 +107,15 @@ describe('ThemeProvider', () => {
     expect(root.getAttribute('data-kitr-theme-to')).toBe('dark')
     expect(root.style.getPropertyValue('--kitr-theme-transition-x')).toBe('30px')
     expect(root.style.getPropertyValue('--kitr-theme-transition-y')).toBe('30px')
-    expect(root.style.getPropertyValue('--kitr-theme-transition-duration')).toBe('400ms')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-duration')).toBe('600ms')
+    // The farthest corner of jsdom's 1024x768 viewport from (30, 30) is (1024, 768).
+    expect(root.style.getPropertyValue('--kitr-theme-transition-radius')).toBe('1239px')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-reach')).toBe('1732px')
     await act(async () => vt.finish())
     expect(root.hasAttribute('data-kitr-theme-transition')).toBe(false)
     expect(root.hasAttribute('data-kitr-theme-to')).toBe(false)
     expect(root.style.getPropertyValue('--kitr-theme-transition-x')).toBe('')
+    expect(root.style.getPropertyValue('--kitr-theme-transition-radius')).toBe('')
   })
 
   it('takes timing and direction, and a per-call transition wins over the provider', () => {

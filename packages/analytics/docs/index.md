@@ -333,7 +333,7 @@ An adapter sends calls to one service. Every call goes to each listed adapter in
 
 | Adapter | Sends to | Script or client |
 | --- | --- | --- |
-| `googleAnalytics({ measurementId })` | Google Analytics 4 | Loads `gtag.js` for you. |
+| `googleAnalytics({ measurementId, ads })` | Google Analytics 4 | Loads `gtag.js` for you. |
 | `plausible({ domain, apiHost })` | Plausible, cloud or self-hosted | Loads `script.manual.js` for you. |
 | `posthog(client, { apiKey })` | PostHog | You install `posthog-js` and pass it in. |
 | `consoleAdapter({ prefix })` | The browser console | None. The development default. |
@@ -342,6 +342,8 @@ An adapter sends calls to one service. Every call goes to each listed adapter in
 ### Google Analytics
 
 Nothing to install. `googleAnalytics()` injects `gtag.js` once and turns off gtag's own page views, so the router decides.
+
+Before anything is sent it sets the Consent Mode v2 default. `analytics_storage` is granted, because the adapter only loads once the visitor has agreed. The ad signals (`ad_storage`, `ad_user_data`, `ad_personalization`) stay denied unless you pass `ads: true`.
 
 ```ts
 // config/analytics.ts

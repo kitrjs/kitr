@@ -306,7 +306,7 @@ interface ThemeTransitionOptions {
    * `data-kitr-theme-transition="<name>"` while it runs, for your CSS to target. Default `'fade'`.
    */
   name?: ThemeTransitionName | (string & {});
-  /** Milliseconds. Default `400`. */
+  /** Milliseconds. Default `600`. */
   duration?: number;
   /** Any CSS easing. Default `'cubic-bezier(0.65, 0, 0.35, 1)'`. */
   easing?: string;
