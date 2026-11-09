@@ -1,6 +1,7 @@
 import { type CommandDef, runMain as cittyRunMain, defineCommand, runCommand } from 'citty'
 import pc from 'picocolors'
 import { add, describePackage, remove } from './commands/add'
+import { agents } from './commands/agents'
 import { catalog } from './commands/catalog'
 import { doctor } from './commands/doctor'
 import { eject } from './commands/eject'
@@ -140,6 +141,7 @@ export const main = defineCommand({
     doctor,
     'package:check': packageCheck,
     catalog,
+    agents,
     eject,
     upgrade,
     info,

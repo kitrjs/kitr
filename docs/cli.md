@@ -15,6 +15,7 @@ A global install (`pnpm add -g @kitr/kitr`) lets you type `kitr` directly. Insid
 | `kitr <pkg>:<cmd>` | Run a command a package adds: `kitr jobs:work`. |
 | `kitr doctor` | Check the project for problems. Exits 1 on errors. |
 | `kitr info` | Print a JSON summary of the project. |
+| `kitr agents` | Print the project's `AGENTS.md`. See [Read the agent rules](#read-the-agent-rules). |
 | `kitr catalog` | List the official packages, platforms and kits. `--json` prints each with its whole `kitr` block. |
 | `kitr upgrade` | Move every kitr package to one version: `kitr upgrade --to 0.2.0`. |
 
@@ -45,6 +46,17 @@ Any npm package with a kitr setup module works: `kitr add @acme/stripe`. See [Pa
 `kitr doctor` checks `kitrrc.ts` against `package.json`, missing config files, imports that should go through an `@kitr/*` package, and versions that drift from the tested set. `--json` prints the result for scripts; `--strict` turns warnings into errors.
 
 `kitr upgrade` also moves upstream libraries to the versions that kitr release was tested with. It lists major bumps without applying them; `--majors` applies them.
+
+### Read the agent rules
+
+`kitr add` writes each package's rules for coding agents into `AGENTS.md`, one `## kitr: <name>` section per package. `kitr agents` prints the file, so an agent or a person can read the rules from the terminal.
+
+| Flag | What it does |
+| --- | --- |
+| `--list` | Print the section names, one per line: `conventions`, `structure`, `router`, ... |
+| `--section <name>` | Print one section, heading included: `kitr agents --section jobs`. |
+
+Outside a project, `kitr agents` fails and names the `AGENTS.md` it looked for.
 
 ## Platforms
 
