@@ -1,6 +1,6 @@
 {
   "name": "@kitr/i18n",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "@kitr/i18n: react-i18next re-exported, plus typed keys and locale helpers.",
   "kitr": {
     "name": "i18n",

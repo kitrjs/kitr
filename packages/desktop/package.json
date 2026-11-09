@@ -1,6 +1,6 @@
 {
   "name": "@kitr/desktop",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "@kitr/desktop: the desktop platform with an Electron shell. Main and preload in platforms/<name>/, typed IPC, storage drivers, packaging with electron-builder.",
   "kitr": {
     "name": "desktop",
