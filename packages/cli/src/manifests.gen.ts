@@ -128,6 +128,22 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "docs": "docs",
     "setup": "./kitr"
   },
+  "content": {
+    "package": "@kitr/content",
+    "name": "content",
+    "title": "Content",
+    "summary": "Write pages in markdown and get a docs site: highlighted code, a sidebar, search and copies for coding agents.",
+    "category": "pages",
+    "runsOn": "both",
+    "builtOn": [
+      "unified",
+      "shiki"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr",
+    "types": "./types"
+  },
   "db": {
     "package": "@kitr/db",
     "name": "db",
