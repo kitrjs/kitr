@@ -1,41 +1,45 @@
 import { KitrError } from '@kitr/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-/**
- * Start's server functions need the Start bundler to run on the client. Here they run
- * in-process: the builder records method and middleware and calls the handler directly,
- * the way Start does on the server. What is tested is kitr's part: validation, the error
- * envelope, keys, and the query and mutation contracts.
- */
-const built: Array<{ method: string; middleware?: unknown[] }> = []
 vi.mock('@tanstack/react-start', () => ({
-  createServerFn: ({ method }: { method: string }) => {
-    const record: { method: string; middleware?: unknown[] } = { method }
-    built.push(record)
-    const builder = {
-      middleware(m: unknown[]) {
-        record.middleware = m
-        return builder
-      },
-      validator: () => builder,
-      handler:
-        (h: (o: { data: unknown; context: unknown; signal: AbortSignal }) => unknown) =>
-        (opts: { data: unknown; signal?: AbortSignal; context?: unknown }) =>
-          // Start serializes data over the wire; do the same so tests catch non-JSON results.
-          Promise.resolve(
-            h({
-              data: JSON.parse(JSON.stringify(opts.data ?? null)) ?? undefined,
-              context: opts.context ?? { session: { user: { id: 'u1' } } },
-              signal: opts.signal ?? new AbortController().signal,
-            }),
-          ).then((r) => JSON.parse(JSON.stringify(r))),
-    }
-    return builder
+  createServerFn: () => {
+    throw new Error('the registry creates server functions, not @kitr/actions')
   },
   createMiddleware: () => ({ server: (fn: unknown) => ({ fn }) }),
 }))
 
-const { defineMutation, defineQuery, requireSession } = await import('../src')
+const {
+  actionMiddleware,
+  defineMutation: mutation,
+  defineQuery: query,
+  requireSession,
+} = await import('../src')
+
+/**
+ * Start compiles server functions only in the app's own source, so the generated registry creates
+ * them and binds each to its action. Here a bound function does what Start does on the server:
+ * data and results cross as JSON, and the body is the action's `handle`. What is tested is kitr's
+ * part: validation, the error envelope, keys, and the query and mutation contracts.
+ */
+function served<T extends { handle: (ctx: any) => Promise<unknown>; bind: (fn: any) => void }>(
+  action: T,
+  context: unknown = { session: { user: { id: 'u1' } } },
+): T {
+  action.bind(async (opts: { data: unknown; signal?: AbortSignal; context?: unknown }) =>
+    JSON.parse(
+      JSON.stringify(
+        await action.handle({
+          data: JSON.parse(JSON.stringify(opts.data ?? null)) ?? undefined,
+          context: opts.context ?? context,
+          signal: opts.signal ?? new AbortController().signal,
+        }),
+      ),
+    ),
+  )
+  return action
+}
+const defineQuery: typeof query = (name, options) => served(query(name, options))
+const defineMutation: typeof mutation = (name, options) => served(mutation(name, options))
 
 /** A minimal Standard Schema: `{ title: string }` with a trimmed, non-empty title. */
 const titleSchema = {
@@ -52,7 +56,6 @@ const titleSchema = {
 } as const
 
 afterEach(() => {
-  built.length = 0
   vi.restoreAllMocks()
   vi.unstubAllEnvs()
 })
@@ -63,7 +66,6 @@ describe('defineQuery and defineMutation', () => {
     const create = defineMutation('projects.create', { input: titleSchema, handler })
     await expect(create({ title: '  Launch  ' })).resolves.toEqual({ id: 1, title: 'Launch' })
     expect(handler.mock.calls[0]![0].input).toEqual({ title: 'Launch' })
-    expect(built[0]!.method).toBe('POST')
     expect(create.kind).toBe('mutation')
   })
 
@@ -162,7 +164,6 @@ describe('defineQuery and defineMutation', () => {
     expect(options.queryKey).toEqual(['action', 'projects.search', { title: 'a' }])
     expect(options.staleTime).toBe(5_000)
     expect(options.meta).toEqual({ source: 'action' })
-    expect(built.map((b) => b.method)).toEqual(['GET', 'GET'])
   })
 
   it('a query fetches through its options and its contract', async () => {
@@ -222,14 +223,28 @@ describe('defineQuery and defineMutation', () => {
     expect(error.code).toBe('VALIDATION')
   })
 
-  it('registers middleware only when given', () => {
+  it("lists middleware for the server function only when given, behind kitr's guard", () => {
     const mw = [{ fn: () => {} }]
-    defineQuery('a', { handler: () => 1 })
-    defineMutation('b', { middleware: mw, handler: () => 1 })
-    expect(built[0]!.middleware).toBeUndefined()
-    // kitr's error guard goes first, then the app's middleware in order.
-    expect(built[1]!.middleware).toHaveLength(2)
-    expect(built[1]!.middleware![1]).toBe(mw[0])
+    expect(actionMiddleware(query('a', { handler: () => 1 }))).toEqual([])
+    const guarded = actionMiddleware(mutation('b', { middleware: mw, handler: () => 1 }))
+    expect(guarded).toHaveLength(2)
+    expect(guarded[1]).toBe(mw[0])
+  })
+
+  it('has no server function until the registry binds one, and runs in-process meanwhile', async () => {
+    const bare = query('bare', { input: titleSchema, handler: ({ input }) => input.title })
+    expect(() => bare.serverFn).toThrow(/run `kitr types`/)
+    await expect(bare({ title: ' x ' })).resolves.toBe('x')
+    const fn = vi.fn(async () => ({ ok: true as const, data: 'from the wire' }))
+    bare.bind(fn as never)
+    expect(bare.serverFn).toBe(fn)
+    await expect(bare({ title: 'x' })).resolves.toBe('from the wire')
+    expect(fn).toHaveBeenCalledWith({ data: { title: 'x' }, signal: undefined })
+  })
+
+  it('names the cause when the handler was left out of the browser bundle', async () => {
+    const stripped = query('stripped', { handler: undefined as never })
+    await expect(stripped.run(undefined)).rejects.toThrow(/left out of the browser bundle/)
   })
 })
 
@@ -237,9 +252,10 @@ describe('defineQuery and defineMutation', () => {
 // and a production server error does not leak its message.
 describe('middleware errors', () => {
   const guardOf = () => {
-    defineMutation('guarded', { middleware: [{ fn: () => {} }], handler: () => 1 })
-    const guard = built.at(-1)!.middleware![0] as { fn: (ctx: unknown) => Promise<any> }
-    return (next: () => unknown) => guard.fn({ data: undefined, context: {}, next })
+    const [guard] = actionMiddleware(
+      mutation('guarded', { middleware: [{ fn: () => {} }], handler: () => 1 }),
+    ) as unknown as Array<{ fn: (ctx: unknown) => Promise<any> }>
+    return (next: () => unknown) => guard!.fn({ data: undefined, context: {}, next })
   }
 
   it('turns a KitrError from middleware into the error envelope', async () => {

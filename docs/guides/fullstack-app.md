@@ -151,14 +151,13 @@ import { defineQuery } from '@kitr/actions'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
 export const listProjects = defineQuery('projects.list', {
   input: z.object({ teamId: z.string() }),
   handler: ({ input }) =>
-    useDb<AppDb>(useRequestApp(app))
+    useDb<AppDb>(useRequestApp())
       .select()
       .from(projects)
       .where(eq(projects.teamId, input.teamId))
@@ -166,7 +165,7 @@ export const listProjects = defineQuery('projects.list', {
 })
 ```
 
-The handler, Drizzle and the Postgres driver only run on the server; none of it reaches the browser bundle. `useRequestApp(app)` is the app for the current request, so services bound per request work inside the handler.
+The handler, Drizzle and the Postgres driver only run on the server; none of it reaches the browser bundle. `useRequestApp()` is the app for the current request, so services bound per request work inside the handler. Keep `import { app } from '#app/app'` out of action files: the registry that `app/app.ts` imports imports every action, so an action that imports `app` back is a cycle.
 
 The name `projects.list` is the action's address. `kitr types` (which `kitr dev` runs, and reruns whenever a file in `app/actions/` changes) writes it into `.kitr/actions.ts`, so a component can use it by name with full types. Load it in the page's loader and read it in the component:
 
@@ -177,7 +176,7 @@ import { seo } from '@kitr/seo'
 
 r.page('/projects', {
   loader: ({ context }) =>
-    context.queryClient.ensureQueryData(queryOptions('projects.list', { teamId: 'team_acme' })),
+    context.queryClient.ensureQueryData(queryOptions(context.app, 'projects.list', { teamId: 'team_acme' })),
   head: () => seo({ title: 'Projects · Acme', description: 'Every project the Acme team runs.' }),
   lazy: () => import('./pages/projects/index'),
 })
@@ -231,7 +230,6 @@ import { defineMutation } from '@kitr/actions'
 import { KitrError } from '@kitr/kitr/app'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { newProjectSchema } from '#app/validators/projects'
 import { projects } from '#server/db/schema'
@@ -240,7 +238,7 @@ export const createProject = defineMutation('projects.create', {
   input: newProjectSchema,
   effects: { invalidate: [['action', 'projects.list']] },
   handler: async ({ input }) => {
-    const db = useDb<AppDb>(useRequestApp(app))
+    const db = useDb<AppDb>(useRequestApp())
     const taken = await db
       .select()
       .from(projects)
@@ -384,19 +382,19 @@ export const routes = defineRoutes([api, realtime], (router) =>
 )
 ```
 
-Emit from the action, after the insert. `createServer({ routes })` bound the socket server as `realtime` in the container, so anything on the server reaches it through `server.app`:
+Emit from the action, after the insert. `createServer({ routes })` bound the socket server as `realtime` in the container, and `useRequestApp()` is the container's app for this request:
 
 ```ts
 // app/actions/projects/create.ts
 // ...
 import { teamProjectsChannel } from '#app/channels/projects'
-import { server } from '#server/main'
 
 export const createProject = defineMutation('projects.create', {
   // ...input and effects as before
   handler: async ({ input }) => {
-    // ...the duplicate check and the insert as before
-    server.app.container.use('realtime').use(teamProjectsChannel, { teamId: input.teamId }).emit('created', {
+    const app = useRequestApp()
+    // ...the duplicate check and the insert as before, reading the database from `app`
+    app.container.use('realtime').use(teamProjectsChannel, { teamId: input.teamId }).emit('created', {
       id: project!.id,
       name: project!.name,
     })

@@ -8,7 +8,7 @@ export default definePackage({
   add(ctx) {
     const serverOnly = !(ctx.has('react') || ctx.hasPackage('react'))
     const path = serverOnly ? '/ws' : '/api/ws'
-    ctx.deps.add('crossws', ...(serverOnly ? [] : ['partysocket']))
+    ctx.deps.add('crossws', 'partysocket')
     ctx.config(
       'realtime',
       `import { defineConfig } from '@kitr/realtime'\n\nexport default defineConfig({\n  // websocket (default), socket.io or sse: the channels and hooks stay the same.\n  transport: 'websocket',\n  path: '${path}',\n})\n`,

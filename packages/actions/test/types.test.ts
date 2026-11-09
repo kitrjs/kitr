@@ -121,6 +121,36 @@ describe('renderActions', () => {
     expect(out).toMatch(/declare module '@kitr\/core' \{\n {2}interface Operations \{/)
   })
 
+  it('creates one server function per action, GET for a query and POST for a mutation, and binds it', () => {
+    const out = renderActions(
+      [
+        {
+          file: 'app/actions/p.ts',
+          exportName: 'listProjects',
+          name: 'projects.list',
+          kind: 'query',
+        },
+        {
+          file: 'app/actions/p.ts',
+          exportName: 'saveProject',
+          name: 'projects.save',
+          kind: 'mutation',
+        },
+      ],
+      ctx,
+    )
+    expect(out).toContain("import { createServerFn } from '@tanstack/react-start'")
+    expect(out).toContain("import { actionMiddleware } from '@kitr/actions'")
+    // Start compiles a direct `createServerFn(...)` chain in the app's own source, nothing else.
+    expect(out).toContain(`const serve0 = createServerFn({ method: 'GET' })
+  .middleware(actionMiddleware(m0.listProjects))
+  .validator((data: unknown) => data)
+  .handler((ctx) => m0.listProjects.handle(ctx as never) as never)
+m0.listProjects.bind(serve0 as never)`)
+    expect(out).toContain("const serve1 = createServerFn({ method: 'POST' })")
+    expect(out).toContain('m0.saveProject.bind(serve1 as never)')
+  })
+
   it('renders an empty registry without imports', () => {
     const out = renderActions([], ctx)
     expect(out).not.toContain('import')

@@ -37,6 +37,7 @@ export default definePackage({
     ctx.agents.remove('actions')
   },
   types: () => import('./types'),
+  vite: { plugin: '@kitr/actions/vite' },
   generators: {
     query: {
       ...operation('query'),

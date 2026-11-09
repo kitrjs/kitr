@@ -118,7 +118,7 @@ export const web = definePlatform<WebOptions>(
       { name: '@tanstack/react-start' },
       { name: '@tanstack/router-plugin', dev: true },
       ...(options.pwa ? [{ name: 'vite-plugin-pwa', dev: true }] : []),
-      ...(options.mode === 'ssr' ? [{ name: 'srvx' }] : []),
+      { name: 'srvx' },
     ],
     scaffold(ctx) {
       if (options.pwa)

@@ -151,7 +151,7 @@ export default class OrdersController {
 
 Emit after the write succeeds, with data you built from your own records. The server does not validate what you pass to `emit`; the schema protects clients from a malformed event, not the server from sending one.
 
-The same call works in a server action, a scheduled task or a webhook handler: anything on the server that can reach the app, for example `server.app.container.use('realtime')` after importing `server` from `#server/main`.
+The same call works in a server action, where `useRequestApp()` from `@kitr/server` is the app, and in a scheduled task or a webhook handler: anything on the server that can reach the app, for example `server.app.container.use('realtime')` after importing `server` from `#server/main`. An action file must not import `server`: the module cycle it makes breaks the action registry.
 
 ## Subscribe on the board
 

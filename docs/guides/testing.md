@@ -165,26 +165,29 @@ To run files in parallel again, give each Vitest worker its own database instead
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createProject } from '#app/actions/projects/create'
 import { app } from '#app/app'
+import { runWithApp } from '@kitr/server'
 
 beforeAll(() => app.boot())
 
+const run = <T>(fn: () => Promise<T>) => runWithApp(app, fn)
+
 describe('projects.create', () => {
   it('creates a project and returns it', async () => {
-    const project = await createProject.run({ teamId: 'team_acme', name: 'Apollo launch' })
+    const project = await run(() => createProject.run({ teamId: 'team_acme', name: 'Apollo launch' }))
     expect(project).toMatchObject({ teamId: 'team_acme', name: 'Apollo launch' })
     expect(project.id).toMatch(/^prj_/)
   })
 
   it('refuses a name the team already uses', async () => {
-    await createProject.run({ teamId: 'team_acme', name: 'Apollo launch' })
-    await expect(createProject.run({ teamId: 'team_acme', name: 'Apollo launch' })).rejects.toMatchObject({
+    await run(() => createProject.run({ teamId: 'team_acme', name: 'Apollo launch' }))
+    await expect(run(() => createProject.run({ teamId: 'team_acme', name: 'Apollo launch' }))).rejects.toMatchObject({
       code: 'VALIDATION',
       fieldErrors: { name: ['This team already has a project with that name'] },
     })
   })
 
   it('validates the input before the handler runs', async () => {
-    await expect(createProject.run({ teamId: 'team_acme', name: 'A' })).rejects.toMatchObject({
+    await expect(run(() => createProject.run({ teamId: 'team_acme', name: 'A' }))).rejects.toMatchObject({
       code: 'VALIDATION',
       fieldErrors: { name: [expect.any(String)] },
     })
@@ -192,7 +195,7 @@ describe('projects.create', () => {
 })
 ```
 
-The handler calls `useRequestApp(app)`. Outside a request that returns `app` from `app/app.ts` itself, so the test boots it first: its providers register, and [DB](/packages/db) connects to the test database from `.env.test`. Without `app.boot()`, the first query fails because nothing has bound the database yet.
+The handler calls `useRequestApp()`, which reads the app of the current request. Outside a request there is none, so the test boots the app and wraps each call in `runWithApp(app, …)`. Booting registers the providers, and [DB](/packages/db) connects to the test database from `.env.test`. Without `app.boot()`, the first query fails because nothing has bound the database yet.
 
 An action behind `requireSession` needs a session in its context. `.run()` skips middleware, so pass the context the middleware would have set:
 

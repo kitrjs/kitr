@@ -24,7 +24,7 @@ import {
   type MutationDefinition,
   type QueryDefinition,
 } from '@kitr/query'
-import { createMiddleware, createServerFn } from '@tanstack/react-start'
+import { createMiddleware } from '@tanstack/react-start'
 
 type InputOf<S> = S extends StandardSchemaV1 ? InferOutput<S> : void
 
@@ -106,6 +106,13 @@ export type ServerFn<TOutput> = (opts: {
   signal?: AbortSignal
 }) => Promise<Envelope<TOutput>>
 
+/** What a Start server function passes to its handler. */
+export interface ServerFnContext<TContext = unknown> {
+  data: unknown
+  context: TContext
+  signal: AbortSignal
+}
+
 /**
  * A server query: a `QueryDefinition` from `@kitr/query` that is also a function. Call it to fetch,
  * pass `.options(input)` to any TanStack hook or loader, or use it by name once `kitr types` has
@@ -117,7 +124,14 @@ export interface ServerQuery<TInput, TOutput, TContext = unknown>
   readonly name: string
   /** Validation and the handler in-process, for tests. Skips Start middleware. */
   run(input: TInput, options?: CallOptions<TContext>): Promise<TOutput>
+  /** The Start server function behind this action, bound by the registry `kitr types` writes. */
   readonly serverFn: ServerFn<TOutput>
+  /** The middleware passed to `middleware`. The registry puts it on the server function. */
+  readonly middleware: ReadonlyArray<unknown>
+  /** The server function's body: validate, run the handler and wrap the result. For the generated registry. */
+  handle(ctx: ServerFnContext<TContext>): Promise<Envelope<TOutput>>
+  /** Attach the server function the registry created. For the generated registry. */
+  bind(serverFn: ServerFn<TOutput>): void
 }
 
 /**
@@ -130,7 +144,14 @@ export interface ServerMutation<TInput, TOutput, TContext = unknown>
   readonly name: string
   /** Validation and the handler in-process, for tests. Skips Start middleware. */
   run(input: TInput, options?: CallOptions<TContext>): Promise<TOutput>
+  /** The Start server function behind this action, bound by the registry `kitr types` writes. */
   readonly serverFn: ServerFn<TOutput>
+  /** The middleware passed to `middleware`. The registry puts it on the server function. */
+  readonly middleware: ReadonlyArray<unknown>
+  /** The server function's body: validate, run the handler and wrap the result. For the generated registry. */
+  handle(ctx: ServerFnContext<TContext>): Promise<Envelope<TOutput>>
+  /** Attach the server function the registry created. For the generated registry. */
+  bind(serverFn: ServerFn<TOutput>): void
 }
 
 /**
@@ -152,7 +173,7 @@ export function defineQuery<
   options: DefineQueryOptions<S, TOutput, TContext, M>,
 ): ServerQuery<InputOf<S>, TOutput, TContext> {
   type TInput = InputOf<S>
-  const { serverFn, call, run } = build<S, TOutput, TContext>(name, 'GET', options)
+  const { call, members } = build<S, TOutput, TContext>(name, options)
   const key = (input: TInput): QueryKey => keyFor('action', name, input)
   const contract: Omit<QueryContract<TInput, TOutput>, 'kind'> = {
     source: 'action',
@@ -160,11 +181,8 @@ export function defineQuery<
     fetch: (input, ctx) => call(input, ctx),
     ...(options.staleTime !== undefined ? { staleTime: options.staleTime } : {}),
   }
-  const definition = Object.assign(call, defineQueryContract<TInput, TOutput>(contract), {
-    run,
-    serverFn,
-  })
-  Object.defineProperty(definition, 'name', { value: name })
+  const definition = Object.assign(call, defineQueryContract<TInput, TOutput>(contract))
+  Object.defineProperties(definition, members)
   return definition as unknown as ServerQuery<TInput, TOutput, TContext>
 }
 
@@ -187,17 +205,14 @@ export function defineMutation<
   options: DefineMutationOptions<S, TOutput, TContext, M>,
 ): ServerMutation<InputOf<S>, TOutput, TContext> {
   type TInput = InputOf<S>
-  const { serverFn, call, run } = build<S, TOutput, TContext>(name, 'POST', options)
+  const { call, members } = build<S, TOutput, TContext>(name, options)
   const contract: Omit<MutationContract<TInput, TOutput>, 'kind'> = {
     source: 'action',
     mutate: (input) => call(input),
     effects: options.effects as MutationContract<TInput, TOutput>['effects'],
   }
-  const definition = Object.assign(call, defineMutationContract<TInput, TOutput>(contract), {
-    run,
-    serverFn,
-  })
-  Object.defineProperty(definition, 'name', { value: name })
+  const definition = Object.assign(call, defineMutationContract<TInput, TOutput>(contract))
+  Object.defineProperties(definition, members)
   return definition as unknown as ServerMutation<TInput, TOutput, TContext>
 }
 
@@ -231,10 +246,14 @@ function guard(name: string) {
   }) as any)
 }
 
-/** The Start server function, the client-side call and the in-process run, shared by both definitions. */
+/**
+ * What both definitions share. The Start server function is not made here: Start compiles
+ * `createServerFn` only where it is written in the app's own source, so the registry `kitr types`
+ * writes creates one per action and hands it to `bind`. Until then (a unit test that imports an
+ * action) a call runs the handler in-process, as `run` does.
+ */
 function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
   name: string,
-  method: 'GET' | 'POST',
   options: DefineOperationOptions<S, TOutput, TContext, ReadonlyArray<unknown>>,
 ) {
   type TInput = InputOf<S>
@@ -249,43 +268,66 @@ function build<S extends StandardSchemaV1 | undefined, TOutput, TContext>(
       if (!result.success) throw KitrError.validation(result.fieldErrors)
       input = result.data as TInput
     }
+    if (typeof options.handler !== 'function')
+      throw new Error(
+        `[@kitr/actions] ${name} has no handler here: its handler runs on the server and is left out of the browser bundle. Call it through its server function.`,
+      )
     return options.handler({ input, context, signal })
   }
-  let builder: any = createServerFn({ method })
-  // kitr's guard runs first, so an error thrown by any middleware becomes the same envelope a
-  // handler error does: typed on the client, and masked in production.
-  if (options.middleware?.length) builder = builder.middleware([guard(name), ...options.middleware])
-  const serverFn: ServerFn<TOutput> = builder
-    .validator((data: unknown) => data)
-    .handler(
-      async ({
-        data,
-        context,
-        signal,
-      }: {
-        data: unknown
-        context: TContext
-        signal: AbortSignal
-      }): Promise<Envelope<TOutput>> => {
-        try {
-          return okEnvelope(await execute(data, context, signal))
-        } catch (error) {
-          if (steersRouter(error)) throw error
-          return failure(name, error)
-        }
-      },
-    )
+  let serverFn: ServerFn<TOutput> | undefined
   const call = async (input: TInput, callOptions: { signal?: AbortSignal } = {}) => {
+    if (!serverFn) return run(input, { signal: callOptions.signal })
     const envelope = await serverFn({ data: input ?? undefined, signal: callOptions.signal })
     return unwrapEnvelope(envelope)
   }
   const run = (input: TInput, runOptions: CallOptions<TContext> = {}) =>
     execute(input, (runOptions.context ?? {}) as TContext, linkSignals(runOptions.signal))
-  return { serverFn, call, run }
+  const handle = async ({
+    data,
+    context,
+    signal,
+  }: ServerFnContext<TContext>): Promise<Envelope<TOutput>> => {
+    try {
+      return okEnvelope(await execute(data, context, signal))
+    } catch (error) {
+      if (steersRouter(error)) throw error
+      return failure(name, error)
+    }
+  }
+  const members: PropertyDescriptorMap = {
+    name: { value: name },
+    run: { value: run },
+    handle: { value: handle },
+    middleware: { value: options.middleware ?? [] },
+    bind: {
+      value: (fn: ServerFn<TOutput>) => {
+        serverFn = fn
+      },
+    },
+    serverFn: {
+      get: () => {
+        if (!serverFn)
+          throw new Error(
+            `[@kitr/actions] ${name} has no server function yet: run \`kitr types\` and import the action through the generated registry (#kitr/actions).`,
+          )
+        return serverFn
+      },
+    },
+  }
+  return { call, members }
+}
+
+/**
+ * The middleware for an action's server function, for the generated registry: the middleware the
+ * action lists, behind kitr's guard, so an error any of them throws reaches the caller as the same
+ * typed envelope a handler error does, masked in production.
+ */
+export function actionMiddleware(action: { name: string; middleware: ReadonlyArray<unknown> }) {
+  return (action.middleware.length ? [guard(action.name), ...action.middleware] : []) as never[]
 }
 
 /** Re-exported so apps write middleware with the same import path. */
-export { createMiddleware, createServerFn }
+export { createMiddleware }
 
 /** Shortcut: a function middleware that rejects anonymous callers. Expects `context.session` from an earlier middleware. */
 export const requireSession = createMiddleware({ type: 'function' }).server(

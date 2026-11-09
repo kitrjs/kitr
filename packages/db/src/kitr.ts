@@ -20,5 +20,5 @@ export default definePackage({
     ctx.provider.remove('@kitr/db')
     ctx.agents.remove('db')
   },
-  vite: { serverOnlyConfig: true },
+  vite: { serverOnlyConfig: true, provider: { client: false } },
 })

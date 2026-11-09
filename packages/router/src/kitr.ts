@@ -1,7 +1,7 @@
-import { definePackage, generatorFile, naming } from '@kitr/core/package'
+import { definePackage, displayName, generatorFile, naming } from '@kitr/core/package'
 
 /** `app/document.tsx`: the HTML shell and head tags every page renders inside. */
-function documentFile(cssImports: string[]): string {
+function documentFile(cssImports: string[], brand: string): string {
   const imports = cssImports.map((c, i) => `import css${i} from '${c}?url'`).join('\n')
   const links = cssImports.map((_, i) => `{ rel: 'stylesheet', href: css${i} }`).join(', ')
   return `import { HeadContent, Link, Outlet, Scripts } from '@kitr/router'
@@ -10,7 +10,11 @@ ${imports}
 /** Head tags for every page. Pages add their own through \`head\` in their route options. */
 export function head() {
   return {
-    meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }],
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: '${brand}' },
+    ],
     links: [${links}],
   }
 }
@@ -107,7 +111,10 @@ export default definePackage({
       { name: '@tanstack/router-plugin', dev: true },
       { name: '@tanstack/react-router-devtools', dev: true },
     )
-    ctx.write('app/document.tsx', documentFile(['@kitr/theme/styles.css']))
+    ctx.write(
+      'app/document.tsx',
+      documentFile(['@kitr/theme/styles.css'], displayName(ctx.pkg.name ?? 'app')),
+    )
     ctx.write('app/routes.ts', routesFile)
     // Idempotent: a table another package created first gets the pages methods added to its list.
     ctx.routes.extend('@kitr/router/routes')

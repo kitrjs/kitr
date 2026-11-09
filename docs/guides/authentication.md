@@ -123,7 +123,6 @@ import { randomBytes } from 'node:crypto'
 import { and, eq, gt } from 'drizzle-orm'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
-import { app } from '#app/app'
 import type { User } from '#app/abilities'
 import type { AppDb } from '#config/db'
 import { sessions, users } from '#server/db/schema'
@@ -131,7 +130,7 @@ import { sessions, users } from '#server/db/schema'
 export const SESSION_COOKIE = 'acme_session'
 const THIRTY_DAYS = 30 * 24 * 60 * 60
 
-const db = () => useDb<AppDb>(useRequestApp(app))
+const db = () => useDb<AppDb>(useRequestApp())
 
 export async function startSession(userId: string): Promise<string> {
   const id = randomBytes(32).toString('base64url')
@@ -297,12 +296,11 @@ export type ServerRoutes = typeof routes.$types
 import { eq } from 'drizzle-orm'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
 export async function findProject(id: string) {
-  const [project] = await useDb<AppDb>(useRequestApp(app)).select().from(projects).where(eq(projects.id, id))
+  const [project] = await useDb<AppDb>(useRequestApp()).select().from(projects).where(eq(projects.id, id))
   return project ?? null
 }
 ```
@@ -487,14 +485,13 @@ import { defineQuery, requireSession } from '@kitr/actions'
 import { useDb } from '@kitr/db'
 import { useRequestApp } from '@kitr/server'
 import { sessionMiddleware } from '#app/actions/middleware/session'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
 export const listProjects = defineQuery('projects.list', {
   middleware: [sessionMiddleware, requireSession],
   handler: ({ context }) =>
-    useDb<AppDb>(useRequestApp(app))
+    useDb<AppDb>(useRequestApp())
       .select()
       .from(projects)
       .where(eq(projects.teamId, context.session.user.teamId))
@@ -516,7 +513,6 @@ import { useRequestApp } from '@kitr/server'
 import { z } from 'zod'
 import { abilities } from '#app/abilities'
 import { sessionMiddleware } from '#app/actions/middleware/session'
-import { app } from '#app/app'
 import type { AppDb } from '#config/db'
 import { projects } from '#server/db/schema'
 
@@ -525,7 +521,7 @@ export const renameProject = defineMutation('projects.rename', {
   input: z.object({ id: z.string(), name: z.string().trim().min(2) }),
   effects: { invalidate: [['action', 'projects.list']] },
   handler: async ({ input, context }) => {
-    const db = useDb<AppDb>(useRequestApp(app))
+    const db = useDb<AppDb>(useRequestApp())
     const [project] = await db.select().from(projects).where(eq(projects.id, input.id))
     if (!project || !abilities.can(context.session.user, 'projects.view', project)) throw KitrError.notFound('Project')
     if (!abilities.can(context.session.user, 'projects.update', project)) throw KitrError.forbidden()
@@ -632,6 +628,7 @@ Server actions run without middleware in tests, so pass the session as context:
 
 ```ts
 // app/actions/projects/rename.test.ts
+import { runWithApp } from '@kitr/server'
 import { beforeAll, expect, it } from 'vitest'
 import { renameProject } from '#app/actions/projects/rename'
 import { app } from '#app/app'
@@ -642,7 +639,9 @@ const grace = { id: 'u_grace', email: 'grace@acme.com', role: 'member' as const,
 
 it('refuses to rename a project Grace does not own', async () => {
   await expect(
-    renameProject.run({ id: 'prj_ada_roadmap', name: 'Mine now' }, { context: { session: { user: grace } } }),
+    runWithApp(app, () =>
+      renameProject.run({ id: 'prj_ada_roadmap', name: 'Mine now' }, { context: { session: { user: grace } } }),
+    ),
   ).rejects.toMatchObject({ code: 'FORBIDDEN' })
 })
 ```
