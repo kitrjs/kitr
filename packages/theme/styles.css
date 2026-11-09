@@ -111,24 +111,4 @@
     font-size: 0.875rem;
     margin: 0;
   }
-
-  /* setTheme(next, { from: button }): the new theme grows as a circle from the button, inside a
-     view transition. Nothing else is named while it runs, so the whole page is one picture. */
-  html[data-kitr-theme-reveal] * {
-    view-transition-name: none !important;
-  }
-  html[data-kitr-theme-reveal]::view-transition-old(root) {
-    animation: none;
-  }
-  html[data-kitr-theme-reveal]::view-transition-new(root) {
-    animation: kitr-theme-reveal 320ms cubic-bezier(0.65, 0, 0.35, 1) both;
-  }
-  @keyframes kitr-theme-reveal {
-    from {
-      clip-path: circle(0 at var(--kitr-reveal-x, 50%) var(--kitr-reveal-y, 0));
-    }
-    to {
-      clip-path: circle(150% at var(--kitr-reveal-x, 50%) var(--kitr-reveal-y, 0));
-    }
-  }
 }
