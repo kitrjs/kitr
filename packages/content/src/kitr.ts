@@ -13,7 +13,8 @@ export default defineConfig({
 })
 `
 
-const navJson = `[
+/** What `kitr add content` writes to `content/docs/nav.json`. */
+export const navJson = `[
   {
     "title": "Start here",
     "pages": ["getting-started"]
@@ -21,7 +22,8 @@ const navJson = `[
 ]
 `
 
-const firstPage = `---
+/** What `kitr add content` writes to `content/docs/getting-started.md`. */
+export const firstPage = `---
 title: Getting started
 description: What these docs cover and where to begin.
 ---

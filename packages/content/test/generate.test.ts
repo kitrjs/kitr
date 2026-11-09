@@ -12,7 +12,9 @@ import { dirname, join, relative } from 'node:path'
 import { type GenerateContext, globToRegExp } from '@kitr/core'
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildContent } from '../src/collections'
+import { contentConfig, firstPage, navJson } from '../src/kitr'
 import { llmsFullTxt, llmsTxt, pageMarkdown } from '../src/llms'
+import { search } from '../src/search'
 import generator, { loadContentConfig, renderIndex } from '../src/types'
 
 const dirs: string[] = []
@@ -298,5 +300,24 @@ describe('llms files', () => {
       ),
     ).toBe(true)
     expect(page).not.toContain('title: Getting started')
+  })
+})
+
+describe('the kitr add starter', () => {
+  it('renders the first page and finds it by its heading', async () => {
+    const root = project({
+      'config/content.ts': contentConfig.replace(
+        "import { defineConfig } from '@kitr/content'",
+        'const defineConfig = <T>(c: T) => c',
+      ),
+      'content/docs/nav.json': navJson,
+      'content/docs/getting-started.md': firstPage,
+    })
+    const content = await buildContent(context(root), (await loadContentConfig(root))!)
+    expect(content.pages[0]!.page).toMatchObject({
+      url: '/docs/getting-started',
+      title: 'Getting started',
+    })
+    expect(search(content.search, 'add a page')[0]?.url).toBe('/docs/getting-started#add-a-page')
   })
 })

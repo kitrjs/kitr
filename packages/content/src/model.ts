@@ -17,7 +17,7 @@ export interface CollectionConfig {
 
 /** What `llms: { ... }` sets for `llms.txt`. `llms: true` uses the defaults. */
 export interface LlmsConfig {
-  /** The `# heading` of `llms.txt`. Default: the `name` in package.json. */
+  /** The `# heading` of `llms.txt`. Default: the `name` in package.json as words (`acme-docs` is `Acme Docs`). */
   title?: string
   /** The `> summary` line under the heading. */
   description?: string
