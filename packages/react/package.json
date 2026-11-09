@@ -1,6 +1,6 @@
 {
   "name": "@kitr/react",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "React bindings for the kitr app: <KitrProvider>, useApp(), useService().",
   "kitr": {
     "name": "react",
