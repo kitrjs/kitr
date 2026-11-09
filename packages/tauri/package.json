@@ -20,7 +20,75 @@
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "platform": {
+      "label": "Rust + webview",
+      "tagline": "Windows, macOS and Linux as a small Rust binary on the webview the operating system provides. Downloads measured in megabytes, not hundreds of them.",
+      "targets": [
+        "Windows",
+        "macOS",
+        "Linux"
+      ],
+      "shell": "Rust + system webview",
+      "color": "#FACC15",
+      "command": "kitr add tauri app",
+      "alternative": "desktop",
+      "highlights": [
+        {
+          "title": "Small and light",
+          "text": "No browser ships with the app, so installers are small and memory use is low. The webview differs between Windows, macOS and Linux, so test on each."
+        },
+        {
+          "title": "Typed Rust commands",
+          "text": "`defineCommands()` types your Rust commands for the app, and `commandQuery` turns one into a cached query like any other."
+        },
+        {
+          "title": "Events both ways",
+          "text": "`useTauriEvent()` listens to events Rust emits, and `emitTauri()` sends one back. Both do nothing in a plain browser, so the web build is unchanged."
+        },
+        {
+          "title": "Checked before you build",
+          "text": "Builds need the Rust toolchain. `kitr doctor` checks for it, and the Rust project lives in `platforms/app/src-tauri` for you to edit."
+        }
+      ],
+      "snippet": "// app/commands.ts\nimport { commandQuery, defineCommands } from '@kitr/tauri/client'\n\ntype Commands = { greet: (args: { name: string }) => string }\nexport const commands = defineCommands<Commands>()\nexport const greeting = commandQuery(commands.greet, 'greet')\n\nawait commands.greet({ name: 'kitr' })",
+      "run": [
+        [
+          "kitr dev app",
+          "the Tauri window over the Vite dev server"
+        ],
+        [
+          "kitr build app",
+          "tauri build: a native bundle per OS"
+        ],
+        [
+          "kitr doctor",
+          "checks the Rust toolchain"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "Tauri 2 docs",
+          "url": "https://v2.tauri.app/start/",
+          "text": "Commands, events, capabilities."
+        },
+        {
+          "title": "Prerequisites",
+          "url": "https://v2.tauri.app/start/prerequisites/",
+          "text": "The Rust toolchain and system webview per OS."
+        },
+        {
+          "title": "Store plugin",
+          "url": "https://v2.tauri.app/plugin/store/",
+          "text": "Where storage items are kept."
+        },
+        {
+          "title": "Distribute",
+          "url": "https://v2.tauri.app/distribute/",
+          "text": "Signing and installers for each OS."
+        }
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",

@@ -20,7 +20,73 @@
     "client": true,
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "platform": {
+      "label": "iOS · Android",
+      "tagline": "iPhone and Android apps through Capacitor, with storage, the back button, deep links and safe areas handled natively.",
+      "targets": [
+        "iOS",
+        "Android"
+      ],
+      "shell": "Capacitor",
+      "color": "#A78BFA",
+      "command": "kitr add mobile phone",
+      "highlights": [
+        {
+          "title": "Native projects you own",
+          "text": "The Xcode and Android Studio projects live in `platforms/phone/`. `kitr dev` adds them the first time and `--target ios` picks one."
+        },
+        {
+          "title": "Live reload on the device",
+          "text": "The app on your phone loads the dev server over the network, so a saved file shows up on the device in a second."
+        },
+        {
+          "title": "Hooks for the device",
+          "text": "`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink` and `useSafeArea` answer the same way in the browser and in the app."
+        },
+        {
+          "title": "Storage that survives",
+          "text": "Storage items move to Capacitor Preferences, which iOS and Android keep when they clear a webview to free space."
+        }
+      ],
+      "snippet": "// app/components/shell.tsx\nimport { useBackButton, useSafeArea } from '@kitr/platform/react'\nimport { useCallback, type ReactNode } from 'react'\n\nexport function Shell({ children }: { children: ReactNode }) {\n  const insets = useSafeArea()\n  useBackButton(\n    useCallback(({ canGoBack }) => canGoBack && window.history.back(), []),\n  )\n  return <main style={{ paddingTop: insets.top }}>{children}</main>\n}",
+      "run": [
+        [
+          "kitr dev phone",
+          "live reload on a device or simulator, port 3100"
+        ],
+        [
+          "kitr build phone",
+          "the web build synced into ios/ and android/"
+        ],
+        [
+          "kitr doctor",
+          "checks Xcode and Android Studio"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "Capacitor docs",
+          "url": "https://capacitorjs.com/docs",
+          "text": "The native runtime under the shell."
+        },
+        {
+          "title": "Environment setup",
+          "url": "https://capacitorjs.com/docs/getting-started/environment-setup",
+          "text": "Xcode, Android Studio and simulators."
+        },
+        {
+          "title": "Capacitor plugins",
+          "url": "https://capacitorjs.com/docs/apis",
+          "text": "Camera, haptics, push and more, for your own drivers."
+        },
+        {
+          "title": "App Store and Play publishing",
+          "url": "https://capacitorjs.com/docs/ios/deploying-to-app-store",
+          "text": "Shipping the build to the stores."
+        }
+      ]
+    }
   },
   "type": "module",
   "license": "MIT",

@@ -1,6 +1,8 @@
 import { type CommandDef, runMain as cittyRunMain, defineCommand, runCommand } from 'citty'
 import pc from 'picocolors'
 import { add, describePackage, remove } from './commands/add'
+import { agents } from './commands/agents'
+import { catalog } from './commands/catalog'
 import { doctor } from './commands/doctor'
 import { eject } from './commands/eject'
 import { generate, typecheck } from './commands/generate'
@@ -25,6 +27,7 @@ import {
 
 export { createAddContext, createProjectInfo } from './add-context'
 export { Codemods } from './codemods'
+export { buildCatalog } from './commands/catalog'
 export type { Finding } from './commands/doctor'
 export { runChecks } from './commands/doctor'
 export type { StubFn } from './commands/make'
@@ -44,8 +47,16 @@ export {
   runGenerate,
 } from './generate'
 export { blankKit, type Kit, kitNames, loadKit } from './kits'
-export type { KitrManifest } from './manifest'
-export { manifests } from './manifests.gen'
+export {
+  categories,
+  type KitrCatalog,
+  type KitrCatalogEntry,
+  type KitrCategory,
+  type KitrManifest,
+  type KitrPlatformInfo,
+  validateManifest,
+} from './manifest'
+export { kitManifests, manifests } from './manifests.gen'
 export type { LoadedPackage } from './packages'
 export { cliResolve, installedPackages, loadPackage, resolvePackageName } from './packages'
 export { knownPackageNames, resolvePlan } from './plan'
@@ -129,6 +140,8 @@ export const main = defineCommand({
     typecheck,
     doctor,
     'package:check': packageCheck,
+    catalog,
+    agents,
     eject,
     upgrade,
     info,

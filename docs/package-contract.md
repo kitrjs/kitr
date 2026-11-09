@@ -123,6 +123,59 @@ The project facts it may read: `ctx.root`, `ctx.pm`, `ctx.pkg`, `ctx.rc` (packag
 
 `setup` says the package ships a setup module; the CLI looks for the `./kitr` export either way. `kitr package:check` validates the block, and the generated manifest table in the CLI (`pnpm manifests`) is what the site lists.
 
+### What a platform says about itself
+
+A platform package (`"kind": "platform"`) adds a `platform` object to the block. It is the text kitr.dev shows on `/platforms/<type>`, so the words ship with the code they describe:
+
+```json
+{
+  "name": "@acme/kitr-kiosk",
+  "kitr": {
+    "name": "kiosk",
+    "title": "Kiosk",
+    "summary": "Run the app fullscreen on a Raspberry Pi in the lobby.",
+    "category": "platforms",
+    "runsOn": "client",
+    "kind": "platform",
+    "setup": "./kitr",
+    "platform": {
+      "label": "Raspberry Pi",
+      "tagline": "The app fullscreen in Chromium on a Raspberry Pi, started at boot.",
+      "targets": ["Raspberry Pi OS"],
+      "shell": "Chromium",
+      "color": "#2D6CF0",
+      "command": "kitr add kiosk lobby",
+      "highlights": [
+        { "title": "Starts with the Pi", "text": "A systemd unit opens the app when the Pi boots." }
+      ],
+      "snippet": "// kitrrc.ts\nplatforms: {\n  lobby: kiosk({ port: 3300 }),\n},",
+      "run": [["kitr dev lobby", "Chromium over the Vite dev server on port 3300"]],
+      "resources": [
+        { "title": "Chromium kiosk mode", "url": "https://www.chromium.org", "text": "The flags the unit passes." }
+      ]
+    }
+  }
+}
+```
+
+| Field | Type | What it holds |
+| --- | --- | --- |
+| `label` | string | The short label on the platform's card: `SSR · SPA · PWA`. |
+| `tagline` | string | One or two sentences on what the platform builds. |
+| `targets` | string[] | What it ships to, shown as chips: `["iOS", "Android"]`. |
+| `shell` | string | What the app runs in: `Electron`, `Capacitor`. |
+| `color` | string | The accent colour, as `#RRGGBB`. |
+| `command` | string, optional | The command that adds it: `kitr add web site --mode ssr`. |
+| `alternative` | string, optional | Another platform that does the same job: `tauri` for `desktop`. |
+| `highlights` | `{ title, text }[]` | Three to five things it does; `text` is markdown. |
+| `snippet` | string | A short code sample whose first line is its path comment, such as `// kitrrc.ts`. |
+| `run` | `[command, what][]` | The commands that run it, each with one line on what it does. |
+| `resources` | `{ title, url, text }[]` | Upstream docs, each with an `https://` URL and one line on why to read it. |
+
+`kitr package:check` rejects a `platform` object on any other kind of package, and names each field that is missing or malformed. `kitr catalog --json` prints every official package, kit and platform with its whole block, so a site's build step can read them without opening `node_modules`. `KitrCatalog`, `KitrManifest` and `KitrPlatformInfo` from `@kitr/cli` type that output.
+
+The `platform` object in the static block is prose. The `platform` field of `definePackage()` in the setup module is code: the factory `kitrrc.ts` calls.
+
 ## How `kitr add` resolves a name
 
 `jobs` means `@kitr/jobs`; a name with a scope is used as written. If the package is not installed, the CLI installs it, then runs its `kitr` module. A package without a setup module is installed and listed in `kitrrc.ts`, and nothing else happens.

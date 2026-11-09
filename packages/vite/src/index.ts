@@ -851,12 +851,27 @@ export interface PrerenderGuard {
 
 const trimSlash = (path: string) => (path.length > 1 ? path.replace(/\/+$/, '') : path)
 
+const robotsNoindex =
+  /<meta\b(?=[^>]*\bname=["']robots["'])(?=[^>]*\bcontent=["'][^"']*\bnoindex\b)[^>]*>/i
+
+/**
+ * Whether a prerendered page belongs in the sitemap: an HTML page (a path with no extension, or
+ * `.html`) whose head does not carry `<meta name="robots" content="noindex">`. A `/docs/x.md`
+ * "view as markdown" file, `llms.txt` or a JSON feed is written like any other page but is not a
+ * page to list.
+ */
+export function indexable(path: string, html: string): boolean {
+  const last = path.split('/').pop() ?? ''
+  if (/\.[a-z0-9]+$/i.test(last) && !/\.html?$/i.test(last)) return false
+  return !robotsNoindex.test(html)
+}
+
 /**
  * Start's prerender throws on the first page that does not answer 200, and the build dies with a
  * dump of the `Response`. Start runs with `failOnError: false` instead, and this keeps the record:
  * `filter` (crawlFilter, plus a note of every page asked for) holds each page out of the sitemap,
- * `onSuccess` puts it back and notes which page links where, and `failures()` is the difference,
- * for `finishPrerender` to print and fail on.
+ * `onSuccess` puts it back when `indexable` (an HTML page without `noindex`) and notes which page
+ * links where, and `failures()` is the difference, for `finishPrerender` to print and fail on.
  */
 export function prerenderGuard(options: {
   routes: string[]
@@ -877,7 +892,7 @@ export function prerenderGuard(options: {
     },
     onSuccess({ page, html }) {
       written.add(page.path)
-      if (asked.has(page.path)) {
+      if (asked.has(page.path) && indexable(page.path, html)) {
         const sitemap = asked.get(page.path)
         if (sitemap) page.sitemap = sitemap
         else delete page.sitemap

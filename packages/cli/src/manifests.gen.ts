@@ -161,7 +161,75 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "kind": "platform",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "platform": {
+      "label": "Electron",
+      "tagline": "Windows, macOS and Linux in an Electron shell. Chromium ships with the app, so it looks and behaves the same on every machine.",
+      "targets": [
+        "Windows",
+        "macOS",
+        "Linux"
+      ],
+      "shell": "Electron",
+      "color": "#FB923C",
+      "command": "kitr add desktop app",
+      "alternative": "tauri",
+      "highlights": [
+        {
+          "title": "Your app, in a window",
+          "text": "The same `app/` folder runs in the shell. The main and preload processes live in `platforms/app/`, and electron-builder packages the installers."
+        },
+        {
+          "title": "Typed IPC",
+          "text": "One schema in `platforms/app/ipc.ts`: `handleIpc()` implements it in main and `createIpcClient()` calls it from your components, typed both ways."
+        },
+        {
+          "title": "Storage that lives on disk",
+          "text": "Storage items write to `kitr-storage.json` in the app data folder instead of `localStorage`. Your code does not change."
+        },
+        {
+          "title": "The recommended desktop shell",
+          "text": "What you test is what every user runs. Pick Tauri instead when download size matters more than identical rendering."
+        }
+      ],
+      "snippet": "// platforms/app/ipc.ts\nexport type Ipc = {\n  'app.version': () => string\n  'dialog.openFile': () => string | null\n}\n\n// app/ipc.ts\nimport { createIpcClient } from '@kitr/desktop/client'\nexport const ipc = createIpcClient<Ipc>()\n\nconst version = await ipc.invoke('app.version')",
+      "run": [
+        [
+          "kitr dev app",
+          "the Electron window, loading Vite on port 3200"
+        ],
+        [
+          "kitr build app",
+          "electron-vite builds main, preload and the app"
+        ],
+        [
+          "kitr start app",
+          "opens the built app"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "Electron docs",
+          "url": "https://www.electronjs.org/docs/latest/",
+          "text": "Main process APIs, menus, windows."
+        },
+        {
+          "title": "electron-vite",
+          "url": "https://electron-vite.org/guide/",
+          "text": "How the three processes are built."
+        },
+        {
+          "title": "electron-builder",
+          "url": "https://www.electron.build",
+          "text": "Installers, code signing, auto update."
+        },
+        {
+          "title": "Electron security checklist",
+          "url": "https://www.electronjs.org/docs/latest/tutorial/security",
+          "text": "What the scaffold already turns on, and why."
+        }
+      ]
+    }
   },
   "devtools": {
     "package": "@kitr/devtools",
@@ -304,7 +372,73 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "platform": {
+      "label": "iOS · Android",
+      "tagline": "iPhone and Android apps through Capacitor, with storage, the back button, deep links and safe areas handled natively.",
+      "targets": [
+        "iOS",
+        "Android"
+      ],
+      "shell": "Capacitor",
+      "color": "#A78BFA",
+      "command": "kitr add mobile phone",
+      "highlights": [
+        {
+          "title": "Native projects you own",
+          "text": "The Xcode and Android Studio projects live in `platforms/phone/`. `kitr dev` adds them the first time and `--target ios` picks one."
+        },
+        {
+          "title": "Live reload on the device",
+          "text": "The app on your phone loads the dev server over the network, so a saved file shows up on the device in a second."
+        },
+        {
+          "title": "Hooks for the device",
+          "text": "`usePlatform`, `useAppState`, `useBackButton`, `useDeepLink` and `useSafeArea` answer the same way in the browser and in the app."
+        },
+        {
+          "title": "Storage that survives",
+          "text": "Storage items move to Capacitor Preferences, which iOS and Android keep when they clear a webview to free space."
+        }
+      ],
+      "snippet": "// app/components/shell.tsx\nimport { useBackButton, useSafeArea } from '@kitr/platform/react'\nimport { useCallback, type ReactNode } from 'react'\n\nexport function Shell({ children }: { children: ReactNode }) {\n  const insets = useSafeArea()\n  useBackButton(\n    useCallback(({ canGoBack }) => canGoBack && window.history.back(), []),\n  )\n  return <main style={{ paddingTop: insets.top }}>{children}</main>\n}",
+      "run": [
+        [
+          "kitr dev phone",
+          "live reload on a device or simulator, port 3100"
+        ],
+        [
+          "kitr build phone",
+          "the web build synced into ios/ and android/"
+        ],
+        [
+          "kitr doctor",
+          "checks Xcode and Android Studio"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "Capacitor docs",
+          "url": "https://capacitorjs.com/docs",
+          "text": "The native runtime under the shell."
+        },
+        {
+          "title": "Environment setup",
+          "url": "https://capacitorjs.com/docs/getting-started/environment-setup",
+          "text": "Xcode, Android Studio and simulators."
+        },
+        {
+          "title": "Capacitor plugins",
+          "url": "https://capacitorjs.com/docs/apis",
+          "text": "Camera, haptics, push and more, for your own drivers."
+        },
+        {
+          "title": "App Store and Play publishing",
+          "url": "https://capacitorjs.com/docs/ios/deploying-to-app-store",
+          "text": "Shipping the build to the stores."
+        }
+      ]
+    }
   },
   "mocks": {
     "package": "@kitr/mocks",
@@ -498,7 +632,75 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "platform": {
+      "label": "Node · Bun · Deno",
+      "tagline": "An HTTP API with routes, controllers and live channels, on Node, Bun, Deno or Cloudflare Workers. With React or without it.",
+      "targets": [
+        "Node",
+        "Bun",
+        "Deno",
+        "Workers"
+      ],
+      "shell": "h3",
+      "color": "#34D399",
+      "command": "kitr add server api --runtime node",
+      "highlights": [
+        {
+          "title": "Four runtimes, one option",
+          "text": "`runtime: 'bun'`, `'deno'` or `'workers'` changes how `kitr dev` and `kitr build` run the same `server/main.ts`. Workers deploy through `wrangler.toml`."
+        },
+        {
+          "title": "A client typed from your routes",
+          "text": "Routes and controllers live in `server/routes.ts`. The client your pages call is typed from that table, so a renamed field is a type error, not a bug report."
+        },
+        {
+          "title": "Inside your site or beside it",
+          "text": "A project with a web platform also gets `app/routes/api.$.ts`, which mounts the same server inside TanStack Start. Run it there, or as its own process."
+        },
+        {
+          "title": "No React required",
+          "text": "`kitr new my-api --kit server` has no React anywhere in its dependency graph: an h3 server, routes, a database hook, logs and tests."
+        }
+      ],
+      "snippet": "// server/routes.ts\nimport { defineRoutes } from '@kitr/api'\nimport HealthController from '#server/controllers/health-controller'\nimport OrdersController from '#server/controllers/orders-controller'\n\nexport const routes = defineRoutes((router) =>\n  router.group({ prefix: '/api' }, (api) =>\n    api\n      .get('/health', [HealthController, 'show'], { name: 'health' })\n      .resource('orders', OrdersController),\n  ),\n)\n\n/** The client your pages call is typed from this. */\nexport type AppRoutes = typeof routes.$types",
+      "run": [
+        [
+          "kitr dev api",
+          "tsx watch, bun --watch or wrangler dev, by runtime"
+        ],
+        [
+          "kitr build api",
+          "a bundled server in dist/api"
+        ],
+        [
+          "kitr start api",
+          "runs the compiled server"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "h3",
+          "url": "https://h3.dev",
+          "text": "The HTTP framework the server is built on."
+        },
+        {
+          "title": "Bun",
+          "url": "https://bun.sh/docs",
+          "text": "runtime: 'bun'"
+        },
+        {
+          "title": "Deno",
+          "url": "https://docs.deno.com",
+          "text": "runtime: 'deno'"
+        },
+        {
+          "title": "Cloudflare Workers",
+          "url": "https://developers.cloudflare.com/workers/",
+          "text": "runtime: 'workers', deployed with wrangler."
+        }
+      ]
+    }
   },
   "shield": {
     "package": "@kitr/shield",
@@ -591,7 +793,75 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     ],
     "client": true,
     "docs": "docs",
-    "setup": "./kitr"
+    "setup": "./kitr",
+    "platform": {
+      "label": "Rust + webview",
+      "tagline": "Windows, macOS and Linux as a small Rust binary on the webview the operating system provides. Downloads measured in megabytes, not hundreds of them.",
+      "targets": [
+        "Windows",
+        "macOS",
+        "Linux"
+      ],
+      "shell": "Rust + system webview",
+      "color": "#FACC15",
+      "command": "kitr add tauri app",
+      "alternative": "desktop",
+      "highlights": [
+        {
+          "title": "Small and light",
+          "text": "No browser ships with the app, so installers are small and memory use is low. The webview differs between Windows, macOS and Linux, so test on each."
+        },
+        {
+          "title": "Typed Rust commands",
+          "text": "`defineCommands()` types your Rust commands for the app, and `commandQuery` turns one into a cached query like any other."
+        },
+        {
+          "title": "Events both ways",
+          "text": "`useTauriEvent()` listens to events Rust emits, and `emitTauri()` sends one back. Both do nothing in a plain browser, so the web build is unchanged."
+        },
+        {
+          "title": "Checked before you build",
+          "text": "Builds need the Rust toolchain. `kitr doctor` checks for it, and the Rust project lives in `platforms/app/src-tauri` for you to edit."
+        }
+      ],
+      "snippet": "// app/commands.ts\nimport { commandQuery, defineCommands } from '@kitr/tauri/client'\n\ntype Commands = { greet: (args: { name: string }) => string }\nexport const commands = defineCommands<Commands>()\nexport const greeting = commandQuery(commands.greet, 'greet')\n\nawait commands.greet({ name: 'kitr' })",
+      "run": [
+        [
+          "kitr dev app",
+          "the Tauri window over the Vite dev server"
+        ],
+        [
+          "kitr build app",
+          "tauri build: a native bundle per OS"
+        ],
+        [
+          "kitr doctor",
+          "checks the Rust toolchain"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "Tauri 2 docs",
+          "url": "https://v2.tauri.app/start/",
+          "text": "Commands, events, capabilities."
+        },
+        {
+          "title": "Prerequisites",
+          "url": "https://v2.tauri.app/start/prerequisites/",
+          "text": "The Rust toolchain and system webview per OS."
+        },
+        {
+          "title": "Store plugin",
+          "url": "https://v2.tauri.app/plugin/store/",
+          "text": "Where storage items are kept."
+        },
+        {
+          "title": "Distribute",
+          "url": "https://v2.tauri.app/distribute/",
+          "text": "Signing and installers for each OS."
+        }
+      ]
+    }
   },
   "testing": {
     "package": "@kitr/testing",
@@ -701,7 +971,75 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "client": true,
     "docs": "docs",
     "setup": "./kitr",
-    "kind": "platform"
+    "kind": "platform",
+    "platform": {
+      "label": "SSR · SPA · PWA",
+      "tagline": "Static sites, single-page apps and server-rendered apps, all from the same app folder. Installable as a PWA with one option.",
+      "targets": [
+        "Static",
+        "SPA",
+        "SSR",
+        "PWA"
+      ],
+      "shell": "Vite + TanStack Start",
+      "color": "#38BDF8",
+      "command": "kitr add web site --mode ssr",
+      "highlights": [
+        {
+          "title": "Three rendering modes, one option",
+          "text": "`static` prerenders every route to HTML, `spa` serves one shell with client routing, and `ssr` renders on request through TanStack Start. Switch with `kitr config site mode ssr`."
+        },
+        {
+          "title": "Installable when you want it",
+          "text": "`pwa: true` adds the web manifest and a service worker. `useInstallPrompt` and `useServiceWorker` from `@kitr/web/client` show the install button and the update banner."
+        },
+        {
+          "title": "Search engines read it",
+          "text": "`kitr add seo` writes `config/seo.ts`: page heads, share previews, the prerender list, the sitemap and `robots.txt` come from that one file."
+        },
+        {
+          "title": "As many sites as you need",
+          "text": "A marketing site, an app and an admin panel are three named web platforms in one project, each with its own mode and port."
+        }
+      ],
+      "snippet": "// kitrrc.ts\nimport { defineKitrConfig } from '@kitr/kitr/app'\nimport { web } from '@kitr/web'\n\nexport default defineKitrConfig({\n  platforms: {\n    www: web({ mode: 'static' }),\n    site: web({ mode: 'ssr', pwa: { name: 'Acme', themeColor: '#2D6CF0' } }),\n    admin: web({ mode: 'spa', port: 3002 }),\n  },\n})",
+      "run": [
+        [
+          "kitr dev site",
+          "Vite with hot reload on port 3000"
+        ],
+        [
+          "kitr build site",
+          "dist/site/client, plus dist/site/server/server.js in ssr mode"
+        ],
+        [
+          "kitr start site",
+          "serves the build with srvx"
+        ]
+      ],
+      "resources": [
+        {
+          "title": "TanStack Start",
+          "url": "https://tanstack.com/start",
+          "text": "The renderer behind ssr and static mode."
+        },
+        {
+          "title": "Vite",
+          "url": "https://vite.dev/guide/",
+          "text": "Dev server and build for every UI platform."
+        },
+        {
+          "title": "Vite PWA",
+          "url": "https://vite-pwa-org.netlify.app/guide/",
+          "text": "What pwa: true sets up underneath."
+        },
+        {
+          "title": "web.dev: Learn PWA",
+          "url": "https://web.dev/learn/pwa",
+          "text": "Install prompts, offline and updates, explained."
+        }
+      ]
+    }
   }
 }
 

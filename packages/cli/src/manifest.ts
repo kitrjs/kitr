@@ -9,6 +9,7 @@ export interface KitrManifest {
   title: string
   /** One plain sentence on what the package does for your app. No library names. */
   summary: string
+  /** The group kitr.dev lists it under; a key of `categories`. */
   category: KitrCategory
   /** Where the package's code runs. */
   runsOn: 'client' | 'server' | 'both'
@@ -31,8 +32,40 @@ export interface KitrManifest {
   types?: string
   /** The setup module's export path (`./kitr`), when the package ships one. */
   setup?: string
+  /** For `kind: 'platform'`: what the platform is, as kitr.dev's /platforms pages show it. */
+  platform?: KitrPlatformInfo
 }
 
+/**
+ * The prose a platform package carries in its `kitr.platform` block. kitr.dev's /platforms pages
+ * read it through `kitr catalog --json`, so the text ships with the package it describes.
+ */
+export interface KitrPlatformInfo {
+  /** The short label on the platform's card: `SSR · SPA · PWA`. */
+  label: string
+  /** One or two sentences on what the platform builds. */
+  tagline: string
+  /** What it ships to, as chips: `['Windows', 'macOS', 'Linux']`. */
+  targets: string[]
+  /** What the app runs in: `Electron`, `Capacitor`, `Rust + system webview`. */
+  shell: string
+  /** The platform's accent colour, as `#RRGGBB`. */
+  color: string
+  /** The command that adds it to a project: `kitr add web site --mode ssr`. */
+  command?: string
+  /** The platform type to consider instead, when two do the same job: `tauri` for `desktop`. */
+  alternative?: string
+  /** Three to five things the platform does, each a title and a sentence or two of markdown. */
+  highlights: Array<{ title: string; text: string }>
+  /** A short code sample whose first line is the file's path comment: `// kitrrc.ts`. */
+  snippet: string
+  /** The commands that run it, each with what it does: `['kitr dev site', 'Vite on port 3000']`. */
+  run: Array<[command: string, what: string]>
+  /** Upstream docs worth reading, each a title, an `https://` URL and one line on why. */
+  resources: Array<{ title: string; url: string; text: string }>
+}
+
+/** The categories kitr.dev groups packages under, by key, with the heading each one shows. */
 export const categories = {
   'data-fetching': 'Data fetching',
   'app-state': 'App state',
@@ -49,6 +82,7 @@ export const categories = {
   kits: 'Kits',
 } as const
 
+/** A key of `categories`. */
 export type KitrCategory = keyof typeof categories
 
 /** Problems with a manifest, as human-readable strings. Empty when valid. */
@@ -77,8 +111,71 @@ export function validateManifest(m: unknown, known: string[] = []): string[] {
     errors.push('"setup" must be "./kitr" (the export the CLI loads)')
   if (k.kind !== undefined && !['package', 'platform', 'kit'].includes(k.kind as string))
     errors.push('"kind" must be "package", "platform" or "kit"')
+  if (k.platform !== undefined) {
+    if (k.kind !== 'platform') errors.push('"platform" is only for packages with kind "platform"')
+    errors.push(...validatePlatformInfo(k.platform).map((e) => `"platform": ${e}`))
+    const alternative = (k.platform as { alternative?: unknown } | null)?.alternative
+    if (known.length && typeof alternative === 'string' && !known.includes(alternative))
+      errors.push(`"platform": "alternative" names unknown package "${alternative}"`)
+  }
   if (known.length && Array.isArray(k.requires))
     for (const dep of k.requires)
       if (!known.includes(dep)) errors.push(`requires unknown package "${dep}"`)
   return errors
+}
+
+const isText = (v: unknown) => typeof v === 'string' && v.trim() !== ''
+
+/** Problems with a `kitr.platform` block. */
+function validatePlatformInfo(p: unknown): string[] {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return ['must be an object']
+  const errors: string[] = []
+  const v = p as Record<string, unknown>
+  for (const field of ['label', 'tagline', 'shell', 'snippet'] as const)
+    if (!isText(v[field])) errors.push(`"${field}" must be a non-empty string`)
+  for (const field of ['command', 'alternative'] as const)
+    if (v[field] !== undefined && !isText(v[field]))
+      errors.push(`"${field}" must be a non-empty string`)
+  if (!(typeof v.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(v.color)))
+    errors.push('"color" must be a hex colour such as "#38BDF8"')
+  if (!(Array.isArray(v.targets) && v.targets.length && v.targets.every(isText)))
+    errors.push('"targets" must be a non-empty list of strings')
+  const list = (field: string, ok: (item: unknown) => boolean, shape: string) => {
+    if (!(Array.isArray(v[field]) && (v[field] as unknown[]).length))
+      errors.push(`"${field}" must be a non-empty list of ${shape}`)
+    else
+      (v[field] as unknown[]).forEach((item, i) => {
+        if (!ok(item)) errors.push(`"${field}[${i}]" must be ${shape}`)
+      })
+  }
+  const fields = (item: unknown, keys: string[]) =>
+    !!item &&
+    typeof item === 'object' &&
+    keys.every((key) => isText((item as Record<string, unknown>)[key]))
+  list('highlights', (h) => fields(h, ['title', 'text']), '{ title, text }')
+  list('run', (r) => Array.isArray(r) && r.length === 2 && r.every(isText), '[command, what]')
+  list(
+    'resources',
+    (r) => fields(r, ['title', 'url', 'text']) && /^https:\/\//.test((r as { url: string }).url),
+    '{ title, url, text } with an https:// url',
+  )
+  return errors
+}
+
+/** One package, platform or kit in `kitr catalog --json`: its `kitr` block and its npm name. */
+export type KitrCatalogEntry = KitrManifest & { package: string }
+
+/**
+ * What `kitr catalog --json` prints: every official package, platform and kit with its whole
+ * `kitr` block, sorted by short name. A site's build step reads it instead of `node_modules`.
+ */
+export interface KitrCatalog {
+  /** The CLI version the catalog came from. */
+  version: string
+  /** Packages added with `kitr add <name>`. */
+  packages: KitrCatalogEntry[]
+  /** Platform packages (`kind: 'platform'`), each with its `platform` block. */
+  platforms: KitrCatalogEntry[]
+  /** Kits used by `kitr new --kit <name>`. */
+  kits: KitrCatalogEntry[]
 }

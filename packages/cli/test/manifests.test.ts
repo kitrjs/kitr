@@ -1,9 +1,34 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import { validateManifest } from '../src/manifest'
 import { kitManifests, manifests } from '../src/manifests.gen'
 import { platformTypeNames } from '../src/platforms'
+import { cleanup, scratch, write } from './helpers'
+
+afterAll(cleanup)
+
+/** A platform block that passes, for tests to break one field at a time. */
+const platformBlock = () => ({
+  label: 'Kiosk',
+  tagline: 'Fullscreen Chromium on a Raspberry Pi.',
+  targets: ['Raspberry Pi'],
+  shell: 'Chromium',
+  color: '#2D6CF0',
+  highlights: [{ title: 'Boots into the app', text: 'The Pi opens the app on start.' }],
+  snippet: '// kitrrc.ts\nplatforms: { lobby: kiosk() },',
+  run: [['kitr dev lobby', 'Chromium over Vite']],
+  resources: [{ title: 'Chromium', url: 'https://www.chromium.org', text: 'The browser.' }],
+})
+const kiosk = (platform: unknown, kind = 'platform') => ({
+  name: 'kiosk',
+  title: 'Kiosk',
+  summary: 'Run the app fullscreen on a Raspberry Pi.',
+  category: 'platforms',
+  runsOn: 'client',
+  kind,
+  platform,
+})
 
 const root = join(import.meta.dirname, '../..')
 const packages = readdirSync(root)
@@ -74,7 +99,70 @@ describe('package manifests', () => {
   })
 })
 
+describe('the platform block', () => {
+  it('every platform package describes itself', () => {
+    const platforms = packages.filter(({ pkg }) => pkg.kitr.kind === 'platform')
+    expect(platforms.map(({ pkg }) => pkg.kitr.name).sort()).toEqual([...platformTypeNames].sort())
+    for (const { dir, pkg } of platforms) {
+      expect(pkg.kitr.platform, dir).toBeDefined()
+      expect(pkg.kitr.platform.highlights.length, dir).toBeGreaterThanOrEqual(3)
+      expect(pkg.kitr.platform.snippet, dir).toMatch(/^\/\/ [\w./-]+\n/)
+    }
+  })
+
+  it('accepts a complete block', () => {
+    expect(validateManifest(kiosk(platformBlock()))).toEqual([])
+  })
+
+  it('names each broken field', () => {
+    const block = {
+      ...platformBlock(),
+      label: '',
+      color: 'blue',
+      targets: [],
+      highlights: [{ title: 'No text' }],
+      run: [['kitr dev lobby']],
+      resources: [{ title: 'Chromium', url: 'http://www.chromium.org', text: 'The browser.' }],
+    }
+    expect(validateManifest(kiosk(block))).toEqual([
+      '"platform": "label" must be a non-empty string',
+      '"platform": "color" must be a hex colour such as "#38BDF8"',
+      '"platform": "targets" must be a non-empty list of strings',
+      '"platform": "highlights[0]" must be { title, text }',
+      '"platform": "run[0]" must be [command, what]',
+      '"platform": "resources[0]" must be { title, url, text } with an https:// url',
+    ])
+  })
+
+  it('belongs to platform packages only, and its alternative must exist', () => {
+    expect(validateManifest(kiosk(platformBlock(), 'package'))).toEqual([
+      '"platform" is only for packages with kind "platform"',
+    ])
+    expect(validateManifest(kiosk('Chromium'))).toEqual(['"platform": must be an object'])
+    expect(
+      validateManifest(kiosk({ ...platformBlock(), alternative: 'signage' }), ['kiosk', 'web']),
+    ).toEqual(['"platform": "alternative" names unknown package "signage"'])
+  })
+})
+
 describe('kitr package:check', () => {
+  it('reports a broken platform block', async () => {
+    const { checkPackage } = await import('../src/commands/package-check')
+    const dir = scratch()
+    write(
+      dir,
+      'package.json',
+      JSON.stringify({
+        name: '@acme/kitr-kiosk',
+        keywords: ['kitr-package'],
+        kitr: kiosk({ ...platformBlock(), color: 'blue' }),
+      }),
+    )
+    expect(checkPackage(dir)).toContain(
+      'kitr block: "platform": "color" must be a hex colour such as "#38BDF8"',
+    )
+  })
+
   it('passes for every package with docs', async () => {
     const { checkPackage } = await import('../src/commands/package-check')
     for (const { dir, pkg } of packages)
