@@ -52,6 +52,16 @@
       "dependencies": []
     },
     {
+      "name": "command",
+      "type": "registry:ui",
+      "title": "Command",
+      "description": "A copyable kitr command with npm, pnpm, yarn and bun tabs; the choice is remembered in localStorage.",
+      "registryDependencies": [
+        "icon"
+      ],
+      "dependencies": []
+    },
+    {
       "name": "data-table",
       "type": "registry:ui",
       "title": "Data table",
@@ -71,6 +81,19 @@
         "button"
       ],
       "dependencies": []
+    },
+    {
+      "name": "doc-layout",
+      "type": "registry:ui",
+      "title": "Doc layout",
+      "description": "A @kitr/content docs page: sidebar with groups and the current page's sections, the page, edit link, previous and next.",
+      "registryDependencies": [
+        "command",
+        "icon"
+      ],
+      "dependencies": [
+        "@kitr/content"
+      ]
     },
     {
       "name": "empty-state",
@@ -139,6 +162,18 @@
       "description": "Title, description and actions row for a page.",
       "registryDependencies": [],
       "dependencies": []
+    },
+    {
+      "name": "search-dialog",
+      "type": "registry:ui",
+      "title": "Search dialog",
+      "description": "Cmd/Ctrl+K search over @kitr/content pages: loads the index on first open, keyboard navigation.",
+      "registryDependencies": [
+        "icon"
+      ],
+      "dependencies": [
+        "@kitr/content"
+      ]
     },
     {
       "name": "select",

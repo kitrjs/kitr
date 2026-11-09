@@ -1,0 +1,417 @@
+/*
+ * @kitr/content: the look of rendered markdown, written against the --kitr-* tokens from
+ * @kitr/theme/styles.css (with fallbacks, so it also works without them). Every rule hangs off a
+ * class the pipeline or the React components write: prose, code, code-file, code-copy, callout,
+ * table-wrap, step-heading, next-cards, toc. Leave this file out to style them yourself.
+ */
+
+.prose {
+  --content-fg: var(--kitr-color-foreground, #1a1d24);
+  --content-muted: var(--kitr-color-mutedForeground, #5b6472);
+  --content-raised: var(--kitr-color-muted, #f3f4f7);
+  --content-line: var(--kitr-color-border, #e1e4ea);
+  --content-bg: var(--kitr-color-background, #fff);
+  --content-link: var(--kitr-color-primary, #2457cc);
+  --content-on-link: var(--kitr-color-primaryForeground, #fff);
+  --content-warn: var(--kitr-color-destructive, #c42626);
+  --content-tip: oklch(55% 0.14 150);
+  --content-radius: var(--kitr-radius-lg, 0.75rem);
+  --content-mono: var(--kitr-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--content-fg);
+  font-size: 1rem;
+  line-height: 1.7;
+  min-width: 0;
+}
+[data-theme="dark"] .prose {
+  --content-tip: oklch(75% 0.15 150);
+}
+
+/* ---------------------------------------------------------------- prose */
+
+.prose h2 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 2.5rem 0 0.75rem;
+  scroll-margin-top: 5rem;
+}
+.prose h3 {
+  font-size: 1.2rem;
+  line-height: 1.35;
+  font-weight: 600;
+  margin: 2rem 0 0.5rem;
+  scroll-margin-top: 5rem;
+}
+.prose h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+.prose p,
+.prose ul,
+.prose ol,
+.prose details {
+  margin: 0 0 1rem;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+}
+.prose ul {
+  list-style: disc;
+}
+.prose ol {
+  list-style: decimal;
+}
+.prose li {
+  margin: 0.25rem 0;
+}
+.prose li > ul,
+.prose li > ol {
+  margin: 0.25rem 0 0;
+}
+.prose a {
+  color: var(--content-link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+.prose strong {
+  font-weight: 600;
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--content-line);
+  margin: 2rem 0;
+}
+.prose img {
+  max-width: 100%;
+  border-radius: var(--content-radius);
+}
+.prose :not(pre) > code {
+  font-family: var(--content-mono);
+  font-size: 0.88em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.35em;
+  background: var(--content-raised);
+  border: 1px solid var(--content-line);
+}
+.prose kbd {
+  font-family: var(--content-mono);
+  font-size: 0.8em;
+  padding: 0.05em 0.4em;
+  border-radius: 0.35em;
+  background: var(--content-raised);
+  border: 1px solid var(--content-line);
+  border-bottom-width: 2px;
+  white-space: nowrap;
+}
+.prose blockquote {
+  margin: 1.25rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--content-line);
+  color: var(--content-muted);
+}
+.prose details {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--content-line);
+  border-radius: var(--content-radius);
+}
+.prose details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.prose details[open] > summary {
+  margin-bottom: 0.75rem;
+}
+
+/* ---------------------------------------------------------------- tables */
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  border: 1px solid var(--content-line);
+  border-radius: var(--content-radius);
+}
+.table-wrap:focus-visible {
+  outline: 2px solid var(--content-link);
+  outline-offset: 2px;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+  line-height: 1.5;
+}
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--content-line);
+}
+.prose tr:last-child td {
+  border-bottom: 0;
+}
+.prose th {
+  font-weight: 600;
+  background: var(--content-raised);
+}
+.prose td code {
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- numbered steps */
+
+.prose .step-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.step-marker {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--content-link);
+  color: var(--content-on-link);
+  font-family: var(--content-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ---------------------------------------------------------------- next steps */
+
+.next-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0.5rem;
+}
+.prose a.next-card,
+.next-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--content-line, var(--kitr-color-border));
+  border-radius: var(--content-radius, 0.75rem);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+@media (hover: hover) {
+  .prose a.next-card:hover,
+  .next-card:hover {
+    border-color: var(--content-link);
+  }
+}
+.next-card-title {
+  font-weight: 600;
+  color: var(--content-link);
+}
+.next-card-title::after {
+  content: " →";
+}
+.next-card > span {
+  color: var(--content-muted);
+  font-size: 0.925rem;
+}
+
+/* ---------------------------------------------------------------- code */
+
+.code {
+  position: relative;
+  margin: 1rem 0 1.5rem;
+}
+.code-file {
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--content-line);
+  border-bottom: 0;
+  border-radius: var(--content-radius) var(--content-radius) 0 0;
+  background: var(--content-raised);
+  color: var(--content-muted);
+  font-family: var(--content-mono);
+  font-size: 0.8rem;
+}
+/* Only markdown code blocks: a component's own <pre> inside .prose keeps its look. */
+.prose .code > pre {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--content-line);
+  border-radius: var(--content-radius);
+  background: var(--content-raised);
+  font-family: var(--content-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  tab-size: 2;
+}
+.prose .code-file + pre {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.prose .code > pre code {
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.prose pre.shiki,
+.prose pre.shiki span {
+  color: var(--shiki-light);
+  font-style: var(--shiki-light-font-style);
+  font-weight: var(--shiki-light-font-weight);
+}
+[data-theme="dark"] .prose pre.shiki,
+[data-theme="dark"] .prose pre.shiki span {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+}
+.code-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--content-line);
+  border-radius: 0.4rem;
+  background: var(--content-bg);
+  color: var(--content-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.code-file ~ .code-copy {
+  top: 2.6rem;
+}
+.code-copy:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--content-link);
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .code:hover .code-copy {
+    opacity: 1;
+  }
+}
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------- callouts */
+
+.callout {
+  --callout-accent: var(--content-link);
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--content-line);
+  border-left: 3px solid var(--callout-accent);
+  border-radius: var(--content-radius);
+  background: var(--content-raised);
+  color: var(--content-fg);
+}
+.callout-tip {
+  --callout-accent: var(--content-tip);
+}
+.callout-warning {
+  --callout-accent: var(--content-warn);
+}
+.prose .callout > * {
+  margin: 0 0 0.6rem;
+}
+.prose .callout > :last-child {
+  margin-bottom: 0;
+}
+.callout .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  color: var(--callout-accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+/* The mark before the label: i for a note, a check for a tip, ! for a warning, a list for a summary. */
+.callout-title::before {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--callout-accent);
+  color: var(--content-bg);
+  font-family: var(--content-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  content: "i";
+}
+.callout-tip .callout-title::before {
+  content: "✓";
+}
+.callout-warning .callout-title::before {
+  content: "!";
+}
+.callout-summary .callout-title::before {
+  content: "≡";
+}
+.prose .callout .code > pre,
+.prose .callout .code-file,
+.prose .callout :not(pre) > code {
+  background: var(--content-bg);
+}
+
+/* ---------------------------------------------------------------- table of contents */
+
+.toc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.toc-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: var(--kitr-color-foreground, #1a1d24);
+}
+nav.toc ul {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border-left: 1px solid var(--kitr-color-border, #e1e4ea);
+}
+.toc li a {
+  display: block;
+  margin-left: -1px;
+  padding: 0.2rem 0.75rem;
+  border-left: 1px solid transparent;
+  color: var(--kitr-color-mutedForeground, #5b6472);
+  text-decoration: none;
+}
+.toc li[data-depth="3"] a {
+  padding-left: 1.5rem;
+}
+.toc li a:hover {
+  color: var(--kitr-color-foreground, #1a1d24);
+}
+.toc li a[aria-current] {
+  border-left-color: var(--kitr-color-primary, #2457cc);
+  color: var(--kitr-color-foreground, #1a1d24);
+  font-weight: 500;
+}
+.toc-edit {
+  color: var(--kitr-color-mutedForeground, #5b6472);
+  text-decoration: none;
+}
+.toc-edit:hover {
+  color: var(--kitr-color-foreground, #1a1d24);
+}

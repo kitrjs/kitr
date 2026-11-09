@@ -55,6 +55,7 @@ The presets are a base kit plus a small working app. Each one is also in [`examp
 | `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, analytics, monitoring | sign-in, a guarded app shell, a projects page, an API test |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools | a prerendered site: home, pricing, a blog, a newsletter form, a test |
 | `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing, devtools | a chat room with rooms in the URL, a test |
+| `docs` | `site: web({ mode: 'static' })` | content, seo, tailwind, theme, testing | a docs site from markdown: sidebar, search, dark mode, `llms.txt`, a test |
 | `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform | the dashboard kit in Electron, with native dialogs |
 | `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform | the dashboard kit in Tauri, with typed Rust commands |
 | `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform | the dashboard kit as an installable PWA and a Capacitor app |
@@ -79,11 +80,28 @@ Sessions are HttpOnly cookies, with CSRF protection on the auth routes. A produc
 
 A prerendered marketing site: home, pricing and a blog, in English and German. `config/seo.ts` lists the pages to prerender. The newsletter form posts to `server/controllers/newsletter-controller.ts`, and `test/newsletter.test.ts` covers it.
 
-For a static marketing or docs site, start from `kitr new my-site --kit app --mode static` and `kitr add seo`; the `site` kit adds SSR and an API server.
+For a static marketing site, start from `kitr new my-site --kit app --mode static` and `kitr add seo`; for docs, use the `docs` kit. The `site` kit adds SSR and an API server.
 
 ### realtime
 
 A chat room. `app/channels/chat.ts` defines the channel, `app/pages/chat.tsx` is the room, and `server/controllers/messages-controller.ts` sends new messages to everyone in it. `config/realtime.ts` picks the transport: WebSocket by default, or Socket.IO or server-sent events.
+
+### docs
+
+A static docs site from the markdown in `content/docs/`, rendered by [content](/packages/content). Every page is prerendered to HTML, and the build writes `llms.txt`, `llms-full.txt` and a `.md` copy of each page for coding agents. Components: icon, button, theme-toggle, command, search-dialog and doc-layout.
+
+| File | What it is |
+| --- | --- |
+| `content/docs/nav.json` | The sidebar: groups and the pages in each, in order. |
+| `content/docs/getting-started.md`, `writing.md` | Two starter pages: running the site, and the markdown extras. |
+| `app/routes.ts` | `/` and `/docs` list the pages; `/docs/$slug` loads one with `loadPage()` and `seo()`. |
+| `app/pages/docs.tsx` | The docs home: every group with its pages and descriptions. |
+| `app/pages/docs/slug.tsx` | One page in `DocLayout`, and the not-found page for an unknown slug. |
+| `app/document.tsx` | The header with the site name, search (Cmd+K) and the theme toggle, and the content stylesheet. |
+| `config/seo.ts` | The site name for titles and share tags. |
+| `test/docs.test.tsx` | Renders a page with its sidebar and next link. |
+
+Add a page by writing `content/docs/<slug>.md` and listing its slug in `nav.json`; `kitr dev` shows it at `/docs/<slug>`.
 
 ### desktop, tauri and mobile
 

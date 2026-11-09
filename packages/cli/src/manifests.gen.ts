@@ -128,6 +128,22 @@ export const manifests: Record<string, KitrManifest & { package: string }> = {
     "docs": "docs",
     "setup": "./kitr"
   },
+  "content": {
+    "package": "@kitr/content",
+    "name": "content",
+    "title": "Content",
+    "summary": "Write pages in markdown and get a docs site: highlighted code, a sidebar, search and copies for coding agents.",
+    "category": "pages",
+    "runsOn": "both",
+    "builtOn": [
+      "unified",
+      "shiki"
+    ],
+    "client": true,
+    "docs": "docs",
+    "setup": "./kitr",
+    "types": "./types"
+  },
   "db": {
     "package": "@kitr/db",
     "name": "db",
@@ -1071,6 +1087,16 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
     "name": "desktop",
     "title": "Desktop kit",
     "summary": "Start the app kit in an Electron shell with a typed IPC contract and native dialogs.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr"
+  },
+  "docs": {
+    "package": "@kitr/kit-docs",
+    "name": "docs",
+    "title": "Docs kit",
+    "summary": "Start a docs site from markdown files: a sidebar, search, dark mode and copies for coding agents, prerendered to static HTML.",
     "category": "kits",
     "runsOn": "both",
     "kind": "kit",

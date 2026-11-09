@@ -4,7 +4,7 @@
 //   pnpm build && pnpm -C registry build && pnpm smoke:registry
 //   node scripts/verdaccio-smoke.mjs --kits app,fullstack --keep
 //   node scripts/verdaccio-smoke.mjs --kits site --pm npm
-//   node scripts/verdaccio-smoke.mjs --matrix          (nightly: 4 kits x npm and pnpm)
+//   node scripts/verdaccio-smoke.mjs --matrix          (nightly: 5 kits x npm and pnpm)
 //
 // What it proves, in order:
 //   1. every public package packs and publishes (workspace: ranges become real versions)
@@ -66,7 +66,7 @@ const { values: opts } = parseArgs({
 })
 const port = Number(opts.port)
 /** The kits the nightly matrix runs: the ones a newcomer starts from. */
-const MATRIX_KITS = ['app', 'site', 'fullstack', 'dashboard']
+const MATRIX_KITS = ['app', 'site', 'fullstack', 'dashboard', 'docs']
 /** One project per cell: a kit and the package manager that installs it. */
 const cells = opts.matrix
   ? MATRIX_KITS.flatMap((kit) => ['npm', 'pnpm'].map((pm) => ({ kit, pm })))

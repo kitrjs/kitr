@@ -1,0 +1,6 @@
+{
+  "title": "Search dialog",
+  "description": "Cmd/Ctrl+K search over @kitr/content pages: loads the index on first open, keyboard navigation.",
+  "dependencies": ["@kitr/content"],
+  "registryDependencies": ["icon"]
+}

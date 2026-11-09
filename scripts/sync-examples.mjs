@@ -35,6 +35,7 @@ export const examples = {
   desktop: 'desktop',
   tauri: 'tauri',
   mobile: 'mobile',
+  docs: 'docs',
   everywhere: 'dashboard',
 }
 /**

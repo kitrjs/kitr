@@ -1,0 +1,5 @@
+{
+  "title": "Command",
+  "description": "A copyable kitr command with npm, pnpm, yarn and bun tabs; the choice is remembered in localStorage.",
+  "registryDependencies": ["icon"]
+}

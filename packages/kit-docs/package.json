@@ -1,0 +1,54 @@
+{
+  "name": "@kitr/kit-docs",
+  "version": "0.3.2",
+  "description": "kitr new --kit docs: A static docs site from markdown: sidebar, search, package-manager commands, dark mode and llms.txt.",
+  "kitr": {
+    "name": "docs",
+    "title": "Docs kit",
+    "summary": "Start a docs site from markdown files: a sidebar, search, dark mode and copies for coding agents, prerendered to static HTML.",
+    "category": "kits",
+    "runsOn": "both",
+    "kind": "kit",
+    "setup": "./kitr"
+  },
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitrjs/kitr.git",
+    "directory": "packages/kit-docs"
+  },
+  "homepage": "https://kitr.dev/docs/cli",
+  "bugs": "https://github.com/kitrjs/kitr/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "exports": {
+    "./kitr": {
+      "types": "./dist/kitr.d.ts",
+      "default": "./dist/kitr.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "kitr",
+    "kitr-package",
+    "kitr-kit"
+  ],
+  "dependencies": {
+    "@kitr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.7",
+    "typescript": "^5.9.3",
+    "@types/node": "^22.19.0"
+  }
+}

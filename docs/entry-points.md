@@ -38,6 +38,8 @@ Apps import each package by its own name: `@kitr/query`, `@kitr/router/routes`, 
 | `@kitr/api`, `@kitr/api/client` | no |
 | `@kitr/actions` | yes (TanStack Start) |
 | `@kitr/seo` | no |
+| `@kitr/content`, `@kitr/content/markdown`, `@kitr/content/vite`, `@kitr/content/styles.css` | no |
+| `@kitr/content/react` | yes |
 | `@kitr/realtime`, `@kitr/realtime/client`, `@kitr/realtime/socket.io`, `@kitr/realtime/sse` | no |
 | `@kitr/realtime/server`, `@kitr/realtime/socket.io/server`, `@kitr/realtime/sse/server` | no |
 | `@kitr/realtime/react` | yes |

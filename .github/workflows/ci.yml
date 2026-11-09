@@ -30,7 +30,7 @@ jobs:
       - run: pnpm -C registry build
       - name: Build the examples' web platforms (also regenerates route trees)
         run: |
-          for app in app dashboard fullstack saas site realtime desktop tauri mobile; do
+          for app in app dashboard fullstack saas site realtime docs desktop tauri mobile; do
             pnpm -C examples/$app exec kitr build site
           done
           pnpm -C examples/backend exec kitr build api
@@ -210,7 +210,7 @@ jobs:
   # must typecheck and build. One kit per runner, so they install side by side. The
   # whole-catalog pass (`kitr add` of every package) rides on the app run on main only. The site
   # kit runs with npm, which hoists packages pnpm keeps nested, the way most newcomers install.
-  # The full {app, site, fullstack, dashboard} x {npm, pnpm} matrix runs nightly in
+  # The full {app, site, fullstack, dashboard, docs} x {npm, pnpm} matrix runs nightly in
   # smoke-nightly.yml (`--matrix`).
   registry-smoke:
     needs: build
@@ -226,6 +226,8 @@ jobs:
           - kit: site
             catalog: false
             pm: npm
+          - kit: docs
+            catalog: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -245,6 +247,7 @@ jobs:
 
   # Browsers against production and dev builds: SSR, hydration, isolation, WebSockets, devtools, and
   # one spec per kit (site: language and prerendering; realtime: two pages over WebSocket and SSE;
+  # docs: markdown pages, search and llms.txt;
   # fullstack and dashboard: a record created, reloaded and read back). Every Playwright project runs.
   e2e:
     needs: build

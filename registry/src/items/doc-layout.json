@@ -1,0 +1,6 @@
+{
+  "title": "Doc layout",
+  "description": "A @kitr/content docs page: sidebar with groups and the current page's sections, the page, edit link, previous and next.",
+  "dependencies": ["@kitr/content"],
+  "registryDependencies": ["command", "icon"]
+}
