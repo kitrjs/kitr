@@ -425,13 +425,14 @@ describe('prerender failures', () => {
     }
   }
 
-  it('warns in one line for a crawled page', async () => {
+  it('warns in one line for a crawled page and writes 404.html', async () => {
     const guard = prerenderGuard({ routes: ['/'] })
     crawl(guard, site)
     const log = logger()
     const out = built()
-    await finishPrerender({ guard, ...out, logger: log })
+    await finishPrerender({ guard, ...out, notFoundPage: true, logger: log })
     expect(log.lines).toEqual(['warn [prerender] 404 at /llms-full.txt, linked from /docs/agents'])
+    expect(readFileSync(join(out.clientDir, '404.html'), 'utf8')).toBe('<h1>Page not found</h1>')
   })
 
   it('fails the build for a listed route, or for any page with failOnError', async () => {

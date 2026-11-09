@@ -528,7 +528,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
     }),
   )
   // After Start's prerender (its `buildApp` hook is also `post`, and comes first in this list):
-  // report the pages that failed.
+  // report the pages that failed, and give a static site its 404.html.
   plugins.push({
     name: 'kitr:prerender',
     apply: 'build',
@@ -539,11 +539,13 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
         const env = (name: string) => builder.environments[name]?.config
         const client = env('client')
         const server = env('ssr')
-        if (!client || !server || !guard) return
+        const notFoundPage = platform?.mode === 'static'
+        if (!client || !server || (!guard && !notFoundPage)) return
         await finishPrerender({
           guard,
           clientDir: resolve(client.root, client.build.outDir),
           serverEntry: resolve(server.root, server.build.outDir, 'server.js'),
+          notFoundPage,
           logger: builder.config.logger,
         })
       },
@@ -899,17 +901,22 @@ export function prerenderGuard(options: {
 /**
  * After Start's prerender: print one line per page that failed (`[prerender] 404 at /x, linked
  * from /y`), with the status asked again of the built server, and fail the build when a listed
- * route failed or `failOnError` is on.
+ * route failed or `failOnError` is on. A static site also gets `404.html`: the root's
+ * `notFoundComponent`, rendered for a path no route matches, which Cloudflare Pages, Netlify and
+ * GitHub Pages serve for unknown paths. It is written here because Start's prerender refuses a
+ * page that answers 404, and so it is never crawled or listed in the sitemap.
  */
 export async function finishPrerender(options: {
   guard?: PrerenderGuard
   clientDir: string
   serverEntry: string
+  /** Also write `404.html` (a `static` site). */
+  notFoundPage?: boolean
   logger: { warn(msg: string): void; error(msg: string): void }
 }): Promise<void> {
   const failures = options.guard?.failures() ?? []
   let handler: ((request: Request) => Response | Promise<Response>) | undefined
-  if (failures.length && existsSync(options.serverEntry)) {
+  if ((failures.length || options.notFoundPage) && existsSync(options.serverEntry)) {
     const mod = (await import(pathToFileURL(options.serverEntry).href)) as Record<string, any>
     const server = mod.default?.fetch ? mod.default : mod
     if (typeof server.fetch === 'function') handler = (request) => server.fetch(request)
@@ -920,6 +927,12 @@ export async function finishPrerender(options: {
     } catch {
       return undefined
     }
+  }
+  if (options.notFoundPage) {
+    const res = await render('/404')
+    if (res?.headers.get('content-type')?.includes('html'))
+      writeFileSync(resolve(options.clientDir, '404.html'), await res.text())
+    else options.logger.warn('[prerender] 404.html not written: the server rendered no page')
   }
   const fatal: string[] = []
   for (const failure of failures) {

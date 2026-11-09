@@ -621,6 +621,7 @@ During server rendering the OS is `'server'`. Inside a native shell the [Mobile]
 | `dist/site/client/` | all | JavaScript, CSS and assets. |
 | `dist/site/client/index.html` | `spa` | The app shell. |
 | `dist/site/client/**/index.html` | `static` | One HTML file per prerendered page. |
+| `dist/site/client/404.html` | `static` | The root route's `notFoundComponent`, for paths no page matches. |
 | `dist/site/server/server.js` | `ssr` | The TanStack Start server bundle. |
 | `dist/site/client/sw.js`, `manifest.webmanifest` | `pwa` | The service worker and the manifest. |
 
@@ -635,7 +636,8 @@ kitr start site --port 8080
 # ✔ site: serving dist/site on http://localhost:8080/
 ```
 
-- In `static` and `spa` mode it serves `dist/site/client` and answers unknown paths with the shell (`index.html`, `_shell.html` or `200.html`), so client routes survive a reload.
+- In `spa` mode it serves `dist/site/client` and answers unknown paths with the shell (`index.html`, `_shell.html` or `200.html`) and status 200, so client routes survive a reload.
+- In `static` mode it serves `dist/site/client` and answers unknown paths with `404.html` and status 404, as a static host does.
 - In `ssr` mode it serves static files first and hands every other request to the `fetch` export of `dist/site/server/server.js`. When `crossws` is installed, WebSocket upgrades work too.
 - Hashed files under `assets/` are cached for a year (`immutable`); everything else gets `no-cache`, so a deploy reaches returning visitors on their next load.
 
@@ -652,6 +654,35 @@ npx wrangler pages deploy dist/site/client --project-name acme-orders
 
 > [!WARNING] SPA hosting
 > Tell the host to answer unknown paths with `index.html` (on Netlify, a `_redirects` line `/* /index.html 200`), or reloading `/orders/ord_1042` returns a 404.
+
+A `static` build writes `404.html` from the root route's `notFoundComponent`. Netlify, Cloudflare Pages and GitHub Pages serve it with status 404 for unknown paths, with no setting. The page is never crawled and never in the sitemap:
+
+```ts
+// app/routes.ts
+import { defineRoutes } from '@kitr/kitr/app'
+import router from '@kitr/router/routes'
+import { head, RootDocument } from './document'
+import NotFound from './pages/not-found'
+
+export const routes = defineRoutes([router], (r) =>
+  r
+    .root({ head, component: RootDocument, notFoundComponent: NotFound })
+    .page('/', { lazy: () => import('./pages/home') }),
+)
+```
+
+On your own nginx, point 404s at the file:
+
+```nginx
+# /etc/nginx/conf.d/acme.conf
+server {
+  root /srv/acme/dist/site/client;
+  error_page 404 /404.html;
+  location / {
+    try_files $uri $uri/index.html =404;
+  }
+}
+```
 
 ## Commands
 

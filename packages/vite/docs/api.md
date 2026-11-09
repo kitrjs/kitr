@@ -42,6 +42,7 @@ function finishPrerender(options: {
   guard?: PrerenderGuard;
   clientDir: string;
   serverEntry: string;
+  notFoundPage?: boolean;
   logger: {
     warn(msg: string): void;
     error(msg: string): void;
@@ -51,7 +52,10 @@ function finishPrerender(options: {
 
 After Start's prerender: print one line per page that failed (`[prerender] 404 at /x, linked
 from /y`), with the status asked again of the built server, and fail the build when a listed
-route failed or `failOnError` is on.
+route failed or `failOnError` is on. A static site also gets `404.html`: the root's
+`notFoundComponent`, rendered for a path no route matches, which Cloudflare Pages, Netlify and
+GitHub Pages serve for unknown paths. It is written here because Start's prerender refuses a
+page that answers 404, and so it is never crawled or listed in the sitemap.
 
 ### kitr
 
