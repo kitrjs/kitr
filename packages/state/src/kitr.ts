@@ -43,6 +43,11 @@ export const [use${naming.pascal(name)}Store, ${naming.pascal(name)}StoreProvide
   }),
 )
 `,
+      // The folder now has a real file: the placeholder `kitr add state` wrote is no longer needed.
+      after(ctx) {
+        const keep = `${ctx.rc.directories.app ?? 'app'}/stores/.gitkeep`
+        if (ctx.exists(keep)) ctx.unlink(keep)
+      },
     },
   },
   wraps: { zustand: '@kitr/state' },

@@ -226,6 +226,14 @@ describe('make:* generators produce code that typechecks and builds', () => {
     expect(exists(dir, file)).toBe(true)
   })
 
+  it("make:page 'docs/$slug' keeps the param in the route and says so", () => {
+    const out = kitr(dir, 'make:page', 'docs/$slug')
+    expect(out).toContain(
+      "wrote app/pages/docs/slug.tsx, added .page('/docs/$slug') to app/routes.ts",
+    )
+    expect(readFileSync(join(dir, 'app/routes.ts'), 'utf8')).toContain("'/docs/$slug'")
+  })
+
   it('kitr make lists every generator with the path it writes', () => {
     const out = kitr(dir, 'make')
     expect(out).toMatch(/make:controller\s+server\/controllers\/<name>-controller\.ts/)
