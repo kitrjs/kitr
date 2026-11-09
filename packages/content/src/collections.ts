@@ -72,6 +72,8 @@ interface Entry {
   collection: string
   config: CollectionConfig
   group: string
+  /** The group's description from nav.json. */
+  groupDescription?: string
   item: { slug: string; title?: string; description?: string }
   source: string
 }
@@ -101,7 +103,14 @@ function entriesOf(files: ContentFiles, name: string, config: CollectionConfig):
         )
         if (!files.exists(file))
           throw new Error(`${navPath} lists "${item.slug}", but ${file} does not exist`)
-        out.push({ collection: name, config, group: group.title, item, source: file })
+        out.push({
+          collection: name,
+          config,
+          group: group.title,
+          ...(group.description ? { groupDescription: group.description } : {}),
+          item,
+          source: file,
+        })
       }
     return out
   }
@@ -190,7 +199,11 @@ export async function buildContent(
     const groups = nav[e.collection]!
     let group = groups.find((g) => g.title === e.group)
     if (!group) {
-      group = { title: e.group, items: [] }
+      group = {
+        title: e.group,
+        ...(e.groupDescription ? { description: e.groupDescription } : {}),
+        items: [],
+      }
       groups.push(group)
     }
     const item: NavItem = { slug: e.item.slug, title, ...(description ? { description } : {}) }
@@ -218,17 +231,6 @@ export async function buildContent(
       section: e.group,
       source: e.source,
     })
-  }
-
-  // Group descriptions come from nav.json, which only the entries know; add them in one pass.
-  for (const [name, collection] of Object.entries(config.collections ?? {})) {
-    if (!collection.nav) continue
-    const navPath = normalizePath(`${normalizePath(collection.source)}/${collection.nav}`)
-    const groups = JSON.parse(files.read(navPath)) as NavFile
-    for (const g of nav[name] ?? []) {
-      const description = groups.find((x) => x.title === g.title)?.description
-      if (description) g.description = description
-    }
   }
 
   const llms = config.llms

@@ -238,7 +238,8 @@
   font-family: var(--content-mono);
   font-size: 0.8rem;
 }
-.prose pre {
+/* Only markdown code blocks: a component's own <pre> inside .prose keeps its look. */
+.prose .code > pre {
   margin: 0;
   padding: 1rem 1.15rem;
   border: 1px solid var(--content-line);
@@ -250,11 +251,11 @@
   overflow-x: auto;
   tab-size: 2;
 }
-.code-file + pre {
+.prose .code-file + pre {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
-.prose pre code {
+.prose .code > pre code {
   font: inherit;
   background: none;
   border: 0;
@@ -365,7 +366,7 @@
 .callout-summary .callout-title::before {
   content: "≡";
 }
-.prose .callout pre,
+.prose .callout .code > pre,
 .prose .callout .code-file,
 .prose .callout :not(pre) > code {
   background: var(--content-bg);

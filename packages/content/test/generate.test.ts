@@ -169,7 +169,7 @@ describe('buildContent', () => {
   it('builds the nav, the search index and the llms index', async () => {
     const root = project(docs)
     const content = await buildContent(context(root), (await loadContentConfig(root))!, {
-      name: 'acme-docs',
+      name: 'Acme Docs',
     })
     expect(content.nav.docs).toEqual([
       {
@@ -201,7 +201,7 @@ describe('buildContent', () => {
       heading: 'Write a page',
       text: 'Pages are markdown.',
     })
-    expect(content.llms).toMatchObject({ title: 'acme-docs', description: 'Acme docs for agents.' })
+    expect(content.llms).toMatchObject({ title: 'Acme Docs', description: 'Acme docs for agents.' })
     expect(content.llms!.pages[2]).toEqual({
       url: '/docs/kits',
       title: 'Kits',
@@ -245,6 +245,9 @@ describe('the generator', () => {
     ])
     const page = JSON.parse(files.find((f) => f.file === 'content/docs/cli.json')!.content)
     expect(page).toMatchObject({ url: '/docs/cli', title: 'The CLI', section: 'Start here' })
+    // The llms.txt title defaults to the package.json name as words.
+    const llms = JSON.parse(files.find((f) => f.file === 'content/llms.json')!.content)
+    expect(llms.title).toBe('Acme Docs')
     const index = files.find((f) => f.file === 'content/index.ts')!.content
     expect(index).toContain("docs: 'getting-started' | 'cli' | 'kits'")
     expect(index).toContain("blog: 'first' | 'second' | 'notes'")

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { defineTypes, type GenerateContext, type GeneratedFile } from '@kitr/core'
+import { displayName } from '@kitr/core/package'
 import { type BuiltContent, buildContent, normalizePath } from './collections'
 import type { ContentConfig } from './model'
 
@@ -98,10 +99,11 @@ export function contentFiles(content: BuiltContent): GeneratedFile[] {
   return files
 }
 
-/** The project's package.json `name`, the default `llms.txt` title. */
+/** The default `llms.txt` title: the package.json `name` as words (`acme-docs` is `Acme Docs`). */
 function packageName(ctx: GenerateContext): string | undefined {
   try {
-    return JSON.parse(ctx.read('package.json')).name
+    const name = JSON.parse(ctx.read('package.json')).name
+    return typeof name === 'string' && name ? displayName(name) : undefined
   } catch {
     return undefined
   }
