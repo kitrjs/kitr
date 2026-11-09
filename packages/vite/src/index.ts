@@ -6,6 +6,7 @@ import type { PackageDefinition, PackageViteNeeds } from '@kitr/core/package'
 import { pickPackageDefinition, resolvePackageName, shortPackageName } from '@kitr/core/package'
 import type { Plugin, PluginOption } from 'vite'
 
+/** Options for `kitr()` in `vite.config.ts`. All optional: the rest comes from `kitrrc.ts`. */
 export interface KitrPluginOptions {
   /** Project root. Default: Vite's root. */
   root?: string

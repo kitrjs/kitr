@@ -160,6 +160,8 @@ interface KitrPluginOptions {
 }
 ```
 
+Options for `kitr()` in `vite.config.ts`. All optional: the rest comes from `kitrrc.ts`.
+
 ### PrerenderFailure
 
 ```ts
