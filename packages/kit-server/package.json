@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-server",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "kitr new --kit server: A pure backend: h3 server, Adonis-style API, logger, db binding, realtime channels. No React in the bundle.",
   "kitr": {
     "name": "server",

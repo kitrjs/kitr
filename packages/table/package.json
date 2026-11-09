@@ -1,6 +1,6 @@
 {
   "name": "@kitr/table",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "@kitr/table: TanStack Table re-exported, plus URL-bound table state.",
   "kitr": {
     "name": "table",

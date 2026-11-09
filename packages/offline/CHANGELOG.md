@@ -1,5 +1,15 @@
 # @kitr/offline
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [a69b7b0]
+  - @kitr/core@0.9.0
+  - @kitr/query@0.9.0
+  - @kitr/react@0.9.0
+  - @kitr/storage@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

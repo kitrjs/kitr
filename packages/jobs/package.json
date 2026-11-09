@@ -1,6 +1,6 @@
 {
   "name": "@kitr/jobs",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "@kitr/jobs: typed background jobs with retries and backoff, cron and interval schedules, a memory queue for development and a Redis queue for several workers.",
   "keywords": [
     "kitr",

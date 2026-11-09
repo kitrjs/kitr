@@ -1,6 +1,6 @@
 {
   "name": "@kitr/router",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "@kitr/router: TanStack Router re-exported, plus the pages extension for the route table (@kitr/router/routes), guards, default pending/error components, createKitrRouter and the stack outlet (@kitr/router/stack).",
   "kitr": {
     "name": "router",

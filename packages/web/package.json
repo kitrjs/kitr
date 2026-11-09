@@ -1,6 +1,6 @@
 {
   "name": "@kitr/web",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "@kitr/web: the web platform. mode static, spa or ssr, optional PWA; owns the Vite dev server, build, prerendering and the production server.",
   "kitr": {
     "name": "web",

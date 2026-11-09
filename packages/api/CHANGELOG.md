@@ -1,5 +1,14 @@
 # @kitr/api
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [a69b7b0]
+  - @kitr/core@0.9.0
+  - @kitr/server@0.9.0
+  - @kitr/shield@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

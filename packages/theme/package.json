@@ -1,6 +1,6 @@
 {
   "name": "@kitr/theme",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "@kitr/theme: design tokens and light/dark/system theming with no flash on load, cookie-backed for SSR, synced to the native status bar and window chrome.",
   "kitr": {
     "name": "theme",
