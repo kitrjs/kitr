@@ -138,7 +138,7 @@ function remarkCallouts() {
       const kind = m[1] as keyof typeof calloutTitles
       const rest = inline.slice(1)
       let title: MdNode[] = []
-      let body: MdNode[] = rest
+      let body: MdNode[]
       const afterMarker = lead.value!.slice(m[0].length)
       const nl = afterMarker.indexOf('\n')
       const sameLine = nl === -1 ? afterMarker : afterMarker.slice(0, nl)

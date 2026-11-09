@@ -11,6 +11,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only GITHUB_TOKEN: nothing here writes to the repo through it.
+permissions:
+  contents: read
+
 jobs:
   # Everything that is built is built here, once, and handed to the jobs below as one artifact:
   # every package's dist, the component registry, the examples' route trees and builds. Install

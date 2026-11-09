@@ -11,6 +11,10 @@ on:
     paths: ["tooling/vscode/**", ".github/workflows/vscode-release.yml"]
   workflow_dispatch:
 
+# Read-only GITHUB_TOKEN: nothing here writes to the repo through it.
+permissions:
+  contents: read
+
 concurrency:
   group: vscode-${{ github.ref }}
   cancel-in-progress: true

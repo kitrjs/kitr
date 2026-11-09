@@ -200,6 +200,15 @@ export class Codemods {
         `${rel}: expected \`export const env = createEnv({...})\`; declare ${name} yourself.`,
       )
     const options = call.$args[0]
+    // An env var is an identifier; anything else (`__proto__` included) is not ours to write.
+    if (
+      (scope !== 'public' && scope !== 'server') ||
+      !/^[A-Za-z_]\w*$/.test(name) ||
+      name === '__proto__'
+    )
+      return this.ctx.log.warn(
+        `${rel}: "${name}" is not an environment variable name; declare it yourself.`,
+      )
     if (!options[scope]) options[scope] = {}
     options[scope][name] = builders.raw(schema)
     writeFileSync(file, generateCode(mod, { quote: 'single' }).code)
@@ -235,7 +244,7 @@ export class Codemods {
     next = options.first
       ? next.replace(/(export const server = createServer\([^\n]*\)\n)/, `$1${options.line}\n`)
       : next.replace(
-          /(export const server = createServer\([^\n]*\)\n(?:(?:\/\/[^\n]*\n)?(?!export |const |\n)[^\n]+\n)*)/,
+          /(export const server = createServer\([^\n]*\)\n(?:(?!export |const |\n)[^\n]+\n)*)/,
           `$1${options.line}\n`,
         )
     if (next === main) return
@@ -878,11 +887,12 @@ export function cssImportEdit(src: string, from: string | undefined, to: string)
     const last = linked[linked.length - 1]!
     const at = last.index! + last[0].length
     const withImport = `${src.slice(0, at)}import css${n} from '${to}?url'\n${src.slice(at)}`
-    return withImport.replace(
-      /links: \[([^\]]*)\]/,
-      (_m, inner: string) =>
-        `links: [${inner.trim() ? `${inner.trim()}, ` : ''}{ rel: 'stylesheet', href: css${n} }]`,
-    )
+    // indexOf, not /links: \[([^\]]*)\]/: that regex rescans to the end for every unclosed `links: [`.
+    const open = withImport.indexOf('links: [')
+    const close = open === -1 ? -1 : withImport.indexOf(']', open)
+    if (close === -1) return withImport
+    const inner = withImport.slice(open + 'links: ['.length, close).trim()
+    return `${withImport.slice(0, open)}links: [${inner ? `${inner}, ` : ''}{ rel: 'stylesheet', href: css${n} }]${withImport.slice(close + 1)}`
   }
   return src.replace(/^(import[^\n]*\n)(?!import)/m, `$1import '${to}'\n`)
 }
