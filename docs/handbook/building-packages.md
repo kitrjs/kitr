@@ -87,7 +87,7 @@ kitr package:check
 
 ## Live examples
 
-Each `examples/<name>.tsx` becomes a live demo at the top of the package page, running in a sandboxed frame with a refresh button so readers can see what persists.
+Each `examples/<name>.tsx` becomes a live demo at the top of the package page, running in a sandboxed frame with a refresh button so readers can see what persists. Beside the demo, a code panel shows the example's source with a tab per file, so what readers see is exactly what runs.
 
 ```tsx
 // examples/checkout.tsx
@@ -102,6 +102,8 @@ export default function Example() {
 ```
 
 Anything an example stores in the browser is namespaced to it, so examples never see each other's data.
+
+The panel shows the example file without its `meta`, then every file it imports with a relative path. Put files that several examples share in a subfolder (`examples/shared/invoices.tsx`): every file directly in `examples/` is an example of its own.
 
 Style an example with Tailwind utilities on the kitr tokens (`bg-primary`, `text-muted-foreground`, `border-border`), not class names of your own: the site compiles the examples' classes, and the example looks the same in any kitr app that has [tailwind](/packages/tailwind). Keep repeated strings in a constant at the top of the file:
 
