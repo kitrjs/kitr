@@ -3,7 +3,7 @@
 **Server kit.** Start a pure backend: h3 server, API routes, logger, database and realtime channels, no React.
 
 ```sh
-pnpm dlx kitr new my-app --kit server
+pnpm dlx @kitr/kitr new my-app --kit server
 ```
 
 Read the guide at https://kitr.dev/docs/cli.

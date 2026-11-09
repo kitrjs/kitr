@@ -306,10 +306,14 @@ function installPublishedCli() {
   const tool = join(work, 'tool')
   mkdirSync(tool)
   writeFileSync(join(tool, 'package.json'), '{"name":"kitr-tool","private":true}\n')
-  sh('npm', ['install', `kitr@${version}`, '--registry', registryUrl, '--no-audit', '--no-fund'], {
-    cwd: tool,
-  })
-  return join(tool, 'node_modules/kitr/bin/kitr.mjs')
+  sh(
+    'npm',
+    ['install', `@kitr/kitr@${version}`, '--registry', registryUrl, '--no-audit', '--no-fund'],
+    {
+      cwd: tool,
+    },
+  )
+  return join(tool, 'node_modules/@kitr/kitr/bin/kitr.mjs')
 }
 
 /** pnpm and npm read `npm_config_registry`, so every install the CLI runs hits Verdaccio. */

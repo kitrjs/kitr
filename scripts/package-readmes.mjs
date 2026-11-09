@@ -19,11 +19,11 @@ for (const dir of readdirSync('packages').sort()) {
   const isPlatform = k.kind === 'platform'
   const install =
     pkg.name === '@kitr/kitr' || pkg.name === '@kitr/cli'
-      ? 'pnpm dlx kitr new my-app'
+      ? 'pnpm dlx @kitr/kitr new my-app'
       : !k.name
         ? `pnpm add ${pkg.name}`
         : isKit
-          ? `pnpm dlx kitr new my-app --kit ${k.name}`
+          ? `pnpm dlx @kitr/kitr new my-app --kit ${k.name}`
           : isPlatform
             ? `pnpm kitr add ${k.name} <name>`
             : k.included

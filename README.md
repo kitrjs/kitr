@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/kitr"><img src="https://img.shields.io/npm/v/kitr.svg" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/@kitr/kitr"><img src="https://img.shields.io/npm/v/@kitr/kitr.svg" alt="npm"></a>
   <a href="https://github.com/kitrjs/kitr/actions/workflows/ci.yml"><img src="https://github.com/kitrjs/kitr/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
 </p>

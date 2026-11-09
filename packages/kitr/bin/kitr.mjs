@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Prefer the project's own kitr: a global `kitr` (npm i -g kitr) hands off to the version
+// Prefer the project's own kitr: a global `kitr` (npm i -g @kitr/kitr) hands off to the version
 // in the nearest node_modules, so every teammate and CI run the CLI the project pins.
 // KITR_NO_LOCAL=1 skips the hand-off.
 import { realpathSync } from 'node:fs'

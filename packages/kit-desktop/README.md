@@ -3,7 +3,7 @@
 **Desktop kit.** Start the app kit in an Electron shell with a typed IPC contract and native dialogs.
 
 ```sh
-pnpm dlx kitr new my-app --kit desktop
+pnpm dlx @kitr/kitr new my-app --kit desktop
 ```
 
 Read the guide at https://kitr.dev/docs/cli.
