@@ -1,9 +1,10 @@
 name: Deploy kitr.dev
 
-# kitr.dev reads the docs and package pages from this repo at build time, so a change on main
-# asks the site's Coolify app to rebuild. Does nothing until the two secrets are set:
-# COOLIFY_DEPLOY_WEBHOOK is <coolify>/api/v1/deploy?uuid=<app uuid>, COOLIFY_TOKEN a deploy-only API token,
-# and CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET a Cloudflare Access service token for that host.
+# kitr.dev (kitrjs/kitr-site) reads the docs and package pages from this repo at build time, so a
+# change on main asks the site to rebuild: a `docs` repository_dispatch starts its Deploy workflow,
+# which builds a fresh image against this commit and rolls it out. The site also rebuilds daily, so
+# this only makes doc changes show up at once. Does nothing until SITE_DISPATCH_TOKEN is set: a
+# fine-grained token for kitrjs/kitr-site with Contents read and write.
 on:
   push:
     branches: [main]
@@ -16,24 +17,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger the kitr.dev rebuild
+      - name: Ask kitrjs/kitr-site to rebuild
         env:
-          WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
-          TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-          # deploy.jam.fan sits behind Cloudflare Access; a service token lets the call through.
-          CF_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
         run: |
-          if [ -z "$WEBHOOK" ]; then
-            echo "COOLIFY_DEPLOY_WEBHOOK is not set; skipping."
+          if [ -z "$TOKEN" ]; then
+            echo "SITE_DISPATCH_TOKEN is not set; skipping."
             exit 0
           fi
-          # A redirect (Cloudflare Access login, for one) is a failure too, not a deploy.
-          status=$(curl --silent --show-error -o response.txt -w '%{http_code}' -X POST \
-            -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
-            -H "CF-Access-Client-Id: $CF_ID" -H "CF-Access-Client-Secret: $CF_SECRET" "$WEBHOOK")
-          cat response.txt; echo
-          if [ "$status" != "200" ]; then
-            echo "::error::Coolify answered $status, so kitr.dev was not redeployed."
-            exit 1
-          fi
+          curl --fail-with-body --silent --show-error -X POST \
+            -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+            --data '{"event_type":"docs"}' \
+            https://api.github.com/repos/kitrjs/kitr-site/dispatches
+          echo "Dispatched; the rebuild runs at https://github.com/kitrjs/kitr-site/actions"
