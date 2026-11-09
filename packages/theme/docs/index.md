@@ -64,6 +64,7 @@ export default defineConfig({
 | `attribute` | `'data-theme'` | The attribute set on `<html>` to `light` or `dark`. Pass the same value to `<ThemeScript>`. |
 | `colors.light` | none | `<meta name="theme-color">` while the light theme shows. Browsers and installed PWAs tint their chrome with it. |
 | `colors.dark` | none | The same, for the dark theme. |
+| `transition` | none | How a theme change animates: a built-in name, your own, or `{ name, duration, easing, direction, animate }`. See [Animate the theme change](#animate-the-theme-change). |
 | `registry` | kitr's registry | Where `kitr ui add` and `kitr ui list` fetch components: a URL or a local directory. |
 | `componentsDir` | `app/components/ui` | Where `kitr ui add` writes components. |
 | `tokens.light`, `tokens.dark` | none | Reserved slot for token overrides; override tokens in `app/styles/tokens.css` (see [Brand the colors](#brand-the-colors)). |
@@ -125,10 +126,160 @@ Click it and the page turns dark: `<html>` gets `data-theme="dark"`, every `--ki
 | --- | --- |
 | `theme` | The user's choice: `'light'`, `'dark'` or `'system'`. |
 | `resolved` | What shows on screen: `'light'` or `'dark'`. With `'system'`, it follows the operating system and updates when the OS setting changes. |
-| `setTheme(theme)` | Sets the choice and saves it to `localStorage` and a one-year cookie. |
-| `toggle()` | Switches to the opposite of `resolved` and saves that, which leaves `'system'`. |
+| `setTheme(theme, options?)` | Sets the choice and saves it to `localStorage` and a one-year cookie. `options` takes `from` and `transition`. |
+| `toggle(options?)` | Switches to the opposite of `resolved` and saves that, which leaves `'system'`. |
 
 For a styled toggle with an icon, `kitr ui add theme-toggle` writes `app/components/ui/theme-toggle.tsx` (plus `button` and `icon`); render `<ThemeToggle />`.
+
+## Animate the theme change
+
+A theme change is instant by default. Set `transition` in `config/theme.ts` and every `setTheme` and `toggle` animates through a [view transition](https://developer.mozilla.org/docs/Web/API/View_Transition_API):
+
+```ts
+// config/theme.ts
+import { defineConfig } from '@kitr/theme'
+
+export default defineConfig({
+  default: 'system',
+  colors: { light: '#ffffff', dark: '#0a0a0a' },
+  transition: 'circle',
+  componentsDir: 'app/components/ui',
+})
+```
+
+Pass the button as `from` and the circle grows out of it. The registry's `theme-toggle` already does:
+
+```tsx
+// app/components/theme-button.tsx
+<button type="button" onClick={(e) => toggle({ from: e.currentTarget })}>
+```
+
+`from` also takes a point, `{ x, y }` in viewport pixels. Without it, a transition that needs an origin starts at the top centre. Visitors who ask for less motion, browsers without view transitions, and a change that leaves the same theme on screen all get an instant change.
+
+### Built-in transitions
+
+The animations live in `@kitr/theme/styles.css`, which the router's `app/document.tsx` already links.
+
+| Name | What it looks like |
+| --- | --- |
+| `'fade'` | The old theme fades out as the new one fades in. |
+| `'circle'` | The new theme grows as a circle from `from`. |
+| `'diamond'` | The same, as a diamond. |
+| `'wipe'` | The new theme sweeps across the page; `direction` picks the way. |
+| `'blur'` | The old theme blurs and fades away over the new one. |
+
+### Set the timing
+
+Pass an object for the timing. Every field is optional:
+
+```ts
+// config/theme.ts
+import { defineConfig } from '@kitr/theme'
+
+export default defineConfig({
+  default: 'system',
+  transition: { name: 'wipe', duration: 600, easing: 'ease-in-out', direction: 'right' },
+})
+```
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `name` | `'fade'` | A built-in name or your own (see [Add your own transition](#add-your-own-transition)). |
+| `duration` | `400` | Milliseconds. |
+| `easing` | `'cubic-bezier(0.65, 0, 0.35, 1)'` | Any CSS easing function. |
+| `direction` | `'down'` | For `wipe`: `'down'`, `'up'`, `'left'` or `'right'`. |
+| `animate` | none | A function that runs the animation itself (see [Animate it in code](#animate-it-in-code)). |
+
+### Pick a transition for one change
+
+In a component, pass `transition` to `setTheme` or `toggle` and it wins over the config for that call. `false` makes that one change instant:
+
+```tsx
+// app/components/settings/appearance.tsx
+import { useTheme } from '@kitr/theme'
+
+export function ResetAppearance() {
+  const { setTheme } = useTheme()
+  return (
+    <button type="button" onClick={() => setTheme('system', { transition: false })}>
+      Match my system
+    </button>
+  )
+}
+```
+
+The same works the other way: leave `transition` out of the config and pass one only where you want motion, such as `toggle({ from: e.currentTarget, transition: 'circle' })` on the header button.
+
+### Add your own transition
+
+Any name that is not built in is yours to style. While the change runs, `<html>` carries the name and the timing, and you animate the browser's two pictures of the page, `::view-transition-old(root)` and `::view-transition-new(root)`:
+
+```css
+/* app/styles/app.css */
+html[data-kitr-theme-transition="curtain"]::view-transition-new(root) {
+  animation: acme-curtain var(--kitr-theme-transition-duration)
+    var(--kitr-theme-transition-easing) both;
+}
+
+@keyframes acme-curtain {
+  from {
+    clip-path: inset(0 50%);
+  }
+  to {
+    clip-path: inset(0 0);
+  }
+}
+```
+
+Then name it: `transition: 'curtain'`, or `{ name: 'curtain', duration: 700 }`. kitr turns off the browser's default cross-fade for every theme transition, so only your animation runs.
+
+| On `<html>` while it runs | Value |
+| --- | --- |
+| `data-kitr-theme-transition` | The transition's name, or `custom` for an `animate` with no name. |
+| `data-kitr-theme-to` | `light` or `dark`: the theme coming in. Style each way differently with it. |
+| `data-kitr-theme-direction` | The `direction` option. |
+| `--kitr-theme-transition-duration` | The duration, such as `400ms`. |
+| `--kitr-theme-transition-easing` | The easing. |
+| `--kitr-theme-transition-x`, `--kitr-theme-transition-y` | The origin from `from`, in pixels. Unset without `from`. |
+
+The same attributes style anything else during the change, such as an icon that turns in with the new theme: `in-data-[kitr-theme-transition]:animate-spin`. To animate the old picture over the new one, give `::view-transition-old(root)` a `z-index: 1`.
+
+### Animate it in code
+
+For an animation CSS cannot express, pass `animate`. It runs once the browser has both pictures, and gets the transition, the themes, the origin and the timing:
+
+```ts
+// config/theme.ts
+import { defineConfig } from '@kitr/theme'
+
+export default defineConfig({
+  default: 'system',
+  transition: {
+    duration: 500,
+    animate({ origin, duration, easing }) {
+      const radius = Math.hypot(window.innerWidth, window.innerHeight)
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0 at ${origin.x}px ${origin.y}px)`,
+            `circle(${radius}px at ${origin.x}px ${origin.y}px)`,
+          ],
+        },
+        { duration, easing, pseudoElement: '::view-transition-new(root)' },
+      )
+    },
+  },
+})
+```
+
+| `animate` gets | What it is |
+| --- | --- |
+| `transition` | The browser's [`ViewTransition`](https://developer.mozilla.org/docs/Web/API/ViewTransition); `finished` settles when the change is over. |
+| `from`, `to` | The theme before and after: `'light'` or `'dark'`. |
+| `origin` | `{ x, y }`: the centre of `from`, or the top centre without one. |
+| `duration`, `easing` | From the options, or the defaults. |
+
+`animate` is not called for visitors who ask for less motion or in browsers without view transitions. A second change while one runs skips the first to its end, so a fast double click never stacks animations.
 
 ## Let users pick light, dark or system
 

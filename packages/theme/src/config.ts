@@ -1,5 +1,6 @@
 import { createDefineConfig } from '@kitr/core'
 import type { TokenGroup } from './tokens'
+import type { ThemeTransition } from './transition'
 
 /** The options of `config/theme.ts`: the default theme, where it is stored, window colours and the component registry. */
 export interface ThemeConfig {
@@ -16,6 +17,11 @@ export interface ThemeConfig {
   tokens?: { light?: TokenGroup; dark?: TokenGroup }
   /** `<meta name="theme-color">` and native window chrome per resolved theme. */
   colors?: { light?: string; dark?: string }
+  /**
+   * How a theme change animates: a built-in name (`'fade'`, `'circle'`, `'diamond'`, `'wipe'`,
+   * `'blur'`), your own, or `{ name, duration, easing, direction, animate }`. Default: none.
+   */
+  transition?: ThemeTransition
   /** Where `kitr ui add` pulls components from. Any shadcn-compatible registry. */
   registry?: string
   /** Where components are written. Default `app/components/ui`. */

@@ -55,6 +55,7 @@ kitr adds the provider, the no-flash script, the cookie for server rendering, ty
 - **A white flash before dark mode.** [Avoid a flash on load](/packages/theme/guide#avoid-a-flash-on-load).
 - **Light, dark and system as three code paths.** [Let users pick light, dark or system](/packages/theme/guide#let-users-pick-light-dark-or-system).
 - **Colors copied between files.** [Use the tokens in CSS](/packages/theme/guide#use-the-tokens-in-css).
+- **A jarring flip between themes.** [Animate the theme change](/packages/theme/guide#animate-the-theme-change).
 - **Rebranding by search and replace.** [Brand the colors](/packages/theme/guide#brand-the-colors).
 - **Component libraries that fight the design system.** [Add components](/packages/theme/guide#add-components).
 

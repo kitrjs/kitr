@@ -14,7 +14,7 @@
       "path": "app/components/ui/theme-toggle.tsx",
       "type": "registry:ui",
       "target": "app/components/ui/theme-toggle.tsx",
-      "content": "import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'\nimport { useTheme } from '@kitr/theme'\nimport { Button } from '#components/ui/button'\nimport { Icon } from '#components/ui/icon'\n\nexport function ThemeToggle() {\n  const { resolved, toggle } = useTheme()\n  return (\n    <Button\n      variant=\"ghost\"\n      size=\"icon\"\n      onClick={toggle}\n      aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}\n    >\n      <Icon icon={resolved === 'dark' ? Sun03Icon : Moon02Icon} size={18} />\n    </Button>\n  )\n}\n"
+      "content": "import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'\nimport { useTheme } from '@kitr/theme'\nimport { Button } from '#components/ui/button'\nimport { Icon } from '#components/ui/icon'\n\nexport function ThemeToggle() {\n  const { resolved, toggle } = useTheme()\n  return (\n    <Button\n      variant=\"ghost\"\n      size=\"icon\"\n      onClick={(e) => toggle({ from: e.currentTarget })}\n      aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}\n    >\n      <Icon icon={resolved === 'dark' ? Sun03Icon : Moon02Icon} size={18} />\n    </Button>\n  )\n}\n"
     }
   ]
 }

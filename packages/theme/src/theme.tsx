@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type { ThemeConfig } from './config'
 import { defineTokens, type TokenGroup } from './tokens'
+import { changeTheme, type ThemeTransition } from './transition'
 
 /** The user's choice: a fixed theme, or `'system'` to follow the operating system. */
 export type Theme = 'light' | 'dark' | 'system'
@@ -17,11 +18,22 @@ export { themeFromCookie } from './cookie'
 /** The theme on screen once `'system'` is resolved: always `'light'` or `'dark'`. */
 export type ResolvedTheme = 'light' | 'dark'
 
+/** How a theme change is shown. */
+export interface ThemeChangeOptions {
+  /**
+   * Where the transition starts: the centre of this element, or a point in viewport pixels. Used by
+   * `circle` and `diamond`, and passed to a custom `animate` as `origin`.
+   */
+  from?: Element | { x: number; y: number }
+  /** This change's transition, over the provider's `transition`; `false` changes at once. */
+  transition?: ThemeTransition
+}
+
 interface ThemeContextValue {
   theme: Theme
   resolved: ResolvedTheme
-  setTheme: (theme: Theme) => void
-  toggle: () => void
+  setTheme: (theme: Theme, options?: ThemeChangeOptions) => void
+  toggle: (options?: ThemeChangeOptions) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
@@ -43,6 +55,8 @@ export interface ThemeProviderProps {
   initialResolved?: ResolvedTheme
   /** `<meta name="theme-color">` per resolved theme, which native shells and PWAs show as window chrome. */
   colors?: { light?: string; dark?: string }
+  /** How `setTheme` and `toggle` animate the change. Default: none, an instant change. */
+  transition?: ThemeTransition
 }
 
 /**
@@ -56,6 +70,7 @@ export function ThemeProvider({
   attribute = 'data-theme',
   initialResolved = 'light',
   colors,
+  transition,
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme)
   const [resolved, setResolved] = useState<ResolvedTheme>(initialResolved)
@@ -93,7 +108,29 @@ export function ThemeProvider({
   }, [theme, attribute, lightColor, darkColor])
 
   const setTheme = useCallback(
-    (next: Theme) => {
+    (next: Theme, options?: ThemeChangeOptions) => {
+      const root = document.documentElement
+      const current: ResolvedTheme = root.getAttribute(attribute) === 'dark' ? 'dark' : 'light'
+      const shown: ResolvedTheme =
+        next === 'system'
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+          : next
+      // The attribute is what the CSS reads, so setting it here puts the new theme in the
+      // transition's second picture; React's state catches up straight after.
+      changeTheme(
+        () => {
+          root.setAttribute(attribute, shown)
+          root.style.colorScheme = shown
+        },
+        {
+          transition: options?.transition ?? transition,
+          from: current,
+          to: shown,
+          origin: options?.from,
+        },
+      )
       setThemeState(next)
       try {
         window.localStorage.setItem(storageKey, next)
@@ -101,10 +138,10 @@ export function ThemeProvider({
         document.cookie = `${storageKey}=${next}; path=/; max-age=31536000; samesite=lax`
       } catch {}
     },
-    [storageKey],
+    [storageKey, attribute, transition],
   )
   const toggle = useCallback(
-    () => setTheme(resolved === 'dark' ? 'light' : 'dark'),
+    (options?: ThemeChangeOptions) => setTheme(resolved === 'dark' ? 'light' : 'dark', options),
     [resolved, setTheme],
   )
   const value = useMemo(

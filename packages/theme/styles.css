@@ -111,4 +111,134 @@
     font-size: 0.875rem;
     margin: 0;
   }
+
+  /* A theme change inside a view transition (`transition` in config/theme.ts). Nothing else is
+     named while it runs, so the whole page is one picture; each built-in name animates it below. */
+  html[data-kitr-theme-transition] * {
+    view-transition-name: none !important;
+  }
+  html[data-kitr-theme-transition]::view-transition-old(root),
+  html[data-kitr-theme-transition]::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  html[data-kitr-theme-transition="fade"]::view-transition-old(root) {
+    animation: kitr-theme-fade-out var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  html[data-kitr-theme-transition="fade"]::view-transition-new(root) {
+    animation: kitr-theme-fade-in var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  html[data-kitr-theme-transition="circle"]::view-transition-new(root) {
+    animation: kitr-theme-circle var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  html[data-kitr-theme-transition="diamond"]::view-transition-new(root) {
+    animation: kitr-theme-diamond var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  html[data-kitr-theme-transition="wipe"]::view-transition-new(root) {
+    animation: kitr-theme-wipe-down var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  html[data-kitr-theme-transition="wipe"][data-kitr-theme-direction="up"]::view-transition-new(
+    root
+  ) {
+    animation-name: kitr-theme-wipe-up;
+  }
+  html[data-kitr-theme-transition="wipe"][data-kitr-theme-direction="left"]::view-transition-new(
+    root
+  ) {
+    animation-name: kitr-theme-wipe-left;
+  }
+  html[data-kitr-theme-transition="wipe"][data-kitr-theme-direction="right"]::view-transition-new(
+    root
+  ) {
+    animation-name: kitr-theme-wipe-right;
+  }
+  html[data-kitr-theme-transition="blur"]::view-transition-old(root) {
+    animation: kitr-theme-blur-out var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  html[data-kitr-theme-transition="blur"]::view-transition-new(root) {
+    animation: kitr-theme-fade-in var(--kitr-theme-transition-duration, 400ms)
+      var(--kitr-theme-transition-easing, ease) both;
+  }
+  @keyframes kitr-theme-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes kitr-theme-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes kitr-theme-blur-out {
+    to {
+      opacity: 0;
+      filter: blur(12px);
+    }
+  }
+  @keyframes kitr-theme-circle {
+    from {
+      clip-path: circle(0 at var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0));
+    }
+    to {
+      clip-path: circle(
+        150vmax at var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0)
+      );
+    }
+  }
+  @keyframes kitr-theme-diamond {
+    from {
+      clip-path: polygon(
+        var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0),
+        var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0),
+        var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0),
+        var(--kitr-theme-transition-x, 50%) var(--kitr-theme-transition-y, 0)
+      );
+    }
+    to {
+      clip-path: polygon(
+        var(--kitr-theme-transition-x, 50%) calc(var(--kitr-theme-transition-y, 0px) - 300vmax),
+        calc(var(--kitr-theme-transition-x, 50%) + 300vmax) var(--kitr-theme-transition-y, 0),
+        var(--kitr-theme-transition-x, 50%) calc(var(--kitr-theme-transition-y, 0px) + 300vmax),
+        calc(var(--kitr-theme-transition-x, 50%) - 300vmax) var(--kitr-theme-transition-y, 0)
+      );
+    }
+  }
+  @keyframes kitr-theme-wipe-down {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+  @keyframes kitr-theme-wipe-up {
+    from {
+      clip-path: inset(100% 0 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+  @keyframes kitr-theme-wipe-left {
+    from {
+      clip-path: inset(0 0 0 100%);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+  @keyframes kitr-theme-wipe-right {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
 }

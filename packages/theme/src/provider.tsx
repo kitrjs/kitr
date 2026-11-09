@@ -18,6 +18,7 @@ export const themeProvider = defineProvider({
           storageKey={config.storageKey}
           attribute={config.attribute}
           colors={config.colors}
+          transition={config.transition}
         >
           {children as ReactNode}
         </ThemeProvider>
