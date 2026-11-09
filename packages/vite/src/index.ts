@@ -302,6 +302,7 @@ export function kitr(options: KitrPluginOptions = {}): PluginOption[] {
           'import.meta.env.KITR_PACKAGES': JSON.stringify(rc.packages),
           'import.meta.env.KITR_PLATFORM': JSON.stringify(platform?.name ?? ''),
           'import.meta.env.KITR_PLATFORM_TYPE': JSON.stringify(platform?.type ?? ''),
+          'import.meta.env.KITR_RENDER': JSON.stringify(platform?.mode ?? 'spa'),
           __KITR_DEVTOOLS__: JSON.stringify(devtoolsShipped),
         },
       }

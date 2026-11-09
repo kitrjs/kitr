@@ -182,24 +182,25 @@ createRoot(document.getElementById('root')!).render(
 )
 ```
 
-A router project's `app/client.tsx` does this, then hydrates the server's HTML:
+A router project's `app/client.tsx` does this, then hydrates the server's HTML, or renders from scratch in a single-page app, whose shell is the same HTML for every URL:
 
 ```tsx
 // app/client.tsx
 import { StartClient } from '@tanstack/react-start/client'
 import { StrictMode, startTransition } from 'react'
-import { hydrateRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { app } from './app'
 
 /** Start's client entry, with the kitr app booted first so providers are ready when the tree hydrates. */
 app.boot().then(() => {
+  const tree = (
+    <StrictMode>
+      <StartClient />
+    </StrictMode>
+  )
   startTransition(() => {
-    hydrateRoot(
-      document,
-      <StrictMode>
-        <StartClient />
-      </StrictMode>,
-    )
+    if (import.meta.env.KITR_RENDER === 'spa') createRoot(document).render(tree)
+    else hydrateRoot(document, tree)
   })
 })
 ```

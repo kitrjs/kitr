@@ -16,7 +16,10 @@ export default function Tasks() {
       await add.mutateAsync({ title })
       setTitle('')
     } catch (e) {
-      const { fieldErrors, message } = e as { fieldErrors?: Record<string, string[]>; message: string }
+      const { fieldErrors, message } = e as {
+        fieldErrors?: Record<string, string[]>
+        message: string
+      }
       setError(fieldErrors?.title?.[0] ?? message)
     }
   }

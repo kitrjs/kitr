@@ -591,6 +591,7 @@ export function Footer() {
 | --- | --- |
 | `import.meta.env.KITR_PLATFORM` | The platform name from `kitrrc.ts`, such as `'site'` or `'admin'`. |
 | `import.meta.env.KITR_PLATFORM_TYPE` | The platform type: `'web'`, `'mobile'`, `'desktop'` or `'tauri'`. |
+| `import.meta.env.KITR_RENDER` | How the platform renders: `'ssr'`, `'static'` or `'spa'`. |
 
 
 

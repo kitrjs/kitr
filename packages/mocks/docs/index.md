@@ -128,7 +128,7 @@ Then start the worker in `app/client.tsx`, before the app boots:
 // app/client.tsx
 import { StartClient } from '@tanstack/react-start/client'
 import { StrictMode, startTransition } from 'react'
-import { hydrateRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { app } from './app'
 
 async function start() {
@@ -137,13 +137,14 @@ async function start() {
     await enableMocks()
   }
   await app.boot()
+  const tree = (
+    <StrictMode>
+      <StartClient />
+    </StrictMode>
+  )
   startTransition(() => {
-    hydrateRoot(
-      document,
-      <StrictMode>
-        <StartClient />
-      </StrictMode>,
-    )
+    if (import.meta.env.KITR_RENDER === 'spa') createRoot(document).render(tree)
+    else hydrateRoot(document, tree)
   })
 }
 
