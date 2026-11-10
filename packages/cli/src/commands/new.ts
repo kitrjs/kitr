@@ -1,6 +1,5 @@
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { defineCommand } from 'citty'
@@ -16,7 +15,7 @@ import {
 } from '../context'
 import { kitAnswers, kitNames, kitPackageNames, loadKit } from '../kits'
 import { base, writeReadme, writeVscode } from '../kits-base'
-import { cliResolve, ensureAvailable } from '../packages'
+import { cliResolve, ensureAvailable, projectExport } from '../packages'
 import { addPlatform, loadFactory, platformTypeNames } from '../platforms'
 import { generateTypesQuietly } from '../types'
 
@@ -118,12 +117,7 @@ export const newCommand = defineCommand({
       // The registry client lives with the theme package (`kitr ui add`): found next to the CLI in a
       // checkout, in the project once the kit installed it (a CLI from a registry has no @kitr/theme).
       const commands =
-        cliResolve('@kitr/theme', 'commands') ??
-        (() => {
-          try {
-            return createRequire(ctx.path('package.json')).resolve('@kitr/theme/commands')
-          } catch {}
-        })()
+        cliResolve('@kitr/theme', 'commands') ?? projectExport(ctx, '@kitr/theme', 'commands')
       if (!commands)
         throw new Error(
           '@kitr/theme is not available to this CLI, so the kit components cannot be pulled',

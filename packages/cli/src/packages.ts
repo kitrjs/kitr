@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
   type PackageDefinition,
@@ -68,6 +68,22 @@ export function cliResolve(pkg: string, sub = 'kitr'): string | undefined {
     } catch {}
   }
   return undefined
+}
+
+/**
+ * Resolve a package export installed into the project during this run. Node caches package.json
+ * lookups for the life of the process, so after the installs earlier in the run it can miss an
+ * export the package has; the manifest is read from disk instead.
+ */
+export function projectExport(ctx: ProjectContext, pkg: string, sub: string): string | undefined {
+  try {
+    const manifestPath = createRequire(ctx.path('package.json')).resolve(`${pkg}/package.json`)
+    const target = JSON.parse(readFileSync(manifestPath, 'utf8')).exports?.[`./${sub}`]
+    const file = typeof target === 'string' ? target : target?.default
+    return file ? join(dirname(manifestPath), file) : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function hasKitrExport(ctx: ProjectContext, pkg: string): boolean {

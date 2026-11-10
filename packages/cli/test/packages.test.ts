@@ -7,6 +7,7 @@ import { createAddContext, createProjectInfo } from '../src/add-context'
 import { Codemods, extensionLocalName } from '../src/codemods'
 import { configurePackages } from '../src/configure'
 import { createContext } from '../src/context'
+import { projectExport } from '../src/packages'
 import { knownPackageNames, resolvePlan } from '../src/plan'
 import { coerceAnswer, describeQuestions, resolveAnswers } from '../src/questions'
 
@@ -313,5 +314,28 @@ describe('plan', () => {
     await expect(resolvePlan(ctx, ['nope'], [], { install: false })).rejects.toThrow(
       /Unknown package "nope"/,
     )
+  })
+})
+
+describe('projectExport', () => {
+  it('reads a subpath export from the installed manifest', () => {
+    const dir = project({
+      'package.json': pkg,
+      'node_modules/@kitr/theme/package.json': JSON.stringify({
+        name: '@kitr/theme',
+        exports: {
+          './commands': { types: './dist/commands.d.ts', default: './dist/commands.js' },
+          './styles.css': './styles.css',
+          './package.json': './package.json',
+        },
+      }),
+    })
+    const ctx = createContext({ root: dir })
+    expect(projectExport(ctx, '@kitr/theme', 'commands')).toMatch(
+      /node_modules[\\/]@kitr[\\/]theme[\\/]dist[\\/]commands\.js$/,
+    )
+    expect(projectExport(ctx, '@kitr/theme', 'styles.css')).toMatch(/styles\.css$/)
+    expect(projectExport(ctx, '@kitr/theme', 'missing')).toBeUndefined()
+    expect(projectExport(ctx, '@kitr/nothing', 'commands')).toBeUndefined()
   })
 })
