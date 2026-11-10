@@ -1,6 +1,6 @@
 {
   "name": "@kitr/content",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "@kitr/content: markdown collections rendered at build time (Shiki, callouts, steps, a table of contents), typed page loaders, search, llms.txt and React components for docs pages.",
   "kitr": {
     "name": "content",

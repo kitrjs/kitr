@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-desktop",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "kitr new --kit desktop: The app kit in an Electron shell with a typed IPC contract and native dialogs. See the tauri kit for a Tauri shell.",
   "kitr": {
     "name": "desktop",

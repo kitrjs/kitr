@@ -1,6 +1,6 @@
 {
   "name": "@kitr/files",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "@kitr/files: open, save and pick files through one API with native dialogs on desktop and mobile and a download fallback on the web.",
   "keywords": [
     "kitr",

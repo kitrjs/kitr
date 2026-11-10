@@ -1,6 +1,6 @@
 {
   "name": "@kitr/forms",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "@kitr/forms: React Hook Form re-exported, plus useSchemaForm, <Form>, <FormField> and server-error mapping.",
   "kitr": {
     "name": "forms",
