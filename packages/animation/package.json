@@ -1,6 +1,6 @@
 {
   "name": "@kitr/animation",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "@kitr/animation: Motion re-exported, plus reduced-motion defaults, shared presets, scroll reveals and page transitions.",
   "kitr": {
     "name": "animation",

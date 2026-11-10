@@ -1,5 +1,14 @@
 # @kitr/vite
 
+## 0.9.2
+
+### Patch Changes
+
+- Updated dependencies [77f67fb]
+  - @kitr/cli@0.9.2
+  - @kitr/core@0.9.2
+  - @kitr/web@0.9.2
+
 ## 0.9.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@kitr/cli",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "The kitr CLI: new, add, remove, make:*, ui add, api:sync, doctor, eject, upgrade. Runs from flags with no prompts for agents and CI.",
   "type": "module",
   "license": "MIT",

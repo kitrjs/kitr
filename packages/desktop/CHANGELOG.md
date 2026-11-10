@@ -1,5 +1,13 @@
 # @kitr/desktop
 
+## 0.9.2
+
+### Patch Changes
+
+- @kitr/core@0.9.2
+  - @kitr/platform@0.9.2
+  - @kitr/storage@0.9.2
+
 ## 0.9.1
 
 ### Patch Changes
