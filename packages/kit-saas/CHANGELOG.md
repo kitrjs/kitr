@@ -1,5 +1,11 @@
 # @kitr/kit-saas
 
+## 0.9.1
+
+### Patch Changes
+
+- @kitr/core@0.9.1
+
 ## 0.9.0
 
 ### Patch Changes
