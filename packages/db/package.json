@@ -1,6 +1,6 @@
 {
   "name": "@kitr/db",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "@kitr/db: bind any ORM (Drizzle, Prisma, Kysely) as ctx.db with lifecycle hooks. No ORM shipped.",
   "kitr": {
     "name": "db",

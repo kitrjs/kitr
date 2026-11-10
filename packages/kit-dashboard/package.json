@@ -1,6 +1,6 @@
 {
   "name": "@kitr/kit-dashboard",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "kitr new --kit dashboard: A logged-in app on an external API: http, forms, tables, state, theme, tailwind, auth, mocks, testing.",
   "kitr": {
     "name": "dashboard",

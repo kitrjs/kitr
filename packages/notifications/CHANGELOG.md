@@ -1,5 +1,13 @@
 # @kitr/notifications
 
+## 0.9.2
+
+### Patch Changes
+
+- @kitr/core@0.9.2
+  - @kitr/platform@0.9.2
+  - @kitr/react@0.9.2
+
 ## 0.9.1
 
 ### Patch Changes
