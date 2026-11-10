@@ -118,6 +118,27 @@ describe('ThemeProvider', () => {
     expect(root.style.getPropertyValue('--kitr-theme-transition-radius')).toBe('')
   })
 
+  it('keeps the old theme on the page until the browser has taken the first picture', () => {
+    mockMatchMedia(false)
+    // A real view transition runs the update a frame later, after it has captured the old page.
+    let update = () => {}
+    ;(document as any).startViewTransition = vi.fn((u: () => void) => {
+      update = u
+      return { finished: new Promise(() => {}), ready: new Promise(() => {}), skipTransition() {} }
+    })
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: wrapper({ transition: 'circle' }),
+    })
+    const root = document.documentElement
+    act(() => result.current.toggle({ from: button() }))
+    expect(root.getAttribute('data-theme')).toBe('light')
+    expect(result.current.theme).toBe('system')
+    act(() => update())
+    expect(root.getAttribute('data-theme')).toBe('dark')
+    expect(result.current.theme).toBe('dark')
+    expect(result.current.resolved).toBe('dark')
+  })
+
   it('takes timing and direction, and a per-call transition wins over the provider', () => {
     mockMatchMedia(false)
     const vt = mockViewTransition()

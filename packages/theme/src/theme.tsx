@@ -118,11 +118,14 @@ export function ThemeProvider({
             : 'light'
           : next
       // The attribute is what the CSS reads, so setting it here puts the new theme in the
-      // transition's second picture; React's state catches up straight after.
+      // transition's second picture. React's state changes in the same callback: set any earlier,
+      // the effect above would write the new attribute before the browser takes the first picture,
+      // and both pictures would show the new theme.
       changeTheme(
         () => {
           root.setAttribute(attribute, shown)
           root.style.colorScheme = shown
+          setThemeState(next)
         },
         {
           transition: options?.transition ?? transition,
@@ -131,7 +134,6 @@ export function ThemeProvider({
           origin: options?.from,
         },
       )
-      setThemeState(next)
       try {
         window.localStorage.setItem(storageKey, next)
         // biome-ignore lint/suspicious/noDocumentCookie: a single first-party cookie so the server renders the right theme; no cookie library needed
