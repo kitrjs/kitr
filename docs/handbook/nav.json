@@ -78,7 +78,7 @@
         "slug": "packages",
         "source": "../packages.md",
         "title": "Packages",
-        "description": "What each package provides, which kit includes it, and the roadmap."
+        "description": "What each package provides and which kit includes it."
       },
       {
         "slug": "entry-points",

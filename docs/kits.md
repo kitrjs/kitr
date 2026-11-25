@@ -20,7 +20,7 @@ Every flag is listed under [Create a project](cli.md#create-a-project). [kitr.de
 | --- | --- | --- | --- |
 | `blank` | none | none | none |
 | `app` | `site: web({ mode: 'spa' })` | query, tailwind, theme, testing | none |
-| `dashboard` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing, devtools | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
+| `dashboard` | `site: web({ mode: 'spa' })` | http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing | icon, button, input, label, card, form, data-table, page-header, empty-state, theme-toggle, app-shell |
 | `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the dashboard kit without mocks, plus seo, actions, api, realtime | the dashboard kit's eleven |
 | `server` | `api: server()` | logger, api, db, realtime, testing. No React. | none |
 
@@ -53,12 +53,12 @@ The presets are a base kit plus a small working app. Each one is also in [`examp
 | Kit | Platforms | Packages | What it scaffolds |
 | --- | --- | --- | --- |
 | `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, analytics, monitoring | sign-in, a guarded app shell, a projects page, an API test |
-| `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing, devtools | a prerendered site: home, pricing, a blog, a newsletter form, a test |
-| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing, devtools | a chat room with rooms in the URL, a test |
+| `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing | a prerendered site: home, pricing, a blog, a newsletter form, a test |
+| `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing | a chat room with rooms in the URL, a test |
 | `docs` | `site: web({ mode: 'static' })` | content, seo, tailwind, theme, testing | a docs site from markdown: sidebar, search, dark mode, `llms.txt`, a test |
-| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform | the dashboard kit in Electron, with native dialogs |
-| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform | the dashboard kit in Tauri, with typed Rust commands |
-| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform | the dashboard kit as an installable PWA and a Capacitor app |
+| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform, secure-storage, notifications, devtools | the dashboard kit in Electron, with native dialogs |
+| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform, secure-storage, notifications, devtools | the dashboard kit in Tauri, with typed Rust commands |
+| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform, devtools | the dashboard kit as an installable PWA and a Capacitor app |
 
 ### saas
 

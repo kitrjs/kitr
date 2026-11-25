@@ -13,10 +13,12 @@ Each example is the unmodified output of a CLI kit, with `kitr`/`@kitr/*` pointe
 | `site/` | `kitr new site --kit site` | `pnpm build` prerenders `/`, `/pricing`, `/blog` and every post into `dist/site/client`; `pnpm start` serves them plus the newsletter API |
 | `realtime/` | `kitr new realtime --kit realtime` | `pnpm build && pnpm start`, open two tabs and chat: messages arrive over `/api/ws` |
 | `desktop/` | `kitr new desktop --kit desktop` | `kitr dev site` in a browser, `kitr dev app` for the Electron window with native dialogs (`platforms/app/`) |
+| `docs/` | `kitr new docs --kit docs` | `pnpm dev`, then edit `content/docs/*.md`; `pnpm build` prerenders every page with `llms.txt` |
+| `tauri/` | `kitr new tauri --kit tauri` | `kitr dev site` in a browser, `kitr dev app` for the Tauri window (needs Rust; `platforms/app/src-tauri/`) |
 | `mobile/` | `kitr new mobile --kit mobile` | `kitr build site && kitr start site` for the installable PWA; `kitr dev phone --target ios` for the Capacitor shell (`platforms/phone/`) |
 | `everywhere/` | `kitr new everywhere --kit dashboard`, then `kitr add desktop app`, `kitr add mobile phone`, `kitr add secure-storage`, `kitr add notifications`, `kitr make:provider flags` | One project, three platforms: `kitr dev` runs `site` (web), `app` (Electron) and `phone` (Capacitor); built in CI by the `everywhere` job. Defined in `scripts/sync-examples.mjs`, with the home page in `scripts/overlays/everywhere/` |
 
-The last five are presets: the same base as `dashboard`/`fullstack` plus real pages, controllers and tests that show the packages working together. They are the fastest way to see what a package does, and `kitr new --kit <preset>` gives you the same files to start from.
+`saas`, `site`, `realtime`, `docs`, `desktop`, `tauri` and `mobile` are presets: the same base as `app`, `dashboard` or `fullstack` plus real pages, controllers and tests that show the packages working together. They are the fastest way to see what a package does, and `kitr new --kit <preset>` gives you the same files to start from.
 
 Regenerate one from the repo root:
 

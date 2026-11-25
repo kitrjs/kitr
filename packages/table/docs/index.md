@@ -28,7 +28,7 @@ kitr add table
 - Adds `'@kitr/table'` to `packages` in `kitrrc.ts`. It registers no provider.
 - Adds a `## kitr: table` section to `AGENTS.md`.
 
-It writes no config file, adds no env variables or scripts, and asks no questions. Tables are a client package, so in a project without React `kitr add` skips it with a warning. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it, along with the `data-table` component.
+It writes no config file, adds no env variables or scripts, and asks no questions. Tables are a client package, so in a project without React `kitr add` skips it with a warning. The `dashboard`, `fullstack`, `saas`, `desktop`, `tauri` and `mobile` kits include it, along with the `data-table` component.
 
 `kitr remove table` takes the package out of `kitrrc.ts`, removes both dependencies and the `AGENTS.md` section, and lists files that still import `@kitr/table`. It leaves `data-table.tsx` in place.
 

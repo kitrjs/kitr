@@ -160,7 +160,7 @@ platforms: {
 },
 ```
 
-It is the `app` kit plus `kitr add desktop app`, `kitr add mobile phone`, `kitr add secure-storage` and `kitr add notifications`. Add the platforms first, so the device packages see Capacitor and install its plugins.
+It is the `dashboard` kit plus `kitr add desktop app`, `kitr add mobile phone`, `kitr add secure-storage` and `kitr add notifications`. Add the platforms first, so the device packages see Capacitor and install its plugins.
 
 | Command | What it does |
 | --- | --- |

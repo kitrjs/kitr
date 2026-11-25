@@ -36,6 +36,39 @@ describe('search', () => {
     expect(search(entries, 'Writing pages')[0]!.url).toBe('/docs/writing')
   })
 
+  it('puts a phrase typed in order above pages that only contain its words', () => {
+    const cli = [
+      entry(
+        '/docs/cli#leaving-kitr',
+        'CLI',
+        'Leaving kitr',
+        'eject prints rewrites that remove kitr.',
+      ),
+      entry(
+        '/docs/cli#project-commands',
+        'CLI',
+        'Project commands',
+        '`kitr remove <pkg>` undoes add.',
+      ),
+      entry(
+        '/docs/agents',
+        'Agents',
+        '',
+        'kitr keeps AGENTS.md; remove a package and its rules go.',
+      ),
+    ]
+    expect(search(cli, 'kitr remove')[0]!.url).toBe('/docs/cli#project-commands')
+    expect(search(cli, 'Kitr  Remove')[0]!.url).toBe('/docs/cli#project-commands')
+  })
+
+  it('weighs a whole word above one that only matches inside a longer word', () => {
+    const pages = [
+      entry('/docs/configuration#kitrrc', 'Configuration', 'kitrrc.ts', 'The kitr config file.'),
+      entry('/docs/cli#doctor', 'CLI', 'Run kitr doctor', 'Checks the project.'),
+    ]
+    expect(search(pages, 'kitr')[0]!.url).toBe('/docs/cli#doctor')
+  })
+
   it('returns at most two hits per page and respects the limit', () => {
     const hits = search(entries, 'static')
     expect(hits.filter((e) => e.url.startsWith('/docs/deploy'))).toHaveLength(2)

@@ -37,7 +37,7 @@ What `kitr add` does:
 - Adds `VITE_MOCKS=false` to `.env.example`, and to `.env` when it exists, under the comment `# Set true to serve app/mocks/handlers.ts in the browser`.
 - Adds a `## kitr: mocks` section to `AGENTS.md`: handlers live in `app/mocks/handlers.ts`, `VITE_MOCKS=true` turns them on in development, tests use `setupNodeMocks(handlers)`, and a kitr route table is mocked with `mockRoutes(routes.toJSON(), baseUrl, { ... })`.
 
-The `app`, `desktop` and `mobile` kits include it. `kitr remove mocks` reverses the `package.json`, `kitrrc.ts` and `AGENTS.md` changes and lists files that still import `@kitr/mocks`. It leaves `app/mocks/`, the `VITE_MOCKS` line and `public/mockServiceWorker.js` for you to delete.
+The `dashboard`, `desktop`, `tauri` and `mobile` kits include it. `kitr remove mocks` reverses the `package.json`, `kitrrc.ts` and `AGENTS.md` changes and lists files that still import `@kitr/mocks`. It leaves `app/mocks/`, the `VITE_MOCKS` line and `public/mockServiceWorker.js` for you to delete.
 
 </details>
 

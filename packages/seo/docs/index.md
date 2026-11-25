@@ -32,7 +32,7 @@ What `kitr add` does:
 - Writes `config/seo.ts` (shown in [Configure](#configure)) and regenerates `config/index.ts`.
 - Adds a `## kitr: seo` section to `AGENTS.md` telling coding agents to set `head: (ctx) => seo({ title, description }, ctx)` on routes, to add structured data with `jsonLd()`, and to use `ssrRoute()` and `cacheHeaders()` for rendering and CDN caching.
 
-It asks no questions and adds no env variables. The `fullstack`, `saas`, `site` and `realtime` kits include seo; the `site` kit writes its own `config/seo.ts`. In a server-only project `kitr add seo` prints a warning and skips it.
+It asks no questions and adds no env variables. The `fullstack`, `saas`, `site`, `realtime` and `docs` kits include seo; the `site` kit writes its own `config/seo.ts`. In a server-only project `kitr add seo` prints a warning and skips it.
 
 `kitr remove seo` removes the `packages` entry, the dependency and the `AGENTS.md` section, and deletes `config/seo.ts`. It leaves the `seo()` calls in your routes.
 

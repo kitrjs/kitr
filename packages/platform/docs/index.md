@@ -29,7 +29,7 @@ What `kitr add platform` does, in order:
 - Writes `config/platform.ts` (shown under Configure) and regenerates `config/index.ts`.
 - Adds a `## kitr: platform` section to `AGENTS.md`: use the hooks from `@kitr/platform/react` instead of user agents or `window.__TAURI__`, `platform.is()` to match a type or an OS, and the web, desktop, tauri and mobile providers register the drivers.
 
-You rarely run it by hand: `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it, and the `mobile` and `desktop` kits include it.
+You rarely run it by hand: `kitr add mobile`, `kitr add desktop` and `kitr add tauri` add it, and the `desktop`, `tauri` and `mobile` kits include it.
 
 `kitr remove platform` reverses every step above and lists the files that still import `@kitr/platform`.
 

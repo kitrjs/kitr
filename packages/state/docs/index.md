@@ -43,7 +43,7 @@ What `kitr add` does:
 
 </details>
 
-`kitr add state` asks no questions. The `app`, `fullstack`, `saas`, `desktop` and `mobile` kits include it. To see the changes without writing them:
+`kitr add state` asks no questions. The `dashboard`, `fullstack`, `saas`, `desktop`, `tauri` and `mobile` kits include it. To see the changes without writing them:
 
 ```sh
 kitr add state --dry-run

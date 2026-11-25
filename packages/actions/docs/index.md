@@ -40,7 +40,7 @@ What `kitr add` does:
 - Runs `kitr types` once dependencies are installed, which writes `.kitr/actions.ts`.
 - Appends an `actions` section to `AGENTS.md`.
 
-`kitr add actions` asks no questions. `kitr remove actions` takes `operations` out of `app/app.ts` and removes the `AGENTS.md` section, the `packages` entry and the dependency. It leaves the `tsconfig.json`, `.gitignore`, `imports` and `typecheck` changes, which other type generators use, and your files in `app/actions/`. The `fullstack` and `saas` kits include actions.
+`kitr add actions` asks no questions. `kitr remove actions` takes `operations` out of `app/app.ts` and removes the `AGENTS.md` section, the `packages` entry and the dependency. It leaves the `tsconfig.json`, `.gitignore`, `imports` and `typecheck` changes, which other type generators use, and your files in `app/actions/`. The `fullstack` kit includes actions.
 
 </details>
 

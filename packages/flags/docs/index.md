@@ -275,8 +275,8 @@ Inside a request, `useFlags(app).value(...)` answers for that request's user. Th
 The browser can't read `process.env` and may not know the user id at boot. The server resolves the flags and embeds them as a JSON script tag, which the client provider loads before the first render. `<FlagsScript values={...} />` from `@kitr/flags/react` renders it. Resolve in the root route's loader and put the tag in the document head:
 
 ```ts
-// app/server/load_flags.ts
-import { createServerFn } from '@kitr/actions'
+// app/server/load-flags.ts
+import { createServerFn } from '@tanstack/react-start'
 import { resolveFlags } from '@kitr/flags/server'
 import type { flags } from '#app/flags'
 import { server } from '#server/main'
@@ -291,7 +291,7 @@ export const loadFlags = createServerFn({ method: 'GET' }).handler(async () => {
 ```ts
 // app/routes.ts
 import { head, RootDocument } from './document'
-import { loadFlags } from '#app/server/load_flags'
+import { loadFlags } from '#app/server/load-flags'
 
 r.root({ head, loader: () => loadFlags(), component: RootDocument })
 ```

@@ -25,6 +25,7 @@ Four packages load data: `http`, `api`, `actions` and `realtime`. [Choosing a da
 | `server` | `@kitr/server` | any | logger | Run a Node server that starts, logs and shuts down cleanly. |
 | `api` | `@kitr/api` | any | server | Build JSON API routes with validation, and call them from the browser fully typed. |
 | `actions` | `@kitr/actions` | client | server, query | Call server code straight from a component, like a form submit, without writing an API route. |
+| `content` | `@kitr/content` | client |  | Write pages in markdown and get a docs site: highlighted code, a sidebar, search and copies for coding agents. |
 | `seo` | `@kitr/seo` | client |  | Give every page a title, a share preview and a sitemap entry so search engines and chat apps show it well. |
 | `realtime` | `@kitr/realtime` | any | server | Define a live channel once and push updates to every open screen, over WebSockets, Socket.IO or server events. |
 | `db` | `@kitr/db` | any | server | Connect your database so every request can use it. |
@@ -77,13 +78,14 @@ The full walkthrough of every kit is in [Kits](kits.md).
 | `blank` | none | none. `kitr add web site` adds Vite, React and the router. |
 | `app` | `site: web({ mode: 'spa' })` | router, query, tailwind, theme, testing |
 | `dashboard` | `site: web({ mode: 'spa' })` | router, query, http, forms, table, state, tailwind, theme, toast, auth, storage, mocks, testing |
-| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the dashboard kit plus logger, server, seo, actions, api, realtime |
+| `fullstack` | `site: web({ mode: 'ssr' })`, `api: server()` | the dashboard kit without mocks, plus logger, server, seo, actions, api, realtime |
 | `server` | `api: server()` | logger, server, api, db, realtime, testing. No React. |
-| `saas` | `site` (ssr), `api` | the fullstack set with analytics and monitoring; sign-in, guarded shell, projects CRUD, tests |
+| `saas` | `site` (ssr), `api` | the fullstack set without actions and realtime, plus shield, mail, analytics, monitoring; sign-in, guarded shell, projects CRUD, tests |
 | `site` | `site` (ssr), `api` | query, forms, tailwind, theme, i18n, storage, analytics, seo, api, testing; prerendered pages, blog, newsletter |
 | `realtime` | `site` (ssr), `api` | query, forms, tailwind, theme, toast, storage, seo, api, realtime, testing; chat over typed channels |
-| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform; Electron, native dialogs over typed IPC |
-| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform; Tauri, typed Rust commands and events |
-| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform; installable PWA and the Capacitor shell |
+| `docs` | `site: web({ mode: 'static' })` | content, seo, tailwind, theme, testing; a docs site from markdown with search and `llms.txt` |
+| `desktop` | `site: web({ mode: 'spa' })`, `app: desktop()` | the dashboard kit plus platform, secure-storage, notifications, devtools; Electron, native dialogs over typed IPC |
+| `tauri` | `site: web({ mode: 'spa' })`, `app: tauri()` | the dashboard kit plus platform, secure-storage, notifications, devtools; Tauri, typed Rust commands and events |
+| `mobile` | `site: web({ mode: 'spa', pwa: true })`, `phone: mobile()` | the dashboard kit plus platform, devtools; installable PWA and the Capacitor shell |
 
 Every kit but `blank` is a package, such as `@kitr/kit-saas`. It runs once when the project is created and is not a dependency afterwards. `kitr new my-app --kit @acme/starter` runs a kit from any npm package.

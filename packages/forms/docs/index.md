@@ -32,7 +32,7 @@ What `kitr add` does:
 
 </details>
 
-`kitr add forms` writes no config file and asks no questions. The `app` and `fullstack` kits include it, with the styled `form` component from [Style fields](#style-fields).
+`kitr add forms` writes no config file and asks no questions. The `dashboard`, `fullstack`, `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile` kits include it. All but `realtime` also copy the styled `form` component from [Style fields](#style-fields).
 
 <details>
 <summary>What kitr remove does</summary>
@@ -758,7 +758,7 @@ export function InvoiceForm({ defaultValues, onSubmit }: { defaultValues?: Parti
 ```
 
 > [!WARNING]
-> The generated file needs `kitr ui add form` first (the `app` and `fullstack` kits ran it). Import from `@kitr/forms`, not `react-hook-form`; `kitr doctor` warns otherwise.
+> The generated file needs `kitr ui add form` first (the `dashboard` and `fullstack` kits and the presets built on them ran it). Import from `@kitr/forms`, not `react-hook-form`; `kitr doctor` warns otherwise.
 
 ## Errors
 

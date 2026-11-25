@@ -11,17 +11,19 @@ A global install (`pnpm add -g @kitr/kitr`) lets you type `kitr` directly. Insid
 | `kitr new <dir> --kit <kit>` | Create a project from a kit: `kitr new my-app --kit app`. See [Create a project](#create-a-project). |
 | `kitr add <pkg...>` | Install a package and wire it into the project: `kitr add jobs`. See [Add a package](#add-a-package). |
 | `kitr add <type> <name>` | Add a platform: `kitr add web admin --mode spa`. See [Platforms](platforms.md). |
-| `kitr remove <pkg...>` | Undo `add`, then list the files that still import the package. |
+| `kitr remove <pkg...>` | Undo `add`, then list the files that still import the package. See [Remove a package](#remove-a-package). |
 | `kitr <pkg>:<cmd>` | Run a command a package adds: `kitr jobs:work`. |
-| `kitr doctor` | Check the project for problems. Exits 1 on errors. |
+| `kitr doctor` | Check the project for problems. Exits 1 on errors. See [Check and upgrade](#check-and-upgrade). |
 | `kitr info` | Print a JSON summary of the project. |
 | `kitr agents` | Print the project's `AGENTS.md`. See [Read the agent rules](#read-the-agent-rules). |
 | `kitr catalog` | List the official packages, platforms and kits. `--json` prints each with its whole `kitr` block. |
-| `kitr upgrade` | Move every kitr package to one version: `kitr upgrade --to 0.2.0`. |
+| `kitr upgrade` | Move every kitr package to one version: `kitr upgrade --to 0.2.0`. See [Check and upgrade](#check-and-upgrade). |
+| `kitr eject <stubs\|all>` | Copy the generator templates into your project, or print what replaces each `@kitr/*` import. See [Leaving kitr](#leaving-kitr). |
+| `kitr package:check [dir]` | Check a kitr package's manifest and docs before you publish it. See [Building packages](/docs/building-packages). |
 
 ### Create a project
 
-Kits: `blank`, `app`, `fullstack`, `server`, and the presets `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile`. [Kits](kits.md) shows what each one writes.
+Kits: `app` (start here), `dashboard`, `fullstack`, `server`, `blank`, and the presets `saas`, `site`, `realtime`, `docs`, `desktop`, `tauri` and `mobile`. `kitr catalog` lists them from the CLI you have installed, and [Kits](kits.md) shows what each one writes.
 
 | Flag | What it does |
 | --- | --- |
@@ -40,6 +42,16 @@ Kits: `blank`, `app`, `fullstack`, `server`, and the presets `saas`, `site`, `re
 Questions a package asks are flags: `kitr add jobs --no-worker`. `--yes` takes the defaults, and `kitr add <pkg> --help` lists the questions. `--dry-run` shows the changes without writing them.
 
 Any npm package with a kitr setup module works: `kitr add @acme/stripe`. See [Package contract](package-contract.md).
+
+### Remove a package
+
+`kitr remove <pkg...>` undoes `kitr add`: it runs the package's own remove step, unregisters its provider, takes it out of `kitrrc.ts` and `package.json`, deletes `config/<pkg>.ts` and drops its `AGENTS.md` section. Files you may have edited, such as stubs and routes it wrote, stay. It then lists the files under `app/`, `config/`, `server/` and `start/` that still import the package, so you can delete or rewrite them.
+
+```sh
+kitr remove auth
+```
+
+Packages that `add` brought in for it stay installed: `kitr remove api` leaves `server` and `logger`. Remove them by name if nothing else uses them. `--dry-run` shows the changes without writing them, and `--no-install` skips reinstalling dependencies.
 
 ### Check and upgrade
 
@@ -215,4 +227,4 @@ export default definePackage({
 
 ## Leaving kitr
 
-`kitr eject stubs` copies every generator template into your project. `kitr eject all` also prints the import rewrites that remove kitr: each `kitr/*` import maps to the library it re-exports.
+`kitr eject stubs` copies every generator template into your project. `kitr eject all` also prints the import rewrites that remove kitr: each `@kitr/*` import maps to the library it re-exports.

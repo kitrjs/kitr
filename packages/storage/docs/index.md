@@ -40,7 +40,7 @@ kitr add storage
 
 It asks no questions and adds no environment variables or scripts. It does not overwrite `config/storage.ts` or `app/storage.ts` when they exist.
 
-The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include it, and the [Desktop](/packages/desktop), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) platforms require it.
+The `dashboard`, `fullstack`, `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile` kits include it, and the [Desktop](/packages/desktop), [Tauri](/packages/tauri) and [Mobile](/packages/mobile) platforms require it.
 
 `kitr remove storage` reverses all of it and deletes `config/storage.ts`. It leaves `app/storage.ts`, because you have probably edited it, and lists the files that still import `@kitr/storage`.
 
