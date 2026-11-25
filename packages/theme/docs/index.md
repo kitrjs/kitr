@@ -31,7 +31,7 @@ kitr add theme
 
 It adds no environment variables or scripts, skips `config/theme.ts` and `tokens.css` when they exist, and asks no questions. `--no-install` skips the package manager and `--dry-run` prints the plan.
 
-The `app`, `fullstack`, `saas`, `site`, `realtime`, `desktop` and `mobile` kits include theme, with a starter set of components (`icon`, `button`, `input`, `card`, `theme-toggle` and more).
+Every kit except `server` and `blank` includes theme. All of them but `app` also copy a starter set of components (`icon`, `button`, `input`, `card`, `theme-toggle` and more).
 
 `kitr remove theme` removes `<ThemeScript />`, its import and `suppressHydrationWarning`, the provider, the `packages` entry, the dependency, `config/theme.ts` and the `AGENTS.md` section. `app/styles/tokens.css`, its import and `app/components/ui/` stay, because they are yours.
 

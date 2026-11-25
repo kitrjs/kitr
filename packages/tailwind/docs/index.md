@@ -32,7 +32,7 @@ kitr add tailwind
 - In `app/document.tsx` (or `app/routes/__root.tsx`), swaps the linked `@kitr/theme/styles.css` for `app/styles/app.css`, so the theme stylesheet loads once, through `app.css`. A document with neither gets the new sheet added.
 - Adds a `## kitr: tailwind` section to `AGENTS.md`.
 
-It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. The `app` and `fullstack` kits, and presets built on them, include tailwind.
+It registers no provider, adds no env variables and asks no questions. Files that already exist are left alone. Every kit except `server` and `blank` includes tailwind.
 
 `kitr remove tailwind` takes `@kitr/tailwind` out of `kitrrc.ts`, uninstalls `@kitr/tailwind`, `tailwindcss`, `@tailwindcss/vite` and `tailwind-merge`, deletes `config/tailwind.ts` and the `AGENTS.md` section. It leaves `app/styles/app.css`, the import in `app/document.tsx`, `clsx` and `class-variance-authority`, because your components may still use them.
 

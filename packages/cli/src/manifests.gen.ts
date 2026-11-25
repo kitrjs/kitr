@@ -1557,7 +1557,7 @@ export const kitManifests: Record<string, KitrManifest & { package: string }> = 
         },
         {
           "title": "Typed Rust commands",
-          "text": "`app/commands.ts` calls the commands in `src-tauri/src/lib.rs`, with types on both sides."
+          "text": "`app/commands.ts` calls the commands in `platforms/app/src-tauri/src/lib.rs`, with types on both sides."
         },
         {
           "title": "Events from Rust",

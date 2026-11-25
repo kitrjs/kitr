@@ -39,7 +39,7 @@ What `kitr add` does:
 kitr add toast --dry-run
 ```
 
-The `app`, `fullstack`, `saas`, `realtime`, `desktop`, `tauri` and `mobile` kits include toast. The `site`, `server` and `blank` kits do not.
+The `dashboard`, `fullstack`, `saas`, `realtime`, `desktop`, `tauri` and `mobile` kits include toast. The `app`, `site`, `docs`, `server` and `blank` kits do not.
 
 `kitr remove toast` removes the provider, the `packages` entry, the dependency, `config/toast.ts` and the `AGENTS.md` section. Calls to `toast` left in your code keep compiling only while the package is installed, so remove them first.
 

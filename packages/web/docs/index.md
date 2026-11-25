@@ -60,7 +60,7 @@ kitr add web site --mode ssr --pwa --port 3000
 | `--no-install` | | Edit `package.json` without running the package manager. |
 | `--dry-run` | | Print what would change. |
 
-Every kit except `server` already has a web platform named `site`: `blank`, `app` and `desktop` use `spa`; `fullstack`, `saas`, `site` and `realtime` use `ssr`; `mobile` uses `spa` with `pwa: true`. `kitr new` takes the same options:
+Every kit except `server` and `blank` already has a web platform named `site`: `app`, `dashboard`, `desktop` and `tauri` use `spa`; `fullstack`, `saas`, `site` and `realtime` use `ssr`; `docs` uses `static`; `mobile` uses `spa` with `pwa: true`. `kitr new` takes the same options:
 
 ```sh
 kitr new acme-orders --kit app --mode ssr --pwa --port 3000

@@ -40,9 +40,9 @@ A **kit** is a starting set of platforms, packages and files. Pick the one close
 | `server` | An API with no React at all |
 | `blank` | Starting from nothing: seven wiring files |
 
-[Kits](/docs/kits) lists the rest, including `saas`, `site`, `realtime`, `desktop`, `tauri` and `mobile`.
+[Kits](/docs/kits) lists the rest, including `saas`, `site`, `realtime`, `docs`, `desktop`, `tauri` and `mobile`.
 
-For a static marketing or docs site, start from `kitr new my-site --kit app --mode static` and `kitr add seo`; the `site` kit adds SSR and an API server.
+For a docs site written in markdown, use `--kit docs`. For a static marketing site, start from `kitr new my-site --kit app --mode static` and `kitr add seo`; the `site` kit adds SSR and an API server.
 
 > [!WARNING] Blank projects have no dev server
 > `kitr new my-app` without `--kit` makes a `blank` project, so `npm run dev` fails until you run `kitr add web site`. Use `--kit app` to start with a working page.
@@ -84,7 +84,54 @@ Say you want users to save a list of favourites that survives a reload:
 kitr add state
 ```
 
-That one command installs the package, wires it up and notes the conventions in `AGENTS.md`. Every package page on this site shows exactly what `kitr add` changed, then walks through each task the package supports.
+That one command installs the package, wires it up and notes the conventions in `AGENTS.md`. Now write the store. `persist: true` saves it in the browser after every change:
+
+```ts
+// app/stores/favourites.ts
+import { createKitrStore } from '@kitr/state'
+
+interface FavouritesState {
+  ids: string[]
+  toggle: (id: string) => void
+}
+
+export const [useFavourites] = createKitrStore<FavouritesState>(
+  { name: 'favourites', persist: true },
+  (set) => ({
+    ids: [],
+    toggle: (id) =>
+      set((s) => ({ ids: s.ids.includes(id) ? s.ids.filter((x) => x !== id) : [...s.ids, id] })),
+  }),
+)
+```
+
+Use it on the page from step 4:
+
+```tsx
+// app/pages/projects.tsx
+import { useFavourites } from '#app/stores/favourites'
+
+const projects = ['Apollo', 'Gemini', 'Mercury']
+
+export default function ProjectsPage() {
+  const { ids, toggle } = useFavourites()
+  return (
+    <ul>
+      {projects.map((name) => (
+        <li key={name}>
+          <button type="button" onClick={() => toggle(name)}>
+            {ids.includes(name) ? 'Unstar' : 'Star'} {name}
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+Star a project and reload: it is still starred, saved under `kitr:favourites` in `localStorage`. [Save state in the browser](/packages/state/guide#save-state-in-the-browser) covers saving only part of a store and changing its shape later.
+
+Every package page on this site shows exactly what `kitr add` changed, then walks through each task the package supports.
 
 ## Next steps
 
