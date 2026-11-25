@@ -1,5 +1,11 @@
 # @kitr/mocks
 
+## 0.9.3
+
+### Patch Changes
+
+- @kitr/core@0.9.3
+
 ## 0.9.2
 
 ### Patch Changes

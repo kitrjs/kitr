@@ -1,5 +1,12 @@
 # @kitr/kit-tauri
 
+## 0.9.3
+
+### Patch Changes
+
+- b13a113: `search()` ranks a whole word above one that only matches inside a longer word, counts a page's title less on each of its sections than on the page itself, and puts a query of several words that appears as typed above pages that only contain those words. Searching `kitr remove` now finds the command instead of every page that mentions kitr. The tauri kit's description points at `platforms/app/src-tauri/src/lib.rs`, where its Rust commands are.
+- @kitr/core@0.9.3
+
 ## 0.9.2
 
 ### Patch Changes
