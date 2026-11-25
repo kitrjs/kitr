@@ -16,9 +16,13 @@ Every export of `@kitr/content`, `@kitr/content/react`, `@kitr/content/markdown`
 function search<E extends SearchEntry>(entries: E[], query: string, limit?: number): E[];
 ```
 
-Rank search entries against a query. Every word must match somewhere: in the title it is worth
-6, in the heading 4 and in the text 1, and an exact title gets 10 more. A whole page beats one
-of its sections, and at most two results come from one page so one long page cannot fill the list.
+Rank search entries against a query. Every word must match somewhere. A whole word in the
+title is worth 6 on the page's own entry and 2 on each of its sections, in the heading 4 and in
+the text 1; a word that only matches inside a longer one (`kitr` in `kitrrc.ts`) counts half in
+the title and heading. An exact title gets 10 more. A query of several words that appears as
+typed gets 8 more in the heading or 6 more in the text, so `kitr remove` finds the command
+before pages that merely say "kitr" and "remove". A whole page beats one of its sections, and at
+most two results come from one page so one long page cannot fill the list.
 
 ```ts
 search(await loadSearch(), 'deploy static', 8)
